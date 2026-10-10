@@ -162,7 +162,8 @@ struct ApproximateAmountMarkTests {
             monthInterval: period,
             prevInterval: monthInterval(2026, 3),
             periodInterval: period,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(buckets.periodExpenseApproximate)
@@ -250,7 +251,8 @@ struct ApproximateAmountMarkTests {
             monthInterval: period,
             prevInterval: monthInterval(2026, 3),
             periodInterval: period,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(buckets.periodIncomeApproximate)
@@ -319,7 +321,8 @@ struct ApproximateAmountMarkTests {
             monthInterval: period,
             prevInterval: monthInterval(2026, 3),
             periodInterval: period,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(buckets.periodExpenseApproximate)
@@ -342,7 +345,8 @@ struct ApproximateAmountMarkTests {
             monthInterval: monthInterval(2026, 4),
             prevInterval: monthInterval(2026, 3),
             periodInterval: monthInterval(2026, 4),
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(!buckets.periodExpenseApproximate)
@@ -492,7 +496,8 @@ struct ApproximateAmountMarkTests {
             monthInterval: period,
             prevInterval: monthInterval(2026, 3),
             periodInterval: period,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(!buckets.periodExpenseApproximate)
@@ -654,7 +659,8 @@ struct ApproximateAmountMarkTests {
             monthInterval: period,
             prevInterval: monthInterval(2026, 3),
             periodInterval: period,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(!buckets.periodIncomeApproximate)

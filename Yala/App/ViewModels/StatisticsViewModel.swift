@@ -564,6 +564,7 @@ final class StatisticsViewModel: Filterable {
         let newData = SankeyFlowCalculator.compute(
             transactions: filtered,
             interval: interval,
+            currencyCode: defaultCurrencyCode,
             maxPerColumn: 15,
             plannedPending: plannedPending,
             plannedSplit: .byKind,
@@ -691,6 +692,31 @@ final class StatisticsViewModel: Filterable {
         )
     }
 
+    /// Ingreso y gasto del período: el KPI de la tarjeta de Tendencias.
+    ///
+    /// La categoría decide el bucket; acumulación signed (paridad con
+    /// TrendDataProcessor/CashFlowCalculator): un reembolso reduce el bucket.
+    /// `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto) y excluye las
+    /// patas de préstamo derivadas (préstamo a grupos). Cada importe se resuelve con la regla
+    /// de la curva de debajo (`CashFlowCalculator.resolvedAmount`): una fila guardada en otra
+    /// divisa principal se reconvierte, o el KPI y su curva darían números distintos.
+    static func periodTotals(
+        filtered: [TransactionItem],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> (income: Double, expense: Double) {
+        var income: Double = 0
+        var expense: Double = 0
+        for tx in filtered where tx.balanceAdjustmentType == nil && !adjustment.isSuppressed(tx) {
+            let value = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
+            if TransactionClassificationLogic.isIncome(tx) { income += value } else { expense -= value }
+        }
+        return (income, expense)
+    }
+
     /// Calculate total income, expense, and current balance
     private func calculateTotals(
         filtered: [TransactionItem],
@@ -699,23 +725,11 @@ final class StatisticsViewModel: Filterable {
         defaultCurrencyCode: String,
         adjustment: GroupBridgeStatsAdjustment
     ) {
-        // La categoría decide el bucket; acumulación signed (paridad con
-        // TrendDataProcessor/CashFlowCalculator): un reembolso reduce el bucket.
-        // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto) y excluye las
-        // patas de préstamo derivadas (préstamo a grupos).
-        let newIncome =
-            filtered
-            .filter { $0.balanceAdjustmentType == nil && !adjustment.isSuppressed($0)
-                && TransactionClassificationLogic.isIncome($0) }
-            .reduce(0) { $0 + adjustment.amountInPreferredCurrency($1) }
-        if newIncome != totalIncome { totalIncome = newIncome }
-
-        let newExpense =
-            filtered
-            .filter { $0.balanceAdjustmentType == nil && !adjustment.isSuppressed($0)
-                && !TransactionClassificationLogic.isIncome($0) }
-            .reduce(0) { $0 - adjustment.amountInPreferredCurrency($1) }
-        if newExpense != totalExpense { totalExpense = newExpense }
+        let totals = Self.periodTotals(
+            filtered: filtered, currencyCode: defaultCurrencyCode, adjustment: adjustment
+        )
+        if totals.income != totalIncome { totalIncome = totals.income }
+        if totals.expense != totalExpense { totalExpense = totals.expense }
 
         // KPI Saldo Actual: usa LiveBalanceCalculator (TC actual sobre saldo
         // nativo) en vez de sumar snapshots históricos — coherente con la

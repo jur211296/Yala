@@ -189,7 +189,8 @@ struct AdjustmentNewMonthVisibilityTests {
                 monthInterval: monthInterval,
                 prevInterval: DateInterval(start: prevStart, end: prevEnd),
                 periodInterval: periodInterval,
-                eligibleAccountIDs: [f.account.persistentModelID]
+                eligibleAccountIDs: [f.account.persistentModelID],
+                currencyCode: accountCurrency
             )
             #expect(hero.periodIncome == 1_200, "Panel · ingresos del mes [\(accountCurrency)]")
             #expect(hero.periodExpense == 80, "Panel · gastos del mes [\(accountCurrency)]")

@@ -13,7 +13,8 @@ struct TagSpendingCalculator {
     /// - Parameters:
     ///   - transactions: List of transactions (already filtered by account/category if needed)
     ///   - interval: Date interval for filtering
-    ///   - currencyCode: Target currency code (for display, uses amountInPreferredCurrency)
+    ///   - currencyCode: la divisa principal en que se suma. Cada importe se resuelve con
+    ///     `CashFlowCalculator.resolvedAmount` (reconvertido si la fila se guardó en otra divisa).
     ///   - transactionNatures: Filter by transaction nature (nil = expense only for backwards compatibility)
     ///   - allTags: Required catalog of Tag objects (from `@Query<Tag>` or service).
     ///     CSV-mirror SSOT: resuelve UUIDs del CSV mirror → Tag objects sin tocar la M2M lazy.
@@ -24,7 +25,8 @@ struct TagSpendingCalculator {
         currencyCode: String,
         transactionNatures: Set<TransactionNature>? = nil,
         allTags: [Tag],
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [TagSpendingSummary] {
         // Determine which natures to include (default: expense only)
         let naturesToInclude = transactionNatures ?? [.expense]
@@ -50,7 +52,9 @@ struct TagSpendingCalculator {
         var tagMap: [UUID: Tag] = [:]
 
         for transaction in filteredTransactions {
-            let absAmount = abs(adjustment.amountInPreferredCurrency(transaction))
+            let absAmount = abs(CashFlowCalculator.resolvedAmount(
+                transaction, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
             let txTagUUIDs = transaction.resolvedTagIDs(scheduleBackfill: true) ?? []
             for tagID in txTagUUIDs {
                 tagTotals[tagID, default: 0] += absAmount

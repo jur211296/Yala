@@ -1297,7 +1297,8 @@ final class PanelViewModel {
                 interval: calcContext.effectiveInterval,
                 currencyCode: calcContext.defaultCurrencyCode,
                 adjustment: statsAdjustment,
-                liveBalanceOverride: liveBalanceOverride
+                liveBalanceOverride: liveBalanceOverride,
+                converter: calcContext.converter
             )
             newTrendPoints = (result.points, result.rawPoints, result.yDomain)
             newTrendTotalIncome = result.totalIncome
@@ -2682,7 +2683,8 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             allTags: allTags,
-            adjustment: statsAdjustment
+            adjustment: statsAdjustment,
+            converter: context.converter
         )
 
         guard context.period != .allTime else {
@@ -2711,7 +2713,8 @@ final class PanelViewModel {
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
             allTags: allTags,
-            adjustment: statsAdjustment
+            adjustment: statsAdjustment,
+            converter: context.converter
         )
 
         let previousTotal = previousData.reduce(0) { $0 + $1.amount }
@@ -2783,7 +2786,8 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             currencyCode: context.defaultCurrencyCode,
             adjustment: statsAdjustment,
-            liveBalanceOverride: liveBalanceOverride
+            liveBalanceOverride: liveBalanceOverride,
+            converter: context.converter
         )
 
         let previousResult = TrendDataProcessor.processTrendData(
@@ -2794,7 +2798,8 @@ final class PanelViewModel {
             grouping: .day,
             interval: previousInterval,
             currencyCode: context.defaultCurrencyCode,
-            adjustment: statsAdjustment
+            adjustment: statsAdjustment,
+            converter: context.converter
         )
 
         let allValues = currentResult.points.map(\.value) + previousResult.points.map(\.value)
@@ -2864,9 +2869,9 @@ final class PanelViewModel {
     ///  - single O(n) pass over `transactions` restricted to the current
     ///    calendar month,
     ///  - zero new fetches (all models are already loaded),
-    ///  - uses `TransactionItem.amountInPreferredCurrency` — the snapshot
-    ///    conversion already persisted on each transaction, so there is no
-    ///    live call to `CurrencyConverter` here.
+    ///  - resuelve cada importe con `CashFlowCalculator.resolvedAmount`: el
+    ///    monto guardado si se guardó en la divisa principal vigente, y una
+    ///    conversión con la tasa de su fecha si se guardó en otra.
     /// Only budgets with `periodType == "monthly"` feed the total; mixing
     /// weekly/yearly would distort the ratio. Pro-rating other periodicities
     /// is a future refinement tracked in the epic.
@@ -2923,7 +2928,9 @@ final class PanelViewModel {
             periodInterval: periodInterval,
             periodPrevInterval: periodPrevInterval,
             eligibleAccountIDs: eligibleAccountIDs,
-            adjustment: statsAdjustment
+            currencyCode: defaultCurrencyCode,
+            adjustment: statsAdjustment,
+            converter: currencyConverter
         )
 
         var newPeriod = PanelHeroPeriodData(income: buckets.periodIncome, expense: buckets.periodExpense)

@@ -165,6 +165,7 @@ struct GroupBridgeApproximateMarkTests {
             monthInterval: interval, prevInterval: monthInterval(2026, 3),
             periodInterval: interval,
             eligibleAccountIDs: e.idsElegibles,
+            currencyCode: "PEN",
             adjustment: e.ajuste
         )
 
@@ -193,6 +194,7 @@ struct GroupBridgeApproximateMarkTests {
             monthInterval: interval, prevInterval: monthInterval(2026, 3),
             periodInterval: interval,
             eligibleAccountIDs: e.idsElegibles,
+            currencyCode: "PEN",
             adjustment: e.ajuste
         )
 
@@ -338,6 +340,7 @@ struct GroupBridgeApproximateMarkTests {
             monthInterval: interval, prevInterval: monthInterval(2026, 3),
             periodInterval: interval,
             eligibleAccountIDs: e.idsElegibles,
+            currencyCode: "PEN",
             adjustment: e.ajuste
         )
 
@@ -376,6 +379,7 @@ struct GroupBridgeApproximateMarkTests {
             monthInterval: interval, prevInterval: monthInterval(2026, 3),
             periodInterval: interval,
             eligibleAccountIDs: e.idsElegibles,
+            currencyCode: "PEN",
             adjustment: e.ajuste
         )
 
@@ -403,6 +407,7 @@ struct GroupBridgeApproximateMarkTests {
             monthInterval: interval, prevInterval: monthInterval(2026, 3),
             periodInterval: interval,
             eligibleAccountIDs: e.idsElegibles,
+            currencyCode: "PEN",
             adjustment: e.ajuste
         )
 
@@ -431,6 +436,7 @@ struct GroupBridgeApproximateMarkTests {
             monthInterval: interval, prevInterval: monthInterval(2026, 3),
             periodInterval: interval,
             eligibleAccountIDs: e.idsElegibles,
+            currencyCode: "PEN",
             adjustment: ajuste
         )
 
