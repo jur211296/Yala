@@ -7643,6 +7643,15 @@ enum L10n {
             }
             /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
             static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }
+            /// Quedan cambios sin subir y el motor no completó su último ciclo (sin red, en backoff o parado por el gate de
+            /// dominio). Plural en el `.stringsdict`.
+            static func waitingForConnection(_ count: Int) -> String {
+                String.localizedStringWithFormat(ls("storage.sync.waitingForConnection", comment: ""), count)
+            }
+            /// Lo mismo cuando las colas no se dejaron contar: sin cifra, pero tampoco «Todo sincronizado».
+            static var waitingForConnectionUncounted: String {
+                ls("storage.sync.waitingForConnectionUncounted", comment: "")
+            }
             static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
         }
 

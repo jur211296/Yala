@@ -6145,6 +6145,7 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Zaloguj się, aby wysłać swoje zmiany";
+"storage.sync.waitingForConnectionUncounted" = "Zmiany czekają na połączenie";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Nie udało się policzyć Twoich danych. Spróbuj ponownie za chwilę.";

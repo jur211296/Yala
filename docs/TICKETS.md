@@ -225,7 +225,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door | backlog | tickets/backlog/cloud-signout-session-expiry-with-the-engine-stopped-until-relaunch-has-no-door.md |
 | cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more | backlog | tickets/backlog/cloud-signout-upstream-rejections-with-a-healthy-pull-say-a-moment-more.md |
 | cloud-signout-with-the-engine-stopped-says-check-your-connection | done | tickets/done/cloud-signout-with-the-engine-stopped-says-check-your-connection.md |
-| cloud-sync-status-says-all-synced-with-changes-still-pending | backlog | tickets/backlog/cloud-sync-status-says-all-synced-with-changes-still-pending.md |
+| cloud-sync-status-says-all-synced-with-changes-still-pending | qa | tickets/qa/cloud-sync-status-says-all-synced-with-changes-still-pending.md |
 | cloud-tab-does-not-say-this-phone-cannot-sync-personal-data | done | tickets/done/cloud-tab-does-not-say-this-phone-cannot-sync-personal-data.md |
 | cloud-tx-epoch-orphan-relations | qa | tickets/qa/cloud-tx-epoch-orphan-relations.md |
 | cloudsync-account-currency-orphans-receiver-history | backlog | tickets/backlog/cloudsync-account-currency-orphans-receiver-history.md |

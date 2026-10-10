@@ -6145,6 +6145,7 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "サインインして変更をアップロード";
+"storage.sync.waitingForConnectionUncounted" = "変更が接続待ちです";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "データを数えられませんでした。少し待ってからもう一度お試しください。";

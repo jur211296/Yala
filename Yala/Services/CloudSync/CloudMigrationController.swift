@@ -532,6 +532,12 @@ final class CloudMigrationController {
     private(set) var syncNeedsSignIn = false
     /// Cuántos cambios faltan por subir. `nil` = la cola no se dejó contar: la pantalla ofrece firmar sin cifra.
     private(set) var pendingUploadCount: Int? = 0
+    /// Cuántos cambios esperan a subir en la nube, las tres colas (`SyncStatusSectionLogic.pendingCount`). `nil` = alguna no
+    /// se dejó contar. Lo recuenta `refreshPendingSyncCount`, que la pantalla llama al aparecer y en cada guardado.
+    private(set) var pendingSyncCount: Int? = 0
+    /// El motor corre y su último ciclo con señal de red completó (`SyncStatusSectionLogic.engineIsHealthy`). Lo relee el
+    /// sondeo de 1 s de la pantalla vía `refresh()`: no hace fetch.
+    private(set) var syncEngineIsHealthy = false
 
     /// El aviso de un «Migrar a la nube» que se paró sin escribir nada (ticket
     /// `settings-migrate-to-cloud-adopts-silently-instead-of-migrating`). Lo consume la pantalla de Almacenamiento, que
@@ -1718,6 +1724,7 @@ final class CloudMigrationController {
         readLiveSession()
 
         refreshSyncBanner()
+        refreshSyncEngineHealth()
     }
 
     /// Banner S11 (D5): runtime detenido por sesión expirada con filas vivas pendientes → CTA sign-in.
@@ -1731,6 +1738,48 @@ final class CloudMigrationController {
                                            hasSession: CloudAuthService.shared.hasSession)
         syncNeedsSignIn = banner.needsSignIn
         pendingUploadCount = banner.pendingCount
+    }
+
+    /// ¿Completó el motor su último ciclo? Lo lee la tarjeta «Sincronización» (`SyncStatusSectionLogic.engineIsHealthy`).
+    /// Sin fetch: cabe en el sondeo de 1 s de la pantalla.
+    private func refreshSyncEngineHealth() {
+        syncEngineIsHealthy = SyncStatusSectionLogic.engineIsHealthy(
+            state: CloudSyncRuntime.shared?.state,
+            consecutiveTransients: CloudSyncRuntime.shared?.consecutiveTransients ?? 0)
+    }
+
+    /// Recuenta lo que espera a subir (ticket `cloud-sync-status-says-all-synced-with-changes-still-pending`). Fuera del
+    /// sondeo de 1 s a propósito: lee el History, y el conteo solo cambia cuando algo guarda —apuntar un gasto, el drain que
+    /// lo pasa al outbox, la subida que lo borra—, que es cuando la pantalla lo llama (`ModelContext.didSave`).
+    func refreshPendingSyncCount() {
+        guard CloudSyncFlags.storageMode == .cloud else {
+            pendingSyncCount = 0
+            return
+        }
+        pendingSyncCount = Self.pendingSyncCount(
+            context: context,
+            uncapturedPersonal: { [self] in uncapturedPersonalChangeKeys()?.count })
+    }
+
+    /// El cuerpo del recuento con el store y la mitad del History inyectados, para medirlo con un store real: el controller
+    /// no se construye en tests. Producción entra SOLO por `refreshPendingSyncCount`. Sin runtime no hay a quién preguntar
+    /// por el History y esa mitad sale `nil`: nunca se lee como «no queda nada».
+    static func pendingSyncCount(context: ModelContext, uncapturedPersonal: () -> Int?) -> Int? {
+        let personalRows: Int?
+        do {
+            personalRows = try context.fetchCount(FetchDescriptor<SyncOutbox>(
+                predicate: #Predicate { $0.rejectedReason == nil }))
+        } catch {
+            #if DEBUG
+            print("CloudMigrationController.pendingSyncCount: fetchCount(SyncOutbox) falló: \(error)")
+            #endif
+            personalRows = nil
+        }
+        return SyncStatusSectionLogic.pendingCount(
+            personalRows: personalRows,
+            personalUncaptured: uncapturedPersonal(),
+            // El MISMO predicado que sube el canal (`GroupsSyncClient.pushPending`) y que cuenta la puerta de firmar.
+            groupsRows: CloudSessionSignOut.liveGroupsPendingRowIDs(context: context)?.count)
     }
 
     /// El cuerpo del banner con el store y el estado del motor inyectados, para medirlo con un store real: el controller no
