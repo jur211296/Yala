@@ -867,7 +867,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
 | widget-snapshot-visitor-overwrites-owner | discarded | tickets/discarded/widget-snapshot-visitor-overwrites-owner.md |
 | wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal | done | tickets/done/wipe-alert-fires-on-a-session-that-no-longer-obeys-the-signal.md |
-| wipe-copy-reads-one-axis-while-the-sheet-reads-two | backlog | tickets/backlog/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
+| wipe-copy-reads-one-axis-while-the-sheet-reads-two | qa | tickets/qa/wipe-copy-reads-one-axis-while-the-sheet-reads-two.md |
 | wipe-data-does-not-cancel-the-remote-wipe-grace | done | tickets/done/wipe-data-does-not-cancel-the-remote-wipe-grace.md |
 | wipe-data-group-rows-return-only-on-the-next-cold-launch | backlog | tickets/backlog/wipe-data-group-rows-return-only-on-the-next-cold-launch.md |
 | wipe-data-keeps-groups-but-drops-their-bridged-rows | qa | tickets/qa/wipe-data-keeps-groups-but-drops-their-bridged-rows.md |

@@ -1,10 +1,10 @@
 ---
 id: wipe-copy-reads-one-axis-while-the-sheet-reads-two
-status: backlog
+status: qa
 priority: medium
 area: "sesiones, settings, copy"
 created: 2026-09-13
-updated: 2026-10-07
+updated: 2026-10-10
 source: "review adversarial del PR-B del paso 12 (`shell-derives-from-two-session-axes`), lente «lo que borra datos»"
 ---
 
@@ -49,12 +49,49 @@ ninguna prometa alcance. Eso no cabe en un PR cuyo objeto era retirar código.
 
 ## Criterios de aceptación
 
-- [ ] El texto de la pantalla y el alcance de la hoja no pueden discrepar en ninguna de las cuatro celdas
+- [x] El texto de la pantalla y el alcance de la hoja no pueden discrepar en ninguna de las cuatro celdas
       del ADR 2026-09-09, y hay un test que recorre las cuatro (hoy `DestructiveScopeLogicTests` cubre
       `wipeOperation` con sus dos variables, pero **nada** cubre la pareja texto ↔ operación).
-- [ ] El comentario de `UserDataResetView` que hoy apunta a este ticket se actualiza o se retira.
+- [x] El comentario de `UserDataResetView` que hoy apunta a este ticket se actualiza o se retira.
 
 ## Decisión de Jürgen (2026-10-07)
 
 Opción A: **el texto sale de lo mismo que decide qué se borra**. El párrafo de la pantalla deriva de `scopeOperation`,
 igual que la hoja; una sola fuente. Los criterios de aceptación de arriba no cambian.
+
+## Hecho (2026-10-10)
+
+Opción A implementada, sin tocar qué se borra ni la hoja:
+
+- `DestructiveScopeLogic.wipeDescription(for:)` mapea la operación a qué alcance nombra el párrafo:
+  `.wipeDataFull` → texto completo (`settings.resetDataDescription`), `.wipeDataGroupsOnly` → perfil y
+  preferencias (`settings.resetDataDescriptionGroupsOnly`), el resto de operaciones → sin párrafo. El
+  `switch` es exhaustivo: una operación de Vaciar nueva no compila hasta decidir su texto.
+- `UserDataResetView` pinta el párrafo con `resetDescriptionText(for: scopeOperation)`, la misma
+  operación que recibe la hoja. El comentario que apuntaba aquí se retiró.
+- Sin claves nuevas: los dos textos existentes ya nombran el alcance de cada operación.
+- `YalaTests/WipeDescriptionParityTests`: fija la discrepancia vieja (la regla de un término difiere en
+  exactamente la celda sin sesión privada + espejo) y recorre las cuatro celdas exigiendo que texto y
+  operación coincidan. Control rojo: con el cuerpo viejo de la pantalla
+  (`PrivateSessionMark.hasPrivateSession() ? … : …`) el test falla.
+
+Para quien usa la app: en las celdas alcanzables hoy el texto no cambia. Solo cambia en la instalación
+solo-grupos anterior al paso 5 con el espejo montado, que ahora lee el párrafo completo, el mismo
+alcance que la hoja le enseña al tocar.
+
+## Guion de device-QA
+
+No hay capturas: la celda que cambia (solo grupos + store que espeja) no se monta en el simulador sin
+inventar estado, y en las otras tres el texto es el mismo de antes. El test unitario cubre la celda
+divergente; el guion comprueba que las alcanzables no retroceden.
+
+1. Instala el build de TestFlight que trae este cambio en tu iPhone, con tu sesión privada habitual.
+2. Ve a **Perfil → Ajustes → Vaciar datos**.
+3. Lee el párrafo bajo «Vaciar todos tus datos»: debe decir que se eliminan de forma permanente tus
+   cuentas, transacciones, presupuestos… (el texto completo).
+4. Toca «Vaciar mis datos» (en rojo): la hoja debe enseñar el borrado completo (📱 y ☁️ en rojo). **Cancela**, no
+   confirmes.
+5. Si tienes a mano un dispositivo con sesión **solo grupos** (sin vida personal, instalación reciente):
+   repite 2-4. El párrafo debe hablar de restablecer perfil y preferencias, y la hoja decir que los
+   grupos no se tocan. Cancela.
+6. Si ambos casos cuadran, el ticket pasa a `done`.

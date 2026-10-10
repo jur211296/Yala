@@ -62,6 +62,18 @@ struct UserDataResetView: View {
             personalMountAttachesMirror: CloudSessionSignOut.personalMountAttachesMirror)
     }
 
+    /// Texto del párrafo bajo el título para la operación que la hoja va a ejecutar. Sin párrafo propio
+    /// (una operación que no es de Vaciar, inalcanzable desde aquí) cae al texto completo: prometer de más
+    /// es el lado barato en una pantalla que borra.
+    static func resetDescriptionText(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch DestructiveScopeLogic.wipeDescription(for: operation) {
+        case .profileAndPreferences:
+            return L10n.Settings.resetDataDescriptionGroupsOnly
+        case .wholePersonalData, nil:
+            return L10n.Settings.resetDataDescription
+        }
+    }
+
     /// D10: ofrecer el batch "También salir de mis grupos" solo con el canal backend ON (DARK), grupos vivos y
     /// CERO deudas globales (el batch no se ofrece con deuda — la fila 👥 muestra "Ver mis grupos"). Solo en
     /// `wipeDataFull` (el modelo lo restringe a esa operación).
@@ -78,20 +90,9 @@ struct UserDataResetView: View {
                     Text(L10n.Settings.resetAllData)
                         .font(DS.Typography.title)
 
-                    // **Este texto lee UN término y `scopeOperation` lee DOS, así que NO
-                    // son el mismo eje** — medido en la review del 2026-09-13, que tumbó un
-                    // comentario anterior donde yo afirmaba lo contrario. La celda donde
-                    // divergen: sin sesión privada y con el store espejando a iCloud, la
-                    // hoja ejecuta un borrado COMPLETO (sale a iCloud y a los demás
-                    // dispositivos del Apple ID) mientras este párrafo promete «tu perfil y
-                    // tus preferencias». El defecto es anterior a este PR y no se arregla
-                    // aquí porque cambia lo que lee una pantalla, no el barrido: tiene
-                    // ticket propio (`wipe-copy-reads-one-axis-while-the-sheet-reads-two`).
-                    Text(
-                        PrivateSessionMark.hasPrivateSession()
-                            ? L10n.Settings.resetDataDescription
-                            : L10n.Settings.resetDataDescriptionGroupsOnly
-                    )
+                    // Sale de `scopeOperation`, lo mismo que la hoja y el borrado: no pueden
+                    // prometer alcances distintos (`DestructiveScopeLogic.wipeDescription`).
+                    Text(Self.resetDescriptionText(for: scopeOperation))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
                 }
