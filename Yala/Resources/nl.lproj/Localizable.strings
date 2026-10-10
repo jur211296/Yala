@@ -504,7 +504,7 @@
 "common.loading" = "Laden...";
 "common.error" = "Fout";
 "common.success" = "Gelukt";
-"common.dataPrivacy" = "Je gegevens verlaten je apparaat nooit";
+"common.dataPrivacy" = "Waar je gegevens staan";
 "common.active" = "Actief";
 "common.hidden" = "Verborgen";
 "common.inactive" = "Inactief";
@@ -1148,8 +1148,8 @@
 "profile.allowedChars" = "Alleen letters, cijfers en underscores";
 "profile.aliasAvailable" = "Alias beschikbaar";
 "profile.aliasHelper" = "3-20 tekens. Alleen letters, cijfers en underscores.";
-"profile.privacyTitle" = "Je gegevens verlaten je apparaat nooit";
-"profile.privacyDesc" = "Yala bewaart je persoonlijke gegevens alleen op je apparaat. AI-functies (spraak, afbeeldingen en inzichten) zijn optioneel en verwerken alleen samengevatte gegevens — je individuele transacties of persoonlijke informatie worden nooit gedeeld.";
+"profile.privacyTitle" = "Waar je gegevens staan";
+"profile.privacyDesc" = "Met je account in je privé-iCloud worden je gegevens op je apparaat en in je iCloud bewaard. Met je account in de cloud worden ze op de servers van Yala bewaard. Wat je in een groep invoert, samen met je alias, wordt op de servers van Yala bewaard zodat de groep het ziet. AI-functies (spraak, afbeeldingen en inzichten) zijn optioneel: wat je ernaar stuurt, gaat via onze server naar OpenAI, dat het verwerkt.";
 "profile.aliasFutureNote" = "Let op: validatie van unieke aliassen komt beschikbaar zodra de functie gedeelde uitgaven actief is.";
 "profile.proMember" = "PRO-lid";
 "profile.choosePhoto" = "Kies foto";
@@ -1829,9 +1829,9 @@
 "onboarding.usageMode.fullControl.desc" = "Je telt alles mee in je saldo — rekeningen, kaarten en wat heen en weer gaat met andere mensen. Het getal dat je ziet is wat echt van jou is.";
 "onboarding.privacyTitle" = "Klaar om te starten";
 "onboarding.privacySubtitle" = "Je kunt nu beginnen met Yala";
-"onboarding.privacyLocal" = "Je financiële gegevens blijven op je apparaat";
+"onboarding.privacyLocal" = "Je financiële gegevens worden in je account bewaard";
 "onboarding.privacyNoTracking" = "Geen tracking of advertenties";
-"onboarding.privacyIcloud" = "Alleen jij hebt toegang tot je gegevens";
+"onboarding.privacyIcloud" = "Je opent je gegevens met je account";
 "onboarding.privacyNoSharing" = "AI-functies delen of bewaren geen gevoelige gegevens";
 "onboarding.categoriesDefault" = "Standaardcategorieën";
 "onboarding.categoriesCustom" = "Aangepaste categorieën";
@@ -1858,9 +1858,9 @@
 "onboarding.balanceManualOption" = "Ik ken mijn saldo";
 "onboarding.balanceManualHint" = "Je voert het zelf in";
 "onboarding.balanceGuidedIncompleteHint" = "Je hebt de berekening niet afgerond. Tik om verder te gaan.";
-"onboarding.privacyLocalShort" = "Gegevens op je apparaat";
+"onboarding.privacyLocalShort" = "Gegevens in je account";
 "onboarding.privacyNoTrackingShort" = "Geen tracking of advertenties";
-"onboarding.privacyIcloudShort" = "Alleen jij hebt toegang";
+"onboarding.privacyIcloudShort" = "Toegang met je account";
 "onboarding.privacyNoSharingShort" = "Veilige AI";
 "onboarding.accountBalanceGuideTitle" = "Hoe bereken ik mijn saldo?";
 "onboarding.accountBalanceGuideIntro" = "Je beginsaldo vertelt Yala met hoeveel geld je begint. Het hoeft niet tot op de cent te kloppen — een ruwe schatting is prima. Hier lees je hoe je erover kunt nadenken, afhankelijk van het type rekening dat je hebt gekozen.";
@@ -4153,7 +4153,7 @@
 "welcome.hero.title" = "Jouw persoonlijke financiën,";
 "welcome.hero.titleAccent" = "moeiteloos.";
 "welcome.hero.cta" = "Beginnen";
-"welcome.hero.trust" = "100% privé · Jouw info blijft bij jou";
+"welcome.hero.trust" = "Geen tracking of advertenties";
 
 "welcome.hero.cards.capture.title" = "Foto van bonnen";
 "welcome.hero.cards.capture.body" = "Richt op de bon. Yala leest 'm.";
@@ -4168,7 +4168,7 @@
 "welcome.hero.cards.import.title" = "Importeer je geschiedenis";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Klaar.";
 "welcome.hero.cards.icloud.title" = "Privé iCloud";
-"welcome.hero.cards.icloud.body" = "Jouw data, in jouw iCloud. Geen servers.";
+"welcome.hero.cards.icloud.body" = "Jouw data, in jouw iCloud.";
 "welcome.hero.cards.more.title" = "En nog veel meer";
 "welcome.hero.cards.more.body" = "Laten we het samen ontdekken.";
 
@@ -4438,7 +4438,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Deze gedeelde uitgave bestaat niet meer in de groep.";
 "whatsNew.v20.groups.title" = "Groepen (Bèta)";
-"whatsNew.v20.groups.description" = "Maak groepen om uitgaven te delen en Yala rekent uit wie wie wat verschuldigd is. En geen zorgen: alles gaat via je privé-iCloud, nooit via onze servers.";
+"whatsNew.v20.groups.description" = "Maak groepen om uitgaven te delen en Yala rekent uit wie wie wat verschuldigd is.";
 "whatsNew.v20.ai.title" = "Maak kennis met Yala AI";
 "whatsNew.v20.ai.description" = "Je financiële assistent met kunstmatige intelligentie. Stel vragen over je geld, laat hem je uitgaven vastleggen en krijg heldere inzichten over je maand. Als een vriend die verstand heeft van geld, op slechts één bericht afstand.";
 "whatsNew.v20.redesign.title" = "Een compleet nieuw uiterlijk";
