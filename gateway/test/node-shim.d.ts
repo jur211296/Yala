@@ -16,7 +16,14 @@ declare module "node:os" {
   export function homedir(): string;
 }
 declare module "node:child_process" {
-  export function execFileSync(file: string, args: string[], options?: { stdio?: "ignore" | "inherit" }): unknown;
+  export function execFileSync(file: string, args: string[], options?: { stdio?: "ignore" | "inherit"; input?: string }): unknown;
+}
+declare module "node:crypto" {
+  interface Hash {
+    update(data: string): Hash;
+    digest(encoding: "hex"): string;
+  }
+  export function createHash(algorithm: "sha1" | "sha256"): Hash;
 }
 declare const process: { argv: string[]; env: Record<string, string | undefined>; exit(code?: number): never };
 declare const Buffer: { from(data: unknown): { toString(encoding: "base64"): string } };

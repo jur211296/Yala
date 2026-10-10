@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { TASK_SCHEMAS } from "../../src/ai/routes";
 import { photoReadBody } from "../lib/appRequests";
 import { gradePhoto, type PhotoCase } from "../lib/grading";
+import { cleanNotes } from "../lib/noteCleaner";
 import type { BenchTask } from "./types";
 
 const BENCH = new URL("../", import.meta.url);
@@ -31,5 +32,6 @@ export const photoTask: BenchTask<PhotoCase> = {
   image: true,
   baseParams: { responseFormat: "json_object", jsonSchema: TASK_SCHEMAS["photo.read"] },
   body: (c, v) => photoReadBody(jpegBase64(c.file, v.edge ?? 0), c.today, c.currencyContext),
-  grade: (content, c) => gradePhoto(content, c),
+  // Con la limpieza REAL de la app (`VisionNoteCleaner.swift` compilado): mide la nota que ve el usuario.
+  grade: (content, c) => gradePhoto(content, c, cleanNotes),
 };

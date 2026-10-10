@@ -89,3 +89,9 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
 - **Los prompts se leen del Swift**: si cambias la firma de la función que los contiene (p. ej.
   `systemPrompt(currency:)`), cambia el marcador en `bench/lib/appRequests.ts`.
 - **La latencia se mide en serie y sola** (candado `bench/.latency-lock`); en paralelo sale inflada.
+- **La nota de la foto se mide con la limpieza REAL de la app** (2026-10-10): `bench/lib/noteCleaner.ts` compila
+  `Yala/App/Logic/VisionNoteCleaner.swift` con `swiftc` y le pasa `[merchant, note]`. Si cambias la firma de
+  `note(merchant:note:)`, cambia su `MAIN`. Los tests y el CI (Ubuntu) llaman a `gradePhoto` sin limpieza y miden solo
+  la nota cruda. **Un cambio del prompt de la foto se juzga también por el acierto, no solo por la nota**: el 2026-10-10
+  un prompt que pedía «nunca dejes vacíos comercio y nota» inventó movimientos en una página de resumen
+  (`results/2026-10-10-nota-despues-v2/REPORT-nota.md`).

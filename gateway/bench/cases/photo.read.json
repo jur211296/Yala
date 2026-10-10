@@ -1,6 +1,6 @@
 {
   "task": "photo.read",
-  "criterion": "Acierta si la app acepta la respuesta (decodifica VisionResponse) y produce EXACTAMENTE los movimientos esperados: mismo número de movimientos con importe (los de importe nulo no cuentan) y cada uno emparejado por importe con su signo (gasto negativo, ingreso positivo), fecha YYYY-MM-DD y divisa ISO. El comercio y el imageType se miden aparte y no deciden. `amountAlt` lista lecturas también correctas (total con y sin propina; el abono de una tarjeta, que es un caso dudoso).",
+  "criterion": "Acierta si la app acepta la respuesta (decodifica VisionResponse) y produce EXACTAMENTE los movimientos esperados: mismo número de movimientos con importe (los de importe nulo no cuentan) y cada uno emparejado por importe con su signo (gasto negativo, ingreso positivo), fecha YYYY-MM-DD y divisa ISO. El comercio y el imageType se miden aparte y no deciden. `amountAlt` lista lecturas también correctas (total con y sin propina; el abono de una tarjeta, que es un caso dudoso). La NOTA se mide aparte y no decide: la final (comercio + nota, como la arma la app) tiene que nombrar `noteWant` (o la mitad de las palabras de `merchant`) sin plantilla de banco, banco, números de 4+ cifras ni asteriscos; se cuenta cruda y con la limpieza de la app (`VisionNoteCleaner`).",
   "cases": [
     {
       "id": "app-receipt-es",
@@ -2223,6 +2223,330 @@
         "main": "PEN",
         "accounts": [
           "PEN"
+        ]
+      }
+    },
+    {
+      "id": "b01-bcp-grok",
+      "file": "b01-bcp-grok-es-PE.png",
+      "today": "2026-10-10",
+      "kind": "alerta BCP de consumo (el caso del reporte)",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -105.6,
+            "date": "2026-10-10",
+            "currency": "USD",
+            "merchant": "GROK XAI",
+            "noteWant": "Grok"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b02-bcp-detail",
+      "file": "b02-bcp-detail-es-PE.png",
+      "today": "2026-10-10",
+      "kind": "constancia BCP con comercio y sucursal",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -186.4,
+            "date": "2026-10-09",
+            "currency": "PEN",
+            "merchant": "WONG SAN ISIDRO",
+            "noteWant": "Wong"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b03-interbank",
+      "file": "b03-interbank-es-PE.png",
+      "today": "2026-10-10",
+      "kind": "alerta Interbank con código de operación",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -54.9,
+            "date": "2026-10-10",
+            "currency": "PEN",
+            "merchant": "TAMBO+ LARCOMAR",
+            "noteWant": "Tambo"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b04-interbank-en",
+      "file": "b04-interbank-en.png",
+      "today": "2026-10-10",
+      "kind": "alerta Interbank en inglés, descriptor con referencia",
+      "lang": "en",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -22.99,
+            "date": "2026-10-09",
+            "currency": "USD",
+            "merchant": "SPOTIFY",
+            "noteWant": "Spotify"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b05-bbva-detail",
+      "file": "b05-bbva-detail-es-PE.png",
+      "today": "2026-10-10",
+      "kind": "detalle BBVA «Has realizado una compra»",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -312.75,
+            "date": "2026-10-08",
+            "currency": "PEN",
+            "merchant": "PLAZA VEA MIRAFLORES",
+            "noteWant": "Plaza Vea"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b06-bbva-en",
+      "file": "b06-bbva-en.png",
+      "today": "2026-10-10",
+      "kind": "alerta BBVA en inglés, descriptor de Uber",
+      "lang": "en",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -45.1,
+            "date": "2026-10-10",
+            "currency": "USD",
+            "merchant": "UBER",
+            "noteWant": "Uber"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b07-scotiabank",
+      "file": "b07-scotiabank-es-PE.png",
+      "today": "2026-10-10",
+      "kind": "alerta Scotiabank «Consumo aprobado»",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -78.0,
+            "date": "2026-10-10",
+            "currency": "PEN",
+            "merchant": "KFC JOCKEY PLAZA",
+            "noteWant": "KFC"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b08-scotiabank-en",
+      "file": "b08-scotiabank-en.png",
+      "today": "2026-10-10",
+      "kind": "detalle Scotiabank en inglés, descriptor de Amazon",
+      "lang": "en",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -129.9,
+            "date": "2026-10-07",
+            "currency": "USD",
+            "merchant": "AMAZON",
+            "noteWant": "Amazon"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b09-yape",
+      "file": "b09-yape-es-PE.png",
+      "today": "2026-10-10",
+      "kind": "constancia «¡Yapeaste!» a una persona",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -25.0,
+            "date": "2026-10-10",
+            "currency": "PEN",
+            "merchant": "JUAN PEREZ",
+            "noteWant": "Juan Perez"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b10-yape-en",
+      "file": "b10-yape-en.png",
+      "today": "2026-10-10",
+      "kind": "Yape recibido en inglés (ingreso)",
+      "lang": "en",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": 40.0,
+            "date": "2026-10-10",
+            "currency": "PEN",
+            "merchant": "MARIA LOPEZ",
+            "noteWant": "Maria Lopez"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b11-plin",
+      "file": "b11-plin-es-PE.png",
+      "today": "2026-10-10",
+      "kind": "pago con Plin a una bodega desde Interbank",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -18.5,
+            "date": "2026-10-10",
+            "currency": "PEN",
+            "merchant": "BODEGA SANTA ROSA",
+            "noteWant": "Santa Rosa"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "b12-plin-en",
+      "file": "b12-plin-en.png",
+      "today": "2026-10-10",
+      "kind": "envío Plin en inglés a una persona",
+      "lang": "en",
+      "source": "sintética (fixtures/make_bank_alerts.py)",
+      "expect": {
+        "imageType": "single",
+        "transactions": [
+          {
+            "amount": -60.0,
+            "date": "2026-10-09",
+            "currency": "PEN",
+            "merchant": "CARLOS RAMIREZ",
+            "noteWant": "Carlos Ramirez"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN",
+          "USD"
         ]
       }
     }

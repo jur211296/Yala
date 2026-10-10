@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (840)
+## Index (841)
 
 | id | status | path |
 |---|---|---|
@@ -475,6 +475,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | image-entry-network-failure-reads-as-no-transactions | done | tickets/done/image-entry-network-failure-reads-as-no-transactions.md |
 | image-entry-uitests-cannot-reach-the-fab-on-ipad | backlog | tickets/backlog/image-entry-uitests-cannot-reach-the-fab-on-ipad.md |
 | image-entry-uitests-save-stays-off-for-a-complete-record | backlog | tickets/backlog/image-entry-uitests-save-stays-off-for-a-complete-record.md |
+| image-note-uses-bank-template-instead-of-merchant | qa | tickets/qa/image-note-uses-bank-template-instead-of-merchant.md |
 | image-reading-sends-the-full-resolution-photo | done | tickets/done/image-reading-sends-the-full-resolution-photo.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |

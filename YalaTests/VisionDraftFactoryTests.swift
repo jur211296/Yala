@@ -97,6 +97,12 @@ struct VisionDraftFactoryTests {
         #expect(result == "Walmart - Groceries")
     }
 
+    /// La nota del draft pasa por `VisionNoteCleaner`: el reporte del 2026-10-10 salía con la plantilla del banco.
+    @Test @MainActor func buildNote_dropsBankTemplate() {
+        let result = VisionDraftFactory.buildNote(merchant: "GROK XAI", note: "Consumo con tarjeta de crédito BCP")
+        #expect(result == "Grok (xAI)")
+    }
+
     @Test @MainActor func buildNote_merchantOnly_returnsMerchant() {
         let result = VisionDraftFactory.buildNote(merchant: "Starbucks", note: nil)
         #expect(result == "Starbucks")
