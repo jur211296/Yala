@@ -64,21 +64,30 @@
 --   camino vuelve a producir esas filas, y una segunda pasada no encuentra ninguna.
 --
 -- === migration_progress SE TRANSFORMA, NO SE RE-PEGA (igual que g15_01 y g15_02) ===
---   El cuerpo entero no vive en el repo. Se parte de la definición VIVA, se sustituye el literal exacto y se
---   verifica de dónde se sale y a dónde se llega.
+--   Se parte de la definición VIVA, se sustituye cada escritura y se verifica de dónde se sale y a dónde se
+--   llega. Una copia del cuerpo de partida vive en `qa/cloud/fixtures/` para el banco, no para aplicarla.
+--
+--   **Las escrituras se buscan por PATRÓN, no por literal.** En el cuerpo vivo están alineadas con sus vecinas
+--   (`reverted_at          = null`, dos con 10 espacios y una con 11), y la primera versión de este fichero,
+--   que buscaba `'reverted_at = null'` con un espacio, abortó en staging el 2026-10-09 sin tocar nada. El
+--   patrón `\mreverted_at(\s*)=(\s*)null\M` captura el espacio de cada lado del `=` y la sustitución lo
+--   devuelve tal cual, así que la alineación se conserva y la inversa es exacta. Sigue exigiendo exactamente 3,
+--   y un segundo recuento más amplio (`reverted_at\s*=\s*null`, sin distinguir mayúsculas ni exigir palabra
+--   entera) tiene que coincidir: una grafía que la sustitución no tocaría (`REVERTED_AT = NULL`, `nullif(…)`)
+--   aborta.
 --
 --   **Estados de partida** (§0), los dos con salida definida:
 --
 --     cuerpo vivo                                            | estado    | qué hace
 --     -------------------------------------------------------|-----------|---------------------------------
 --     md5 14fc5e2c54766dd7c5706966c7381f51 (g15_02 final)     | virgen    | la sustitución + §2 + §3
---     sin el literal viejo, y deshacer la sustitución vuelve | aplicado  | no-op, pero el §3 corre IGUAL
---       EXACTAMENTE al md5 virgen                            |           |
+--     sin escrituras a null, tres condicionales, y deshacer  | aplicado  | no-op, pero el §3 corre IGUAL
+--       la sustitución vuelve EXACTAMENTE al md5 virgen      |           |
 --     cualquier otro                                         | divergido | ABORTA
 --
---   El estado «aplicado» se reconoce por la inversa exacta, no por un md5 propio: así queda fijado byte a byte
---   sin haberlo medido antes de aplicarlo. Apunta el md5 que salga en staging en `docs/RUNBOOK-staging-ddl.md`
---   y compáralo con el de producción: tienen que coincidir.
+--   El estado «aplicado» se reconoce por la inversa exacta, no por un md5 propio. Sobre el cuerpo real exportado
+--   de staging (el mismo md5 que producción) el banco mide md5(prosrc) **776dac35d585393fabeabedf8eafee82** tras
+--   la migración, y el §1 lo anuncia al aplicarla: tiene que salir ése en staging y en producción.
 --
 -- === APLICACIÓN ===
 --   NO trae `begin;`/`commit;`: `apply_migration` ya envuelve en transacción. Por psql, **`-1` NO es
@@ -89,20 +98,23 @@
 --
 --   Marcha atrás: `qa/cloud/g17_01_rollback.sql` (vuelve al md5 14fc5e2c…).
 --
---   Probado en local en las dos direcciones (`qa/cloud/g17_01-local-test.sh`, Postgres 17, réplica del RPC
---   escrita desde el contrato del README): con el cuerpo viejo el §3 aborta con los cuatro escenarios del
---   ticket; con el nuevo pasa 11/11; el §1-bis repara la cuenta atascada y no toca ni la de solo grupos pura ni
---   la `complete`; el rollback devuelve el md5 de partida; la re-aplicación es no-op; un cuerpo divergido o con
---   una cuarta escritura aborta sin tocar nada. Review adversarial de dos lentes (SQL y consumidores).
---   La prueba contra el motor y el cuerpo reales es este mismo §3, que corre en staging y en producción.
+--   Probado en local en las dos direcciones (`qa/cloud/g17_01-local-test.sh`, Postgres 17) contra DOS cuerpos:
+--   el real de staging (fixture, md5 14fc5e2c…; el fichero corre sin tocar) y una réplica con un espacio por
+--   escritura. En los dos: con el cuerpo viejo el §3 aborta con los cuatro escenarios del ticket; con el nuevo
+--   pasa 11/11; el §1-bis repara la cuenta atascada y no toca ni la de solo grupos pura ni la `complete`; el
+--   rollback devuelve el md5 de partida; la re-aplicación es no-op; un cuerpo divergido, una cuarta escritura o
+--   una cuarta con otra grafía abortan sin tocar nada. Review adversarial de dos lentes (SQL y consumidores).
 -- =====================================================================================================
 
 -- ── 0 · Guarda de partida ────────────────────────────────────────────────────────────────────────────
 do $guard$
 declare
   v_src  text;
-  v_old  text := 'reverted_at = null';
-  v_new  text := 'reverted_at = case when kind = ''complete'' then null else reverted_at end';
+  -- Los patrones, no literales: en el cuerpo vivo las escrituras están ALINEADAS (`reverted_at          = null`,
+  -- 10 u 11 espacios). Cada uno captura el espacio de los dos lados del `=` para devolverlo tal cual.
+  v_pat_old text := '\mreverted_at(\s*)=(\s*)null\M';
+  v_pat_new text := '\mreverted_at(\s*)=(\s*)case when kind = ''complete'' then null else reverted_at end';
+  v_inv     text := 'reverted_at\1=\2null';
   v_virgen text := '14fc5e2c54766dd7c5706966c7381f51';
 begin
   select prosrc into v_src from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -114,9 +126,9 @@ begin
 
   if md5(v_src) = v_virgen then
     perform set_config('yala.g17_01_estado', 'virgen', true);
-  elsif position(v_old in v_src) = 0
-        and position(v_new in v_src) <> 0
-        and md5(replace(v_src, v_new, v_old)) = v_virgen then
+  elsif (select count(*) from regexp_matches(v_src, 'reverted_at\s*=\s*null', 'gi')) = 0
+        and (select count(*) from regexp_matches(v_src, v_pat_new, 'g')) = 3
+        and md5(regexp_replace(v_src, v_pat_new, v_inv, 'g')) = v_virgen then
     perform set_config('yala.g17_01_estado', 'final', true);
     raise notice 'g17_01: ya aplicada (md5 %). No-op; el §3 se ejecuta igual.', md5(v_src);
   else
@@ -129,8 +141,11 @@ do $mig$
 declare
   v_src text;
   v_new_src text;
-  v_old text := 'reverted_at = null';
-  v_new text := 'reverted_at = case when kind = ''complete'' then null else reverted_at end';
+  v_pat_old text := '\mreverted_at(\s*)=(\s*)null\M';
+  v_pat_new text := '\mreverted_at(\s*)=(\s*)case when kind = ''complete'' then null else reverted_at end';
+  v_sust    text := 'reverted_at\1=\2case when kind = ''complete'' then null else reverted_at end';
+  v_inv     text := 'reverted_at\1=\2null';
+  v_virgen  text := '14fc5e2c54766dd7c5706966c7381f51';
   v_n_literal int;
   v_n_cualquier int;
   v_estado text := coalesce(nullif(current_setting('yala.g17_01_estado', true), ''), 'final');
@@ -142,10 +157,11 @@ begin
   select prosrc into v_src from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'migration_progress' and p.pronargs = 2;
 
-  -- Cuántas veces aparece el literal exacto, y cuántas cualquier escritura de `reverted_at` a null con otra
-  -- grafía (mayúsculas, sin espacios). Si difieren, hay una escritura que esta sustitución no tocaría y la
-  -- inversa del §0 dejaría de ser exacta: se aborta en vez de adivinar.
-  v_n_literal   := (length(v_src) - length(replace(v_src, v_old, ''))) / length(v_old);
+  -- Cuántas escrituras tiene la grafía que la sustitución toca (minúsculas, palabra entera, CUALQUIER espaciado
+  -- alrededor del `=`: el cuerpo vivo las alinea), y cuántas cualquier escritura de `reverted_at` a null con
+  -- otra grafía (mayúsculas, `nullif(…)`, un prefijo). Si difieren, hay una que esta sustitución no tocaría y
+  -- la inversa del §0 dejaría de ser exacta: se aborta en vez de adivinar.
+  v_n_literal   := (select count(*) from regexp_matches(v_src, v_pat_old, 'g'));
   v_n_cualquier := (select count(*) from regexp_matches(v_src, 'reverted_at\s*=\s*null', 'gi'));
 
   -- Exactamente TRES: el claim fresco y los dos takeovers (README §«Reversa server-side»). PL/pgSQL no analiza
@@ -153,19 +169,27 @@ begin
   -- columna `kind`) pasaría en verde y reventaría en la cara del primer usuario (medido en la review con una
   -- réplica). Si el cuerpo vivo tiene otro número, léelo con `pg_get_functiondef` antes de tocar este 3.
   if v_n_literal <> 3 then
-    raise exception 'g17_01: «%» aparece % vez/veces en migration_progress; se esperaban 3. Abortada.', v_old, v_n_literal;
+    raise exception 'g17_01: «reverted_at = null» (con cualquier espaciado) aparece % vez/veces en migration_progress; se esperaban 3. Abortada.', v_n_literal;
   end if;
   if v_n_cualquier <> v_n_literal then
     raise exception 'g17_01: % escrituras de reverted_at a null y solo % con la grafía esperada. Abortada.',
       v_n_cualquier, v_n_literal;
   end if;
 
-  v_new_src := replace(v_src, v_old, v_new);
-  raise notice 'g17_01: % sustitución(es) de «%».', v_n_literal, v_old;
+  -- Cada escritura conserva su espaciado: `reverted_at          = null` pasa a
+  -- `reverted_at          = case when … end`. Así la inversa es exacta y el §0 reconoce el estado «aplicado».
+  v_new_src := regexp_replace(v_src, v_pat_old, v_sust, 'g');
+  if (select count(*) from regexp_matches(v_new_src, v_pat_new, 'g')) <> v_n_literal
+     or md5(regexp_replace(v_new_src, v_pat_new, v_inv, 'g')) <> v_virgen then
+    raise exception 'g17_01: la sustitución no es exactamente invertible (md5 de la inversa %). Abortada.',
+      md5(regexp_replace(v_new_src, v_pat_new, v_inv, 'g'));
+  end if;
+  raise notice 'g17_01: % sustitución(es) de «reverted_at = null».', v_n_literal;
 
   execute format(
     'create or replace function public.migration_progress(p_device_id text, p_action text) returns jsonb language plpgsql set search_path = public as %L',
     v_new_src);
+  raise notice 'g17_01: md5 nuevo de migration_progress: %.', md5(v_new_src);
 end $mig$;
 
 -- ── 1-bis · Reparar las cuentas que el bug ya atascó ─────────────────────────────────────────────────
@@ -192,8 +216,10 @@ begin
   select prosrc into v_src from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname = 'migration_progress' and p.pronargs = 2;
 
-  if position('reverted_at = case when kind = ''complete'' then null else reverted_at end' in v_src) = 0 then
-    raise exception 'g17_01 verify: la escritura condicional no está en el cuerpo';
+  -- Por patrón, como el §1: con un literal de un espacio esto fallaría en el cuerpo alineado.
+  if (select count(*) from regexp_matches(v_src,
+        '\mreverted_at(\s*)=(\s*)case when kind = ''complete'' then null else reverted_at end', 'g')) <> 3 then
+    raise exception 'g17_01 verify: la escritura condicional no está tres veces en el cuerpo';
   end if;
   if (select count(*) from regexp_matches(v_src, 'reverted_at\s*=\s*null', 'gi')) <> 0 then
     raise exception 'g17_01 verify: sigue habiendo un reverted_at = null incondicional';
