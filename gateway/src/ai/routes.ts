@@ -1,4 +1,4 @@
-import { CHAT_REWRITE_SCHEMA } from "./schemas";
+import { CHAT_REWRITE_SCHEMA, TEXT_PARSE_SCHEMA } from "./schemas";
 import type { TaskId } from "./tasks";
 
 /**
@@ -233,11 +233,14 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
   // 97,7 % en 44 frases × 2 de 14 locales (mini: 90,9 %); sin razonar se queda en 85,7 %, por eso esfuerzo `low`. p95
   // 3,7 s; 0,146 USD por 1 000 (mini: 0,589). El tope cuenta el razonamiento: p99 373 tokens; 1500 cubre notas de 5
   // movimientos, que el banco no tiene. Lo que falla: jerga («18 lucas») y divisas que el prompt no enseña.
+  // 2026-10-09: JSON estricto con el esquema de la app (antes, texto libre: una respuesta mal formada tumbaba el
+  // registro) y prompt con las divisas del usuario; mismo modelo y esfuerzo. Alcanza también a las versiones instaladas.
+  // 100 % en 51 frases × 2 (bench/results/2026-10-09/REPORT-text-parse.md), p95 7,2 s en serie, 0,22 USD por 1 000.
   "text.parse": {
     mode: "managed",
     provider: "openai",
     model: "gpt-6-luna",
-    params: { reasoningEffort: "low", responseFormat: "text", maxOutputTokens: 1500 },
+    params: { reasoningEffort: "low", responseFormat: "json_object", jsonSchema: TEXT_PARSE_SCHEMA, strictSchema: true, maxOutputTokens: 1500 },
     retries: 0,
   },
   // Banco de voz del 2026-10-07 (docs/ai-voice-bench-2026-10.md): de 15 variantes medidas, la que menos se equivoca.

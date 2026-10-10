@@ -28,6 +28,14 @@ nonisolated struct SiriIntentContext: Codable {
     let defaultCurrency: String
     /// Si el usuario tiene ≥1 cuenta real (no de sistema). El intent lo usa para el aviso hablado.
     let hasRealAccount: Bool
+    /// Divisas de las cuentas activas, para leer «pesos» o «francos» con la divisa del usuario (2026-10-09).
+    /// OPCIONAL a propósito: una caché escrita por un build anterior no la trae y tiene que seguir decodificando.
+    var accountCurrencies: [String]? = nil
+
+    /// Lo que la lectura de la frase necesita de las divisas del usuario.
+    var parserCurrency: ParserCurrencyContext {
+        ParserCurrencyContext(mainCurrency: defaultCurrency, accountCurrencies: accountCurrencies ?? [])
+    }
 }
 
 enum SiriIntentContextCache {
@@ -110,7 +118,8 @@ enum SiriIntentContextCache {
             expenseSubcategories: expense,
             incomeSubcategories: income,
             defaultCurrency: defaultCurrency,
-            hasRealAccount: hasRealAccount
+            hasRealAccount: hasRealAccount,
+            accountCurrencies: ParserCurrencyContext.load(mainCurrency: defaultCurrency, context: context).accountCurrencies
         ))
     }
 }

@@ -172,7 +172,8 @@ import { categoryName, currencySymbol, seedSubcategoryNames, subcategoryName } f
 import { chatDynamicPrompt, chatRegister, chatStaticPrompt, extractNumbers, fidelity, gradeChatAnswer, matchesValue, personaContext, triggersAnomalies } from "../bench/lib/chatAnswer";
 import { toAppJSON } from "../bench/lib/chatContext";
 import { commonWordSet, gradeRewrite, isPolishInflection, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
-import { gradeTextParse, matchSubcategory, parseNoteResponse, textParseBody, type TextParseCase } from "../bench/lib/textParse";
+import { exampleHint, gradeTextParse, matchSubcategory, parserCurrencyValues, parseNoteResponse, resolveFamily, sharedNameFamilies, textParseBody, type TextParseCase } from "../bench/lib/textParse";
+import { TEXT_PARSE_SCHEMA } from "../src/ai/schemas";
 import { PERSONAS } from "../bench/tasks/chat.answer";
 
 const caseFile = <T>(name: string): { cases: T[] } => JSON.parse(readFileSync(new URL(`../bench/cases/${name}`, import.meta.url), "utf8"));
@@ -180,7 +181,7 @@ const swiftLines = (file: string) => new Set(swift(file).replace(/\\"/g, '"').sp
 
 describe("text.parse: el cuerpo de TranscriptionParserService", () => {
   const c = caseFile<TextParseCase>("text.parse.json").cases[0];
-  const body = textParseBody(c) as { messages: { role: string; content: string }[]; temperature: number; model: string };
+  const body = textParseBody(c) as { messages: { role: string; content: string }[]; temperature: number; model: string; response_format?: unknown };
   const prompt = body.messages[0].content;
 
   it("el prompt sale del Swift: toda línea fija está allí, sin interpolaciones sueltas", () => {
@@ -188,13 +189,39 @@ describe("text.parse: el cuerpo de TranscriptionParserService", () => {
     expect(prompt.startsWith("Eres un parser de gastos para una app de finanzas personales.")).toBe(true);
     expect(prompt).not.toMatch(/\\\(/);
     const fromDateContext = new Set(dateContext("2026-10-07").split("\n").map((l) => l.trim()));
+    const cur = parserCurrencyValues(c.defaultCurrency, c.accountCurrencies ?? [c.defaultCurrency]);
+    const fromCurrency = new Set([cur.userCurrencyLine, ...cur.sharedNameRules.split("\n")].map((l) => l.trim().replace(/^- /, "")));
     for (const line of prompt.split("\n").map((l) => l.trim()).filter(Boolean)) {
-      if (fromDateContext.has(line) || line.startsWith("Output:") || line.split(", ").length > 8) continue;
-      expect(src.has(line), line).toBe(true);
+      if (fromDateContext.has(line) || fromCurrency.has(line.replace(/^- /, "")) || line.startsWith("Output:") || line.split(", ").length > 8) continue;
+      expect(src.has(line) || src.has(line.replace("2026-10-07", "\\(today)")), line).toBe(true);
     }
     expect(body.temperature).toBe(0.1);
     expect(body.model).toBe("gpt-4.1-mini");
-    expect(body).not.toHaveProperty("response_format");
+    expect(body.response_format).toEqual({ type: "json_schema", json_schema: { name: "text_parse", schema: TEXT_PARSE_SCHEMA.schema, strict: true } });
+  });
+
+  it("divisas como ParserCurrencyContext: la principal manda, luego la única cuenta de la familia, luego el defecto", () => {
+    const fams = sharedNameFamilies();
+    const [peso, dollar, franc] = fams;
+    expect(peso.names).toContain('"pesos"');
+    expect(resolveFamily({ main: "ARS", accounts: ["ARS", "USD"] }, peso)).toBe("ARS");
+    expect(resolveFamily({ main: "USD", accounts: ["USD", "ARS"] }, peso)).toBe("ARS");
+    expect(resolveFamily({ main: "PEN", accounts: ["PEN"] }, peso)).toBeNull();
+    expect(resolveFamily({ main: "CAD", accounts: [] }, dollar)).toBe("CAD");
+    expect(resolveFamily({ main: "EUR", accounts: ["EUR"] }, franc)).toBe("CHF");
+    const ar = textParseBody({ ...c, defaultCurrency: "ARS", accountCurrencies: ["ARS", "USD"] }) as { messages: { content: string }[] };
+    expect(ar.messages[0].content).toContain(`${peso.names} a secas → "ARS"`);
+    expect(ar.messages[0].content).toContain("La divisa principal del usuario es ARS y sus cuentas usan ARS, USD.");
+  });
+
+  it("los ejemplos solo enseñan subcategorías de la lista (palabras clave leídas del Swift)", () => {
+    expect(exampleHint(["Alquiler"], ["restaur"])).toBe("null");
+    expect(exampleHint(["Supermärkte & Lebensmittel"], ["supermark"])).toBe('"Supermärkte & Lebensmittel"');
+    const subs = new Set(seedSubcategoryNames("es-419").expense);
+    for (const m of prompt.matchAll(/"subcategoryHint":("[^"]*"|null)/g)) {
+      if (m[1] !== "null") expect(subs.has(JSON.parse(m[1])), m[1]).toBe(true);
+    }
+    expect(prompt).not.toContain('"date":null');
   });
 
   it("los ejemplos llevan la fecha de hoy y las listas son las subcategorías sembradas en el idioma del usuario", () => {

@@ -834,8 +834,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | vision-reads-every-dollar-sign-as-usd | qa | tickets/qa/vision-reads-every-dollar-sign-as-usd.md |
 | voice-entry-end-to-end | qa | tickets/qa/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
-| voice-note-parser-prompt-knows-six-currencies | backlog | tickets/backlog/voice-note-parser-prompt-knows-six-currencies.md |
-| voice-parser-sends-no-json-mode | backlog | tickets/backlog/voice-parser-sends-no-json-mode.md |
+| voice-note-parser-prompt-knows-six-currencies | qa | tickets/qa/voice-note-parser-prompt-knows-six-currencies.md |
+| voice-parser-sends-no-json-mode | qa | tickets/qa/voice-parser-sends-no-json-mode.md |
 | voice-transcription-model-choice | done | tickets/done/voice-transcription-model-choice.md |
 | volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas | backlog | tickets/backlog/volver-de-segundo-plano-en-un-dia-nuevo-no-trae-las-tasas.md |
 | waiting-card-disables-stop-waiting-without-saying-why | backlog | tickets/backlog/waiting-card-disables-stop-waiting-without-saying-why.md |

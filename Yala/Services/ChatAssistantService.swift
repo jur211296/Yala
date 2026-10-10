@@ -238,7 +238,11 @@ final class ChatAssistantService {
             parsed = try await TranscriptionParserService.shared.parseMultiple(
                 text: question,
                 expenseSubcategories: expenseNames,
-                incomeSubcategories: incomeNames
+                incomeSubcategories: incomeNames,
+                currency: ParserCurrencyContext(
+                    mainCurrency: currencyCode,
+                    accountCurrencies: accounts.filter { !$0.isSystemAccount }.map(\.currencyCode)
+                )
             )
         } catch let parserError as ParserError {
             switch parserError {

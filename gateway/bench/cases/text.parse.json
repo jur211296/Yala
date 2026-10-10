@@ -144,6 +144,27 @@
     { "id": "zh-02", "locale": "zh-Hans", "today": "2026-10-07", "defaultCurrency": "CNY", "text": "这个月工资到账一万二",
       "expect": [ { "amount": 12000, "isExpense": false, "date": "2026-10-07", "currency": "CNY", "sub": ["salary"] } ] },
     { "id": "zh-03", "locale": "zh-Hans", "today": "2026-10-07", "defaultCurrency": "CNY", "text": "上周五在盒马买菜花了168.8",
-      "expect": [ { "amount": 168.8, "isExpense": true, "date": "2026-10-02", "currency": "CNY", "sub": ["supermarkets"], "merchant": "盒马" } ] }
+      "expect": [ { "amount": 168.8, "isExpense": true, "date": "2026-10-02", "currency": "CNY", "sub": ["supermarkets"], "merchant": "盒马" } ] },
+    { "id": "es-AR-04", "locale": "es-AR", "today": "2026-10-07", "defaultCurrency": "ARS", "accountCurrencies": ["ARS", "USD"], "text": "gasté 5000 pesos en el súper",
+      "note": "Divisa de voz (2026-10-09): «pesos» con la principal ARS es ARS, nunca MXN ni PEN.",
+      "expect": [ { "amount": 5000, "isExpense": true, "date": "2026-10-07", "currency": "ARS", "sub": ["supermarkets"] } ] },
+    { "id": "es-US-01", "locale": "es-US", "today": "2026-10-07", "defaultCurrency": "USD", "accountCurrencies": ["USD", "ARS"], "text": "5000 pesos de nafta",
+      "note": "Principal USD y una sola cuenta en pesos (ARS): «pesos» es esa cuenta. Sin la regla, null daría USD.",
+      "expect": [ { "amount": 5000, "isExpense": true, "date": "2026-10-07", "currency": "ARS", "sub": ["fuel"] } ] },
+    { "id": "es-CH-01", "locale": "es-ES", "today": "2026-10-07", "defaultCurrency": "CHF", "accountCurrencies": ["CHF"], "text": "almuerzo 30 francos",
+      "note": "Principal CHF: «francos» es CHF.",
+      "expect": [ { "amount": 30, "isExpense": true, "date": "2026-10-07", "currency": "CHF", "sub": ["restaurants"] } ] },
+    { "id": "es-ES-04", "locale": "es-ES", "today": "2026-10-07", "defaultCurrency": "EUR", "accountCurrencies": ["EUR"], "text": "comida en Ginebra, 30 francos",
+      "note": "Principal EUR: «francos» sigue siendo CHF (la única divisa franco de la app), no EUR.",
+      "expect": [ { "amount": 30, "isExpense": true, "date": "2026-10-07", "currency": "CHF", "sub": ["restaurants"] } ] },
+    { "id": "en-CA-01", "locale": "en", "today": "2026-10-07", "defaultCurrency": "CAD", "accountCurrencies": ["CAD"], "text": "25 dollars for lunch at Tim Hortons",
+      "note": "Principal CAD: «dollars» a secas es CAD.",
+      "expect": [ { "amount": 25, "isExpense": true, "date": "2026-10-07", "currency": "CAD", "sub": ["restaurants"], "merchant": "Tim Hortons" } ] },
+    { "id": "pt-PT-03", "locale": "pt-PT", "today": "2026-10-07", "defaultCurrency": "EUR", "accountCurrencies": ["EUR"], "text": "28 euros e 30 no Pingo Doce",
+      "note": "Decimales en letra: «28 euros e 30» son 28,30, un solo movimiento.",
+      "expect": [ { "amount": 28.3, "isExpense": true, "date": "2026-10-07", "currency": "EUR", "sub": ["supermarkets"], "merchant": "Pingo Doce" } ] },
+    { "id": "ja-04", "locale": "ja", "today": "2026-10-07", "defaultCurrency": "PEN", "accountCurrencies": ["PEN", "JPY"], "text": "ローソンで860円",
+      "note": "Principal PEN: 円 es JPY, nunca soles.",
+      "expect": [ { "amount": 860, "isExpense": true, "date": "2026-10-07", "currency": "JPY", "sub": ["supermarkets", "otherShopping"], "merchant": "ローソン" } ] }
   ]
 }

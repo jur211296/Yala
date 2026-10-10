@@ -16,6 +16,7 @@
  * 7. Sin cabecera, nunca un proveedor que no sea OpenAI (las versiones instaladas lo prometen).
  */
 import { readFileSync } from "node:fs";
+import { TEXT_PARSE_SCHEMA } from "../src/ai/schemas";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import app from "../src/index";
 import type { Env } from "../src/env";
@@ -309,9 +310,23 @@ describe("las de gpt-4.1-mini: las decide la tabla, con los parámetros de hoy h
       expect(out.model).toBe(r.model);
       expect(out.temperature).toBe(r.params.temperature);
       expect(out.max_completion_tokens).toBe(r.params.maxOutputTokens);
-      expect(out.response_format).toEqual(body.response_format);
+      const p = r.params;
+      const rowFormat = p.responseFormat !== "json_object" ? undefined
+        : p.strictSchema && p.jsonSchema ? { type: "json_schema", json_schema: { name: p.jsonSchema.name, schema: p.jsonSchema.schema, strict: true } }
+        : { type: "json_object" };
+      expect(out.response_format).toEqual(rowFormat);
     });
   }
+
+  it("text.parse: JSON estricto con TEXT_PARSE_SCHEMA, también para las versiones sin cabecera (2026-10-09)", async () => {
+    const res = await chat(MINI_CASES[1][2], "voice");
+    expect(res.status).toBe(200);
+    const fmt = (sent[0].json ?? {}).response_format as { type: string; json_schema: { name: string; strict: boolean; schema: unknown } };
+    expect(fmt.type).toBe("json_schema");
+    expect(fmt.json_schema.strict).toBe(true);
+    expect(fmt.json_schema.name).toBe("text_parse");
+    expect(fmt.json_schema.schema).toEqual(TEXT_PARSE_SCHEMA.schema);
+  });
 
   it("mientras su banco no decida, cada fila reproduce la llamada de hoy (gpt-4.1-mini, misma temperatura y formato)", () => {
     for (const [, task, body] of MINI_CASES) {
