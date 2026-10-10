@@ -197,6 +197,10 @@ algo (el simulador) sin ganar nada.
 
 ## El job `tests` del CI es ADVISORY por diseño — no lo esperes como si bloqueara (2026-09-07)
 
+> **CADUCADO el 2026-10-10** (`ci-warns-but-does-not-block`): los dos pasos de unit ya NO son
+> advisory. Un unit en rojo pone `tests` en rojo y el auto-merge no mergea; solo la UI (nocturna)
+> sigue advisory. Lo vigente está en `.claude/rules/ci-qa.md`. Lo de abajo queda como historia.
+
 **Dónde se comprueba, y cuesta un comando:** `gh run view --job <id>` lista los pasos, y los tres de
 test se llaman literalmente *«Unit tests (YalaTests pure-logic) — **advisory** (flaky crash SwiftData
 in-memory; ver Lista Negra)»*, *«… context-based — advisory»* y *«UI tests (YalaUITests) — advisory
@@ -284,6 +288,9 @@ era elegir entre ellos: era medir a los dos lados.
 
 
 ## El job `tests` del CI ya NO corre la suite UI en cada PR — medido el 2026-09-08
+
+> **Parte caducada el 2026-10-10:** «los tres pasos de test siguen siendo advisory» ya no vale — los
+> unit bloquean (`.claude/rules/ci-qa.md`).
 
 **Qué decía esta ficha:** que su job `tests` corre `-only-testing:YalaUITests` sin `timeout-minutes`,
 y que eso era «literalmente el ticket `el-job-de-tests-del-ci-no-tiene-timeout`, con decisión de

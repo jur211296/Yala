@@ -101,6 +101,11 @@ jobs:
       # falsos.
       - name: Reintento de rojos (ci-reintentar-rojos.sh)
         run: bash qa/scripts/ci-reintentar-rojos-test.sh
+      # Los unit del job `tests` BLOQUEAN desde el 2026-10-10: su rojo pone `tests` en rojo y el
+      # auto-merge no mergea. Volver a ponerles `continue-on-error` no da ningun error —el CI
+      # sigue verde, que es justo el fallo—, asi que este banco lo vigila sobre el propio qa.yml.
+      - name: Los unit bloquean (ci-unit-bloqueante-test.sh)
+        run: bash qa/scripts/ci-unit-bloqueante-test.sh
       # El vigilante de la nocturna decide con una API que omite runs (medido el 2026-10-06: 22 de
       # 22 lanzamientos suyos sobraban). Lo que decide si lanza solo se ejerce el dia que algo va
       # mal; su banco lo simula con un `gh` falso que miente a proposito.
@@ -267,27 +272,25 @@ jobs:
   # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
   # iPhone 17 Pro. Build UNA vez + test-without-building.
   #
-  # ESTRATEGIA (2026-06-04 — TODO advisory; gate duro = coverage-index):
-  #  (1) HOST CLOUDKIT CRASH (ARREGLADO, b25fc8c2): el host Yala.app arrancaba con CloudKit
-  #      en sims SIN cuenta iCloud (CI) → NSCloudKitMirroringDelegate loop → proceso inestable.
-  #      Fix: YALA_TEST_MODE + cloudKitDatabase .none + gate bootstrap/sync. Eliminó la cascada.
-  #  (2) SwiftData IN-MEMORY EXC_BREAKPOINT (flaky en CI, NO resuelto): crash silencioso al
-  #      instanciar/insertar @Model in-memory. NO se limita a las 7 clases que crean un
-  #      ModelContext — TAMBIÉN tumba tests pure-logic que instancian @Model SIN contexto
-  #      (Sankey/Insights/NewTransactionVM crean TransactionItem/Budget/Category). ALEATORIO por
-  #      run: 26957612252 (f1575df7) pasó pure-logic limpio; 26963873224 (264e25f8, con pure-logic
-  #      bloqueante) CRASHEÓ (cascade: NewTransactionVM/CurrencyDefaults víctimas in-flight,
-  #      "TEST EXECUTE FAILED" sin ✘). -retry-tests-on-failure NO converge.
-  #  (3) "Aislamiento de singletons" (hipótesis 2026-06-03) DESCARTADA: el run per-suite-a-solas
-  #      probó que los fallos reproducibles del subset eran DETERMINISTAS = 7 tests STALE vs
-  #      cambios INTENCIONALES de producto (regla Insights eliminada, Sankey tap-filter, seed
-  #      Panel diferido, iCloud env). Arreglados en f1575df7 (subset verde local + en el run CI
-  #      que no crasheó). El bloqueo NO lo impide el aislamiento sino el crash flaky (2).
-  # Por (2) — flaky crash que ALCANZA al subset pure-logic — los 3 pasos siguen ADVISORY. El
-  # intento de pure-logic BLOQUEANTE (264e25f8) se revirtió tras el crash de 26963873224. Gate
-  # duro = coverage-index. Detalle en TESTING-STRATEGY.md.
-  # TODO(@jur, 2026-07-15): resolver el EXC_BREAKPOINT SwiftData in-memory (repro mínima / bug
-  # iOS 26.x sim / container compartido) — prerequisito para CUALQUIER paso de test bloqueante.
+  # LOS UNIT BLOQUEAN (2026-10-10, ticket `ci-warns-but-does-not-block`). Un unit en rojo pone
+  # este job en rojo, y `tests` es check requerido del ruleset de `2.1`: el auto-merge (ADR-054 de
+  # casa) ya no mergea con un unit en rojo. La UI sigue advisory y solo nocturna (job `ui`).
+  #
+  # Hasta ese dia los dos pasos de unit llevaban `continue-on-error: true` por el EXC_BREAKPOINT de
+  # SwiftData in-memory (crash flaky medido en junio, run 26963873224). Lo medido al promoverlos,
+  # sobre los 300 runs de este workflow del 30-sep al 10-oct:
+  #   · Ningun crash de proceso: 0 de los 73 logs del job revisados traen `Restarting after
+  #     unexpected exit`, la linea con la que xcodebuild relanza tras un crash (medida con la
+  #     sonda de `ci-reintentar-rojos.sh`). Encaja con el reuso de `ModelContainer` por fichero
+  #     (`makeTestContext()`, 2026-07-04), aunque eso es inferencia, no medida.
+  #   · TODOS los rojos de unit fueron deterministas y reales, y el advisory los dejo entrar:
+  #     `PrivateSessionMarkTests` en 2.1 (3-oct, 7 runs), `UploadOrderTests` en 2.1 (7-oct, 2 runs)
+  #     y `WidgetDataServiceIntervalTests` en un PR (6-oct).
+  # Lo flaky que queda —`SpikeR3ContainerReleaseTests` (ticket
+  # `spike-r3-eje-4b-flaky-en-suite-completa`) o un crash suelto, que solo tumba el caso en curso—
+  # lo cubre el reintento acotado de `ci-reintentar-rojos.sh`: repite SOLO los rojos, hasta 3
+  # vueltas, y no toca nada en un PR verde. Su banco, y el de que esto siga bloqueando
+  # (`ci-unit-bloqueante-test.sh`), corren en `coverage-index`.
   tests:
     needs: changes
     # Fail closed también aquí: si `changes` peta, su output llega vacío y '' != 'false',
@@ -330,9 +333,10 @@ jobs:
     # (`StepsRunner.RunStepAsync` + `ExecutionContext.ApplyContinueOnError`, verificado el
     # 2026-09-07 contra `actions/runner` en `main`):
     #
-    #   · Tope de PASO agotado ⇒ el paso queda `Failed`. `continue-on-error` SI rescata
-    #     eso: lo pinta de `Succeeded` dejando `outcome: failure`, el job sigue con los
-    #     pasos siguientes con normalidad y el aviso de abajo lo lee y lo cuenta.
+    #   · Tope de PASO agotado ⇒ el paso queda `Failed`, con `outcome: failure`. Desde que
+    #     los unit bloquean (2026-10-10) eso pone el job en rojo, pero el job sigue VIVO: el
+    #     paso context-based corre igual (`!cancelled()`) y el aviso lee el `outcome` y lo
+    #     cuenta. (`continue-on-error`, que ya solo lleva la UI, lo pintaria de `Succeeded`.)
     #   · Tope de JOB agotado ⇒ es una CANCELACION, no un fallo. `ApplyContinueOnError`
     #     abre con `if (Result != TaskResult.Failed) return;`, asi que **no rescata una
     #     cancelacion**: el paso en curso muere cancelado y el job entero se va con el.
@@ -358,8 +362,7 @@ jobs:
     # America/Lima, pero el SSOT que comparan (`DetailPeriod.dateInterval`) resuelve sus
     # fechas con `userConfiguredCalendar()` = `Calendar.current`. En la Mac del owner las
     # dos mitades coinciden y salen verdes; bajo otra zona no coinciden y salen CUATRO rojos
-    # DETERMINISTAS —no flaky, categoria distinta del EXC_BREAKPOINT que justifica los
-    # `continue-on-error` de mas abajo—. Llevaban asi desde el 2026-08-17.
+    # DETERMINISTAS —no flaky—. Llevaban asi desde el 2026-08-17.
     #
     # `TEST_RUNNER_` es el prefijo que `xcodebuild` retira al propagar la variable al proceso
     # de test, asi que el proceso recibe `TZ=America/Lima`. Medido el 2026-09-03 en la Mac del
@@ -378,12 +381,14 @@ jobs:
     # Va a nivel de JOB, no de paso, para que un paso de test nuevo lo herede — olvidarse de
     # aplicarlo es exactamente el modo de fallo que este bloque arregla.
     # Lo que el job del aviso necesita para leer que paso de verdad. `outcome` guarda lo
-    # que devolvio el comando; `conclusion` es el que `continue-on-error` pinta de verde.
+    # que devolvio el comando; `conclusion` es el que `continue-on-error` pinta de verde (en
+    # los unit ya coinciden: desde el 2026-10-10 no llevan `continue-on-error`).
     outputs:
       unit_pure: ${{ steps.unit_pure.outcome }}
       # Los tests que siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
       unit_pure_rojos: ${{ steps.unit_pure.outputs.rojos }}
       unit_context: ${{ steps.unit_context.outcome }}
+      unit_context_rojos: ${{ steps.unit_context.outputs.rojos }}
       ui_tocaba: ${{ steps.contexto.outputs.ui_tocaba }}
     env:
       TEST_RUNNER_TZ: America/Lima
@@ -444,6 +449,7 @@ jobs:
         timeout-minutes: 25
         run: bash qa/scripts/ci-simulador.sh
       - name: Build for testing
+        id: build
         timeout-minutes: 25
         run: |
           xcodebuild build-for-testing \
@@ -452,18 +458,15 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath .ddp \
             -quiet
-      # YalaTests SALVO las 7 clases que crean un ModelContext (paso advisory aparte). ADVISORY:
-      # los 7 tests stale ya están arreglados (f1575df7) y el subset es determinista en lo
-      # reproducible, PERO el EXC_BREAKPOINT flaky de SwiftData in-memory ALCANZA al subset
-      # pure-logic (crashea ~1 de N runs — 26963873224 lo probó: cascade NewTransactionVM/
-      # CurrencyDefaults). Bloquear aquí = rojos aleatorios. Volver a bloqueante exige
-      # resolver ese crash primero (TESTING-STRATEGY.md).
+      # YalaTests SALVO las 7 clases que crean un ModelContext (van en el paso siguiente).
+      # BLOQUEANTE desde el 2026-10-10: sin `continue-on-error`, un rojo que siga rojo tras sus
+      # reintentos pone `tests` en rojo y el auto-merge no mergea (ver «LOS UNIT BLOQUEAN» arriba
+      # del job).
       #
       # SIN `-retry-tests-on-failure` (2026-10-06). Con Swift Testing —YalaTests lo es entero—
       # ese flag no repite el test rojo: repite la SUITE ENTERA hasta 3 veces. Un solo rojo
-      # llevaba este paso de ~13 a 27-30 min (26 889 tests = 3 × 8 963), el tope de 45 min del
-      # JOB lo cancelaba, y `continue-on-error` no rescata una cancelación: el rojo advisory
-      # acababa poniendo `tests` en rojo y bloqueando el auto-merge (10-03, 10-05 y 10-06).
+      # llevaba este paso de ~13 a 27-30 min (26 889 tests = 3 × 8 963) y el tope de 45 min del
+      # JOB lo cancelaba (10-03, 10-05 y 10-06).
       # `ci-reintentar-rojos.sh` corre la selección UNA vez y repite solo los casos rojos que
       # nombra el `.xcresult`, hasta 3 vueltas como antes; si no puede leerlos, no repite nada.
       # Los nombres de los que siguen en rojo salen en `outputs.rojos` y el aviso los cita.
@@ -474,9 +477,8 @@ jobs:
       # repetición de 4 tests que corren en 0,03 s. En los logs del runner (Xcode 26) no sale,
       # pero si una imagen lo trae, tres vueltas volverían a rozar el tope. Nadie sube esos
       # diagnósticos: el `.xcresult` y el log bastan.
-      - name: Unit tests (YalaTests pure-logic) — advisory (flaky crash SwiftData in-memory; ver Lista Negra)
+      - name: Unit tests (YalaTests pure-logic)
         id: unit_pure
-        continue-on-error: true
         timeout-minutes: 30
         run: |
           bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 -- \
@@ -496,28 +498,36 @@ jobs:
             -skip-testing:YalaTests/ICloudAccountSummaryTests \
             -skip-testing:YalaTests/InitialBalanceServiceTests \
             -skip-testing:YalaTests/UserSegmentServiceTests
-      # ADVISORY: las 7 clases context-based (crean ModelContext in-memory). Corren para
-      # visibilidad (cuando pasan confirman no-regresión); no bloquean por el insert-trap
-      # flaky de SwiftData en el runner de CI. Plan de migración en TESTING-STRATEGY.md.
-      - name: Unit tests (YalaTests context-based) — advisory (SwiftData insert-trap flaky; ver Lista Negra)
+      # Las 7 clases context-based (crean ModelContext in-memory). BLOQUEANTE desde el 2026-10-10,
+      # como pure-logic y con el mismo reintento acotado: hasta entonces usaba
+      # `-retry-tests-on-failure`, que con Swift Testing repite la seleccion entera.
+      #
+      # Corre aunque pure-logic haya salido en rojo (`!cancelled()`), pero no si el build no
+      # salio: sin el no hay nada que probar. Lo primero hace falta para el aviso: un `skipped`
+      # aqui se leeria como «la suite no llego a correr» en vez de como el rojo de pure-logic que
+      # es. Y solo cuesta minutos en corridas que ya estan en rojo.
+      - name: Unit tests (YalaTests context-based)
         id: unit_context
-        continue-on-error: true
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         timeout-minutes: 10
         run: |
-          xcodebuild test-without-building \
+          bash qa/scripts/ci-reintentar-rojos.sh --vueltas 3 \
+            --dir "$RUNNER_TEMP/reintentar-rojos-context" -- \
+            test-without-building \
             -scheme "Yala Dev" \
             -project Yala.xcodeproj \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath .ddp \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
+            --- \
             -only-testing:YalaTests/BudgetFilterRegressionTests \
             -only-testing:YalaTests/CategoryDeduplicationServiceTests \
             -only-testing:YalaTests/ChatAssistantViewModelTests \
             -only-testing:YalaTests/CurrencyConverterCacheTests \
             -only-testing:YalaTests/ICloudAccountSummaryTests \
             -only-testing:YalaTests/InitialBalanceServiceTests \
-            -only-testing:YalaTests/UserSegmentServiceTests \
-            -derivedDataPath .ddp \
-            -parallel-testing-enabled NO \
-            -retry-tests-on-failure
+            -only-testing:YalaTests/UserSegmentServiceTests
 
   # --------------------------------------------------------------------------------
   # SUITE DE UI, SOLO EN LA NOCTURNA, PARTIDA EN TANDAS PARALELAS  (2026-10-09)
@@ -525,7 +535,8 @@ jobs:
   # Solo nocturna desde el 2026-09-06 (decision del owner): en un PR este job queda `skipped` a
   # proposito. Lo que cubre el hueco en el PR es el gate local, que corre los XCUITest de las
   # areas TOCADAS antes de cada commit; aqui se corre la suite COMPLETA cada noche. Sigue siendo
-  # advisory, por lo mismo que los pasos de unit (`continue-on-error`).
+  # advisory (`continue-on-error`): a diferencia de los unit, que bloquean desde el 2026-10-10,
+  # un rojo de UI no pone en rojo el run. Lo cuenta el aviso.
   #
   # POR QUE EN TANDAS. Hasta el 2026-10-09 era un paso del job `tests`, en serie detras de build
   # y unit. Medido en la nocturna 37802106095 (8-oct): 36 min antes de la UI; la UI llego a los
@@ -648,13 +659,15 @@ jobs:
   # --------------------------------------------------------------------------------
   # EL AVISO, EN SU PROPIO CHECK  (2026-09-09, decision del owner)
   #
-  # POR QUE EXISTE EL AVISO. Los tres pasos de test llevan `continue-on-error` a
-  # proposito —el EXC_BREAKPOINT de SwiftData in-memory haria rojos aleatorios, y volver
-  # a bloqueante exige resolver ESE crash primero—, pero GitHub pinta de `success` un
-  # paso asi aunque `xcodebuild` salga con 65. Medido el 2026-09-02: el CI llevaba
-  # SEMANAS en verde con ocho tests en rojo, y el mas viejo databa del 17 de agosto. La
-  # red funcionaba; estaba amordazada. Esto no promueve nada a bloqueante: hace que el
-  # fallo DEJE RASTRO. Se lee `outcome`, no `conclusion`.
+  # POR QUE EXISTE EL AVISO. Nacio cuando los tres pasos de test llevaban `continue-on-error`
+  # y GitHub los pintaba de `success` aunque `xcodebuild` saliera con 65. Medido el 2026-09-02:
+  # el CI llevaba SEMANAS en verde con ocho tests en rojo, y el mas viejo databa del 17 de
+  # agosto. La red funcionaba; estaba amordazada. Se lee `outcome`, no `conclusion`.
+  #
+  # Desde el 2026-10-10 los unit BLOQUEAN (ver «LOS UNIT BLOQUEAN» sobre el job `tests`): su
+  # rojo ya pone `tests` en rojo y frena el auto-merge, y el aviso lo dice asi. Sigue haciendo
+  # falta por dos cosas: la UI, que sigue advisory, y un push a `2.1` en rojo, que ya entro y
+  # no tiene PR que lo frene — alguien tiene que enterarse.
   #
   # POR QUE SALIO DEL JOB `tests`. Cuando el aviso vivia ahi dentro, su `exit 1` tumbaba
   # el job entero, y entonces un `tests: fail` mezclaba dos señales opuestas: «los tests
@@ -669,7 +682,7 @@ jobs:
   # el aviso escrito en un issue del repo (etiqueta `aviso-ci`). Solo cuando no queda
   # ningun canal se pone en rojo — ahi si, porque entonces nadie se ha enterado.
   aviso:
-    name: ¿Se ha enterado alguien de los rojos advisory?
+    name: ¿Se ha enterado alguien de los rojos de test?
     # Espera tambien al job `ui`. En un PR `ui` sale `skipped` al instante, asi que no retrasa
     # nada; en la nocturna el aviso sale cuando acaban todas las tandas.
     needs: [tests, ui]
@@ -709,6 +722,7 @@ jobs:
           R_UNIT_PURE: ${{ needs.tests.outputs.unit_pure }}
           R_UNIT_PURE_ROJOS: ${{ needs.tests.outputs.unit_pure_rojos }}
           R_UNIT_CONTEXT: ${{ needs.tests.outputs.unit_context }}
+          R_UNIT_CONTEXT_ROJOS: ${{ needs.tests.outputs.unit_context_rojos }}
           R_UI_1: ${{ needs.ui.outputs.ui_1 }}
           R_UI_2: ${{ needs.ui.outputs.ui_2 }}
           R_UI_3: ${{ needs.ui.outputs.ui_3 }}
@@ -722,17 +736,29 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Los unit BLOQUEAN (su rojo pone `tests` en rojo); la UI no. Se cuentan por separado
+          # porque el aviso dice cosas distintas: «esto frena el merge» frente a «esto no lo frena».
           fallidos=""
-          # pure-logic dice QUÉ tests siguen en rojo tras repetirlos solos (`ci-reintentar-rojos.sh`).
-          # Sin nombres —el tope del paso cortó antes de publicarlos— queda la línea de siempre.
+          unit_rojo=""
+          # Los dos pasos de unit dicen QUÉ tests siguen en rojo tras repetirlos solos
+          # (`ci-reintentar-rojos.sh`). Sin nombres —el tope del paso cortó antes de publicarlos—
+          # queda la línea sin detalle.
           if [ "$R_UNIT_PURE" = "failure" ]; then
+            unit_rojo="si"
             if [ -n "${R_UNIT_PURE_ROJOS:-}" ]; then
               fallidos="$fallidos\n- Unit tests (pure-logic): $R_UNIT_PURE_ROJOS"
             else
               fallidos="$fallidos\n- Unit tests (pure-logic)"
             fi
           fi
-          [ "$R_UNIT_CONTEXT" != "failure" ] || fallidos="$fallidos\n- Unit tests (context-based)"
+          if [ "$R_UNIT_CONTEXT" = "failure" ]; then
+            unit_rojo="si"
+            if [ -n "${R_UNIT_CONTEXT_ROJOS:-}" ]; then
+              fallidos="$fallidos\n- Unit tests (context-based): $R_UNIT_CONTEXT_ROJOS"
+            else
+              fallidos="$fallidos\n- Unit tests (context-based)"
+            fi
+          fi
           [ "$R_UI_1" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 1)"
           [ "$R_UI_2" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 2)"
           [ "$R_UI_3" != "failure" ]         || fallidos="$fallidos\n- UI tests (YalaUITests, tanda 3)"
@@ -782,18 +808,27 @@ jobs:
               "resultado — casi siempre, su tope de tiempo." \
               "Esto NO es un verde: es un run que no probo nada." \
               "La causa esta en un paso ANTERIOR del job — mira el log.")
-          elif [ -n "$fallidos" ]; then
-            asunto="hay tests en rojo"
+          elif [ -n "$unit_rojo" ]; then
+            asunto="hay unit tests en rojo"
             detalle=$(printf '%s\n' \
-              "CI de $REPO ($RAMA): hay pasos de test en ROJO que el run marca como verde." \
+              "CI de $REPO ($RAMA): hay unit tests en ROJO tras repetirlos, y el check \`tests\` esta en rojo." \
               "" \
-              "Estos pasos son advisory a proposito (continue-on-error), asi que el run NO se pone" \
-              "en rojo y el repo sigue mergeando. Este aviso existe para que el rojo no pase inadvertido." \
+              "Los unit bloquean: si es un PR, el auto-merge NO lo mergea hasta que se arreglen." \
+              "Si es un push a 2.1, ya entro: la rama esta en rojo." \
+              "" \
+              "Pasos en rojo:$(printf '%b' "$fallidos")")
+          elif [ -n "$fallidos" ]; then
+            asunto="hay tests de UI en rojo"
+            detalle=$(printf '%s\n' \
+              "CI de $REPO ($RAMA): hay tandas de UI en ROJO que el run marca como verde." \
+              "" \
+              "La UI es advisory a proposito (continue-on-error), asi que el run NO se pone en rojo." \
+              "Este aviso existe para que el rojo no pase inadvertido." \
               "" \
               "Pasos en rojo:$(printf '%b' "$fallidos")")
           else
             if [ "$UI_TOCABA" = "true" ]; then
-              echo "::notice title=Suite en verde::Los pasos advisory corrieron (todas las tandas de UI incluidas) y ninguno fallo."
+              echo "::notice title=Suite en verde::Los unit y todas las tandas de UI corrieron y ninguno fallo."
             else
               echo "::notice title=Suite en verde::Los dos pasos de unit corrieron y ninguno fallo. La UI corre en la nocturna."
             fi
