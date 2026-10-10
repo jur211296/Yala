@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: ci
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-10-10
 source: medido de camino en el-job-de-tests-del-ci-no-tiene-timeout
 ---
 
@@ -80,3 +80,10 @@ Barrer de paso las otras citas sin ruta: `tickets/backlog/unit-suite-nondetermin
 - Las otras citas sin ruta se movieron: `.claude/rules/testing.md:62` y `:90`, `.claude/commands/cerrar.md:39`. `unit-suite-nondeterministic-reds` ya está en `tickets/done/`.
 
 Triage 2026-10-08: abierto · low → very-low · las citas rotas siguen, pero es documentación de mantenimiento que no ciega al CI.
+
+## 2026-10-10 · las tres citas de `qa.yml` ya no están
+
+`ci-warns-but-does-not-block` promovió los unit a bloqueantes y reescribió los tres comentarios: el
+porqué vive ahora en el propio `qa.yml` («LOS UNIT BLOQUEAN», sobre el job `tests`) y en
+`.claude/rules/ci-qa.md`. `grep -c TESTING-STRATEGY .github/workflows/qa.yml` da 0. Queda el barrido
+de las otras citas sin ruta (`.claude/rules/testing.md` y `.claude/commands/cerrar.md`).
