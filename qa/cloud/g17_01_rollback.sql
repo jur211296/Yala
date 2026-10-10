@@ -2,7 +2,9 @@
 -- g17_01 · marcha atrás: el claim de la vuelta vuelve a borrar `reverted_at` (cuerpo de g15_02)
 --
 -- Deshace exactamente la sustitución de `g17_01_reverse_claim_keeps_reverted_at.sql` y comprueba que el cuerpo
--- vuelve al md5 de partida (14fc5e2c…). Si el cuerpo vivo no es el de g17_01, aborta sin tocar nada.
+-- vuelve al md5 de partida (14fc5e2c…). Si el cuerpo vivo no es el de g17_01, aborta sin tocar nada. Busca las
+-- escrituras por patrón y devuelve a cada una su espaciado: el cuerpo vivo las alinea (`reverted_at          = …`).
+-- Probado contra el cuerpo real en `qa/cloud/g17_01-local-test.sh`.
 --
 -- Qué vuelve con ella: los tres caminos al `not_complete` del ticket
 -- `reverse-exit-on-a-reverted-account-rejects-the-retry`. Las cuentas que ya conservaron `reverted_at` gracias
@@ -14,8 +16,10 @@ do $rollback$
 declare
   v_src  text;
   v_new_src text;
-  v_old  text := 'reverted_at = null';
-  v_new  text := 'reverted_at = case when kind = ''complete'' then null else reverted_at end';
+  -- Patrones, no literales: el cuerpo vivo alinea las escrituras (`reverted_at          = …`). La inversa
+  -- devuelve a cada una su espaciado, capturado a los dos lados del `=`.
+  v_pat_new text := '\mreverted_at(\s*)=(\s*)case when kind = ''complete'' then null else reverted_at end';
+  v_inv     text := 'reverted_at\1=\2null';
   v_virgen text := '14fc5e2c54766dd7c5706966c7381f51';
 begin
   select prosrc into v_src from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -28,11 +32,12 @@ begin
     raise notice 'g17_01 rollback: el cuerpo ya es el de g15_02. No-op.';
     return;
   end if;
-  if position(v_old in v_src) <> 0 or position(v_new in v_src) = 0 then
+  if (select count(*) from regexp_matches(v_src, 'reverted_at\s*=\s*null', 'gi')) <> 0
+     or (select count(*) from regexp_matches(v_src, v_pat_new, 'g')) <> 3 then
     raise exception 'g17_01 rollback: el cuerpo vivo no es el de g17_01 (md5 %). Abortada.', md5(v_src);
   end if;
 
-  v_new_src := replace(v_src, v_new, v_old);
+  v_new_src := regexp_replace(v_src, v_pat_new, v_inv, 'g');
   if md5(v_new_src) <> v_virgen then
     raise exception 'g17_01 rollback: deshacer la sustitución daría md5 %, no el de g15_02. Abortada.', md5(v_new_src);
   end if;

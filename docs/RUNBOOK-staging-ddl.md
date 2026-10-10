@@ -352,10 +352,20 @@ del mismo B y el reintento tras salir reciben `not_complete`**. La migración ca
 `reverted_at = case when kind = 'complete' then null else reverted_at end`: igual que hoy en una cuenta `complete`,
 conservado en una `groups_only`. **Sin cambio de Worker ni de app**: mismos códigos y misma forma de respuesta.
 
-**Probado en local** (`bash qa/cloud/g17_01-local-test.sh`, Postgres 17 desechable con una réplica del RPC escrita desde
-el contrato del README): el §3 de conducta falla con el cuerpo viejo en los cuatro caminos del ticket y deja verdes los
-cuatro controles; la migración pasa 11/11; re-aplicar es no-op; el rollback vuelve al md5 de partida; un cuerpo divergido
-aborta en la guarda. Dos mutantes de la sustitución (solo la primera escritura; no borrar nunca) los caza el §3.
+**Probado en local** (`bash qa/cloud/g17_01-local-test.sh`, Postgres 17 desechable) contra **el cuerpo real**
+(`qa/cloud/fixtures/migration_progress.g15_02.functiondef.sql`, exportado de staging el 2026-10-09, md5 `14fc5e2c…`; la
+migración corre sin tocar) y contra una réplica con un espacio por escritura: el §3 de conducta falla con el cuerpo viejo
+en los cuatro caminos del ticket y deja verdes los cuatro controles; la migración pasa 11/11; re-aplicar es no-op; el
+rollback vuelve al md5 de partida; un cuerpo divergido, una cuarta escritura o una cuarta con otra grafía (mayúsculas,
+`nullif`) abortan sin tocar nada. Dos mutantes de la sustitución (solo la primera escritura; no borrar nunca) los caza el
+§3, y uno que no conserve el espaciado lo caza la comprobación de inversa exacta del §1.
+
+**El espaciado** (2026-10-09). En el cuerpo vivo las tres escrituras están alineadas con sus vecinas del `SET`: dos
+`reverted_at          = null` (10 espacios) y una `reverted_at           = null` (11). La primera versión de la guarda
+buscaba el literal con un espacio y abortó en staging con `aparece 0 vez/veces` sin tocar nada; el banco no lo vio porque
+solo tenía la réplica. Ahora cuenta y sustituye por patrón (`\mreverted_at(\s*)=(\s*)null\M`), conserva el espaciado de
+cada una (la inversa es exacta) y sigue exigiendo 3. **md5 nuevo esperado**: `776dac35d585393fabeabedf8eafee82`
+(`md5(prosrc)`; `md5(pg_get_functiondef)` = `4171f5f401ff4cd19ace1e7995f1e340`), medido en el banco sobre el cuerpo real.
 
 **Repara también a quien el bug ya atascó** (§1-bis, añadido por la review): las filas `groups_only` con
 `personal_claimed_at` y sin `reverted_at` —solo las deja una vuelta completada a la que un claim posterior le borró
@@ -373,7 +383,7 @@ conector de Supabase autenticado, cada `psql -1 -f` equivale a `apply_migration`
    ```bash
    psql "$STAGING_DB_URL" -At -c "select md5(prosrc), md5(pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='migration_progress' and p.pronargs=2"
    psql "$STAGING_DB_URL" -At -c "select pg_get_functiondef('public.migration_progress(text,text)'::regprocedure)" > /tmp/migration_progress.staging.antes.sql
-   grep -c 'reverted_at = null' /tmp/migration_progress.staging.antes.sql   # tiene que dar 3; si no, la migración aborta
+   psql "$STAGING_DB_URL" -At -c "select (select count(*) from regexp_matches(prosrc, '\mreverted_at\s*=\s*null\M', 'g')), (select count(*) from regexp_matches(prosrc, 'reverted_at\s*=\s*null', 'gi')) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='migration_progress' and p.pronargs=2"   # tiene que dar 3|3; si no, la migración aborta
    psql "$STAGING_DB_URL" -At -c "select count(*) from public.profiles where kind='groups_only' and personal_claimed_at is not null and reverted_at is null"   # cuentas ya atascadas
    ```
 2. **Aplicar en staging.** El §3 corre dentro y aborta todo si un escenario falla.
@@ -381,7 +391,8 @@ conector de Supabase autenticado, cada `psql -1 -f` equivale a `apply_migration`
    psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql "$STAGING_DB_URL"
    ```
    Esperado: `g17_01: 3 sustitución(es)`, `g17_01: K cuenta(s) ya revertida(s) recuperan reverted_at` (K = el
-   recuento del paso 1) y `g17_01 OK · 11/11 escenarios`. Apunta K y el md5 nuevo (el comando del paso 1).
+   recuento del paso 1), `g17_01: md5 nuevo de migration_progress: 776dac35d585393fabeabedf8eafee82.` y
+   `g17_01 OK · 11/11 escenarios`. Apunta K y comprueba el md5 nuevo con el comando del paso 1.
 3. **Goldens contra staging**, desde `gateway/`:
    ```bash
    set -a; . ~/Secrets/yala-supabase-test/test-users.env; set +a
@@ -389,7 +400,7 @@ conector de Supabase autenticado, cada `psql -1 -f` equivale a `apply_migration`
    ```
    Esperado: 11/11, **con el 16-ter en verde** (hoy, sin la migración, es el único rojo).
 4. **Producción** (`kefvaiymtgytemwbltlz`): el paso 1 (mismo md5 de partida), el paso 2 con `$PROD_DB_URL`, y el md5
-   nuevo tiene que ser **el mismo** que en staging. El §3 usa usuarios sintéticos dentro de savepoints: no deja filas ni
+   nuevo tiene que ser **el mismo** que en staging (`776dac35…`). El §3 usa usuarios sintéticos dentro de savepoints: no deja filas ni
    toca a nadie real.
 5. **Humo en producción** sin datos de usuarios: re-aplicar el fichero (rama no-op: corre el §3 otra vez contra el cuerpo
    ya cambiado; prueba el camino nuevo y, con sus controles `complete`, `born-cloud`, solo grupos y la ida abandonada, que

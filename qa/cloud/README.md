@@ -1709,8 +1709,11 @@ delete from public.profiles where id = (select id from auth.users where email='i
 
 **PREPARADA, NO APLICADA en ningún entorno** (la sesión no tenía acceso de escritura; los pasos están en
 `docs/RUNBOOK-staging-ddl.md`). Fichero: `qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql`; marcha atrás
-`qa/cloud/g17_01_rollback.sql`; banco local `bash qa/cloud/g17_01-local-test.sh`. Ticket
-`reverse-exit-on-a-reverted-account-rejects-the-retry`.
+`qa/cloud/g17_01_rollback.sql`; banco local `bash qa/cloud/g17_01-local-test.sh`, que corre contra el cuerpo REAL
+(`qa/cloud/fixtures/migration_progress.g15_02.functiondef.sql`, md5 `14fc5e2c…`) y contra una réplica. Ticket
+`reverse-exit-on-a-reverted-account-rejects-the-retry`. El primer intento en staging abortó sin tocar nada porque la guarda
+buscaba el literal con un espacio y el cuerpo vivo alinea las escrituras; ahora busca por patrón y conserva el espaciado.
+md5 nuevo esperado: `776dac35d585393fabeabedf8eafee82`.
 
 Qué cambia: cada `reverted_at = null` de `migration_progress` (el claim fresco y los dos takeovers de `reverse_claim`) pasa
 a `reverted_at = case when kind = 'complete' then null else reverted_at end`. En una cuenta `complete` sigue limpiando los

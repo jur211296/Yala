@@ -111,6 +111,12 @@ con el cuerpo viejo en los cuatro caminos y pasa 11/11 con el nuevo; reparación
 consumidor (SQL, Worker, app) lee el valor de `reverted_at`; de ella salieron la reparación de los ya atascados, el número
 fijado a 3 y la comprobación de atributos de la función.
 
+**Primer intento en staging (2026-10-09 18:4x, Frank desde el box): abortó sin tocar nada.** La guarda buscaba el
+literal `reverted_at = null` con un espacio y el cuerpo vivo (md5 `14fc5e2c…`, igual en producción) alinea las tres
+escrituras con 10-11 espacios. Corregido en el encargo `g17-01-guard-matches-any-spacing`: cuenta y sustituye por patrón
+conservando el espaciado, sigue exigiendo 3, y el banco corre ahora contra el cuerpo real (fixture en
+`qa/cloud/fixtures/`), con el §3 11/11. **md5 nuevo esperado: `776dac35d585393fabeabedf8eafee82`.**
+
 **Cuando se aplique**, cierra el criterio: goldens `-t "I11-3"` 11/11 con el 16-ter verde, el canario
 `cloudReverseClaimRejected|not_complete` a cero, y los cinco textos del cliente y de las reglas que describen el reset
 (lista en el RUNBOOK). Después, el device-QA:
