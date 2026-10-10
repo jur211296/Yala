@@ -257,7 +257,8 @@ struct WelcomeAdoptExitTests {
                 for: controller.uiState,
                 claimBlocker: controller.claimBlocker,
                 adoptClaimExit: controller.adoptClaimExit,
-                forwardStepExit: controller.forwardStepExitReason) else {
+                forwardStepExit: controller.forwardStepExitReason,
+                origin: adoptOrigin) else {
             """)))
         // Terminal: el poll para, como en `.error`. `.lineageExit` también (ticket
         // `migration-takeover-uploads-without-a-lineage-check`).

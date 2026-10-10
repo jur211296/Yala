@@ -6561,3 +6561,6 @@
 
 /* Budget row: exactly one day left in the period (today counts) */
 "budgets.days.remaining.one" = "1 Tag verbleibend";
+
+/* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
+"welcome.bornCloud.readyExistingAccountTitle" = "Du hattest schon ein Konto und bist jetzt darin angemeldet.";
