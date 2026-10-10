@@ -367,21 +367,25 @@ describe("criterios por tarea", () => {
 });
 
 describe("juez", () => {
-  it("nadie se juzga a sí mismo: un juez en Insights y dos en Tendencias, todos de otro proveedor", () => {
+  it("nadie se juzga a sí mismo: un juez por respuesta en Insights y en Tendencias, de otro proveedor", () => {
     for (const task of INSIGHTS_TASKS)
       for (const p of ["openai", "anthropic", "gemini", "xai", "workersai"]) {
         const js = judgesFor(p, task);
-        expect(js).toHaveLength(task.startsWith("insights.") ? 1 : 2);
+        expect(js).toHaveLength(1);
         expect(js.every((j) => j.provider !== p)).toBe(true);
         expect(new Set(js.map((j) => j.provider)).size).toBe(js.length);
       }
     expect(JUDGES.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("en Tendencias Sonnet 5.5 abre la lista y a Anthropic lo juzgan otros (2026-10-08)", () => {
-    for (const p of ["openai", "gemini", "xai", "workersai"]) expect(judgesFor(p, "trends.summary")[0].id).toBe("anthropic:claude-sonnet-5-5");
-    expect(judgesFor("anthropic", "trends.summary").map((j) => j.id)).toEqual(["gemini:gemini-3.8-flash", "xai:grok-4.3"]);
-    expect(judgeOrder("trends.summary")).toBe(JUDGES);
+  it("en Tendencias decide Gemini solo y a Gemini lo juzga Grok, no Sonnet (2026-10-10)", () => {
+    // Sonnet coincidió con la nota a mano un 44 % en Tendencias y la pareja que abría, un 57 %; Gemini un 79 %, Grok un 78 %.
+    expect(judgeOrder("trends.summary").map((j) => j.id)).toEqual(["gemini:gemini-3.8-flash", "xai:grok-4.3", "anthropic:claude-sonnet-5-5", "workersai:gpt-oss-120b"]);
+    for (const p of ["openai", "anthropic", "xai", "workersai"]) expect(judgesFor(p, "trends.summary").map((j) => j.id)).toEqual(["gemini:gemini-3.8-flash"]);
+    expect(judgesFor("gemini", "trends.summary").map((j) => j.id)).toEqual(["xai:grok-4.3"]);
+    // Volver al juez anterior (la pareja que abre Sonnet) rompe esto: Sonnet no decide ninguna respuesta de Tendencias.
+    for (const p of ["openai", "anthropic", "gemini", "xai", "workersai"])
+      expect(judgesFor(p, "trends.summary").some((j) => j.id === "anthropic:claude-sonnet-5-5")).toBe(false);
     // Sonnet 5.5 rechaza una temperatura distinta de la de por defecto: el juez no la manda.
     expect(JUDGES.find((j) => j.id === "anthropic:claude-sonnet-5-5")?.temperature).toBeUndefined();
   });

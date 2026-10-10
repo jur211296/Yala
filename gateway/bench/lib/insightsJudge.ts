@@ -12,8 +12,7 @@
  * Veredicto = no contradice y es útil. La voz se anota pero no decide.
  *
  * Reglas: el juez es OTRO modelo, de OTRO proveedor que el candidato (nadie se juzga a sí mismo): de la lista
- * `judgeOrder(tarea)` se toman los primeros cuyo proveedor no es el del candidato (uno en `insights.*`, dos en
- * `trends.summary`; ver `judgesFor`). Antes de dejarle decidir algo se mide su
+ * `judgeOrder(tarea)` se toma el primero cuyo proveedor no es el del candidato (ver `judgesFor`). Antes de dejarle decidir algo se mide su
  * acuerdo con una muestra puntuada a mano (`insights.hand-scores.json`); si el acuerdo es bajo, no decide.
  * Resultados: `bench/results/<fecha>/<tarea>.judge.jsonl` (una línea por respuesta y juez, con su coste).
  */
@@ -39,11 +38,9 @@ export interface Judge {
 }
 
 /**
- * En este orden; cada respuesta de Tendencias la miran los dos primeros de otro proveedor. Desde el 2026-10-08 abre Claude Sonnet 5.5
- * (créditos de Anthropic; su acuerdo con la muestra a mano, en `docs/ai-model-bench-2026-10-claude.md`): juzga a
- * OpenAI, Google, xAI y Workers AI junto a Gemini, y a Anthropic lo juzgan Gemini y Grok, porque nadie juzga a su propio
- * proveedor. En las tareas `insights.*` abre Gemini y juzga solo (ver `judgeOrder` y `judgesFor`). Sin temperatura: Sonnet 5.5 rechaza un valor
- * distinto del de por defecto.
+ * Los jueces disponibles. El orden de cada tarea lo da `judgeOrder`: en `insights.*` abre Gemini y le releva Sonnet, y en
+ * `trends.*` abre Gemini y le releva Grok. Nadie juzga a su propio proveedor. Sin temperatura: Sonnet 5.5 rechaza un
+ * valor distinto del de por defecto.
  */
 export const JUDGES: Judge[] = [
   { id: "anthropic:claude-sonnet-5-5", provider: "anthropic", model: "claude-sonnet-5-5", effort: "low" },
@@ -54,24 +51,34 @@ export const JUDGES: Judge[] = [
 
 /**
  * Las tres tareas `insights.*` abren con Gemini 3.8 Flash (2026-10-08): ahí Sonnet coincidió con la nota a mano un 55 %
- * y Gemini un 85 % (`docs/ai-model-bench-2026-10-claude.md`). `trends.summary` sigue con el orden de `JUDGES`.
+ * y Gemini un 85 % (`docs/ai-model-bench-2026-10-claude.md`). `trends.*`, en `TRENDS_ORDER`.
  * En `insights.*` juzga UNO solo: con dos, la pareja sería Gemini + Sonnet en cualquier orden y el veredicto no cambiaría
  * (acuerdo 67 % la pareja, 87 % Gemini solo, sobre los juicios del 2026-10-07).
  */
 const GEMINI_FIRST = "gemini:gemini-3.8-flash";
 
+/**
+ * `trends.*` abre con Gemini 3.8 Flash y le releva Grok 4.3 (2026-10-10). Sobre 40 respuestas puntuadas a mano
+ * (`--agreement --date 2026-10-07 --task trends.summary`) coincidieron Gemini un 79 %, Grok un 78 %, gpt-oss-120b un 74 %
+ * y Sonnet un 44 %; la pareja que abría Sonnet, un 57 %. Gemini solo con Grok de relevo, un 80 %. Grok de relevo y no
+ * Sonnet: es el segundo que más coincide (`docs/ai-model-bench-2026-10-claude.md`).
+ */
+const TRENDS_ORDER = [GEMINI_FIRST, "xai:grok-4.3"];
+
 export function judgeOrder(task: string): Judge[] {
-  if (!task.startsWith("insights.")) return JUDGES;
-  return [...JUDGES.filter((j) => j.id === GEMINI_FIRST), ...JUDGES.filter((j) => j.id !== GEMINI_FIRST)];
+  const first = task.startsWith("insights.") ? [GEMINI_FIRST] : task.startsWith("trends.") ? TRENDS_ORDER : [];
+  const head = first.map((id) => JUDGES.find((j) => j.id === id)).filter((j): j is Judge => !!j);
+  return [...head, ...JUDGES.filter((j) => !first.includes(j.id))];
 }
 
 /**
  * Los jueces que deciden una respuesta de `task`: los primeros de `judgeOrder` cuyo proveedor no es el del candidato
- * (nadie se juzga a sí mismo). Uno en `insights.*` (Gemini; Sonnet si el candidato es Gemini), dos en el resto, y pasa
- * si todos dicen que pasa.
+ * (nadie se juzga a sí mismo). Uno en `insights.*` (Gemini; Sonnet si el candidato es Gemini) y uno en `trends.*`
+ * (Gemini; Grok si el candidato es Gemini). Una tarea sin orden propio usaría la pareja, y pasa si los dos dicen que pasa.
  */
 export function judgesFor(candidateProvider: string, task: string): Judge[] {
-  return judgeOrder(task).filter((j) => j.provider !== candidateProvider).slice(0, task.startsWith("insights.") ? 1 : 2);
+  const solo = task.startsWith("insights.") || task.startsWith("trends.");
+  return judgeOrder(task).filter((j) => j.provider !== candidateProvider).slice(0, solo ? 1 : 2);
 }
 
 const JUDGE_SCHEMA = {
@@ -395,13 +402,13 @@ function sample(date: string, n: number): void {
   console.log(lines.join("\n"));
 }
 
-function agreement(date: string): void {
+function agreement(date: string, onlyTasks: string[] | null): void {
   const hand = JSON.parse(readFileSync(new URL(HAND_FILE, resultsDir(date)), "utf8")) as HandScores;
-  const scored = hand.items.filter((i) => i.contradice !== null && i.util !== null);
+  const scored = hand.items.filter((i) => i.contradice !== null && i.util !== null && (!onlyTasks || onlyTasks.includes(i.task)));
   const judged = new Map<string, JudgeRow>();
   for (const task of INSIGHTS_TASKS) for (const j of judgeRows(task, date)) judged.set(`${task}|${rowKey(j)}|${j.judge}`, j);
   const lines = ["| Juez | Respuestas | Coinciden | Acuerdo | κ de Cohen | Contradice: coincide | Útil: coincide |", "|---|---|---|---|---|---|---|"];
-  const ids = [...JUDGES.map((j) => j.id), "banco (`judgesFor`: uno en Insights, par en Tendencias; todos «pasa»)"];
+  const ids = [...JUDGES.map((j) => j.id), "banco (`judgesFor`: uno por respuesta)"];
   for (const id of ids) {
     const a: boolean[] = [];
     const b: boolean[] = [];
@@ -438,12 +445,17 @@ function agreement(date: string): void {
 export async function main(): Promise<void> {
   const date = arg("date") ?? new Date().toISOString().slice(0, 10);
   if (arg("sample")) return sample(date, Number(arg("sample")));
-  if (process.argv.includes("--agreement")) return agreement(date);
+  if (process.argv.includes("--agreement")) return agreement(date, arg("task")?.split(",") ?? null);
   const tasks = (arg("task") ?? INSIGHTS_TASKS.join(",")).split(",");
   const only = arg("only")?.split(",") ?? null;
   const keyFilter = arg("keys") ? new Set((JSON.parse(readFileSync(arg("keys")!, "utf8")) as { items: { task: string; key: string }[] }).items.map((i) => `${i.task}|${i.key}`)) : null;
   const judgeFilter = arg("judges");
   const k = keys();
+  // Tope de gasto de ESTA corrida (`--max-usd 0.50`), como en `run.ts`: la clave de OpenAI del banco cobra del saldo de
+  // producción. Al llegar, no se lanza ningún juicio más; los ya lanzados terminan.
+  const maxUsd = Number(arg("max-usd") ?? Infinity);
+  let spent = 0;
+  let capped = 0;
   for (const task of tasks) {
     const cases = caseMap(task);
     const done = new Set(judgeRows(task, date).filter((j) => j.status === 200 && j.verdict).map((j) => `${rowKey(j)}|${j.judge}`));
@@ -467,12 +479,18 @@ export async function main(): Promise<void> {
     await pool(jobs, Number(arg("concurrency") ?? 6), async ({ row, judge }) => {
       const c = cases.get(row.case);
       if (!c) return;
+      if (spent >= maxUsd) {
+        capped++;
+        return;
+      }
       const jr = await judgeOne(task, c, row, judge, k);
+      spent += jr.cost ?? 0;
       appendFileSync(out, `${JSON.stringify(jr)}\n`);
       n++;
       if (jr.status !== 200 || !jr.verdict) console.log(`  ${judge.id} ${rowKey(row)} → ${jr.status} ${jr.error ?? "veredicto ilegible"}`);
       else if (n % 25 === 0) console.log(`  ${n}/${jobs.length}`);
     });
   }
+  console.log(`jueces: ${spent.toFixed(4)} USD en esta corrida${capped ? ` · tope de ${maxUsd} USD alcanzado, ${capped} juicios sin lanzar` : ""}`);
 }
 

@@ -58,7 +58,7 @@ async function regrade(date: string): Promise<void> {
 }
 
 interface Judged {
-  /** Veredicto de los jueces de otro proveedor (`judgesFor`: uno en Insights, dos en Tendencias): pasa si todos pasan. */
+  /** Veredicto de los jueces de otro proveedor (`judgesFor`: uno por respuesta en Insights y en Tendencias): pasa si todos pasan. */
   pass: boolean | null;
   contradice: boolean | null;
 }
