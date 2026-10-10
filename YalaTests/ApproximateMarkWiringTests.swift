@@ -430,12 +430,17 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     /// silencio. Con `arguments:` cada fichero es un caso independiente.
     @Test("Los numeradores del umbral leen la magnitud del ajuste, no el flag de la fila",
           arguments: [
-        (fichero: "Yala/App/Logic/Calculators/HeroBucketsCalculator.swift",
-         desde: "static func calculate(", hasta: "return Buckets(",
-         accessor: "adjustment.approximateMagnitude(tx, magnitude: amount)"),
         // Desde el 2026-10-10 la regla vive en `CashFlowCalculator.resolvedAmount`, compartida por el
         // Panel y Registros (ticket `records-summary-mixes-preferred-currencies`): se fija el helper y
-        // que los dos productores deleguen en él.
+        // que los productores deleguen en él. El hero del Panel se sumó el mismo día
+        // (`stats-aggregators-sum-stored-amounts-from-other-preferred-currencies`): resuelve con el
+        // helper y su numerador sale de esa MISMA resolución.
+        (fichero: "Yala/App/Logic/Calculators/HeroBucketsCalculator.swift",
+         desde: "static func calculate(", hasta: "return Buckets(",
+         accessor: "let resolved = CashFlowCalculator.resolvedAmount("),
+        (fichero: "Yala/App/Logic/Calculators/HeroBucketsCalculator.swift",
+         desde: "static func calculate(", hasta: "return Buckets(",
+         accessor: "let approximate = resolved.approximateMagnitude"),
         (fichero: "Yala/App/Logic/Calculators/CashFlowCalculator.swift",
          desde: "static func resolvedAmount(", hasta: "static func calculateCashFlow(",
          accessor: "adjustment.approximateMagnitude(tx, magnitude: abs(value))"),

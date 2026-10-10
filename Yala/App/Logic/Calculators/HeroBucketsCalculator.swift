@@ -49,11 +49,11 @@ enum HeroBucketsCalculator {
         /// Gastos el hero pinta únicamente `periodExpense`, y una señal común le ponía «≈» por
         /// culpa de un ingreso antiguo que no entra en ese número.
         ///
-        /// Aquí no hay converter que consultar: este calculador suma `amountInPreferredCurrency`,
-        /// que se convirtió al guardarse. Quien sabe si aquella tasa era la del día es el flag de la
-        /// transacción — pero **no se lee de la fila**: lo sirve `GroupBridgeStatsAdjustment`, que
-        /// en un gasto de grupo suma la magnitud dudosa de TODAS las patas (la de préstamo está
-        /// suprimida del recorrido y su flag no lo vería nadie).
+        /// La magnitud dudosa sale de `CashFlowCalculator.resolvedAmount`, la misma regla que el
+        /// importe: si la fila se guardó en esta divisa, la sirve `GroupBridgeStatsAdjustment` (que en
+        /// un gasto de grupo suma la de TODAS las patas, la de préstamo incluida aunque esté
+        /// suprimida del recorrido); si se guardó en otra divisa principal y se reconvierte, es la
+        /// calidad de ESA conversión.
         ///
         /// **No es un OR desde el 2026-09-08**: se enciende cuando el importe aproximado PESA sobre
         /// su lado — el criterio vive en `ApproximateMarkThreshold`, no aquí. Antes bastaba una
@@ -77,7 +77,9 @@ enum HeroBucketsCalculator {
         periodInterval: DateInterval,
         periodPrevInterval: DateInterval? = nil,
         eligibleAccountIDs: Set<PersistentIdentifier>,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Buckets {
         var monthIncome: Double = 0
         var monthExpense: Double = 0
@@ -99,8 +101,12 @@ enum HeroBucketsCalculator {
             // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
             guard !adjustment.isSuppressed(tx) else { continue }
 
-            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
-            let amount = abs(adjustment.amountInPreferredCurrency(tx))
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto); `resolvedAmount`
+            // lo lleva a `currencyCode` aunque la fila se guardara en otra divisa principal.
+            let resolved = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            )
+            let amount = abs(resolved.value)
             let isIncome = tx.category?.isIncome == true
 
             if monthInterval.contains(tx.date) {
@@ -114,9 +120,9 @@ enum HeroBucketsCalculator {
             // independientes para que la card "Disponible" sea exacta tanto
             // si el periodo coincide con el mes como si difiere.
             if periodInterval.contains(tx.date) {
-                // La magnitud dudosa la da el `adjustment`, NO la fila: en un gasto de grupo
-                // `amount` es el NETO de varias patas y el flag de la fila describe solo una.
-                let approximate = adjustment.approximateMagnitude(tx, magnitude: amount)
+                // La magnitud dudosa NO la da la fila: en un gasto de grupo `amount` es el NETO de
+                // varias patas y el flag de la fila describe solo una (ver `resolvedAmount`).
+                let approximate = resolved.approximateMagnitude
                 if isIncome {
                     periodIncome += amount
                     periodIncomeApproximateAmount += approximate

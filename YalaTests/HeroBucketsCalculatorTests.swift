@@ -81,7 +81,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: []
+            eligibleAccountIDs: [],
+            currencyCode: "USD"
         )
 
         #expect(result.monthIncome == 0)
@@ -123,7 +124,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: lastWeekInterval,
-            eligibleAccountIDs: [kept.persistentModelID]
+            eligibleAccountIDs: [kept.persistentModelID],
+            currencyCode: "USD"
         )
 
         // Mes (kept): 100 (food del 5) + 50 (food del 25) = 150 expense, 1000 income.
@@ -155,7 +157,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [a.persistentModelID, b.persistentModelID]
+            eligibleAccountIDs: [a.persistentModelID, b.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.monthIncome == 1500)
@@ -186,7 +189,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.monthIncome == result.periodIncome)
@@ -209,7 +213,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: lastWeekInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         // Mes incluye ambas (200), período solo la del 25 (120).
@@ -235,7 +240,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.monthExpense == 200)
@@ -252,7 +258,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: []
+            eligibleAccountIDs: [],
+            currencyCode: "USD"
         )
 
         #expect(result.monthExpense == 0)
@@ -275,7 +282,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.prevExpense == 500)
@@ -296,7 +304,8 @@ struct HeroBucketsCalculatorTests {
             monthInterval: aprilInterval,
             prevInterval: marchInterval,
             periodInterval: aprilInterval,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.prevExpense == 0)
@@ -333,7 +342,8 @@ struct HeroBucketsCalculatorTests {
             prevInterval: marchInterval,
             periodInterval: lastWeekInterval,
             periodPrevInterval: prevWeek,
-            eligibleAccountIDs: [kept.persistentModelID]
+            eligibleAccountIDs: [kept.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.periodExpense == 30)
@@ -356,7 +366,8 @@ struct HeroBucketsCalculatorTests {
             prevInterval: marchInterval,
             periodInterval: lastWeekInterval,
             periodPrevInterval: nil,
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.periodPrevExpense == 0)
@@ -385,7 +396,8 @@ struct HeroBucketsCalculatorTests {
             prevInterval: marchInterval,
             periodInterval: aprilInterval,      // [1 abr, 1 may]
             periodPrevInterval: marchInterval,  // [1 mar, 1 abr] — end == periodInterval.start
-            eligibleAccountIDs: [account.persistentModelID]
+            eligibleAccountIDs: [account.persistentModelID],
+            currencyCode: "USD"
         )
 
         #expect(result.periodExpense == 500)

@@ -70,7 +70,8 @@ struct TrendDataProcessor {
         interval: DateInterval,
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment = .none,
-        liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil
+        liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
 
@@ -87,14 +88,19 @@ struct TrendDataProcessor {
             // Excluir patas de préstamo derivadas del bridge de los totales income/expense
             // (la pata real, misma fecha, conserva el rango de la curva).
             guard !adjustment.isSuppressed(transaction) else { continue }
-            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
-            let amount = adjustment.amountInPreferredCurrency(transaction)
 
             // Exclude balance adjustments from income/expense totals
             // (they should only affect balance, not income/expense stats)
             let isBalanceAdjustment = transaction.balanceAdjustmentType != nil
 
             if !isBalanceAdjustment {
+                // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto), y
+                // `resolvedAmount` lo lleva a `currencyCode` aunque la fila se guardara en otra
+                // divisa principal: es la regla del hero del Panel, que comparte pantalla con este
+                // total (`stats-aggregators-sum-stored-amounts-from-other-preferred-currencies`).
+                let amount = CashFlowCalculator.resolvedAmount(
+                    transaction, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value
                 // La categoría decide el bucket; acumulación signed (paridad con
                 // CashFlowCalculator): un monto de signo contrario a su categoría
                 // reduce el bucket (reembolso), no suma magnitud.
@@ -193,7 +199,11 @@ struct TrendDataProcessor {
                 },
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { adjustment.amountInPreferredCurrency($0) }
+                valueTransform: {
+                    CashFlowCalculator.resolvedAmount(
+                        $0, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                    ).value
+                }
             )
 
         case .expense:
@@ -207,7 +217,11 @@ struct TrendDataProcessor {
                 },
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { -adjustment.amountInPreferredCurrency($0) }
+                valueTransform: {
+                    -CashFlowCalculator.resolvedAmount(
+                        $0, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                    ).value
+                }
             )
         }
 

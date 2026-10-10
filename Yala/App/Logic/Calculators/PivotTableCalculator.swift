@@ -25,7 +25,8 @@ struct PivotTableCalculator {
         hierarchy: [ReportGroupingDimension],
         preferredCurrency: String,
         allTags: [Tag],
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [PivotNode] {
         guard !hierarchy.isEmpty else { return [] }
 
@@ -49,15 +50,20 @@ struct PivotTableCalculator {
             let previousTxns = previousGroups[key] ?? []
 
             // When grouped by currency or account, sum in original currency; otherwise preferred.
-            // Los montos pasan por el adjustment (pata real Caso A neteada a `-myShare`).
+            // Los montos pasan por el adjustment (pata real Caso A neteada a `-myShare`). El
+            // preferido se resuelve con `CashFlowCalculator.resolvedAmount`: una fila guardada en
+            // otra divisa principal se reconvierte en vez de sumarse en su escala.
             let useOriginalAmount = (dimension == .divisa || dimension == .cuenta)
+            let amountOf: (TransactionItem) -> Double = { tx in
+                useOriginalAmount
+                    ? adjustment.amount(tx)
+                    : CashFlowCalculator.resolvedAmount(
+                        tx, currencyCode: preferredCurrency, adjustment: adjustment, converter: converter
+                    ).value
+            }
 
-            let currentAmount = currentTxns.reduce(0.0) { acc, tx in
-                acc + (useOriginalAmount ? adjustment.amount(tx) : adjustment.amountInPreferredCurrency(tx))
-            }
-            let previousAmountValue = previousTxns.reduce(0.0) { acc, tx in
-                acc + (useOriginalAmount ? adjustment.amount(tx) : adjustment.amountInPreferredCurrency(tx))
-            }
+            let currentAmount = currentTxns.reduce(0.0) { $0 + amountOf($1) }
+            let previousAmountValue = previousTxns.reduce(0.0) { $0 + amountOf($1) }
 
             let previousAmount: Double? = previousTxns.isEmpty ? nil : previousAmountValue
             let variation = PreviousPeriodHelper.calculateVariation(
@@ -86,7 +92,8 @@ struct PivotTableCalculator {
                     hierarchy: remaining,
                     preferredCurrency: preferredCurrency,
                     allTags: allTags,
-                    adjustment: adjustment
+                    adjustment: adjustment,
+                    converter: converter
                 )
             }
 

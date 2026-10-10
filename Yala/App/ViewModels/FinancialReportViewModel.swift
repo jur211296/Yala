@@ -134,7 +134,8 @@ final class FinancialReportViewModel: Filterable {
         now: Date = .now,
         period: DetailPeriod? = nil,
         comparisonMode: ComparisonMode? = nil,
-        expensesOnly: Bool? = nil
+        expensesOnly: Bool? = nil,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) {
         // Proyección "mi parte" (neto) desde el set AMPLIO (`transactions` completo, con AMBAS
         // hermanas del bridge, antes de cualquier filtro por cuenta/etiqueta).
@@ -208,7 +209,8 @@ final class FinancialReportViewModel: Filterable {
             hierarchy: hierarchy,
             preferredCurrency: preferredCurrency,
             allTags: allTags,
-            adjustment: adjustment
+            adjustment: adjustment,
+            converter: converter
         )
 
         // Flatten for rendering
@@ -216,10 +218,20 @@ final class FinancialReportViewModel: Filterable {
 
         // Calculate net flow from filtered transactions (always in preferred currency).
         // Income-aware: suprime las patas de préstamo derivadas y netea la pata real a `-myShare`.
-        netFlowCurrent = currentTxns.reduce(0.0) { $0 + (adjustment.incomeAwarePreferred($1) ?? 0) }
+        // Cada importe se resuelve con la misma regla que la tabla de debajo
+        // (`CashFlowCalculator.resolvedAmount`): una fila guardada en otra divisa principal se
+        // reconvierte, o el neto y las filas de la tabla (las agrupadas en divisa principal; por
+        // divisa o por cuenta suman el nativo) darían números distintos.
+        let netAmount: (TransactionItem) -> Double = { tx in
+            guard !adjustment.isSuppressed(tx) else { return 0 }
+            return CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: preferredCurrency, adjustment: adjustment, converter: converter
+            ).value
+        }
+        netFlowCurrent = currentTxns.reduce(0.0) { $0 + netAmount($1) }
         netFlowPrevious = previousTxns.isEmpty
             ? nil
-            : previousTxns.reduce(0.0) { $0 + (adjustment.incomeAwarePreferred($1) ?? 0) }
+            : previousTxns.reduce(0.0) { $0 + netAmount($1) }
         netFlowVariation = netFlowPrevious.flatMap {
             PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }

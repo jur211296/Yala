@@ -68,7 +68,8 @@ struct SankeyFlowCalculatorTests {
     @Test func compute_emptyTransactions_returnsEmpty() {
         let result = SankeyFlowCalculator.compute(
             transactions: [],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result == .empty)
         #expect(result.hasFlow == false)
@@ -79,7 +80,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -100, category: cat)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.hasFlow == true)
     }
@@ -87,7 +89,8 @@ struct SankeyFlowCalculatorTests {
     @Test func compute_hasFlow_falseWhenEmpty() {
         let result = SankeyFlowCalculator.compute(
             transactions: [],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.hasFlow == false)
     }
@@ -104,7 +107,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
 
         #expect(result.totalIncome == 1500)
@@ -132,7 +136,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.totalIncome == 0)
         #expect(result.totalExpense == 100)
@@ -161,7 +166,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: 1000, category: salary, subcategory: base)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let incomeNode = result.nodes(in: .income).first
         #expect(incomeNode?.name == "Base")
@@ -172,7 +178,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: 1000, category: salary, subcategory: nil)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let incomeNode = result.nodes(in: .income).first
         #expect(incomeNode?.name == "Salary")
@@ -189,7 +196,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let names = result.nodes(in: .income).map(\.name).sorted()
         #expect(names == ["Base", "Freelance"])
@@ -206,7 +214,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let pool = result.nodes(in: .pool)
         #expect(pool.count == 1)
@@ -222,7 +231,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let pool = result.nodes(in: .pool)
         #expect(pool.count == 2)
@@ -239,7 +249,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let pool = result.nodes(in: .pool)
         #expect(pool.count == 1)
@@ -265,7 +276,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.totalIncome == 0)
         #expect(result.totalExpense == 50)
@@ -281,7 +293,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.totalExpense == 100)
     }
@@ -290,7 +303,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -100, category: nil)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.hasFlow == false)
     }
@@ -306,6 +320,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             maxPerColumn: 12
         )
         let expenseNodes = result.nodes(in: .expenseCategory)
@@ -321,6 +336,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             maxPerColumn: 12
         )
         let expenseNodes = result.nodes(in: .expenseCategory)
@@ -340,7 +356,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let surplusResult = SankeyFlowCalculator.compute(
             transactions: surplusTxs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(surplusResult.pool == 300)
         // Deficit case: expense > income → pool still == totalExpense (no cap).
@@ -350,7 +367,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let deficitResult = SankeyFlowCalculator.compute(
             transactions: deficitTxs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(deficitResult.pool == 500)
     }
@@ -366,7 +384,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let nodes = result.nodes(in: .expenseCategory)
         #expect(nodes.first?.name == "Big")
@@ -378,7 +397,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -100, category: food)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let node = result.nodes(in: .expenseCategory).first
         #expect(node?.colorHex == "#ABC123")
@@ -390,7 +410,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -100, category: food, subcategory: sub)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let subNode = result.nodes(in: .expenseSubcategory).first
         #expect(subNode?.colorHex == "#AAAAAA")
@@ -404,7 +425,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -75, category: food, subcategory: restaurants)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         // Without income, the deficit node funds the pool, so links are:
         // deficit→expenses + expenses→food + food→restaurants. Validate the
@@ -424,7 +446,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         // Expect 1 income node with 2 outgoing links (to Gastos and to Disponible).
         let incToGastos = result.links.first { $0.targetID == "pool_expenses" }
@@ -450,7 +473,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
 
         let incomeNodes = result.nodes(in: .income)
@@ -485,7 +509,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
 
         let salaryID = result.nodes(in: .income).first { $0.id != "inc_deficit" }?.id
@@ -507,7 +532,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let gastosToExpense = result.links.filter { $0.sourceID == "pool_expenses" }
         let sum = gastosToExpense.reduce(0.0) { $0 + $1.amount }
@@ -521,7 +547,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: 1000, category: salary)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let incomeNode = result.nodes(in: .income).first
         #expect(incomeNode?.isTappable == false)
@@ -533,7 +560,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -100, category: food, subcategory: sub)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.nodes(in: .expenseCategory).first?.isTappable == true)
         #expect(result.nodes(in: .expenseSubcategory).first?.isTappable == true)
@@ -548,7 +576,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let pool = result.nodes(in: .pool)
         // "Gastos" es tappable: filtra los gastos del período (tap filter por pool,
@@ -565,6 +594,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             maxPerColumn: 12
         )
         let otros = result.nodes(in: .expenseCategory).first { $0.isOtros }
@@ -581,7 +611,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -100, category: food, subcategory: sub)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let subNode = result.nodes(in: .expenseSubcategory).first
         let parentNode = result.nodes(in: .expenseCategory).first
@@ -594,7 +625,8 @@ struct SankeyFlowCalculatorTests {
         let tx = makeTransaction(amount: -100, category: food, amountInPreferred: -250)
         let result = SankeyFlowCalculator.compute(
             transactions: [tx],
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         #expect(result.totalExpense == 250)
     }
@@ -608,10 +640,11 @@ struct SankeyFlowCalculatorTests {
             makeTransaction(amount: 1000, category: salary),
             makeTransaction(amount: -300, category: food)
         ]
-        let baseline = SankeyFlowCalculator.compute(transactions: txs, interval: defaultInterval)
+        let baseline = SankeyFlowCalculator.compute(transactions: txs, interval: defaultInterval, currencyCode: "USD")
         let withEmptyPlanned = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: []
         )
         #expect(baseline == withEmptyPlanned)
@@ -628,6 +661,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned
         )
         let pool = result.nodes(in: .pool)
@@ -649,6 +683,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned
         )
         let pool = result.nodes(in: .pool)
@@ -674,6 +709,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned
         )
         let pool = result.nodes(in: .pool)
@@ -689,6 +725,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             plannedSplit: .unified
         )
@@ -722,6 +759,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             plannedSplit: .byKind
         )
@@ -743,6 +781,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             plannedSplit: .byKind
         )
@@ -767,6 +806,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             plannedSplit: .byKind
         )
@@ -794,6 +834,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             propagatePlannedToCategories: true
         )
@@ -819,6 +860,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             propagatePlannedToCategories: true
         )
@@ -842,7 +884,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let income = result.nodes(in: .income)
         let deficit = income.first { $0.id == "inc_deficit" }
@@ -859,7 +902,8 @@ struct SankeyFlowCalculatorTests {
         let txs = [makeTransaction(amount: -200, category: food)]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let deficit = result.nodes(in: .income).first { $0.id == "inc_deficit" }
         #expect(deficit?.colorHex == "#9CA3AF")
@@ -870,7 +914,8 @@ struct SankeyFlowCalculatorTests {
         let txs = [makeTransaction(amount: -100, category: food)]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let deficitToAvailable = result.links.first {
             $0.sourceID == "inc_deficit" && $0.targetID == "pool_available"
@@ -888,7 +933,8 @@ struct SankeyFlowCalculatorTests {
         ]
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
-            interval: defaultInterval
+            interval: defaultInterval,
+            currencyCode: "USD"
         )
         let foodNode = result.nodes(in: .expenseCategory).first { $0.name == "Food" }
         #expect(foodNode?.amount == 400)
@@ -915,6 +961,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             plannedSplit: .byKind,
             propagatePlannedToCategories: true
@@ -938,6 +985,7 @@ struct SankeyFlowCalculatorTests {
         let result = SankeyFlowCalculator.compute(
             transactions: txs,
             interval: defaultInterval,
+            currencyCode: "USD",
             plannedPending: planned,
             plannedSplit: .unified
         )

@@ -39,10 +39,16 @@ struct SankeyFlowCalculator {
     /// - `tx.category != nil`
     /// - `interval.contains(tx.date)` — protects metrics that bypass the period filter (e.g. `.balance`).
     ///
-    /// One O(N) pass over `transactions`. Uses `tx.amountInPreferredCurrency` snapshot.
+    /// One O(N) pass over `transactions`. Cada importe se resuelve en `currencyCode` con la regla
+    /// única `CashFlowCalculator.resolvedAmount`: el monto guardado si se guardó en esa divisa, y
+    /// reconvertido desde el nativo si se guardó en otra divisa principal. Antes del 2026-10-10 se
+    /// sumaba el guardado sin mirar su divisa y el flujo mezclaba escalas
+    /// (`stats-aggregators-sum-stored-amounts-from-other-preferred-currencies`).
     static func compute(
         transactions: [TransactionItem],
         interval: DateInterval,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared,
         maxPerColumn: Int = 12,
         plannedPending: [PlannedOccurrence] = [],
         plannedSplit: PlannedSplit = .unified,
@@ -70,8 +76,11 @@ struct SankeyFlowCalculator {
             // Excluir patas de préstamo derivadas del bridge (préstamo a grupos).
             guard !adjustment.isSuppressed(tx) else { continue }
 
-            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
-            let amount = abs(adjustment.amountInPreferredCurrency(tx))
+            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto); `resolvedAmount`
+            // lo lleva a `currencyCode` aunque la fila se guardara en otra divisa principal.
+            let amount = abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
             guard amount > 0 else { continue }
 
             let catID = category.persistentModelID
