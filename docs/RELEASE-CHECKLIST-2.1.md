@@ -21,7 +21,7 @@
    del usuario, uso del producto y diagnósticos. El ID de dispositivo figura como «no vinculado» y sí
    está vinculado.
 3. **El esquema de CloudKit de Production no está comprobado** (§5.2). PR #442 abierto, con la guía.
-4. **La migración `g17_01` no está aplicada en ningún entorno** (§5.3).
+4. ~~La migración `g17_01` no está aplicada~~ → **hecho**: aplicada en staging y producción; md5(prosrc) de `migration_progress` = `776dac35d585393fabeabedf8eafee82` en los dos, re-medido por Frank el 2026-10-10 15:05 Lima con la Management API (§5.3). Ya no bloquea.
 5. **Bloqueantes del tablero:** 2 en `blocked` y 15 en `in qa` con prioridad `high` (§6).
 
 ---
@@ -277,7 +277,7 @@ dice que no vale para quien empezó en la nube. Y fuera el conector de Claude, q
 
 ### 5.3 Backend: migraciones y Worker
 
-- [ ] **J** · Aplicar `qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql`: staging → goldens → producción → humo. Jürgen la autorizó el 2026-10-09; **no está aplicada en ningún entorno** (`docs/RUNBOOK-staging-ddl.md:341-346`, pasos y md5 en `:396-410`). Arregla `tickets/blocked/reverse-exit-on-a-reverted-account-rejects-the-retry.md`. La sesión anterior no tenía credencial de escritura · 🔲 no verificado en producción
+- [x] **J** · Aplicar `qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql`: staging → goldens → producción → humo · ✅ aplicada en staging y producción; md5(prosrc) de `migration_progress` = `776dac35d585393fabeabedf8eafee82` en los dos, re-medido por Frank el 2026-10-10 15:05 Lima con la Management API. La sesión de la checklist no tenía credencial para medirlo y lo dio por no aplicado.
 - [ ] **J** · El resto de la base de producción está al día según el runbook: `hlc01` aplicada el 2026-10-07 (`:423-425`). El Worker de producción es la versión `4e93d41f…` del 2026-10-08 (`:460-480`). No hay Edge Functions (0 `functions/v1`) · ✅ verificado en el runbook, 🔲 en la consola
 - [ ] **J** · Flags de producción para el envío: Modo Nube 100, elección en la bienvenida 100, Grupos 100, versión mínima 0, `TRUST_ATTESTED_AS_PRO` false (`gateway/wrangler.toml:127,136,170,173,92`). Comprobar que lo desplegado coincide: `curl -s https://yala-gateway-production.misty-surf-6866.workers.dev/config` · ✅ verificado en el repo, 🔲 en vivo
 - [ ] **J** · El conector de Claude (`mcp0_*`) **no** va a producción en 2.1 (`docs/RUNBOOK-staging-ddl.md:238-240`) · ✅
@@ -330,7 +330,7 @@ Leídos con `tablero listar --proyecto Yala --json` el 2026-10-10. Responsable =
 ### 6.2 En `in qa`, prioridad `high`
 
 - [ ] **J** · `tablero-el-esquema-de-icloud-del-repo-no-tiene-c-o2li` · Esquema de CloudKit (§5.2)
-- [ ] **J** · `tablero-en-el-segundo-dispositivo-de-una-cuenta-gk5w` · Volver a iCloud en el segundo dispositivo; espera `g17_01` (§5.3) · `tickets/blocked/reverse-exit-on-a-reverted-account-rejects-the-retry.md`
+- [ ] **J** · `tablero-en-el-segundo-dispositivo-de-una-cuenta-gk5w` · Volver a iCloud en el segundo dispositivo; `g17_01` ya aplicada (§5.3); solo falta el device-QA con dos iPhone · `tickets/blocked/reverse-exit-on-a-reverted-account-rejects-the-retry.md`
 - [ ] **J** · `tablero-tu-segundo-iphone-no-puede-activar-la-nu-w7w8` · El segundo iPhone no puede activar la nube; device-QA con la build del PR #422
 - [ ] **J** · `tablero-tras-vaciar-los-datos-desde-otro-disposi-pb6r` · Tras vaciar desde otro dispositivo, widget, Siri y recordatorios siguen con datos del dueño; device-QA
 - [ ] **J** · `tablero-borrar-un-gasto-de-la-bandeja-de-entrada-yneu` · La x de la Bandeja no borra · `tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md`
