@@ -12,6 +12,11 @@
 //  por subcadena, contra el VALOR de cada clave. Ojo al añadir una: «Tu correo no sale de
 //  tu dispositivo» (`groups.consent.point2`) es verdad y no debe cazarse.
 //
+//  Desde el ticket `in-app-ai-privacy-claims-need-a-policy-check` también caza lo que la app
+//  prometía sobre la IA sin que la política lo dijera: que es «segura», que «no comparte ni
+//  almacena datos sensibles» y que «solo manda datos resumidos a OpenAI». Las tres eran falsas
+//  para la foto de un recibo, que es un gasto individual y pasa entera por nuestro servidor.
+//
 
 import Foundation
 import Testing
@@ -44,7 +49,39 @@ struct PrivacyCopyForbiddenPhrasesTests {
         "só você acessa",
         // zh-Hans
         "永远不会离开你的设备", "无服务器", "绝不经过我们的服务器", "仅在你的设备上", "100% 私密",
+
+        // IA: «no comparten ni almacenan datos sensibles» (`onboarding.privacyNoSharing`)
+        "no comparten ni almacenan", "don't share or store", "teilen oder speichern keine",
+        "ne partagent ni ne stockent", "non condividono né archiviano", "共有・保存しません",
+        "delen of bewaren geen", "nie udostępniają ani nie zapisują", "não partilham nem armazenam",
+        "不分享或存储敏感数据",
+        // IA: «solo se envían datos resumidos a OpenAI» (`insights.activateAIDisclaimer`)
+        "solo se envían datos resumidos", "only summarized data", "nur zusammengefasste daten",
+        "seules des données résumées", "solo dati riassuntivi", "集計データのみ", "alleen samengevatte gegevens",
+        "tylko zagregowane dane", "apenas dados resumidos", "只有汇总数据",
+        // IA: «IA segura» en ja y zh-Hans. Van aquí y no en `forbiddenWholePhrases` porque sin espacios
+        // entre palabras el límite de letra no existe: «より安全な AI» llevaría un kanji pegado delante.
+        "安全な ai", "安全 ai",
     ]
+
+    /// Frases prohibidas que solo cuentan como frase ENTERA: sin letra justo antes ni justo después.
+    /// Son cortas y por subcadena cazarían textos verdaderos («copia segura» contiene «ia segura»).
+    /// Son los títulos de la tarjeta «IA segura» del onboarding (`onboarding.privacyNoSharingShort`).
+    static let forbiddenWholePhrases: [String] = [
+        "ia segura", "safe ai", "sichere ki", "ia sécurisée", "ia sicura", "veilige ai", "bezpieczna si",
+    ]
+
+    /// `true` si `phrase` aparece en `value` sin una letra pegada a ninguno de sus dos lados.
+    static func containsWholePhrase(_ value: String, _ phrase: String) -> Bool {
+        var searchStart = value.startIndex
+        while let range = value.range(of: phrase, range: searchStart..<value.endIndex) {
+            let before = range.lowerBound == value.startIndex ? nil : value[value.index(before: range.lowerBound)]
+            let after = range.upperBound == value.endIndex ? nil : value[range.upperBound]
+            if !(before?.isLetter ?? false), !(after?.isLetter ?? false) { return true }
+            searchStart = value.index(after: range.lowerBound)
+        }
+        return false
+    }
 
     /// Devuelve `(fichero, clave, frase)` por cada valor que contiene una frase prohibida.
     static func violations(in content: String, file: String) -> [(String, String, String)] {
@@ -54,6 +91,9 @@ struct PrivacyCopyForbiddenPhrasesTests {
             guard let match = line.firstMatch(of: linePattern) else { continue }
             let value = String(match.2).lowercased()
             for phrase in forbiddenPhrases where value.contains(phrase) {
+                found.append((file, String(match.1), phrase))
+            }
+            for phrase in forbiddenWholePhrases where containsWholePhrase(value, phrase) {
                 found.append((file, String(match.1), phrase))
             }
         }
@@ -94,7 +134,7 @@ struct PrivacyCopyForbiddenPhrasesTests {
         #expect(scanned >= 16, "Solo se leyeron \(scanned) Localizable.strings — ¿cambió la ruta?")
         #expect(
             violations.isEmpty,
-            "Textos que prometen que los datos no salen del dispositivo: \(violations.prefix(10).map { "\($0.0) \($0.1) («\($0.2)»)" })"
+            "Textos que prometen algo que 2.1 no cumple (datos fuera del dispositivo o la IA): \(violations.prefix(10).map { "\($0.0) \($0.1) («\($0.2)»)" })"
         )
     }
 
@@ -112,11 +152,35 @@ struct PrivacyCopyForbiddenPhrasesTests {
         #expect(!Self.violations(in: line, file: "fixture").isEmpty)
     }
 
+    /// Las promesas sobre la IA que había hasta 2.1, tal cual estaban, en varios idiomas.
+    @Test(arguments: [
+        #""onboarding.privacyNoSharingShort" = "IA segura";"#,
+        #""onboarding.privacyNoSharingShort" = "Safe AI";"#,
+        #""onboarding.privacyNoSharingShort" = "Sichere KI";"#,
+        #""onboarding.privacyNoSharingShort" = "Bezpieczna SI";"#,
+        #""onboarding.privacyNoSharingShort" = "安全な AI";"#,
+        #""onboarding.privacyNoSharingShort" = "安全 AI";"#,
+        #""onboarding.privacyNoSharing" = "Las funciones de IA no comparten ni almacenan datos sensibles";"#,
+        #""onboarding.privacyNoSharing" = "AI features don't share or store sensitive data";"#,
+        #""onboarding.privacyNoSharing" = "Funkcje AI nie udostępniają ani nie zapisują wrażliwych danych";"#,
+        #""insights.activateAIDisclaimer" = "Solo se envían datos resumidos a OpenAI (totales, porcentajes, tendencias).";"#,
+        #""insights.activateAIDisclaimer" = "Only summarized data is sent to OpenAI (totals, percentages, trends).";"#,
+        #""insights.activateAIDisclaimer" = "Nur zusammengefasste Daten werden an OpenAI gesendet.";"#,
+    ])
+    func scanner_catchesTheOldAIPromises(line: String) {
+        #expect(!Self.violations(in: line, file: "fixture").isEmpty)
+    }
+
     /// Lo que sí es verdad en 2.1 no se caza.
     @Test(arguments: [
         #""groups.consent.point2" = "Solo se comparte lo mínimo: tu alias y los gastos del grupo. Tu correo no sale de tu dispositivo.";"#,
         #""groups.consent.point2" = "Only the minimum is shared: your alias and the group's expenses. Your email never leaves your device.";"#,
         #""profile.privacyTitle" = "Dónde viven tus datos";"#,
+        #""onboarding.privacyAIShort" = "IA a través de nuestro servidor";"#,
+        #""onboarding.privacyAIShort" = "AI through our server";"#,
+        // «ia segura» como subcadena de otra palabra no es la promesa: la frase entera sí.
+        #""backup.hint" = "Haz una copia segura de tus datos";"#,
+        #""backup.hint" = "Faça uma cópia segura dos seus dados";"#,
     ])
     func scanner_ignoresTruthfulCopy(line: String) {
         #expect(Self.violations(in: line, file: "fixture").isEmpty)

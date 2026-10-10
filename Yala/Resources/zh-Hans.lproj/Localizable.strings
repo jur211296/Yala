@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "正在分析你的数据...";
 "insights.activateAITitle" = "智能概览可用";
 "insights.activateAIBody" = "在「个人资料 > AI 功能」中启用并自定义。";
-"insights.activateAIDisclaimer" = "只有汇总数据(总计、百分比、趋势)会发送到 OpenAI。你的单笔交易和个人数据从不会被共享。";
 "insights.activate" = "启用";
 "insights.goToSettings" = "前往设置";
 "insights.notInterested" = "不感兴趣";
@@ -1832,7 +1831,6 @@
 "onboarding.privacyLocal" = "你的财务数据保存在你的账户中";
 "onboarding.privacyNoTracking" = "无跟踪、无广告";
 "onboarding.privacyIcloud" = "你用自己的账户访问你的数据";
-"onboarding.privacyNoSharing" = "AI 功能不分享或存储敏感数据";
 "onboarding.categoriesDefault" = "默认类别";
 "onboarding.categoriesCustom" = "自定义类别";
 "onboarding.privacyTutorialsHint" = "探索 Yala 的教程和技巧";
@@ -1861,7 +1859,8 @@
 "onboarding.privacyLocalShort" = "数据保存在你的账户中";
 "onboarding.privacyNoTrackingShort" = "无跟踪、无广告";
 "onboarding.privacyIcloudShort" = "用你的账户访问";
-"onboarding.privacyNoSharingShort" = "安全 AI";
+"onboarding.privacyAIShort" = "AI 经由我们的服务器";
+"onboarding.privacyAIDetail" = "是否使用由你决定";
 "onboarding.accountBalanceGuideTitle" = "我怎么算我的余额?";
 "onboarding.accountBalanceGuideIntro" = "初始余额告诉 Yala 你从多少开始。不需要精确到分 — 粗略估计就行。下面是按你所选账户类型的思考方式。";
 "onboarding.accountBalanceGuideGeneral" = "如果你用一个通用账户来汇总同一货币的所有付款方式,你的余额反映你有多少可用的钱。\n\n要计算它,把所有相加:活期账户、储蓄、现金。如果有未付的信用卡费用,可以减去以更精确 — 或者之后把每张卡作为单独账户跟踪。\n\n最终的数字就是你的初始余额。";

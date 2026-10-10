@@ -1090,7 +1090,6 @@
 "insights.analyzingData" = "Deine Daten werden analysiert...";
 "insights.activateAITitle" = "Smarter Überblick verfügbar";
 "insights.activateAIBody" = "Aktiviere und passe es unter Profil > KI-Funktionen an.";
-"insights.activateAIDisclaimer" = "Nur zusammengefasste Daten werden an OpenAI gesendet (Summen, Prozentsätze, Trends). Deine einzelnen Ausgaben und persönlichen Daten werden nie geteilt.";
 "insights.activate" = "Aktivieren";
 "insights.goToSettings" = "Zu den Einstellungen";
 "insights.notInterested" = "Kein Interesse";
@@ -1831,7 +1830,6 @@
 "onboarding.privacyLocal" = "Deine Finanzdaten werden in deinem Konto gespeichert";
 "onboarding.privacyNoTracking" = "Kein Tracking, keine Werbung";
 "onboarding.privacyIcloud" = "Du greifst mit deinem Konto auf deine Daten zu";
-"onboarding.privacyNoSharing" = "KI-Funktionen teilen oder speichern keine sensiblen Daten";
 "onboarding.categoriesDefault" = "Standardkategorien";
 "onboarding.categoriesCustom" = "Benutzerdefinierte Kategorien";
 "onboarding.privacyTutorialsHint" = "Entdecke die Tutorials und Tipps von Yala";
@@ -1856,7 +1854,8 @@
 "onboarding.privacyLocalShort" = "Daten in deinem Konto";
 "onboarding.privacyNoTrackingShort" = "Kein Tracking, keine Werbung";
 "onboarding.privacyIcloudShort" = "Zugriff mit deinem Konto";
-"onboarding.privacyNoSharingShort" = "Sichere KI";
+"onboarding.privacyAIShort" = "KI über unseren Server";
+"onboarding.privacyAIDetail" = "Du entscheidest, ob du sie nutzt";
 "onboarding.accountBalanceGuideTitle" = "Wie berechne ich meinen Saldo?";
 "onboarding.accountBalanceGuideIntro" = "Dein Anfangssaldo zeigt Yala, mit wie viel Geld du startest. Es muss nicht auf den Cent genau sein — eine Schätzung reicht völlig. Hier erfährst du, wie du es je nach gewähltem Kontotyp berechnen kannst.";
 "onboarding.accountBalanceGuideGeneral" = "Wenn du ein allgemeines Konto verwendest, um alle Zahlungsmittel in einer Währung zusammenzufassen, zeigt dein Saldo, wie viel Geld du verfügbar hast.\n\nUm ihn zu berechnen, addiere alles: Girokonten, Sparguthaben, Bargeld. Wenn du ausstehende Kreditkartenausgaben hast, kannst du sie abziehen für ein genaueres Bild — oder jede Karte später als eigenes Konto führen.\n\nDiese Endsumme ist dein Anfangssaldo.";

@@ -1219,7 +1219,13 @@ struct OnboardingView: View {
                 privacyCard(icon: "iphone", text: L10n.Onboarding.privacyLocalShort)
                 privacyCard(icon: "eye.slash.fill", text: L10n.Onboarding.privacyNoTrackingShort)
                 privacyCard(icon: "person.badge.key.fill", text: L10n.Onboarding.privacyIcloudShort)
-                privacyCard(icon: "lock.shield.fill", text: L10n.Onboarding.privacyNoSharingShort)
+                // La IA (foto, voz, chat) pasa por nuestro servidor hasta OpenAI, y solo con el
+                // consentimiento del usuario: la tarjeta dice eso, no que sea «segura».
+                privacyCard(
+                    icon: "lock.shield.fill",
+                    text: L10n.Onboarding.privacyAIShort,
+                    detail: L10n.Onboarding.privacyAIDetail
+                )
             }
         }
     }
@@ -1446,17 +1452,27 @@ struct OnboardingView: View {
     /// Mini-card del grid 2x2 de privacidad — VStack icon + text breve, card
     /// individual `cardFill` + cardStroke. Iconos privacidad mantienen tints
     /// neutros (no aplica R3 — son contexto distinto a las cards de selección).
-    private func privacyCard(icon: String, text: String) -> some View {
+    private func privacyCard(icon: String, text: String, detail: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Image(systemName: icon)
                 .font(.system(size: 24, weight: .semibold)) // A11Y-DT: privacy card
                 .foregroundStyle(secondaryTextStyle)
                 .accessibilityHidden(true)
-            Text(text)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(secondaryTextStyle)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(text)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(secondaryTextStyle)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let detail {
+                    Text(detail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(secondaryTextStyle)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

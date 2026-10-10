@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "Analizuję twoje dane...";
 "insights.activateAITitle" = "Inteligentny przegląd dostępny";
 "insights.activateAIBody" = "Włącz i dostosuj go w Profil > Funkcje AI.";
-"insights.activateAIDisclaimer" = "Do OpenAI wysyłane są tylko zagregowane dane (sumy, procenty, trendy). Twoje pojedyncze transakcje i dane osobowe nigdy nie są udostępniane.";
 "insights.activate" = "Aktywuj";
 "insights.goToSettings" = "Przejdź do ustawień";
 "insights.notInterested" = "Nie interesuje mnie";
@@ -1832,7 +1831,6 @@
 "onboarding.privacyLocal" = "Twoje dane finansowe są przechowywane na Twoim koncie";
 "onboarding.privacyNoTracking" = "Bez śledzenia i reklam";
 "onboarding.privacyIcloud" = "Do swoich danych wchodzisz przez swoje konto";
-"onboarding.privacyNoSharing" = "Funkcje AI nie udostępniają ani nie zapisują wrażliwych danych";
 "onboarding.categoriesDefault" = "Domyślne kategorie";
 "onboarding.categoriesCustom" = "Niestandardowe kategorie";
 "onboarding.privacyTutorialsHint" = "Odkryj samouczki i wskazówki Yala";
@@ -1861,7 +1859,8 @@
 "onboarding.privacyLocalShort" = "Dane na Twoim koncie";
 "onboarding.privacyNoTrackingShort" = "Bez śledzenia ani reklam";
 "onboarding.privacyIcloudShort" = "Dostęp przez Twoje konto";
-"onboarding.privacyNoSharingShort" = "Bezpieczna SI";
+"onboarding.privacyAIShort" = "AI przez nasz serwer";
+"onboarding.privacyAIDetail" = "Ty decydujesz, czy z niej korzystać";
 "onboarding.accountBalanceGuideTitle" = "Jak obliczyć moje saldo?";
 "onboarding.accountBalanceGuideIntro" = "Saldo początkowe mówi Yala, z jaką kwotą startujesz. Nie musi być co do grosza — szacunek wystarczy. Oto jak o nim myśleć w zależności od typu wybranego konta.";
 "onboarding.accountBalanceGuideGeneral" = "Jeśli używasz konta ogólnego, aby zgromadzić wszystkie metody płatności w jednej walucie, twoje saldo odzwierciedla, ile masz dostępnych pieniędzy.\n\nZsumuj wszystko: konta bieżące, oszczędności, gotówka. Jeśli masz oczekujące obciążenia karty kredytowej, możesz je odjąć dla większej precyzji — albo śledzić każdą kartę jako osobne konto.\n\nTa końcowa liczba to twoje saldo początkowe.";

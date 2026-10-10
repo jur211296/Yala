@@ -1383,7 +1383,6 @@ enum L10n {
         static var aiErrorProRequired: String { ls("insights.aiError.proRequired", comment: "") }
         static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }
         static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
-        static var activateAIDisclaimer: String { ls("insights.activateAIDisclaimer", comment: "") }
         static var activate: String { ls("insights.activate", comment: "") }
         static var goToSettings: String { ls("insights.goToSettings", comment: "") }
         static var notInterested: String { ls("insights.notInterested", comment: "") }
@@ -6056,7 +6055,6 @@ enum L10n {
         static var privacyLocal: String { ls("onboarding.privacyLocal", comment: "") }
         static var privacyNoTracking: String { ls("onboarding.privacyNoTracking", comment: "") }
         static var privacyIcloud: String { ls("onboarding.privacyIcloud", comment: "") }
-        static var privacyNoSharing: String { ls("onboarding.privacyNoSharing", comment: "") }
         static var categoriesDefault: String { ls("onboarding.categoriesDefault", comment: "") }
         static var categoriesCustom: String { ls("onboarding.categoriesCustom", comment: "") }
         static var privacyTutorialsHint: String { ls("onboarding.privacyTutorialsHint", comment: "") }
@@ -6087,7 +6085,8 @@ enum L10n {
         static var privacyLocalShort: String { ls("onboarding.privacyLocalShort", comment: "") }
         static var privacyNoTrackingShort: String { ls("onboarding.privacyNoTrackingShort", comment: "") }
         static var privacyIcloudShort: String { ls("onboarding.privacyIcloudShort", comment: "") }
-        static var privacyNoSharingShort: String { ls("onboarding.privacyNoSharingShort", comment: "") }
+        static var privacyAIShort: String { ls("onboarding.privacyAIShort", comment: "") }
+        static var privacyAIDetail: String { ls("onboarding.privacyAIDetail", comment: "") }
         static var accountBalanceGuideTitle: String { ls("onboarding.accountBalanceGuideTitle", comment: "") }
         static var accountBalanceGuideIntro: String { ls("onboarding.accountBalanceGuideIntro", comment: "") }
         static var accountBalanceGuideGeneral: String { ls("onboarding.accountBalanceGuideGeneral", comment: "") }
