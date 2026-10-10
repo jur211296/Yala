@@ -299,3 +299,106 @@ struct WelcomeAdoptAutoResumeTests {
         #expect(second.state.attempts == 2)
     }
 }
+
+/// Ticket `born-cloud-signup-lands-on-existing-account-silently` (decisión de Jürgen del 2026-10-07). «Crear otra cuenta» con
+/// un Apple ID que ya tenía una entra en ella —el claim contesta `existing_stable` y el alta sigue por la re-entrada—, y
+/// hasta este ticket terminaba en `.reentryReady`: «¡Tu cuenta está lista!» después de «Creando tu cuenta…». Ahora la
+/// terminal de ese camino dice «Ya tenías una cuenta, has entrado en ella»; la re-entrada normal no cambia.
+@Suite("Welcome · el alta que entra en una cuenta que ya existía lo dice")
+struct WelcomeSignUpEnteredExistingAccountTests {
+
+    @Test("El alta que encontró la cuenta creada termina en su propia fase; la re-entrada, en la de siempre")
+    func cloudActive_splitsByOrigin() {
+        #expect(CloudWelcomeSignInFlow.phase(for: .cloudActive, origin: .signUpFoundExistingAccount)
+                == .signUpEnteredExistingAccount)
+        #expect(CloudWelcomeSignInFlow.phase(for: .cloudActive, origin: .reentry) == .reentryReady)
+        // Sin origen es la re-entrada: los llamadores de antes (Almacenamiento no pasa por aquí) no cambian.
+        #expect(CloudWelcomeSignInFlow.phase(for: .cloudActive) == .reentryReady)
+    }
+
+    /// El origen solo elige el título de la terminal de «listo». El progreso, los fallos, la espera al líder y el
+    /// relanzamiento son los mismos venga de donde venga el adopt.
+    @Test("Fuera de `.cloudActive`, el origen no cambia nada")
+    func otherStates_ignoreTheOrigin() {
+        let step = MigrationUIStep(fraction: 0.4, phase: .claimingMigration)
+        let states: [CloudMigrationUIState] = [
+            .idle, .migrating(step), .reverting(step), .needsRelaunch(.toCloud), .needsRelaunch(.toICloud),
+            .waitingForLeader, .failed(.migration), .failed(.reverse), .journalUnreadable,
+        ]
+        for state in states {
+            #expect(CloudWelcomeSignInFlow.phase(for: state, origin: .signUpFoundExistingAccount)
+                    == CloudWelcomeSignInFlow.phase(for: state, origin: .reentry), "\(state)")
+            for blocker in [ClaimBlocker.accountUnavailable, .sessionExpired] {
+                #expect(CloudWelcomeSignInFlow.phase(for: state, claimBlocker: blocker, origin: .signUpFoundExistingAccount)
+                        == CloudWelcomeSignInFlow.phase(for: state, claimBlocker: blocker, origin: .reentry),
+                        "\(state) · \(blocker)")
+            }
+        }
+    }
+
+    /// Un bloqueo viejo no tapa un final que ya ocurrió (`CloudWelcomeSignInFlowClaimBlockerTests`), tampoco en el alta.
+    @Test func cloudActive_withAStaleBlocker_stillSaysItEnteredTheExistingAccount() {
+        #expect(CloudWelcomeSignInFlow.phase(for: .cloudActive, claimBlocker: .accountUnavailable,
+                                             origin: .signUpFoundExistingAccount) == .signUpEnteredExistingAccount)
+    }
+
+    /// El alta no siembra encima de una cuenta viva: `existing_stable` sigue yendo a la re-entrada, y la terminal del alta
+    /// de verdad (`.bornCloudReady`) no la produce nunca el adopt.
+    @Test func theRoutingStaysTheSame() {
+        #expect(BornCloudSignUpFlow.step(for: .routeReturningUser) == .continueAsReturningUser)
+        for state in [CloudMigrationUIState.cloudActive, .needsRelaunch(.toCloud)] {
+            #expect(CloudWelcomeSignInFlow.phase(for: state, origin: .signUpFoundExistingAccount) != .bornCloudReady)
+        }
+    }
+
+    /// **El texto, en los 16 idiomas.** El de esta terminal no puede ser el de «¡Tu cuenta está lista!», y en español es
+    /// la frase de Jürgen tal cual. Se lee del fichero de cada locale, porque la corrida solo ve uno.
+    @Test func copy_inEveryLocale_isItsOwn() throws {
+        let resources = Self.repoRoot.appendingPathComponent("Yala/Resources")
+        let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path).filter { $0.hasSuffix(".lproj") }
+        #expect(locales.count == 16)
+        for locale in locales {
+            let url = resources.appendingPathComponent("\(locale)/Localizable.strings")
+            let table = try #require(NSDictionary(contentsOf: url) as? [String: String], "\(locale)")
+            let existing = try #require(table["welcome.bornCloud.readyExistingAccountTitle"], "\(locale)")
+            let ready = try #require(table["welcome.bornCloud.readyTitle"], "\(locale)")
+            #expect(!existing.isEmpty && !existing.contains("NEEDS_TRANSLATION"), "\(locale)")
+            #expect(existing != ready, "\(locale): repite «\(ready)»")
+            if locale.hasPrefix("es") {
+                #expect(existing == "Ya tenías una cuenta, has entrado en ella", "\(locale)")
+            }
+        }
+    }
+
+    /// **El cableado de la pantalla**, que la lógica pura no ve: solo el alta que encontró la cuenta pasa el origen, el
+    /// poll lo usa, y la terminal pinta el título nuevo con la salida de la re-entrada (`onFinishedToApp`: el flag de
+    /// onboarding ya lo marcó `onAdoptStarted`, y el onboarding de 8 pasos sembraría encima de la cuenta).
+    @Test func viewWiring() throws {
+        let source = try String(contentsOf: Self.repoRoot.appendingPathComponent(
+            "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"), encoding: .utf8)
+        let branch = try #require(Self.slice(source, from: "case .continueAsReturningUser:", to: "case .show("))
+        #expect(branch.contains("await runSignInFlow(origin: .signUpFoundExistingAccount)"))
+        #expect(source.components(separatedBy: "origin: .signUpFoundExistingAccount").count == 2, "un solo llamador lo pasa")
+        let flow = try #require(Self.slice(source, from: "private func runSignInFlow(origin: WelcomeAdoptOrigin) async {",
+                                           to: "phase = .checking"))
+        #expect(flow.contains("adoptOrigin = origin"))
+        let poll = try #require(Self.slice(source, from: "private func pollAdoptProgress() async {", to: ") else {"))
+        #expect(poll.contains("origin: adoptOrigin"))
+        let screen = try #require(Self.slice(source, from: "private var signUpEnteredExistingAccountContent: some View {",
+                                             to: "\n    }"))
+        #expect(screen.contains("L10n.Welcome.BornCloud.readyExistingAccountTitle"))
+        #expect(screen.contains("action: onFinishedToApp"))
+        let reentry = try #require(Self.slice(source, from: "private var reentryReadyContent: some View {", to: "\n    }"))
+        #expect(reentry.contains("title: L10n.Welcome.BornCloud.readyTitle"))
+    }
+
+    private static func slice(_ source: String, from start: String, to end: String) -> String? {
+        guard let lower = source.range(of: start) else { return nil }
+        guard let upper = source.range(of: end, range: lower.upperBound..<source.endIndex) else { return nil }
+        return String(source[lower.lowerBound..<upper.upperBound])
+    }
+
+    private static var repoRoot: URL {
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    }
+}
