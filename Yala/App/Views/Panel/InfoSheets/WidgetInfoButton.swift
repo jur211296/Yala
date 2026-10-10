@@ -36,6 +36,7 @@ struct WidgetInfoButton<Preview: View>: View {
             .buttonStyle(.plain)
             .widgetHelpCircleAlignment()
             .accessibilityLabel(kind.title)
+            .accessibilityIdentifier("widget_info_\(kind.rawValue)")
             .sheet(isPresented: $showSheet) {
                 WidgetInfoSheet(
                     kind: kind,

@@ -289,6 +289,8 @@ struct ContentView: View {
             // `groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`): con él completo ya no describe a
             // nadie que esté en el Welcome, y dejarla puesta le daría los grupos a quien llegue al Welcome otro día.
             if newValue { LateNoticeKeptGroupsMark.clear() }
+            // Lo que llegó de fuera durante el onboarding (un enlace, una foto compartida) espera aplazado: sale ya.
+            if newValue { AppBootstrapper.shared.resumeEntriesAfterOnboarding() }
             if newValue, offersFullActivationAfterGroupsEntry {
                 offersFullActivationAfterGroupsEntry = false
                 if !PrivateSessionMark.hasPrivateSession() {

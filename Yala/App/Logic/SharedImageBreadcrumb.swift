@@ -28,4 +28,10 @@ enum SharedImageBreadcrumb {
     nonisolated static func checked(site: String, found: Bool, willReEmit: Bool) {
         logger.notice("SHARED-IMAGE CHECK \(site, privacy: .public) — found=\(found, privacy: .public) reEmit=\(willReEmit, privacy: .public)")
     }
+
+    /// Un enlace que decide con estado aún sin cargar (`EntryReadinessLogic`) llegó antes de terminar el arranque y
+    /// espera a él. Sin PII: solo el host (`shared-image`, `voice-entry`…).
+    nonisolated static func entryAwaitsBootstrap(host: String) {
+        logger.notice("ENTRY AWAITS BOOTSTRAP \(host, privacy: .public)")
+    }
 }

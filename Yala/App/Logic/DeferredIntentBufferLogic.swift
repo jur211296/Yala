@@ -43,6 +43,11 @@ enum SerializableIntent: Codable, Equatable {
     /// groupID. This dedicated case carries the ID across a launch.
     case navigateGroupDetail(groupID: String)
     case showInboxAlert(scheduledPayments: Int, subscriptions: Int, automations: Int)
+    /// `.presentSharedImage(url)`: la foto compartida es un fichero de `PendingImages/` y su ruta basta para
+    /// reconstruir el intent. Al drenar solo vuelve si el fichero sigue ahí (otra entrada pudo consumirlo). Hasta el
+    /// 2026-10-10 este intent no se serializaba y el aplazamiento lo tiraba en silencio (canario «DROP
+    /// non-serializable deferred intent»); lo recuperaba solo la siguiente ventana lista.
+    case presentSharedImage(path: String)
 }
 
 enum DeferredIntentBufferLogic {
@@ -60,12 +65,9 @@ enum DeferredIntentBufferLogic {
     ///   proxy would drop the groupID). This lets a group deep link
     ///   (`yala://groups/<id>`) survive a pre-bootstrap defer and re-emit on
     ///   drain in cold launch. Ver Bugs/qa_cold-launch-groupdetail-deeplink-no-routing.
-    /// - `.presentSharedImage(url)` — the full URL cannot be reconstructed
-    ///   from `filename` alone. `AppBootstrapper.checkForPendingSharedImage`
-    ///   re-emits this intent desde el App Group `PendingImages/` en cada ventana
-    ///   ready — bootstrap POST-`isInitialized` (NO pre-init: ahí el submit se
-    ///   difiere y esta serialización nula lo descartaría) Y `handleBecameActive`,
-    ///   gateado por `SharedImageRecoveryGate`. Persistir aquí sería redundante + lossy.
+    /// - `.presentSharedImage(url)` — serializa la RUTA del fichero (`.presentSharedImage(path:)`). Antes del
+    ///   2026-10-10 devolvía `nil` y el aplazamiento lo perdía; la recuperación desde `PendingImages/`
+    ///   (`checkForPendingSharedImage`) sigue ahí como segunda red.
     static func serialize(_ intent: RouterIntent) -> SerializableIntent? {
         switch intent {
         case .navigate(let dest):
@@ -87,11 +89,9 @@ enum DeferredIntentBufferLogic {
                 subscriptions: n.subscriptions,
                 automations: n.automations
             )
-        case .presentSharedImage:
-            // Re-emitted from SharedContainerService at every cold launch —
-            // persistence would create stale entries pointing at a filename
-            // we can't re-resolve. Skip.
-            return nil
+        case .presentSharedImage(let url):
+            guard url.isFileURL else { return nil }
+            return .presentSharedImage(path: url.path)
         default:
             return nil
         }
@@ -99,7 +99,10 @@ enum DeferredIntentBufferLogic {
 
     /// Inverse of `serialize`. `serialize` rejects unrecoverable cases
     /// up-front, so this function only needs the recoverable subset.
-    static func deserialize(_ s: SerializableIntent) -> RouterIntent? {
+    static func deserialize(
+        _ s: SerializableIntent,
+        fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
+    ) -> RouterIntent? {
         switch s {
         case .navigate(let key):
             guard let dest = deepLinkDestination(from: key) else { return nil }
@@ -112,6 +115,10 @@ enum DeferredIntentBufferLogic {
                 subscriptions: subs,
                 automations: autos
             ))
+        case .presentSharedImage(let path):
+            // Ya consumida (la hoja la leyó y la borró) o purgada: no hay nada que presentar.
+            guard fileExists(path) else { return nil }
+            return .presentSharedImage(URL(fileURLWithPath: path))
         }
     }
 

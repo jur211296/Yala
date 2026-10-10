@@ -50,6 +50,10 @@ final class AppBootstrapper {
     // MARK: - State
 
     private(set) var isInitialized = false
+    /// Enlaces que llegaron antes de `isInitialized` y deciden algo al tratarse (puerta Pro, consentimiento, eje de
+    /// sesión): se apartan y se tratan al terminar el arranque (`EntryReadinessLogic`). Viven en memoria a propósito:
+    /// si el proceso muere antes, la foto compartida sigue en `PendingImages/` y la recoge el paso 21.
+    @ObservationIgnored private var entryURLsAwaitingBootstrap: [URL] = []
     /// Un `bootstrap` en curso. Ver la guarda al principio de `bootstrap(container:)`.
     @ObservationIgnored private var isBootstrapping = false
     private var subscriptionCheckTask: Task<Void, Never>?
@@ -702,12 +706,26 @@ final class AppBootstrapper {
         // arrived during pre-bootstrap or mid-onboarding.
         RouterEntryGate.shared.drainDeferredBuffer()
 
+        // 20b. Los enlaces que llegaron durante el arranque y deciden con estado que ahora ya está cargado
+        // (`EntryReadinessLogic`), en su orden de llegada. Van ANTES de la recuperación de la foto: si el enlace era
+        // `shared-image`, encola la misma foto y el paso 21 colapsa con él por `id`.
+        let awaiting = entryURLsAwaitingBootstrap
+        entryURLsAwaitingBootstrap.removeAll()
+        for url in awaiting { handleIncomingURL(url) }
+
         // 21. Recuperar imagen compartida pendiente (share extension → PendingImages/).
         // DEBE correr post-`isInitialized` y DESPUÉS del drain: así `submit(.presentSharedImage)`
         // pasa el gate y encola en AppRouter (el consumer .panel la drena al montarse) en vez
         // de diferirse a un buffer que no serializa el intent. Espeja la red de invites del
         // paso 19. Ver Bugs/qa_cold-launch-share-image-no-registro.
         checkForPendingSharedImage(site: "bootstrap")
+
+        // 21b. Una acción del Centro de Control que llegó antes del arranque se quedó en el App Group
+        // (`EntryReadinessLogic.controlActionMayRun`): se trata ahora, con la suscripción ya cargada. Con el borrado de
+        // cierre de sesión armado no se toca, como en `handleBecameActive`: lo encolado se lo llevaría el relanzamiento.
+        if !StorageModePersistence.isSignOutWipeArmed() {
+            checkForPendingControlAction()
+        }
 
         #if DEBUG
         // Trigger del spike device S2 (purga de History en `.icloud` REAL — patrón UITestHooks).
@@ -745,6 +763,11 @@ final class AppBootstrapper {
             // los limpiamos para aislar corridas: si no, re-sembrar el perfil `.grupos`
             // apilaría grupos duplicados ("Viaje a Cusco" x2) encima del residual.
             DevSeedGroups.reset(in: context)
+            // Las fotos compartidas viven en el App Group y sobreviven al wipe: una que dejó un test la leería la
+            // recuperación del arranque del siguiente (medido el 2026-10-10 con `SharedImageEntryUITests`).
+            for url in SharedContainerService.pendingImageURLs() {
+                SharedContainerService.removePendingImage(at: url)
+            }
             // Estado limpio entre tests: el wipe de SwiftData no toca UserDefaults, así que
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
             // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
@@ -2122,6 +2145,10 @@ final class AppBootstrapper {
             return
         }
 
+        // Antes del arranque la puerta Pro leería una suscripción sin cargar: la clave se queda y la trata el
+        // arranque al terminar (paso 21b).
+        guard EntryReadinessLogic.controlActionMayRun(isInitialized: isInitialized) else { return }
+
         // Clear the action immediately to prevent re-processing
         defaults.removeObject(forKey: "pendingControlAction")
         defaults.synchronize()
@@ -2396,12 +2423,22 @@ final class AppBootstrapper {
 
         guard url.scheme == urlScheme else { return }
 
+        // Antes de terminar el arranque, lo que decide con estado aún sin cargar (Pro, consentimiento) espera.
+        if EntryReadinessLogic.waitsForBootstrap(host: url.host, isInitialized: isInitialized) {
+            entryURLsAwaitingBootstrap.append(url)
+            SharedImageBreadcrumb.entryAwaitsBootstrap(host: url.host ?? "nil")
+            return
+        }
+
         #if DEBUG
         print("AppBootstrapper: Received deep link: \(url.absoluteString)")
         #endif
 
         switch url.host {
         case "shared-image":
+            #if DEBUG
+            UITestSharedImageStage.stageIfRequested(by: url)
+            #endif
             if let firstImageURL = SharedContainerService.pendingImageURLs().first {
                 enqueueSharedImage(firstImageURL)
             }
@@ -2973,6 +3010,17 @@ final class AppBootstrapper {
         SharedImageBreadcrumb.checked(site: site, found: pending != nil, willReEmit: willReEmit)
         guard willReEmit, let firstImageURL = pending else { return }
         enqueueSharedImage(firstImageURL)
+    }
+
+    /// La app acaba de quedar lista para presentar sin pasar por un `.active`: el onboarding se completó con la app
+    /// delante. Lo aplazado mientras tanto —intents del buffer y la foto compartida que la recuperación no re-emitía
+    /// por el onboarding— sale ahora, no al volver de segundo plano. Lo llama `ContentView` al completarse.
+    func resumeEntriesAfterOnboarding() {
+        guard isInitialized else { return }
+        // Mismo orden que `handleBecameActive`: la recuperación pasa la foto por la puerta Pro antes de que el drenaje
+        // devuelva su intent aplazado; si la puerta la descarta, el intent aplazado cae por `fileExists`.
+        checkForPendingSharedImage(site: "onboardingCompleted")
+        RouterEntryGate.shared.drainDeferredBuffer()
     }
 
     /// Un recibo soltado sobre Yala (iPad, fase 3 del carril adaptativo), ya guardado en `PendingImages/` por

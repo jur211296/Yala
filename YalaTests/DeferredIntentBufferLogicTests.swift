@@ -15,12 +15,38 @@ struct DeferredIntentBufferLogicTests {
         if case .navigate(let key) = s { #expect(key == "statistics") } else { Issue.record("wrong case") }
     }
 
-    @Test func serialize_sharedImage_returnsNil_byDesign() {
-        // .presentSharedImage is re-emitted at every cold launch from
-        // SharedContainerService — persistence would create stale entries we
-        // can't re-resolve. Buffer rejects it on purpose.
-        let url = URL(fileURLWithPath: "/tmp/foo.jpg")
+    /// Hasta el 2026-10-10 devolvía `nil` «a propósito» y el aplazamiento perdía la foto compartida en silencio
+    /// (ticket share-image-reading-does-not-always-start). Ahora guarda la RUTA del fichero de `PendingImages/`.
+    @Test func serialize_sharedImage_keepsTheFilePath() {
+        let url = URL(fileURLWithPath: "/tmp/PendingImages/foo.jpg")
+        #expect(DeferredIntentBufferLogic.serialize(.presentSharedImage(url)) == .presentSharedImage(path: url.path))
+        #expect(DeferredIntentBufferLogic.canSerialize(.presentSharedImage(url)))
+    }
+
+    @Test func serialize_sharedImage_nonFileURL_returnsNil() {
+        let url = URL(string: "https://example.com/foo.jpg")!
         #expect(DeferredIntentBufferLogic.serialize(.presentSharedImage(url)) == nil)
+    }
+
+    @Test func deserialize_sharedImage_withTheFileStillThere_rebuildsTheIntent() {
+        let intent = DeferredIntentBufferLogic.deserialize(.presentSharedImage(path: "/tmp/PendingImages/foo.jpg"),
+                                                           fileExists: { _ in true })
+        #expect(intent == .presentSharedImage(URL(fileURLWithPath: "/tmp/PendingImages/foo.jpg")))
+        #expect(intent?.id == "sharedImage:foo.jpg")
+    }
+
+    /// La hoja ya leyó la foto (y la borró) o la purga de 24 h se la llevó: no hay nada que presentar.
+    @Test func deserialize_sharedImage_withTheFileGone_returnsNil() {
+        #expect(DeferredIntentBufferLogic.deserialize(.presentSharedImage(path: "/tmp/PendingImages/foo.jpg"),
+                                                      fileExists: { _ in false }) == nil)
+    }
+
+    @Test func roundTrip_sharedImage_throughJSON() {
+        // ISO-8601 guarda segundos enteros: la fecha va truncada, como en el round-trip de groupDetail.
+        let createdAt = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        let entry = DeferredEntry(payload: .presentSharedImage(path: "/tmp/PendingImages/foo.jpg"), createdAt: createdAt)
+        let data = DeferredIntentBufferLogic.encode([entry])
+        #expect(DeferredIntentBufferLogic.decode(data) == [entry])
     }
 
     @Test func serialize_navigateGroupDetail_preservesGroupID() {

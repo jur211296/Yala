@@ -287,6 +287,7 @@ struct InboxView: View {
                         YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                             dismiss()
                         }
+                        .accessibilityIdentifier("inbox_close")
                     }
                     if !filteredDrafts.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
