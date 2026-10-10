@@ -23,13 +23,17 @@ secciones 4-6.
 
 ## Bloqueo
 
-**Bloqueada por [`personal-cloudkit-schema-snapshot-misses-optional-fields`](personal-cloudkit-schema-snapshot-misses-optional-fields.md)** (high).
-Esta entrega añade un campo opcional a `CD_Account` y lo despliega a Production. El snapshot `.ckdb`
-del repo no tiene campos opcionales que la app ya escribe (`CD_Account.accountNumber` entre ellos),
-así que hoy no sirve para saber qué hay en Production ni para planificar el campo nuevo. Ese ticket
-se cierra primero: consola de iCloud mirada, snapshots regenerados y el test de paridad del `.ckdb`
-personal en su sitio. Con ese test, esta entrega sabe al instante si el campo nuevo falta en el
-snapshot.
+**Bloqueada por [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md)**
+(high, en `blocked`). Esta entrega añade un campo opcional a `CD_Account` y lo despliega a Production.
+
+- **Ya resuelto** (PR #442, 2026-10-10): los cuatro `.ckdb` personales llevan los 14 campos que
+  faltaban, y `PersonalCloudKitSchemaParityTests` vigila que el snapshot coincida con los modelos.
+  Con ese test, esta entrega sabe al instante si el campo nuevo falta en el snapshot.
+- **Lo que falta, y bloquea:** nadie ha mirado el esquema de **Production** de los contenedores
+  personales. Si faltan esos 14 campos, hay que desplegarlos antes, o el deploy de esta entrega sale
+  sobre un esquema que ya rechaza guardados. Ese paso espera a Jürgen: hace falta un token de gestión
+  de CloudKit (`cktool`), que la Mini no tiene.
+- Lo más barato es desplegar los 14 campos y `CD_parentAccountID` en la misma pasada por la consola.
 
 ## Alcance
 
@@ -77,7 +81,7 @@ entregas 2, 3 y 4.
 - `Yala/Services/CloudSync/EntityEmissionMap.swift`, `EntityApplyMap.swift`,
   `SystemEntityMergePolicy.swift`, `CloudSyncReconciler.swift`
 - `capability_manifest.json`, `supabase-staging.ddl`, `qa/cloud/<nuevo>.sql`
-- `Cloudkit Schemas/*.ckdb` (los cuatro personales)
+- `Cloudkit Schemas/*.ckdb` (los cuatro personales) y `docs/cloudkit-schema-diff-2.1.md` (guía de deploy)
 - Tests de paridad del sync: `CloudCapabilityManifestParityTests`, `EntityEmissionParityTests`,
   `CloudSyncSchemaParityTests`
 - `qa/coverage-index.json`: `accounts-crud`, `cloud-backend-schema`, `cloud-sync-capture`,
@@ -100,14 +104,15 @@ entregas 2, 3 y 4.
 - [ ] `CD_Account.CD_parentAccountID` visible en el esquema de **Production** de los dos contenedores
       personales, comprobado en la consola de iCloud (lo hace Jürgen si la sesión no tiene acceso), y
       `.ckdb` regenerados.
-- [ ] Test de paridad del `.ckdb` personal (lo trae el ticket que bloquea) en verde con el campo nuevo.
+- [ ] `PersonalCloudKitSchemaParityTests` en verde con el campo nuevo en los cuatro `.ckdb`.
 - [ ] Review adversarial (varias lentes + refutación por hallazgo) hecha y sus hallazgos cerrados o
       con ticket.
 - [ ] `/gate` en verde.
 
 ## Dependencias y orden
 
-- Depende de: `personal-cloudkit-schema-snapshot-misses-optional-fields`.
+- Depende de: [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md)
+  (en `blocked`: espera el token de gestión de CloudKit).
 - De esta dependen: [`multi-currency-accounts-2-card-view`](multi-currency-accounts-2-card-view.md),
   [`multi-currency-accounts-3-pickers-and-capture`](multi-currency-accounts-3-pickers-and-capture.md)
   y [`multi-currency-accounts-4-reports-and-export`](multi-currency-accounts-4-reports-and-export.md).

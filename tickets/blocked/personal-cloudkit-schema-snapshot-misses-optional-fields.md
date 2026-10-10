@@ -107,7 +107,7 @@ Bloqueado por: token de gestión de CloudKit (la Mini no tiene; `cktool get-team
 
 ## Relacionados
 
-- **Bloquea a [`multi-currency-accounts-1-model-and-sync`](multi-currency-accounts-1-model-and-sync.md)**
+- **Bloquea a [`multi-currency-accounts-1-model-and-sync`](../backlog/multi-currency-accounts-1-model-and-sync.md)**
   (2026-10-10): esa entrega añade `CD_Account.CD_parentAccountID` y lo despliega a Production, y
   necesita un snapshot fiel y el test de paridad de este ticket.
 - `multi-currency-accounts`: la opción recomendada añade un campo opcional a `CD_Account`, y este

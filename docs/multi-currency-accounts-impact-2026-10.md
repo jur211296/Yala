@@ -697,9 +697,9 @@ registro menos, sin cuarentena en clientes viejos y sin tocar tres tests de pari
   existe como cuenta suelta (falla cerrado y visible), más un test con el UUID colapsado.
 - **Desplegar el esquema de iCloud tarde.** Si la versión sale antes del deploy a Production, el
   guardado de cuentas muere en silencio. Mitigación: deploy en la entrega 1, antes de cualquier UI,
-  y comprobar en la consola de iCloud que el campo existe en Production. Como el snapshot `.ckdb` del
-  repo no es fiel (sección 7), la entrega 1 espera a
-  `personal-cloudkit-schema-snapshot-misses-optional-fields`.
+  y comprobar en la consola de iCloud que el campo existe en Production. La entrega 1 espera a
+  `personal-cloudkit-schema-snapshot-misses-optional-fields`: desde el PR #442 los snapshots y el test
+  de paridad ya están, pero nadie ha mirado todavía el esquema de Production (sección 7).
 - **Vincular cuentas con historial** (respuesta 4). Dos cuentas de la misma divisa no se pueden
   vincular, y una cuenta que ya es principal de otra tarjeta tampoco puede pasar a ser línea: no hay
   más de un nivel. Vincular escribe solo `parentAccountID` y no toca ningún movimiento.
@@ -744,7 +744,7 @@ la 3 y la 4 dependen de la 1.
 
 1. **[`multi-currency-accounts-1-model-and-sync`](../tickets/backlog/multi-currency-accounts-1-model-and-sync.md):
    modelo, sync y esquema, sin UI.** Prioridad `high`. Bloqueada por
-   [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../tickets/backlog/personal-cloudkit-schema-snapshot-misses-optional-fields.md).
+   [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../tickets/blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md).
    - `parentAccountID` en `Account`.
    - Emisión, apply, manifest, DDL en `qa/cloud/` con staging, sonda y producción.
    - Deploy de `CD_Account` a Production en `yala` y `yala_dev`.
@@ -778,7 +778,7 @@ la 3 y la 4 dependen de la 1.
 
 Existen hoy, elija Jürgen lo que elija. Tienen ticket propio y no se han arreglado:
 
-- [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../tickets/backlog/personal-cloudkit-schema-snapshot-misses-optional-fields.md)
+- [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../tickets/blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md)
   (high):
   - los snapshots `.ckdb` del contenedor personal no tienen campos opcionales que los modelos sí
     escriben, por ejemplo `Account.accountNumber` y `FavoritePayment.amount`;
