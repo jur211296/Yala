@@ -1,0 +1,89 @@
+# Puntos de entrada a Yala
+
+Inventario de todas las formas de entrar a la app, cómo llega cada una al router de presentaciones y en qué orden se
+presenta lo que traen. Auditado el 2026-10-10 contra el código (ticket `share-image-reading-does-not-always-start`).
+Las funciones se citan por nombre y no por línea: las líneas se mueven. **Si cambias una entrada, cambia su fila.**
+
+## Cómo se coordina una entrada
+
+Todo lo que una entrada quiere presentar pasa por `RouterEntryGate.shared.submit(_:)` → `AppRouter`. El coordinador
+tiene cuatro reglas, y ninguna entrada se las salta:
+
+1. **Lo que decide con estado aún sin cargar espera al arranque.** Antes de `AppBootstrapper.isInitialized`, la puerta
+   Pro (`StoreKitManager.isProUser` arranca en `false` y se carga en el paso 3), el consentimiento de IA y el eje de la
+   sesión no valen. `EntryReadinessLogic` aparta esos enlaces (`shared-image`, `image-entry`, `voice-entry`,
+   `new-transaction`, `activate-full`) y el paso 20b del arranque los trata en su orden de llegada. La acción del
+   Centro de Control tampoco se consume antes: su clave se queda en el App Group y la lee el paso 21b.
+2. **Lo que llega con la app sin poder presentar se aplaza y se conserva.** `RouterEntryGate` difiere `.navigate` y
+   `.presentSharedImage` mientras falte el arranque o el onboarding, y `DeferredIntentBuffer` los guarda en disco
+   (24 h). `.presentSharedImage` guarda la ruta de la foto y solo vuelve si el fichero sigue ahí. El buffer se drena
+   en el paso 20 del arranque, en cada vuelta a primer plano y al completarse el onboarding
+   (`resumeEntriesAfterOnboarding`).
+3. **Nada se presenta tapado.** Cada consumidor retiene su cola mientras algo esté encima (`RouterConsumerGateLogic`,
+   `ContentViewReadinessLogic`). Al cerrarse lo que tapaba, sale lo pendiente. Medido el 2026-10-10 también con una
+   hoja del Panel que ningún flag publica (el «?» de un widget): la lectura sale al cerrarla, sin comprobación extra.
+4. **Lo que tiene una fuente durable se vuelve a pedir desde ella.** Los intents transitorios se tiran al pasar a
+   segundo plano (`AppRouter.resetTransients`); la foto compartida se re-emite desde `PendingImages/` en el arranque y
+   en cada vuelta a primer plano, y la invitación desde `PendingJoinStore`.
+
+## Orden: qué sale primero
+
+La cola ordena por prioridad y, dentro de la misma, por llegada (`RouterIntent.priority`). Cada consumidor presenta en
+su anchor, y el de `ContentView` tapa a los demás.
+
+| Prioridad | Qué | Por qué ahí |
+|---|---|---|
+| `critical` | Avisos de sistema que no pueden esperar (`remoteWipe`, `iCloudMismatch`, `appleIDChangedClosePrivate`) y la respuesta a un enlace de invitación que la persona acaba de tocar (`showInviteError`, `showGroupArchivedNotice`) | O protegen datos, o contestan a un toque que está esperando respuesta |
+| `high` | **La foto compartida** (`presentSharedImage`), el consentimiento de IA, el aviso de la Bandeja, el espejo tardío de iCloud, prueba expirada, downgrade | Lo que la persona acaba de pedir desde fuera y los avisos que no deberían esperar al arranque siguiente |
+| `normal` | Navegar a una pestaña, abrir un formulario, la oferta de prueba, las pantallas de unirse a un grupo | Pueden esperar a que se cierre lo anterior |
+| `low` | Novedades y pedir reseña | Pueden esperar al arranque siguiente |
+
+**Por defecto, propuesto el 2026-10-10 y pendiente de que Jürgen lo confirme:** entre una invitación y una foto
+compartida, gana la invitación (va en el anchor de `ContentView`, que tapa al Panel) y la foto espera en cola hasta que
+se conteste. Una foto compartida no cierra una hoja abierta para presentarse: espera a que la persona la cierre (la hoja
+podría tener un formulario a medias). Ir al Panel sí cierra las hojas de OTRA pestaña, porque cambiar de pestaña las
+desmonta; eso no es de este cambio y viene de antes.
+
+## Entradas
+
+| Origen | Cómo llega | Qué presenta (intent → consumidor · prioridad) | Antes del arranque | ¿Se conserva si se aplaza? |
+|---|---|---|---|---|
+| **Hoja de compartir** (`YalaShare`): guarda `PendingImages/<uuid>.jpg` y abre `yala://shared-image` | `onOpenURL` (`WindowURLEntry`) → `handleIncomingURL` → `enqueueSharedImage` | Puerta Pro → `.presentUpgradeSheet(.image)` · o `.navigate(.panel)` + `.presentSharedImage(url)` (panel · high) · o `.requestAIConsent(.image)` si falta el consentimiento | Espera (`EntryReadinessLogic`) y se trata en el paso 20b | Sí: el fichero es durable, el intent aplazado guarda su ruta |
+| Foto compartida que la app no llegó a abrir (la extensión no pudo abrir Yala, o la app murió) | Paso 21 del arranque y cada `.active` → `checkForPendingSharedImage` (`SharedImageRecoveryGate`) | Igual que la fila anterior | Solo corre tras el arranque | Sí, `PendingImages/` (se purga a las 24 h) |
+| Recibo soltado en el iPad | `onDrop` → `ReceiptDropHandler` → `presentDroppedReceipt` → `enqueueSharedImage` | Igual que la hoja de compartir; el fallo abre la hoja en su error | Solo en caliente | El fichero, sí |
+| Widget o Siri: `yala://voice-entry`, `image-entry`, `new-transaction` | `onOpenURL` → `executeAction` | `.presentVoiceEntry` / `.presentImageEntry` / `.presentNewTransaction` (panel · normal), o la hoja de Pro / el consentimiento | Espera (`EntryReadinessLogic`) | No: transitorio, sin fuente durable |
+| Widget: `yala://panel`, `statistics[/records\|/categories]`, `planning`, `budgets`, `records`, `groups[/<id>]` | `onOpenURL` → `setOrDeferDeepLink` | `.navigate(destino)` (mainTab · normal) | Se aplaza (`DeferredIntentBuffer`) | Sí, serializable |
+| Widget solo-grupos: `yala://activate-full` | `onOpenURL` | `.presentFullModeActivation` (contentView · normal) o `.navigate(.panel)` | Espera (`EntryReadinessLogic`) | No |
+| Centro de Control: voz e imagen (`ControlCenterIntents`, escriben `pendingControlAction` en el App Group) | `.active` → `checkForPendingControlAction` | Como `voice-entry` / `image-entry` | No se consume; la lee el paso 21b | Sí, la clave del App Group |
+| Enlace de invitación `https://yala-app.pe/invite` | `onOpenURL` → `handleInviteLink` (y `YalaAppDelegate.application(_:continue:)`) | `.showInviteError` (critical), pantallas de unirse (contentView · normal), `.showGroupSyncError` (high) | El camino backend persiste en `PendingJoinStore` y lo retoma el reconciliador | Sí, `PendingJoinStore` |
+| Vuelta de Google Sign-In | `onOpenURL` → `GIDSignIn.handle` | Nada | — | — |
+| Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `deepLink` del `userInfo` | `.navigate(destino)`; `inbox` acaba en la hoja de la Bandeja | Se aplaza | Sí, serializable |
+| Apple Pay y Siri en lenguaje natural (no abren la app) | Cola del App Group → `InboundCaptureDrain` en el arranque y en cada `.active` | Borradores en la Bandeja → `.showInboxAlert` (contentView · high) | Se encola sin aplazar | Sí, los borradores |
+| Atajos de teclado | `.commands` → `RootCommandPerformer` | ⌘N → `.navigate(.panel)` + `.presentNewTransaction`; el resto, flags de la ventana | Solo en caliente | No |
+| Ventana nueva o restaurada (iPad) | `SceneRoot.land()` | Flags de la ventana (`pendingGroupID`, `pendingRecordID`) | — | — |
+| Push remoto | `YalaAppDelegate` | Nada: sync silencioso | — | — |
+| Spotlight, Handoff, accesos rápidos del icono | **No existen** en el código ni en el `Info.plist` | — | — | — |
+
+## Avisos que la app saca sola al entrar
+
+| Aviso | Quién lo pide | Consumidor · prioridad |
+|---|---|---|
+| Welcome, onboarding, idioma, restaurar | `ContentView` con flags propios, dentro de la matriz de readiness | — (bloquean el router) |
+| Forzar actualización, relanzar tras cerrar sesión | `ContentView`, flags dentro de la matriz | — (bloquean el router) |
+| Aviso de la Bandeja | Arranque y cada `.active` (`checkForPendingInboxDrafts`) | contentView · high |
+| Espejo tardío de iCloud, aviso de datos borrados | `ContentView` (`runLateICloudMirrorCheck`, gracia de 5 s) | contentView · high |
+| Prueba expirada, downgrade | `refreshSubscriptionStatus`, `checkForDowngrade` | mainTab · high |
+| Oferta de prueba, reanudar «Yala completo» | `ContentView` tras el arranque | contentView · normal |
+| Novedades | `ContentView` | contentView · low |
+| Alertas de sistema (`iCloudMismatch`, `remoteWipe`, Apple ID cambiado) | Arranque, observadores, `PreferenceSyncService` | contentView · critical |
+
+## Huecos conocidos que siguen abiertos
+
+Con ticket en `tickets/backlog/`:
+
+- `notification-delegate-assigned-after-launch`: el delegado de notificaciones se asigna en el paso 1 del arranque,
+  después de que el lanzamiento termine; un toque con la app cerrada puede no llegar.
+- `notification-deeplink-accounts-not-parsed`: `ScheduledPaymentNotificationService` manda `deepLink: "accounts"`, que
+  `NotificationService.parseDestination` no reconoce; el toque no lleva a ningún sitio.
+- `widget-and-siri-entries-lost-on-background`: voz, imagen y nuevo registro desde un widget o Siri son transitorios y
+  sin fuente durable: si la app pasa a segundo plano antes de presentarlos, se pierden.

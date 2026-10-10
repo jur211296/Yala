@@ -61,6 +61,7 @@ struct WidgetInfoSheet<Preview: View>: View {
                     ) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("widget_info_close")
                 }
                 if isInPanel {
                     ToolbarItem(placement: .topBarTrailing) {

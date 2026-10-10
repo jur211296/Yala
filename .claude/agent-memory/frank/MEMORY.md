@@ -235,6 +235,8 @@
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» s…
 - [Trabajo anterior](project_indice_trabajo_anterior.md) — PR #62 a #282: qué cerró cada uno y qué dejó abierto.
 
+- [Foto compartida: espera la decisión B](project_foto_compartida_espera_decision.md) — frío arreglado (#441); si vuelve, ¿había una hoja abierta?
+
 ## Entorno y herramientas
 - [Girar y estrechar el iPad sin Simulator.app](reference_girar_simulador_sin_simulator_app.md) — estrechar y ensanchar con XCUIApplication+Window; sin erase.
 - [`removeObject` sin efecto = es el simulador](feedback_simulador_preferencias_fuera_del_contenedor.md) — `simctl erase` va…

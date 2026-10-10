@@ -7,11 +7,11 @@
 //
 //  El directorio App Group es una cola durable cross-launch (la imagen sobrevive al kill
 //  del proceso). La app la drena en cada "ventana ready" (post-bootstrap y en cada
-//  `handleBecameActive`). Pero `.presentSharedImage` es notification-like Y NO-serializable:
-//  si se `submit`ea mientras la app aún no puede presentar, `RouterEntryGate` lo difiere a
-//  un buffer que lo descarta en silencio (cold launch → "no hace nada"). Este gate replica
-//  exactamente las condiciones de `NotificationGateLogic.shouldEnqueueNow` para asegurar que
-//  el re-emit SOLO ocurra cuando el `submit` pasará el gate y encolará de verdad.
+//  `handleBecameActive`). `.presentSharedImage` es notification-like: si se `submit`ea mientras la
+//  app aún no puede presentar, `RouterEntryGate` lo difiere. Hasta el 2026-10-10 el buffer lo
+//  descartaba en silencio (cold launch → "no hace nada"); hoy guarda su ruta. Este gate sigue
+//  replicando las condiciones de `NotificationGateLogic.shouldEnqueueNow`: re-emitir contra un gate
+//  que va a diferir solo apilaría entradas en el buffer.
 //
 //  Ver `Bugs/qa_cold-launch-share-image-no-registro`.
 //
@@ -26,7 +26,7 @@ enum SharedImageRecoveryGate {
     ///
     /// Las condiciones de readiness (init + onboarding) espejan
     /// `NotificationGateLogic.shouldEnqueueNow`: si alguna falla, `RouterEntryGate` diferiría
-    /// el `.presentSharedImage` a un buffer que no lo serializa → se perdería.
+    /// el `.presentSharedImage` en vez de encolarlo.
     static func shouldReEmit(
         hasPendingImage: Bool,
         isInitialized: Bool,

@@ -640,9 +640,9 @@
         "F-NAV-07"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests,PaywallInboxAlertRoutingUITests + unit:YalaTests/RouterConsumerGateLogicTests,RoutingIntegrationTests,RouterHoldCanaryTests (gate Clase D: intents de .mainTab/.panel retenidos en cola con un nodo superior tapando — peek-first, jamás consumidos tapados; canario D4 routingDrainHoldSustained para flags publicados pegados >45s) D1 (2026-07-20): derivador ÚNICO de shell ShellModeLogic.effective(onboardingMode:usageFocus:) (.groupsFocused si group-invite O usageFocus==.groupsOnly) alimenta la tab bar (TabBarConfiguration.forMode reduceToGroupsOnly + SessionState.selectMainTab/resetToDefaults); byte-idéntico con usageFocus=.full. Gate: unit ShellModeLogicTests (reescrito sobre el eje 1, 2026-09-13) (tabla 6 celdas) + TabBarConfigurationTests (reduceToGroupsOnly). || 2026-10-08 (after-session-redesign-review-widgets-siri-applepay-and-web-copy): host nuevo yala://activate-full (widget solo grupos). Con la shell en solo grupos encola .presentFullModeActivation; si no, Panel. unit:YalaTests/RemoteWipeSurfacesWiringTests#elEnlaceDelWidgetDecideConElEjeVivo (cuerpo entero de la rama).",
+      "coverage": "xcuitest:YalaUITests/DeeplinkRoutingUITests,PaywallInboxAlertRoutingUITests + unit:YalaTests/RouterConsumerGateLogicTests,RoutingIntegrationTests,RouterHoldCanaryTests (gate Clase D: intents de .mainTab/.panel retenidos en cola con un nodo superior tapando — peek-first, jamás consumidos tapados; canario D4 routingDrainHoldSustained para flags publicados pegados >45s) D1 (2026-07-20): derivador ÚNICO de shell ShellModeLogic.effective(onboardingMode:usageFocus:) (.groupsFocused si group-invite O usageFocus==.groupsOnly) alimenta la tab bar (TabBarConfiguration.forMode reduceToGroupsOnly + SessionState.selectMainTab/resetToDefaults); byte-idéntico con usageFocus=.full. Gate: unit ShellModeLogicTests (reescrito sobre el eje 1, 2026-09-13) (tabla 6 celdas) + TabBarConfigurationTests (reduceToGroupsOnly). || 2026-10-08 (after-session-redesign-review-widgets-siri-applepay-and-web-copy): host nuevo yala://activate-full (widget solo grupos). Con la shell en solo grupos encola .presentFullModeActivation; si no, Panel. unit:YalaTests/RemoteWipeSurfacesWiringTests#elEnlaceDelWidgetDecideConElEjeVivo (cuerpo entero de la rama). || 2026-10-10 (`share-image-reading-does-not-always-start`): con una hoja del Panel que ningún flag publica (el «?» de un widget), la foto compartida espera y sale al cerrarla sin gate extra (mutante que añadía una sexta dimensión preguntada a UIKit: sobrevivió, se retiró). Red: SharedImageEntryUITests.",
       "owner": "",
-      "lastVerified": "2026-10-08"
+      "lastVerified": "2026-10-10"
     },
     {
       "area": "deferred-filters-apply-discard",
@@ -884,9 +884,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:YalaTests/DeferredIntentBufferLogicTests + xcuitest:YalaUITests/GroupDetailDeeplinkColdLaunchUITests (e2e cold launch: siembra grupos → termina app → relanza con yala://groups/seeded-first PRE-init por handleIncomingURL → defer→drain → rutea al detalle; hook -uitest-deeplink-url + seededGroupIDKey) + manual (sync CloudKit real device/TestFlight)",
+      "coverage": "unit:YalaTests/DeferredIntentBufferLogicTests + xcuitest:YalaUITests/GroupDetailDeeplinkColdLaunchUITests (e2e cold launch: siembra grupos → termina app → relanza con yala://groups/seeded-first PRE-init por handleIncomingURL → defer→drain → rutea al detalle; hook -uitest-deeplink-url + seededGroupIDKey) + manual (sync CloudKit real device/TestFlight) | 2026-10-10: `.presentSharedImage` también se serializa (por la ruta de la foto) y el buffer se drena además al completar el onboarding.",
       "owner": "",
-      "lastVerified": "2026-09-30"
+      "lastVerified": "2026-10-10"
     },
     {
       "area": "groups-bridge-personal",
@@ -2275,16 +2275,18 @@
         "YalaShare/ShareViewController.swift",
         "Yala/Services/SharedContainerService.swift",
         "Yala/App/Logic/SharedImageRecoveryGate.swift",
-        "Yala/App/Logic/SharedImageBreadcrumb.swift"
+        "Yala/App/Logic/SharedImageBreadcrumb.swift",
+        "Yala/App/Logic/EntryReadinessLogic.swift",
+        "Yala/App/UITestSharedImageStage.swift"
       ],
       "scenarioIDs": [
         "F-SHARE-IMG-01",
         "F-SHARE-IMG-02"
       ],
-      "classification": "manual",
-      "coverage": "unit:YalaTests/SharedImageRecoveryGateTests + unit:YalaTests/SharedContainerServiceTests + manual | 2026-10-08: PendingImages/ admite también `.pdf` (el PDF soltado en el iPad se guarda entero); la recuperación y la purga del App Group lo ven.",
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/SharedImageEntryUITests + unit:YalaTests/SharedImageRecoveryGateTests,SharedContainerServiceTests,EntryReadinessLogicTests,SharedImageEntryWiringTests + manual (la extensión real en iPhone) | 2026-10-08: PendingImages/ admite también `.pdf` (el PDF soltado en el iPad se guarda entero); la recuperación y la purga del App Group lo ven. | 2026-10-10 (`share-image-reading-does-not-always-start`): la foto compartida arranca la lectura en frío, delante, en segundo plano y con una hoja abierta (espera y sale al cerrarla). Los enlaces que deciden con estado del arranque esperan a él (`EntryReadinessLogic`); el seam `?uitest-stage=readable` de `shared-image` deja el recibo en `PendingImages/` y `-uitest-reset` vacía esa carpeta.",
       "owner": "",
-      "lastVerified": "2026-10-08"
+      "lastVerified": "2026-10-10"
     },
     {
       "area": "smart-insights-tab",
