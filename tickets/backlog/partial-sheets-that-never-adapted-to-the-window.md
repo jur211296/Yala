@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "design-system, ipad, adaptativo"
 created: 2026-09-29
+updated: 2026-10-08
 source: "hallazgo de sheet-size-follows-the-device-not-the-window, 2026-09-29"
 ---
 
@@ -43,3 +44,9 @@ de ser hoja (columna o inspector) y entonces sobra.
 - [[sheet-size-follows-the-device-not-the-window]] — de donde sale.
 - [[ipad-native-app]] — paraguas del carril.
 - [[cola-b-redesigns-must-hold-up-at-ipad-width]] — Panel y Flujo de caja se rediseñan allí.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Recontado: los 19 `.presentationDetents` crudos siguen en sus 15 ficheros, sin pasar por `.yalaSheetDetents`. Las líneas se movieron: la de Perfil está hoy hacia `ProfileView.swift:1599`; las dos de `GroupOpeningBalanceFormView` siguen en `:122` y `:130`, y su hoja de `:136` sí usa el helper.
+
+Triage 2026-10-08: abierto · low → low · Los 15 ficheros citados siguen con su `.presentationDetents` crudo y sin `.yalaSheetDetents`; solo cambiaron las coordenadas (p. ej. Perfil, hoy hacia `ProfileView.swift:1599`).

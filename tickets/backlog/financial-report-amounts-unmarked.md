@@ -1,10 +1,11 @@
 ---
 id: financial-report-amounts-unmarked
 status: backlog
-priority: low
+priority: medium
 area: "currency, fx"
 created: 2026-09-09
 source: hallazgo de camino en bridge-de-grupos-pierde-la-marca-de-sus-patas (2026-09-09)
+updated: 2026-10-08
 ---
 
 # La pantalla de Informes presenta 22 importes y ninguno puede llevar la marca
@@ -49,3 +50,11 @@ la da `GroupBridgeStatsAdjustment.isApproximate(_:)`, no el flag de la fila.
 - [[fx-approximate-mark-missing-on-secondary-surfaces]] — la tanda que cubrió las otras pantallas; su
   tabla no nombraba Informes.
 - [[fx-category-totals-unmarked]] · [[fx-per-bucket-approximate-signal-missing]] — misma familia.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `Yala/App/Views/Reports/` sigue con 22 `AmountText(` y ninguno pasa `isEstimate:` de FX; el único `isEstimate` sigue siendo el de pago variable de `CashFlowAddLineSheet`.
+- `FinancialReportViewModel` y `PivotTableCalculator` siguen sin ninguna mención de «approximate». El único commit posterior en esos ficheros (`133437905`, iPad) no toca la marca.
+- Sube a `medium` por coherencia con `pie-header-total-unmarked` (medium en el triage del 2026-10-08): es el mismo número que el Panel sí marca, en la pantalla a la que se va a buscar el detalle.
+
+Triage 2026-10-08: abierto · low → medium · Informes sigue sin poder marcar «≈»; enseña como exacto el mismo dinero que el Panel marca como aproximado, que es copy que miente sobre los datos.

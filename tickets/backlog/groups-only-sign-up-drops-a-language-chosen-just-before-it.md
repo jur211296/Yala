@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "sesiones, idioma, onboarding"
 created: 2026-10-01
+updated: 2026-10-08
 source: "review adversarial de neutral-boot-hands-owner-prefs-to-whoever-signs-in-next (2026-10-01)"
 ---
 
@@ -41,3 +42,11 @@ arranque neutro lo aplica y el selector no sale).
 - La foto del widget conserva divisa y formato del dueño hasta el siguiente `WidgetDataCache.updateCache`.
 - `SessionState.selectedTrendMetric` puede quedarse en «gastos» si el dueño tenía el modo solo-gastos; solo se ve tras
   «Activar Yala completo» sin relanzar.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsOnlySignUpPreferenceReset.removeLocal` sigue retirando `.appLanguageOverride` sin distinguir quién lo escribió, y `resetLive` publica `languageDidChange` al quitarlo. No hay marca de «elegido en este arranque». Sin commits en el fichero desde el 2026-10-01.
+- Población pequeña (idioma del sistema no soportado y KV sin override) y la persona puede volver a elegirlo en Perfil.
+- Recomendación para la decisión: opción 1 (marca local del selector que el reset respeta), que no devuelve el idioma del dueño a nadie.
+
+Triage 2026-10-08: abierto · low → low · el reset sigue borrando el idioma recién elegido; población pequeña y se arregla desde Perfil.

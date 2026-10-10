@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "welcome, onboarding, restore"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "review adversarial de `restore-treats-budgets-and-groups-as-no-data` (2026-09-21), hallazgo 2 de la lente de consumidores"
 ---
 
@@ -52,3 +52,10 @@ eso.
 ## Relación con otros tickets
 
 - `restore-treats-budgets-and-groups-as-no-data` — de donde sale.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `OnboardingStepPlan.skippedSteps`: `if prefilledCurrencyCode != nil { skip.insert(.currencyName) }` dentro de `if hasPrefill`; `OnboardingView` sigue pasando `hasPrefill: prefilledData != nil`.
+- `iCloudSyncService` sigue construyendo el resumen con `primaryCurrencyCode: appPreferences.defaultCurrencyCode.rawValue`, nunca `nil`. El único commit posterior en esos ficheros (a37033936) no lo toca.
+
+Triage 2026-10-08: abierto · low → low · se salta una pregunta, pero el valor que fija es el de las propias preferencias de la persona y se puede cambiar después.

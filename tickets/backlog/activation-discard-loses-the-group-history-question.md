@@ -1,9 +1,10 @@
 ---
 id: activation-discard-loses-the-group-history-question
 status: backlog
-priority: medium
+priority: low
 area: "onboarding, grupos"
 created: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial del PR de `activation-restore-start-fresh-keeps-the-imported-rows` (tres lentes coincidieron, 2026-09-14)"
 ---
 
@@ -57,3 +58,18 @@ se lleva las filas del bridge y deja pedida la convergencia, que espera a la act
 `bridgedGroupExpenseCount()` da 0, la pregunta no sale y la convergencia del arranque siguiente trae el historial con la
 visibilidad por defecto. Se eligió así a propósito: sin la convergencia esas filas no volverían nunca. El arreglo que se
 elija aquí tiene que cubrir también este camino.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+- **A.** Preguntar siempre que haya gastos de grupo, contándolos en el dominio de grupos y no en las filas ya puenteadas. Cubre a la vez «Empezar desde cero» y «Vaciar datos» en solo-grupos.
+- **B.** Medir el conteo antes del borrado. Cubre «Empezar desde cero», pero no «Vaciar datos», donde las filas ya se fueron antes.
+- **C.** No preguntar a quien empieza de cero, y dejar escrito que el valor por defecto es la respuesta.
+
+**Recomendación: A.** Iguala las dos puertas con un solo cambio. Con A la prioridad es `low`: solo decide la visibilidad, y se cambia luego en Ajustes.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `shouldAskHistory` abre con `guard bridgedGroupExpenseCount > 0` (`Yala/App/Logic/FullModeActivationFlowLogic.swift:316-317`).
+- `bridgedGroupExpenseCount()` (`Yala/App/Views/Groups/FullModeActivationView.swift:498-509`) sigue contando `TransactionItem` puenteadas en `onboardingFinished` (`:383-395`), después del borrado. Los dos caminos (descartar y «Vaciar datos» solo-grupos) siguen sin pregunta.
+
+Triage 2026-10-08: abierto · medium → low · el conteo sigue tras el borrado (FullModeActivationView.swift:498) y la pregunta no sale; falta decidir si se pregunta (pregunta A/B/C).

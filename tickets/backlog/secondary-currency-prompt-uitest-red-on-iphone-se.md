@@ -5,6 +5,7 @@ priority: low
 area: "testing, currency"
 created: 2026-10-03
 source: hallazgo de account-form-as-medium-detent-sheet (2026-10-03)
+updated: 2026-10-08
 ---
 
 # `test_secondaryCurrencyPromptAppearsForNonPreferred` sale rojo en el iPhone SE
@@ -31,3 +32,9 @@ botón de atrás por identificador.
 
 El gate corre en el iPhone 17 Pro, donde pasa, así que hoy no bloquea a nadie. Pero cualquier sesión
 que verifique en el SE se encuentra un rojo que parece una regresión del formulario de cuenta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `SecondaryCurrencyPromptUITests.dropSecondaryCurrency` sigue volviendo con `app.navigationBars.buttons.firstMatch.tap()` (ahora `:57`). El fichero no tiene commits desde el 2026-10-03, así que la hipótesis sigue sin medir y sin arreglo.
+
+Triage 2026-10-08: abierto · low → low · el test no ha cambiado (sigue el firstMatch de la barra) y solo afecta al carril del SE, no al gate.

@@ -1,10 +1,10 @@
 ---
 id: groups-settlement-reminder-stale-clock
 status: backlog
-priority: medium
+priority: low
 area: groups
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 ---
 
 # El reloj del recordatorio de deuda no ve las ediciones ni los pagos retro-fechados
@@ -58,3 +58,11 @@ si el device es nuevo (restore), porque entonces «primera observación» es la 
 - [ ] Editar hoy el importe de un gasto viejo resetea el contador de ese par.
 - [ ] Los records anteriores a la migración no producen ningún aviso prematuro ni pierden el suyo.
 - [ ] Tests pure-logic sobre `GroupSettlementReminderService.activities` para los dos casos.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `GroupSettlementReminderService.swift:335` usa `expense.createdAt` y `:342` `settlement.date`.
+- `SplitSettlement` sigue sin fecha de sistema (`SplitSettlement.swift:16-32`), y `SplitExpense` sin `updatedAt`.
+- **Obsoleto:** ya no es un cambio de schema CloudKit. Con Grupos en backend, los campos nuevos van al manifest de Grupos (`split_settlements` y `split_expenses` en `group_capability_manifest.json`), y eso choca con `groups-canal-sin-capability-set` (cada columna nueva exige bump de canon).
+- Baja a `low`: el daño es un aviso prematuro, nunca un importe falso.
+
+Triage 2026-10-08: abierto · medium → low · El reloj del recordatorio sigue usando SplitExpense.createdAt y SplitSettlement.date; ningún modelo ni el manifest de Grupos tiene updatedAt/recordedAt.

@@ -1,10 +1,10 @@
 ---
 id: groups-batch-facts-plural-identity
 status: backlog
-priority: medium
+priority: low
 area: groups
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-08
 source: review adversarial de groups-owner-transfer-and-leave (2026-09-06)
 ---
 
@@ -44,3 +44,10 @@ Consecuencia en la clasificación de `GroupBatchLeaveLogic`:
 ## Relacionados
 
 - [[groups-owner-transfer-and-leave]] — el gemelo ya arreglado.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `GroupService.batchFacts` está en `GroupService.swift:998-1013`; `:1004` sigue con `resolveCurrentUserMember` (una fila) y `:1005-1006` cuentan co-miembros y herederos excluyendo solo esa.
+- `resolveAllCurrentUserMembers` (`GroupExpenseService.swift:700`) ya se usa en `GroupService.swift:969` y `:1181`: el arreglo es el mismo molde.
+- Solo afecta a quien tiene dos filas propias en un grupo (zonas migradas); no pierde datos, el RPC devuelve `no_eligible_owner`.
+
+Triage 2026-10-08: abierto · medium → low · batchFacts sigue resolviendo «yo» con resolveCurrentUserMember (singular); el gemelo ownerExitOffer ya usa la variante plural.

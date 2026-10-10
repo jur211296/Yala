@@ -5,6 +5,7 @@ priority: low
 area: "settings, modo-nube"
 created: 2026-09-11
 source: "paso 9 del rediseño de sesiones (`session-exits-one-verb-per-session`)"
+updated: 2026-10-08
 ---
 
 # Si el borrado de cierre falla en una sesión privada, la app vuelve sin explicar nada
@@ -31,3 +32,10 @@ El paso 9 le resuelve **la mitad `.icloud`**: C, D y F desarman al abortar, así
 degradado. La mitad `.cloud` sigue igual (la nube reintenta con el arm puesto). Lo que queda pendiente en
 los dos es lo mismo, que el fallo se vea. Cuando aquella rama aterrice, este ticket se cierra dentro del
 suyo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El aborto en `.icloud` sigue en `SwiftDataConfiguration.swift` (hacia `:606-624`): desarma el cierre y solo emite `signOutWipeAborted(reason: "store file deletion failed — icloud, disarmed")`, sin aviso ni canario.
+- `sign-out-boot-wipe-has-no-way-back-if-it-aborts` sigue sin existir en `2.1`: solo vive en la rama `encargo/2026-09-10-groups-entry-on-a-mirrored-store-still-blocks-the-owner`, sin mergear.
+
+Triage 2026-10-08: abierto · low → low · sigue sin aviso, pero los datos quedan intactos y hace falta un fallo de disco o de permisos al borrar el store.

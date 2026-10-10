@@ -5,6 +5,7 @@ priority: low
 area: "records, tags"
 created: 2026-09-30
 source: "diff al píxel del iPhone en `ipad-and-duo-panel-and-statistics-use-the-width` (capturas antes/después)"
+updated: 2026-10-08
 ---
 
 # Las etiquetas de un registro cambian de orden en cada arranque
@@ -30,3 +31,9 @@ siguiente. Con más de tres, cuáles se ven y cuáles van al «+N» también cam
   planificados).
 - Con más de `limit` etiquetas, las que se enseñan son siempre las mismas.
 - Test de `TagDisplayResolver` que fija el orden.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `TagDisplayResolver.resolve(ids:catalog:limit:)` sigue haciendo `ids.compactMap { catalog[$0] }` sobre un `Set<UUID>` y luego `prefix(limit)`, sin ordenar. Su docblock incluso dice «display order is not guaranteed». El fichero no tiene commits desde el 2026-09-30.
+
+Triage 2026-10-08: abierto · low → low · sigue pasando (Set sin ordenar en TagDisplayResolver); es incómodo y cambia qué etiquetas se ven, pero no toca ningún dato.

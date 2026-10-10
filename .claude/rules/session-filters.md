@@ -90,6 +90,10 @@ Decisión de Jürgen (2026-10-03): una cuenta suma o no según `excludeFromStati
   (`PanelTotalAccountsLogic.countableAccounts`, el «en N cuentas» del panorama), salvo las cuentas
   sistema de Grupos que archiva la propia app. Archivar sigue escondiendo la cuenta de listas y
   selectores; eso no cambia.
+- **Yala IA y el conector de Claude siguen la misma regla desde el 2026-10-09**: el contexto del chat
+  (`FullFinancialContextBuilder`) suma por el toggle y lista las cuentas de `countableAccounts`, y `mcp/` lo porta
+  (`balances.ts`, `summary.ts`). `MCPAppParityGoldenTests` ata los dos: si cambias la regla en uno, regenera el golden
+  y cambia el otro. Archivar sigue escondiendo la cuenta de `listar_cuentas` del conector, como de las listas de la app.
 - **Dos sitios archivan SIN excluir, a propósito**: el downgrade de plan
   (`DowngradeResolutionSheet.archiveExcessItems`; excluir ahí ocultaría el historial y nada lo
   re-incluye al volver a Pro, decisión pendiente de Jürgen) y `GroupBridgeSystemEntities` (cuentas
@@ -101,6 +105,12 @@ Decisión de Jürgen (2026-10-03): una cuenta suma o no según `excludeFromStati
 `PanelTotalAccountsLogic.accountsForTotal(hasSelectedAccount:)` recorta las cuentas sistema de
 grupos **solo cuando no hay filtro de cuentas**. `hasSelectedAccount` se calcula
 `!selectedAccountIDs.isEmpty` — una cuenta o cinco es igual de «hay filtro».
+
+**Yala IA lo sigue desde el 2026-10-09** (decisión A de Jürgen): `FullFinancialContextBuilder` recibe el ajuste
+inyectado (`includeGroupsInTotal`, desde `ChatSheetView` → `ChatAssistantViewModel.setAppPreferences`) y suma con
+`accountsForTotal`; las cuentas de Grupos siguen en `balances.accounts` y `balances.total_includes_groups` lo dice.
+**El conector `mcp/` no**: no conoce las preferencias del teléfono y suma siempre las cuentas de Grupos (`mcp/src/logic/balances.ts`). Un consumidor nuevo del contexto
+pasa el ajuste; el default `true` de `buildFromArrays` es para tests y el golden.
 
 ## La UI tiene que decir lo mismo que el número
 

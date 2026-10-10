@@ -22,6 +22,7 @@
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
 - [Esperar un PR ajeno: mira si puede entrar](feedback_esperar_un_pr_ajeno_mira_si_puede_entrar.md) — DIRTY no entra solo aunque el CI pase; rebasa y sigue.
+- [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 
 ## Cómo mido y cómo entrego
 - [`tablero --nota` sustituye](feedback_tablero_nota_sustituye.md) — lee la nota antes y concatena; borró una decisión.
@@ -86,11 +87,13 @@
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
 - [El vídeo del simulador salta pantallas cortas](feedback_el_video_del_simulador_salta_pantallas_cortas.md) — el «después» breve se conduce a mano y screenshot.
 - [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
+- [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.
 - [El barrido de QA rinde por lotes](feedback_el_barrido_qa_rinde_por_lotes.md) — agrupa por estado de simulador; dos números…
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de ded…
 - [Un flaky «de entorno» se mide a mano](feedback_el_flaky_de_entorno_se_mide_lanzando_a_mano.md) — N arranques con simctl + prints; el de la oferta en cola era producto.
 - [El tap de XcodeBuildMCP se pierde en pantallas vivas](feedback_el_tap_de_xcodebuildmcp_se_pierde_en_pantallas_vivas.md) — `touch` 0,1 s antes de culpar al botón.
 - [El seam que lanza lo mismo no prueba el `catch`](feedback_el_seam_que_lanza_lo_mismo_no_prueba_el_catch.md) — que lance un `C…
+- [El mutante con dangler lo cura el pase final](feedback_el_mutante_con_dangler_lo_cura_el_pase_final.md) — en el pull, nil sin dangler o el mutante sobrevive.
 - [El oráculo del mutante es el efecto que produce](feedback_el_oraculo_del_mutante_es_el_efecto_que_produce.md) — mide el efecto,…
 - [El test fija el bug como contrato](feedback_el_test_fija_el_bug_como_contrato.md) — grep del valor viejo en los tests ante…
 - [El CI se verifica en LOCAL](feedback_el_ci_se_verifica_en_local.md) — el `run:` se corre con matriz; un corte por tiempo: cuenta tests (×3 = reintento).
@@ -162,6 +165,7 @@
 - [El tope del test de cancelación es PROPIO](feedback_el_tope_del_test_de_cancelacion_es_propio.md) — el mutante que deja la…
 - [Mi arreglo cumple una premisa que era FALSA](feedback_mi_arreglo_cumple_una_premisa_que_era_falsa.md) — busca quién depend…
 - [El mutante que sobrevive puede SOBRAR](feedback_el_mutante_que_sobrevive_puede_sobrar.md) — dos respuestas: falta un test.
+- [El mutante sobrevive por una latencia ajena](feedback_el_mutante_sobrevive_por_una_latencia_ajena.md) — al mutar una espera, prueba nada/solo la mía/solo la ajena.
 - [Pedir en los dos extremos duplica](feedback_pedir_en_los_dos_extremos_duplica.md) — si la reparación re-hace todo y no un delta.
 - [El motivo que cae no retira el mecanismo](feedback_el_motivo_que_cae_no_retira_el_mecanismo.md) — quité la petición de #284 y cubría tres casos más.
 - [El dueño se FECHA, no se recuerda](feedback_el_dueno_se_fecha_no_se_recuerda.md) — «último visto» cayó 3 veces; la red de rescate no toca lo decidido «ninguno».
@@ -176,6 +180,7 @@
 - [Las lentes se contradicen entre sí](feedback_lentes_adversariales_se_contradicen.md) — cuando dos discrepan, mídelo.
 - [El test viejo CUELGA, no falla](feedback_el_test_viejo_cuelga_no_falla.md) — al mover un outcome de parada a reintento.
 - [Mi arreglo deja el mecanismo sin productor](feedback_mi_arreglo_deja_el_mecanismo_sin_productor.md) — mide aguas arriba y…
+- [Arreglar la función no cura a los atascados](feedback_arreglar_la_funcion_no_cura_a_los_atascados.md) — repara en la misma migración las filas que el bug ya dejó mal.
 - [El árbol base contesta «¿es mío?»](feedback_el_arbol_base_contesta_si_es_mio.md) — worktree desde HEAD zanja un rojo ajeno…
 - [Un «rojo conocido» no exime de bisecar](feedback_rojo_conocido_no_exime_de_bisecar.md) — dos rojos idénticos en el log, ca…
 - [La suite completa cuando no hay memoria](feedback_suite_completa_sin_memoria.md) — separa el compilador de la corrida.

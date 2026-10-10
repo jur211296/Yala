@@ -109,6 +109,41 @@ struct CloudIdentityDiscoveryTests {
         return beacon
     }
 
+    // MARK: - La ida en curso (ticket `settings-migrate-blocks-a-second-device-before-its-marker`)
+
+    /// `migration_in_progress` llega hasta la puerta de «Migrar» sin cambiar lo que se descubre ni lo que se cachea.
+    @Test("`migration_in_progress` viaja con el descubrimiento, y ausente es false")
+    func idaEnCursoViaja() async {
+        for (body, esperado) in [
+            (#"{"exists":true,"kind":"complete","migration_in_progress":true}"#, true),
+            (#"{"exists":true,"kind":"complete","migration_in_progress":false}"#, false),
+            (#"{"exists":true,"kind":"complete"}"#, false),
+        ] {
+            let store = AccountKindStore(defaults: makeIsolatedDefaults(prefix: "idisc.mip"))
+            let (motor, _) = makeMotor(body: body, store: store)
+            #expect(await motor.discover(gate: .settingsMigrateToCloud)
+                    == .discovered(.complete, userID: "sub-A", migrationInProgress: esperado), "\(body)")
+            #expect(store.read()?.kind == .complete, "el campo nuevo no cambia lo que se cachea")
+        }
+    }
+
+    /// El faro «nombra esta cuenta» solo puesto y con el hash de ESTE `sub`. Sin hash —el faro fingido de los XCUITest, o uno
+    /// escrito sin `sub`— no nombra ninguna.
+    @Test("el faro nombra la cuenta solo con su hash")
+    func faroNombraLaCuenta() {
+        #expect(CloudBeacon(store: linkedBeacon(provider: "apple", hashOf: "sub-A")).namesAccount(sub: "sub-A"))
+        #expect(!CloudBeacon(store: linkedBeacon(provider: "apple", hashOf: "sub-B")).namesAccount(sub: "sub-A"),
+                "otra cuenta")
+        #expect(!CloudBeacon(store: linkedBeacon(provider: "apple", hashOf: nil)).namesAccount(sub: "sub-A"),
+                "sin hash")
+        #expect(!CloudBeacon(store: linkedBeacon(provider: "apple", hashOf: "sub-A")).namesAccount(sub: nil), "sin sesión")
+        #expect(!CloudBeacon(store: linkedBeacon(provider: "apple", hashOf: "sub-A")).namesAccount(sub: ""), "sub vacío")
+        let apagado = linkedBeacon(provider: "apple", hashOf: "sub-A")
+        apagado.setBool(false, forKey: CloudBeacon.Keys.linked)
+        #expect(!CloudBeacon(store: apagado).namesAccount(sub: "sub-A"), "faro apagado con el hash viejo")
+        #expect(!CloudBeacon(store: FakeBeaconStore()).namesAccount(sub: "sub-A"), "sin faro")
+    }
+
     // MARK: - Los tres resultados
 
     @Test("`exists:true` con `kind: complete` → completa, y lo cachea")

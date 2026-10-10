@@ -5,14 +5,15 @@
  *   npx vite-node bench/lib/insightsJudgeCli.ts -- --task insights.cards --keys <f>  # juzga esas respuestas
  *   npx vite-node bench/lib/insightsJudgeCli.ts -- --task insights.cards --only openai:gpt-6-luna
  *   npx vite-node bench/lib/insightsJudgeCli.ts -- --agreement                       # acuerdo con la muestra a mano
- *   (con `--judges all` juzgan los tres, para medir el acuerdo de cada uno)
+ *   (con `--judges all` juzgan todos, para medir el acuerdo de cada uno; con `--judges <id,id>`, solo esos)
  *
  * Pregunta dos cosas y anota una tercera: ¿alguna afirmación CONTRADICE los datos (dirección, atribución, algo que
  * no está, una comparación imposible)?, ¿dice algo ÚTIL y concreto sobre estos datos? y ¿respeta la voz de la app?
  * Veredicto = no contradice y es útil. La voz se anota pero no decide.
  *
  * Reglas: el juez es OTRO modelo, de OTRO proveedor que el candidato (nadie se juzga a sí mismo): de la lista
- * `JUDGES` se toman los dos primeros cuyo proveedor no es el del candidato. Antes de dejarle decidir algo se mide su
+ * `judgeOrder(tarea)` se toman los primeros cuyo proveedor no es el del candidato (uno en `insights.*`, dos en
+ * `trends.summary`; ver `judgesFor`). Antes de dejarle decidir algo se mide su
  * acuerdo con una muestra puntuada a mano (`insights.hand-scores.json`); si el acuerdo es bajo, no decide.
  * Resultados: `bench/results/<fecha>/<tarea>.judge.jsonl` (una línea por respuesta y juez, con su coste).
  */
@@ -38,18 +39,39 @@ export interface Judge {
 }
 
 /**
- * En este orden; cada respuesta la miran los dos primeros de otro proveedor. Sin Anthropic a propósito: la clave del
- * banco se quedó sin crédito a mitad de la criba (2026-10-07, 21:43 UTC) y los jueces tienen que ser los mismos para
- * todas las respuestas que se comparan.
+ * En este orden; cada respuesta de Tendencias la miran los dos primeros de otro proveedor. Desde el 2026-10-08 abre Claude Sonnet 5.5
+ * (créditos de Anthropic; su acuerdo con la muestra a mano, en `docs/ai-model-bench-2026-10-claude.md`): juzga a
+ * OpenAI, Google, xAI y Workers AI junto a Gemini, y a Anthropic lo juzgan Gemini y Grok, porque nadie juzga a su propio
+ * proveedor. En las tareas `insights.*` abre Gemini y juzga solo (ver `judgeOrder` y `judgesFor`). Sin temperatura: Sonnet 5.5 rechaza un valor
+ * distinto del de por defecto.
  */
 export const JUDGES: Judge[] = [
+  { id: "anthropic:claude-sonnet-5-5", provider: "anthropic", model: "claude-sonnet-5-5", effort: "low" },
   { id: "gemini:gemini-3.8-flash", provider: "gemini", model: "gemini-3.8-flash", effort: "low", temperature: 0 },
   { id: "xai:grok-4.3", provider: "xai", model: "grok-4.3", temperature: 0 },
   { id: "workersai:gpt-oss-120b", provider: "workersai", model: "@cf/openai/gpt-oss-120b", effort: "low" },
 ];
 
-export function judgesFor(candidateProvider: string): Judge[] {
-  return JUDGES.filter((j) => j.provider !== candidateProvider).slice(0, 2);
+/**
+ * Las tres tareas `insights.*` abren con Gemini 3.8 Flash (2026-10-08): ahí Sonnet coincidió con la nota a mano un 55 %
+ * y Gemini un 85 % (`docs/ai-model-bench-2026-10-claude.md`). `trends.summary` sigue con el orden de `JUDGES`.
+ * En `insights.*` juzga UNO solo: con dos, la pareja sería Gemini + Sonnet en cualquier orden y el veredicto no cambiaría
+ * (acuerdo 67 % la pareja, 87 % Gemini solo, sobre los juicios del 2026-10-07).
+ */
+const GEMINI_FIRST = "gemini:gemini-3.8-flash";
+
+export function judgeOrder(task: string): Judge[] {
+  if (!task.startsWith("insights.")) return JUDGES;
+  return [...JUDGES.filter((j) => j.id === GEMINI_FIRST), ...JUDGES.filter((j) => j.id !== GEMINI_FIRST)];
+}
+
+/**
+ * Los jueces que deciden una respuesta de `task`: los primeros de `judgeOrder` cuyo proveedor no es el del candidato
+ * (nadie se juzga a sí mismo). Uno en `insights.*` (Gemini; Sonnet si el candidato es Gemini), dos en el resto, y pasa
+ * si todos dicen que pasa.
+ */
+export function judgesFor(candidateProvider: string, task: string): Judge[] {
+  return judgeOrder(task).filter((j) => j.provider !== candidateProvider).slice(0, task.startsWith("insights.") ? 1 : 2);
 }
 
 const JUDGE_SCHEMA = {
@@ -379,7 +401,7 @@ function agreement(date: string): void {
   const judged = new Map<string, JudgeRow>();
   for (const task of INSIGHTS_TASKS) for (const j of judgeRows(task, date)) judged.set(`${task}|${rowKey(j)}|${j.judge}`, j);
   const lines = ["| Juez | Respuestas | Coinciden | Acuerdo | κ de Cohen | Contradice: coincide | Útil: coincide |", "|---|---|---|---|---|---|---|"];
-  const ids = [...JUDGES.map((j) => j.id), "par (los dos de otro proveedor, ambos «pasa»)"];
+  const ids = [...JUDGES.map((j) => j.id), "banco (`judgesFor`: uno en Insights, par en Tendencias; todos «pasa»)"];
   for (const id of ids) {
     const a: boolean[] = [];
     const b: boolean[] = [];
@@ -388,10 +410,10 @@ function agreement(date: string): void {
     for (const it of scored) {
       const handPass = !it.contradice && !!it.util;
       let v: { contradice: boolean; util: boolean } | null = null;
-      if (id.startsWith("par")) {
+      if (id.startsWith("banco")) {
         const cand = it.key.split("|")[1];
-        const pair = judgesFor(cand.split(":")[0]).map((j) => judged.get(`${it.task}|${it.key}|${j.id}`)?.verdict);
-        if (pair.length < 2 || pair.some((x) => !x)) continue;
+        const pair = judgesFor(cand.split(":")[0], it.task).map((j) => judged.get(`${it.task}|${it.key}|${j.id}`)?.verdict);
+        if (pair.length === 0 || pair.some((x) => !x)) continue;
         v = { contradice: pair.some((x) => x!.contradice), util: pair.every((x) => x!.util) };
       } else {
         // Nadie se juzga a sí mismo, tampoco al medir el acuerdo: fuera las respuestas de su propio proveedor.
@@ -430,7 +452,13 @@ export async function main(): Promise<void> {
       if (row.status !== 200 || !row.appParsed || !row.detailOut.out) continue;
       if (only && !only.some((o) => row.candidate === o || row.candidate.startsWith(`${o}:`) || `${row.candidate}|${row.effort ?? "-"}` === o)) continue;
       if (keyFilter && !keyFilter.has(`${task}|${rowKey(row)}`)) continue;
-      const js = judgeFilter === "all" ? JUDGES : judgesFor(row.provider);
+      // `--judges all`: todos (para medir el acuerdo de cada uno); `--judges a,b`: solo esos. Nunca el del propio proveedor.
+      const js =
+        judgeFilter === "all"
+          ? JUDGES.filter((j) => j.provider !== row.provider)
+          : judgeFilter
+            ? JUDGES.filter((j) => judgeFilter.split(",").includes(j.id) && j.provider !== row.provider)
+            : judgesFor(row.provider, task);
       for (const judge of js) if (!done.has(`${rowKey(row)}|${judge.id}`)) jobs.push({ row, judge });
     }
     console.log(`${task}: ${jobs.length} juicios pendientes`);

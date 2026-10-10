@@ -1,10 +1,10 @@
 ---
 id: restore-empty-state-resolution-cannot-be-cancelled
 status: backlog
-priority: low
+priority: very-low
 area: "welcome, icloud, restore"
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-10-08
 source: "review adversarial (lente de concurrencia y ciclo de vida) de `restore-says-no-data-when-the-icloud-import-never-settled`, 2026-09-20"
 ---
 
@@ -41,3 +41,10 @@ volvió a apoyarse en esa rama.
 
 - `restore-back-and-reenter-closes-the-live-session-window` — el otro «la cancelación no cancela»
   de esta misma pantalla, y ese sí muerde.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WelcomeRestoreView.swift`: el closure de `RestoreProgressView` sigue haciendo `Task { await resolveEmptyState(settlement) }`; `resolveEmptyState` conserva el `guard !Task.isCancelled` tras `refreshIfDue(force: true)` con el comentario «sin este guard un usuario que toca volver…». Nadie guarda ni cancela esa tarea.
+- Los diez commits del fichero desde el 2026-09-20 tocan la ventana de sesión y los estados vacíos, no esta tarea.
+
+Triage 2026-10-08: abierto · low → very-low · higiene: un comentario que promete una protección inexistente sobre un caso hoy benigno.

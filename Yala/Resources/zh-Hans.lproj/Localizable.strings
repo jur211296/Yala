@@ -5308,6 +5308,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "你当前的 Yala 账户可能属于其他人：此设备从零开始时它就已登录。要选择你自己的账户，请先在“群组”中取消关联，再点一次“启用云端”。";
+"storage.migrate.refusedOtherDevice" = "你的另一台设备正在把你的数据移到此账户。请在那台设备上完成启用；如果已中断，请在那台设备上重试。";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "这份云端副本属于另一个 Yala 账户（%@）。请退出登录，并使用该账户登录后继续。";
@@ -6058,6 +6059,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "使用 Apple 时，Yala 始终使用此设备上的账户。要使用其他账户，请选择 Google。";
 "storage.migrateBlock.freshStartSessionTitle" = "此账户可能属于其他人";
 "storage.migrateBlock.freshStartSessionBody" = "未做任何更改。你的群组使用的是此设备上原本已登录的账户，而此设备已从零开始，所以它可能属于其他人。要把你的数据移到云端，请先在“群组”中取消关联，再点一次“启用云端”，即可选择你自己的账户。";
+"storage.migrateBlock.otherDeviceTitle" = "你的另一台设备正在把你的数据移到云端";
+"storage.migrateBlock.otherDeviceBody" = "未做任何更改。请在那台设备上完成启用；如果已中断，请在那台设备上重试。完成后，你就可以在这里启用云端。";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "无法确认你的数据";
@@ -6142,6 +6145,7 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "登录以上传你的更改";
+"storage.sync.waitingForConnectionUncounted" = "更改正在等待连接";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "无法统计你的数据。请稍后重试。";
@@ -6518,7 +6522,7 @@
 "image.entry.failure.unreadableFile.title" = "无法打开这个文件";
 
 /* Image entry failure: unreadable file, why and what to try */
-"image.entry.failure.unreadableFile.message" = "它可能是空的、已损坏或受密码保护。试试这张收据的其他照片或 PDF。";
+"image.entry.failure.unreadableFile.message" = "它可能是空的或已损坏。试试这张收据的其他照片或 PDF。";
 
 /* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
 "account.currencyChange.confirmTitleNoHistory" = "将币种更改为 %@？";
@@ -6537,3 +6541,48 @@
 
 /* Account currency change confirmation: closing sentence when there are no movements to convert */
 "account.currencyChange.cannotUndo" = "此操作无法撤销。";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "此 PDF 有密码";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "输入密码以打开文件。密码只在此设备上使用，不会保存或发送。";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "PDF 密码";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "打开";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "密码不正确。请检查后重试。";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "有 1 页未读取：每次最多读取 %d 页。如需读取，请放在另一个 PDF 中上传。";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "有 %1$d 页未读取：每次最多读取 %2$d 页。如需读取，请放在另一个 PDF 中上传。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "你已用完试用照片识别：有 1 张未读取。";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "你已用完试用照片识别：有 %d 张未读取。";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "第 %1$d 页，共 %2$d 页";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "剩余 1 天";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "生成 AI 分析需要网络连接。";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "你今天的 AI 分析次数已用完，明天再来吧。";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "你连续请求了多次分析。请稍等片刻再试。";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "无法确认你的 Yala Pro。请稍后再试。";

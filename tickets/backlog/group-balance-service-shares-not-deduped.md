@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: groups
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: review adversarial de groups-shareable-summary (2026-09-07)
 ---
 
@@ -49,3 +49,18 @@ propósito**: es un servicio compartido por media docena de pantallas y merece s
 - [ ] Test en `GroupBalanceServiceTests` con repartos duplicados, verificado por mutación.
 - [ ] Comprobado que ninguna pantalla que hoy dependa del doble conteo cambia de comportamiento
       (no debería haber ninguna: el doble conteo nunca fue intencionado).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupBalanceService.calculateBalances` y `rawDebts` siguen deduplicando los gastos (`uniqueExpenses`) y agrupando los repartos tal cual (`Dictionary(grouping: shares, by: \.expenseID)`). Sin commits en el fichero desde el 2026-09-07.
+- `GroupExpenseService.updateExpense` sigue borrando los repartos viejos e insertando otros con `id` nuevo, que es la segunda vía de llegada.
+- El arreglo es de una línea por función, con el test que ya tiene de molde `GroupShareableSummaryLogic`.
+
+Triage 2026-10-08: abierto · low → low · los repartos siguen sin dedup y un duplicado dobla lo que cada uno debe, pero solo con una anomalía de sync.
+
+## Estadísticas tiene el mismo hueco (2026-10-08)
+
+Medido al arreglar `groups-stats-no-deduplica-gastos`: `GroupStatsViewModel.computeMyPortion` y
+`recalculateDualTotals` suman `allShares` sin deduplicar por `id`. Los gastos ya se deduplican desde
+ese arreglo, pero un reparto repetido dobla «Mi parte» en Estadísticas. Se arregla con el mismo molde
+de una línea; no entró en ese cambio porque son repartos, no gastos.

@@ -1,3 +1,4 @@
+import { TEXT_PARSE_SCHEMA } from "../../src/ai/schemas";
 import { lprojFor, seedSubcategoryNames, subcategoryName } from "./appCatalog";
 import { dateContext } from "./appRequests";
 import type { Grade } from "./grading";
@@ -5,8 +6,9 @@ import { interpolate, readRepoFile, swiftMultilineAfter } from "./swift";
 
 /**
  * `text.parse` — `TranscriptionParserService.parseMultiple`: convierte una frase (dictada y transcrita, escrita
- * en el chat o dicha a Siri) en movimientos. Hoy `gpt-4.1-mini`, temperatura 0.1, SIN `response_format` (el
- * prompt pide JSON y la app quita las vallas ```json). Sin corte propio: hereda el `timeoutInterval` de 20 s del
+ * en el chat o dicha a Siri) en movimientos. La app manda `gpt-4.1-mini`, temperatura 0.1 y `json_schema` estricto,
+ * pero la fila `managed` del gateway decide (desde el 2026-10-09, JSON estricto con `TEXT_PARSE_SCHEMA`). El prompt
+ * lleva las divisas del usuario (`ParserCurrencyContext`). Sin corte propio: hereda el `timeoutInterval` de 20 s del
  * cliente HTTP.
  *
  * Qué hace la app con la respuesta (replicado aquí, en este orden):
@@ -21,7 +23,7 @@ import { interpolate, readRepoFile, swiftMultilineAfter } from "./swift";
  */
 
 const SWIFT = "Yala/Services/TranscriptionParserService.swift";
-const DATE_EXPR = "\\(Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)))";
+const MARKER = "func buildSystemPrompt(\n        expenseSubcategories: [String],";
 
 function emptyListText(which: "expense" | "income"): string {
   const src = readRepoFile(SWIFT);
@@ -30,13 +32,100 @@ function emptyListText(which: "expense" | "income"): string {
   return m[1];
 }
 
-export function textParseSystemPrompt(todayIso: string, expense: string[], income: string[]): string {
-  const tpl = swiftMultilineAfter(readRepoFile(SWIFT), "private func buildSystemPrompt(expenseSubcategories:");
-  if (!tpl.includes(DATE_EXPR)) throw new Error("textParse: cambió la fecha de los ejemplos del prompt");
-  return interpolate(tpl.split(DATE_EXPR).join(todayIso), {
+// ---------- réplica de `ParserCurrencyContext` (familias leídas del Swift) ----------
+
+export interface SharedNameFamily {
+  names: string;
+  codes: string[];
+  fallback: string | null;
+}
+
+/** `ParserCurrencyContext.sharedNameFamilies`, una línea por familia en el Swift. */
+export function sharedNameFamilies(): SharedNameFamily[] {
+  const src = readRepoFile(SWIFT);
+  const out: SharedNameFamily[] = [];
+  for (const m of src.matchAll(/SharedNameFamily\(names: #"(.*?)"#, codes: \[([^\]]*)\], fallback: (nil|"[A-Z]{3}")\)/g)) {
+    out.push({ names: m[1], codes: [...m[2].matchAll(/"([A-Z]{3})"/g)].map((c) => c[1]), fallback: m[3] === "nil" ? null : m[3].slice(1, -1) });
+  }
+  if (out.length < 5) throw new Error(`textParse: ${out.length} familias de divisas en el Swift, ¿cambió el formato?`);
+  return out;
+}
+
+export interface ParserCurrency {
+  main: string | null;
+  accounts: string[];
+}
+
+function dedupUpper(codes: string[]): string[] {
+  const seen = new Set<string>();
+  return codes.map((c) => c.toUpperCase()).filter((c) => (seen.has(c) ? false : (seen.add(c), true)));
+}
+
+/** `ParserCurrencyContext.resolve`. */
+export function resolveFamily(ctx: ParserCurrency, f: SharedNameFamily): string | null {
+  if (ctx.main && f.codes.includes(ctx.main)) return ctx.main;
+  const inAccounts = ctx.accounts.filter((c) => f.codes.includes(c));
+  if (inAccounts.length === 1) return inAccounts[0];
+  return f.fallback;
+}
+
+/** `ParserCurrencyContext.sharedNameRules` y `.userCurrencyLine`. */
+export function parserCurrencyValues(main: string | null, accounts: string[]): { sharedNameRules: string; userCurrencyLine: string } {
+  const ctx: ParserCurrency = { main: main?.toUpperCase() ?? null, accounts: dedupUpper(accounts) };
+  const sharedNameRules = sharedNameFamilies()
+    .map((f) => {
+      const code = resolveFamily(ctx, f);
+      return `  - ${f.names} a secas → ${code ? `"${code}"` : "null"}`;
+    })
+    .join("\n");
+  const userCurrencyLine = ctx.main
+    ? `La divisa principal del usuario es ${ctx.main} y sus cuentas usan ${ctx.accounts.length ? ctx.accounts.join(", ") : ctx.main}.`
+    : "No se conoce la divisa principal del usuario.";
+  return { sharedNameRules, userCurrencyLine };
+}
+
+// ---------- réplica de las pistas de los ejemplos (palabras clave leídas del Swift) ----------
+
+function swiftKeywords(name: string): string[] {
+  const m = readRepoFile(SWIFT).match(new RegExp(`static let ${name} = \\[([^\\]]*)\\]`));
+  if (!m) throw new Error(`textParse: no encuentro ${name} en el Swift`);
+  return [...m[1].matchAll(/"([^"]*)"/g)].map((k) => k[1]);
+}
+
+const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+/** `TranscriptionParserService.exampleHint`: literal JSON de la primera subcategoría que casa, o `null`. */
+export function exampleHint(list: string[], keywords: string[]): string {
+  const folded = keywords.map(fold);
+  const name = list.find((n) => folded.some((k) => fold(n).includes(k)));
+  return name === undefined ? "null" : JSON.stringify(name);
+}
+
+function addDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export function textParseSystemPrompt(todayIso: string, expense: string[], income: string[], currency: { main: string | null; accounts: string[] }): string {
+  const tpl = swiftMultilineAfter(readRepoFile(SWIFT), MARKER);
+  const hints = {
+    restaurantsHint: exampleHint(expense, swiftKeywords("restaurantKeywords")),
+    parkingHint: exampleHint(expense, swiftKeywords("parkingKeywords")),
+    supermarketsHint: exampleHint(expense, swiftKeywords("supermarketKeywords")),
+  };
+  const score = (h: string) => (h === "null" ? "0.0" : "0.85");
+  return interpolate(tpl, {
     dateContext: dateContext(todayIso),
+    today: todayIso,
+    yesterday: addDays(todayIso, -1),
     expenseList: expense.length ? expense.join(", ") : emptyListText("expense"),
     incomeList: income.length ? income.join(", ") : emptyListText("income"),
+    ...parserCurrencyValues(currency.main, currency.accounts),
+    ...hints,
+    restaurantsScore: score(hints.restaurantsHint),
+    parkingScore: score(hints.parkingHint),
+    supermarketsScore: score(hints.supermarketsHint),
   });
 }
 
@@ -57,6 +146,8 @@ export interface TextParseCase {
   locale: string;
   today: string;
   defaultCurrency: string;
+  /** Divisas de las cuentas activas del usuario (`ParserCurrencyContext.accountCurrencies`). Sin ella, solo la principal. */
+  accountCurrencies?: string[];
   text: string;
   /** Subcategorías creadas por el usuario además de las del seed. */
   extraExpense?: string[];
@@ -74,10 +165,12 @@ export function textParseBody(c: TextParseCase): Record<string, unknown> {
   const subs = caseSubcategories(c);
   return {
     messages: [
-      { role: "system", content: textParseSystemPrompt(c.today, subs.expense, subs.income) },
+      { role: "system", content: textParseSystemPrompt(c.today, subs.expense, subs.income, { main: c.defaultCurrency, accounts: c.accountCurrencies ?? [c.defaultCurrency] }) },
       { role: "user", content: c.text.trim() },
     ],
     model: "gpt-4.1-mini",
+    // Lo que manda la app (`TranscriptionParserService.makeQuery`). La fila `managed` lo ignora y pone el suyo.
+    response_format: { type: "json_schema", json_schema: { name: TEXT_PARSE_SCHEMA.name, schema: TEXT_PARSE_SCHEMA.schema, strict: true } },
     temperature: 0.1,
     stream: false,
   };

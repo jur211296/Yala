@@ -184,7 +184,9 @@ struct MCPAppParityGoldenTests {
         )
 
         let live = LiveBalanceCalculator.liveBalanceBreakdown(
-            accounts: accounts.map(\.model).filter { !$0.excludeFromStatistics && !$0.isArchived },
+            // Las cuentas que suma el Panel (archivar no decide la suma, 2026-10-03), que es también lo que el
+            // chat lista en `balances` y lo que porta `computeBalances` del conector.
+            accounts: PanelTotalAccountsLogic.countableAccounts(accounts.map(\.model)),
             transactions: allTx,
             preferredCurrencyCode: scenario.preferredCurrency,
             converter: converter

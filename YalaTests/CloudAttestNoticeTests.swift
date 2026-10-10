@@ -240,15 +240,21 @@ struct CloudAttestNoticeWiringTests {
         let section = Self.squashed(try Self.body(
             of: "private func syncStatusSection(_ controller: CloudMigrationController) -> some View {",
             in: storage))
+        // Desde `cloud-sync-status-says-all-synced-with-changes-still-pending` el orden de las ramas vive en
+        // `SyncStatusSectionLogic.decide` (lo mide `SyncStatusSectionLogicTests.attestWins`); aquí se fija que la sección
+        // le pasa el veredicto del attest y que su rama pinta el aviso.
         #expect(section.contains(Self.squashed("""
-            if CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal) {
-                CloudAttestNoticeBanner(accessibilityID: "storage_sync_attest_banner")
-            } else if controller.syncNeedsSignIn {
+            switch SyncStatusSectionLogic.decide(
+                attestNoticeShowing: CloudAttestNotice.isShowing(verdictIsTerminal: attestVerdictIsTerminal),
             """)), """
-            la sección de estado volvió a su `if` de dos ramas. `refreshSyncBanner` solo mira \
+            la sección dejó de pasarle el veredicto del attest a su lógica: `refreshSyncBanner` solo mira \
             `.stoppedUntilSignIn`, y el attest terminal deja el runtime en `.stoppedUntilRelaunch`: sin esta rama \
-            cae al `else` y pinta un check verde «Todo al día» con los movimientos sin subir.
+            cae al check verde «Todo al día» con los movimientos sin subir.
             """)
+        #expect(section.contains(Self.squashed("""
+            case .attestUnavailable:
+                CloudAttestNoticeBanner(accessibilityID: "storage_sync_attest_banner")
+            """)), "la rama del attest de la sección ya no pinta su aviso")
         #expect(Self.squashed(storage).contains(".cloudAttestVerdictWatcher($attestVerdictIsTerminal)"), """
             «Dónde viven tus datos» perdió el cableado del veredicto: su `@State` se queda en `false` y la sección \
             vuelve a decir que todo está al día.

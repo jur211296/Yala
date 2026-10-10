@@ -141,13 +141,7 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         let accountRow = app.buttons["chat_draft_detail_account"]
         XCTAssertTrue(accountRow.waitForExistence(timeout: 10), "No se abrió la hoja de detalles.")
         XCTAssertTrue(app.textFields["chat_input"].exists, "La hoja va sobre el chat: el chat sigue montado debajo.")
-        accountRow.tap()
-
-        let anyAccount = app.buttons
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "account_selector_row_"))
-            .firstMatch
-        XCTAssertTrue(anyAccount.waitForExistence(timeout: 10), "No se abrió el selector de cuentas de Nuevo registro.")
-        anyAccount.tap()
+        app.chooseFirstSelectorRow(chip: "chat_draft_detail_account", rowPrefix: "account_selector_row_", timeout: 10)
 
         XCTAssertTrue(accountRow.waitForExistence(timeout: 10), "Tras elegir cuenta se vuelve a la hoja de detalles.")
     }

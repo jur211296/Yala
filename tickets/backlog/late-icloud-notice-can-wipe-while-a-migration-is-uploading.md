@@ -35,3 +35,9 @@ pendiente. Confirmar antes que el espejo sigue montado durante la subida de la i
 
 - `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration`.
 - `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Confirmado en el árbol: `decideLateMirror(watching:iCloudAvailable:outcome:)` no recibe nada de la migración, y `lateWipeLaunch` solo devuelve `.holdForMigration` con `armed || leftHalfway`. `07c1371a0`, del mismo día, tocó el borrado pendiente tras un fallo asentado, no este caso.
+
+Triage 2026-10-08: abierto · low → low · `WelcomePrivateICloudGateLogic.decideLateMirror` sigue sin mirar la migración; el `.holdForMigration` de `lateWipeLaunch` solo cubre un borrado ya pendiente. Ticket de hoy, sin reproducir.

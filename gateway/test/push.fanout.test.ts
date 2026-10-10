@@ -10,6 +10,7 @@
  * NO corre en CI (necesita red + i5-user-a/b). Los tokens dummy sembrados se limpian al final de cada test.
  */
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { describeStaging } from "./staging";
 import { exportPKCS8, generateKeyPair } from "jose";
 import app from "../src/index";
 import type { Env } from "../src/env";
@@ -127,7 +128,7 @@ beforeAll(async () => {
   subB = decodeSub(jwtB);
 }, 30_000);
 
-describe("G8 goldens · /push/register + /push/unregister contra staging real", () => {
+describeStaging("G8 goldens · /push/register + /push/unregister contra staging real", () => {
   it("401 sin JWT", async () => {
     const res = await app.fetch(
       new Request("https://gw.local/push/register", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ device_token: dummyToken("x"), platform: "ios-prod" }) }),
@@ -177,7 +178,7 @@ async function makeApnsPem(): Promise<string> {
   return exportPKCS8(privateKey);
 }
 
-describe("G8 goldens · fan-out machine-role + revoke (post-aplicación g8_02)", () => {
+describeStaging("G8 goldens · fan-out machine-role + revoke (post-aplicación g8_02)", () => {
   let apnsEnv: Env;
   let appleHits: Array<{ url: string; init?: RequestInit }>;
   let appleResponder: () => Response;

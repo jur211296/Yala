@@ -529,7 +529,7 @@ struct TransactionDetailSheet: View {
                 .font(DS.Typography.label)
                 .foregroundStyle(.primary)
 
-                Text(L10n.Transaction.exchangeRateShort(String(format: "%.4f", transaction.exchangeRate)))
+                Text(L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(transaction.exchangeRate)))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
             }

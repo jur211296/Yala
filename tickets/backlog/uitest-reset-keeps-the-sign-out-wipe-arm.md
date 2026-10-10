@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: "qa, sesiones"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `sign-out-exits-do-not-verify-the-cloud-session-closed` (2026-09-26)"
 ---
 
@@ -28,3 +28,9 @@ arranque MANUAL del simulador borra el store.
 
 Si `-uitest-reset` debe retirar también los arms de `cloudSync.*` del cierre de sesión bajo `isUITesting`. Cambia una
 propiedad que hoy está documentada como «sobrevive a propósito».
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `UITestHooks.swift:279` sigue documentando que `-uitest-reset` no limpia las claves `cloudSync.*`, y `armSignOutWipe` no tiene guard de test.
+
+Triage 2026-10-08: abierto · very-low → very-low · solo muerde si una regresión deja llegar al arm en un XCUITest.

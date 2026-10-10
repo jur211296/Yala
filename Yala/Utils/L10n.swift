@@ -1376,6 +1376,11 @@ enum L10n {
         static var perDay: String { ls("insights.perDay", comment: "") }
         static var ofTotal: String { ls("insights.ofTotal", comment: "") }
         static var analyzingData: String { ls("insights.analyzingData", comment: "") }
+        // Tarjeta de error del análisis de IA (Resumen, Distribución y Tendencias): `AIInsightCardComponents.message(for:)`.
+        static var aiErrorOffline: String { ls("insights.aiError.offline", comment: "") }
+        static var aiErrorDailyLimit: String { ls("insights.aiError.dailyLimit", comment: "") }
+        static var aiErrorTooManyRequests: String { ls("insights.aiError.tooManyRequests", comment: "") }
+        static var aiErrorProRequired: String { ls("insights.aiError.proRequired", comment: "") }
         static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }
         static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
         static var activateAIDisclaimer: String { ls("insights.activateAIDisclaimer", comment: "") }
@@ -5126,6 +5131,14 @@ enum L10n {
     // MARK: - Budgets
 
     enum Budgets {
+        /// «N días restantes», en singular cuando queda uno: el último día del presupuesto todavía
+        /// cuenta (decisión de Jürgen, 2026-09-06).
+        static func daysRemaining(_ days: Int) -> String {
+            days == 1
+                ? ls("budgets.days.remaining.one", comment: "")
+                : String(format: ls("budgets.days.remaining", comment: ""), "\(days)")
+        }
+
         enum Widget {
             static var selectFavorites: String {
                 ls("budgets.widget.selectFavorites", comment: "")
@@ -6814,6 +6827,28 @@ enum L10n {
             /// El plan free probó la foto con su cupo de prueba entero (`yala_trial_exhausted` del gateway).
             static var failureTrialUsedUpTitle: String { ls("image.entry.failure.trialUsedUp.title", comment: "Free plan used up its trial photos") }
             static var failureTrialUsedUpMessage: String { ls("image.entry.failure.trialUsedUp.message", comment: "Free plan used up its trial photos: Pro has no limit") }
+
+            // Un PDF página a página (ticket pdf-statement-reads-only-the-first-page, 2026-10-08).
+            static func readingPageProgress(_ current: Int, _ total: Int) -> String {
+                String(format: ls("image.entry.readingPageProgress", comment: ""), current, total)
+            }
+            static var passwordTitle: String { ls("image.entry.password.title", comment: "") }
+            static var passwordMessage: String { ls("image.entry.password.message", comment: "") }
+            static var passwordField: String { ls("image.entry.password.field", comment: "") }
+            static var passwordOpen: String { ls("image.entry.password.open", comment: "") }
+            static var passwordWrong: String { ls("image.entry.password.wrong", comment: "") }
+            /// Páginas de PDF que no entraron en la tanda; `limit` es el tope de páginas por vez.
+            static func pagesLeftOut(_ count: Int, limit: Int) -> String {
+                count == 1
+                    ? String(format: ls("image.entry.pagesLeftOutOne", comment: ""), limit)
+                    : String(format: ls("image.entry.pagesLeftOutMany", comment: ""), count, limit)
+            }
+            /// El cupo de prueba se acabó a mitad de la tanda: `count` fotos o páginas sin leer.
+            static func trialLeftOut(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.trialLeftOutOne", comment: "")
+                    : String(format: ls("image.entry.trialLeftOutMany", comment: ""), count)
+            }
         }
     }
 
@@ -7571,6 +7606,8 @@ enum L10n {
                 case .anotherGroupsAccountAssociated: return ls("storage.migrate.refusedOtherGroups", comment: "")
                 case .accountReturnedToICloud:        return ls("storage.migrate.refusedReturned", comment: "")
                 case .sessionFromBeforeFreshStart:    return ls("storage.migrate.refusedFreshStart", comment: "")
+                case .migrationInProgressOnAnotherDevice:
+                    return ls("storage.migrate.refusedOtherDevice", comment: "")
                 }
             }
         }
@@ -7606,6 +7643,15 @@ enum L10n {
             }
             /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
             static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }
+            /// Quedan cambios sin subir y el motor no completó su último ciclo (sin red, en backoff o parado por el gate de
+            /// dominio). Plural en el `.stringsdict`.
+            static func waitingForConnection(_ count: Int) -> String {
+                String.localizedStringWithFormat(ls("storage.sync.waitingForConnection", comment: ""), count)
+            }
+            /// Lo mismo cuando las colas no se dejaron contar: sin cifra, pero tampoco «Todo sincronizado».
+            static var waitingForConnectionUncounted: String {
+                ls("storage.sync.waitingForConnectionUncounted", comment: "")
+            }
             static var signInButton: String { ls("storage.sync.signInButton", comment: "") }
         }
 
@@ -7730,6 +7776,12 @@ enum L10n {
             /// enseña. En una sesión solo-grupos esa sección no existe (`groups-only-session-storage-screen-says-data-lives-in-icloud`).
             static var freshStartSessionBody: String { ls("storage.migrateBlock.freshStartSessionBody", comment: "") }
             static var useAnotherAccount: String { ls("storage.migrateBlock.useAnotherAccount", comment: "") }
+            /// Otro dispositivo de esta misma persona está llevando sus datos a esa cuenta (ticket
+            /// `settings-migrate-blocks-a-second-device-before-its-marker`, opción A de Jürgen del 2026-10-08). El título es su
+            /// texto. El cuerpo nombra las dos salidas —terminar allí, o reintentar allí si se paró— y no promete que aquí se
+            /// active solo: con el otro parado no pasaría nunca.
+            static var otherDeviceTitle: String { ls("storage.migrateBlock.otherDeviceTitle", comment: "") }
+            static var otherDeviceBody: String { ls("storage.migrateBlock.otherDeviceBody", comment: "") }
             /// Junto a «Usar otra cuenta» cuando la cuenta rechazada era de Apple: en el iPhone, «Iniciar sesión con Apple»
             /// firma siempre con el Apple ID del dispositivo, así que elegir Apple otra vez acaba en la misma cuenta
             /// (Jürgen, 2026-09-16; poder elegir otro Apple ID es otro ticket).
@@ -7741,6 +7793,7 @@ enum L10n {
                 case .anotherGroupsAccountAssociated: return otherGroupsTitle
                 case .accountReturnedToICloud:        return returnedTitle
                 case .sessionFromBeforeFreshStart:    return freshStartSessionTitle
+                case .migrationInProgressOnAnotherDevice: return otherDeviceTitle
                 }
             }
 
@@ -7763,6 +7816,8 @@ enum L10n {
                     return returnedBody
                 case .sessionFromBeforeFreshStart:
                     return freshStartSessionBody
+                case .migrationInProgressOnAnotherDevice:
+                    return otherDeviceBody
                 }
             }
         }

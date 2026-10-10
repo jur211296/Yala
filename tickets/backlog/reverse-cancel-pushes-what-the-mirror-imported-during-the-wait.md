@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, migración"
 created: 2026-09-16
+updated: 2026-10-08
 source: "review de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), decisión D12(c): residual documentado"
 ---
 
@@ -53,3 +54,10 @@ Decisión de Jürgen (2026-09-16, D17 del ticket del techo): ticket aparte.
 - [ ] Medido en device qué autor lleva una transacción de import del espejo.
 - [ ] Decidido si el drenaje posterior a una salida de `reverseUpload` debe saltarse las transacciones del
       espejo, o si el riesgo se queda aceptado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncEngine.drainOnce`: la única exclusión por autor sigue siendo `if tx.author != Self.outboxSaveAuthor`; las marcas `drainTxAdoptSkipped`/`drainTxAdoptUnproven` solo actúan en la ventana del adopt, no tras salir de `reverseUpload`.
+- Sigue sin medirse en device qué autor lleva una transacción de import del espejo (primer criterio).
+
+Triage 2026-10-08: abierto · low → low · población estrecha (zona de iCloud cambiada o re-importada durante la vuelta) y riesgo aceptado por Jürgen en D17 a la espera de medir.

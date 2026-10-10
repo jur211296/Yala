@@ -190,15 +190,8 @@ struct FXPnLDetailSheet: View {
 
     /// Un tipo de cambio no es un monto: no lleva símbolo de divisa y necesita más decimales que
     /// dos (con JPY o COP, redondear a dos céntimos deja la tasa en 0,00 y la fila sin sentido).
-    private static let rateFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = 2
-        f.maximumFractionDigits = 4
-        return f
-    }()
-
+    /// Lo escribe el formateador único de tasas, el mismo que el widget de tipos de cambio.
     static func rateString(_ value: Decimal) -> String {
-        rateFormatter.string(from: value as NSDecimalNumber) ?? "—"
+        ExchangeRateDisplayFormatter.string(value)
     }
 }

@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: panel
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: review adversarial de panel-colapsa-la-seleccion-de-cuentas-a-la-primera
 ---
 
@@ -65,3 +65,24 @@ borrar es un arreglo independiente y probablemente el más barato de los tres.
 - [ ] Saldo grande, widgets y KPI de Distribución coinciden en el caso «selección no contable».
 - [ ] Borrar una cuenta filtrada no deja su ID vivo en `SessionState`.
 - [ ] El test que fija el fallback se actualiza o se retira **conscientemente**, no de rebote.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Fallback vivo: `LiveBalanceCalculator.swift:118-122`, fijado por `liveBalance_selectedAccountIDExcluded_fallsBackToTotal`
+  (`LiveBalanceCalculatorTests.swift:281`).
+- `PanelViewModel.computeEligibleAccounts` (`PanelViewModel.swift:1455`) no tiene fallback. `orderedActiveAccounts` (`:1065`)
+  solo filtra `isArchived`.
+- `EntityDeletionService.swift` no toca `SessionState.selectedAccountIDs`, así que el ID fantasma sigue.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Qué ve quien filtra el Panel por una cuenta excluida de estadísticas:
+
+- **A** · 0 en las tres piezas, igual que en Estadísticas.
+- **B** · El total en las tres.
+- **C** · El carrusel no lista cuentas excluidas de estadísticas, y el caso desaparece.
+
+**Recomendación: A**, junto con limpiar el ID al borrar la cuenta. Iguala la pantalla con Estadísticas sin quitar ninguna
+vista. Exige retirar el test del fallback a conciencia. Con A, `medium`.
+
+Triage 2026-10-08: abierto · medium → medium · El fallback de LiveBalanceCalculator sigue fijado por test, computeEligibleAccounts del Panel no lo tiene, y borrar una cuenta filtrada sigue sin limpiar selectedAccountIDs; sigue pendiente la decisión de producto que dejó 8b2aa9393.

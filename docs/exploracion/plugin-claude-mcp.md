@@ -184,7 +184,7 @@ gateway ni en un repo aparte. Las razones:
    aparte lo complicaría.
 
 Las dos cosas que esto obliga a hacer: añadir `mcp/*` a la lista de `qa.yml`, y darle al MCP una suite
-propia en CI. Hoy el gateway no la tiene (`tickets/backlog/ci-no-corre-la-suite-del-gateway.md`).
+propia en CI. El gateway la tiene desde el 2026-10-08 (job `gateway` de `qa.yml`).
 
 ## 4. Qué exige Anthropic para aprobarlo
 

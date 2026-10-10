@@ -9,7 +9,14 @@
 //  Edge cases handled (per plan):
 //   - 0 transacciones → shape válido con arrays vacíos
 //   - tx.category == nil → bucket `uncategorized` explícito
-//   - account.excludeFromStatistics / isArchived → excluido + listado en metadata
+//   - account.excludeFromStatistics → excluido + listado en metadata. Archivar NO decide la suma
+//     (decisión de Jürgen, 2026-10-03, `.claude/rules/session-filters.md`): una cuenta archivada
+//     que el usuario volvió a incluir suma aquí igual que en el Panel. Las cuentas que salen en
+//     `balances` son las del conteo del Panel (`PanelTotalAccountsLogic.countableAccounts`).
+//   - «Grupos en el total» apagado → `balances.total_balance` deja fuera las cuentas de Grupos con la misma regla
+//     que el Panel (`PanelTotalAccountsLogic.accountsForTotal`); siguen listadas en `balances.accounts`
+//   - comparar el mes en curso → `periods.last_month_to_date` y `total_last_month_to_date`: el
+//     mes pasado hasta el día equivalente a hoy, la misma alineación que el hero de Tendencias
 //   - tx.balanceAdjustmentType != nil → filtrado
 //   - tx.date > now → filtrado (drafts en futuro)
 //   - multi-currency → amountInPreferredCurrency con guard isFinite
@@ -29,6 +36,8 @@ final class FullFinancialContextBuilder {
         let context: FullFinancialContext
         let timestamp: Date
         let includedAnomalies: Bool
+        /// El ajuste con el que se calculó el total: si cambia, la caché no vale.
+        let includedGroupsInTotal: Bool
     }
 
     private var cache: CacheEntry?
@@ -46,6 +55,7 @@ final class FullFinancialContextBuilder {
         language: String,
         country: String,
         includeAnomalies: Bool,
+        includeGroupsInTotal: Bool,
         now: Date = .now
     ) -> FullFinancialContext {
         let calendar = Calendar.current
@@ -66,6 +76,7 @@ final class FullFinancialContextBuilder {
             language: language,
             country: country,
             includeAnomalies: includeAnomalies,
+            includeGroupsInTotal: includeGroupsInTotal,
             adjustment: adjustment,
             now: now
         )
@@ -75,6 +86,9 @@ final class FullFinancialContextBuilder {
     /// instantiating a ModelContext (whose CloudKit container has a known race
     /// condition in suite mode). Production callers use `build(modelContext:...)`
     /// which fetches and delegates here.
+    ///
+    /// `includeGroupsInTotal` es el ajuste «Grupos en el total» del Panel (`AppPreferences.includeGroupsInPanelTotal`):
+    /// lo pasa quien construye el contexto. Su default `true` es el default del ajuste.
     func buildFromArrays(
         transactions: [TransactionItem],
         budgets: [Budget],
@@ -87,11 +101,13 @@ final class FullFinancialContextBuilder {
         language: String,
         country: String,
         includeAnomalies: Bool,
+        includeGroupsInTotal: Bool = true,
         adjustment: GroupBridgeStatsAdjustment = .none,
         now: Date = .now
     ) -> FullFinancialContext {
         if let entry = cache,
            now.timeIntervalSince(entry.timestamp) < Self.ttlSeconds,
+           entry.includedGroupsInTotal == includeGroupsInTotal,
            includeAnomalies == false || entry.includedAnomalies {
             return entry.context
         }
@@ -102,15 +118,16 @@ final class FullFinancialContextBuilder {
         let allAccounts = accounts
         let allTags = tags
         let scheduledPayments = scheduledPayments
+        // Solo «Excluir de las estadísticas» decide si una cuenta suma, igual que en el Panel
+        // (`computeEligibleAccounts`). Archivar no: el usuario puede volver a incluir una archivada.
         let excludedAccountNames = allAccounts
-            .filter { $0.excludeFromStatistics || $0.isArchived }
+            .filter { $0.excludeFromStatistics }
             .map(\.name)
 
         // Filter excluded/balance-adjustment/future TX once
         let eligibleTx = allTx.filter { tx in
             tx.balanceAdjustmentType == nil
                 && tx.account?.excludeFromStatistics != true
-                && tx.account?.isArchived != true
                 && tx.date <= now
         }
 
@@ -132,7 +149,8 @@ final class FullFinancialContextBuilder {
         )
 
         let balances = buildBalances(
-            accounts: allAccounts.filter { !$0.excludeFromStatistics && !$0.isArchived },
+            accounts: PanelTotalAccountsLogic.countableAccounts(allAccounts),
+            includeGroupsInTotal: includeGroupsInTotal,
             allRawTx: allTx,
             preferredCurrency: currencyCode,
             converter: converter
@@ -243,7 +261,8 @@ final class FullFinancialContextBuilder {
         cache = CacheEntry(
             context: context,
             timestamp: now,
-            includedAnomalies: includeAnomalies
+            includedAnomalies: includeAnomalies,
+            includedGroupsInTotal: includeGroupsInTotal
         )
         return context
     }
@@ -263,6 +282,8 @@ final class FullFinancialContextBuilder {
         let last4Weeks: [DateInterval] // index 0 = oldest, 3 = current
         let currentMonth: DateInterval
         let lastMonth: DateInterval
+        /// El mes pasado hasta el final del día equivalente a hoy (MTD contra MTD).
+        let lastMonthToDate: DateInterval
         let twoMonthsAgo: DateInterval
         let threeMonthsAgo: DateInterval
         let currentYear: DateInterval
@@ -296,18 +317,63 @@ final class FullFinancialContextBuilder {
             }
         }
 
+        let lastMonth = DateInterval(start: lastMonthStart, end: monthStartMinusOneSecond)
+
         return Intervals(
             today: DateInterval(start: startOfToday, end: now),
             currentWeek: DateInterval(start: weekStart, end: now),
             lastWeek: DateInterval(start: prevWeekStart, end: weekStartMinusOneSecond),
             last4Weeks: weeks,
             currentMonth: DateInterval(start: monthStart, end: now),
-            lastMonth: DateInterval(start: lastMonthStart, end: monthStartMinusOneSecond),
+            lastMonth: lastMonth,
+            lastMonthToDate: Self.lastMonthToDateInterval(
+                monthStart: monthStart,
+                lastMonth: lastMonth,
+                now: now,
+                calendar: calendar
+            ),
             twoMonthsAgo: DateInterval(start: twoMonthsAgoStart, end: lastMonthStartMinusOneSecond),
             threeMonthsAgo: DateInterval(start: threeMonthsAgoStart, end: twoMonthsAgoStartMinusOneSecond),
             currentYear: DateInterval(start: yearStart, end: now),
             last30Days: DateInterval(start: last30Start, end: now)
         )
+    }
+
+    /// El mes pasado hasta el final del día equivalente a hoy: lo que hay que poner al lado del mes
+    /// en curso para que «¿gasto más que el mes pasado?» compare lo mismo con lo mismo.
+    ///
+    /// Reusa `DateAlignmentHelper.alignedPreviousInterval`, la alineación del hero de Tendencias
+    /// (`InsightsCalculator`): día del mes contra día del mes, el día equivalente ENTERO, y el clamp al
+    /// final del mes pasado cuando hoy no existe en él (31 frente a un mes de 30, 29-31 frente a
+    /// febrero), que da el mes pasado completo. El intervalo actual se le pasa hasta el inicio de
+    /// mañana, como en el hero: con `now` justo a medianoche su guard daría el mes entero.
+    ///
+    /// **La corrección del -1 s es de aquí y no del helper.** El helper cierra en la medianoche del día
+    /// siguiente al equivalente y `DateInterval.contains` es cerrado en los dos extremos, así que una
+    /// transacción de ese día siguiente fechada a medianoche (lo que guarda el `DatePicker` de fecha)
+    /// contaría en el mes pasado «hasta hoy». Se resta un segundo salvo cuando el `end` es el clamp al
+    /// final del mes pasado, que ya llega restado (`CLAUDE.md`, «Cálculos con fechas»). Los dos heros
+    /// que usan el helper con `.contains` tienen ese borde abierto: ticket
+    /// `aligned-previous-interval-counts-the-next-midnight`.
+    static func lastMonthToDateInterval(
+        monthStart: Date,
+        lastMonth: DateInterval,
+        now: Date,
+        calendar: Calendar
+    ) -> DateInterval {
+        let startOfToday = calendar.startOfDay(for: now)
+        let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? now
+        let aligned = DateAlignmentHelper.alignedPreviousInterval(
+            currentInterval: DateInterval(start: monthStart, end: startOfTomorrow),
+            previousInterval: lastMonth,
+            asOf: now,
+            period: .thisMonth,
+            comparisonMode: .month,
+            calendar: calendar
+        )
+        guard aligned.end < lastMonth.end else { return aligned }
+        let end = calendar.date(byAdding: .second, value: -1, to: aligned.end) ?? aligned.end
+        return DateInterval(start: aligned.start, end: end)
     }
 
     // MARK: - Sub-builders
@@ -341,8 +407,11 @@ final class FullFinancialContextBuilder {
         )
     }
 
+    /// Lista todas las cuentas que cuentan (`accounts`) y suma las del total del Panel sin filtro de cuentas:
+    /// con «Grupos en el total» apagado, `accountsForTotal` quita las cuentas sistema de Grupos solo de la suma.
     private func buildBalances(
         accounts: [Account],
+        includeGroupsInTotal: Bool,
         allRawTx: [TransactionItem],
         preferredCurrency: String,
         converter: CurrencyConverting
@@ -360,14 +429,19 @@ final class FullFinancialContextBuilder {
         // en vez de suma de snapshots históricos — el LLM debe ver el saldo
         // disponible HOY, no la acumulación con TCs de distintos momentos.
         let total = LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
+            accounts: PanelTotalAccountsLogic.accountsForTotal(
+                accounts,
+                includeGroups: includeGroupsInTotal,
+                hasSelectedAccount: false
+            ),
             transactions: allRawTx,
             preferredCurrencyCode: preferredCurrency,
             converter: converter
         )
         return FullFinancialContext.BalancesSection(
             accounts: entries,
-            totalBalance: safeDouble(total)
+            totalBalance: safeDouble(total),
+            totalIncludesGroups: includeGroupsInTotal
         )
     }
 
@@ -442,6 +516,7 @@ final class FullFinancialContextBuilder {
             last4Weeks: weekSummaries,
             currentMonth: summarize(intervals.currentMonth),
             lastMonth: summarize(intervals.lastMonth),
+            lastMonthToDate: summarize(intervals.lastMonthToDate),
             twoMonthsAgo: summarize(intervals.twoMonthsAgo),
             threeMonthsAgo: summarize(intervals.threeMonthsAgo),
             currentYear: summarize(intervals.currentYear)
@@ -459,63 +534,53 @@ final class FullFinancialContextBuilder {
         let lastMonthTx = tx.filter { intervals.lastMonth.contains($0.date) && $0.category?.isIncome == false }
         let twoMonthsAgoTx = tx.filter { intervals.twoMonthsAgo.contains($0.date) && $0.category?.isIncome == false }
 
-        // Group by category name for each period
-        var current: [String: (total: Double, count: Int)] = [:]
-        var last: [String: Double] = [:]
-        var twoBack: [String: Double] = [:]
-        // Track tx by (categoryName -> subcategoryName -> totals)
-        var subAgg: [String: [String: (current: Double, last: Double, twoBack: Double, count: Int)]] = [:]
+        // Totales por periodo de una categoría o subcategoría. `lastToDate` es la parte del mes
+        // pasado hasta el día equivalente a hoy (`intervals.lastMonthToDate`, contenido en `last`).
+        struct Totals {
+            var current: Double = 0
+            var last: Double = 0
+            var lastToDate: Double = 0
+            var twoBack: Double = 0
+            var count: Int = 0
+        }
 
-        for tx in currentTx {
-            if adjustment.isSuppressed(tx) { continue }
+        // Group by category name for each period
+        var catAgg: [String: Totals] = [:]
+        // Track tx by (categoryName -> subcategoryName -> totals)
+        var subAgg: [String: [String: Totals]] = [:]
+
+        func add(_ tx: TransactionItem, _ apply: (inout Totals, Double) -> Void) {
+            if adjustment.isSuppressed(tx) { return }
             let cat = tx.category?.name ?? "Other"
             let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
-            let entry = current[cat] ?? (total: 0, count: 0)
-            current[cat] = (total: entry.total + amount, count: entry.count + 1)
+            apply(&catAgg[cat, default: Totals()], amount)
             if let sub = tx.subcategory?.name {
-                var subDict = subAgg[cat] ?? [:]
-                let subEntry = subDict[sub] ?? (current: 0, last: 0, twoBack: 0, count: 0)
-                subDict[sub] = (current: subEntry.current + amount, last: subEntry.last, twoBack: subEntry.twoBack, count: subEntry.count + 1)
-                subAgg[cat] = subDict
+                apply(&subAgg[cat, default: [:]][sub, default: Totals()], amount)
             }
         }
+
+        for tx in currentTx {
+            add(tx) { $0.current += $1; $0.count += 1 }
+        }
         for tx in lastMonthTx {
-            if adjustment.isSuppressed(tx) { continue }
-            let cat = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
-            last[cat, default: 0] += amount
-            if let sub = tx.subcategory?.name {
-                var subDict = subAgg[cat] ?? [:]
-                let subEntry = subDict[sub] ?? (current: 0, last: 0, twoBack: 0, count: 0)
-                subDict[sub] = (current: subEntry.current, last: subEntry.last + amount, twoBack: subEntry.twoBack, count: subEntry.count)
-                subAgg[cat] = subDict
+            let toDate = intervals.lastMonthToDate.contains(tx.date)
+            add(tx) { totals, amount in
+                totals.last += amount
+                if toDate { totals.lastToDate += amount }
             }
         }
         for tx in twoMonthsAgoTx {
-            if adjustment.isSuppressed(tx) { continue }
-            let cat = tx.category?.name ?? "Other"
-            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
-            twoBack[cat, default: 0] += amount
-            if let sub = tx.subcategory?.name {
-                var subDict = subAgg[cat] ?? [:]
-                let subEntry = subDict[sub] ?? (current: 0, last: 0, twoBack: 0, count: 0)
-                subDict[sub] = (current: subEntry.current, last: subEntry.last, twoBack: subEntry.twoBack + amount, count: subEntry.count)
-                subAgg[cat] = subDict
-            }
+            add(tx) { $0.twoBack += $1 }
         }
 
         // Top 10 categories by current month total (or last month if no current)
-        let allCatNames = Set(current.keys).union(last.keys).union(twoBack.keys)
-        let ranked = allCatNames.sorted { (a, b) in
-            (current[a]?.total ?? 0) > (current[b]?.total ?? 0)
+        let ranked = catAgg.keys.sorted { (a, b) in
+            (catAgg[a]?.current ?? 0) > (catAgg[b]?.current ?? 0)
         }
         let topCats = Array(ranked.prefix(10))
 
         return topCats.map { catName in
-            let cur = current[catName] ?? (total: 0, count: 0)
-            let lastVal = last[catName] ?? 0
-            let twoVal = twoBack[catName] ?? 0
-            let variation: Double? = lastVal > 0 ? ((cur.total - lastVal) / lastVal) * 100 : nil
+            let cat = catAgg[catName] ?? Totals()
 
             // Subcategorías con tx > 0 en cualquiera de los 3 meses
             var subEntries: [FullFinancialContext.SubcategoryEntry] = []
@@ -523,13 +588,13 @@ final class FullFinancialContextBuilder {
                 let activeSubs = subDict.filter { $0.value.current > 0 || $0.value.last > 0 || $0.value.twoBack > 0 }
                 let sortedSubs = activeSubs.sorted { $0.value.current > $1.value.current }
                 subEntries = sortedSubs.map { (name, val) in
-                    let subVar: Double? = val.last > 0 ? ((val.current - val.last) / val.last) * 100 : nil
-                    return FullFinancialContext.SubcategoryEntry(
+                    FullFinancialContext.SubcategoryEntry(
                         name: name,
                         totalCurrentMonth: safeDouble(val.current),
                         totalLastMonth: safeDouble(val.last),
+                        totalLastMonthToDate: safeDouble(val.lastToDate),
                         totalTwoMonthsAgo: safeDouble(val.twoBack),
-                        variationPercentVsLastMonth: subVar.map(safeDouble),
+                        variationPercentVsLastMonthToDate: Self.variationPercent(val.current, vs: val.lastToDate),
                         txCountCurrentMonth: val.count
                     )
                 }
@@ -537,14 +602,23 @@ final class FullFinancialContextBuilder {
 
             return FullFinancialContext.CategoryEntry(
                 name: catName,
-                totalCurrentMonth: safeDouble(cur.total),
-                totalLastMonth: safeDouble(lastVal),
-                totalTwoMonthsAgo: safeDouble(twoVal),
-                variationPercentVsLastMonth: variation.map(safeDouble),
-                txCountCurrentMonth: cur.count,
+                totalCurrentMonth: safeDouble(cat.current),
+                totalLastMonth: safeDouble(cat.last),
+                totalLastMonthToDate: safeDouble(cat.lastToDate),
+                totalTwoMonthsAgo: safeDouble(cat.twoBack),
+                variationPercentVsLastMonthToDate: Self.variationPercent(cat.current, vs: cat.lastToDate),
+                txCountCurrentMonth: cat.count,
                 subcategories: subEntries
             )
         }
+    }
+
+    /// Variación del mes en curso contra el mes pasado HASTA EL MISMO DÍA. `nil` si no hubo gasto
+    /// en ese tramo. Contra el mes pasado entero, a mitad de mes, casi todo salía «menos».
+    static func variationPercent(_ current: Double, vs lastToDate: Double) -> Double? {
+        guard lastToDate > 0 else { return nil }
+        let value = ((current - lastToDate) / lastToDate) * 100
+        return value.isFinite ? value : 0
     }
 
     private func buildUncategorized(
@@ -574,6 +648,7 @@ final class FullFinancialContextBuilder {
 
         var current: [String: (total: Double, count: Int)] = [:]
         var last: [String: Double] = [:]
+        var lastToDate: [String: Double] = [:]
 
         for tx in currentTx {
             if adjustment.isSuppressed(tx) { continue }
@@ -587,20 +662,23 @@ final class FullFinancialContextBuilder {
             guard let merchant = canonicalMerchant(tx) else { continue }
             let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
             last[merchant, default: 0] += amount
+            if intervals.lastMonthToDate.contains(tx.date) {
+                lastToDate[merchant, default: 0] += amount
+            }
         }
 
         let sorted = current.sorted { $0.value.total > $1.value.total }.prefix(20)
         return sorted.map { (name, val) in
-            let lastVal = last[name] ?? 0
-            let variation: Double? = lastVal > 0 ? ((val.total - lastVal) / lastVal) * 100 : nil
+            let lastToDateVal = lastToDate[name] ?? 0
             let avg = val.count > 0 ? val.total / Double(val.count) : 0
             return FullFinancialContext.MerchantEntry(
                 name: name,
                 totalCurrentMonth: safeDouble(val.total),
-                totalLastMonth: safeDouble(lastVal),
+                totalLastMonth: safeDouble(last[name] ?? 0),
+                totalLastMonthToDate: safeDouble(lastToDateVal),
                 txCount: val.count,
                 avgAmount: safeDouble(avg),
-                variationPercentVsLastMonth: variation.map(safeDouble)
+                variationPercentVsLastMonthToDate: Self.variationPercent(val.total, vs: lastToDateVal)
             )
         }
     }
@@ -615,7 +693,7 @@ final class FullFinancialContextBuilder {
     ) -> [FullFinancialContext.BudgetEntry] {
         let active = allBudgets.filter { $0.isActive }
         return active.map { budget in
-            let interval = InsightsCalculator.currentBudgetInterval(for: budget)
+            let interval = InsightsCalculator.currentBudgetInterval(for: budget, now: now)
             // Canonical spending path: filtra por resolvedSubcategoryIDs/AccountIDs/
             // TagIDs/natures + includeSharedExpenses y convierte con TC actual
             // (convertWithLatestRate). El sistema moderno NO setea `budget.category`
@@ -631,7 +709,8 @@ final class FullFinancialContextBuilder {
             )
             let limit = budget.limitAmount
             let usagePct: Double? = limit > 0 ? (spent / limit) * 100 : nil
-            let daysLeft = max(0, calendar.dateComponents([.day], from: now, to: interval.end).day ?? 0)
+            // Hoy cuenta: el último día del presupuesto queda 1, no 0 (decisión de Jürgen, 2026-09-06).
+            let daysLeft = BudgetPeriodInterval.daysLeft(now: now, in: interval, calendar: calendar)
             let status: FullFinancialContext.BudgetStatus
             if limit <= 0 {
                 status = .noLimit

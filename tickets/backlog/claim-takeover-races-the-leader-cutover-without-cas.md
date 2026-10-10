@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración, backend"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-10-08
 source: "review adversarial de `claim-grants-a-takeover-after-the-leader-passed-the-cutover` (2026-09-24), lente de servidor"
 ---
 
@@ -37,3 +37,9 @@ p_device_id`, y `other_leader` si no hay `found`. Se prueba con dos sesiones y `
 
 - [ ] Un relevo que se cruza con el cutover del líder no devuelve `created` sobre una cuenta con `migrated_at`.
 - [ ] Un cutover que se cruza con un relevo no estampa `migrated_at` para un líder que ya no lo es.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Ninguna migración posterior a `qa/cloud/g16_04_claim_no_takeover_after_the_cutover.sql` toca `claim_account` ni `migration_progress`: las más nuevas de `qa/cloud/` son `hlc01_*` y `mcp0_*`. No se pudo releer el cuerpo vivo (sin acceso a staging ni producción en este triage).
+
+Triage 2026-10-08: abierto · low → low · no hay migración que añada el CAS después de g16_04; carrera de milisegundos con producción a 0 perfiles medidos el 2026-09-24.

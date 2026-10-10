@@ -3,7 +3,7 @@ id: ipad-settings-sheet-size-depends-on-where-it-opens
 status: backlog
 priority: low
 area: "ipad, settings, adaptativo"
-updated: 2026-10-03
+updated: 2026-10-08
 created: 2026-09-29
 source: "fase 2 del carril adaptativo (ipad-list-detail-for-groups-and-settings-and-chat-inspector), 2026-09-29"
 ---
@@ -44,3 +44,9 @@ Capturas en `qa/evidencia-adaptativo-20261003/cola-b-redesigns-must-hold-up-at-i
 
 Ajustes abre con lista y ajuste lado a lado en el iPad Pro 13 y el iPad mini en horizontal, desde cualquiera de sus
 siete puertas, sin cambiar nada en iPhone.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Ningún commit posterior al 2026-10-03 cambió la presentación de `ProfileView` (sigue `.presentationSizing(.page)`); los tres que lo tocan son del cierre de sesión con el drain atascado. Lo pendiente sigue siendo medir Registros, Estadísticas, Reportes, Más y el resto de puertas en iPad, y cerrar si salen lado a lado.
+
+Triage 2026-10-08: abierto · low → low · `ProfileView` sigue con `.presentationSizing(.page)` sin cambios de tamaño desde la medida del 2026-10-03, que ya vio lado a lado desde el Panel; faltan medir las otras cinco puertas antes de cerrarlo.

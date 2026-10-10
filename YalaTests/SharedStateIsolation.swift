@@ -131,6 +131,8 @@ enum SharedStateScope: Sendable {
                 SharedStateCell(appGroup, AppPreferences.Keys.expensesOnlyMode, "App Group"),
                 SharedStateCell(appGroup, "firstWeekday", "App Group"),
                 SharedStateCell(appGroup, AppPreferences.Keys.lastUsedAccountID, "App Group"),
+                // Desde el 2026-10-08 el PASO 3 del borrado vacía también el snapshot que lee Siri.
+                SharedStateCell(appGroup, SiriIntentContextCache.storageKey, "App Group"),
             ]
 
         case .ownerKeyValueGate:

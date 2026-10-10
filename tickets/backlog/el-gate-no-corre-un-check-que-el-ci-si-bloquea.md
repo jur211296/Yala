@@ -1,10 +1,11 @@
 ---
 id: el-gate-no-corre-un-check-que-el-ci-si-bloquea
 status: backlog
-priority: medium
+priority: low
 area: "proceso"
 created: 2026-09-08
 source: medido de camino en chat-draft-sign-can-contradict-its-subcategory (2026-09-08)
+updated: 2026-10-08
 ---
 
 # El gate da verde a un cambio que el CI bloquea
@@ -56,3 +57,12 @@ rama de todos. El gate es exactamente la red que debía cubrir eso.
 - [ ] Control positivo: una suite con `makeTestContext(` sin `.serialized` hace que `/gate` **no**
       selle, y con `.serialized` sí.
 - [ ] Comprobado si el job `tests` tiene algún otro paso que el gate tampoco replica.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `/gate` §5 (`.claude/commands/gate.md:101-107`) sigue corriendo solo `bash qa/validate-coverage.sh`. Ningún hook ni comando local llama a `qa/check-test-isolation.sh`.
+- El job `coverage-index` de `.github/workflows/qa.yml:69-108` ha crecido a 7 pasos: `validate-coverage.py`, `check-test-isolation.sh` (`:76`) y cinco bancos de scripts (`commit-msg-test.sh`, `sim-lock-test.sh`, `ci-simulador-test.sh`, `ci-reintentar-rojos-test.sh`, `ci-vigilante-nocturna-test.sh`). El gate no replica ninguno de los seis últimos.
+- La divergencia que pedía el camino 2 ya ha pasado: los bancos solo importan si el diff toca esos scripts, pero el de aislamiento afecta a cualquier test nuevo.
+- El CI lo sigue parando en todo PR y en el push a `2.1`. El hueco queda en el commit directo desde el árbol principal.
+
+Triage 2026-10-08: abierto · medium → low · `/gate` §5 sigue sin correr `qa/check-test-isolation.sh` (`qa.yml:76`); el CI lo para en PR y en push, así que el hueco queda en el commit directo a `2.1`.

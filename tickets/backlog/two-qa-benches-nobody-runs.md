@@ -1,9 +1,10 @@
 ---
 id: two-qa-benches-nobody-runs
 status: backlog
-priority: medium
+priority: low
 area: "qa"
 created: 2026-09-09
+updated: 2026-10-08
 source: salió de camino al cerrar el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo
 ---
 
@@ -41,3 +42,12 @@ y conviene medir que no depende de nada de macOS.
 
 - [ ] Los dos bancos corren en CI, o está escrito por qué no pueden.
 - [ ] Un mutante confirma que cada uno puede ponerse rojo desde el CI.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `.github/workflows/qa.yml:83-108` corre hoy cinco bancos: `commit-msg`, `sim-lock`, `ci-simulador`, `ci-reintentar-rojos` y `ci-vigilante-nocturna`. Faltan los dos de este ticket.
+- `.claude/rules/git-hooks.md:178` sigue diciendo que a `worktree-stamp-test.sh` no lo corre nadie.
+- `ci-allowlist-test.sh` extrae el `case` de `qa.yml`, y conviene comprobar que el bloque sigue siendo extraíble antes de cablearlo.
+- Por qué low: vigilan dos redes (el sello del gate y el allowlist del CI), pero las dos redes funcionan. Lo que no existe es la alarma si se rompen.
+
+Triage 2026-10-08: abierto · medium → low · qa.yml ya corre cinco bancos de qa/scripts, pero sigue sin correr worktree-stamp-test.sh ni ci-allowlist-test.sh

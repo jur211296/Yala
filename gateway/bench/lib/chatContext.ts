@@ -13,6 +13,10 @@ import { categoryName, currencySymbol, lprojFor, needOf, seedCategoryOf, subcate
  * Lo que se replica, y de dónde (medido en el Swift el 2026-10-07):
  * - Intervalos de `buildIntervals`: los meses y semanas cerrados acaban 1 s antes del siguiente; la semana
  *   empieza según la región (`Calendar.current.firstWeekday`: domingo en US, BR, PE, PT y JP; lunes en el resto).
+ * - `last_month_to_date` (`lastMonthToDateInterval`, 2026-10-09): el mes pasado hasta el final del día equivalente a
+ *   hoy (`DateAlignmentHelper.alignedPreviousInterval` menos 1 s); si hoy no existe en el mes pasado (31 frente a 30,
+ *   29-31 frente a febrero), el mes pasado entero. Las categorías, subcategorías y comercios llevan su
+ *   `total_last_month_to_date`, y la variación se calcula contra él (`variation_percent_vs_last_month_to_date`).
  * - `daily_avg` = gasto / `DateIntervalDayCount.days` (que TRUNCA: el mes en curso a las 12:00 del día 7 son 6 días).
  * - Nada se redondea: los importes viajan como `Double` crudos (12.300000000000001 incluido).
  * - `JSONEncoder` con `.sortedKeys`: claves ordenadas, opcionales `nil` OMITIDOS (no `null`) y la barra escapada
@@ -244,6 +248,12 @@ export function buildContext(p: Persona): BuiltContext {
     lastWeek: { start: weekStart - 7 * DAY, end: weekStart - 1000 },
     currentMonth: { start: monthStart, end: now },
     lastMonth: { start: lastMonthStart, end: monthStart - 1000 },
+    lastMonthToDate: {
+      start: lastMonthStart,
+      end: nowDate.getUTCDate() <= Math.round((monthStart - lastMonthStart) / DAY)
+        ? lastMonthStart + nowDate.getUTCDate() * DAY - 1000
+        : monthStart - 1000,
+    },
     twoMonthsAgo: { start: twoStart, end: lastMonthStart - 1000 },
     threeMonthsAgo: { start: threeStart, end: twoStart - 1000 },
     currentYear: { start: yearStart, end: now },
@@ -281,17 +291,21 @@ export function buildContext(p: Persona): BuiltContext {
   const cur = expenseIn(iv.currentMonth);
   const last = expenseIn(iv.lastMonth);
   const two = expenseIn(iv.twoMonthsAgo);
-  const catAgg = new Map<string, { cur: number; n: number; last: number; two: number; subs: Map<string, { cur: number; last: number; two: number; n: number }> }>();
+  const catAgg = new Map<string, { cur: number; n: number; last: number; lastToDate: number; two: number; subs: Map<string, { cur: number; last: number; lastToDate: number; two: number; n: number }> }>();
   const touch = (x: Tx) => {
     const c = catName(x);
-    if (!catAgg.has(c)) catAgg.set(c, { cur: 0, n: 0, last: 0, two: 0, subs: new Map() });
+    if (!catAgg.has(c)) catAgg.set(c, { cur: 0, n: 0, last: 0, lastToDate: 0, two: 0, subs: new Map() });
     const e = catAgg.get(c)!;
     const s = subName(x);
-    if (!e.subs.has(s)) e.subs.set(s, { cur: 0, last: 0, two: 0, n: 0 });
+    if (!e.subs.has(s)) e.subs.set(s, { cur: 0, last: 0, lastToDate: 0, two: 0, n: 0 });
     return { e, s: e.subs.get(s)! };
   };
   for (const x of cur) { const { e, s } = touch(x); e.cur += abs(x); e.n++; s.cur += abs(x); s.n++; }
-  for (const x of last) { const { e, s } = touch(x); e.last += abs(x); s.last += abs(x); }
+  for (const x of last) {
+    const { e, s } = touch(x);
+    e.last += abs(x); s.last += abs(x);
+    if (inside(iv.lastMonthToDate, x.t)) { e.lastToDate += abs(x); s.lastToDate += abs(x); }
+  }
   for (const x of two) { const { e, s } = touch(x); e.two += abs(x); s.two += abs(x); }
   const variation = (c: number, l: number) => (l > 0 ? ((c - l) / l) * 100 : undefined);
   const categories = [...catAgg.entries()]
@@ -301,8 +315,9 @@ export function buildContext(p: Persona): BuiltContext {
       name,
       total_current_month: v.cur,
       total_last_month: v.last,
+      total_last_month_to_date: v.lastToDate,
       total_two_months_ago: v.two,
-      variation_percent_vs_last_month: variation(v.cur, v.last),
+      variation_percent_vs_last_month_to_date: variation(v.cur, v.lastToDate),
       tx_count_current_month: v.n,
       subcategories: [...v.subs.entries()]
         .filter(([, s]) => s.cur > 0 || s.last > 0 || s.two > 0)
@@ -311,8 +326,9 @@ export function buildContext(p: Persona): BuiltContext {
           name: sn,
           total_current_month: s.cur,
           total_last_month: s.last,
+          total_last_month_to_date: s.lastToDate,
           total_two_months_ago: s.two,
-          variation_percent_vs_last_month: variation(s.cur, s.last),
+          variation_percent_vs_last_month_to_date: variation(s.cur, s.lastToDate),
           tx_count_current_month: s.n,
         })),
     }));
@@ -320,15 +336,21 @@ export function buildContext(p: Persona): BuiltContext {
   // merchants
   const mCur = new Map<string, { total: number; n: number }>();
   const mLast = new Map<string, number>();
+  const mLastToDate = new Map<string, number>();
   for (const x of cur) { const m = canonicalMerchant(x.note); if (!m) continue; const e = mCur.get(m) ?? { total: 0, n: 0 }; e.total += abs(x); e.n++; mCur.set(m, e); }
-  for (const x of last) { const m = canonicalMerchant(x.note); if (!m) continue; mLast.set(m, (mLast.get(m) ?? 0) + abs(x)); }
+  for (const x of last) {
+    const m = canonicalMerchant(x.note); if (!m) continue;
+    mLast.set(m, (mLast.get(m) ?? 0) + abs(x));
+    if (inside(iv.lastMonthToDate, x.t)) mLastToDate.set(m, (mLastToDate.get(m) ?? 0) + abs(x));
+  }
   const merchants = [...mCur.entries()].sort((a, b) => b[1].total - a[1].total).slice(0, 20).map(([name, v]) => ({
     name,
     total_current_month: v.total,
     total_last_month: mLast.get(name) ?? 0,
+    total_last_month_to_date: mLastToDate.get(name) ?? 0,
     tx_count: v.n,
     avg_amount: v.n ? v.total / v.n : 0,
-    variation_percent_vs_last_month: variation(v.total, mLast.get(name) ?? 0),
+    variation_percent_vs_last_month_to_date: variation(v.total, mLastToDate.get(name) ?? 0),
   }));
 
   // budgets (mensuales: el intervalo del mes en curso hasta su último segundo)
@@ -407,7 +429,9 @@ export function buildContext(p: Persona): BuiltContext {
       country: p.country,
       excluded_accounts: [],
     },
-    balances: { accounts, total_balance: totalBalance },
+    // Las personas del banco no tienen cuentas de Grupos: el total suma todo, como la app con «Grupos en el total»
+    // encendido (su default).
+    balances: { accounts, total_balance: totalBalance, total_includes_groups: true },
     periods: {
       today: summarize(iv.today),
       current_week: summarize(iv.currentWeek),
@@ -418,6 +442,7 @@ export function buildContext(p: Persona): BuiltContext {
       }),
       current_month: summarize(iv.currentMonth),
       last_month: summarize(iv.lastMonth),
+      last_month_to_date: summarize(iv.lastMonthToDate),
       two_months_ago: summarize(iv.twoMonthsAgo),
       three_months_ago: summarize(iv.threeMonthsAgo),
       current_year: summarize(iv.currentYear),

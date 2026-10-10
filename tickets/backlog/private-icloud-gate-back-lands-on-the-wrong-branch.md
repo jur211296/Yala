@@ -1,10 +1,10 @@
 ---
 id: private-icloud-gate-back-lands-on-the-wrong-branch
 status: backlog
-priority: medium
+priority: low
 area: "onboarding, modo-nube"
 created: 2026-09-14
-updated: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `restore-start-fresh-keeps-the-imported-corpus` (2026-09-14) · VISTO en simulador"
 ---
 
@@ -81,3 +81,11 @@ sin ejecutar.**
 
 - [[restore-start-fresh-keeps-the-imported-corpus]] — el PR que añadió el segundo productor.
 - [[welcome-copy-acusa-al-dueno-de-traer-datos-ajenos]] — otra salida del mismo Welcome.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue. `case privateICloudGate` (`WelcomeFlowContainer.swift:50`) sigue sin payload.
+- Sus dos `onBack` (`:289`, `:326`) van a `goTo(newBranchOriginStep)`, y `newBranchOriginStep` (`:498-500`) sigue decidiendo por el número de cards.
+- Los productores siguen siendo `:521` (privada) y `ContentView.swift:943` / `:2554`.
+
+Triage 2026-10-08: abierto · medium → low · `newBranchOriginStep` (`WelcomeFlowContainer.swift:498`) sigue sin saber de dónde se vino; no hay camino muerto ni datos en riesgo.

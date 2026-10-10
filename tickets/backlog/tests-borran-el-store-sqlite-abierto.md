@@ -1,10 +1,10 @@
 ---
 id: tests-borran-el-store-sqlite-abierto
 status: backlog
-priority: medium
+priority: low
 area: testing
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: medido de camino durante unit-suite-nondeterministic-reds (2026-09-07)
 ---
 
@@ -66,3 +66,11 @@ Elegir **una** y aplicarla a los 12 prefijos, no solo al primero que aparezca.
 ## Relacionados
 
 - [[unit-suite-nondeterministic-reds]] — de donde salió esta medición.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El patrón sigue en `CKIdentityCaptureTests.swift:27-32` (`freshDir()` + `cleanup()` con `removeItem`, sin cerrar antes el container). Lo mismo en `GroupsPendingBridgeDurabilityTests.swift:49`, `GroupLeaveOwnershipReconcileTests.swift:35` y `GroupBridgeCaseBPreserveTests.swift:31`.
+- La cuenta de líneas `vnode unlinked` **no se re-midió**: el triage no corre `xcodebuild`.
+- Por qué low: es higiene de tests, sin ningún rojo atribuido. Sigue siendo una variable de confusión.
+
+Triage 2026-10-08: abierto · medium → low · Los helpers de teardown siguen borrando el directorio temporal con removeItem sin cerrar antes el ModelContainer; ningún commit cambió el patrón

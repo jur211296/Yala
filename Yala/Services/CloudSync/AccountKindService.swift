@@ -117,7 +117,7 @@ final class AccountKindService {
         guard let jwt = await jwtProvider() else { return current }
 
         let outcome = await client.exists(jwt: jwt)
-        guard case let .exists(existe, kind) = outcome, existe else { return current }
+        guard case let .exists(existe, kind, _) = outcome, existe else { return current }
 
         // El userID se re-lee DESPUÉS del await: entre la petición y la respuesta puede haberse
         // cerrado la sesión o entrado otra cuenta, y escribir aquí resucitaría un snapshot que la

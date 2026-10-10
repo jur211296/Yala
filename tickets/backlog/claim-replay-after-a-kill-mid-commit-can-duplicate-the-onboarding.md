@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, groups"
 created: 2026-09-24
 source: "review adversarial de `claim-promotion-lost-response-blocks-the-retry` (2026-09-24), las dos lentes"
+updated: 2026-10-08
 ---
 
 # Si la app muere justo después de guardar el onboarding, repetir la activación puede duplicarlo
@@ -35,3 +36,10 @@ tengo dos juegos de cuentas y categorías.
 ## Criterios de aceptación
 
 - [ ] Un kill entre persistir [P] y la primera subida no deja dos juegos de cuentas y categorías.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `FullModeActivationFlowLogic.commitPlan(.freshCloud)` sigue siendo `[.promote, .activateCloudStorage, .persistOnboarding, .applyHistoryChoice, .completeActivation]`, sin marca durable de «persistido».
+- Sin reproducir aún el kill entre `persistOnboarding` y el primer push; ningún commit ni test cita este ticket.
+
+Triage 2026-10-08: abierto · low → low · el plan sigue sin marca durable y sigue sin reproducir; ventana estrecha porque con red el motor suele subir antes.

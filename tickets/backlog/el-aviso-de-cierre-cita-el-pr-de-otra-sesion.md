@@ -1,10 +1,11 @@
 ---
 id: el-aviso-de-cierre-cita-el-pr-de-otra-sesion
 status: backlog
-priority: medium
+priority: low
 area: infra
 created: 2026-09-09
 source: medido al cerrar fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
+updated: 2026-10-08
 ---
 
 # El aviso de cierre cita el PR de otra sesión, y `--rama` no lo arregla
@@ -113,3 +114,10 @@ anotación y no en la lectura.
 
 Tampoco aquí se mandó un segundo aviso corregido, por lo mismo que la vez anterior.
 
+## Medido en 2.1 (triage 2026-10-08)
+
+- Resolución: `modo_avisar` (`~/.claude/hooks/avisar_grok.py:2052-2065`) sí usa `--rama` para buscar el puntero (`sesion_del_arbol(dict(d, rama=…))`). El primer AC funciona por código.
+- Captura: el PR se anota en `PostToolUse` al ver `gh pr create` (`:1733-1736`), no al terminar el turno. En `~/.claude/cache/avisos-grok/ultimas/`, 192 de 194 punteros `Yala__encargo-*` desde el 20-sep tienen PR. Los 2 sin PR (`groups-purge-…` #321 y `groups-detach-…` #319, 01-oct) tuvieron PR y no se anotó.
+- Sigue abierto: `sesion_del_arbol` (`:762`) cae al respaldo por repo sin decirlo, y un puntero exacto sin PR produce un aviso sin línea de PR, también sin decirlo (AC 2). El §9 de `cerrar-total` no se ha revisado.
+
+Triage 2026-10-08: abierto · medium → low · `--rama` ya resuelve el puntero y la captura falla en 2 de 194 sesiones desde el 20-sep (#319, #321), pero el respaldo y el aviso sin PR siguen callados (AC 2).

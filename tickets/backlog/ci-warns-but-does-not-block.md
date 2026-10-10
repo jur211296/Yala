@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: platform
 created: 2026-09-04
+updated: 2026-10-08
 source: residuales de ci-verde-con-la-suite-en-rojo al cerrarlo (2026-09-04)
 ---
 
@@ -77,3 +78,12 @@ equivocado:
   modificó los `codeGlobs` de **56** áreas.
 
 La conclusión de fondo —el gate no corría lo que podía romperse— se sostiene. Las cifras, no.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Paso 4, hecho: 6a9df9898 (2026-09-07) mueve la suite de UI a la nocturna (`schedule` en `qa.yml:41`, paso `ui` solo nocturna).
+- Paso 3, vivo: `continue-on-error: true` en `qa.yml:431` (unit pure-logic), `:456` (context-based) y `:484` (UI). Desde 239ff023f pure-logic repite solo sus rojos, lo que abarata promoverlo.
+- **Lo que cambia el peso, medido hoy:** desde ADR-054 de casa el auto-merge espera al check `tests` del ruleset, y ese job queda verde con unit en rojo porque el aviso salió a su propio job (`aviso`, `:519`), que no es requerido. Un PR en cola entra en `2.1` con un test unitario en rojo; solo lo frena el `/gate` local.
+- El `TODO(@jur, 2026-07-15)` sigue en `qa.yml:251`.
+
+Triage 2026-10-08: abierto · medium → medium · el paso 4 está hecho (UI a la nocturna, 6a9df9898); el paso 3 sigue: los tres pasos de test con `continue-on-error` (`qa.yml:431`, `:456`, `:484`), así que el check `tests` que exige el ruleset sale verde con unit en rojo.

@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "data, import"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-08
 source: "AC pendiente de `csv-import-rows-fall-in-the-chat-sign-sweep` (criterio 3), creado en el barrido /qa del 2026-09-16"
 ---
 
@@ -52,3 +52,5 @@ barrido lo usa como señal de lote. Una marca de origen explícita no rompe ning
 
 - `csv-import-rows-fall-in-the-chat-sign-sweep` — de donde sale; queda en qa con su guion a mano.
 - `records-standalone-amount-discrepancy` — la parte de la categoría, medida.
+
+Triage 2026-10-08: abierto · medium → medium · las filas importadas siguen sin marca de origen (los cuatro `TransactionItem(` de `TransactionCSVImportService.swift:187/1107/1502/1663` toman `createdAt = Date.now`) y `CategoryImportHelper` sigue reusando por nombre sin `isIncome` (`:45-47`).

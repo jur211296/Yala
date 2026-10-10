@@ -38,35 +38,26 @@ struct BudgetChartsView: View {
     private var localDateInterval: DateInterval {
         let calendar = userConfiguredCalendar()
 
+        // Cierra en el último segundo del periodo (`BudgetPeriodInterval`), como Presupuestos.
         guard let pType = periodType else {
-            let start = localSelectedMonth
-            let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-            return DateInterval(start: start, end: end)
+            return BudgetPeriodInterval.month(startingAt: localSelectedMonth, calendar: calendar)
         }
 
         switch pType {
         case .weekly:
-            let weekStart = localSelectedWeek
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
+            return BudgetPeriodInterval.week(startingAt: localSelectedWeek, calendar: calendar)
 
         case .monthly:
-            let monthStart = localSelectedMonth
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
+            return BudgetPeriodInterval.month(startingAt: localSelectedMonth, calendar: calendar)
 
         case .yearly:
-            let yearStart = calendar.date(from: DateComponents(year: localSelectedYear, month: 1, day: 1)) ?? Date.now
-            let yearEnd = calendar.date(from: DateComponents(year: localSelectedYear + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
+            return BudgetPeriodInterval.year(localSelectedYear, calendar: calendar, fallbackStart: Date.now)
 
         case .unique:
             guard let start = budget.startDate, let end = budget.endDate else {
-                let start = localSelectedMonth
-                let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-                return DateInterval(start: start, end: end)
+                return BudgetPeriodInterval.month(startingAt: localSelectedMonth, calendar: calendar)
             }
-            return DateInterval(start: start, end: end)
+            return BudgetPeriodInterval.unique(start: start, end: end, calendar: calendar)
         }
     }
 

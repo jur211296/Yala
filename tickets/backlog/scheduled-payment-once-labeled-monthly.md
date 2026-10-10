@@ -1,10 +1,10 @@
 ---
 id: scheduled-payment-once-labeled-monthly
 status: backlog
-priority: low
+priority: medium
 area: planning
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-10-08
 ---
 
 # Un pago planificado de «una sola vez» se muestra como «Mensual» en la lista
@@ -61,3 +61,9 @@ notificaciones. Es presentación.
       existente del editor (sin clave nueva si ya la hay).
 - [ ] Barrido de las demás superficies que leen `recurrenceType`.
 - [ ] Unit test sobre el helper de la etiqueta con las dos polaridades de `isRecurring`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ScheduledPaymentRowView.recurrenceBadge` (ahora `:136-147`) sigue pintando `summary.payment.recurrenceType` sin consultar `isRecurring`. El fichero no tiene commits desde el 2026-09-02.
+
+Triage 2026-10-08: abierto · low → medium · sigue pasando (recurrenceBadge no mira isRecurring) y la lista le dice al usuario que un pago único se repite cada mes.

@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: "grupos, sync, copy"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: "review adversarial de `stuck-groups-loss-without-a-count-covers-own-edits-made-after-the-notice` (2026-10-05, lente de verdad del copy)"
 ---
 
@@ -39,3 +39,9 @@ porque `GroupsLoss.readsUncaptured` daba `true` con `nil`.
   causas en los cierres, como `DetachBlockedNotice` en el desasociar.
 - **B.** Solo para el invitado del Welcome, que nunca tiene salida.
 - **C.** Dejarlo: hacen falta otra cuenta, el drain atascado y un fallo de lectura en la oferta a la vez.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSignOutFlowLogic.groupsLossShownReason` sigue devolviendo `.groupsCaptureUnfinished` con `uncaptured == nil`, sea cual sea la causa de fondo.
+
+Triage 2026-10-08: abierto · very-low → very-low · rarísimo y sin pérdida: las causas salen de una en una.

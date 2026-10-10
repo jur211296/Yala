@@ -245,6 +245,18 @@ final class PanelViewModel {
     /// Whether the app is in background — suppresses recalculation to prevent 0x8BADF00D
     private(set) var isInBackground = false
 
+    /// «¿Está la app activa?» para el freno del recálculo. Costura de test: el `applicationState` del
+    /// host de unit tests no es fiable (molde de `RecalculationDebouncer`). Producción no la toca.
+    @ObservationIgnored
+    var isApplicationActive: @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }
+
+    #if DEBUG
+    /// Cuántas veces ha corrido `performCalculation`. Solo para medir: los tests cuentan con él que un
+    /// evento produce UN recálculo y no más, y la traza de DEBUG lo imprime con su motivo.
+    @ObservationIgnored
+    private(set) var debugCalculationRuns = 0
+    #endif
+
     // MARK: - Loaded Data
 
     private(set) var accounts: [Account] = []
@@ -2443,56 +2455,15 @@ final class PanelViewModel {
         )
     }
 
-    /// Get date interval for a budget period
-    private func getBudgetDateInterval(budget: Budget) -> DateInterval {
-        let calendar = userConfiguredCalendar()
-
-        guard let periodType = BudgetPeriodType(rawValue: budget.periodType) else {
-            let start = calendar.startOfMonth(for: Date.now)
-            let end = calendar.date(byAdding: .month, value: 1, to: start) ?? start
-            return DateInterval(start: start, end: end)
-        }
-
-        switch periodType {
-        case .weekly:
-            let weekStart = calendar.startOfWeek(for: Date.now)
-            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-            return DateInterval(start: weekStart, end: weekEnd)
-
-        case .monthly:
-            let monthStart = calendar.startOfMonth(for: Date.now)
-            let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-            return DateInterval(start: monthStart, end: monthEnd)
-
-        case .yearly:
-            let year = calendar.component(.year, from: Date.now)
-            let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) ?? Date.now
-            let yearEnd = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) ?? yearStart
-            return DateInterval(start: yearStart, end: yearEnd)
-
-        case .unique:
-            guard let start = budget.startDate, let end = budget.endDate else {
-                let monthStart = calendar.startOfMonth(for: Date.now)
-                let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart
-                return DateInterval(start: monthStart, end: monthEnd)
-            }
-            return DateInterval(start: start, end: end)
-        }
+    /// Periodo EN CURSO del presupuesto. Cierra en su último segundo (`BudgetPeriodInterval`):
+    /// con el `end` en la medianoche siguiente, un gasto de ese instante contaba en los dos periodos.
+    func getBudgetDateInterval(budget: Budget) -> DateInterval {
+        BudgetPeriodInterval.current(for: budget, now: Date.now, calendar: userConfiguredCalendar())
     }
 
-    /// Calculate days remaining in budget period
-    private func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
-        let calendar = userConfiguredCalendar()
-        let today = Date.now
-
-        if today > interval.end {
-            return -1  // Period has ended
-        }
-
-        guard interval.contains(today) else { return 0 }
-
-        let components = calendar.dateComponents([.day], from: today, to: interval.end)
-        return max(0, components.day ?? 0)
+    /// Días que le quedan al presupuesto, contando hoy: -1 si ya acabó, 0 si aún no empieza.
+    func getBudgetDaysRemaining(budget: Budget, interval: DateInterval) -> Int {
+        BudgetPeriodInterval.summaryDaysRemaining(now: Date.now, in: interval, calendar: userConfiguredCalendar())
     }
 
     /// Determine budget status
@@ -2568,12 +2539,24 @@ final class PanelViewModel {
         scheduleRecalculation(reload: true)
     }
 
+    /// Han llegado tasas nuevas a disco (`.yalaExchangeRatesUpdated`, que el Panel recibe en
+    /// `PanelDataObservers`). Persistir tasas no toca ninguna fila, así que basta recalcular: el saldo
+    /// vivo, su marca «≈» y la card de resultado cambiario vuelven a convertir con la caché del converter
+    /// ya invalidada por el receptor del arranque, que corre al postear —el recálculo llega 150 ms
+    /// después—. El widget de tipo de cambio solo se rehace con su marca: sin ella seguiría enseñando la
+    /// tasa de antes. Sin esto, el Panel se quedaba con la tasa vieja y el «≈» encendido hasta que el
+    /// usuario tocara algo (ticket `panel-no-recalcula-al-llegar-tasas-nuevas`).
+    func exchangeRatesDidUpdate() {
+        SessionState.shared.needsExchangeRateWidgetRefresh = true
+        recalculateData()
+    }
+
     /// Shared debounce (150ms). `pendingReload` ensures a reload request isn't lost
     /// if a subsequent calculate-only call arrives within the debounce window.
     /// Guarded by isInBackground to prevent 0x8BADF00D during snapshot capture.
     private func scheduleRecalculation(reload: Bool) {
         guard !isInBackground else { return }
-        guard UIApplication.shared.applicationState == .active else { return }
+        guard isApplicationActive() else { return }
         if reload { pendingReload = true }
         recalculateTask?.cancel()
         recalculateTask = Task { @MainActor in
@@ -2591,6 +2574,10 @@ final class PanelViewModel {
     /// Runs all widget calculations from cached data (no SwiftData fetch).
     private func performCalculation() {
         guard let sessionState, let context = modelContext else { return }
+        #if DEBUG
+        debugCalculationRuns += 1
+        print("PanelViewModel: performCalculation #\(debugCalculationRuns)")
+        #endif
         calculateTrendData(
             accounts: accounts,
             transactions: transactions,

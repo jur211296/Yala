@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `dangling-ref-repair-is-lost-when-its-row-cannot-be-read` (2026-09-23), lente de instancias gemelas — hallazgos 1 y 2"
 ---
 
@@ -38,3 +38,10 @@ Misma familia que `apply-overwrites-a-pending-local-write-without-its-guards` y
 
 - [ ] Un fallo de lectura de `Budget` durante la fusión no deja un CSV que apunte a la perdedora.
 - [ ] Un reconciler que no pudo leer no da la reparación por hecha.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSyncReconciler.resyncOrphanCSV` sigue con `catch { print(...) }` sin relanzar; los demás `catch` de los reconcilers siguen devolviendo vacío.
+- Los dos commits que tocaron el fichero desde el 2026-09-23 (d9462c742, e735820d4) no cambian ese camino.
+
+Triage 2026-10-08: abierto · low → low · sigue igual, pero exige un fallo de lectura de SwiftData justo en la fusión de duplicados del sistema.

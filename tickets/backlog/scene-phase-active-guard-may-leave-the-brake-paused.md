@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "performance, groups, panel"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: tickets/qa/groups-tab-missing-panel-perf.md
 ---
 
@@ -51,3 +51,9 @@ los dos pueden discrepar.
       ventanas).
 - [ ] Si ocurre, decidir el arreglo para los 10 sitios a la vez: separar el `setBackground(false)` del `guard`, o
       dejar que el `reloadAndRecalculate()` posterior lo reintente. Si no ocurre, cerrar este ticket con la medida.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Los 10 `guard UIApplication.shared.applicationState == .active else { return }` siguen donde dice el ticket, en las mismas líneas (`GroupDetailView.swift:273`, `PanelViewModel.swift:2576`, `FinancialReportView.swift:125` y `:409`, etc.). Ningún commit los ha tocado desde el 2026-10-05.
+
+Triage 2026-10-08: abierto · low → low · el guard sigue en los 10 sitios, pero es una hipótesis sin medir y nadie ha visto que la pantalla se quede quieta.

@@ -5297,6 +5297,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "Ton compte Yala actuel appartient peut-être à quelqu’un d’autre : il était déjà connecté quand on est reparti de zéro ici. Pour choisir le tien, dissocie-le dans « Groupes » et touche à nouveau « Activer le cloud ».";
+"storage.migrate.refusedOtherDevice" = "Un autre de tes appareils transfère tes données vers ce compte. Termine l’activation là-bas ou, si elle s’est arrêtée, réessaie sur l’autre appareil.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "Cette copie du cloud appartient à un autre compte Yala, celui de %@. Déconnecte-toi et connecte-toi avec ce compte pour continuer.";
@@ -6047,6 +6048,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "Avec Apple, Yala utilise toujours le compte de cet appareil. Pour en utiliser un autre, choisis Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "Ce compte appartient peut-être à quelqu’un d’autre";
 "storage.migrateBlock.freshStartSessionBody" = "Rien n’a changé. Tes groupes utilisent un compte qui était déjà connecté sur cet appareil et, comme on y est reparti de zéro, il appartient peut-être à quelqu’un d’autre. Pour mettre tes données dans le cloud, dissocie-le dans « Groupes » et touche à nouveau « Activer le cloud » : tu pourras choisir ton compte.";
+"storage.migrateBlock.otherDeviceTitle" = "Un autre de tes appareils transfère tes données vers le cloud";
+"storage.migrateBlock.otherDeviceBody" = "Rien n’a changé. Termine l’activation sur l’autre appareil ou, si elle s’est arrêtée, réessaie là-bas. Une fois terminée, tu pourras activer le cloud ici.";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "Nous n'avons pas pu vérifier vos données";
@@ -6131,6 +6134,7 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Connecte-toi pour envoyer tes modifications";
+"storage.sync.waitingForConnectionUncounted" = "Modifications en attente de connexion";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Nous n’avons pas pu compter tes données. Réessaie dans un instant.";
@@ -6507,7 +6511,7 @@
 "image.entry.failure.unreadableFile.title" = "Je n’ai pas pu ouvrir ce fichier";
 
 /* Image entry failure: unreadable file, why and what to try */
-"image.entry.failure.unreadableFile.message" = "Il est peut-être vide, endommagé ou protégé par un mot de passe. Essaie une autre photo ou un autre PDF du reçu.";
+"image.entry.failure.unreadableFile.message" = "Il est peut-être vide ou endommagé. Essaie une autre photo ou un autre PDF du reçu.";
 
 /* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
 "account.currencyChange.confirmTitleNoHistory" = "Changer la devise en %@ ?";
@@ -6526,3 +6530,48 @@
 
 /* Account currency change confirmation: closing sentence when there are no movements to convert */
 "account.currencyChange.cannotUndo" = "Cette action est irréversible.";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "Ce PDF a un mot de passe";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "Saisis-le pour ouvrir le fichier. Il n’est utilisé que sur cet appareil : il n’est ni enregistré ni envoyé.";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "Mot de passe du PDF";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "Ouvrir";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "Mot de passe incorrect. Vérifie-le et réessaie.";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1 page n’a pas été lue : on en lit jusqu’à %d à la fois. Pour la lire, envoie-la dans un autre PDF.";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$d pages n’ont pas été lues : on en lit jusqu’à %2$d à la fois. Pour les lire, envoie-les dans un autre PDF.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "Tu as utilisé tes photos d’essai : 1 n’a pas été lue.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "Tu as utilisé tes photos d’essai : %d n’ont pas été lues.";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "Page %1$d sur %2$d";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "1 jour restant";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "Tu as besoin d'une connexion pour générer l'analyse IA.";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "Tu as épuisé ton quota d'analyses IA pour aujourd'hui. Reviens demain.";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "Tu as demandé plusieurs analyses d'affilée. Attends un instant et réessaie.";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "Nous n'avons pas pu confirmer ton Yala Pro. Réessaie dans un instant.";

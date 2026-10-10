@@ -1,10 +1,10 @@
 ---
 id: start-fresh-dialog-promises-what-the-gate-undoes
 status: backlog
-priority: medium
+priority: low
 area: "welcome, icloud, restore, copy"
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-10-08
 source: "review adversarial (lentes de concurrencia y de tests/copy) de `restore-says-no-data-when-the-icloud-import-never-settled`, 2026-09-20"
 ---
 
@@ -45,3 +45,12 @@ pantalla que vuelve a preguntarme, esta vez con las cifras de lo que hay en iClo
 - `restore-says-no-data-when-the-icloud-import-never-settled` — de donde sale; extendió el diálogo
   a `.importIncomplete`, `.iCloudDisabled` y `.notFound`.
 - `restore-start-fresh-keeps-the-imported-corpus` — el ticket que movió el callback a la puerta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El copy no cambió: `welcome.restore.startFreshConfirm.body` está en `es-419.lproj/Localizable.strings:4093` y lo pinta `WelcomeRestoreView.swift:228`.
+- Confirmar llama a `discardImportAndStartFresh()` (`WelcomeRestoreView.swift:224`), y `onStartFresh` sigue en `ContentView.swift:904-943`. Termina en `returnToWelcomeChooser(… step: .privateICloudGate)`: no crea nada y abre la puerta.
+- Hoy abren el diálogo seis botones: `WelcomeRestoreView.swift:389, 547, 568, 597, 636, 669`.
+- Por qué baja a low: es un texto falso que va justo antes de una pantalla que vuelve a preguntar. No se borra ni se pierde nada sin una segunda confirmación.
+
+Triage 2026-10-08: abierto · medium → low · El copy sigue diciendo «Esto creará una cuenta nueva sin tus datos previos» y confirmar sigue abriendo la puerta privada de iCloud; ningún commit lo tocó desde el 2026-09-20

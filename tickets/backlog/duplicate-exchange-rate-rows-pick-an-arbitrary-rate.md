@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: cloud
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: encargo 2026-09-26-claude-mcp-numbers-match-the-app (hallazgo al portar la tasa del día)
 ---
 
@@ -41,3 +41,12 @@ dispositivo por el sync son filas aparte con el mismo `dateKey`, y nadie las fun
 ## Cómo se sabe que está bien
 
 Con dos filas del mismo día y valores distintos, la conversión da siempre lo mismo, y es la misma que da el conector.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CurrencyConverter.fetchExchangeRate(for:)` (`CurrencyConverter.swift:612`) sigue con `results.first` sin `sortBy`; lo usa la caché del día (`cachedLatestRates`, `:520`).
+- Gemelo idéntico en `ExchangeRateService.fetchExchangeRate(for:)` (`ExchangeRateService.swift:514`): también hay que arreglarlo ahí.
+- `fetchRates(strictlyBefore:)` (`:495`) ordena solo por `dateKey`, así que dos filas del mismo día también salen en orden arbitrario.
+- Desde el 26-sep, el único commit en esos ficheros es `d9462c742` (NaN en el sync), que no toca esto.
+
+Triage 2026-10-08: abierto · medium → medium · `fetchExchangeRate(for:)` sigue devolviendo `results.first` sin orden en `CurrencyConverter.swift:612` y `ExchangeRateService.swift:514`; nadie funde las filas por `dateKey`.

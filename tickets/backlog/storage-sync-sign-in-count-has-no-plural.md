@@ -1,10 +1,10 @@
 ---
 id: storage-sync-sign-in-count-has-no-plural
 status: backlog
-priority: low
+priority: very-low
 area: "l10n, ajustes, modo-nube"
 created: 2026-09-16
-updated: 2026-09-16
+updated: 2026-10-08
 source: "segunda review adversarial de `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-16)"
 ---
 
@@ -26,3 +26,9 @@ dice «Inicia sesión para subir 1 cambios».
 
 - [ ] La clave pasa a `Localizable.stringsdict` con `one`/`other` en los 16 idiomas.
 - [ ] La batería de paridad de `/l10n-check` sigue en verde.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `storage.sync.needsSignIn` sigue en `Localizable.strings` (es: «Inicia sesión para subir %d cambios», en: «Sign in to upload %d changes») y ninguna `.stringsdict` tiene la clave.
+
+Triage 2026-10-08: abierto · low → very-low · sigue sin plural, y es pulido de texto que no confunde sobre los datos.

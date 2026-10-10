@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: gateway, ai, cost
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H9)
 ---
 
@@ -44,3 +44,11 @@ Relacionado, no duplicado: `gateway-has-no-telemetry` trata el gateway sin ning�
 - Test del gateway: una respuesta con `usage` produce un datapoint con esos campos y ninguno de texto.
 - La respuesta al cliente es byte a byte la de OpenAI.
 - Tras una semana en producción hay coste medio por pregunta de chat, por foto y por nota de voz.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Avance parcial, de `cef2a467f` (07-oct): el proxy ya no vive en `gateway/src/proxy/openai.ts` sino en `gateway/src/ai/handler.ts`. `passthrough()` (`:131-147`) ya extrae `usage` (`openAIUsage`, `ai/providers/openai.ts:39`), y `logRoute()` (`:70-104`) lo escribe con categoría, modelo, status e `in`/`cached`/`out`/`reasoning`.
+- Lo que falta: `logRoute` es un `console.log`. No hay `writeDataPoint` (el único sigue en `metrics.ts:102`) ni `[observability]` en `gateway/wrangler.toml`, así que el dato muere al cerrar `wrangler tail`.
+- Tampoco hay `finish_reason`, test del datapoint ni consulta guardada. La transcripción registra `usage: null` (`handler.ts:250`, `:258`), que basta para su punto 2 si se persiste.
+
+Triage 2026-10-08: abierto · medium → medium · desde `cef2a467f` el gateway lee `usage` y lo escribe en `console.log` (`ai/handler.ts:70-104`), pero no lo persiste en Analytics Engine ni guarda `finish_reason`.

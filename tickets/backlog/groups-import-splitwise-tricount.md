@@ -1,10 +1,10 @@
 ---
 id: groups-import-splitwise-tricount
 status: backlog
-priority: medium
+priority: low
 area: "groups, import"
 created: 2026-07-02
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Backlog/groups-import-splitwise-tricount.md
 ---
 
@@ -73,3 +73,10 @@ Dos modos de import a decidir (ver Preguntas abiertas #2 — posiblemente ambos,
 - Investigación de la sesión 2026-07-02 (flujo Solo Grupos + precondiciones de grupos).
 
 migrated from YalaWiki Backlog/groups-import-splitwise-tricount.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+- No hay ningún import de Splitwise o Tricount: `splitwise` solo aparece en comentarios (`GroupsViewModel.swift:69`, `GroupSettingsView.swift:723`).
+- `SplitExpense.isOpeningBalance` sigue (`SplitExpense.swift:28`) y es la base del modo «solo saldos netos».
+- **Obsoleto del análisis de julio:** el transporte CloudKit de Grupos ya no existe (`CKRecordTranslator`, schema `.ckdb` de grupos). Un miembro «fantasma» (pregunta #1) sería hoy un cambio del manifest de Grupos y del backend (`group_capability_manifest.json`), no de CloudKit.
+
+Triage 2026-10-08: abierto · medium → low · No existe ningún import de Splitwise/Tricount en el código; es una feature deseable con preguntas de diseño abiertas, y parte de su análisis técnico quedó obsoleto con Grupos en backend.

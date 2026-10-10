@@ -211,6 +211,7 @@ struct SubcategoriesPieWidget: Widget {
             provider: SubcategoriesPieWidgetProvider()
         ) { entry in
             SubcategoriesPieWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.subcategoriesPie")

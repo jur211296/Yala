@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: statistics
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: barrido del patrón al cerrar panel-colapsa-la-seleccion-de-cuentas-a-la-primera
 ---
 
@@ -62,3 +62,11 @@ solo un accessor con una forma peligrosa, y la regla `.claude/rules/session-filt
 - [ ] Con dos cuentas filtradas, saltar de Estadísticas a Registros conserva las dos (o se decide y
       documenta que no).
 - [ ] Unit del contexto de navegación con conjunto de dos.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- **El caso del título no se alcanza:** `StatisticsViewModel.buildRecordsContext` no tiene ningún llamador (`git grep`), y su historial empieza en `aa7adc70c` (rebrand, 2026-01-24) sin llamadores. Estadísticas y Registros comparten los filtros vía `SessionState.shared.selectedAccountIDs`, y `DetailContainerView` solo se construye con el contexto vacío. Lo que queda de esa parte es borrar `buildRecordsContext` como código muerto.
+- **El gemelo «sin confirmar» sí se alcanza para las necesidades:** `RecordsFiltersView.needChip` inserta sin `removeAll`, así que se pueden aplicar dos. `PanelViewModel.selectedNeed` devuelve `selectedNeeds.first`, y lo leen el chip de `PanelFilterControlBar` y `NeedTrendWidget` (que atenúa las demás). El cálculo del Panel usa el conjunto entero (`criteria.selectedNeeds`), así que la cifra está bien y lo que miente es la presentación. Inferido leyendo, no recorrido.
+- Categorías: `SessionState.toggleCategoryFilter` y `RecordsFiltersView` son de selección única; ahí no hay bug, solo la forma del accessor.
+
+Triage 2026-10-08: abierto · low → low · la navegación del título usa código muerto y no se alcanza; queda vivo el gemelo de necesidades en el Panel (chip y widget con `.first`), sin efecto en las cifras.

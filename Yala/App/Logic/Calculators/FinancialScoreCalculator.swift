@@ -170,8 +170,13 @@ enum FinancialScoreCalculator {
             let buckets = generateBuckets(for: budget, withinInterval: interval, calendar: calendar)
             for bucket in buckets {
                 guard bucketIsValid(bucket, for: budget, calendar: calendar) else { continue }
+                // El gasto se cuenta en el bucket CERRADO en su último segundo: `bucket` termina en la
+                // medianoche del siguiente y un gasto de ese instante contaba en los dos.
                 let spending = BudgetsViewModel.calculateSpending(
-                    budget: budget, transactions: transactions, interval: bucket, adjustment: adjustment
+                    budget: budget,
+                    transactions: transactions,
+                    interval: BudgetPeriodInterval.closing(bucket, calendar: calendar),
+                    adjustment: adjustment
                 )
                 let score = scoreForBucket(
                     spending: spending,
@@ -214,8 +219,10 @@ enum FinancialScoreCalculator {
         case .yearly:
             return enumerateBuckets(component: .year, interval: interval, calendar: calendar)
         case .unique:
-            guard let start = budget.startDate, let end = budget.endDate, start < end else { return [] }
-            let bucket = DateInterval(start: start, end: end)
+            guard let start = budget.startDate, let end = budget.endDate,
+                  calendar.startOfDay(for: start) <= calendar.startOfDay(for: end) else { return [] }
+            // Días enteros, como en Presupuestos (`BudgetPeriodInterval.unique`).
+            let bucket = BudgetPeriodInterval.unique(start: start, end: end, calendar: calendar)
             return interval.intersects(bucket) ? [bucket] : []
         }
     }

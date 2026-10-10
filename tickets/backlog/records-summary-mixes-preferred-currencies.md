@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: currency
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -41,3 +42,10 @@ reparador no alcanza (ver `fx-manual-writes-seal-approximate-as-final`, que desc
       transacción (hoy es la única que hay, y está escrito en el código).
 - [ ] Un test con dos transacciones de `preferredCurrencyCode` distinto: el total tiene que salir en
       la divisa vigente.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue. `RecordsViewModel.calculateSummary()` (`:340`) acumula `statsAdjustment.amountInPreferredCurrency(record)` (`:365`). Su comentario lo dice: «Este resumen NO convierte».
+- `CashFlowCalculator.swift:111` sí condiciona por `tx.preferredCurrencyCode == currencyCode`, y en otro caso convierte (`:120`).
+
+Triage 2026-10-08: abierto · medium → medium · `RecordsViewModel.calculateSummary` (`:365`) sigue sin la rama de conversión que tiene `CashFlowCalculator.swift:111-120`.

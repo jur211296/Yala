@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: cloud
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: encargo 2026-09-26-claude-mcp-oauth-token-can-change-the-account (residual, medido en el diseño)
 ---
 
@@ -36,3 +36,11 @@ Revocar desde la cuenta de Supabase sí corta todo al momento: el Worker lo dete
   todo, o los grants del Worker, que necesitan un endpoint propio.
 - **Si se quiere limpiar:** interceptar la revocación de `/oauth/token` antes de la librería para cerrar la sesión de
   Supabase, o un barrido periódico.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `mcp/` no tiene commits desde el 2026-09-26 (`67a15b6f2`): la revocación de `/oauth/token` la sigue sirviendo la librería sin cerrar la sesión de Supabase, y no hay barrido.
+- La fase 2 («Claude conectado · Revocar» en la app) sigue sin existir: ningún string de la app la menciona.
+- Hermano, no duplicado: `claude-mcp-production-auth-hardening` (medium) pide en su punto 6 un `sessions_inactivity_timeout`, que acotaría la vida de la sesión huérfana pero no decide qué lista la app como «Claude conectado».
+
+Triage 2026-10-08: abierto · low → low · sigue igual, pero no cambia nada para el usuario hasta la fase 2; la sesión huérfana es inalcanzable.

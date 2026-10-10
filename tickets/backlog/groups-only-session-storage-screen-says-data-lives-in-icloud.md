@@ -1,10 +1,10 @@
 ---
 id: groups-only-session-storage-screen-says-data-lives-in-icloud
 status: backlog
-priority: low
+priority: medium
 area: "sesiones, ajustes, copy"
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest` (2026-09-16)"
 ---
 
@@ -58,3 +58,12 @@ dos no pueden ser verdad a la vez.
 
 - `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest` — de donde sale.
 - `shell-derives-from-two-session-axes` — el eje de sesión que decide qué filas ve cada forma de sesión.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- La fila `storage_settings_row` de `ProfileView` sigue sin `!isGroupsOnlyShell` (`StorageRowGateLogic.isVisible` no recibe la forma de la sesión), mientras «Importar» y otras filas vecinas sí lo llevan.
+- `StorageSettingsView` sigue pintando `L10n.Storage.Status.icloudBody` («tus datos viven… en tu iCloud privado») para todo lo que no es `.cloud`.
+- Ningún commit posterior sobre los dos ficheros cambió esto. Sube a `medium` porque es copy que contradice a la persona sobre dónde viven sus datos, en una forma de sesión principal de 2.1.
+- Recomendación para la decisión: opción 1 (ocultar la fila en solo-grupos, como «Importar»), que además quita la tarjeta que puede quedarse cerrada para siempre.
+
+Triage 2026-10-08: abierto · low → medium · la pantalla sigue diciendo «tus datos viven en tu iCloud privado» en una sesión que no tiene datos personales; copy falso sobre los datos.

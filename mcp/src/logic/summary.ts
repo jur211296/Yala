@@ -4,7 +4,8 @@
  * Port de `CashFlowCalculator.calculateCashFlow` (Yala/App/Logic/Calculators/CashFlowCalculator.swift:65) con el
  * filtro de elegibilidad del chat (`FullFinancialContextBuilder.buildFromArrays`, líneas 109-114):
  *
- * - Fuera: ajustes de saldo, movimientos de cuentas excluidas de estadísticas o archivadas, y los futuros.
+ * - Fuera: ajustes de saldo, movimientos de cuentas excluidas de estadísticas, y los futuros. Una cuenta archivada
+ *   cuenta si no está excluida: archivar no decide la suma (decisión de Jürgen, 2026-10-03).
  * - Solo cuentan los movimientos CON categoría (así caen las transferencias). Ingreso o gasto lo decide
  *   `category.is_income`, no el signo.
  * - Acumulación CON SIGNO: un reembolso (gasto positivo) resta del gasto; no se usa el valor absoluto.
@@ -44,7 +45,7 @@ export function eligibleForStats(tx: TxRow, lookup: Lookup, today: string, tz: s
   if (tx.balance_adjustment_type) return null;
   if (tx.account_ref) {
     const acc = lookup.accounts.get(tx.account_ref);
-    if (acc?.exclude_from_statistics === true || acc?.is_archived === true) return null;
+    if (acc?.exclude_from_statistics === true) return null;
   }
   const day = txDay(tx, tz);
   if (!day || day > today) return null;

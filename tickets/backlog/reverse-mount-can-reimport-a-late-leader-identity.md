@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, vuelta a iCloud"
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-10-08
 source: "ticket `displaced-leader-late-identity-export-can-rekey-the-relief-corpus` (2026-09-24), residual del Paso 0"
 ---
 
@@ -28,3 +28,10 @@ después vuelves a iCloud: algunos movimientos podrían aparecer dos veces.
 ## Criterios de aceptación
 
 - [ ] Medido si pasa y, si pasa, que la vuelta no duplique.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationRunner` sigue llamando a `executor.verify(underMigrationLease: false)` en la vuelta, sin restaurar identidades.
+- `.claude/rules/swiftdata-cloudkit.md` y `tickets/done/displaced-leader-late-identity-export-can-rekey-the-relief-corpus.md` lo siguen citando como residual abierto; los PR #243, #245 y #246 cerraron las ventanas hermanas (relevo, cutover, adopt), no la de la vuelta.
+
+Triage 2026-10-08: abierto · low → low · inferido y sin medir; exige un líder desplazado que exportó tarde y, meses después, volver a iCloud.

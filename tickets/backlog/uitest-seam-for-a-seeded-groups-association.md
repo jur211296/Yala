@@ -1,10 +1,10 @@
 ---
 id: uitest-seam-for-a-seeded-groups-association
 status: backlog
-priority: medium
+priority: low
 area: "testing, groups, modo-nube"
 created: 2026-09-11
-updated: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `detach-failure-looks-like-success`"
 ---
 
@@ -50,3 +50,11 @@ hacen sus cuatro vecinos, y como hubo que hacer con `GroupsDetachPendingPurge` e
   `detach-failure-looks-like-success`, hoy cubiertos solo por unit. *(Corrección 2026-09-16: no hay
   device-QA que los cubra; ese ticket se cerró como no replicable en device, así que este seam es la única
   vía para verlos en pantalla.)*
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `grep` de `uitest-groups-association` en `Yala/` no da nada.
+- `YalaUITests/Flows/GroupsAssociationRowUITests.swift:197-206` sigue explicando que el botón «Terminar de soltar la cuenta» no se puede comprobar y remite aquí. Mientras tanto lo cubren solo los unit de `GroupsDetachPurgeFailureTests`.
+- Por qué low: es un hueco de cobertura en pantalla, y la lógica está cubierta por unit.
+
+Triage 2026-10-08: abierto · medium → low · No existe ningún seam -uitest-groups-association, y el XCUITest sigue remitiendo a este ticket para los dos estados sin cubrir

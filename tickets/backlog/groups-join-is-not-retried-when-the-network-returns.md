@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, invitaciones"
 created: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` (lente de lo que ve la persona), 2026-09-17"
 ---
 
@@ -42,3 +43,12 @@ cambio de app o vuelvo a abrir Yala. Mientras tanto, la pestaña Grupos no dice 
 
 - `groups-join-intent-expires-silently-after-transient-failures` — lo que pasa si el fallo dura 7 días.
 - `groups-loop-in-backoff-ignores-the-return-to-foreground` — la cadencia del canal de sync al volver a la app.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupJoinReconciler` sigue teniendo solo tres disparadores (`acceptShare`, `boot`, `foreground`); nada reacciona a que vuelva la red.
+- Matiz a la premisa: la app SÍ tiene un vigilante de conexión, `NetworkMonitor` (`NWPathMonitor`, desde enero), pero solo lo consultan la IA, la voz y las imágenes. La decisión D6 citada aplica al canal de sync, no a este monitor.
+- `groups.invite.slow.body` sigue prometiendo que el grupo aparecerá «apenas esté listo».
+- Recomendación para la decisión: opción 2 (ajustar el texto y enseñar la franja de unión), que es barata y deja de prometer; la 1 puede reutilizar `NetworkMonitor` sin vigilante nuevo.
+
+Triage 2026-10-08: abierto · low → low · la unión sigue sin reintentarse al volver la red y el texto lo promete; se cura en el siguiente paso a primer plano.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `adopt-follower-waits-for-the-leader-with-no-ceiling` (2026-09-23), lente de cancelar y carreras"
 ---
 
@@ -31,3 +32,10 @@ con un test por paso.
 
 - [ ] Un «sí» apuntado en una pasada que vence el techo sale como cancelación (sin tarjeta de fallo, marca `cancelled` en
       un adopt).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationRunner.observeForwardStepStall` sigue empezando por `loadState()` sin mirar `migrationCancelRequested`; `observeAdoptEffectFailure` sí lo mira en su primera línea. El arreglo propuesto sigue siendo de una línea.
+- Los commits posteriores sobre el runner (`4331f2e44`, `790d2cec3`, `da9a1f961`) añadieron pasos a esta función, no el chequeo.
+
+Triage 2026-10-08: abierto · low → low · observeForwardStepStall sigue sin leer migrationCancelRequested; es una carrera de ventana estrecha y el daño es de texto.

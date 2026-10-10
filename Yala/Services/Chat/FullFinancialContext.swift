@@ -81,10 +81,14 @@ extension FullFinancialContext {
     struct BalancesSection: Codable, Equatable {
         let accounts: [AccountEntry]
         let totalBalance: Double
+        /// Si `totalBalance` suma las cuentas de Grupos (`type == "system"`), igual que el total del Panel con
+        /// «Grupos en el total» (`includeGroupsInPanelTotal`). Esas cuentas salen en `accounts` en los dos casos.
+        let totalIncludesGroups: Bool
 
         enum CodingKeys: String, CodingKey {
             case accounts
             case totalBalance = "total_balance"
+            case totalIncludesGroups = "total_includes_groups"
         }
     }
 
@@ -106,7 +110,12 @@ extension FullFinancialContext {
         let lastWeek: PeriodSummary
         let last4Weeks: [WeekSummary]
         let currentMonth: PeriodSummary
+        /// El mes pasado ENTERO: para «¿cuánto gasté el mes pasado?».
         let lastMonth: PeriodSummary
+        /// El mes pasado hasta el día equivalente a hoy: lo que se compara con `currentMonth`
+        /// mientras el mes está en curso. Sin él, a mitad de mes el chat comparaba lo que va del mes
+        /// con el mes pasado entero y respondía «gastas menos» (banco de `chat.answer`, 2026-10-07).
+        let lastMonthToDate: PeriodSummary
         let twoMonthsAgo: PeriodSummary
         let threeMonthsAgo: PeriodSummary
         let currentYear: PeriodSummary
@@ -118,6 +127,7 @@ extension FullFinancialContext {
             case last4Weeks = "last_4_weeks"
             case currentMonth = "current_month"
             case lastMonth = "last_month"
+            case lastMonthToDate = "last_month_to_date"
             case twoMonthsAgo = "two_months_ago"
             case threeMonthsAgo = "three_months_ago"
             case currentYear = "current_year"
@@ -178,9 +188,10 @@ extension FullFinancialContext {
     struct CategoryEntry: Codable, Equatable {
         let name: String
         let totalCurrentMonth: Double
-        let totalLastMonth: Double
+        let totalLastMonth: Double              // el mes pasado entero
+        let totalLastMonthToDate: Double        // el mes pasado hasta el día equivalente a hoy
         let totalTwoMonthsAgo: Double
-        let variationPercentVsLastMonth: Double?  // null if last month was 0
+        let variationPercentVsLastMonthToDate: Double?  // contra `totalLastMonthToDate`; null si fue 0
         let txCountCurrentMonth: Int
         let subcategories: [SubcategoryEntry]
 
@@ -188,8 +199,9 @@ extension FullFinancialContext {
             case name
             case totalCurrentMonth = "total_current_month"
             case totalLastMonth = "total_last_month"
+            case totalLastMonthToDate = "total_last_month_to_date"
             case totalTwoMonthsAgo = "total_two_months_ago"
-            case variationPercentVsLastMonth = "variation_percent_vs_last_month"
+            case variationPercentVsLastMonthToDate = "variation_percent_vs_last_month_to_date"
             case txCountCurrentMonth = "tx_count_current_month"
             case subcategories
         }
@@ -199,16 +211,18 @@ extension FullFinancialContext {
         let name: String
         let totalCurrentMonth: Double
         let totalLastMonth: Double
+        let totalLastMonthToDate: Double
         let totalTwoMonthsAgo: Double
-        let variationPercentVsLastMonth: Double?
+        let variationPercentVsLastMonthToDate: Double?
         let txCountCurrentMonth: Int
 
         enum CodingKeys: String, CodingKey {
             case name
             case totalCurrentMonth = "total_current_month"
             case totalLastMonth = "total_last_month"
+            case totalLastMonthToDate = "total_last_month_to_date"
             case totalTwoMonthsAgo = "total_two_months_ago"
-            case variationPercentVsLastMonth = "variation_percent_vs_last_month"
+            case variationPercentVsLastMonthToDate = "variation_percent_vs_last_month_to_date"
             case txCountCurrentMonth = "tx_count_current_month"
         }
     }
@@ -233,17 +247,19 @@ extension FullFinancialContext {
         let name: String       // canonicalized
         let totalCurrentMonth: Double
         let totalLastMonth: Double
+        let totalLastMonthToDate: Double
         let txCount: Int
         let avgAmount: Double
-        let variationPercentVsLastMonth: Double?
+        let variationPercentVsLastMonthToDate: Double?
 
         enum CodingKeys: String, CodingKey {
             case name
             case totalCurrentMonth = "total_current_month"
             case totalLastMonth = "total_last_month"
+            case totalLastMonthToDate = "total_last_month_to_date"
             case txCount = "tx_count"
             case avgAmount = "avg_amount"
-            case variationPercentVsLastMonth = "variation_percent_vs_last_month"
+            case variationPercentVsLastMonthToDate = "variation_percent_vs_last_month_to_date"
         }
     }
 }

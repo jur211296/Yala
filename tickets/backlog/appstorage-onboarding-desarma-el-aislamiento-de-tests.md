@@ -1,10 +1,10 @@
 ---
 id: appstorage-onboarding-desarma-el-aislamiento-de-tests
 status: backlog
-priority: medium
+priority: low
 area: testing
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-10-08
 ---
 
 # Una corrida de tests deja el onboarding marcado como visto en el simulador
@@ -149,3 +149,11 @@ aserción tiene que quedar pinneada donde el escáner actual no llega.
 
 No se ha corrido ningún build ni ninguna suite para escribir este ticket. Todo lo de arriba es
 lectura del árbol `553b91c9`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Las coordenadas cambiaron: `@AppStorage` en `Yala/App/ContentView.swift:16` y `:19`; 22 asignaciones a las dos propiedades; las de `= false`, en `:942`, `:970`, `:1718`, `:1722`, `:1860`, `:1862` y `:2190`.
+- `SessionDefaults` ya no existe (se retiró con la sesión de visita, `783a4ec9b`) y no queda `defaultAppStorage`. Los `@AppStorage` escriben directo en `.standard`: la conclusión del ticket se sostiene.
+- `UITestEphemeralDefaults.applyOnboardingAlreadySeen` (`:141`) sigue purgando solo al arrancar.
+
+Triage 2026-10-08: abierto · medium → low · ContentView sigue escribiendo las dos claves en el almacén persistente (22 asignaciones); solo afecta al aislamiento de tests y a arranques manuales del simulador.

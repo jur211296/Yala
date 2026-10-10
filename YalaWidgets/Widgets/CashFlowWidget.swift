@@ -785,6 +785,7 @@ struct CashFlowWidget: Widget {
             provider: CashFlowWidgetProvider()
         ) { entry in
             CashFlowWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.cashFlow")

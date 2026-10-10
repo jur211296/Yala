@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "accounts, filters"
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-08
 source: idea de Jürgen el 2026-10-03, durante el rediseño de cuentas
 ---
 
@@ -21,3 +21,5 @@ colecciones.
 - Es un **dato nuevo**: modelo SwiftData con CloudKit y su campo en el Modo Nube. Por eso es otro desarrollo.
 
 Mientras tanto, el filtro de la toolbar del Panel ya deja elegir varias cuentas (`panel-accounts-redesign`).
+
+Triage 2026-10-08: abierto · low → low · no existe nada equivalente en `Yala/` (ningún modelo ni filtro de colección) y ningún ADR la supera; idea válida sin urgencia.

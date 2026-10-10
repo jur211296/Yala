@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "grupos, copy"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: "medido al implementar `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason` (2026-10-05)"
 ---
 
@@ -33,3 +33,11 @@ sí los cuenta y ofrece perderlos. Lo que falla es la cifra de ese primer aviso.
 Que la cifra de este bloqueo sea siempre «lo tuyo que no subió + todo lo de otra cuenta (filas retenidas y espejo)», y la
 parte de otra cuenta, esa misma suma. Cambia la cifra total, por eso no entró en el ticket padre («no cambies qué se
 cuenta»). Requiere decidir si la cifra del cierre de sesión debe cambiar igual (comparte el push-all).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudSessionSignOut.freshStartBlockCountingAnotherAccount` suma solo `mirrorPendingOfAnotherAccount` a la cifra total; las filas retenidas (`heldForAnotherAccount`) siguen fuera, y su docblock cita este ticket como el pendiente.
+- Lo que sí cambió en `e403c93c2`: con alguna fila retenida, la parte «de otra cuenta» sale `Int.max` y el aviso no parte la cifra en «tuyos» y «de otra cuenta». La cifra total sigue siendo la que este ticket describe.
+- No hay pérdida: este camino no ofrece borrar.
+
+Triage 2026-10-08: abierto · low → low · la cifra total del bloqueo pasajero sigue sin sumar las filas retenidas de otra cuenta; ya no las llama tuyas, pero el número sigue variando según el camino.

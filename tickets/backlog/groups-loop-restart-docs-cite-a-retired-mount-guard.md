@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "groups, sync"
 created: 2026-09-15
-updated: 2026-09-16
+updated: 2026-10-08
 source: "medición al cerrar `groups-channel-seal-has-no-reachable-producer`"
 ---
 
@@ -74,3 +74,11 @@ No es una decisión de producto: es documentación que miente sobre una garantí
 - `groups-channel-seal-has-no-reachable-producer`: la sesión que lo encontró, al editar el mismo docblock.
   Esa sesión solo quitó «stop» de la enumeración y dejó «D8» como estaba.
 - `shell-derives-from-two-session-axes`: el PR que retiró la sesión de visita.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Siguen los cinco comentarios: `GroupsLoopRestartLogic.swift:6-7` (guard D8) y `:25` («producción hoy»), el docblock de `GroupsSyncClient.startIfEligible` (líneas 398 y 403, «D8… AHORA es SEGURO»), `GroupsBackendInviteModifier.swift:165` («D8-safe») y `GroupsLoopRestartLogicTests.swift:22`.
+- El docblock de `GroupsSyncBreadcrumb.groupsLoopStopped` sigue sin `channel-disabled`, que `GroupsSyncClient` emite (línea 503).
+- Sigue sin medir lo que da prioridad al ticket: si queda alguna ventana de mount-mismatch alcanzable desde `startIfEligible`. Por eso se queda en `low` y no en `very-low`.
+
+Triage 2026-10-08: abierto · low → low · los comentarios siguen prometiendo un guard que se borró en 783a4ec9b, y la seguridad del re-arranque a mitad de sesión sigue sin medir.

@@ -1,5 +1,6 @@
 import { baseLang, detectLang } from "./lang";
 import type { SuggestionsContext } from "./appRequests";
+import { isValidSuggestion } from "./chatRewrite";
 
 /**
  * Criterios de acierto por tarea. Cada uno replica primero lo que hace la APP con la respuesta
@@ -94,10 +95,28 @@ export function gradeSuggestions(content: string, c: SuggestionsCase): Grade {
   const inLang = langs.filter((l) => l === target).length / items.length;
   const specific = items.filter((t) => names.some((n) => n && norm(t).includes(norm(n)))).length / items.length;
   const pass = items.length >= 8 && inLang >= 0.9 && specific >= 0.5;
+  // Aparte del acierto: cuántas conserva la app sin reescribir (`SuggestionsRewriterService.isValid` con el whitelist
+  // que arma `ChatSuggestionsLLMService`, sin los pagos recurrentes). Las demás van a `chat.rewrite`.
+  const whitelist = {
+    categories: ctx.topCategories,
+    subcategories: ctx.subcategoryNames,
+    budgets: ctx.activeBudgets,
+    tags: ctx.tagNames,
+    merchants: ctx.merchantNames,
+  };
+  const toRewrite = items.filter((t) => !isValidSuggestion(t, whitelist, ctx.language));
   return {
     pass,
     appParsed: true,
-    detail: { n: items.length, inLang: Number(inLang.toFixed(2)), specific: Number(specific.toFixed(2)), langs: langs.join(","), sample: items.slice(0, 3) },
+    detail: {
+      n: items.length,
+      inLang: Number(inLang.toFixed(2)),
+      specific: Number(specific.toFixed(2)),
+      langs: langs.join(","),
+      appValid: items.length - toRewrite.length,
+      ...(toRewrite.length ? { toRewrite } : {}),
+      items,
+    },
   };
 }
 

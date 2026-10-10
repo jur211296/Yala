@@ -5,6 +5,7 @@ priority: low
 area: "groups, currency, fx"
 created: 2026-09-09
 source: review adversarial de bridge-de-grupos-pierde-la-marca-de-sus-patas (2026-09-09)
+updated: 2026-10-08
 ---
 
 # Una pata sin convertir hace que el gasto de grupo salga con el importe del grupo entero
@@ -47,3 +48,10 @@ esa pata como dudosa — no es que la tasa fuera mala, es que no hubo tasa.
 
 - [[bridge-de-grupos-pierde-la-marca-de-sus-patas]] — la propagación de la marca; este es el hueco que
   queda por el lado del importe.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupBridgeStatsAdjustment.build` sigue sumando `realLeg.amountInPreferredCurrency + Σ loanBySign.amountInPreferredCurrency` sin tratar el cero, y la magnitud dudosa solo cuenta `isExchangeRateProvisional`.
+- `WidgetDataCache.preferredAmount(_:)` sigue tratando el cero como «sin convertir» y cae a `tx.amount`: los dos criterios siguen opuestos.
+
+Triage 2026-10-08: abierto · low → low · los dos criterios del cero siguen opuestos; la ventana es estrecha porque el bridge convierte al crear las patas.

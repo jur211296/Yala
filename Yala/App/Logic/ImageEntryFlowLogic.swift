@@ -43,6 +43,9 @@ enum ImageEntryFailure: Equatable {
 enum ImageReadOutcome: Equatable {
     /// Se leyó y salieron registros.
     case read
+    /// Una página de PDF que no trae movimientos (portada, condiciones). No es un fallo que avisar: solo cuenta como «sin
+    /// importe» si ninguna otra foto dio registros (decisión de Jürgen del 2026-10-08).
+    case empty
     case failed(ImageEntryFailure)
 }
 
@@ -83,16 +86,39 @@ enum ImageEntryFlowLogic {
             if case .failed(let failure) = outcome { return failure }
             return nil
         }
-        if failures.count < outcomes.count {
+        if outcomes.contains(.read) {
             return .review(failedPhotos: failures.count)
         }
+        // Nada leído: las páginas vacías cuentan como lo que son, fotos sin importe.
+        let emptyPages = outcomes.filter { $0 == .empty }.map { _ in ImageEntryFailure.noAmount }
+        return .failure(worstFailure(failures + emptyPages))
+    }
+
+    /// Qué dice el aviso de las fotos que no se leyeron, con lo leído a la vista. Si alguna se quedó sin leer porque se
+    /// acabó el cupo de prueba, reintentar no sirve: el aviso lo dice y ofrece Yala Pro (decisión de Jürgen del
+    /// 2026-10-08). `nil` si no falló ninguna.
+    enum FailedPhotosNotice: Equatable {
+        case retry(count: Int)
+        case trialUsedUp(count: Int)
+    }
+
+    static func failedPhotosNotice(for failures: [ImageEntryFailure]) -> FailedPhotosNotice? {
+        guard !failures.isEmpty else { return nil }
+        return failures.contains(.trialUsedUp) ? .trialUsedUp(count: failures.count) : .retry(count: failures.count)
+    }
+
+    /// Con el cupo de prueba agotado en una foto, las siguientes de la tanda fallarían igual: no se piden.
+    static func skipsRemainingReads(after failure: ImageEntryFailure) -> Bool {
+        failure == .trialUsedUp
+    }
+
+    private static func worstFailure(_ failures: [ImageEntryFailure]) -> ImageEntryFailure {
         // El cupo agotado va primero: si una foto lo agotó, las siguientes también fallarán, y lo único que lo arregla
         // es Yala Pro.
         let priority: [ImageEntryFailure] = [
             .trialUsedUp, .noConnection, .serviceUnavailable, .generic, .saveFailed, .noAmount, .unreadable, .unreadableFile,
             .cameraPermission
         ]
-        let worst = priority.first { failures.contains($0) } ?? .generic
-        return .failure(worst)
+        return priority.first { failures.contains($0) } ?? .generic
     }
 }

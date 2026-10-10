@@ -7,7 +7,7 @@
  *   (`firstWeekday`, lunes por defecto), mes, año, o las fechas del presupuesto si es «único».
  * - Gasto: port de `BudgetsViewModel.filterTransactions` + `calculateSpending`
  *   (Yala/App/ViewModels/BudgetsViewModel.swift:540, 615). Igual que esa pantalla, NO quita movimientos futuros
- *   ni de cuentas excluidas o archivadas (el chat de la app sí; la pantalla no). Filtros: cuentas, subcategorías,
+ *   ni de cuentas excluidas (el chat de la app sí; la pantalla no). Filtros: cuentas, subcategorías,
  *   etiquetas (basta una en común), naturaleza y gastos compartidos. Solo movimientos con categoría que no sea de
  *   ingreso. Suma de valores absolutos en la divisa del presupuesto, con la tasa de HOY (`convertWithLatestRate`) si
  *   hace falta. Un gasto de grupo cuenta por «tu parte» y su pata de préstamo no cuenta (ver groups.ts).

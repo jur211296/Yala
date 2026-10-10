@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: groups
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: review adversarial de groups-shareable-summary (2026-09-07)
 ---
 
@@ -58,3 +58,9 @@ con el menor id. Es determinista, no cambia ningún importe y no toca el número
       hay que fijar el conjunto esperado.
 - [ ] Sin cambios en los importes ni en la cantidad de pagos de ningún caso ya cubierto por
       `GroupBalanceServiceTests`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `DebtSimplificationService.simplifyForCurrency` sigue eligiendo con `netBalance.max(by:)` / `netBalance.min(by:)` sobre el `Dictionary`, sin desempate por `memberID`. Sin commits en el fichero desde el 2026-09-07.
+
+Triage 2026-10-08: abierto · low → low · sigue sin desempate determinista; los importes son correctos y solo cambia el reparto entre dos imágenes compartidas.

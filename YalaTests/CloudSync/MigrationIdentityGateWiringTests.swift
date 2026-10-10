@@ -194,11 +194,13 @@ struct MigrationIdentityGateWiringTests {
             "let answer: StorageMigrationIdentityGateLogic.Answer",
             "var discovery: CloudIdentityRoutingLogic.Discovery?",
             "var userID: String?",
+            "var accountMigrationInProgress = false",
             "switch await CloudIdentityDiscovery().discover(gate: .settingsMigrateToCloud) {",
-            "case let .discovered(found, id):",
+            "case let .discovered(found, id, migrationInProgress):",
             "answer = .discovered(found)",
             "discovery = found",
             "userID = id",
+            "accountMigrationInProgress = migrationInProgress",
             "case .unavailable:",
             "answer = .unavailable",
             "}",
@@ -216,7 +218,9 @@ struct MigrationIdentityGateWiringTests {
             "hasUnansweredMigrationClaim: hasUnansweredMigrationClaim,",
             "sessionOpenedByThisAttempt: sessionOpenedByThisAttempt,",
             "deviceSealedForFreshStart: UserDefaults.standard.bool(",
-            "forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart))",
+            "forKey: AppPreferences.Keys.groupsDomainSealedForFreshStart),",
+            "accountMigrationInProgress: accountMigrationInProgress,",
+            "beaconNamesThisAccount: CloudBeacon().namesAccount(sub: userID))",
             "return (check, discovery)",
         ])
 
@@ -267,10 +271,13 @@ struct MigrationIdentityGateWiringTests {
             "let attempt = migrationAttempt",
             "migrationAttempt = nil",
             "let openedSession = attempt?.sessionOpenedByThisAttempt ?? false",
+            // El faro se lee ANTES de cerrar la sesión: después ya no hay `sub` con el que compararlo.
+            "let beaconNamesClaimedAccount = CloudBeacon().namesAccount(sub: CloudAuthService.shared.currentUserID)",
             "let rejectedProvider = await closeSessionIfOpened(openedSession)",
             "publishBlock(",
             "StorageMigrationIdentityGateLogic.blockForClaimRefusal(",
-            "checkedDiscovery: attempt?.checkedDiscovery, claimState: refusal.claimState),",
+            "checkedDiscovery: attempt?.checkedDiscovery, claimState: refusal.claimState,",
+            "beaconNamesThisAccount: beaconNamesClaimedAccount),",
             "offersAnotherAccount: openedSession,",
             "rejectedProvider: rejectedProvider,",
             "stage: \"claim\")",
@@ -584,7 +591,7 @@ struct MigrationIdentityGateWiringTests {
             #expect(launcher.contains("args.append(\"\(arg)\")"), "el lanzador del XCUITest no pasa `\(arg)`")
             #expect(hooks.contains("parseValue(after: \"\(arg)\""), "`UITestHooks` no lee `\(arg)`")
         }
-        for value in ["personalData", "proceed", "personalDataApple"] {
+        for value in ["personalData", "proceed", "personalDataApple", "otherDeviceMigrating"] {
             #expect(hooks.contains("case \"\(value)\":"), "`UITestHooks` no entiende el valor `\(value)`")
         }
         let controller = Self.lines(try Self.source(Self.controllerPath)).joined(separator: "\n")

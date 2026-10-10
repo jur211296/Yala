@@ -637,7 +637,8 @@ struct VoiceRecordingView: View {
         let parsed = try await transcriptionParserService.parseMultiple(
             text: result.text,
             expenseSubcategories: expenseSubcategories,
-            incomeSubcategories: incomeSubcategories
+            incomeSubcategories: incomeSubcategories,
+            currency: ParserCurrencyContext.load(mainCurrency: appPreferences.defaultCurrencyCode.rawValue, context: modelContext)
         )
         return (result.text, parsed)
     }

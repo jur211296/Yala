@@ -1,10 +1,10 @@
 ---
 id: sidebar-test-fails-after-the-narrowing-cases-on-ipad
 status: backlog
-priority: medium
+priority: low
 area: "testing, ipad, adaptativo"
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-08
 source: "gate de floating-buttons-cover-row-amounts-on-ipad-landscape, 2026-10-03"
 ---
 
@@ -44,3 +44,12 @@ orientación— que el arranque siguiente hereda, y la barra lateral sale sin «
 ## Relacionados
 
 [[ipad-native-app]] · [[floating-buttons-cover-row-amounts-on-ipad-landscape]] (donde salió).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `AdaptiveNavigationUITests.swift`: `test_rootShowsSidebarInWideWindow_andTabBarInCompact` en `:43` (aserción en `:54`). Los tres
+  `test_narrowingTheWindow_*` están en `:415`, `:441` y `:487`.
+- Solo hay `setUp` (`:26`): ni `tearDown` ni `addTeardownBlock`. Sin medir hoy: no corrí simuladores en este triage.
+- `low`: es un rojo de orden en la lane del iPad, fuera del CI.
+
+Triage 2026-10-08: abierto · medium → low · AdaptiveNavigationUITests sigue sin tearDown ni addTeardownBlock que devuelva la ventana, y su único commit posterior (6bad63aaa) añade un caso sin tocar el orden.

@@ -1,10 +1,10 @@
 ---
 id: insights-precomputed-icon-lookup
 status: backlog
-priority: low
+priority: very-low
 area: insights
 created: 2026-05-25
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Backlog/insights-calculator-iconlookup-precomputed.md
 ---
 
@@ -82,3 +82,11 @@ icon: iconLookup[budget.persistentModelID]?.icon ?? budget.displayProperties.ico
 TODO inline en `InsightsCalculator.swift:604-605`, removido del texto del comentario durante /refine post-épico CSV mirror pero preservado como este ticket de Backlog.
 
 migrated from YalaWiki Backlog/insights-calculator-iconlookup-precomputed.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `InsightsCalculator` sigue igual: el `BudgetAtRisk` toma `icon: budget.displayProperties.icon` con el comentario «Refactor con iconLookup precomputado: ver Backlog». `Budget.displayProperties` sigue leyendo la M2M y `computeDisplayProperties(for:in:)` sigue siendo `@MainActor` con fetch.
+- Las coordenadas del plan se movieron (el `append` está hoy hacia la línea 671); el plan sigue valiendo.
+- Baja a `very-low`: el propio ticket lo describe como cosmético y transitorio, y no toca montos ni porcentajes.
+
+Triage 2026-10-08: abierto · low → very-low · `InsightsCalculator.calculateCommitments` sigue leyendo `budget.displayProperties.icon` (ruta M2M legacy) con el TODO; es un icono genérico transitorio que se autocura, pulido puro.

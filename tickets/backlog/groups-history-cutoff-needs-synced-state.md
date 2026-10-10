@@ -1,10 +1,11 @@
 ---
 id: groups-history-cutoff-needs-synced-state
 status: backlog
-priority: medium
+priority: very-low
 area: "groups, bridge"
 created: 2026-09-11
 source: "paso 8 del rediseño de sesiones (`full-mode-activation-must-ask-where-personal-data-lives`), decisión D8 del Paso 0"
+updated: 2026-10-08
 ---
 
 # «No traer mis gastos de grupo» también oculta los que vengan después
@@ -45,3 +46,14 @@ gastos de grupo que ya existían».
 - [ ] Jürgen elige (1) o (2).
 - [ ] Si (1): el saldo de «Grupos» no cambia al elegir «No»; un segundo dispositivo no trae de vuelta el
       historial; editar un gasto anterior no lo trae de vuelta; los nuevos sí se ven.
+
+## Medido en 2.1 (triage 2026-10-08)
+- El pie de la pregunta ya dice «Vale también para los que registres después. Puedes cambiarlo cuando quieras en Ajustes de Grupos.» (`groups.fullActivation.historyFootnote`, `es-419` `Localizable.strings:5787`, pintado en `FullModeActivationFinaleView.swift:138`, desde `697b5c9a1`). La opción 2 ya está aplicada en el copy.
+- `GroupTransactionBridge` no tiene corte por fecha: la opción 1 sigue sin empezar.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+- **A.** Corte sincronizado («solo lo de antes»): toca el bridge y el saldo de «Grupos», con review adversarial obligatoria.
+- **B.** Dejarlo: «No» = mantener Grupos aparte de mis finanzas, como ya dice el pie de la pregunta.
+- **Recomendación: B** — el copy ya es honesto y el cambio es reversible en Ajustes; A es un cambio de dinero caro. Con B no queda trabajo (se descartaría), por eso `very-low`.
+
+Triage 2026-10-08: abierto · medium → very-low · Comportamiento sin cambios, pero el copy ya lo dice desde 697b5c9a1 («Vale también para los que registres después»); solo falta que Jürgen elija entre corte sincronizado o dejarlo.

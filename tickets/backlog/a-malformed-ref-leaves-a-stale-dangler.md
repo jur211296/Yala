@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: "modo-nube, sync"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `dangling-ref-repair-is-lost-when-its-row-cannot-be-read` (2026-09-23), lente de instancias gemelas — fuera de lente"
 ---
 
@@ -29,3 +29,9 @@ caso `default` devuelven `nil` —pisan la ref— SIN `clearDangler`. El `.null`
 ## Criterios de aceptación
 
 - [ ] Un valor de ref mal formado no deja un dangler que luego pise la ref.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `EntityApplyMap.resolveRef` no ha cambiado: un `.string` que no es UUID y el `default` devuelven `nil` sin `clearDangler`.
+
+Triage 2026-10-08: abierto · very-low → very-low · defensa: el servidor no manda ese formato.

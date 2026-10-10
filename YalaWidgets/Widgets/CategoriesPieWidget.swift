@@ -210,6 +210,7 @@ struct CategoriesPieWidget: Widget {
             provider: CategoriesPieWidgetProvider()
         ) { entry in
             CategoriesPieWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.categoriesPie")

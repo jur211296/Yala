@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: "lectura del código al implementar el canario de `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`, 2026-10-05"
 ---
 
@@ -43,3 +43,10 @@ se pierde: sigue en este teléfono.
 
 - Sale de `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check` (el canario no lo ve).
 - Familia: `adopt-window-late-imports-overwrite-newer-cloud-edits`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- En `runAdoptOrphanReconcile` el último `collectAdoptInventory()` sigue antes de `await uploadAdoptOrphans(plan, …)` y no hay relectura después.
+- `runAdoptFlow` sigue llamando a `engine.fastForwardHistoryBaseline` en el paso 3, después del reconcile, con el ancla en la última transacción del store.
+
+Triage 2026-10-08: abierto · low → low · el orden inventario → subida → baseline sigue igual; el hueco dura segundos y el dato no se pierde, sigue en el teléfono.

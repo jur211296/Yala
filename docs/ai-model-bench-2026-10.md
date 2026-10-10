@@ -5,6 +5,9 @@
 > `gateway/bench/results/2026-10-07/`. Precios comprobados ese día en las páginas oficiales (enlazadas en
 > `gateway/bench/candidates.ts`). Gasto total del banco: ≈ 6 USD.
 
+> **Sesión 3 (2026-10-08): Claude Sonnet 5.5 y Haiku 5.5 en Insights y Tendencias**, en
+> `docs/ai-model-bench-2026-10-claude.md`. Ninguno entra; los jueces del banco pasan a Sonnet 5.5.
+
 ## Sesión 2 (2026-10-07): las 12 llamadas por el banco
 
 La sesión 2 (`ai-every-call-sends-its-task-and-passes-the-bench`) pasó por el banco las tareas que seguían en

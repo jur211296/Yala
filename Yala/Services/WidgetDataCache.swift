@@ -216,7 +216,18 @@ struct WidgetDataSnapshot: Codable {
 @MainActor
 enum WidgetDataCache {
 
-    private static let cacheKey = "widget_data_cache"
+    nonisolated static let cacheKey = "widget_data_cache"
+
+    /// **«Esta sesión es solo grupos»**, publicado para el widget en una clave PROPIA del App Group.
+    ///
+    /// El widget no ve las preferencias de la app, así que el eje 1 (`PrivateSessionMark`) tiene que viajar por el App
+    /// Group. Va FUERA del snapshot a propósito: `WidgetDataSnapshot` está duplicado en los dos targets y se decodifica
+    /// entero, así que un campo nuevo mal declarado apaga TODOS los widgets (regla del App Group en
+    /// `swiftdata-cloudkit.md`). Una clave suelta no puede romper el decode, y un widget de una versión anterior la ignora.
+    /// Ausente se lee `false`: sin dato, el widget enseña lo de siempre. Decisión de Jürgen del 2026-09-09 (ticket
+    /// `after-session-redesign-review-widgets-siri-applepay-and-web-copy`): en solo grupos invita a activar Yala completo.
+    /// El lector espejo es `WidgetDataService.groupsOnlySessionKey`, y `WidgetGroupsOnlyInviteParityTests` los compara.
+    nonisolated static let groupsOnlySessionKey = "widget_groupsOnlySession"
 
     /// Shared UserDefaults for App Group
     private static var sharedDefaults: UserDefaults? {
@@ -247,6 +258,7 @@ enum WidgetDataCache {
 
         let snapshot = buildSnapshot(context: context)
         saveSnapshot(snapshot)
+        publishSessionShell(hasPrivateSession: PrivateSessionMark.hasPrivateSession())
 
         // Trigger widget refresh
         WidgetCenter.shared.reloadAllTimelines()
@@ -261,8 +273,34 @@ enum WidgetDataCache {
 
     /// Clears the widget cache
     static func clearCache() {
-        sharedDefaults?.removeObject(forKey: cacheKey)
+        clearCache(in: sharedDefaults)
+    }
+
+    /// Variante con el store inyectado: la usan los tests de las purgas para medir el vaciado sin tocar el App Group real.
+    /// No toca `groupsOnlySessionKey`: vaciar los datos no cambia QUIÉN usa el teléfono.
+    static func clearCache(in defaults: UserDefaults?) {
+        defaults?.removeObject(forKey: cacheKey)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Publica para el widget si esta sesión es solo grupos (`!hasPrivateSession`, la MISMA lectura laxa que decide la
+    /// shell en `ShellModeLogic`: sin marca no se invita, que es enseñar lo de siempre). Solo escribe y recarga si cambia.
+    ///
+    /// Dos llamadores, y los dos hacen falta: `updateCache` (cubre el arranque, y con él al que actualiza la app ya en
+    /// solo grupos) y el `didSet` de `SessionState.hasPrivateSession`, el embudo del eje, que cubre activar Yala completo
+    /// o entrar por un grupo con la app abierta. Sin el segundo, el widget seguiría invitando hasta el siguiente arranque.
+    static func publishSessionShell(hasPrivateSession: Bool) {
+        publishSessionShell(hasPrivateSession: hasPrivateSession, in: sharedDefaults)
+    }
+
+    @discardableResult
+    static func publishSessionShell(hasPrivateSession: Bool, in defaults: UserDefaults?) -> Bool {
+        guard let defaults else { return false }
+        let groupsOnly = ShellModeLogic.effective(hasPrivateSession: hasPrivateSession) == .groupsFocused
+        guard defaults.object(forKey: groupsOnlySessionKey) as? Bool != groupsOnly else { return false }
+        defaults.set(groupsOnly, forKey: groupsOnlySessionKey)
+        WidgetCenter.shared.reloadAllTimelines()
+        return true
     }
 
     // MARK: - Private Helpers
@@ -527,7 +565,10 @@ enum WidgetDataCache {
             let start = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
             interval = DateInterval(start: start, end: now)
         case .unique:
-            interval = DateInterval(start: budget.startDate ?? now, end: budget.endDate ?? now)
+            // Días enteros, como en Presupuestos: la hora guardada en las fechas no decide nada.
+            interval = BudgetPeriodInterval.unique(
+                start: budget.startDate ?? now, end: budget.endDate ?? now, calendar: calendar
+            )
         }
 
         return BudgetsViewModel.calculateSpending(

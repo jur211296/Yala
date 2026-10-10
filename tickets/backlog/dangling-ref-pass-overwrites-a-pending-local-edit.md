@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `dangling-ref-repair-is-lost-when-its-row-cannot-be-read` (2026-09-23), lente de corrección — hallazgo 4"
 ---
 
@@ -35,3 +35,10 @@ elección en la siguiente sincronización; en una ventana estrecha, tu cambio se
 ## Criterios de aceptación
 
 - [ ] Una edición local de una columna con dangler pendiente no la pisa el pase final.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `SyncApplyEngine.reresolveDanglingRefs` sigue aplicando cada dangler con `EntityApplyMap.reresolveDangler` bajo `outboxSaveAuthor`, sin `buildPendingGuards` ni `drainOnce` delante.
+- Ningún camino de edición local borra el `SyncDanglingRef` (sus usos fuera del motor son solo el esquema y el Merkle). Los dos commits posteriores al fichero (`d9462c742`, `e735820d4`) no tocan el pase.
+
+Triage 2026-10-08: abierto · low → low · el pase final sigue sin guard D-1 ni drain previo; la pérdida exige una edición durante el último pull y que el destino llegue en ese ciclo.

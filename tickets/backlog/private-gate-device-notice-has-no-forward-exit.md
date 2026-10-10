@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-13
+updated: 2026-10-08
 source: "review adversarial de `groups-only-private-restart-skips-the-wipe-alert`, lentes de camino (F5) y de datos (A6)"
 ---
 
@@ -47,3 +48,19 @@ dos opciones sobre la mesa:
 
 - Unit: la tabla de `decide` ya cubre las celdas; lo que cambie serán las salidas de la vista.
 - Device-QA: en un teléfono sin cuenta de iCloud.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue. `WelcomePrivateICloudGateLogic.decide` (`:97-105`) da `.foundDeviceData` también sin cuenta y con fallo.
+- `foundDeviceContent` (`WelcomePrivateICloudGateView.swift:456`) tiene dos salidas, «Dejarlo como está» (`leaveGate()`) y borrar. Su docblock dice «No hay tercera».
+- `ContentView.checkHasExistingData()` (`:1442-1464`) sigue fallando cerrado: el `catch` devuelve `true`.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+- **A** (recomendada): la (a) del ticket. Ofrecer «Activar Yala completo» desde el aviso del teléfono, que conserva los grupos. Además, que un error de lectura no cuente como «hay datos».
+- **B**: la (b). Dejar las dos salidas y que el copy de «Dejarlo como está» se lea como «esto no es lo que buscas».
+- **C**: solo arreglar el fallo cerrado de `checkHasExistingData`.
+
+Con A, la prioridad es `medium`.
+
+Triage 2026-10-08: abierto · medium → medium · `foundDeviceContent` sigue con dos salidas (dejarlo o borrar) y `checkHasExistingData` sigue fallando cerrado (`ContentView.swift:1463`).

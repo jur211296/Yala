@@ -55,23 +55,16 @@ final class TransactionsCrudUITests: XCTestCase {
         amountField.tap()
         amountField.typeText("50")
 
-        // Cuenta — abrir selector y elegir la primera fila (sin acoplar al nombre del seed).
-        app.buttons["new_transaction_account_chip"].tap()
-        let firstAccount = app.buttons
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "account_selector_row_"))
-            .firstMatch
-        XCTAssertTrue(firstAccount.waitForExistence(timeout: 5), "No se montó AccountSelectorSheet con filas.")
-        firstAccount.tap()
+        // Cuenta — abrir selector y elegir la primera fila (sin acoplar al nombre del seed). El helper
+        // espera a que el teclado termine de entrar: en iOS 27.0 el toque inmediato se perdía.
+        app.chooseFirstSelectorRow(chip: "new_transaction_account_chip", rowPrefix: "account_selector_row_")
 
         // Subcategoría — ídem.
-        let subcatChip = app.buttons["new_transaction_subcategory_chip"]
-        XCTAssertTrue(subcatChip.waitForExistence(timeout: 5), "No volvió al formulario tras elegir cuenta.")
-        subcatChip.tap()
-        let firstSubcat = app.buttons
-            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "subcategory_selector_row_"))
-            .firstMatch
-        XCTAssertTrue(firstSubcat.waitForExistence(timeout: 5), "No se montó SubcategorySelectorSheet con filas.")
-        firstSubcat.tap()
+        XCTAssertTrue(
+            app.buttons["new_transaction_subcategory_chip"].waitForExistence(timeout: 5),
+            "No volvió al formulario tras elegir cuenta."
+        )
+        app.chooseFirstSelectorRow(chip: "new_transaction_subcategory_chip", rowPrefix: "subcategory_selector_row_")
 
         // Guardar → pantalla de éxito.
         let saveButton = app.buttons["new_transaction_save"]
@@ -128,13 +121,7 @@ final class TransactionsCrudUITests: XCTestCase {
             ("new_transaction_tags_chip", "tag_selector_row_", false),
         ]
         for selector in selectors {
-            let chip = app.buttons[selector.chip]
-            XCTAssertTrue(chip.waitForExistence(timeout: 5), "No apareció \(selector.chip).")
-            chip.tap()
-            let firstRow = app.buttons
-                .matching(NSPredicate(format: "identifier BEGINSWITH %@", selector.rowPrefix))
-                .firstMatch
-            XCTAssertTrue(firstRow.waitForExistence(timeout: 5), "No se montó el selector de \(selector.chip).")
+            let firstRow = app.openSelectorFirstRow(chip: selector.chip, rowPrefix: selector.rowPrefix)
             XCTAssertGreaterThan(
                 firstRow.frame.minY, windowHeight * 0.4,
                 "El selector de \(selector.chip) abrió a pantalla completa, no a media altura."
@@ -162,7 +149,10 @@ final class TransactionsCrudUITests: XCTestCase {
             } else {
                 app.buttons["toolbar_save_button"].tap()
             }
-            XCTAssertTrue(chip.waitForHittable(timeout: 5), "El selector de \(selector.chip) no se cerró.")
+            XCTAssertTrue(
+                app.buttons[selector.chip].waitForHittable(timeout: 5),
+                "El selector de \(selector.chip) no se cerró."
+            )
         }
     }
 }

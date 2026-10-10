@@ -1,0 +1,154 @@
+---
+id: settings-migrate-blocks-a-second-device-before-its-marker
+status: qa
+priority: high
+area: "modo-nube, settings"
+created: 2026-09-16
+updated: 2026-10-09
+qa-status: needs-testing
+source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (Paso 0 · D14: Jürgen, ticket aparte), 2026-09-16"
+---
+
+# El segundo iPhone del mismo iCloud no puede activar la nube hasta que le llega la marca del primero
+
+## El problema, en lenguaje de usuario
+
+Tengo dos iPhones con el mismo iCloud. Activo la nube en el primero. En el segundo, antes de que iCloud le haya traído
+la señal de que el primero ya migró, toco «Activar la nube» y entro con la misma cuenta. Yala me para con «Esa cuenta
+ya tiene finanzas personales», aunque son mis mismos datos. Hasta hoy seguía y adoptaba la cuenta, que en este caso era
+lo correcto.
+
+## Lo medido (2026-09-16, rama `encargo/2026-09-16-settings-migrate-to-cloud-adopts-silently-instead-of-migrating`)
+
+- La cuenta es `complete` desde el claim del primer iPhone: el `created` del INSERT o de la promoción ya escribe
+  `kind = 'complete'` (`qa/cloud/g15_01_account_kind.sql`, `claim_account`), no al terminar la migración.
+- La comprobación de «Migrar a la nube» bloquea toda cuenta `complete` que este dispositivo no reclamó
+  (`StorageMigrationIdentityGateLogic.check`, `claimedForMigrationHere`), y el claim con la intención de migrar
+  devuelve al inicio cualquier `existing_stable` o `claiming_in_progress` (`ForwardClaimIntent.migrateOnly`).
+- La tarjeta pasa sola a «Activar en este dispositivo» cuando el espejo de CloudKit trae el `CloudMigrationMarker`
+  (`StorageSettingsView.markerDecision()`), y ese camino es el adopt, que no pasa por la comprobación.
+- El aviso ya da una salida que funciona: «Para usar los de esa cuenta aquí, cierra sesión y entra con ella».
+- **El claim tampoco sigue al líder** (decisión de Jürgen del mismo día, D18): si la comprobación pasó antes de que el
+  primer iPhone reclamara la cuenta, el claim del segundo contesta `claiming_in_progress` y «Migrar» vuelve al inicio con
+  el mismo aviso, en vez de esperar al líder y adoptar.
+
+## La ventana que no se cierra (segunda pasada de la review, 2026-09-16)
+
+La marca llega solo si el primer dispositivo TERMINA. Dos casos en que no termina nunca, medidos en el código:
+
+- **El líder falla y no reintenta.** Su claim dejó la cuenta `complete` con `migration_in_progress` y él de líder; un
+  rollback (iCloud lleno, un fallo antes del cutover) es solo local y no deja marca. El segundo dispositivo se para en la
+  comprobación para siempre. En `2.1` su claim le seguía y a los 60 min sin latido le quitaba el turno
+  (`claim_account`, rama del relevo). La salida que queda es reintentar en el dispositivo que empezó, y **ningún texto lo
+  dice**.
+- **El mismo iPhone reinstala Yala a medias.** El sello `.proceedMigration` vive en `UserDefaults` y se va con la app, y el
+  `device_id` cambia, así que el servidor ya no le devuelve `created` al líder: se para igual. Guardar el sello donde
+  sobreviva a reinstalar (el Keychain, por `sub`) es una de las opciones.
+
+Jürgen eligió parar y avisar también aquí (D18): con iCloud distintos, esperar y relevar mezcla dos corpus, y el teléfono
+no puede distinguir los dos casos.
+
+## Por qué no se arregló en el ticket que lo abrió
+
+Distinguir «es mi otro iPhone» de «es la cuenta de otra persona» necesita una prueba de linaje que hoy no existe. **El
+faro (`CloudBeacon`) no vale**: dice que la cuenta es de este Apple ID, no que el corpus de este teléfono sea el de esa
+cuenta, y también lo escribe el alta born-cloud, que no tiene corpus en CloudKit. Es la misma pregunta que
+`adopt-uploads-a-foreign-corpus-without-a-lineage-check`.
+
+## Opciones, sin decidir
+
+- **Decir la verdad sobre la migración en curso**: si la cuenta tiene `migration_in_progress` y el faro nombra esta cuenta,
+  decir «Otro de tus dispositivos está llevando tus datos a la nube: termina allí, o reintenta en ese dispositivo» en vez
+  de «ya tiene finanzas personales». `/account/exists` no expone `migration_in_progress`: hace falta el gateway. Y «aquí se
+  activará cuando termine» sería falso con un líder abandonado.
+- **Resolverlo con la guarda de linaje del ticket hermano**, si se diseña una.
+
+## Criterios de aceptación
+
+- [ ] Un segundo dispositivo del mismo iCloud, antes de que llegue la marca, no recibe el aviso de «ya tiene finanzas
+      personales», o el caso se decide y se documenta como aceptado.
+- [ ] Una cuenta con finanzas de otra persona sigue sin poder recibir la migración.
+- [ ] Una migración abandonada por su líder, o por el mismo iPhone tras reinstalar, tiene una salida que el aviso nombra.
+
+## Nota (2026-09-24)
+
+La «guarda de linaje del ticket hermano» existe ya, con dos pruebas: el marcador de la cuenta o una fila viva de la cuenta
+en el store local (`MigrationWorkExecutor.lineageSharedLiveRows`, la de la ida y la del adopt desde
+`adopt-after-the-cutover-needs-a-marker-the-leader-never-exported`). Es candidata para distinguir aquí «es mi otro iPhone»
+de «es la cuenta de otra persona»; no se ha tocado esta puerta. Ojo al reusarla: sin marcador, una fila compartida sola no
+basta —`adoptSharedRowsProof` exige además que en cada tabla que sube estén ya todas las filas de la cuenta, o se
+duplicarían—. Y este es ahora el hueco que queda del escenario de ese ticket: el segundo teléfono que YA tenía Yala, con
+el líder parado tras el cutover del servidor, no llega al adopt desde Ajustes.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `StorageMigrationIdentityGateLogic.check` (`StorageMigrationIdentityGateLogic.swift:134-171`): una cuenta `complete` que este
+  dispositivo no reclamó sigue en `.blocked(.accountHasPersonalData)`.
+- `edc92f5af` (06-oct) recuerda el rechazo y apaga el botón con el motivo, pero el motivo sigue siendo el mismo texto falso.
+- `high`: con el líder abandonado o reinstalado, nadie puede volver a activar la nube en esa cuenta, y ningún texto lo dice.
+  Los datos siguen a salvo en privado.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Cómo distinguir «es mi otro iPhone» en la puerta de «Migrar a la nube»:
+
+- **A** · Decir la verdad sobre la migración en curso: exponer `migration_in_progress` en `/account/exists` y, con el faro
+  de esta cuenta, decir «Otro de tus dispositivos está llevando tus datos a la nube: termina o reintenta allí».
+- **B** · Reusar la guarda de linaje que ya existe (`MigrationWorkExecutor.lineageSharedLiveRows` / `adoptSharedRowsProof`)
+  para dejar pasar al adopt.
+- **C** · Aceptar el bloqueo y documentarlo.
+
+**Recomendación: A primero.** Cierra la mentira y nombra la salida para los tres casos: marca en camino, líder parado y
+reinstalación. B no ayuda cuando el líder no terminó. Con A, `high`.
+
+Triage 2026-10-08: abierto · medium → high · StorageMigrationIdentityGateLogic.check sigue convirtiendo blockedAccountIsComplete en accountHasPersonalData, y edc92f5af solo recuerda el rechazo; la migración abandonada por su líder sigue sin salida nombrada.
+
+## Hecho (2026-10-09, opción A)
+
+Decidido por Jürgen el 2026-10-08 16:20; decisiones de detalle en el Paso 0 del encargo
+`encargos/lanzados/2026-10-09-settings-migrate-blocks-a-second-device-before-its-marker.md`.
+
+- **Gateway**: `/account/exists` añade `migration_in_progress: true|false` cuando la fila existe (`handleAccountExists`). Sin
+  SQL: la columna ya se podía leer con el JWT del usuario. Desplegado en staging y producción; antes → después y prueba de humo
+  en `docs/RUNBOOK-staging-ddl.md`.
+- **La puerta** (`StorageMigrationIdentityGateLogic.check`): cuenta `complete` que este dispositivo no reclamó + ida en curso +
+  faro de esta cuenta ⇒ `.blocked(.migrationInProgressOnAnotherDevice)`. Sin ida en curso, o sin el faro, sigue siendo
+  «ya tiene finanzas personales». **Sigue siendo un bloqueo**: ninguna cuenta recibe la migración que antes no la recibía.
+- **La segunda capa** (`blockForClaimRefusal`): un claim que contesta `claiming_in_progress` con el faro de la cuenta da el mismo
+  motivo. El faro se lee antes de cerrar la sesión que abrió el intento.
+- **Texto** (16 locales): título de Jürgen «Otro de tus dispositivos está llevando tus datos a la nube»; cuerpo «No cambiamos
+  nada. Termina la activación en ese dispositivo o, si se detuvo, reinténtala allí. Cuando termine, podrás activar la nube
+  aquí.»; nota de la tarjeta «Otro de tus dispositivos está llevando tus datos a esta cuenta. Termina la activación allí o, si
+  se detuvo, reinténtala en ese dispositivo.» Canario `other_device_migrating`.
+
+### Criterios
+
+- [x] Un segundo dispositivo del mismo iCloud, antes de que llegue la marca, ya no recibe «ya tiene finanzas personales».
+- [x] Una cuenta con finanzas de otra persona sigue sin poder recibir la migración (los unit fijan que solo cambia el motivo).
+- [ ] Una migración abandonada por su líder tiene una salida que el aviso nombra (reintentar en ese dispositivo).
+      **Tras reinstalar en el mismo iPhone, no**: el aviso nombra «otro dispositivo» y esa salida no existe. Ticket
+      `reinstall-mid-migration-has-no-exit-from-the-identity-gate`.
+
+## Device-QA (Jürgen, dos iPhone con el mismo Apple ID)
+
+**Montaje.** Los dos iPhone con el mismo Apple ID y la misma build de TestFlight que lleve este cambio. En los dos, Yala con
+tus datos en el iCloud privado (Ajustes → Perfil → «Dónde viven tus datos» dice «iCloud privado»). El backend ya está
+desplegado en producción.
+
+1. En el **iPhone A**: Perfil → «Dónde viven tus datos» → «Activar la nube» → elige Apple o Google y acepta. Déjalo
+   trabajando (la barra avanza).
+2. Mientras A sigue en la barra, en el **iPhone B**: Perfil → «Dónde viven tus datos» → «Activar la nube» y entra con la
+   **misma** cuenta.
+3. **Esperado en B**: una hoja con el título «Otro de tus dispositivos está llevando tus datos a la nube» y el texto «… Termina
+   la activación en ese dispositivo o, si se detuvo, reinténtala allí…». **No** debe decir «Esa cuenta ya tiene finanzas
+   personales».
+4. Toca «Entendido». **Esperado**: la tarjeta vuelve a como estaba, porque Yala cierra la sesión que abriste para esto. Si
+   en B ya tenías sesión por tus grupos (la cuenta de la sección «Grupos»), la tarjeta dice en cambio «Otro de tus
+   dispositivos está llevando tus datos a esta cuenta…» y el botón «Activar la nube» queda apagado.
+5. Deja que A termine. **Esperado en B**, al rato (cuando iCloud le trae la marca): la tarjeta pasa sola a «Activar la nube en
+   este dispositivo».
+6. Control: con otra cuenta que ya tenga datos personales y **sin** ninguna activación en curso, el paso 2 debe seguir diciendo
+   «Esa cuenta ya tiene finanzas personales».
+
+Si en el paso 3 sale el texto viejo: puede que el faro de iCloud-KV aún no haya llegado a B (tarda segundos, a veces minutos).
+Cierra la hoja, espera un minuto y vuelve a tocar.

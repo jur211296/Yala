@@ -1,10 +1,10 @@
 ---
 id: groups-transfer-leave-write-ahead
 status: backlog
-priority: medium
+priority: low
 area: groups
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-08
 source: review adversarial de groups-owner-transfer-and-leave (2026-09-06)
 ---
 
@@ -47,3 +47,10 @@ acción correcta— y ya no «Eliminar», que era la que podía destruir el grup
 ## Relacionados
 
 - [[groups-owner-transfer-and-leave]] — el ticket que expuso esta primitiva a una segunda superficie.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `GroupSettingsView.transferAndLeave` (`GroupSettingsView.swift:883-905`) llama directo a `GroupService.transferOwnershipThenLeave` (`GroupService.swift:907`), sin grabar fase.
+- El único camino con write-ahead sigue siendo el batch (`GroupService.swift:792`, vía `GroupBatchLeaveOrchestrator`).
+- Baja a `low`: recuperable sin pérdida al reabrir los ajustes, y desde el arreglo del padre la ventana ofrece «Salir».
+
+Triage 2026-10-08: abierto · medium → low · GroupSettingsView.transferAndLeave sigue llamando a transferOwnershipThenLeave sin intent durable ni resume; el estado es recuperable a mano y sin pérdida.

@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (35 entradas)
+## Índice (36 entradas)
 
-> **No hace falta leer este fichero entero** — son 142 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 144 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-10-09` [g17_01 — el claim de la vuelta conserva `reverted_at` en una cuenta que ya volvió (2026-10-09)](#g1701--el-claim-de-la-vuelta-conserva-revertedat-en-una-cuenta-que-ya-volvi-2026-10-09)
 - `2026-10-07` [hlc01 — tope a un HLC del futuro, canal personal + Grupos (2026-10-07)](#hlc01--tope-a-un-hlc-del-futuro-canal-personal--grupos-2026-10-07)
 - `2026-09-24` [g16_04 — después del cutover no hay relevo: quien llega entra en la cuenta (2026-09-24)](#g1604--despus-del-cutover-no-hay-relevo-quien-llega-entra-en-la-cuenta-2026-09-24)
 - `2026-09-24` [g16_03 — el claim que da el turno dice si la cuenta ya tiene datos personales (2026-09-24)](#g1603--el-claim-que-da-el-turno-dice-si-la-cuenta-ya-tiene-datos-personales-2026-09-24)
@@ -1703,6 +1704,26 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 ```sql
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
+
+## g17_01 — el claim de la vuelta conserva `reverted_at` en una cuenta que ya volvió (2026-10-09)
+
+**PREPARADA, NO APLICADA en ningún entorno** (la sesión no tenía acceso de escritura; los pasos están en
+`docs/RUNBOOK-staging-ddl.md`). Fichero: `qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql`; marcha atrás
+`qa/cloud/g17_01_rollback.sql`; banco local `bash qa/cloud/g17_01-local-test.sh`, que corre contra el cuerpo REAL
+(`qa/cloud/fixtures/migration_progress.g15_02.functiondef.sql`, md5 `14fc5e2c…`) y contra una réplica. Ticket
+`reverse-exit-on-a-reverted-account-rejects-the-retry`. El primer intento en staging abortó sin tocar nada porque la guarda
+buscaba el literal con un espacio y el cuerpo vivo alinea las escrituras; ahora busca por patrón y conserva el espaciado.
+md5 nuevo esperado: `776dac35d585393fabeabedf8eafee82`.
+
+Qué cambia: cada `reverted_at = null` de `migration_progress` (el claim fresco y los dos takeovers de `reverse_claim`) pasa
+a `reverted_at = case when kind = 'complete' then null else reverted_at end`. En una cuenta `complete` sigue limpiando los
+marcadores del run anterior (golden 17); en una `groups_only` —la que ya volvió a iCloud desde otro dispositivo— los
+conserva, y con ellos la mitad `reverted_at` del guard de `g15_02`. Así el 2.º dispositivo puede salir de su espera y
+reintentar, su re-claim tras una respuesta perdida es idempotente, y un 3.º que pulsa mientras otro sube oye
+`other_leader`. **Medido contra la función viva de staging** el 2026-10-09 con el golden 16-ter, antes de aplicar nada: los
+tres reciben `not_complete`. Su §1-bis repara además las cuentas que el bug ya atascó (`groups_only` con
+`personal_claimed_at` y sin `reverted_at`, un estado que solo deja ese bug). Tras aplicarla, el apartado «Reversa server-side» de arriba deja de ser exacto en «el claim
+FRESCO (y todo takeover) resetea `reverse_frozen_at`/`reverted_at`»: `reverted_at` solo en una cuenta `complete`.
 
 ## hlc01 — tope a un HLC del futuro, canal personal + Grupos (2026-10-07)
 

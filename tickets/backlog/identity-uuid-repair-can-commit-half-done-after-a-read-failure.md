@@ -1,10 +1,10 @@
 ---
 id: identity-uuid-repair-can-commit-half-done-after-a-read-failure
 status: backlog
-priority: medium
+priority: low
 area: "sync, dedup, etiquetas"
 created: 2026-09-23
-updated: 2026-09-23
+updated: 2026-10-08
 source: "review adversarial de `drain-duplicates-the-unit-clock-when-its-row-cannot-be-read` (2026-09-23), lente de gemelos"
 ---
 
@@ -33,3 +33,11 @@ Tres sitios de `CategoryDeduplicationService.repairCollapsedIdentityUUIDs` (`Yal
 
 - [ ] Toda lectura que falle durante la reparación deshace la pasada entera (rollback) y la aplaza.
 - [ ] Tests con cada lectura lanzando + control positivo.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `repairCollapsedIdentityUUIDs` (`CategoryDeduplicationService.swift:287`): el `catch` externo (`:454-458`) solo devuelve `0`, sin `rollback()`; solo el `catch` del remap (`:428-435`) deshace.
+- `rebuildTagCSVMirrors` (`:467-494`) sigue tragándose el `fetch`.
+- `SyncIdentityService.rekeyIdentity` (`:424-427`) se llama sin mirar su resultado.
+- Baja a `low`: requiere un fallo de lectura improbable en una reparación ya rara.
+
+Triage 2026-10-08: abierto · medium → low · Los tres huecos siguen: rebuildTagCSVMirrors traga el fetch, el catch externo devuelve 0 sin rollback y el resultado de rekeyIdentity se descarta.

@@ -1,10 +1,10 @@
 ---
 id: image-entry-name-says-image-but-takes-files
 status: backlog
-priority: medium
+priority: low
 area: image, copy, l10n
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: Jürgen, sesión gpt-4-1-nano-shuts-down-on-october-23 (2026-10-07)
 ---
 
@@ -51,3 +51,15 @@ el atajo. Leer `BRAND-VOICE.md` antes de escribir el copy final.
 - Las 11 claves dicen el nombre nuevo en los 10 idiomas de la app (sus 16 `.lproj`), con la batería de paridad de l10n en verde.
 - La frase de Siri vieja sigue funcionando, o se decide expresamente retirarla.
 - Lola tiene el aviso para la ficha y las capturas.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Las 11 claves siguen diciendo «imagen» (medido en `es.lproj`: «Registrar con imagen», «Registro por imagen», «Entrada por imagen», «Registra con imagen en Yala»). ¿Qué nombre?
+
+- **A** · «Registrar con foto o archivo» en la hoja y el paywall, y «Foto o archivo» en el control y el atajo.
+- **B** · «Escanear».
+- **C** · «Leer un comprobante».
+
+Recomendación: **A**, y conservar la frase de Siri vieja como sinónimo. Con A la prioridad es `low`: es un nombre, y la función ya acepta PDF.
+
+Triage 2026-10-08: abierto · medium → low · las 11 claves siguen diciendo «imagen» en `es.lproj` (p. ej. `image.entry.title` = «Registrar con imagen»); falta la decisión del nombre.

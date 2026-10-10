@@ -1,10 +1,10 @@
 ---
 id: unit-tests-clear-the-attest-streak-of-a-device-qa-in-progress
 status: backlog
-priority: low
+priority: very-low
 area: "testing, attest, qa"
 created: 2026-09-15
-updated: 2026-09-15
+updated: 2026-10-08
 source: "hallazgo de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15)"
 ---
 
@@ -57,3 +57,10 @@ el desvío de uitest es su gemelo para el otro target y puede servir de molde.
 
 - `groups-phone-that-never-attests-is-told-to-retry-forever` — el device-QA que lo sufre.
 - `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` — donde apareció.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `IsolatedAttestStreak` ya lo usan 10 ficheros de test (entre ellos `CloudSyncRuntimeTests` y `GroupsSyncHardeningTests`), pero `GroupsSyncClientPushTests` y `GroupsSyncApplyZoneTests`, que responden 200, siguen sin él.
+- El device-QA que lo sufría (`groups-phone-that-never-attests-is-told-to-retry-forever`) se cerró el 2026-09-23 sin device-QA, cubierto por 25 mutantes. Hoy no hay ningún recorrido que dependa de la racha en el simulador.
+
+Triage 2026-10-08: abierto · low → very-low · dos suites siguen escribiendo en la racha del host, pero el único device-QA que la necesitaba se cerró sin correrlo y no hay otro en cola.

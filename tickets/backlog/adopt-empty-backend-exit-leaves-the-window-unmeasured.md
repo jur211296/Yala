@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: "review adversarial (lente de exactitud) de `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`, 2026-10-05"
 ---
 
@@ -36,3 +36,10 @@ sube a la cuenta en la nube, y el canario que mide justo esto no lo ve.
 ## Relación
 
 - Sale de `adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `runAdoptOrphanReconcile` (`MigrationWorkExecutor.swift`) sigue saliendo por `.abortedEmptyBackend` con `backendSyncIDs.isEmpty && pendingUploads > 0`, tras `clearAdoptBackendKnown` y sin dejar la marca del adopt.
+- `runAdoptFlow` sigue tratando `.completed, .abortedEmptyBackend` igual y pasa al paso 3 y a `writeCloudArmed`. Ningún commit desde el 2026-10-05 toca esa salida.
+
+Triage 2026-10-08: abierto · low → low · la salida por backend vacío sigue sin marca ni ventana; requiere cuenta existente vacía y un import tardío, y queda por medir cuántas hay.

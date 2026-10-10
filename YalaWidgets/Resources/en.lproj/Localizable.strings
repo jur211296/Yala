@@ -149,3 +149,9 @@
 "widget.gallery.monthSummary" = "Monthly Summary";
 "widget.gallery.monthSummary.desc" = "Your balance, spending by category and budgets this month";
 "widget.ui.monthSummary" = "Monthly Summary";
+
+/* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
+"widget.groupsOnly.title" = "No personal finances yet";
+
+/* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
+"widget.groupsOnly.cta" = "Activate full Yala";

@@ -5,6 +5,7 @@ priority: low
 area: "groups, onboarding"
 created: 2026-09-27
 source: "review adversarial de `wipe-data-keeps-groups-but-drops-their-bridged-rows` (2026-09-27, lentes de momento y de dinero); inferido por lectura, NO reproducido"
+updated: 2026-10-08
 ---
 
 # La petición de convergencia de un «Vaciar datos» en solo-grupos queda dormida y la heredan caminos que no la pidieron
@@ -33,3 +34,11 @@ Ninguno visible casi nunca. En el peor caso: tras vaciar mis datos en solo-grupo
 ## Relacionados
 
 - [[wipe-data-keeps-groups-but-drops-their-bridged-rows]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `FullModeActivationView` sigue pidiendo solo `GroupsBridgeRestoreConvergenceStore.markPending()` al restaurar, y `markPending()` no retira `settlementLegsKey`, así que la petición de liquidaciones heredada sigue viva.
+- La única retirada de las dos keys sigue siendo `GroupsBridgeRestoreConvergenceStore.clear` en el relevo de persona de `DataWipeService`; el cierre de sesión no las nombra.
+- Sigue pendiente la decisión. Recomendación: sí a las dos (restaurar retira la de liquidaciones heredada; el cierre retira las dos), que cierra el doble conteo sin cambiar el caso normal.
+
+Triage 2026-10-08: abierto · low → low · las dos peticiones siguen dormidas y heredables; el doble conteo exige restaurar con un import de más de 30 s y aprobar el borrador.

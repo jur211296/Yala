@@ -147,6 +147,23 @@ describe("criterios", () => {
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), t(-1, "2026-10-02")]).pass).toBe(false); // de más
     expect(g([t(-10, "2026-10-01"), t(5, "2026-10-02"), { ...t(0, "2026-10-02"), amount: null }]).pass).toBe(true); // sin importe: no cuenta
   });
+
+  it("foto: una página de extracto sin movimientos acierta vacía, y un saldo leído como movimiento la hace fallar", () => {
+    const empty: PhotoCase = { id: "stmt-x", file: "", today: "2026-10-08", kind: "", lang: "es", source: "", expect: { imageType: "unknown", transactions: [] } };
+    const conf = { overall: 1, imageType: 1 };
+    const g = (txs: unknown[]) => gradePhoto(JSON.stringify({ imageType: "list", transactions: txs, confidence: conf }), empty);
+    expect(g([]).pass).toBe(true);
+    expect(g([{ amount: 3250.4, date: "2026-09-01", merchant: "SALDO ANTERIOR", note: null, currency: "PEN" }]).pass).toBe(false);
+  });
+
+  it("los casos multipágina (`stmt-*`) existen, tienen su imagen y una página sin movimientos al menos", () => {
+    const cases = (JSON.parse(readFileSync(new URL("../bench/cases/photo.read.json", import.meta.url), "utf8")) as { cases: PhotoCase[] }).cases
+      .filter((c) => c.id.startsWith("stmt-"));
+    expect(cases.length).toBeGreaterThanOrEqual(12);
+    for (const c of cases) expect(() => readFileSync(new URL(`../bench/cases/photo/${c.file}`, import.meta.url))).not.toThrow();
+    expect(cases.some((c) => c.expect.transactions.length === 0)).toBe(true);
+    expect(Math.max(...cases.map((c) => c.expect.transactions.length))).toBeGreaterThanOrEqual(40);
+  });
 });
 
 // ---------- sesión 2 · chat y nota (trabajador A): text.parse, chat.answer, chat.rewrite ----------
@@ -154,8 +171,9 @@ describe("criterios", () => {
 import { categoryName, currencySymbol, seedSubcategoryNames, subcategoryName } from "../bench/lib/appCatalog";
 import { chatDynamicPrompt, chatRegister, chatStaticPrompt, extractNumbers, fidelity, gradeChatAnswer, matchesValue, personaContext, triggersAnomalies } from "../bench/lib/chatAnswer";
 import { toAppJSON } from "../bench/lib/chatContext";
-import { gradeRewrite, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
-import { gradeTextParse, matchSubcategory, parseNoteResponse, textParseBody, type TextParseCase } from "../bench/lib/textParse";
+import { commonWordSet, gradeRewrite, isPolishInflection, isValidSuggestion, parseRewritten, rewriteBody, type RewriteCase } from "../bench/lib/chatRewrite";
+import { exampleHint, gradeTextParse, matchSubcategory, parserCurrencyValues, parseNoteResponse, resolveFamily, sharedNameFamilies, textParseBody, type TextParseCase } from "../bench/lib/textParse";
+import { TEXT_PARSE_SCHEMA } from "../src/ai/schemas";
 import { PERSONAS } from "../bench/tasks/chat.answer";
 
 const caseFile = <T>(name: string): { cases: T[] } => JSON.parse(readFileSync(new URL(`../bench/cases/${name}`, import.meta.url), "utf8"));
@@ -163,7 +181,7 @@ const swiftLines = (file: string) => new Set(swift(file).replace(/\\"/g, '"').sp
 
 describe("text.parse: el cuerpo de TranscriptionParserService", () => {
   const c = caseFile<TextParseCase>("text.parse.json").cases[0];
-  const body = textParseBody(c) as { messages: { role: string; content: string }[]; temperature: number; model: string };
+  const body = textParseBody(c) as { messages: { role: string; content: string }[]; temperature: number; model: string; response_format?: unknown };
   const prompt = body.messages[0].content;
 
   it("el prompt sale del Swift: toda línea fija está allí, sin interpolaciones sueltas", () => {
@@ -171,13 +189,39 @@ describe("text.parse: el cuerpo de TranscriptionParserService", () => {
     expect(prompt.startsWith("Eres un parser de gastos para una app de finanzas personales.")).toBe(true);
     expect(prompt).not.toMatch(/\\\(/);
     const fromDateContext = new Set(dateContext("2026-10-07").split("\n").map((l) => l.trim()));
+    const cur = parserCurrencyValues(c.defaultCurrency, c.accountCurrencies ?? [c.defaultCurrency]);
+    const fromCurrency = new Set([cur.userCurrencyLine, ...cur.sharedNameRules.split("\n")].map((l) => l.trim().replace(/^- /, "")));
     for (const line of prompt.split("\n").map((l) => l.trim()).filter(Boolean)) {
-      if (fromDateContext.has(line) || line.startsWith("Output:") || line.split(", ").length > 8) continue;
-      expect(src.has(line), line).toBe(true);
+      if (fromDateContext.has(line) || fromCurrency.has(line.replace(/^- /, "")) || line.startsWith("Output:") || line.split(", ").length > 8) continue;
+      expect(src.has(line) || src.has(line.replace("2026-10-07", "\\(today)")), line).toBe(true);
     }
     expect(body.temperature).toBe(0.1);
     expect(body.model).toBe("gpt-4.1-mini");
-    expect(body).not.toHaveProperty("response_format");
+    expect(body.response_format).toEqual({ type: "json_schema", json_schema: { name: "text_parse", schema: TEXT_PARSE_SCHEMA.schema, strict: true } });
+  });
+
+  it("divisas como ParserCurrencyContext: la principal manda, luego la única cuenta de la familia, luego el defecto", () => {
+    const fams = sharedNameFamilies();
+    const [peso, dollar, franc] = fams;
+    expect(peso.names).toContain('"pesos"');
+    expect(resolveFamily({ main: "ARS", accounts: ["ARS", "USD"] }, peso)).toBe("ARS");
+    expect(resolveFamily({ main: "USD", accounts: ["USD", "ARS"] }, peso)).toBe("ARS");
+    expect(resolveFamily({ main: "PEN", accounts: ["PEN"] }, peso)).toBeNull();
+    expect(resolveFamily({ main: "CAD", accounts: [] }, dollar)).toBe("CAD");
+    expect(resolveFamily({ main: "EUR", accounts: ["EUR"] }, franc)).toBe("CHF");
+    const ar = textParseBody({ ...c, defaultCurrency: "ARS", accountCurrencies: ["ARS", "USD"] }) as { messages: { content: string }[] };
+    expect(ar.messages[0].content).toContain(`${peso.names} a secas → "ARS"`);
+    expect(ar.messages[0].content).toContain("La divisa principal del usuario es ARS y sus cuentas usan ARS, USD.");
+  });
+
+  it("los ejemplos solo enseñan subcategorías de la lista (palabras clave leídas del Swift)", () => {
+    expect(exampleHint(["Alquiler"], ["restaur"])).toBe("null");
+    expect(exampleHint(["Supermärkte & Lebensmittel"], ["supermark"])).toBe('"Supermärkte & Lebensmittel"');
+    const subs = new Set(seedSubcategoryNames("es-419").expense);
+    for (const m of prompt.matchAll(/"subcategoryHint":("[^"]*"|null)/g)) {
+      if (m[1] !== "null") expect(subs.has(JSON.parse(m[1])), m[1]).toBe(true);
+    }
+    expect(prompt).not.toContain('"date":null');
   });
 
   it("los ejemplos llevan la fecha de hoy y las listas son las subcategorías sembradas en el idioma del usuario", () => {
@@ -256,7 +300,12 @@ describe("chat.answer: el cuerpo de ChatAssistantService.runAskFlow", () => {
       for (const c of ctx.categories) {
         const subs = c.subcategories.reduce((a: number, s: { total_last_month: number }) => a + s.total_last_month, 0);
         expect(subs, `${p.id} ${c.name}`).toBeCloseTo(c.total_last_month, 6);
+        const subsToDate = c.subcategories.reduce((a: number, s: { total_last_month_to_date: number }) => a + s.total_last_month_to_date, 0);
+        expect(subsToDate, `${p.id} ${c.name} to_date`).toBeCloseTo(c.total_last_month_to_date, 6);
+        expect(c.total_last_month_to_date, `${p.id} ${c.name} to_date ≤ entero`).toBeLessThanOrEqual(c.total_last_month + 1e-9);
       }
+      // El mes pasado hasta hoy es parte del mes pasado entero (igual solo si hoy no existe en el mes pasado).
+      expect(ctx.periods.last_month_to_date.expense, p.id).toBeLessThanOrEqual(ctx.periods.last_month.expense + 1e-9);
       expect(ctx.metadata.date_today).toBe(p.today);
       expect(ctx.anomalies).toBeUndefined();
     }
@@ -313,7 +362,7 @@ describe("chat.rewrite: el cuerpo de SuggestionsRewriterService.rewrite", () => 
   });
 
   it("las inválidas de cada caso son exactamente las que el isValid de la app manda a reescribir", () => {
-    for (const c of cases) expect(c.suggestions.filter((s) => !isValidSuggestion(s, c.whitelist)), c.id).toEqual(c.invalid);
+    for (const c of cases) expect(c.suggestions.filter((s) => !isValidSuggestion(s, c.whitelist, c.language)), c.id).toEqual(c.invalid);
   });
 
   it("parseRewritten y el criterio", () => {
@@ -325,6 +374,68 @@ describe("chat.rewrite: el cuerpo de SuggestionsRewriterService.rewrite", () => 
     expect(gradeRewrite(JSON.stringify({ suggestions: [...good.slice(0, 2), "¿Gasté más en Wong o en Tambo?"] }), c).pass).toBe(false);
     expect(gradeRewrite(JSON.stringify({ suggestions: good.slice(0, 2) }), c).pass).toBe(false);
     expect(gradeRewrite(JSON.stringify({ suggestions: [...good.slice(0, 2), "How much did I spend at Tambo last week?"] }), c).pass).toBe(false);
+  });
+});
+
+describe("chat.rewrite: el isValid replicado en alemán, polaco e inglés (ticket suggestions-rewriter-drops-german-and-polish-rewrites)", () => {
+  const empty = { categories: [], subcategories: [], budgets: [], tags: [], merchants: [] };
+  const de = { ...empty, categories: ["Lebensmittel", "Freizeit"], subcategories: ["Restaurant", "Tanken", "Supermarkt"], merchants: ["Rewe", "Lidl"] };
+  const pl = { ...empty, categories: ["Jedzenie", "Rozrywka"], subcategories: ["Restauracje", "Kino", "Apteka"], merchants: ["Biedronka", "Żabka", "Lidl"] };
+  const en = { ...empty, categories: ["Food"], subcategories: ["Gas"], merchants: ["Costco"] };
+  const es = { ...empty, categories: ["Comida"], subcategories: ["Restaurantes"], merchants: ["Tambo"] };
+
+  it("frases correctas pasan: sustantivos alemanes, meses, días, «I» y nombres declinados", () => {
+    for (const t of [
+      "Wie viel habe ich diesen Monat bei Rewe ausgegeben?",
+      "Wie hoch waren meine Ausgaben für Lebensmittel im Oktober?",
+      "Wie viel ist noch im Budget für Freizeit übrig?",
+      "Habe ich am Samstag mehr für Restaurants ausgegeben als im Vergleich zum Vormonat?",
+      "An welchen Wochentagen gebe ich mehr für Supermärkte aus?",
+    ]) expect(isValidSuggestion(t, de, "de-DE"), t).toBe(true);
+    for (const t of [
+      "Ile wydałem w Biedronce w tym miesiącu?",
+      "Ile wydałem w Żabce w tym tygodniu?",
+      "Ile wydałem w Aptece?",
+      "Ile wydałem na Rozrywkę?",
+      "Ile wydałem w Restauracjach w tym miesiącu?",
+      "Ile wydałem w Lidlu?",
+      "Ile zostało Ci w budżecie Jedzenie?",
+      "Jak wydatki na Rozrywkę wypadają względem Twojego budżetu?",
+    ]) expect(isValidSuggestion(t, pl, "pl-PL"), t).toBe(true);
+    for (const t of ["How much did I spend at Costco in October?", "Did I spend more on Gas on Saturday than on Sunday?"]) {
+      expect(isValidSuggestion(t, en, "en-US"), t).toBe(true);
+    }
+  });
+
+  it("un comercio o una categoría inventada sigue sin pasar, en los cuatro idiomas", () => {
+    expect(isValidSuggestion("Wie viel habe ich bei Aldi ausgegeben?", de, "de-DE")).toBe(false);
+    expect(isValidSuggestion("Wie hoch waren meine Kosten für Strom?", de, "de")).toBe(false);
+    expect(isValidSuggestion("Wie viel zahle ich im Monat für Spotify?", de, "de-DE")).toBe(false);
+    expect(isValidSuggestion("Ile wydałem w Rossmannie?", pl, "pl-PL")).toBe(false);
+    expect(isValidSuggestion("Ile wydałem na Ubrania?", pl, "pl-PL")).toBe(false);
+    expect(isValidSuggestion("How much did I spend at Walmart in October?", en, "en-US")).toBe(false);
+    expect(isValidSuggestion("How much did I spend on Insurance?", en, "en-US")).toBe(false);
+    expect(isValidSuggestion("¿Cuánto gasté en Wong en octubre?", es, "es-PE")).toBe(false);
+    expect(isValidSuggestion("¿Cuánto gasté en Comisiones este mes?", es, "es-PE")).toBe(false);
+  });
+
+  it("las listas son del idioma: el alemán no abre el español ni la declinación polaca abre otro idioma", () => {
+    expect(isValidSuggestion("¿Cuánto gasté este Monat?", es, "es-PE")).toBe(false);
+    expect(isValidSuggestion("Wie viel habe ich in Biedronce ausgegeben?", { ...empty, merchants: ["Biedronka"] }, "de-DE")).toBe(false);
+    expect(commonWordSet("de_DE").has("monat")).toBe(true);
+    expect(commonWordSet("en-GB").has("i")).toBe(true);
+    expect(commonWordSet("es").has("cuánto")).toBe(true);
+    expect(commonWordSet("es").has("monat")).toBe(false);
+  });
+
+  it("la declinación polaca: raíz con alternancia k→c, sin abrir palabras que solo comparten el principio", () => {
+    expect(isPolishInflection("biedronce", "biedronka")).toBe(true);
+    expect(isPolishInflection("żabce", "żabka")).toBe(true);
+    expect(isPolishInflection("kinie", "kino")).toBe(true);
+    expect(isPolishInflection("restauracjach", "restauracje")).toBe(true);
+    expect(isPolishInflection("biedronkowski", "biedronka")).toBe(false);
+    expect(isPolishInflection("rossmannie", "lidl")).toBe(false);
+    expect(isPolishInflection("domu", "dom")).toBe(false);
   });
 });
 

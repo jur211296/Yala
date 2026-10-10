@@ -5,6 +5,7 @@ priority: medium
 area: "modo-nube, groups, sync"
 created: 2026-09-11
 source: "review adversarial del paso 9 (`session-exits-one-verb-per-session`), lente de celdas"
+updated: 2026-10-08
 ---
 
 # Con iCloud Drive apagado, el cierre con grupos puede guardar en plena importación de iCloud
@@ -37,3 +38,10 @@ enciende nunca y la puerta esperaría para siempre un import que no llega: el ci
 - [ ] La puerta usa un testigo de «no hay cuenta» que no dependa de iCloud Drive.
 - [ ] Un dispositivo sin iCloud cierra sesión sin quedarse esperando (test y device-QA).
 - [ ] Con Drive apagado y un import en marcha, el cierre espera al import.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `isPersonalSaveSafe` en `CloudSignOutFlowLogic.swift:649-652`: `!mountAttachesMirror || !accountAvailable || (…)`.
+- Su único llamador, `CloudSessionSignOut.personalSaveIsSafeNow` (`CloudSessionSignOut.swift:2694-2700`), pasa `iCloudSyncService.isAccountAvailable`, que es `SwiftDataConfiguration.isICloudAvailable()` (token de iCloud Drive, `iCloudSyncService.swift:184-189`).
+- Sin commits sobre ese término desde el 2026-09-11. Las dos mediciones en device siguen pendientes.
+
+Triage 2026-10-08: abierto · medium → medium · La puerta de quiescencia sigue abriéndose cuando falta el token de iCloud Drive; el sustituto necesita antes una medición en device.

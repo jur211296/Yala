@@ -48,8 +48,9 @@ final class CloudIdentityDiscovery {
 
     /// Qué se pudo averiguar.
     enum Outcome: Equatable {
-        /// El backend contestó. `discovery` viene ya resuelto para la puerta que preguntó.
-        case discovered(CloudIdentityRoutingLogic.Discovery, userID: String)
+        /// El backend contestó. `discovery` viene ya resuelto para la puerta que preguntó. `migrationInProgress` es el
+        /// `migration_in_progress` de `/account/exists` (`false` si no lo dijo): solo lo lee la puerta de «Migrar a la nube».
+        case discovered(CloudIdentityRoutingLogic.Discovery, userID: String, migrationInProgress: Bool = false)
         /// No se pudo preguntar: sin sesión, sin JWT, o la red/el gateway no contestaron.
         ///
         /// **No es un resultado de la tabla y no debe tratarse como uno.** La matriz de escenarios lo dice
@@ -123,7 +124,7 @@ final class CloudIdentityDiscovery {
             clearBeaconIfItsAccountIsGone(sessionUserID: userIDVivo, readBeforeAsking: beaconBeforeAsking)
             return .discovered(.newAccount, userID: userIDVivo)
 
-        case .accountFound(let kind):
+        case let .accountFound(kind, migrationInProgress):
             // El tipo se cachea aquí porque éste es el único punto de la app donde el backend lo dice
             // antes de que la sesión esté en marcha. `snapshotToPersist` es quien decide si se escribe:
             // un `kind` ausente devuelve `nil` y **no** borra lo que ya sabíamos.
@@ -134,7 +135,8 @@ final class CloudIdentityDiscovery {
             }
             return .discovered(
                 CloudIdentityRoutingLogic.discovery(exists: true, kind: kind, gate: gate),
-                userID: userIDVivo)
+                userID: userIDVivo,
+                migrationInProgress: migrationInProgress)
         }
     }
 

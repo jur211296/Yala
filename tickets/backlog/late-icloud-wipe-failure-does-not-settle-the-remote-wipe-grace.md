@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "sesiones, sync"
 created: 2026-09-30
+updated: 2026-10-08
 source: "review adversarial de `wipe-data-does-not-cancel-the-remote-wipe-grace`, lentes de caminos y de timing"
 ---
 
@@ -44,3 +45,10 @@ ocurrió, y el error de signo aquí es callar un aviso, no borrar nada.
 
 - [ ] El fallo a media lista del aviso tardío no enciende el aviso de vaciado remoto (test con el eje a `true`).
 - [ ] Decidido y fijado qué hace el asentamiento cuando la medida falla.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `performLateICloudWipe` llama a `cancelWipeGrace()` antes de borrar, pero su rama de fallo devuelve sin `settleSignalsAfterDeliberateWipe()`. El docblock de ese asentamiento dice que cancelar sin absorber no basta.
+- `checkHasPersonalData` sigue devolviendo `true` en el `catch`, así que la absorción no se arma cuando la medida falla. Los seis llamadores de `settleSignalsAfterDeliberateWipe` no incluyen esta rama.
+
+Triage 2026-10-08: abierto · low → low · `ContentView.performLateICloudWipe` sale por `guard failure == nil else { return failure }` sin `settleSignalsAfterDeliberateWipe()` (solo `cancelWipeGrace()` antes), y `checkHasPersonalData` sigue fallando a `true`.

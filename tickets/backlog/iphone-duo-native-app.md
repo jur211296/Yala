@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "platform, iphone-duo, adaptativo"
 created: 2026-09-09
-updated: 2026-10-02
+updated: 2026-10-08
 source: idea Jürgen 2026-09-09; plan adaptativo (docs/exploracion/adaptativo-ipad-duo.md §5 y §7), 2026-09-27
 ---
 
@@ -89,3 +89,10 @@ Dynamic Type grande (`adaptativo-ipad-duo.md` §6.1).
 **Layout** (ADR «[2026-09-27] Yala se adapta por espacio, no por dispositivo»). Se decide por size class y ancho del
 contenedor, nunca por tipo de dispositivo ni orientación; un contenedor que se adapta, no un `if` por size class en
 la raíz; APIs de iOS 27.1 solo tras `if #available`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- No hay código propio del Duo en `Yala/`: `toolbarVerticalEdge`, `visibilityPriority`, `ReservedRegion` y `onHingeChange` dan cero.
+- El prerrequisito `xcode-27-1-with-the-iphone-duo-simulator` sigue en `backlog/`, así que no hay `YalaLane-Adapt-iPhone-Duo` para medir.
+
+Triage 2026-10-08: abierto · medium → medium · nada del Duo en el código todavía, y sigue bloqueado por `xcode-27-1-with-the-iphone-duo-simulator`; mientras tanto la app corre en modo compatible.

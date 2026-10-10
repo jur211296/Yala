@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "attest, gateway, groups"
 created: 2026-09-15
-updated: 2026-09-16
+updated: 2026-10-08
 source: "review adversarial de `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -56,3 +56,10 @@ de `.icloud` y de solo grupos.
 
 - `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` — de donde sale.
 - `.claude/rules/gateway-attest.md` — la caché negativa, la escalera y los dos 401 de la guard.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `AppAttestClient.currentSessionToken()` sigue devolviendo `cached` mientras `expiry > now + refreshMargin` (30 s); `cached` solo se escribe al renovar y nada lo descarta al recibir un 401 `yala_attest_required`.
+- Ningún commit toca `AppAttestClient.swift` desde el 2026-09-16.
+
+Triage 2026-10-08: abierto · low → low · nada descarta el token cacheado al 401; exige rotar el secreto o un reloj atrasado, y el caso grave (24 h atrasado con el proceso vivo un día) es raro.

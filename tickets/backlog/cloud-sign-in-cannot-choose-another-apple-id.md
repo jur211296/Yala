@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, auth"
 created: 2026-09-16
-updated: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (Paso 0 · D15: Jürgen, «permitir otro Apple ID»), 2026-09-16"
 ---
 
@@ -54,3 +54,5 @@ la nota de Apple, porque en esa hoja no hay «Usar otra cuenta».
 - [ ] Desde «Usar otra cuenta» se puede entrar con un Apple ID distinto del del teléfono.
 - [ ] El faro no se limpia con una sesión de Apple que no es la del Apple ID del teléfono.
 - [ ] La nota provisional de la hoja se retira o se ajusta.
+
+Triage 2026-10-08: abierto · medium → medium · no hay flujo web de Apple: el único inicio es el nativo y la nota provisional sigue (`StorageMigrationBlockedView.swift:56`); la decisión ya está tomada y falta el Services ID de Jürgen.

@@ -5,6 +5,7 @@ priority: medium
 area: panel/currency
 created: 2026-09-07
 source: review adversarial de fx-pnl-education-card (2026-09-07)
+updated: 2026-10-08
 ---
 
 # La hoja «Tu saldo hoy» y el saldo del Panel suman cuentas distintas
@@ -42,3 +43,10 @@ del panorama no ve.
 
 - [ ] Las dos superficies suman el mismo conjunto, o queda escrito por qué deben diferir y la hoja lo
       dice en pantalla.
+
+## Medido en 2.1 (triage 2026-10-08)
+- Panorama: `displayedBalanceInDefaultCurrency` (`PanelViewModel.swift:1096-1115`) usa `PanelTotalAccountsLogic.accountsForTotal` con `includeGroupsInPanelTotal` y las transacciones sin filtros.
+- Hoja: el ancla sale de `liveBalanceOverride` con `calcContext.eligibleAccounts` y `calcContext.balanceTransactions` (`:1270-1281`); `computeEligibleAccounts` (`:1455-1469`) no aplica el toggle de grupos y `balanceTransactions` (`:1684-1688`) aplica `FilterService.matchesCriteria`.
+- La hoja se presenta en `TrendChartView.swift:321-331`.
+
+Triage 2026-10-08: abierto · medium → medium · El saldo del panorama sigue aplicando el toggle de grupos y no los filtros, y la hoja sigue al revés (eligibleAccounts sin el toggle, balanceTransactions con FilterService).

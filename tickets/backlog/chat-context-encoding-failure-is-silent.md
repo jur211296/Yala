@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: chat, ai
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H11)
 ---
 
@@ -32,3 +32,9 @@ y **no** llama al modelo.
 ## Hecho cuando
 
 - Test: un contexto que no se puede codificar produce error tipado y cero llamadas al cliente.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `FullFinancialContext.toJSONString()` (`Yala/Services/Chat/FullFinancialContext.swift:43`) sigue con `guard let data = try? encoder.encode(self) … else { return "{}" }`.
+
+Triage 2026-10-08: abierto · low → low · el `try?` que devuelve `{}` sigue; hace falta un valor no codificable en el contexto, raro desde que el sync rechaza NaN.

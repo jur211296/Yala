@@ -870,7 +870,7 @@ struct NewTransactionView: View {
             formattedAmount = String(format: "%.2f", convertedAmount)
         }
 
-        let formattedRate = String(format: "%.4f", rate)
+        let formattedRate = ExchangeRateDisplayFormatter.string(rate)
 
         return Text("≈ \(currencyDisplay) \(formattedAmount) (TC: \(formattedRate))")
             .font(DS.Typography.labelSmall)

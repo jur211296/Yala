@@ -1,10 +1,10 @@
 ---
 id: dos-criterios-de-aproximado-en-la-misma-pantalla
 status: backlog
-priority: medium
+priority: low
 area: "currency, fx, ui"
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-10-08
 source: review adversarial de approximate-mark-ors-over-whole-period (2026-09-08)
 ---
 
@@ -53,3 +53,18 @@ vecinos**. Salió de la review adversarial del cambio, no de un fallo funcional.
 ## Relacionados
 
 - [[approximate-mark-ors-over-whole-period]] — la decisión que introdujo el segundo criterio.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Panorama: el OR sigue en `LiveBalanceCalculator.swift:144` (`amountsAreApproximate || !outcome.quality.isExact`, por divisa).
+- P&L de divisas: OR en `FXPnLLogic.swift:112` (`rows.contains(where: \.isApproximate)`), pintado en `FXPnLCard.swift:88`.
+- Los números del período usan `ApproximateMarkThreshold` (`Helpers/ApproximateMarkThreshold.swift:29`, `fraction = 0.05`), p. ej. `RecordsViewModel.swift:391-400`. Ningún commit desde el 08-sep unificó los dos criterios.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+- **A.** Dejarlo: cada marca es correcta en su número. Se cierra el ticket.
+- **B.** Llevar `ApproximateMarkThreshold` al panorama y al P&L (peso del saldo con tasa no exacta sobre el total), con el test de coincidencia del criterio de aceptación.
+- **C.** Dos glifos o un pie explicativo.
+- Recomendación: **B**. El helper ya existe y centraliza el umbral, así que el coste es bajo y el «≈» pasa a significar una sola cosa. Prioridad con B: `low` (no hay datos en riesgo, es coherencia del glifo).
+
+Triage 2026-10-08: abierto · medium → low · el panorama (`LiveBalanceCalculator.swift:144`) y el P&L (`FXPnLLogic.swift:112`) siguen con OR mientras el período usa `ApproximateMarkThreshold`; falta la decisión de producto.

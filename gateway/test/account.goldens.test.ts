@@ -29,6 +29,7 @@
  * passthrough del RPC quedan cubiertos OFFLINE en account.delete.test.ts (corre en CI).
  */
 import { beforeAll, describe, expect, it } from "vitest";
+import { describeStaging } from "./staging";
 import app from "../src/index";
 import type { Env } from "../src/env";
 
@@ -92,6 +93,16 @@ async function exists(jwt: string): Promise<boolean> {
     env,
   );
   return ((await res.json()) as { exists: boolean }).exists;
+}
+
+/** `exists` crudo, con todas las claves que mande el Worker. */
+async function existsRaw(jwt: string): Promise<{ exists: boolean; kind?: string; migration_in_progress?: unknown }> {
+  const res = await app.fetch(
+    new Request("https://gw.local/account/exists", { method: "GET", headers: { Authorization: `Bearer ${jwt}` } }),
+    env,
+  );
+  expect(res.status).toBe(200);
+  return (await res.json()) as { exists: boolean; kind?: string; migration_in_progress?: unknown };
 }
 
 interface ProgressResult {
@@ -235,7 +246,7 @@ beforeAll(async () => {
   subB = decodeSub(jwtB);
 });
 
-describe("I7a goldens · /account/* contra staging real", () => {
+describeStaging("I7a goldens · /account/* contra staging real", () => {
   it("1. dos claims CONCURRENTES del mismo sub desde DOS dispositivos → exactamente uno 'created', el otro 'existing_stable'", async (ctx) => {
     // Requiere profiles[subA] AUSENTE (limpieza previa en contexto service — ver README/header).
     // SKIP limpio si el seed no está preparado (2026-07-15): el golden es one-shot-tras-seed por
@@ -309,7 +320,7 @@ describe("I7a goldens · /account/* contra staging real", () => {
 // dejan la fila en estado estable — la limpieza pre-run de la suite la resetea). Ver header.
 const DEV_LEADER = "device-B-leader";
 
-describe("I10 goldens · /account/migration + lease (staging real)", () => {
+describeStaging("I10 goldens · /account/migration + lease (staging real)", () => {
   it("6. cutover por el LÍDER registrado → ok:true y estampa migrated_at (idempotente)", async () => {
     // Estado in-progress con ESTE device como líder (migrated_at limpio).
     expect(
@@ -479,8 +490,9 @@ describe("I10 goldens · /account/migration + lease (staging real)", () => {
 // `kind` tiene sub B cuando llegue: un `not_complete` inesperado es andamio roto, no RPC roto.
 const DEV_REV = "device-B-rev-leader";
 const DEV_REV_OTHER = "device-rev-usurper";
+const DEV_REV_THIRD = "device-rev-third"; // el 3.er dispositivo del 16-ter (g17_01)
 
-describe("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
+describeStaging("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
   // Red de arranque: la degradación del 16 es durable y `kind` no se puede PATCHear. Ver `ensureCompleteKind`.
   beforeAll(async () => {
     await ensureCompleteKind(jwtB, DEV_REV, "google");
@@ -621,6 +633,53 @@ describe("I11-3 goldens · /account/migration reverse_* (staging real)", () => {
     // Idempotente tras el flip (resume del complete): rip ya false + reverted_at set → ok.
     expect((await migrationProgress(jwtB, { device_id: DEV_REV, action: "reverse_complete" })).body.ok).toBe(true);
     expect((await readProfile(jwtB))?.reverted_at).toBe(p?.reverted_at);
+  });
+
+  it("16-ter. tras revertir, el 2.º device puede SALIR y REINTENTAR; un 3.º oye 'other_leader' (REQUIERE g17_01)", async () => {
+    // Los tres caminos de `reverse-exit-on-a-reverted-account-rejects-the-retry`, sobre el estado REAL que deja el
+    // golden 16 (`groups_only` + `reverted_at`). Hasta g17_01 el claim fresco borraba `reverted_at` y la cuenta se
+    // quedaba sin la mitad del guard que la dejaba pasar: el 3.º oía `not_complete` en vez de `other_leader` (c), el
+    // reintento del mismo líder tras perder la respuesta también (b), y salir y reintentar también (a).
+    const antes = await readProfile(jwtB);
+    expect(antes?.kind).toBe("groups_only");
+    expect(antes?.reverted_at).not.toBeNull();
+
+    const claim = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" });
+    const tercero = await migrationProgress(jwtB, { device_id: DEV_REV_THIRD, action: "reverse_claim" }); // (c)
+    const reclaim = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" }); // (b)
+    const tras = await readProfile(jwtB);
+    const salida = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_abort" });
+    const trasSalir = await readProfile(jwtB);
+    const reintento = await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_claim" }); // (a)
+
+    // Desarmar ANTES de aserjar: un `expect` que falle dejaría a sub B con rip=true latcheado. Y si `reverted_at`
+    // se perdió (staging sin g17_01) se repone, para que el 16-bis mida su guard y no el rojo de éste.
+    await migrationProgress(jwtB, { device_id: DEV_REV_OTHER, action: "reverse_abort" });
+    if ((await readProfile(jwtB))?.reverted_at == null) {
+      await patchProfile(jwtB, { reverted_at: antes?.reverted_at ?? null });
+    }
+
+    // Lo que lee la app instalada (`CloudAccountClient.MigrationResponse`): `ok` booleano y, si no, `reason`
+    // como texto, con códigos que ya conoce. g17_01 cambia CUÁL recibe aquí, no la forma.
+    for (const r of [claim, tercero, reclaim, salida, reintento]) {
+      expect(r.status).toBe(200);
+      expect(typeof r.body.ok).toBe("boolean");
+      if (r.body.ok === false) expect(typeof r.body.reason).toBe("string");
+    }
+
+    expect(claim.body.ok).toBe(true);
+    expect(tercero.body.ok).toBe(false);
+    expect(tercero.body.reason).toBe("other_leader"); // (c): B lidera con el lease vivo
+    expect(reclaim.body.ok).toBe(true); // (b): re-claim idempotente del mismo líder
+    expect(tras?.reverse_in_progress).toBe(true);
+    expect(tras?.leader_device_id).toBe(DEV_REV_OTHER);
+    expect(tras?.reverted_at).toBe(antes?.reverted_at); // el claim ya no borra la prueba de que volvió
+
+    expect(salida.body.ok).toBe(true);
+    expect(trasSalir?.reverse_in_progress).toBe(false);
+    expect(trasSalir?.reverse_frozen_at).toBeNull(); // salir sigue des-congelando
+    expect(trasSalir?.reverted_at).toBe(antes?.reverted_at);
+    expect(reintento.body.ok).toBe(true); // (a): el reintento avanza
   });
 
   it("16-bis. tras revertir: el 2.º device SÍ puede reclamar; una cuenta de solo grupos NO ('not_complete')", async () => {
@@ -807,7 +866,7 @@ async function prefExists(jwt: string, key: string): Promise<boolean> {
   return ((await res.json()) as unknown[]).length > 0;
 }
 
-describe("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (staging real)", () => {
+describeStaging("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (staging real)", () => {
   const SID0 = crypto.randomUUID();
   const SID1 = crypto.randomUUID();
   const HLC0 = hlcOf(Date.UTC(2026, 6, 11, 12, 0, 0));
@@ -892,7 +951,7 @@ describe("Freeze enforcement · /sync/push + /prefs/push con reverse_frozen_at (
 const DEV_HB = "device-B-hb-leader";
 const DEV_HB_OTHER = "device-hb-usurper";
 
-describe("I14-pre goldens · /account/migration heartbeat (staging real, REQUIERE deploy i14_heartbeat_action + Worker)", () => {
+describeStaging("I14-pre goldens · /account/migration heartbeat (staging real, REQUIERE deploy i14_heartbeat_action + Worker)", () => {
   it("23. heartbeat es acción VÁLIDA en el edge (no 400) y sin run activo → ok:false 'not_in_progress'", async () => {
     // Sin migración ni reversa en curso.
     expect(
@@ -970,7 +1029,7 @@ describe("I14-pre goldens · /account/migration heartbeat (staging real, REQUIER
   });
 });
 
-describe("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)", () => {
+describeStaging("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)", () => {
   // El claim LIGERO de create_group/join_group (G1) inserta profiles(id) sin vida personal
   // (personal_claimed_at NULL). g3_02: claim_account PROMOCIONA esa fila a 'created' — el camino
   // del usuario solo-grupos que activa Yala completo (antes: existing_stable → migración bloqueada).
@@ -1026,7 +1085,7 @@ describe("g3_02 goldens · claim promociona fila LIGERA de grupos (staging real)
 // —mismo criterio que los goldens 1 y 2— porque termina dejando la cuenta promovida. Reset:
 //   delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 // El golden del guard, en cambio, no depende del estado y corre siempre.
-describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
+describeStaging("g15_01 goldens · kind de la cuenta (staging real)", () => {
   let jwtC = "";
   let subC = "";
 
@@ -1043,13 +1102,14 @@ describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
     subC = decodeSub(jwtC);
   });
 
-  /** `exists` crudo: aquí importa el `kind`, no solo el booleano del helper de arriba. */
+  /**
+   * `exists` tal como lo lee la app de este bloque: `exists` + `kind`. Desde el 2026-10-09 la respuesta trae además
+   * `migration_in_progress` (golden 33), que este bloque no mide: se quita aquí para que el ciclo del `kind` no dependa del
+   * valor que dejen los goldens de la migración en la fila.
+   */
   async function existsFull(jwt: string): Promise<{ exists: boolean; kind?: string }> {
-    const res = await app.fetch(
-      new Request("https://gw.local/account/exists", { method: "GET", headers: { Authorization: `Bearer ${jwt}` } }),
-      env,
-    );
-    return (await res.json()) as { exists: boolean; kind?: string };
+    const { migration_in_progress: _mip, ...resto } = await existsRaw(jwt);
+    return resto;
   }
 
   /** El sello de g16_02: cuándo entró por primera vez en lo personal un dispositivo que no es el líder. */
@@ -1159,5 +1219,39 @@ describe("g15_01 goldens · kind de la cuenta (staging real)", () => {
   it("32. un claim con kind fuera del dominio → 400, sin llegar al RPC", async () => {
     const res = await claim(jwtA, { device_id: DEV_A, provider: "apple", kind: "premium" });
     expect(res.status).toBe(400);
+  });
+});
+
+// settings-migrate-blocks-a-second-device-before-its-marker (2026-10-09) — `/account/exists` dice si la cuenta tiene una ida
+// en curso. Usa sub B y deja `migration_in_progress=false` y el líder vacío, como el golden 3.
+describeStaging("2026-10-09 goldens · migration_in_progress en /account/exists (staging real)", () => {
+  it("33. con una ida en curso lo dice; sin ella, false; y exists/kind no cambian para la app que no conoce el campo", async () => {
+    const antes = await existsRaw(jwtB);
+    expect(antes.exists).toBe(true);
+    // Con la fila existente el campo viaja SIEMPRE, booleano: la columna es legible con el JWT del dueño (grants a nivel
+    // tabla de `profiles`). Si faltara aquí, el Worker estaría leyendo otra columna o la base no la tendría.
+    expect(typeof antes.migration_in_progress).toBe("boolean");
+    const comoLaAppVieja = (r: { exists: boolean; kind?: string }) => ({ exists: r.exists, kind: r.kind });
+
+    // Una ida en curso de OTRO dispositivo, con el lease vigente (molde del golden 3).
+    expect(
+      await patchProfile(jwtB, {
+        migration_in_progress: true,
+        leader_device_id: DEV_OTHER,
+        migration_updated_at: new Date().toISOString(),
+      }),
+    ).toBeLessThan(300);
+    try {
+      const enCurso = await existsRaw(jwtB);
+      expect(enCurso.migration_in_progress).toBe(true);
+      expect(comoLaAppVieja(enCurso)).toEqual(comoLaAppVieja(antes));
+    } finally {
+      // Limpia el estado aunque falle una aserción: la fila de B la leen los goldens siguientes.
+      await patchProfile(jwtB, { migration_in_progress: false, leader_device_id: null });
+    }
+
+    const terminada = await existsRaw(jwtB);
+    expect(terminada.migration_in_progress).toBe(false);
+    expect(comoLaAppVieja(terminada)).toEqual(comoLaAppVieja(antes));
   });
 });

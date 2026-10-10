@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: panel
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: review adversarial de panel-colapsa-la-seleccion-de-cuentas-a-la-primera
 ---
 
@@ -65,3 +65,20 @@ en la vista—, y eso es diseño.
 - [ ] El prefill del formulario no propone una cuenta arbitraria, y nunca una excluida.
 - [ ] Unit del conteo con las tres formas de filtro.
 - [ ] Device-QA: 5 cuentas, filtrar 2, leer el subtítulo; y abrir «+» en modo excluir.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- (1) Sigue. `PanelPanoramaSection.totalAccountsCount` (`:66-75`) pasa `hasAccountFilter(...)` a `accountsForTotal`. Con cualquier filtro en modo incluir, el `guard` de `PanelTotalAccountsLogic.swift:40` devuelve todas las cuentas que cuentan. b8a371f9d (archivar = excluir de estadísticas) cambió qué cuentas cuentan, pero no esto.
+- (2) Sigue. `PanelSheetsModifier.swift:93` pasa `prefillAccountID: viewModel.selectedAccountID`, que es `selectedAccountIDs.first` (`PanelViewModel.swift:331-332`), también en modo excluir.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Sobre el (2), cuando hay más de una cuenta filtrada o se está en modo excluir:
+
+- **A** (recomendada): el formulario abre sin cuenta precargada. Nunca propone una cuenta excluida.
+- **B**: precarga la primera por nombre de las incluidas.
+- **C**: precarga la última cuenta usada.
+
+Con A, la prioridad es `medium`. El (1) es técnico, y lo natural es que el conteo salga del mismo `Breakdown` que el saldo.
+
+Triage 2026-10-08: abierto · medium → medium · el conteo de `PanelPanoramaSection.totalAccountsCount` ignora el filtro, y `PanelSheetsModifier.swift:93` precarga `selectedAccountIDs.first`, también en modo excluir.

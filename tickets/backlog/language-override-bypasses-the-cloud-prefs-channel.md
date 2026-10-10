@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, settings, sync, l10n"
 created: 2026-09-14
+updated: 2026-10-08
 source: "medido al reponer el guard del iCloud-KV (`icloud-kv-prefs-cross-sessions-on-a-lent-phone`), celda E"
 ---
 
@@ -45,3 +46,5 @@ de priorizar.
       de la cuenta.
 - [ ] En `.cloud`, cambiar el idioma no escribe el iCloud-KV del Apple ID.
 - [ ] Los dos comentarios de `PreferenceSyncService` que dan `.cloud` por apagado quedan al día.
+
+Triage 2026-10-08: abierto · medium → medium · el setter de `LanguageManager.overrideLanguage` sigue escribiendo solo en el App Group y en `OwnerKeyValueStore` (`L10n.swift:69-88`), sin encolar; los comentarios «DARK» siguen en `PreferenceSyncService.swift:81` y `:147-149`.

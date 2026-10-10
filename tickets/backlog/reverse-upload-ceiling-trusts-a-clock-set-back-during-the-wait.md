@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-16
+updated: 2026-10-08
 source: "segunda pasada de review de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de código — H2; caso raro, ticket aparte por D17"
 ---
 
@@ -54,3 +55,10 @@ esta fecha.
 ## Relacionado
 
 - `reverse-upload-has-no-ceiling-and-no-exit` (D16, D17).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `MigrationRunner.observeReverseUploadWait`: «Sin sello, o con un sello en el FUTURO… Se re-sella ahora», sin mirar `NSSystemClockDidChange` (solo lo escucha `iCloudSyncService.systemClockDidChange`, para su ancla).
+- El cambio a tres relojes del 2026-09-23 (`reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last`) no cambia el re-sellado; la regla de `reverseUpload` en `.claude/rules/swiftdata-cloudkit.md` sigue citando este ticket como residual.
+
+Triage 2026-10-08: abierto · low → low · exige mover la fecha a mano más que el techo (días) durante la vuelta; intercambio aceptado contra el reloj adelantado.

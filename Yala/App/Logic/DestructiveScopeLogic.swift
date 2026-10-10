@@ -151,6 +151,37 @@ nonisolated enum DestructiveScopeLogic {
         !hasPrivateSession && !personalMountAttachesMirror ? .wipeDataGroupsOnly : .wipeDataFull
     }
 
+    /// Qué alcance nombra el párrafo de la pantalla «Vaciar mis datos», el que se lee ANTES de tocar.
+    enum WipeDescription: Equatable {
+        /// Cuentas, transacciones, presupuestos… todo lo personal (`settings.resetDataDescription`).
+        case wholePersonalData
+        /// Solo el perfil y las preferencias; los grupos no se tocan
+        /// (`settings.resetDataDescriptionGroupsOnly`).
+        case profileAndPreferences
+    }
+
+    /// **El párrafo de la pantalla sale de la MISMA operación que la hoja y el borrado** (decisión de
+    /// Jürgen, 2026-10-07, ticket `wipe-copy-reads-one-axis-while-the-sheet-reads-two`). Hasta entonces el
+    /// párrafo leía un solo término (¿hay sesión privada?) y la operación dos, y en la celda «sin sesión
+    /// privada + store que espeja» la pantalla prometía «tu perfil y tus preferencias» sobre un borrado
+    /// completo que sale a iCloud. Derivando de la operación ya no pueden discrepar: un término nuevo en
+    /// `wipeOperation` mueve los dos a la vez.
+    ///
+    /// Las operaciones que no son de Vaciar no tienen párrafo (`nil`). El `switch` es exhaustivo a
+    /// propósito: una operación de Vaciar nueva no compila hasta que alguien decida qué texto la nombra.
+    static func wipeDescription(for operation: Operation) -> WipeDescription? {
+        switch operation {
+        case .wipeDataFull:
+            return .wholePersonalData
+        case .wipeDataGroupsOnly:
+            return .profileAndPreferences
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate,
+             .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups,
+             .signOutPrivateWithGroupsNoCopy, .signOutCloud, .signOutGroupsOnly:
+            return nil
+        }
+    }
+
     /// ¿«Vaciar datos» avisa a los OTROS dispositivos del Apple ID para que se vacíen también? Solo desde una
     /// sesión PRIVADA (C · D), que es la única cuyos datos son los del Apple ID.
     ///

@@ -19,8 +19,8 @@ final class TrendsAIViewModel {
         case idle
         case loading
         case loaded([TrendsAIBullet])
-        /// Falló: la card vuelve a los bullets de reglas con un aviso (V2-06).
-        case failed
+        /// Falló: la card vuelve a los bullets de reglas con un aviso (V2-06) que dice por qué.
+        case failed(AIInsightFailure)
     }
 
     private(set) var phase: Phase = .idle
@@ -70,7 +70,7 @@ final class TrendsAIViewModel {
         let token = generation
 
         guard isOnline() else {
-            phase = .failed
+            phase = .failed(.offline)
             return
         }
 
@@ -90,7 +90,7 @@ final class TrendsAIViewModel {
             #if DEBUG
             print("TrendsAIViewModel: Error: \(error)")
             #endif
-            phase = .failed
+            phase = .failed(AIInsightFailureLogic.failure(for: error, isConnected: isOnline()))
         }
     }
 }

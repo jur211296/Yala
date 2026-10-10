@@ -2,9 +2,9 @@
 id: invite-aasa-requires-s-param
 status: backlog
 area: groups
-priority: low
+priority: very-low
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-10-08
 source: invite-link-five-causes-one-message (pieza 3)
 ---
 
@@ -54,3 +54,10 @@ repo y el AASA vivo igual que estaba — la peor de las dos situaciones, porque 
 
 **Ojo al verificar**: iOS cachea el AASA. Tras desplegar, comprobar contra el fichero servido
 (`curl https://yala-app.pe/.well-known/apple-app-site-association`), no contra el del repo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `Web/public/.well-known/apple-app-site-association` sigue con un solo component (`"?": { "s": "*" }`); ningún commit lo tocó desde el 2026-09-05.
+- `InviteLinkService.buildBackendInviteURL` sigue envolviendo `g`+`t` en `s`, así que hoy no hay enlace real afectado. Baja a `very-low`: es robustez para un emisor que no existe.
+
+Triage 2026-10-08: abierto · low → very-low · El AASA de `Web/public/.well-known` sigue con un único component que exige `s`, pero `InviteLinkService.buildBackendInviteURL` sigue emitiendo siempre `s`: ningún enlace real tiene la forma mínima.

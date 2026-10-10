@@ -1,9 +1,10 @@
 ---
 id: remote-onboarding-signal-ignores-the-session-axis
 status: backlog
-priority: medium
+priority: low
 area: "sesiones, modo-nube, onboarding"
 created: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial de `remote-wipe-signal-honored-by-any-session`, lente de producto"
 ---
 
@@ -33,3 +34,13 @@ No borra filas. Lo que hace es cerrar una pantalla de alta ajena y afirmar algo 
 - [ ] Una sesión en la nube o solo-grupos no cierra su onboarding por la señal del Apple ID.
 - [ ] Una sesión privada sigue comportándose como hoy.
 - [ ] La decisión es pura y testeable, como la del vaciado.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Caso B de `PreferenceSyncService.checkForRemoteWipeSignal`: `PreferenceSyncService.swift:558-575`. Sigue sin
+  `RemoteWipeSignalDecider` ni `DestructiveScopeLogic.wipeSignalObeyedByThisSession`; postea y encola `.remoteOnboardingCompleted`.
+- `ContentView.handleRemoteOnboardingCompleted` (`ContentView.swift:1811`): solo `showOnboarding` y `hasCompletedOnboarding`.
+- Baja a `low`: hace falta un vaciado previo del Apple ID, un alta posterior en otro dispositivo y este a mitad de alta con
+  `hasCompletedOnboarding = true`. No borra filas.
+
+Triage 2026-10-08: abierto · medium → low · El Caso B de checkForRemoteWipeSignal y handleRemoteOnboardingCompleted siguen sin pasar por el eje de sesión; ningún commit los tocó desde el 14-sep, y el camino exige un vaciado previo del Apple ID más un alta posterior, sin borrar filas.

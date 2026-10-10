@@ -1,9 +1,10 @@
 ---
 id: accounts-need-more-visibility-in-the-ui
 status: backlog
-priority: medium
+priority: low
 area: "accounts, ui"
 created: 2026-09-09
+updated: 2026-10-08
 source: idea Jürgen 2026-09-09
 ---
 
@@ -46,3 +47,20 @@ pestaña propia, ambas) y qué cuenta como «más visible». `/spec` cuando se p
 - [[panel-colapsa-la-seleccion-de-cuentas-a-la-primera]] y
   [[filtro-de-cuentas-se-colapsa-al-navegar-a-registros]] — dos defectos vivos del filtro de
   cuentas. Conviene mirarlos antes de rediseñar encima.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Falta decidir qué superficie cambia.
+
+- **A.** Sacar las cuentas del plegable «Tus finanzas» y darles una sección propia, siempre abierta, en el Panel.
+- **B.** Una superficie propia de Cuentas (pestaña o lista vertical con el saldo de cada una).
+- **C.** Dar la idea por cumplida con el rediseño del 03-oct y la lista de Ajustes (`accounts-settings-list-redesign`), y cerrarla.
+
+**Recomendación: A.** Es el cambio más barato y ataca justo lo medido: hoy las cuentas están dos niveles hacia dentro. Con A la prioridad es `low`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El carrusel sigue horizontal y dentro de la sección plegable (`Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift:26`, `panelAccountsCollapsed`).
+- `panel-accounts-redesign` (done, 03-oct) agrandó las tarjetas y dejó la sección como estaba a propósito: «La sección no crece (eso es `accounts-need-more-visibility-in-the-ui`)» (`encargos/lanzados/2026-10-03-panel-accounts-redesign.md:66`).
+
+Triage 2026-10-08: abierto · medium → low · idea sin spec; el rediseño del 03-oct dejó la sección igual a propósito y falta decidir la superficie (pregunta A/B/C).

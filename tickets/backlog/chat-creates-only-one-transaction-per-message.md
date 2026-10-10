@@ -1,9 +1,10 @@
 ---
 id: chat-creates-only-one-transaction-per-message
 status: backlog
-priority: medium
+priority: low
 area: chat
 created: 2026-09-09
+updated: 2026-10-08
 source: idea Jürgen 2026-09-09
 ---
 
@@ -44,3 +45,11 @@ chat esté caído esto no se puede ni probar.
 - [[chat-assistant-is-down]] (**high**) — bloquea la verificación.
 - [[chat-draft-sign-can-contradict-its-subcategory]] — con N borradores por mensaje, los defectos
   de contenido de un borrador se multiplican por N. Conviene mirarlos antes de abrir el grifo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- **La premisa del título es falsa.** `ChatAssistantService.swift:196` fija `maxDraftsPerMessage = 5`; `:261` recorta con `prefix(5)` y `:266-269` avisa con `chat.draft.overflowFormat` («Detecté %d movimientos. Registro los primeros %d; manda el resto en otro mensaje.»). El parseo es plural (`TranscriptionParserService.parseMultiple`, `:233`). Existe desde 52d2ad6b6 (2026-04-27).
+- Lo que queda de la idea: el caso de «veinte movimientos del correo» choca con el tope de 5, no con un tope de 1. Antes de subirlo: coste del parseo, límite diario del chat y cómo se revisan 20 cards.
+- La dependencia `chat-assistant-is-down` está en `tickets/discarded/`.
+
+Triage 2026-10-08: abierto · medium → low · premisa falsa: el chat ya crea hasta 5 borradores por mensaje desde 52d2ad6b6 (`ChatAssistantService.maxDraftsPerMessage`); lo que queda es subir ese tope para pegar un mes entero.

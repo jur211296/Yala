@@ -5,6 +5,7 @@ priority: low
 area: "currency, fx"
 created: 2026-09-08
 source: review adversarial de repair-queue-has-no-exit-for-partial-rate-rows (2026-09-08)
+updated: 2026-10-08
 ---
 
 # Al cambiar de divisa preferida se piden las tasas de la divisa que se abandona
@@ -34,3 +35,10 @@ Desde `repair-queue-has-no-exit-for-partial-rate-rows` existe la sobrecarga
 
 - [ ] `CurrencyChangeService` nombra las divisas que necesita en vez de heredar las de la app.
 - [ ] Test: con la fila de tasas sin la divisa de DESTINO, la migración la pide.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CurrencyChangeService.updateAllTransactions` sigue llamando a `ensureRates(for:context:)` sin divisas, que delega en `getRequiredCurrencies` y lee `defaultCurrencyCode` (la vieja). Sin commits en el fichero desde el 2026-09-08.
+- La divisa nueva solo entra si ya era secundaria o de alguna cuenta; si no, las transacciones quedan provisionales hasta que el reparador las cure en el arranque siguiente.
+
+Triage 2026-10-08: abierto · low → low · `CurrencyChangeService` sigue sin nombrar la divisa de destino; el efecto se auto-cura en el siguiente arranque.

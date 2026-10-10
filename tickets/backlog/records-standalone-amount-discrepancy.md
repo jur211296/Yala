@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: calculos
 created: 2026-04-30
-updated: 2026-09-06
+updated: 2026-10-08
 source: YalaWiki/Backlog/p20-13_records-standalone-discrepancy.md
 ---
 
@@ -322,3 +322,14 @@ ingreso, negativo = gasto; **el cero** se resuelve al implementar con una sola r
 `>= 0` ⇒ ingreso; el Informe dice `> 0`): se unifica a la del helper y se fija por test. Los filtros
 «Ingresos»/«Gastos» dejan de esconder el movimiento. La regla va a `.claude/rules/` en el mismo commit.
 
+## Medido en 2.1 (triage 2026-10-08)
+
+La decisión del 2026-09-06 (fallback al signo) no está aplicada en ningún sitio nuevo. Coordenadas de hoy:
+
+- Residual 1: `NewTransactionView.swift:1534` sigue con `||`.
+- Residual 2: `PivotTableCalculator.swift:185` usa `?? (tx.amount > 0)`; `:195`, `:202` y `:225` usan `?? false`.
+- Respuesta 2: `HeroBucketsCalculator.swift:104` usa `== true`.
+- Respuesta 4: `FilterService.swift:255-270` usa `== true` / `== false`.
+- No hay commits de clasificación en estos ficheros desde el 2026-09-06.
+
+Triage 2026-10-08: abierto · medium → medium · la convención decidida el 2026-09-06 sigue sin aplicar: `NewTransactionView.swift:1534`, `PivotTableCalculator.swift:195`, `HeroBucketsCalculator.swift:104` y `FilterService.swift:255`.

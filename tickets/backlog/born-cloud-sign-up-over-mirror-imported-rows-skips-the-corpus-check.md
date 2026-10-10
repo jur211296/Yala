@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, onboarding"
 created: 2026-09-29
 source: "review adversarial de `groups-invite-neutral-gate-has-no-way-out-when-the-exit-cell-cannot-wipe` (2026-09-29), lente de datos cruzados. INFERIDO: medir antes de trabajarlo"
+updated: 2026-10-08
 ---
 
 # El alta nacida en la nube no mira si el espejo ya bajó filas del Apple ID
@@ -29,3 +30,10 @@ sesión activa, no a un iCloud.
 ## Cómo se sabe que está bien
 
 Un alta nacida en la nube nunca sube filas que no escribió esa persona.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WelcomeCloudSignInView.runBornCloudFlow` sigue llamando a `service.activateBornCloudStorage(mountedDecision:context:)` en `.activateStorageAndRelaunch` sin mirar antes si el store tiene filas importadas; ningún commit desde el 2026-09-29 añade esa comprobación.
+- Sigue sin medir si se llega ahí con el espejo ya montado y filas importadas. Si la medida lo confirma, sube a `very-high`: es el corpus de otra persona en una cuenta ajena.
+
+Triage 2026-10-08: abierto · low → low · el chequeo de corpus sigue sin existir, pero el camino es inferido con confianza baja y las puertas del Welcome pueden cortarlo; medir antes.

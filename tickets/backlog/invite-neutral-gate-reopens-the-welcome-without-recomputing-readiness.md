@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "groups, routing"
 created: 2026-10-01
+updated: 2026-10-08
 source: "review adversarial de `superseding-intent-can-strand-the-sign-out-coordinator`, lente de router"
 ---
 
@@ -28,3 +29,9 @@ Si de verdad no se recomputa: un XCUITest con un intent encolado detrás de `.pr
 
 Llamar a `updateContentViewReadiness()` tras el handler de `.presentGroupsInviteNeutralGate`, o no derribar la cadena
 para un intent que la va a reabrir.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El handler de `.presentGroupsInviteNeutralGate` (`ContentView`, dentro del `switch` de intents) sigue igual: escribe `welcomeFlowInitialStep` y `showWelcomeFlow = true`, sin llamar a `updateContentViewReadiness()`. Ningún commit posterior al 2026-10-01 tocó ese intent salvo el de varias ventanas de iPad (`133437905`).
+
+Triage 2026-10-08: abierto · low → low · El handler de `.presentGroupsInviteNeutralGate` en `ContentView` sigue reabriendo el Welcome (`showWelcomeFlow = true`) sin recomputar la readiness; sigue inferido, sin XCUITest que lo mida.

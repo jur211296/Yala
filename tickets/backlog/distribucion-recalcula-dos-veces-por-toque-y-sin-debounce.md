@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: statistics
 created: 2026-09-06
-updated: 2026-09-06
+updated: 2026-10-08
 source: hallazgo de la review adversarial de distribution-balance-kpi-skips-fx
 ---
 
@@ -51,3 +51,10 @@ pulsación — por eso esto es `low` y no `high`.
 
 - [ ] Un toque en el chip de naturaleza dispara un solo recálculo.
 - [ ] Medido antes y después, en aparato o simulador con datos realistas — no por lectura de código.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CategoriesTabView` sigue observando la naturaleza dos veces: `.onChange(of: sessionState.selectedTransactionNatures)` en el body llama a `calculateData()`, y `CategoriesFilterRecalcObservers` tiene `.onChange(of: viewModel.selectedTransactionNatures) { onRecalc() }`.
+- Sigue sin debounce: 11 llamadas a `calculateData()` en el fichero y ninguna `Task.sleep` ni `schedule…Recalc`. Los tres commits posteriores (`262e97631`, `415193daa`, `7a2baaf7e`) no tocan los observadores.
+
+Triage 2026-10-08: abierto · low → low · el doble recálculo y la falta de debounce siguen; coste por toque, no por tecla, y sin medir en aparato.

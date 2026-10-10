@@ -5296,6 +5296,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "Dein aktuelles Yala-Konto gehört vielleicht jemand anderem: Es war schon angemeldet, als hier neu begonnen wurde. Um dein eigenes auszuwählen, trenne es unter „Gruppen“ und tippe erneut auf „Cloud aktivieren“.";
+"storage.migrate.refusedOtherDevice" = "Ein anderes deiner Geräte bringt deine Daten in dieses Konto. Schließ die Aktivierung dort ab oder versuche es auf dem anderen Gerät erneut, falls sie angehalten hat.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "Diese Cloud-Kopie gehört zu einem anderen Yala-Konto (%@). Melde dich ab und mit diesem Konto wieder an, um fortzufahren.";
@@ -6046,6 +6047,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "Mit Apple verwendet Yala immer das Konto dieses Geräts. Um ein anderes zu verwenden, wähle Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "Dieses Konto gehört vielleicht jemand anderem";
 "storage.migrateBlock.freshStartSessionBody" = "Es wurde nichts geändert. Deine Gruppen nutzen ein Konto, das auf diesem Gerät schon angemeldet war, und da hier neu begonnen wurde, gehört es vielleicht jemand anderem. Um deine Daten in die Cloud zu bringen, trenne es unter „Gruppen“ und tippe erneut auf „Cloud aktivieren“: Dann kannst du dein Konto auswählen.";
+"storage.migrateBlock.otherDeviceTitle" = "Ein anderes deiner Geräte bringt deine Daten in die Cloud";
+"storage.migrateBlock.otherDeviceBody" = "Es wurde nichts geändert. Schließ die Aktivierung auf dem anderen Gerät ab oder versuche es dort erneut, falls sie angehalten hat. Danach kannst du die Cloud hier aktivieren.";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "Wir konnten Ihre Daten nicht prüfen";
@@ -6130,6 +6133,7 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Melde dich an, um deine Änderungen hochzuladen";
+"storage.sync.waitingForConnectionUncounted" = "Änderungen warten auf eine Verbindung";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "Wir konnten deine Daten nicht zählen. Versuche es gleich noch einmal.";
@@ -6506,7 +6510,7 @@
 "image.entry.failure.unreadableFile.title" = "Ich konnte diese Datei nicht öffnen";
 
 /* Image entry failure: unreadable file, why and what to try */
-"image.entry.failure.unreadableFile.message" = "Sie ist vielleicht leer, beschädigt oder mit einem Passwort geschützt. Versuch es mit einem anderen Foto oder PDF des Belegs.";
+"image.entry.failure.unreadableFile.message" = "Sie ist vielleicht leer oder beschädigt. Versuch es mit einem anderen Foto oder PDF des Belegs.";
 
 /* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
 "account.currencyChange.confirmTitleNoHistory" = "Währung auf %@ ändern?";
@@ -6525,3 +6529,48 @@
 
 /* Account currency change confirmation: closing sentence when there are no movements to convert */
 "account.currencyChange.cannotUndo" = "Das lässt sich nicht rückgängig machen.";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "Dieses PDF hat ein Passwort";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "Gib es ein, um die Datei zu öffnen. Es wird nur auf diesem Gerät verwendet: Es wird weder gespeichert noch gesendet.";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "PDF-Passwort";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "Öffnen";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "Falsches Passwort. Prüfe es und versuche es noch einmal.";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1 Seite wurde nicht gelesen: Es werden bis zu %d auf einmal gelesen. Lade sie in einem anderen PDF hoch, um sie zu lesen.";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$d Seiten wurden nicht gelesen: Es werden bis zu %2$d auf einmal gelesen. Lade sie in einem anderen PDF hoch, um sie zu lesen.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "Deine Testfotos sind aufgebraucht: 1 wurde nicht gelesen.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "Deine Testfotos sind aufgebraucht: %d wurden nicht gelesen.";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "Seite %1$d von %2$d";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "1 Tag verbleibend";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "Für die KI-Analyse brauchst du eine Internetverbindung.";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "Du hast dein Kontingent an KI-Analysen für heute aufgebraucht. Komm morgen wieder.";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "Du hast mehrere Analysen kurz hintereinander angefordert. Warte einen Moment und versuch es erneut.";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "Wir konnten dein Yala Pro nicht bestätigen. Versuch es gleich noch einmal.";

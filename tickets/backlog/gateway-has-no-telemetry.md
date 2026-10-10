@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: cloud, qa
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-10-08
 source: medido por el panel de diseño de notificaciones (2026-09-03)
 ---
 
@@ -42,3 +42,12 @@ Analytics Engine puede responder «¿están llegando los avisos?» sin abrir una
 
 **Y el canario de permiso apagado no lo cubre esto**: APNs devuelve 200 con el permiso en OFF, así
 que eso sólo se ve guardando `authorization_status` al registrar el token. Va en el mismo trabajo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `writeDataPoint` sigue apareciendo solo en `gateway/src/metrics.ts:102`, que es la ingestión de `POST /metrics` que manda la app, no un camino propio del gateway.
+- Los canarios siguen siendo `console.log`: `groupApnsSendFailed` (`groups/routes.ts:303`), `groupSyncCoherenceGroupPartial` (`:371`) y `cloudSyncCoherenceGroupPartial` (`sync/routes.ts:219`). Este último es nuevo y tampoco persiste.
+- `gateway/wrangler.toml` no declara `[observability]`, así que nada de eso sobrevive a `wrangler tail`. Tampoco se guarda `authorization_status` al registrar el token.
+- Gemelo relacionado, no duplicado: `gateway-does-not-record-ai-token-usage`. Los dos se arreglan con el mismo molde.
+
+Triage 2026-10-08: abierto · medium → medium · ningún camino del gateway llama a `writeDataPoint` (solo `metrics.ts:102`) y los canarios de push y sync siguen siendo `console.log` (`groups/routes.ts:303`).

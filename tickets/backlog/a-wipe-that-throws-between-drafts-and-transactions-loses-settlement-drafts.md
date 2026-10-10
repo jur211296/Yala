@@ -5,6 +5,7 @@ priority: low
 area: "groups, settings"
 created: 2026-09-27
 source: "review adversarial de `wipe-data-keeps-groups-but-drops-their-bridged-rows` (2026-09-27, lente de dinero); inferido por lectura, NO reproducido"
+updated: 2026-10-08
 ---
 
 # Un «Vaciar datos» que falla entre los borradores y las transacciones pierde los borradores de las liquidaciones
@@ -29,3 +30,10 @@ con pata virtual y sin borrador?
 ## Relacionados
 
 - [[wipe-data-keeps-groups-but-drops-their-bridged-rows]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `DataWipeService.wipeAllUserData` sigue guardando los borradores (paso 1.1b) antes que las transacciones (1.2), cada uno con su `save()`.
+- `GroupsBridgeRestoreConvergence.settlementsToReBridge` sigue excluyendo toda liquidación con alguna pata (`legSettlementIDs`), así que la que conserva su pata virtual sin borrador no se re-puentea.
+
+Triage 2026-10-08: abierto · low → low · el orden borradores→transacciones y el filtro de `settlementsToReBridge` siguen igual; requiere un wipe que lance a mitad, raro.

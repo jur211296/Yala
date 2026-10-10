@@ -208,18 +208,25 @@ struct FullFinancialContextBuilderTests {
 
     // MARK: - Period comparison
 
-    @MainActor @Test func periodComparison_currentVsLastMonth() {
+    @MainActor @Test func periodComparison_currentVsLastMonth() throws {
+        // `now` fijo a mitad de mes: la variación compara con el mes pasado HASTA EL MISMO DÍA
+        // (`ChatContextPanelParityAndMonthToDateTests`), y con `Date.now` el día 1 dejaba fuera el
+        // gasto del día 2 del mes pasado.
+        let cal = Calendar.current
+        let now = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: 15, hour: 12)))
+        let thisMonth = try #require(cal.date(from: DateComponents(year: 2026, month: 10, day: 2, hour: 12)))
+        let lastMonth = try #require(cal.date(from: DateComponents(year: 2026, month: 9, day: 2, hour: 12)))
         let food = makeCategory(name: "Food")
         let txs = [
-            makeTx(amount: -200, date: currentMonthDate(), category: food),
-            makeTx(amount: -150, date: lastMonthDate(), category: food)
+            makeTx(amount: -200, date: thisMonth, category: food),
+            makeTx(amount: -150, date: lastMonth, category: food)
         ]
 
-        let result = buildContext(transactions: txs)
+        let result = buildContext(transactions: txs, now: now)
 
         #expect(result.periods.currentMonth.expense == 200.0)
         #expect(result.periods.lastMonth.expense == 150.0)
-        let variation = result.categories.first?.variationPercentVsLastMonth ?? 0
+        let variation = result.categories.first?.variationPercentVsLastMonthToDate ?? 0
         #expect(abs(variation - 33.33) < 0.5)
     }
 

@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "modo-nube, onboarding, gdpr"
 created: 2026-09-10
+updated: 2026-10-08
 source: "lente adversarial durante `cloud-sign-in-discovers-account-kind` (bloque [I])"
 ---
 
@@ -62,3 +63,11 @@ el ticket: si el dueño migra después, el drenaje del cutover lo sube como cons
       el dominio del dueño.
 - [ ] El alta que termina bien conserva su epoch con su T0 original (no el `now()` del final).
 - [ ] `CloudConsentRegistrationTests` cubre el desenlace nuevo, con su control positivo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WelcomeCloudSignInView.persistsConsentOnAccept` (`Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift:278-286`) sigue en `true` para `.bornCloud`.
+- `CloudConsentView` sigue llamando a `registerConsent()` antes de `onAccept()` (`Yala/App/Views/Settings/CloudConsentView.swift:118-120`, `:131`).
+- La tabla `CloudConsentRegistrationLogic.placement` (`:40-44`) sigue cubriendo solo la re-entrada.
+
+Triage 2026-10-08: abierto · medium → medium · el alta born-cloud sigue escribiendo el consentimiento al aceptar (WelcomeCloudSignInView.swift:280), antes de que el guard decida.

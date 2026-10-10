@@ -1,9 +1,10 @@
 ---
 id: remote-wipe-signal-is-burned-even-when-the-session-ignores-it
 status: backlog
-priority: medium
+priority: low
 area: "sesiones, modo-nube"
 created: 2026-09-14
+updated: 2026-10-08
 source: "review adversarial de `remote-wipe-signal-honored-by-any-session`, lentes de caminos y de producto"
 ---
 
@@ -54,3 +55,24 @@ ser un retraso y se convierte en una pérdida permanente de la señal.
 
 - [ ] Decidido qué pasa con una señal que llegó durante una ventana transitoria del eje.
 - [ ] El docblock de `RemoteWipeSignalDecider` dice lo que la segunda evaluación puede y no puede hacer.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- La marca incondicional sigue en `PreferenceSyncService.swift:514`, antes de `RemoteWipeSignalDecider.decide` (`:531`).
+- El 2.º criterio ya está hecho: el docblock de `RemoteWipeSignalDecider.decide` (`RemoteWipeSignalDecider.swift:41-45`)
+  dice que la segunda evaluación solo puede cerrar la puerta y cita este ticket.
+- Falta el 1.º: decidir. `low` porque la ventana es la del cutover o la reversa y no se pierden datos: se quedan de más.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Qué hacer con una señal de vaciado que llega mientras el eje de sesión está en tránsito:
+
+- **A** · Marcarla solo cuando la decisión es definitiva (opción 1 del ticket). Pide separar «no obedezco» de «todavía no sé».
+- **B** · Guardar la señal ignorada para consultarla al pasar a sesión privada (opción 2).
+- **C** · Dejarlo (opción 3) y cerrar la ventana por el otro lado: arreglar `storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal`,
+  para que el eje no esté equivocado durante el cutover. Con eso, quemar la señal es correcto.
+
+**Recomendación: C.** Ataca la causa, el eje equivocado, y no añade estado nuevo. Con C la prioridad es `low` y este ticket
+se cierra cuando se cierre el hermano.
+
+Triage 2026-10-08: abierto · medium → low · WipeKey.localWipe se sigue escribiendo antes de consultar el decisor; el docblock del decisor ya dice lo que la segunda evaluación no puede hacer (2.º criterio hecho), falta decidir qué hacer con la señal en la ventana del eje.

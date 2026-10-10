@@ -28,6 +28,14 @@ nonisolated struct SiriIntentContext: Codable {
     let defaultCurrency: String
     /// Si el usuario tiene ≥1 cuenta real (no de sistema). El intent lo usa para el aviso hablado.
     let hasRealAccount: Bool
+    /// Divisas de las cuentas activas, para leer «pesos» o «francos» con la divisa del usuario (2026-10-09).
+    /// OPCIONAL a propósito: una caché escrita por un build anterior no la trae y tiene que seguir decodificando.
+    var accountCurrencies: [String]? = nil
+
+    /// Lo que la lectura de la frase necesita de las divisas del usuario.
+    var parserCurrency: ParserCurrencyContext {
+        ParserCurrencyContext(mainCurrency: defaultCurrency, accountCurrencies: accountCurrencies ?? [])
+    }
 }
 
 enum SiriIntentContextCache {
@@ -75,6 +83,9 @@ enum SiriIntentContextCache {
     /// Borra el snapshot. Lo invocan las purgas de FRONTERA de sesión
     /// (`AppGroupInboundPurge.purgeInboundSurfaces`): el snapshot lleva los nombres de subcategoría
     /// —que pueden ser propios del usuario— y su divisa, y el App Group es compartido entre cuentas.
+    /// Y desde el 2026-10-08 también todo borrado de filas personales (`DataWipeService.wipeAllUserData`,
+    /// PASO 3) y el «Empezar de cero» del aviso de vaciado remoto (`RemoteWipeSharedSurfaces`), que
+    /// dejaban vivas las subcategorías borradas hasta el siguiente primer plano.
     /// Ausente ≠ incorrecto: `read()` devuelve `nil` y la app lo reconstruye en el próximo `refresh`.
     nonisolated static func clear(
         defaults: UserDefaults? = SiriIntentContextCache.appGroupDefaults
@@ -107,7 +118,8 @@ enum SiriIntentContextCache {
             expenseSubcategories: expense,
             incomeSubcategories: income,
             defaultCurrency: defaultCurrency,
-            hasRealAccount: hasRealAccount
+            hasRealAccount: hasRealAccount,
+            accountCurrencies: ParserCurrencyContext.load(mainCurrency: defaultCurrency, context: context).accountCurrencies
         ))
     }
 }

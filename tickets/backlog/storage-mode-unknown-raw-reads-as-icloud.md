@@ -1,10 +1,10 @@
 ---
 id: storage-mode-unknown-raw-reads-as-icloud
 status: backlog
-priority: low
+priority: very-low
 area: "modo-nube, almacenamiento"
 created: 2026-09-25
-updated: 2026-09-25
+updated: 2026-10-08
 source: "review adversarial de `an-undecodable-migration-phase-reads-as-never-started` (2026-09-25)"
 ---
 
@@ -27,3 +27,9 @@ un downgrade tras añadir uno.
 
 - [ ] Un modo desconocido no se lee como `.icloud` en silencio; se decide hacia el lado que no monta nada que escriba.
 - [ ] Test con un raw desconocido + control.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `StorageModePersistence.read` (`CloudSyncFlags.swift`) sigue devolviendo `.icloud` cuando el `rawValue` no decodifica. Hoy `StorageMode` solo tiene los casos que se escriben, así que no es alcanzable hasta que se añada uno y alguien baje de versión.
+
+Triage 2026-10-08: abierto · low → very-low · sigue igual, pero hoy no es alcanzable: hace falta un modo nuevo en una versión futura y volver a una anterior.

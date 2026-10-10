@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "welcome, icloud, restore, l10n"
 created: 2026-09-21
-updated: 2026-09-21
+updated: 2026-10-08
 source: "medición durante `restore-treats-budgets-and-groups-as-no-data` (2026-09-21): al añadir los grupos al criterio de «hay datos» salió que los grupos NO viajan por iCloud"
 ---
 
@@ -57,3 +57,10 @@ Tres razones, y la tercera es la que decide:
 ## Relación con otros tickets
 
 - `restore-treats-budgets-and-groups-as-no-data` — de donde sale (su D6).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `welcome.restore.foundBody` = «Encontramos tus datos en iCloud:» (es) / «We found your data in iCloud:» (en), sin cambios; `WelcomeRestoreView` sigue añadiendo la tarjeta de grupos con `s.groupsCount > 0`.
+- Recomendación: **quitar «en iCloud»** de `foundBody` en los 16 locales (sin clave nueva). La pantalla ya se llama «Restaurar desde iCloud», así que el matiz no se pierde, y el encabezado deja de afirmar un origen falso. La prioridad es la de esa opción.
+
+Triage 2026-10-08: abierto · low → low · imprecisión de encabezado: la cifra es correcta y nadie pierde datos ni decide mal por ella.

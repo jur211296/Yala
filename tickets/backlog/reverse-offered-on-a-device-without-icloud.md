@@ -1,9 +1,10 @@
 ---
 id: reverse-offered-on-a-device-without-icloud
 status: backlog
-priority: medium
+priority: low
 area: "modo-nube, migración"
 created: 2026-09-16
+updated: 2026-10-08
 source: "medición de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), decisión D4 de Jürgen: ticket aparte"
 ---
 
@@ -70,3 +71,22 @@ no crea sus tablas de metadatos (`CKIdentityCapture` → `no-record-metadata-tab
 condicional de «Si iCloud no está activo…», que para él sería el texto verdadero. Sale antes que con las 72 h de antes,
 pero culpando al teléfono. Medirlo en un iPhone sin iCloud (o leer el `reason` del canario
 `cloudReverseUploadSampleUnreadable` en la flota) antes de decidir; si cae ahí, el texto es decisión de Jürgen.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ReverseEligibility.decide` (`MigrationWorkExecutor.swift:180-199`) sigue sin mirar iCloud. `CloudMigrationController.swift:294`
+  documenta que `CKContainer.accountStatus()` se evita a propósito.
+- La espera ya tiene salida y techo, así que no es un callejón: `low`.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Qué hacer con «Volver a iCloud» en un dispositivo sin iCloud:
+
+- **A** · Bloquear la entrada con el token de Drive y una nota, tras medir en un dispositivo si hay falso negativo.
+- **B** · Una señal de CloudKit (`CKContainer.accountStatus()`). Es una decisión de arquitectura.
+- **C** · No tocar: la salida existe y dice la verdad.
+
+**Recomendación: C para 2.1**, y leer antes el `reason` del canario `cloudReverseUploadSampleUnreadable` en la flota.
+Si los teléfonos sin iCloud caen en la muestra ilegible, el problema pasa a ser de copy y se decide entonces. Con C, `low`.
+
+Triage 2026-10-08: abierto · medium → low · ReverseEligibility.decide sigue sin mirar iCloud; desde el techo y la salida de reverse-upload-has-no-ceiling-and-no-exit ya no es un callejón, y queda la decisión A/B/C.

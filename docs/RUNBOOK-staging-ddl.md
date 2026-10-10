@@ -338,6 +338,88 @@ a `false`, por el mismo `PATCH` de la Management API. Es defensa en profundidad;
 
 ---
 
+## `g17_01_reverse_claim_keeps_reverted_at.sql` — «Volver a iCloud» se puede reintentar en el 2.º dispositivo (PENDIENTE, 2026-10-09)
+
+**Estado: preparada y probada en local; NO aplicada en ningún entorno.** Autorizada por Jürgen el 2026-10-09 14:01. La
+sesión que la preparó no tenía acceso de escritura a ninguna de las dos bases: el token de gestión
+(`~/Secrets/yala-supabase-mgmt/pat`) da **401** en los dos proyectos, el conector de Supabase pedía OAuth y no hay URI de
+base en `~/Secrets`. Ticket: `reverse-exit-on-a-reverted-account-rejects-the-retry`.
+
+**Qué arregla.** En una cuenta que ya volvió a iCloud desde otro teléfono, el claim de la vuelta borraba `reverted_at`, y
+con él la mitad del guard de `g15_02` que deja pasar al segundo dispositivo. Medido en staging el 2026-10-09 con el golden
+16-ter (función viva, sin tocarla): tras el claim de B, `reverted_at` queda a null y **el tercer dispositivo, el re-claim
+del mismo B y el reintento tras salir reciben `not_complete`**. La migración cambia cada `reverted_at = null` por
+`reverted_at = case when kind = 'complete' then null else reverted_at end`: igual que hoy en una cuenta `complete`,
+conservado en una `groups_only`. **Sin cambio de Worker ni de app**: mismos códigos y misma forma de respuesta.
+
+**Probado en local** (`bash qa/cloud/g17_01-local-test.sh`, Postgres 17 desechable) contra **el cuerpo real**
+(`qa/cloud/fixtures/migration_progress.g15_02.functiondef.sql`, exportado de staging el 2026-10-09, md5 `14fc5e2c…`; la
+migración corre sin tocar) y contra una réplica con un espacio por escritura: el §3 de conducta falla con el cuerpo viejo
+en los cuatro caminos del ticket y deja verdes los cuatro controles; la migración pasa 11/11; re-aplicar es no-op; el
+rollback vuelve al md5 de partida; un cuerpo divergido, una cuarta escritura o una cuarta con otra grafía (mayúsculas,
+`nullif`) abortan sin tocar nada. Dos mutantes de la sustitución (solo la primera escritura; no borrar nunca) los caza el
+§3, y uno que no conserve el espaciado lo caza la comprobación de inversa exacta del §1.
+
+**El espaciado** (2026-10-09). En el cuerpo vivo las tres escrituras están alineadas con sus vecinas del `SET`: dos
+`reverted_at          = null` (10 espacios) y una `reverted_at           = null` (11). La primera versión de la guarda
+buscaba el literal con un espacio y abortó en staging con `aparece 0 vez/veces` sin tocar nada; el banco no lo vio porque
+solo tenía la réplica. Ahora cuenta y sustituye por patrón (`\mreverted_at(\s*)=(\s*)null\M`), conserva el espaciado de
+cada una (la inversa es exacta) y sigue exigiendo 3. **md5 nuevo esperado**: `776dac35d585393fabeabedf8eafee82`
+(`md5(prosrc)`; `md5(pg_get_functiondef)` = `4171f5f401ff4cd19ace1e7995f1e340`), medido en el banco sobre el cuerpo real.
+
+**Repara también a quien el bug ya atascó** (§1-bis, añadido por la review): las filas `groups_only` con
+`personal_claimed_at` y sin `reverted_at` —solo las deja una vuelta completada a la que un claim posterior le borró
+`reverted_at`— recuperan `reverted_at`. Sin eso, el arreglo de la función no curaría a quien ya recibe «tu cuenta no
+lo permitía», ni el canario `cloudReverseClaimRejected|not_complete` llegaría a cero.
+
+### Los pasos, en orden
+
+Desde la raíz del repo. `$STAGING_DB_URL` y `$PROD_DB_URL` son la URI del pooler de cada proyecto (*Dashboard → Project
+Settings → Database → Connection string → URI, session pooler, puerto 5432*); la contraseña no está en el repo. Con el
+conector de Supabase autenticado, cada `psql -1 -f` equivale a `apply_migration` con el contenido del fichero.
+
+1. **Medir antes, en staging** (`fostjbbwstyuunmmefuk`). Tiene que salir `14fc5e2c54766dd7c5706966c7381f51` (el final de
+   `g15_02`, medido en producción el 16-sep). Si sale otro, para: la migración abortaría igual.
+   ```bash
+   psql "$STAGING_DB_URL" -At -c "select md5(prosrc), md5(pg_get_functiondef(p.oid)) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='migration_progress' and p.pronargs=2"
+   psql "$STAGING_DB_URL" -At -c "select pg_get_functiondef('public.migration_progress(text,text)'::regprocedure)" > /tmp/migration_progress.staging.antes.sql
+   psql "$STAGING_DB_URL" -At -c "select (select count(*) from regexp_matches(prosrc, '\mreverted_at\s*=\s*null\M', 'g')), (select count(*) from regexp_matches(prosrc, 'reverted_at\s*=\s*null', 'gi')) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='migration_progress' and p.pronargs=2"   # tiene que dar 3|3; si no, la migración aborta
+   psql "$STAGING_DB_URL" -At -c "select count(*) from public.profiles where kind='groups_only' and personal_claimed_at is not null and reverted_at is null"   # cuentas ya atascadas
+   ```
+2. **Aplicar en staging.** El §3 corre dentro y aborta todo si un escenario falla.
+   ```bash
+   psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g17_01_reverse_claim_keeps_reverted_at.sql "$STAGING_DB_URL"
+   ```
+   Esperado: `g17_01: 3 sustitución(es)`, `g17_01: K cuenta(s) ya revertida(s) recuperan reverted_at` (K = el
+   recuento del paso 1), `g17_01: md5 nuevo de migration_progress: 776dac35d585393fabeabedf8eafee82.` y
+   `g17_01 OK · 11/11 escenarios`. Apunta K y comprueba el md5 nuevo con el comando del paso 1.
+3. **Goldens contra staging**, desde `gateway/`:
+   ```bash
+   set -a; . ~/Secrets/yala-supabase-test/test-users.env; set +a
+   npm run sync:manifest && npx vitest run test/account.goldens.test.ts -t "I11-3"
+   ```
+   Esperado: 11/11, **con el 16-ter en verde** (hoy, sin la migración, es el único rojo).
+4. **Producción** (`kefvaiymtgytemwbltlz`): el paso 1 (mismo md5 de partida), el paso 2 con `$PROD_DB_URL`, y el md5
+   nuevo tiene que ser **el mismo** que en staging (`776dac35…`). El §3 usa usuarios sintéticos dentro de savepoints: no deja filas ni
+   toca a nadie real.
+5. **Humo en producción** sin datos de usuarios: re-aplicar el fichero (rama no-op: corre el §3 otra vez contra el cuerpo
+   ya cambiado; prueba el camino nuevo y, con sus controles `complete`, `born-cloud`, solo grupos y la ida abandonada, que
+   el viejo sigue igual), y `POST /account/migration` sin JWT → el mismo 401 de antes.
+6. **Apuntar** el antes → después (md5 de los dos entornos, N, resultado del §3 y de los goldens) aquí, en el ticket y en
+   el PR que lo cierre.
+
+**Marcha atrás:** `psql -1 -v ON_ERROR_STOP=1 -f qa/cloud/g17_01_rollback.sql "$..._DB_URL"` — devuelve el cuerpo al md5
+`14fc5e2c…` y aborta si el vivo no es el de g17_01. No reescribe filas.
+
+**Después del deploy**, cinco textos describen el reset como vigente y se corrigen cuando deje de serlo (hoy son
+verdad): el residual de `MigrationStateMachine.swift` (rama `reverseClaimRejected`), «`reverted_at` queda null» en
+`MigrationWorkExecutor.swift` (`.reverseRollback`) y `CloudSyncEngine.swift` (docblock del rastro `reverseRollback`), el apartado
+«Reversa server-side» de `qa/cloud/README.md` y la lista de residuales de la regla «El claim de la reversa tampoco
+puede quedarse sin salida» en `.claude/rules/swiftdata-cloudkit.md`. Y se mira el canario
+`cloudReverseClaimRejected` con detalle `not_complete`: tiene que caer a cero.
+
+---
+
 ## `hlc01_cap_future_hlc.sql` — tope a un HLC del futuro (staging y producción, 2026-10-07)
 
 **Aplicada en staging (`fostjbbwstyuunmmefuk`) y en producción (`kefvaiymtgytemwbltlz`) el 2026-10-07.** Verificado:
@@ -374,6 +456,29 @@ alguna de las 22 tablas.
 
 **Marcha atrás:** `qa/cloud/hlc01_rollback.sql` (quita los 22 triggers y las 3 funciones). La normalización no se
 deshace y no hace falta: solo acotó HLC por encima de `now() + 60 s`, nunca un valor.
+
+## `migration_in_progress` en `/account/exists` — solo Worker, sin SQL (staging y producción, 2026-10-09)
+
+Ticket `settings-migrate-blocks-a-second-device-before-its-marker` (opción A de Jürgen, deploy autorizado el 2026-10-09
+14:01). `/account/exists` añade `migration_in_progress: true|false` cuando la fila existe; la app instalada lo ignora
+(decodifica sin claves estrictas) y la nueva lo lee para el aviso de «otro de tus dispositivos».
+
+**No hay migración SQL.** Los grants de `profiles` son a nivel tabla (`qa/cloud/g15_01_account_kind.sql:25-28`), así que el
+`select` con el JWT del usuario ya podía leer la columna. Medido antes de desplegar, por PostgREST con la clave anónima y
+`limit=0` (no devuelve filas): `select=id,kind,migration_in_progress` da **200** en los dos proyectos, y el control con una
+columna inexistente da **400 / 42703**. El token de gestión (`~/Secrets/yala-supabase-mgmt/pat`) seguía dando
+`Invalid access token`, así que no se leyeron los `md5` de funciones: ninguna cambió.
+
+| Paso | Antes | Después | Resultado |
+|---|---|---|---|
+| Worker staging (`npm run deploy:staging`) | `de51aa1b-cb70-4911-9f83-c5f8eef4c4fc` (2026-10-08 00:01Z) | `47b02439-ab1f-4ef6-9604-3b15f4b53675` | goldens de `account.goldens.test.ts` con el código local: 34 en verde, 3 saltados por fixture, 1 rojo (el 20 falla igual en `HEAD`: `account-goldens-freeze-read-test-times-out`); el Worker desplegado, con el usuario B: `false` → (ida en curso por PATCH) `true` → (limpia) `false` |
+| Worker producción (`npm run deploy:production`) | `4e93d41f-c01c-469c-b601-d602bf741dfb` (2026-10-08 00:03Z) | `c2b95bd0-43f9-4ff9-9d53-2331b1b3ea1b` | humo: `/account/exists` sin JWT → 401 `yala_attest_required` y con JWT inválido → 401 `yala_attest_invalid`, como antes; `/config` → 200. Sin usuario de test en producción, el campo nuevo no se pidió ahí: lo prueban los goldens contra staging con el mismo código |
+
+Entre el deploy anterior y este no cambió nada más de `gateway/src`, `wrangler.toml` ni los manifiestos (medido con
+`git diff b4b988ea9 HEAD`): el deploy llevó solo este cambio.
+
+**Marcha atrás:** `npx wrangler rollback 4e93d41f-c01c-469c-b601-d602bf741dfb --env production` (y `de51aa1b-…` en staging).
+La app nueva sin el campo cae al aviso de siempre, que sigue bloqueando.
 
 ---
 

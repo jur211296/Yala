@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: currency
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-10-08
 source: 5.ª instancia del patrón, hallada al barrer fx-partial-rate-rows-silent-1to1 (2026-09-03)
 ---
 
@@ -27,3 +27,10 @@ hallazgo nuevo.
 Nota de diseño que conviene no perder: su comportamiento —omitir en vez de inventar— es el
 **precedente honesto** del repo, el que `fx-presentation-still-shows-1to1` va a necesitar como molde.
 No hay ni un test que lo fije, así que hoy nada impide que alguien lo "arregle" convirtiéndolo a 1:1.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ExchangeRateWidgetHelper.getAverageRatesForBucket` sigue eligiendo por la EXISTENCIA de la fila (`getRate(for:)`, y solo si no hay fila, `getMostRecentRate`); si la fila no trae la divisa, `calculateRatesFromPreferred` la omite y no se busca otra fila. Sin commits en el fichero desde el 2026-09-03.
+- Sigue sin un test que fije «omitir, no inventar 1:1».
+
+Triage 2026-10-08: abierto · low → low · el widget sigue omitiendo la divisa cuando la fila del día no la trae; es de presentación y se cura al llegar las tasas.

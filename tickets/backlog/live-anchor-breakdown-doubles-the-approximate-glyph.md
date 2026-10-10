@@ -1,9 +1,10 @@
 ---
 id: live-anchor-breakdown-doubles-the-approximate-glyph
 status: backlog
-priority: medium
+priority: low
 area: "currency, ui, l10n"
 created: 2026-09-09
+updated: 2026-10-08
 source: device-QA de fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -84,3 +85,15 @@ colisiona porque ese importe no pasa por `isEstimate:`; es la misma clase de fra
 - [[approximate-mark-ors-over-whole-period]] — de dónde sale el criterio de cuándo marcar.
 - [[dos-criterios-de-aproximado-en-la-misma-pantalla]] — el «≈» ya significa dos cosas en el Panel;
   esto es una tercera lectura del mismo símbolo, en la misma hoja.
+
+## Pregunta para Jürgen (triage 2026-10-08)
+
+Sigue igual: `"≈ %@ hoy"` (`es.lproj:743`) + `isEstimate: row.convertedIsApproximate` (`BalanceLiveAnchorEducationSheet.swift:175-177`). ¿Qué queda?
+
+- **A** · Quitar el «≈» del copy en los 16 `.lproj` (y el «约» de `zh-Hans`): el glifo pasa a significar solo «tasa dudosa», como en el resto de la app.
+- **B** · Dejar el copy y marcar la tasa dudosa con otra señal en esta fila (texto «tasa de otro día» o un icono).
+- **C** · Dejarlo como está.
+
+Recomendación: **A**, que es lo que el «≈» ya significa en el resto de la app. Con A la prioridad es `low`.
+
+Triage 2026-10-08: abierto · medium → low · el doble glifo sigue: formato `"≈ %@ hoy"` (`es.lproj:743`) más `isEstimate:` en `BalanceLiveAnchorEducationSheet.swift:175`; falta decidir el copy.

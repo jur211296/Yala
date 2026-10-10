@@ -290,6 +290,7 @@ struct MonthSummaryWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: MonthSummaryProvider()) { entry in
             MonthSummaryWidgetView(entry: entry)
+                .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }
         .configurationDisplayName("widget.gallery.monthSummary")

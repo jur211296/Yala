@@ -1,10 +1,10 @@
 ---
 id: groups-double-load-on-entry-needs-redeciding
 status: backlog
-priority: low
+priority: very-low
 area: "groups, performance"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-08
 source: tickets/qa/groups-tab-missing-panel-perf.md
 ---
 
@@ -40,3 +40,10 @@ páginas sin subir `dataVersion` (`.claude/rules/swiftui-ds.md`, el live-binding
 
 - [ ] Medido qué caminos de `refreshFromCloud(force: false)` terminan sin bumpear `dataVersion`.
 - [ ] Decidido, con esa medida, si el segundo `loadData()` se quita, se condiciona a «no hubo bump» o se queda.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El par sigue igual: lista en `GroupsContainerView.swift:259` (`setContext`) y `:280` (`refreshFromCloud(force: false)`); detalle en `GroupDetailView.swift:252` y `:255`. `GroupsViewModel.refreshFromCloud` sigue haciendo `syncNowFromUI()` y luego `loadData()`.
+- Sin commits en los tres ficheros desde el 2026-10-05. No hay síntoma visible: es trabajo repetido al montar.
+
+Triage 2026-10-08: abierto · low → very-low · la doble lectura sigue, sin síntoma visible; es una optimización que antes pide medir los caminos sin bump.

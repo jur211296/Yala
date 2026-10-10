@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, groups"
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: "review adversarial de `personal-clock-ahead-wins-…` / `groups-clock-ahead-wins-…` (2026-10-07), lente de extremo a extremo"
 ---
 
@@ -45,3 +45,10 @@ Dos efectos de la misma raíz, menores:
 - [ ] Decisión escrita.
 - [ ] Test: con el reloj más de un minuto adelantado, un cambio que falla en su lote y se reintenta después del cambio
   nuevo de la misma unidad no lo pisa.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `gateway/src/sync/routes.ts` sigue aplicando cada delta con `applyOneDelta` en su propia llamada dentro del `for (const delta of body.deltas)`, y un `upstream_*` sigue saliendo como `rejected` por delta sin parar los siguientes de la misma `sync_id`.
+- Ningún commit desde el 2026-10-07 toca ese bucle, `SyncPushClient` ni `GroupsSyncClient`; la decisión sigue sin escribir.
+
+Triage 2026-10-08: abierto · low → low · el fallo parcial por delta sigue igual; exige reloj adelantado más de un minuto, dos cambios de la misma fila en un lote y un `upstream_*` en el primero.

@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: currency
 created: 2026-09-09
+updated: 2026-10-08
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -43,3 +44,10 @@ precedente para las dos lecturas y conviene mirarlo antes de alinear.
       `LiveBalanceCalculator` sobre la mesa.
 - [ ] Los dos bucles usan ese conjunto, o queda escrito por qué difieren.
 - [ ] Un test con un gasto de grupo bridgeado que fije la elección.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `WidgetDataCache.buildPeriodSummary` no ha cambiado: el bucle del saldo usa `preferredAmount(tx)` sin `adjustment` ni `guard tx.category != nil`.
+- **Decisión:** A) el saldo es el de la cuenta, como `LiveBalanceCalculator`, y se deja escrito por qué difiere del gasto; B) alinear el saldo con «mi parte». **Recomendada: A**, con un test que la fije.
+
+Triage 2026-10-08: abierto · low → low · los dos bucles siguen con conjuntos distintos y falta la decisión de cuál es el correcto.

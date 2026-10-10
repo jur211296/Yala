@@ -4,7 +4,7 @@ status: backlog
 priority: very-low
 area: qa
 created: 2026-09-12
-updated: 2026-09-12
+updated: 2026-10-08
 source: lente adversarial de la sesión de la cola del simulador (2026-09-12)
 ---
 
@@ -48,3 +48,9 @@ perder nada».
 ## Relacionados
 
 - [[diez-worktrees-comparten-un-simulador]] — la cola y su medición
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `.claude/commands/gate.md` sigue envolviendo `xcodebuild … test` entero con `qa/scripts/sim-lock.sh`, sin partir en `build-for-testing` y `test-without-building`.
+
+Triage 2026-10-08: abierto · very-low → very-low · tooling; la cola funciona y esto solo la acortaría.

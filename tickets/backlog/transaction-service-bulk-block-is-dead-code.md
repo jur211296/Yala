@@ -1,10 +1,11 @@
 ---
 id: transaction-service-bulk-block-is-dead-code
 status: backlog
-priority: low
+priority: very-low
 area: "arquitectura, tech-debt"
 created: 2026-09-08
 source: barrido del patrón de bulk-update-account-leaves-converted-amount-stale (2026-09-08)
+updated: 2026-10-08
 ---
 
 # El bloque bulk de `TransactionService` es una copia paralela muerta de la del ViewModel
@@ -64,3 +65,9 @@ ahora, es que el próximo arreglo del ViewModel vuelva a dejarlos atrás.
       `TransactionServiceTests` ejercita `bulkUpdateAmount` y habría que decidir si su caso de
       coherencia del grupo `money` se muda a la ruta viva (donde ya vive el de la cuenta, en
       `RecordsViewModelBulkAccountCurrencyTests`) o se pierde.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Los cinco siguen en `TransactionService.swift` (`:146-245`) y ninguno tiene llamador de producción; `bulkUpdateAmount` solo lo usa su test. El fichero no tiene commits tras `48120f915` (el que borró `bulkUpdateAccount`).
+
+Triage 2026-10-08: abierto · low → very-low · siguen los cinco métodos muertos; es deuda técnica sin efecto para el usuario mientras nadie los llame.

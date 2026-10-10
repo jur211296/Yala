@@ -25,20 +25,26 @@ struct SiriDraftService {
     /// Convierte la cola de dictados de Siri pendientes en `InboxDraft`s. Devuelve cuántos creó.
     /// Se llama en `bootstrap()`, en `handleBecameActive()` y en el trailing-edge del observer de
     /// remote-change; es idempotente (consume-after-save) y barato si la cola está vacía.
+    /// `pendingStoreDefaults` e `importQuiescent`: inyectables en tests, como en `ApplePayDraftService.processPending`
+    /// (producción usa el App Group y el singleton de sync).
     @discardableResult
-    static func processPending(context: ModelContext) -> Int {
+    static func processPending(
+        context: ModelContext,
+        pendingStoreDefaults: UserDefaults? = SiriPendingStore.appGroupDefaults,
+        importQuiescent: Bool? = nil
+    ) -> Int {
         // Gate de quiescencia (idéntico a ApplePayDraftService): crea InboxDrafts + `save()` del store
         // personal; diferir durante el import del restore de iCloud evita el `_assertionFailure`/
         // SIGTRAP interno de SwiftData. NO consumimos la cola si el gate no pasa (los dictados
         // persisten y se reintentan en el próximo arranque / trailing-edge).
-        guard iCloudSyncService.shared.isImportQuiescent else {
+        guard importQuiescent ?? iCloudSyncService.shared.isImportQuiescent else {
             SaveBreadcrumb.deferred("SiriDraftService.processPending", "import not quiescent")
             return 0
         }
 
         // peek (NO consume): un fetch/save fallido o un crash antes del save deja la cola intacta →
         // se reintenta. Solo borramos las keys tras un `save()` exitoso (consume-after-save).
-        let pending = SiriPendingStore.peekAll()
+        let pending = SiriPendingStore.peekAll(defaults: pendingStoreDefaults)
         guard !pending.isEmpty else { return 0 }
 
         // Fetches del lote (una vez para todos los dictados): cuentas reales (excluye las de sistema:
@@ -102,7 +108,7 @@ struct SiriDraftService {
 
         // Los descartados (sin transacción válida) se borran aunque no haya nada que guardar.
         if !droppedKeys.isEmpty {
-            SiriPendingStore.remove(keys: droppedKeys)
+            SiriPendingStore.remove(keys: droppedKeys, defaults: pendingStoreDefaults)
         }
 
         // Nada válido que insertar (todos los dictados sin transacción parseable): salir.
@@ -126,7 +132,7 @@ struct SiriDraftService {
 
         // Save OK → borrar las keys materializadas. Residual documentado: un crash entre este save y
         // el remove reprocesaría el dictado, pero el dedup del próximo pase lo absorbe.
-        SiriPendingStore.remove(keys: materializedKeys)
+        SiriPendingStore.remove(keys: materializedKeys, defaults: pendingStoreDefaults)
         return accepted.count
     }
 

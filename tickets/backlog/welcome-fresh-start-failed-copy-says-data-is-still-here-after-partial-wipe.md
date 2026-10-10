@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "onboarding, groups, l10n"
 created: 2026-10-01
+updated: 2026-10-08
 source: "review adversarial de `groups-purge-save-crosses-two-stores-without-atomicity` (lente de consumidores); anterior a ese cambio"
 ---
 
@@ -28,3 +29,10 @@ No lo introdujo `groups-purge-save-crosses-two-stores-without-atomicity`: ya pas
 
 Que ese alert diga lo mismo que la puerta del teléfono cuando el fallo llega después de `wipeAllUserData`, o
 separar el texto por dónde falló. Los 16 idiomas y `BRAND-VOICE.md`.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ShellDataAlertsModifier.performFreshStartWipe`: `wipeAllUserData` sigue antes de `wipeLocalGroupsDomain`, y el `catch` genérico abre el aviso con `welcome.freshStart.failedMessage` («Tus datos siguen aquí…», `es.lproj`:5460).
+- Se queda en `low`: hace falta que el segundo borrado lance después del primero (un fallo de guardado), y lo que el aviso dice que sigue es lo que la persona pidió borrar.
+
+Triage 2026-10-08: abierto · low → low · el texto sigue siendo falso en ese fallo, pero requiere que el segundo borrado lance tras el primero.

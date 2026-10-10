@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "inbox"
 created: 2026-09-08
+updated: 2026-10-08
 source: barrido del patrón en chat-draft-sign-can-contradict-its-subcategory (2026-09-08)
 ---
 
@@ -58,3 +59,9 @@ a la naturaleza contraria, y eso no se ha contado en datos reales.
       seis llamadores— o se queda en cada superficie. Subirlo es más limpio pero cambia un servicio
       con usos de UI; quedarse deja el criterio repetido en cuatro sitios.
 - [ ] Test de la combinación cruzada en cada una, con su control positivo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+Las tres llamadas siguen sin filtro de naturaleza: `ApplePayDraftService.swift:102`, `VoiceRecordingView.swift:776` (antes `:762`) e `InboxDraftEditSheet.swift:839`. `MerchantMemoryService.suggest(for:)` (`:51`) sigue sin parámetro de tipo.
+
+Triage 2026-10-08: abierto · medium → medium · las tres superficies siguen llamando a `suggest(for:)` sin `matchesNature` (`ApplePayDraftService.swift:102`, `VoiceRecordingView.swift:776`, `InboxDraftEditSheet.swift:839`).

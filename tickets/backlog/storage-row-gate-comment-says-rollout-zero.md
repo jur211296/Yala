@@ -5,6 +5,7 @@ priority: low
 area: "cloud, docs"
 created: 2026-09-08
 source: hallazgo de camino en chat-rows-with-unsigned-amount-have-no-repair-path (2026-09-08)
+updated: 2026-10-08
 ---
 
 # El comentario de la fila «Almacenamiento» dice que la nube está apagada, y lleva mes y medio abierta
@@ -46,3 +47,10 @@ ancla. La pregunta «¿está esa puerta abierta?» se contestó con el comentari
 
 - [ ] `StorageRowGateLogic` describe el percent que sirve producción de verdad, con fecha.
 - [ ] Barrido de otras menciones al percent en comentarios, corregidas o retiradas.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `StorageRowGateLogic.swift:10-12` sigue afirmando que el gateway sirve `CLOUD_MODE_ROLLOUT_PERCENT = "0"`; `gateway/wrangler.toml` sirve `"100"` en `:51` (staging) y `:127` (producción).
+- Barrido hecho: es la única mención del percent viejo en `Yala/` y `gateway/src`, así que el segundo criterio se reduce a ese comentario.
+
+Triage 2026-10-08: abierto · low → low · el comentario sigue diciendo 0 % con producción en 100 %; no lo ve ningún usuario, pero confunde a quien decide si algo es alcanzable.

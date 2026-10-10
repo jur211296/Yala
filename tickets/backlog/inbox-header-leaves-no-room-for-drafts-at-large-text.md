@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "inbox, a11y, iphone, adaptativo"
 created: 2026-09-28
+updated: 2026-10-08
 source: "iphone-small-screens-and-safe-areas-audit (carril adaptativo, paso 3), capturas del 2026-09-28"
 ---
 
@@ -36,3 +37,5 @@ iphone-small-screens-and-safe-areas-audit/README.md`. A tamaño normal no deber�
 
 - [[large-text-leftovers-outside-the-main-iphone-screens]] — punto 4, los filtros de la Bandeja partidos en
   sílabas a AX5. Se puede arreglar a la vez.
+
+Triage 2026-10-08: abierto · medium → medium · `InboxView.body` sigue apilando la cabecera fija y la lista en un `VStack` (`InboxView.swift:230-264`), sin commit de arreglo desde el 28-sep.

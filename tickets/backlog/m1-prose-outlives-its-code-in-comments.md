@@ -1,9 +1,10 @@
 ---
 id: m1-prose-outlives-its-code-in-comments
 status: backlog
-priority: medium
+priority: very-low
 area: "documentación en código, sesiones"
 created: 2026-09-13
+updated: 2026-10-08
 source: "medido al cerrar el PR-B del paso 12 (`shell-derives-from-two-session-axes`)"
 ---
 
@@ -66,3 +67,5 @@ reescribieron en ese PR.
       borrada (si no), o movida a `.claude/rules/` (si vale para más de un fichero).
 - [ ] Ningún comentario justifica un guard, un orden o una fachada **vivos** con un escenario que hoy
       es imposible sin decir que lo es.
+
+Triage 2026-10-08: abierto · medium → very-low · la prosa sigue: un `git grep` orientativo (sesión secundaria / la visita / la invitada / visitor / M1) da 56 líneas en 32 ficheros, encabezados por `SecondarySessionRetirement` (6) y `AppBootstrapper` (5); es documentación en código.

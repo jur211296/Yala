@@ -1,9 +1,10 @@
 ---
 id: groups-convergence-retries-every-launch-without-a-ceiling
 status: backlog
-priority: low
+priority: very-low
 area: "groups"
 created: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `activation-start-fresh-drops-group-settlement-legs` (2026-09-27, lente de momento y kill-safety); inferido por lectura, NO reproducido"
 ---
 
@@ -33,3 +34,11 @@ nada.
 ## Relacionados
 
 - [[activation-start-fresh-drops-group-settlement-legs]]
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsBridgeRestoreConvergence.convergeIfPending` sigue con gastos, liquidaciones, la entrega a `GroupsPendingBridgeIntent` y `dedupeSettlementVirtualLegs` dentro de un solo `do`; el `catch` deja la intención puesta y no hay contador de intentos.
+- Los cinco commits posteriores sobre el fichero (`e7bfa659f` … `ae204458d`) cambiaron qué se converge, no el tope.
+- Solo muerde con un store que falla siempre, y entonces el síntoma es trabajo de más en cada arranque, no un dato perdido.
+
+Triage 2026-10-08: abierto · low → very-low · sigue sin tope, pero solo con un store dañado de forma persistente y sin síntoma visible.

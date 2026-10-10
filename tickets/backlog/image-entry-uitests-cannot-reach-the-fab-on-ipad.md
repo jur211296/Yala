@@ -4,6 +4,7 @@ status: backlog
 priority: low
 area: "testing"
 created: 2026-10-07
+updated: 2026-10-08
 source: hallazgo del encargo 2026-10-07-ipad-drop-unreadable-file-fails-silently
 ---
 
@@ -25,3 +26,9 @@ Panel con el seed `minimal` cabe sin scroll y el flotante no entra nunca.
 
 Que el helper use la fila de acciones del Panel (`panel_action_image`) cuando el flotante no puede entrar, o que estas
 suites se declaren de iPhone. `ReceiptDropUITests` ya entra por `panel_action_image` por esto mismo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- La suite vive hoy en `YalaUITests/Flows/ImageEntryReviewUITests.swift` y sigue entrando por `app.revealPanelFAB().tap()`; `revealPanelFAB` (`YalaUITests/Support/XCUIApplication+Yala.swift`) no tiene alternativa para cuando el flotante no entra.
+
+Triage 2026-10-08: abierto · low → low · `ImageEntryReviewUITests` (YalaUITests/Flows) sigue entrando por `revealPanelFAB()` y no por `panel_action_image`; solo afecta a corridas en iPad, fuera del gate.

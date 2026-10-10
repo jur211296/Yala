@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, migración"
 created: 2026-09-23
 source: "review adversarial de `reverse-upload-ceiling-charges-a-wait-to-whoever-stops-it-last` (2026-09-23), lente de persistencia"
+updated: 2026-10-08
 ---
 
 # Un fallo de UNA pasada justo antes de cerrar la app cobra todas las horas que la app estuvo cerrada
@@ -59,3 +60,9 @@ motivo del canal —casi siempre `unknown`— y no abría el tramo corto; ahora 
 ilegible SUELTA, la app cerrada dos horas y otra pasada mala suelta al volver (ilegible, o el `notAuthenticated` de una
 pasada) sacan de la vuelta en el acto, cobrándose las horas cerradas. Mismo mecanismo que ya tenían `icloudFull` e
 `icloudUnusable`; una lectura ilegible transitoria es rara (el SQLite que no abre o falta su tabla suele ser persistente).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CauseStallClock` (MigrationRunner.swift) sigue cobrando el hueco no observado, fijado por `reversePreMountDefinitiveClock_anUnobservedGapBetweenTwoCauses_counts`, y `iCloudSyncService.mirrorReportedNotAuthenticated` sigue siendo una propiedad en memoria que no sobrevive al relanzamiento.
+
+Triage 2026-10-08: abierto · low → low · sigue igual en el código, pero hace falta un fallo de una sola pasada justo antes de cerrar la app y el efecto es cancelar la vuelta, no perder datos.

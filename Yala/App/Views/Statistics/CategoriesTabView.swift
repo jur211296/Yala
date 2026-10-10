@@ -29,6 +29,9 @@ struct CategoriesTabView: View {
     let allSubcategories: [Subcategory]
     let tags: [Tag]
     let allTransactions: [TransactionItem]
+    /// Recargas del store hechas por el contenedor (`DetailContainerViewModel.dataGeneration`). Todo lo que esta
+    /// pestaña precalcula cuelga de él para enterarse de un alta, un borrado o una edición en sitio.
+    let dataGeneration: Int
 
     // MARK: - Scheduled Payments (for Sankey "Planificados" branch)
 
@@ -224,7 +227,12 @@ struct CategoriesTabView: View {
                 recomputeSankey()
             }
             .onChange(of: viewModel.sankeyInputKey) { recomputeSankey() }
-            .onChange(of: allTransactions.count) { recomputeSankey() }
+            // Datos nuevos: cualquier mutador (alta, borrado, edición del importe, sync) acaba en una recarga del
+            // contenedor, detrás de su debounce, y esa recarga avanza `dataGeneration`. Antes se miraba
+            // `allTransactions.count`, que no ve una edición en sitio y solo recalculaba el Sankey: el hero (saldo y
+            // flujo) seguía con el número viejo hasta tocar un filtro. Sustituye a aquel observador, no se suma: el
+            // array solo cambia dentro de esa recarga, así que el contador cubre todo lo que cubría `.count`.
+            .onChange(of: dataGeneration) { recalculateAfterDataReload() }
             .onChange(of: scheduledPaymentsSignature) { recomputeSankey() }
             // Filtros del VM que disparan recálculo, extraídos a un ViewModifier para no exceder el
             // presupuesto del type-checker de Swift (cadena larga de .onChange en este body).
@@ -377,6 +385,8 @@ struct CategoriesTabView: View {
                     isEstimate: isBalanceMode ? (balanceKPI?.isApproximate ?? false) : false
                 )
                 .contentTransition(.numericText())
+                // Lo lee el XCUITest que comprueba que la cifra sigue a un alta (`StatisticsHeroLikePanelUITests`).
+                .accessibilityIdentifier("stats_hero_amount")
             }
 
             if hasRecords, let subtitle = heroDimensionalSubtitle() {
@@ -1299,6 +1309,12 @@ struct CategoriesTabView: View {
     }
 
     // MARK: - Data Calculation
+
+    /// Los datos cambiaron (alta, borrado, edición en sitio, sync): todo lo que la pestaña precalcula, una vez.
+    private func recalculateAfterDataReload() {
+        calculateData()
+        recomputeSankey()
+    }
 
     private func calculateData() {
         let interval = viewModel.panelDateInterval

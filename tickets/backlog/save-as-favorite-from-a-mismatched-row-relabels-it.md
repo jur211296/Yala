@@ -1,7 +1,7 @@
 ---
 id: save-as-favorite-from-a-mismatched-row-relabels-it
 status: backlog
-priority: low
+priority: medium
 area: "transactions, favorites, scheduled, currency"
 created: 2026-10-08
 updated: 2026-10-08
@@ -30,3 +30,11 @@ acaba de enseñar. Duplicar el movimiento también vuelve a la divisa de la cuen
 
 Convertir el importe a la divisa de la cuenta al crear el favorito/programado (tasa de hoy), o avisar. Se dejó fuera
 del PR del 2026-10-08 para no tocar lo adyacente.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `NewTransactionView.favoriteSheetContent` y `recurringSheetContent` siguen pasando `viewModel.effectiveCurrencyCode`; el formulario usa `amountCurrencyCode` a unas líneas. Ningún commit posterior al 4ec6f0c5e los toca.
+- Hermanos: `saving-a-mismatched-transaction-relabels-it-without-converting` (qa, medium) y `cloudsync-account-currency-orphans-receiver-history` (medium), que es una de las fuentes de filas desemparejadas.
+- Decisión pendiente. A) convertir el importe a la divisa de la cuenta con la tasa de hoy al crear el favorito o el programado. B) crearlo en la divisa de la fila, que obliga a tocar `prefillFromFavorite`. C) avisar y no crear. Recomendada: A, que es lo que hace el arreglo de la divisa de la cuenta.
+
+Triage 2026-10-08: abierto · low → medium · sigue pasando (favoriteSheetContent/recurringSheetContent con effectiveCurrencyCode) y crea un favorito o un programado con un importe en otra divisa justo después de que la pantalla enseñara la buena; es la misma clase que su hermano medium.

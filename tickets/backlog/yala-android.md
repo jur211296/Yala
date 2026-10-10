@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: general
 created: 2026-03-29
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Backlog/future_yala-android.md
 ---
 
@@ -60,3 +60,10 @@ source: YalaWiki/Backlog/future_yala-android.md
   lado iOS para eventualmente iniciar la Fase 0 cuando se decida invertir.
 
 migrated from YalaWiki Backlog/future_yala-android.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- Sigue sin `Package.swift` propio: la Fase 0 no ha empezado.
+- `docs/DECISIONS.md` (2026-07-13, Grupos en v1) pone Android después de Grupos→backend y de la web; ninguna decisión posterior la retira.
+
+Triage 2026-10-08: abierto · low → low · idea válida sin urgencia; va después de la web según el orden decidido.

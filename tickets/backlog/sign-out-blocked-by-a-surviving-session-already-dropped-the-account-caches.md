@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sesiones"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "review adversarial de `sign-out-exits-do-not-verify-the-cloud-session-closed` (2026-09-26)"
 ---
 
@@ -30,3 +30,9 @@ antes de descubrir que la sesión no se fue.
 
 Si merece la pena que `signOut()` separe «soltar la sesión» de «soltar lo que cuelga de ella» y los cierres solo hagan lo
 segundo con la sesión ida. Toca el orden de un camino que también usan el desasociar y el relevo.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `CloudAuthService.signOut(returningToPreviousAccount:)` sigue llamando a `AccountKindService.handleSignOut`, `AdoptSessionOwnership.record(nil)`, `GIDSignIn.signOut()` y `AccountEntitlementService.handleSignOut()` ANTES de leer `storedSessionIsGone`. Solo el perfil capturado y el proveedor se movieron detrás de la comprobación.
+
+Triage 2026-10-08: abierto · low → low · sigue pasando (las cachés se sueltan antes de saber si la sesión se fue), pero solo cuando la sesión sobrevive al cierre, y reintentar o reabrir la app lo repone.

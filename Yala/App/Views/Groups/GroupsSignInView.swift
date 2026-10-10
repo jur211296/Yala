@@ -240,7 +240,7 @@ extension GroupsSignInView {
         let discovery: CloudIdentityRoutingLogic.Discovery
         var userID: String?
         switch await CloudIdentityDiscovery().discover(gate: .groups) {
-        case .discovered(let resultado, let discoveredUserID):
+        case .discovered(let resultado, let discoveredUserID, _):
             discovery = resultado
             userID = discoveredUserID
         case .unavailable:

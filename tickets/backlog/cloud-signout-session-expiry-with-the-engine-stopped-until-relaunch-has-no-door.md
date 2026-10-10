@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, sesión, settings"
 created: 2026-09-25
 source: "review adversarial de `cloud-session-expiry-with-only-group-changes-has-no-sign-in-door` (2026-09-25), dos lentes"
+updated: 2026-10-08
 ---
 
 # Con el motor parado hasta relanzar, el aviso de sesión caducada manda a un «Iniciar sesión» que no está
@@ -28,3 +29,11 @@ el aviso de App Attest y ningún botón para entrar.
 
 ¿Qué dice el cierre cuando el motor está parado hasta relanzar y la sesión también caducó? Firmar no arregla un attest
 roto; el texto de la sesión caducada tampoco es el que toca.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `SyncSignInBannerLogic.engineWaitsForSignIn` sigue devolviendo `false` para `.stoppedUntilRelaunch`, y `CloudSyncRuntime.stopUntilSignIn` sigue saliendo si el estado no es `.running`.
+- Desde el 2026-09-28 (`159191c4f`, `70b8c1e67`) `.cloudSessionExpired` ofrece también la salida que pierde los cambios, así que la persona no queda atrapada; lo que sigue mal es el texto que nombra la puerta.
+- Sigue pendiente decidir el texto. Recomendación: cuando el motor está en `.stoppedUntilRelaunch`, que gane el motivo de App Attest al de la sesión caducada, que es lo que la tarjeta ya enseña.
+
+Triage 2026-10-08: abierto · low → low · la tarjeta sigue sin puerta con el motor parado hasta relanzar; hay salida de pérdida desde el 28-sep y la población es la del teléfono sin attest.

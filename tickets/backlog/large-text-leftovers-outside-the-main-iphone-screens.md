@@ -1,9 +1,10 @@
 ---
 id: large-text-leftovers-outside-the-main-iphone-screens
 status: backlog
-priority: medium
+priority: low
 area: "a11y, design-system, iphone, adaptativo"
 created: 2026-09-28
+updated: 2026-10-08
 source: "iphone-large-text-sizes-break-layouts (carril adaptativo, paso 2), capturas a AX5 del 2026-09-28"
 ---
 
@@ -54,3 +55,5 @@ arregladas, **inferido** sin captura.
 Lo mismo que el paso 2: capturas antes y después en `YalaLane-Adapt-iPhone-SE` y `YalaLane-Adapt-iPhone-ProMax`,
 a tamaño por defecto y a AX5, con el guion temporal que usó el paso 2 (se describe en su ticket). Los puntos 1 y
 2 son baratos; el 3 y el 5 piden una decisión de diseño pequeña, que se toma con la práctica nativa de Apple.
+
+Triage 2026-10-08: abierto · medium → low · ninguna de las 11 vistas citadas usa `AdaptiveRowStack`; `incomeExpenseChips` sigue en `TrendsTabView.swift:288` e `InsightsTabView.swift:254`, y `TransactionAmountInputView` sigue sin llamadores.

@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "modo-nube, sync, preferencias"
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: "residual de `prefs-outbox-reads-an-unreadable-file-as-corrupt-and-overwrites-it` (2026-09-26), D2 de su Paso 0"
 ---
 
@@ -32,3 +32,10 @@ queda en este teléfono y no sube. Tus otros dispositivos no lo ven hasta que vu
 
 - [ ] Un cambio que el outbox no aceptó sube en cuanto el outbox lo acepta, con el HLC de cuando se hizo.
 - [ ] Un cambio de dueño o un teardown entre medias lo descarta.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `Yala/App/Services/PreferenceSyncService.swift` `enqueuePref`: el `catch` de `prefsOutbox.enqueue` solo emite `prefsOutboxUnreadable(step: "enqueue")` con `.readFailed` y un print; nadie guarda el cambio para reintentarlo.
+- Los commits posteriores al 2026-09-26 sobre el canal de prefs (099aa010a, a1b7297c5) no tocan ese camino.
+
+Triage 2026-10-08: abierto · low → low · sigue sin reintento, pero exige un fallo de lectura o escritura de la cola justo en el cambio, y el valor local no se pierde.

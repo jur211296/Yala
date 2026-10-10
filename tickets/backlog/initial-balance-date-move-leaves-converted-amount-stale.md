@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "currency, fx, import"
 created: 2026-09-08
+updated: 2026-10-08
 source: barrido del patrón de bulk-update-account-leaves-converted-amount-stale (2026-09-08)
 ---
 
@@ -63,3 +64,11 @@ una combinación acotada, pero cuando ocurre el número queda mal para siempre y
       convertido corresponde a la tasa de la fecha NUEVA. Sembrar dos días con tasas distintas para
       que el testigo distinga.
 - [ ] Verificar el mutante: sin el recálculo, el test debe caer.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `InitialBalanceService.swift:241-256`: el `if newDate < initialBalanceTx.date { initialBalanceTx.date = newDate }` sigue sin `recalculatePreferredCurrency`. El servicio no tiene commits desde el 2026-09-08.
+- Llamadores, sin cambio: `TransactionCSVImportService.swift:229`, `:1149`, `:1541` y `:1703`.
+- Relación con `converted-amount-sweep-blind-to-input-changes`: es su control positivo, un hijo y no un duplicado. Aquel pone el detector y éste arregla el caso.
+
+Triage 2026-10-08: abierto · medium → medium · no es duplicado: el barrido de `converted-amount-sweep-blind-to-input-changes` lo detectaría pero no lo arregla; `updateInitialBalanceDateIfNeeded` sigue moviendo la fecha sin recomputar (`InitialBalanceService.swift:253-255`).

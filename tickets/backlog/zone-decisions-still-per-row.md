@@ -2,9 +2,9 @@
 id: zone-decisions-still-per-row
 status: backlog
 area: groups
-priority: medium
+priority: low
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-10-08
 source: docs/aprendizajes-tecnicos.md
 ---
 
@@ -37,3 +37,12 @@ no contra un productor activo — eso cambia la prioridad, no la corrección.
 ## De dónde sale
 
 Residuales (b) y (c) de [docs/aprendizajes-tecnicos.md#un-gate-por-zona-calculado-sobre-filas-vivas-es-la-herramienta-equivocada-para-un-tombstone-por](../../docs/aprendizajes-tecnicos.md#un-gate-por-zona-calculado-sobre-filas-vivas-es-la-herramienta-equivocada-para-un-tombstone-por).
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupService.batchClassifyAllGroups` (`GroupService.swift:715-735`) itera filas, no zonas. `batchFacts` (`:998-1012`) lee `isOwner` de la fila, y `GroupBatchLeaveStore.replaceAll` (`GroupBatchLeaveStore.swift:80-84`) se queda con la última entrada de cada zona.
+- `executeBatchStep` ya toma la fila canónica, pero el `plannedAction` congelado sigue saliendo de la fila que ganó.
+- `SplitGroupDeduplicationService.computeDedupPlan` (`:78-104`) elige el keeper por `createdAt`. Fusiona `isBackendGroup`, `movedToBackendAt` y `rejoinRevokedAt` desde `c8ce41fd3`, que es anterior al ticket, y deja `backendReInviteToken` sin fusionar a propósito.
+- Por qué low: el productor de duplicados ya no existe. Es endurecimiento contra datos legacy.
+
+Triage 2026-10-08: abierto · medium → low · batchClassifyAllGroups sigue clasificando por fila y replaceAll se queda con la última por zona; computeDedupPlan sigue eligiendo keeper por createdAt sin mirar el canal

@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, sync"
 created: 2026-09-17
 source: "review adversarial de `cloud-hydration-spinner-never-gives-up-without-attest` (2026-09-17), lente de carreras (medido con una sonda de SwiftUI)"
+updated: 2026-10-08
 ---
 
 # «Descargando tus datos…» no se entera de que la pantalla ya tiene datos
@@ -43,3 +44,11 @@ entera.
 - `cloud-hydration-spinner-never-gives-up-without-attest` (done) — de donde sale.
 - `cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped` — el otro término que el banner no re-evalúa.
 - `reentry-counts-as-fresh-install` (qa) — su paso 3 mira justo cuándo desaparece la píldora.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- El `.task` del banner sigue sin `id` (`CloudHydrationBanner.swift`, `body` → `.task {`) y `keepsWatching` documenta ya en su docblock que `storeLooksEmpty` llega congelado al montar y cita este ticket.
+- Ningún commit posterior al 2026-09-17 toca `CloudHydrationBanner.swift`.
+- Sigue pendiente la decisión 1/2 del cuerpo. Recomendación: la 2 (mantener hasta cerrar la descarga y corregir el docblock), que no cambia el guion de `reentry-counts-as-fresh-install`; con ella sigue `low`.
+
+Triage 2026-10-08: abierto · low → low · el `.task` del banner sigue sin `id` y lee `storeLooksEmpty` congelado; la píldora no miente sobre los datos, solo tarda en irse.

@@ -1,9 +1,10 @@
 ---
 id: claude-plugin-read-only-mcp-connector
 status: backlog
+priority: low
 area: cloud
 created: 2026-09-26
-updated: 2026-09-26
+updated: 2026-10-08
 source: encargo 2026-09-26-plugin-claude-mcp-exploracion; diferido #22 de docs/modo-nube/MODO-NUBE-DIFERIDOS.md
 ---
 
@@ -52,3 +53,11 @@ cuenta de inicio de sesión (`claude-mcp-oauth-token-can-change-the-account`).
 - `session-redesign-web-and-store-copy`: la política de privacidad todavía dice que no hay servidores
   propios.
 - `ci-no-corre-la-suite-del-gateway`: el MCP necesitará su suite en CI.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- **El «Bloqueo para la fase 1» de arriba ya no bloquea:** `claude-mcp-oauth-token-can-change-the-account` está en `done` (PR #263), y la paridad de cifras también (`claude-mcp-numbers-match-the-app`, PR #266).
+- Siguen abiertos `claude-mcp-consent-with-apple-and-google` (low) y `claude-mcp-production-auth-hardening` (medium).
+- Producción espera a que la nube esté estable tras 2.1 (decisión 3 de Jürgen).
+
+Triage 2026-10-08: abierto · sin prioridad → low · fase 0 hecha; producción espera a después de 2.1 por decisión de Jürgen.

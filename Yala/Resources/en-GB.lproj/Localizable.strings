@@ -3894,7 +3894,7 @@
 
 /* MARK: Modo Nube (I14) — almacenamiento / migración / consentimiento */
 "storage.title" = "Where your data lives";
-"storage.waitingForLeader" = "Another of your devices is activating the cloud for this account. Wait for it to finish.";
+"storage.waitingForLeader" = "One of your other devices is activating the cloud for this account. Wait for it to finish.";
 "storage.status.icloudTitle" = "Private iCloud";
 "storage.status.icloudBody" = "Your data lives on your device and syncs through your private iCloud. No one else can read it — not even us.";
 "storage.status.cloudTitle" = "Your cloud account";
@@ -4561,6 +4561,7 @@
 
 /* Storage migrate card, after the identity check refused the live account: it was signed in before a fresh start */
 "storage.migrate.refusedFreshStart" = "Your current Yala account may belong to someone else: it was already signed in when this device started fresh. To choose yours, unlink it in “Groups” and tap “Turn on the cloud” again.";
+"storage.migrate.refusedOtherDevice" = "One of your other devices is moving your data to this account. Finish turning on the cloud there or, if it stopped, try again on that device.";
 
 /* Storage adopt card: the live session is a different Yala account than the one that migrated (%@ = Apple|Google) */
 "storage.adopt.otherAccountNote" = "This cloud copy belongs to a different Yala account — the %@ one. Sign out and sign in with that account to continue.";
@@ -5314,6 +5315,8 @@
 "storage.migrateBlock.appleSameAccountNote" = "With Apple, Yala always uses this device’s account. To use another one, choose Google.";
 "storage.migrateBlock.freshStartSessionTitle" = "This account may belong to someone else";
 "storage.migrateBlock.freshStartSessionBody" = "Nothing has changed. Your groups use an account that was already signed in on this device, and since this device started fresh, it may belong to someone else. To move your data to the cloud, unlink it in “Groups” and tap “Turn on the cloud” again: you’ll be able to choose your account.";
+"storage.migrateBlock.otherDeviceTitle" = "One of your other devices is moving your data to the cloud";
+"storage.migrateBlock.otherDeviceBody" = "Nothing has changed. Finish turning on the cloud on that device or, if it stopped, try again there. Once it’s done, you’ll be able to turn on the cloud here.";
 
 /* Restaurar: la busqueda termino vacia y el servidor nunca contesto — no sabemos si hay datos (reinstall-without-network-has-no-cloud-door) */
 "welcome.restore.cloudUnverifiedTitle" = "We couldn't check your data";
@@ -5398,6 +5401,8 @@
 
 /* Sincronización parada hasta iniciar sesión, cuando no se pudo contar cuántos cambios faltan */
 "storage.sync.needsSignInUncounted" = "Sign in to upload your changes";
+"storage.sync.waitingForConnection" = "%d changes waiting for a connection";
+"storage.sync.waitingForConnectionUncounted" = "Changes waiting for a connection";
 
 /* Ver qué migraría: los conteos no se pudieron leer */
 "storage.migrate.previewUnreadable" = "We couldn’t count your data. Try again in a moment.";
@@ -5774,7 +5779,7 @@
 "image.entry.failure.unreadableFile.title" = "I couldn’t open this file";
 
 /* Image entry failure: unreadable file, why and what to try */
-"image.entry.failure.unreadableFile.message" = "It may be empty, damaged or password-protected. Try another photo or PDF of the receipt.";
+"image.entry.failure.unreadableFile.message" = "It may be empty or damaged. Try another photo or PDF of the receipt.";
 
 /* Account currency change: title of the confirmation when the account has no movements but has scheduled payments or favorites to convert. %@ = new currency code */
 "account.currencyChange.confirmTitleNoHistory" = "Change the currency to %@?";
@@ -5793,3 +5798,48 @@
 
 /* Account currency change confirmation: closing sentence when there are no movements to convert */
 "account.currencyChange.cannotUndo" = "This can't be undone.";
+
+/* Registro por imagen: título al pedir la contraseña de un PDF */
+"image.entry.password.title" = "This PDF has a password";
+
+/* Registro por imagen: explicación bajo el título de la contraseña */
+"image.entry.password.message" = "Enter it to open the file. It’s only used on this device: it isn’t saved or sent anywhere.";
+
+/* Registro por imagen: campo seguro de la contraseña del PDF */
+"image.entry.password.field" = "PDF password";
+
+/* Registro por imagen: botón que abre el PDF con la contraseña */
+"image.entry.password.open" = "Open";
+
+/* Registro por imagen: la contraseña del PDF no lo abre */
+"image.entry.password.wrong" = "Wrong password. Check it and try again.";
+
+/* Registro por imagen: una página del PDF no entró en el tope; %d = tope de páginas */
+"image.entry.pagesLeftOutOne" = "1 page wasn’t read: up to %d are read at a time. To read it, upload it in another PDF.";
+
+/* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
+"image.entry.pagesLeftOutMany" = "%1$d pages weren’t read: up to %2$d are read at a time. To read them, upload them in another PDF.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
+"image.entry.trialLeftOutOne" = "You’ve used your trial photos: 1 wasn’t read.";
+
+/* Registro por imagen: el cupo de prueba se acabó a mitad; %d = fotos o páginas sin leer */
+"image.entry.trialLeftOutMany" = "You’ve used your trial photos: %d weren’t read.";
+
+/* Registro por imagen: progreso al leer las páginas de un PDF */
+"image.entry.readingPageProgress" = "Page %1$d of %2$d";
+
+/* Budget row: exactly one day left in the period (today counts) */
+"budgets.days.remaining.one" = "1 day left";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "You need a connection to generate the AI analysis.";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "You've used up today's AI analyses. Come back tomorrow.";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "You asked for several analyses in a row. Wait a moment and try again.";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "We couldn't confirm your Yala Pro. Try again in a moment.";

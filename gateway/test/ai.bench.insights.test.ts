@@ -27,7 +27,7 @@ import {
   perturbationSensitivity,
   presentCharts,
 } from "../bench/lib/insightsGrading";
-import { cohenKappa, JUDGES, judgesFor, parseVerdict, renderResponse, verdictPass } from "../bench/lib/insightsJudge";
+import { cohenKappa, INSIGHTS_TASKS, JUDGES, judgeOrder, judgesFor, parseVerdict, renderResponse, verdictPass } from "../bench/lib/insightsJudge";
 import {
   cardsBody,
   cardsPayload,
@@ -367,14 +367,35 @@ describe("criterios por tarea", () => {
 });
 
 describe("juez", () => {
-  it("nadie se juzga a sí mismo: los dos jueces de una respuesta son de otro proveedor", () => {
-    for (const p of ["openai", "anthropic", "gemini", "xai", "workersai"]) {
-      const js = judgesFor(p);
-      expect(js).toHaveLength(2);
-      expect(js.every((j) => j.provider !== p)).toBe(true);
-      expect(new Set(js.map((j) => j.provider)).size).toBe(2);
-    }
+  it("nadie se juzga a sí mismo: un juez en Insights y dos en Tendencias, todos de otro proveedor", () => {
+    for (const task of INSIGHTS_TASKS)
+      for (const p of ["openai", "anthropic", "gemini", "xai", "workersai"]) {
+        const js = judgesFor(p, task);
+        expect(js).toHaveLength(task.startsWith("insights.") ? 1 : 2);
+        expect(js.every((j) => j.provider !== p)).toBe(true);
+        expect(new Set(js.map((j) => j.provider)).size).toBe(js.length);
+      }
     expect(JUDGES.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("en Tendencias Sonnet 5.5 abre la lista y a Anthropic lo juzgan otros (2026-10-08)", () => {
+    for (const p of ["openai", "gemini", "xai", "workersai"]) expect(judgesFor(p, "trends.summary")[0].id).toBe("anthropic:claude-sonnet-5-5");
+    expect(judgesFor("anthropic", "trends.summary").map((j) => j.id)).toEqual(["gemini:gemini-3.8-flash", "xai:grok-4.3"]);
+    expect(judgeOrder("trends.summary")).toBe(JUDGES);
+    // Sonnet 5.5 rechaza una temperatura distinta de la de por defecto: el juez no la manda.
+    expect(JUDGES.find((j) => j.id === "anthropic:claude-sonnet-5-5")?.temperature).toBeUndefined();
+  });
+
+  it("en las tres tareas de Insights decide Gemini solo, y a Gemini lo juzga Sonnet (2026-10-08)", () => {
+    const insights = INSIGHTS_TASKS.filter((t) => t.startsWith("insights."));
+    expect(insights).toEqual(["insights.cards", "insights.cashflow", "insights.deviation"]);
+    for (const task of insights) {
+      expect(judgeOrder(task).map((j) => j.id)).toEqual(["gemini:gemini-3.8-flash", "anthropic:claude-sonnet-5-5", "xai:grok-4.3", "workersai:gpt-oss-120b"]);
+      for (const p of ["openai", "anthropic", "xai", "workersai"]) expect(judgesFor(p, task).map((j) => j.id)).toEqual(["gemini:gemini-3.8-flash"]);
+      expect(judgesFor("gemini", task).map((j) => j.id)).toEqual(["anthropic:claude-sonnet-5-5"]);
+    }
+    // El orden por tarea no toca la lista compartida.
+    expect(JUDGES[0].id).toBe("anthropic:claude-sonnet-5-5");
   });
 
   it("veredicto = no contradice y es útil; JSON ilegible = sin veredicto", () => {

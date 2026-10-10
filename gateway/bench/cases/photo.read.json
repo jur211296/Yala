@@ -1135,6 +1135,1096 @@
           "USD"
         ]
       }
+    },
+    {
+      "id": "stmt-pe-p1",
+      "file": "stmt-pe-p1.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, 14 movimientos con saldo arrastrado y subtotales",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -135.31,
+            "date": "2026-09-02",
+            "currency": "PEN",
+            "merchant": "MOVIL"
+          },
+          {
+            "amount": -146.56,
+            "date": "2026-09-02",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": 200.0,
+            "date": "2026-09-03",
+            "currency": "PEN",
+            "merchant": "TRANSF. RECIBIDA M. QUISPE"
+          },
+          {
+            "amount": -110.49,
+            "date": "2026-09-03",
+            "currency": "PEN",
+            "merchant": "PANADERIA"
+          },
+          {
+            "amount": -0.16,
+            "date": "2026-09-03",
+            "currency": "PEN",
+            "merchant": "ITF"
+          },
+          {
+            "amount": 80.0,
+            "date": "2026-09-04",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          },
+          {
+            "amount": -17.84,
+            "date": "2026-09-04",
+            "currency": "PEN",
+            "merchant": "MOVIL"
+          },
+          {
+            "amount": -12.44,
+            "date": "2026-09-05",
+            "currency": "PEN",
+            "merchant": "GIMNASIO"
+          },
+          {
+            "amount": 80.0,
+            "date": "2026-09-06",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          },
+          {
+            "amount": -74.8,
+            "date": "2026-09-07",
+            "currency": "PEN",
+            "merchant": "GIMNASIO"
+          },
+          {
+            "amount": -89.17,
+            "date": "2026-09-07",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO"
+          },
+          {
+            "amount": 150.0,
+            "date": "2026-09-08",
+            "currency": "PEN",
+            "merchant": "TRANSF. RECIBIDA M. QUISPE"
+          },
+          {
+            "amount": 200.0,
+            "date": "2026-09-09",
+            "currency": "PEN",
+            "merchant": "TRANSF. RECIBIDA M. QUISPE"
+          },
+          {
+            "amount": -37.66,
+            "date": "2026-09-09",
+            "currency": "PEN",
+            "merchant": "TARJETA"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN"
+        ]
+      }
+    },
+    {
+      "id": "stmt-pe-p2",
+      "file": "stmt-pe-p2.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, 14 movimientos con saldo arrastrado y subtotales",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -111.41,
+            "date": "2026-09-10",
+            "currency": "PEN",
+            "merchant": "RETIRO CAJERO AG. MIRAFLORES"
+          },
+          {
+            "amount": 4850.0,
+            "date": "2026-09-10",
+            "currency": "PEN",
+            "merchant": "ABONO HABERES EMPRESA SAC"
+          },
+          {
+            "amount": -14.23,
+            "date": "2026-09-11",
+            "currency": "PEN",
+            "merchant": "CINE"
+          },
+          {
+            "amount": -140.6,
+            "date": "2026-09-11",
+            "currency": "PEN",
+            "merchant": "RETIRO CAJERO AG. MIRAFLORES"
+          },
+          {
+            "amount": -35.54,
+            "date": "2026-09-12",
+            "currency": "PEN",
+            "merchant": "LIBRERIA"
+          },
+          {
+            "amount": -63.7,
+            "date": "2026-09-12",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -142.09,
+            "date": "2026-09-13",
+            "currency": "PEN",
+            "merchant": "TRANSF. A L. RAMIREZ"
+          },
+          {
+            "amount": -117.53,
+            "date": "2026-09-14",
+            "currency": "PEN",
+            "merchant": "MERCADO"
+          },
+          {
+            "amount": -75.04,
+            "date": "2026-09-15",
+            "currency": "PEN",
+            "merchant": "PANADERIA"
+          },
+          {
+            "amount": -54.14,
+            "date": "2026-09-16",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -117.17,
+            "date": "2026-09-16",
+            "currency": "PEN",
+            "merchant": "RESTAURANTE"
+          },
+          {
+            "amount": -116.71,
+            "date": "2026-09-17",
+            "currency": "PEN",
+            "merchant": "AGUA"
+          },
+          {
+            "amount": -6.57,
+            "date": "2026-09-17",
+            "currency": "PEN",
+            "merchant": "PANADERIA"
+          },
+          {
+            "amount": -16.79,
+            "date": "2026-09-18",
+            "currency": "PEN",
+            "merchant": "MOVIL"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN"
+        ]
+      }
+    },
+    {
+      "id": "stmt-pe-p3",
+      "file": "stmt-pe-p3.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, 12 movimientos con saldo arrastrado y subtotales",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -34.8,
+            "date": "2026-09-19",
+            "currency": "PEN",
+            "merchant": "RESTAURANTE"
+          },
+          {
+            "amount": -55.79,
+            "date": "2026-09-20",
+            "currency": "PEN",
+            "merchant": "RESTAURANTE"
+          },
+          {
+            "amount": -59.66,
+            "date": "2026-09-21",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO"
+          },
+          {
+            "amount": -8.8,
+            "date": "2026-09-22",
+            "currency": "PEN",
+            "merchant": "RETIRO CAJERO AG. MIRAFLORES"
+          },
+          {
+            "amount": 350.5,
+            "date": "2026-09-23",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          },
+          {
+            "amount": -106.42,
+            "date": "2026-09-24",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -158.1,
+            "date": "2026-09-25",
+            "currency": "PEN",
+            "merchant": "MERCADO"
+          },
+          {
+            "amount": -87.17,
+            "date": "2026-09-26",
+            "currency": "PEN",
+            "merchant": "MERCADO"
+          },
+          {
+            "amount": -77.86,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -78.91,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO"
+          },
+          {
+            "amount": -21.29,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": 80.0,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN"
+        ]
+      }
+    },
+    {
+      "id": "stmt-pe-p4",
+      "file": "stmt-pe-p4.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, página sin movimientos (condiciones)",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "unknown",
+        "transactions": []
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN"
+        ]
+      }
+    },
+    {
+      "id": "stmt-pe-dense",
+      "file": "stmt-pe-dense.png",
+      "today": "2026-10-08",
+      "kind": "extracto en una página densa: 40 movimientos a 7 pt, con saldo anterior y totales",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -135.31,
+            "date": "2026-09-02",
+            "currency": "PEN",
+            "merchant": "MOVIL"
+          },
+          {
+            "amount": -146.56,
+            "date": "2026-09-02",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": 200.0,
+            "date": "2026-09-03",
+            "currency": "PEN",
+            "merchant": "TRANSF. RECIBIDA M. QUISPE"
+          },
+          {
+            "amount": -110.49,
+            "date": "2026-09-03",
+            "currency": "PEN",
+            "merchant": "PANADERIA"
+          },
+          {
+            "amount": -0.16,
+            "date": "2026-09-03",
+            "currency": "PEN",
+            "merchant": "ITF"
+          },
+          {
+            "amount": 80.0,
+            "date": "2026-09-04",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          },
+          {
+            "amount": -17.84,
+            "date": "2026-09-04",
+            "currency": "PEN",
+            "merchant": "MOVIL"
+          },
+          {
+            "amount": -12.44,
+            "date": "2026-09-05",
+            "currency": "PEN",
+            "merchant": "GIMNASIO"
+          },
+          {
+            "amount": 80.0,
+            "date": "2026-09-06",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          },
+          {
+            "amount": -74.8,
+            "date": "2026-09-07",
+            "currency": "PEN",
+            "merchant": "GIMNASIO"
+          },
+          {
+            "amount": -89.17,
+            "date": "2026-09-07",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO"
+          },
+          {
+            "amount": 150.0,
+            "date": "2026-09-08",
+            "currency": "PEN",
+            "merchant": "TRANSF. RECIBIDA M. QUISPE"
+          },
+          {
+            "amount": 200.0,
+            "date": "2026-09-09",
+            "currency": "PEN",
+            "merchant": "TRANSF. RECIBIDA M. QUISPE"
+          },
+          {
+            "amount": -37.66,
+            "date": "2026-09-09",
+            "currency": "PEN",
+            "merchant": "TARJETA"
+          },
+          {
+            "amount": -111.41,
+            "date": "2026-09-10",
+            "currency": "PEN",
+            "merchant": "RETIRO CAJERO AG. MIRAFLORES"
+          },
+          {
+            "amount": 4850.0,
+            "date": "2026-09-10",
+            "currency": "PEN",
+            "merchant": "ABONO HABERES EMPRESA SAC"
+          },
+          {
+            "amount": -14.23,
+            "date": "2026-09-11",
+            "currency": "PEN",
+            "merchant": "CINE"
+          },
+          {
+            "amount": -140.6,
+            "date": "2026-09-11",
+            "currency": "PEN",
+            "merchant": "RETIRO CAJERO AG. MIRAFLORES"
+          },
+          {
+            "amount": -35.54,
+            "date": "2026-09-12",
+            "currency": "PEN",
+            "merchant": "LIBRERIA"
+          },
+          {
+            "amount": -63.7,
+            "date": "2026-09-12",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -142.09,
+            "date": "2026-09-13",
+            "currency": "PEN",
+            "merchant": "TRANSF. A L. RAMIREZ"
+          },
+          {
+            "amount": -117.53,
+            "date": "2026-09-14",
+            "currency": "PEN",
+            "merchant": "MERCADO"
+          },
+          {
+            "amount": -75.04,
+            "date": "2026-09-15",
+            "currency": "PEN",
+            "merchant": "PANADERIA"
+          },
+          {
+            "amount": -54.14,
+            "date": "2026-09-16",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -117.17,
+            "date": "2026-09-16",
+            "currency": "PEN",
+            "merchant": "RESTAURANTE"
+          },
+          {
+            "amount": -116.71,
+            "date": "2026-09-17",
+            "currency": "PEN",
+            "merchant": "AGUA"
+          },
+          {
+            "amount": -6.57,
+            "date": "2026-09-17",
+            "currency": "PEN",
+            "merchant": "PANADERIA"
+          },
+          {
+            "amount": -16.79,
+            "date": "2026-09-18",
+            "currency": "PEN",
+            "merchant": "MOVIL"
+          },
+          {
+            "amount": -34.8,
+            "date": "2026-09-19",
+            "currency": "PEN",
+            "merchant": "RESTAURANTE"
+          },
+          {
+            "amount": -55.79,
+            "date": "2026-09-20",
+            "currency": "PEN",
+            "merchant": "RESTAURANTE"
+          },
+          {
+            "amount": -59.66,
+            "date": "2026-09-21",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO"
+          },
+          {
+            "amount": -8.8,
+            "date": "2026-09-22",
+            "currency": "PEN",
+            "merchant": "RETIRO CAJERO AG. MIRAFLORES"
+          },
+          {
+            "amount": 350.5,
+            "date": "2026-09-23",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          },
+          {
+            "amount": -106.42,
+            "date": "2026-09-24",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -158.1,
+            "date": "2026-09-25",
+            "currency": "PEN",
+            "merchant": "MERCADO"
+          },
+          {
+            "amount": -87.17,
+            "date": "2026-09-26",
+            "currency": "PEN",
+            "merchant": "MERCADO"
+          },
+          {
+            "amount": -77.86,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": -78.91,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO"
+          },
+          {
+            "amount": -21.29,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "TAXI"
+          },
+          {
+            "amount": 80.0,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "DEPOSITO EFECTIVO"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN"
+        ]
+      }
+    },
+    {
+      "id": "stmt-us-p1",
+      "file": "stmt-us-p1.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, página sin movimientos (resumen de cuenta)",
+      "lang": "en-US",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "unknown",
+        "transactions": []
+      },
+      "currencyContext": {
+        "main": "USD",
+        "accounts": [
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "stmt-us-p2",
+      "file": "stmt-us-p2.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, 12 movimientos con saldo arrastrado y subtotales",
+      "lang": "en-US",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -64.18,
+            "date": "2026-09-02",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "GREEN GROCER"
+          },
+          {
+            "amount": 500.0,
+            "date": "2026-09-03",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "ONLINE TRANSFER FROM SAVINGS"
+          },
+          {
+            "amount": -41.07,
+            "date": "2026-09-04",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "CITY FUEL 3381"
+          },
+          {
+            "amount": -98.4,
+            "date": "2026-09-05",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "RIVERSIDE ELECTRIC"
+          },
+          {
+            "amount": -7.25,
+            "date": "2026-09-08",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "CORNER CAFE"
+          },
+          {
+            "amount": -120.0,
+            "date": "2026-09-09",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "ATM WITHDRAWAL 5TH AVE"
+          },
+          {
+            "amount": -23.99,
+            "date": "2026-09-10",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "BOOK NOOK"
+          },
+          {
+            "amount": -1450.0,
+            "date": "2026-09-12",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "METRO RENTALS LLC"
+          },
+          {
+            "amount": 2600.0,
+            "date": "2026-09-15",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "PAYROLL DEPOSIT ACME WIDGETS"
+          },
+          {
+            "amount": -18.62,
+            "date": "2026-09-16",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "PHARMA PLUS"
+          },
+          {
+            "amount": -45.0,
+            "date": "2026-09-17",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "ZELLE PAYMENT TO J SMITH"
+          },
+          {
+            "amount": -76.34,
+            "date": "2026-09-18",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "HOME & HARDWARE"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "USD",
+        "accounts": [
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "stmt-us-p3",
+      "file": "stmt-us-p3.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, 8 movimientos con saldo arrastrado y subtotales",
+      "lang": "en-US",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -88.51,
+            "date": "2026-09-20",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "GREEN GROCER"
+          },
+          {
+            "amount": -59.99,
+            "date": "2026-09-22",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "CITYNET INTERNET"
+          },
+          {
+            "amount": -12.4,
+            "date": "2026-09-23",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "TACO STAND"
+          },
+          {
+            "amount": -200.0,
+            "date": "2026-09-24",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "CHECK"
+          },
+          {
+            "amount": -15.49,
+            "date": "2026-09-26",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "STREAMFLIX"
+          },
+          {
+            "amount": 145.0,
+            "date": "2026-09-27",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "MOBILE DEPOSIT"
+          },
+          {
+            "amount": -38.66,
+            "date": "2026-09-29",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "CITY FUEL 3381"
+          },
+          {
+            "amount": -12.0,
+            "date": "2026-09-30",
+            "currency": "USD",
+            "currencyAlt": [
+              null
+            ],
+            "merchant": "MONTHLY SERVICE FEE"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "USD",
+        "accounts": [
+          "USD"
+        ]
+      }
+    },
+    {
+      "id": "stmt-es-p1",
+      "file": "stmt-es-p1.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, 10 movimientos con saldo arrastrado y subtotales",
+      "lang": "es-ES",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -42.37,
+            "date": "2026-09-01",
+            "currency": "EUR",
+            "merchant": "SUPERMERCADOS DEL BARRIO"
+          },
+          {
+            "amount": -61.2,
+            "date": "2026-09-02",
+            "currency": "EUR",
+            "merchant": "LUZ ENERGÍA COSTA"
+          },
+          {
+            "amount": 25.0,
+            "date": "2026-09-03",
+            "currency": "EUR",
+            "merchant": "BIZUM DE MARTA G."
+          },
+          {
+            "amount": -55.1,
+            "date": "2026-09-04",
+            "currency": "EUR",
+            "merchant": "GASOLINERA RUTA 9"
+          },
+          {
+            "amount": -12.85,
+            "date": "2026-09-05",
+            "currency": "EUR",
+            "merchant": "FARMACIA PLAZA"
+          },
+          {
+            "amount": -780.0,
+            "date": "2026-09-08",
+            "currency": "EUR",
+            "merchant": "TRANSFERENCIA ALQUILER SEPTIEMBRE"
+          },
+          {
+            "amount": -18.9,
+            "date": "2026-09-09",
+            "currency": "EUR",
+            "merchant": "LIBRERÍA EL FARO"
+          },
+          {
+            "amount": -29.99,
+            "date": "2026-09-10",
+            "currency": "EUR",
+            "merchant": "TELÉFONO MÓVIL"
+          },
+          {
+            "amount": -4.6,
+            "date": "2026-09-11",
+            "currency": "EUR",
+            "merchant": "CAFETERÍA SOL"
+          },
+          {
+            "amount": -100.0,
+            "date": "2026-09-12",
+            "currency": "EUR",
+            "merchant": "REINTEGRO CAJERO"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "EUR",
+        "accounts": [
+          "EUR"
+        ]
+      }
+    },
+    {
+      "id": "stmt-es-p2",
+      "file": "stmt-es-p2.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina, 8 movimientos con saldo arrastrado y subtotales",
+      "lang": "es-ES",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -67.14,
+            "date": "2026-09-15",
+            "currency": "EUR",
+            "merchant": "SUPERMERCADOS DEL BARRIO"
+          },
+          {
+            "amount": -38.5,
+            "date": "2026-09-18",
+            "currency": "EUR",
+            "merchant": "RESTAURANTE LA HUERTA"
+          },
+          {
+            "amount": -34.9,
+            "date": "2026-09-22",
+            "currency": "EUR",
+            "merchant": "GIMNASIO VITAL"
+          },
+          {
+            "amount": -59.95,
+            "date": "2026-09-25",
+            "currency": "EUR",
+            "merchant": "ZAPATERÍA PASOS"
+          },
+          {
+            "amount": -16.8,
+            "date": "2026-09-26",
+            "currency": "EUR",
+            "merchant": "CINE ALAMEDA"
+          },
+          {
+            "amount": 2140.0,
+            "date": "2026-09-28",
+            "currency": "EUR",
+            "merchant": "NÓMINA EMPRESA EJEMPLO S.L."
+          },
+          {
+            "amount": -9.75,
+            "date": "2026-09-29",
+            "currency": "EUR",
+            "merchant": "FERRETERÍA CENTRO"
+          },
+          {
+            "amount": -6.0,
+            "date": "2026-09-30",
+            "currency": "EUR",
+            "merchant": "COMISIÓN MANTENIMIENTO"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "EUR",
+        "accounts": [
+          "EUR"
+        ]
+      }
+    },
+    {
+      "id": "stmt-tc-p1",
+      "file": "stmt-tc-p1.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina de tarjeta (saldo en la columna de importes), 9 movimientos con saldo arrastrado y subtotales",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -182.4,
+            "date": "2026-09-03",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO LA ECONOMIA"
+          },
+          {
+            "amount": -120.0,
+            "date": "2026-09-04",
+            "currency": "PEN",
+            "merchant": "GRIFO NORTE SAC"
+          },
+          {
+            "amount": 800.0,
+            "date": "2026-09-06",
+            "currency": "PEN",
+            "merchant": "PAGO RECIBIDO - GRACIAS",
+            "amountAlt": [
+              -800.0
+            ]
+          },
+          {
+            "amount": -44.9,
+            "date": "2026-09-07",
+            "currency": "PEN",
+            "merchant": "STREAMING PLUS"
+          },
+          {
+            "amount": -96.5,
+            "date": "2026-09-09",
+            "currency": "PEN",
+            "merchant": "RESTAURANTE EL BUEN SABOR"
+          },
+          {
+            "amount": -83.25,
+            "date": "2026-09-11",
+            "currency": "PEN",
+            "merchant": "TIENDA DEPORTES CUMBRE"
+          },
+          {
+            "amount": -37.8,
+            "date": "2026-09-12",
+            "currency": "PEN",
+            "merchant": "FARMACIA SALUD TOTAL"
+          },
+          {
+            "amount": -18.6,
+            "date": "2026-09-14",
+            "currency": "PEN",
+            "merchant": "TAXI APP"
+          },
+          {
+            "amount": -59.0,
+            "date": "2026-09-15",
+            "currency": "PEN",
+            "merchant": "LIBRERIA CENTRAL"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN"
+        ]
+      }
+    },
+    {
+      "id": "stmt-tc-p2",
+      "file": "stmt-tc-p2.png",
+      "today": "2026-10-08",
+      "kind": "extracto multipágina de tarjeta (saldo en la columna de importes), 6 movimientos con saldo arrastrado y subtotales",
+      "lang": "es-PE",
+      "source": "sintética (fixtures/make_statements.py), página de PDF a 2×",
+      "expect": {
+        "imageType": "list",
+        "transactions": [
+          {
+            "amount": -312.33,
+            "date": "2026-09-18",
+            "currency": "PEN",
+            "merchant": "AEROLINEA ANDES"
+          },
+          {
+            "amount": -141.27,
+            "date": "2026-09-20",
+            "currency": "PEN",
+            "merchant": "SUPERMERCADO LA ECONOMIA"
+          },
+          {
+            "amount": -36.0,
+            "date": "2026-09-22",
+            "currency": "PEN",
+            "merchant": "CINE ESTRELLA"
+          },
+          {
+            "amount": 45.0,
+            "date": "2026-09-25",
+            "currency": "PEN",
+            "merchant": "DEVOLUCION TIENDA DEPORTES",
+            "amountAlt": [
+              -45.0
+            ]
+          },
+          {
+            "amount": -28.14,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "INTERESES DEL PERIODO"
+          },
+          {
+            "amount": -99.0,
+            "date": "2026-09-27",
+            "currency": "PEN",
+            "merchant": "COMISION MEMBRESIA ANUAL"
+          }
+        ]
+      },
+      "currencyContext": {
+        "main": "PEN",
+        "accounts": [
+          "PEN"
+        ]
+      }
     }
   ]
 }

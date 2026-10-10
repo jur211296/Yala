@@ -413,6 +413,9 @@ class SessionState {
     /// nace o deja de existir asignan a esta propiedad, y el `didSet` persiste. No hay dos gestos.
     var hasPrivateSession: Bool = PrivateSessionMark.hasPrivateSession() {
         didSet {
+            // El widget no ve esta marca: se la publica el embudo, también cuando el espejo solo se re-lee
+            // (`refreshPrivateSessionMirror`), porque lo que el widget enseña depende del valor, no de quién lo escribió.
+            WidgetDataCache.publishSessionShell(hasPrivateSession: hasPrivateSession)
             guard !isRefreshingPrivateSessionMirror else { return }
             PrivateSessionMark.set(hasPrivateSession)
         }

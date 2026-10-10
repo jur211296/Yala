@@ -58,7 +58,7 @@ async function regrade(date: string): Promise<void> {
 }
 
 interface Judged {
-  /** Veredicto combinado del par de jueces de otro proveedor: pasa si los dos dicen que pasa. */
+  /** Veredicto de los jueces de otro proveedor (`judgesFor`: uno en Insights, dos en Tendencias): pasa si todos pasan. */
   pass: boolean | null;
   contradice: boolean | null;
 }
@@ -73,7 +73,7 @@ function judgedMap(task: string, date: string): Map<string, Judged> {
   const out = new Map<string, Judged>();
   for (const [k, m] of by) {
     const cand = k.split("|")[1];
-    const pair = judgesFor(cand.split(":")[0]).map((j) => m.get(j.id));
+    const pair = judgesFor(cand.split(":")[0], task).map((j) => m.get(j.id));
     if (pair.some((v) => !v)) continue;
     out.set(k, { pass: pair.every((v) => !v!.contradice && v!.util), contradice: pair.some((v) => v!.contradice) });
   }

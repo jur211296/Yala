@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: "sesiones, modo-nube"
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-10-08
 source: "review adversarial de `apple-id-change-boot-check-runs-before-the-migration-guard-can-see` (2026-09-26), lentes de orden y de falso bloqueo"
 ---
 
@@ -28,3 +28,10 @@ vuelve a intentar al abrir la app. El aviso llega en el siguiente arranque en fr
 
 - [ ] Si el disparo de arranque salió por el guard de migración, un primer plano posterior lo reintenta UNA vez, sin
   convertirlo en una ida a CloudKit por cada primer plano. Test del reintento y de que no se repite.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `AppBootstrapper.checkForAppleIDChange` sigue saliendo por `guard migrationAtRestForAppleIDChange()` sin apuntar nada para reintentar; su doc comment lo lista como residual (3) y cita este ticket.
+- Los únicos disparos siguen siendo `boot` y `identity-notification`; ninguno cuelga de `handleBecameActive`.
+
+Triage 2026-10-08: abierto · low → low · sigue sin reintento tras un arranque con el journal ilegible, y el código lo documenta como residual; solo retrasa el aviso un arranque.

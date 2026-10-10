@@ -1,10 +1,10 @@
 ---
 id: groups-join-intent-expires-silently-after-transient-failures
 status: backlog
-priority: medium
+priority: low
 area: "groups, invitaciones"
 created: 2026-09-15
-updated: 2026-09-17
+updated: 2026-10-08
 source: "review adversarial de `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -47,3 +47,16 @@ me avisó de que no entré.
 - `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` — de donde sale.
 - `groups-phone-that-never-attests-is-told-to-retry-forever` — la causa que no se cura sola.
 - `groups-join-intent-reconciler` — el diseño del intent y su canario.
+
+## Medido en 2.1 (triage 2026-10-08)
+- `PendingJoinStore.ttl` en `PendingJoinStore.swift:132`; `all(now:)` (`:159-168`) purga y solo emite `groupJoinIntentExpired`.
+- `groups-phone-that-never-attests-is-told-to-retry-forever` ya está en `done/`: la causa que estiraba el fallo hasta la caducidad tiene hoy aviso fijo en la pestaña. Lo que queda es la caducidad silenciosa por otras causas (7 días sin abrir Yala con red).
+- Gemelo relacionado, no duplicado: `groups-join-is-not-retried-when-the-network-returns` (reintento al volver la red).
+
+## Pregunta para Jürgen (triage 2026-10-08)
+- **A.** Avisar al caducar: al purgar el intent, un aviso de que no pudimos unirte y que pidas otro enlace.
+- **B.** Avisar antes: tras varios reintentos pasajeros, decirlo en la pantalla de unión o en la pestaña Grupos.
+- **C.** Dejarlo: el canario lo cuenta.
+- **Recomendación: A** — barato, un solo sitio (`PendingJoinStore.all`) y cierra el silencio. Con A, prioridad `low`.
+
+Triage 2026-10-08: abierto · medium → low · PendingJoinStore sigue purgando el intent caducado solo con el canario; la causa que no se curaba sola (teléfono sin App Attest) ya tiene aviso propio, así que baja la frecuencia.

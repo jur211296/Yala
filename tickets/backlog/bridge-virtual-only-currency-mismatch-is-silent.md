@@ -4,6 +4,7 @@ status: backlog
 priority: medium
 area: "groups, bridge, currency"
 created: 2026-09-09
+updated: 2026-10-08
 source: barrido de changing-an-account-currency-orphans-its-whole-history (2026-09-09)
 ---
 
@@ -43,3 +44,11 @@ efecto de ese cambio, es preexistente.
 ## Relacionados
 
 - `changing-an-account-currency-orphans-its-whole-history` — de donde salió la medición.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupTransactionBridge.swift`: `bridgeExpense` borra + draft en `:424`/`:449`; `bridgeVirtualOnly` (`:554`) gatea en `:576` sin `else`.
+- Agravante leído hoy: con la TX real superviviente, `decideVirtualReconciliation(hasRealTx: true)` monta la virtual `+lent` en la divisa NUEVA mientras la real se queda en la vieja, así que el neto del usuario mezcla dos divisas.
+- Llamadores: Caso B (`:357`, borra la real si el puente está activo) y Caso A con puente apagado (`:400`, la conserva). El hueco vive sobre todo en el segundo.
+
+Triage 2026-10-08: abierto · medium → medium · `bridgeVirtualOnly` sigue con el gate de divisa sin `else` (`GroupTransactionBridge.swift:576`); ningún commit desde el 09-09 lo toca.

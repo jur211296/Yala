@@ -5,6 +5,7 @@ priority: low
 area: "modo-nube, settings, groups"
 created: 2026-09-16
 source: "segunda pasada de la review de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (lente de controller y vista, hallazgo 5), 2026-09-16"
+updated: 2026-10-08
 ---
 
 # «Desasociar» sigue activo mientras «Activar la nube» comprueba la cuenta
@@ -36,3 +37,9 @@ Deshabilitar las acciones de la sección mientras el controller trabaja, con el 
 
 - [ ] Mientras la comprobación de «Activar la nube» está en vuelo, «Asociar» y «Desasociar» no se pueden tocar.
 - [ ] Al terminar, vuelven a estar activos sin salir de la pantalla.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `GroupsAssociationSection` se sigue creando solo con `onAssociate` (`StorageSettingsView.swift`, tres sitios) y su `isWorking` es `signOutCoordinator.isDetaching`; sus botones solo se deshabilitan con `channelCheck != nil`, nunca con `CloudMigrationController.isWorking`.
+
+Triage 2026-10-08: abierto · low → low · sigue pasando (la sección no lee isWorking del controller), pero la ventana es una llamada de red y salir de la pantalla lo recupera.

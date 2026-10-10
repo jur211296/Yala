@@ -3,7 +3,7 @@ id: ipad-reports-and-search-get-a-readable-width
 status: backlog
 priority: low
 area: "ipad, reports, search, adaptativo"
-updated: 2026-09-29
+updated: 2026-10-08
 created: 2026-09-29
 source: "fase 1 del carril adaptativo (ipad-sidebar-and-list-detail-for-records-and-planning), 2026-09-29"
 ---
@@ -32,3 +32,10 @@ suya ([[ipad-list-detail-for-groups-and-settings-and-chat-inspector]]); estas do
 ## Relacionados
 
 - [[ipad-sidebar-and-list-detail-for-records-and-planning]].
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `grep maxWidth|readableWidth` sigue dando 0 en `Yala/App/Views/Reports/FinancialReportView.swift` y en `Yala/App/Views/Search/GlobalSearchView.swift`. Su último cambio es el de varias ventanas (`133437905`, 2026-10-02), que no toca el ancho.
+- `DS.Adaptive.readableWidth` se aplica hoy en `BudgetDetailView`, `TransactionDetailSheet`, `AccountDetailSheet`, `ChatSheetView`, `StepGuide`, `FollowerWindowRoot` y, vía `readableListMargin`, en las listas de ajustes.
+
+Triage 2026-10-08: abierto · low → low · `FinancialReportView.swift` y `GlobalSearchView.swift` siguen sin ningún `maxWidth` ni `readableWidth`; el tope solo lo usan detalles, ajustes, chat y `StepGuide`.

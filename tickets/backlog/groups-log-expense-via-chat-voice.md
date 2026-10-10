@@ -1,10 +1,10 @@
 ---
 id: groups-log-expense-via-chat-voice
 status: backlog
-priority: medium
+priority: low
 area: groups
 created: 2026-07-01
-updated: 2026-08-26
+updated: 2026-10-08
 source: YalaWiki/Backlog/groups-registrar-gasto-por-chat-voz.md
 ---
 
@@ -92,3 +92,9 @@ Se dispara desde `InboxView.swift:251-264` cuando un draft `.groupScheduledExpen
 - Pagador en v1: siempre el usuario actual (igual que Caso A del bridge) — no intentar detectar "pagó Juan" desde texto libre en la primera versión.
 
 migrated from YalaWiki Backlog/groups-registrar-gasto-por-chat-voz.md @ 1934e8ad
+
+## Medido en 2.1 (triage 2026-10-08)
+- `ChatIntent` sigue en `ChatAssistantModels.swift:271-275` con `ask`, `register`, `ambiguous`.
+- Ningún fichero que use `ChatTransactionDraft` referencia `SplitGroup` ni `groupZoneID`: nada del pipeline del chat conoce los grupos.
+
+Triage 2026-10-08: abierto · medium → low · El chat sigue sin conocer los grupos: ChatIntent tiene los mismos 3 casos y ningún tipo de chat referencia SplitGroup; feature deseable sin empezar.

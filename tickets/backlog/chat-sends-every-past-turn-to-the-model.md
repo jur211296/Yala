@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: chat, ai
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H8)
 ---
 
@@ -34,3 +34,11 @@ Los follow-ups («¿y eso?») solo necesitan los últimos.
 
 - Test: con 20 turnos, `buildMessages` produce system + 6 pares + la pregunta.
 - El historial visible del chat no cambia.
+
+## Medido en 2.1 (triage 2026-10-08)
+
+- `ChatAssistantService.buildMessages` sigue recorriendo `turns` entero y `ChatAssistantViewModel.sendMessage` pasa `allTurns`, con tope defensivo `maxTurns = 50`.
+- La ventana del día entero fue deliberada (`fb31a6a62`, «Fase A — sliding window full-day»), y el prompt tiene reglas que dependen del historial («3+ temas distintos», «5+ turnos»).
+- Decisión pendiente. A) recortar a 6 turnos y reescribir esas reglas; B) recortar a una ventana más larga (p. ej. 12-20) que las conserve; C) dejar la ventana del día. Recomendada: B, fijando N con la medida de tokens de `gateway-does-not-record-ai-token-usage`; con ella sigue `low`.
+
+Triage 2026-10-08: abierto · low → low · sigue enviando todos los turnos, pero la ventana del día fue deliberada y recortarla toca reglas del prompt; es coste, no datos.

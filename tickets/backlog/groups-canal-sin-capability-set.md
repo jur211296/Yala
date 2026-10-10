@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "groups, cloudsync, gateway"
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-10-08
 source: hallazgo de la review adversarial de groups-budget (2026-09-07)
 ---
 
@@ -53,3 +53,11 @@ No existe para Grupos el equivalente de `CloudCapabilityManifestParityTests`, qu
 cruza el manifest con `supabase-staging.ddl`. **Nada comprueba que una columna del manifest de Grupos
 exista de verdad en el DDL.** En g14_01 se acertó a mano; la próxima no tiene red — y ese test habría
 convertido «staging no tiene la columna» en un rojo local en vez de en un dead-letter en un teléfono.
+
+## Medido en 2.1 (triage 2026-10-08)
+- El header solo lo mandan `SyncPullClient.swift:169` y `SyncMerkleClient.swift:100`; `GroupsMerkleClient.swift:10,85` documenta que no.
+- `merkleColumnsGroup` (`gateway/src/groups/canon.ts:82-86`) sigue devolviendo todas las columnas del manifest.
+- El guard de canon sigue en `c2` (`GroupsSyncClient.swift:3786`): la próxima columna exigirá otro bump.
+- No hay test que cruce `group_capability_manifest.json` con el DDL: `gateway/test/manifest.sync.test.ts` solo compara la copia con la SSOT.
+
+Triage 2026-10-08: abierto · medium → medium · Nada cambió desde g14_01: el cliente de Grupos no manda X-Yala-Capability-Set, el gateway no poda y no hay test de paridad manifest de Grupos vs DDL.

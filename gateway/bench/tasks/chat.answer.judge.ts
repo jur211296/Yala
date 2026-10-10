@@ -4,8 +4,9 @@
  *   cd gateway
  *   npx vite-node bench/tasks/chat.answer.judge.ts -- sample --n 36            # plantilla de la muestra a mano
  *   (puntuar a mano: `mine` = "pass" | "fail" y `why` en results/<fecha>/chat.answer.handscore.json)
- *   npx vite-node bench/tasks/chat.answer.judge.ts -- agree --judges gemini:gemini-3.8-flash,anthropic:claude-haiku-5-5
- *   npx vite-node bench/tasks/chat.answer.judge.ts -- apply --judges <ids> [--first]   # juzga y reescribe `pass`
+ *   npx vite-node bench/tasks/chat.answer.judge.ts -- agree --judges anthropic:claude-sonnet-5-5,gemini:gemini-3.8-flash
+ *   npx vite-node bench/tasks/chat.answer.judge.ts -- apply --judges anthropic:claude-sonnet-5-5,gemini:gemini-3.8-flash --first
+ *   (juzga y reescribe `pass`; con `--first`, Sonnet a todos menos a Anthropic y Gemini a Anthropic)
  *   npx vite-node bench/tasks/chat.answer.judge.ts -- regrade                  # rehace el determinista con las respuestas guardadas
  *
  * Todo juicio se guarda en `results/<fecha>/chat.answer.judge.jsonl` (con su coste, que cuenta `--spend`) y no se
