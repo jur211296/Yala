@@ -997,7 +997,8 @@ struct RecordsSummaryApproximateMarkTests {
     ) -> RecordsViewModel.RecordsSummary {
         let vm = RecordsViewModel()
         vm.applyFilters(
-            transactions: txs, accounts: accounts, categories: [], tags: [], context: context
+            transactions: txs, accounts: accounts, categories: [], tags: [], context: context,
+            currencyCode: "PEN"
         )
         return vm.recordsSummary
     }

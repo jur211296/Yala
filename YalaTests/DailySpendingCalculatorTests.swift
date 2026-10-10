@@ -59,7 +59,7 @@ struct DailySpendingCalculatorTests {
     // MARK: - Tests
 
     @Test func empty_returnsZeroMax() {
-        let result = DailySpendingCalculator.compute(groups: [])
+        let result = DailySpendingCalculator.compute(groups: [], currencyCode: "USD")
         #expect(result.spendingByDay.isEmpty)
         #expect(result.maxSpending == 0)
     }
@@ -71,7 +71,7 @@ struct DailySpendingCalculatorTests {
             makeTx(preferred: -100, account: acc),
             makeTx(preferred: -50, account: acc),
         ])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == 150)
         #expect(result.maxSpending == 150)
     }
@@ -83,7 +83,7 @@ struct DailySpendingCalculatorTests {
             makeTx(preferred: 500, account: acc),
             makeTx(preferred: -80, account: acc),
         ])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == 80)
     }
 
@@ -94,7 +94,7 @@ struct DailySpendingCalculatorTests {
             makeTx(preferred: -100, account: acc, balanceAdjustmentType: TransactionItem.adjustmentTypeTransfer),
             makeTx(preferred: -40, account: acc),
         ])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == 40)
     }
 
@@ -102,7 +102,7 @@ struct DailySpendingCalculatorTests {
         let excluded = makeAccount(excludeFromStatistics: true)
         let day = startOfDay(2026, 1, 5)
         let groups = [(date: day, records: [makeTx(preferred: -100, account: excluded)])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == nil)
         #expect(result.maxSpending == 0)
     }
@@ -110,7 +110,7 @@ struct DailySpendingCalculatorTests {
     @Test func ignoresRecordsWithoutAccount() {
         let day = startOfDay(2026, 1, 5)
         let groups = [(date: day, records: [makeTx(preferred: -100, account: nil)])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay.isEmpty)
     }
 
@@ -122,7 +122,7 @@ struct DailySpendingCalculatorTests {
             (date: d1, records: [makeTx(preferred: -100, account: acc)]),
             (date: d2, records: [makeTx(preferred: -250, account: acc)]),
         ]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[d1] == 100)
         #expect(result.spendingByDay[d2] == 250)
         #expect(result.maxSpending == 250)
@@ -132,7 +132,7 @@ struct DailySpendingCalculatorTests {
         let acc = makeAccount()
         let day = startOfDay(2026, 1, 5)
         let groups = [(date: day, records: [makeTx(preferred: 300, account: acc)])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == nil)
         #expect(result.maxSpending == 0)
     }
@@ -154,7 +154,7 @@ struct DailySpendingCalculatorTests {
             makeTx(preferred: -500, account: acc, category: food),
             makeTx(preferred: 200, account: acc, category: food),
         ])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == 300)
         #expect(result.maxSpending == 300)
     }
@@ -166,7 +166,7 @@ struct DailySpendingCalculatorTests {
         let salary = makeCategory(name: "Salario", isIncome: true)
         let day = startOfDay(2026, 1, 5)
         let groups = [(date: day, records: [makeTx(preferred: -100, account: acc, category: salary)])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == nil)
         #expect(result.maxSpending == 0)
     }
@@ -186,7 +186,7 @@ struct DailySpendingCalculatorTests {
             makeTx(preferred: -500, account: acc, category: food),
             makeTx(preferred: 200, account: acc, category: food),
         ])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == 300)
     }
 
@@ -199,7 +199,7 @@ struct DailySpendingCalculatorTests {
             makeTx(preferred: -100, account: acc),
             makeTx(preferred: 40, account: acc),
         ])]
-        let result = DailySpendingCalculator.compute(groups: groups)
+        let result = DailySpendingCalculator.compute(groups: groups, currencyCode: "USD")
         #expect(result.spendingByDay[day] == 100)
     }
 }

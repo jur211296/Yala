@@ -17,8 +17,10 @@ import Foundation
 /// signo del monto solo es fallback cuando `category == nil`. La acumulación es signed,
 /// igual que el resumen (`RecordsViewModel.calculateSummary`): un monto de signo contrario
 /// a su categoría —un reembolso— REDUCE el gasto del día en vez de sumar magnitud.
-/// Usa el snapshot ya convertido (no reconvierte), igual que el resumen — así ambos
-/// coinciden incluso si la divisa preferida cambió.
+/// Resuelve cada importe con la misma regla que el resumen (`CashFlowCalculator.resolvedAmount`):
+/// el monto guardado si se guardó en `currencyCode`, y reconvertido desde el nativo si se guardó
+/// en otra divisa preferida. Antes del 2026-10-10 los dos leían el monto guardado sin mirar en qué
+/// divisa estaba, y sumaban escalas distintas (`records-summary-mixes-preferred-currencies`).
 ///
 /// Sin gap-filling: los días sin gasto no aparecen en `spendingByDay` (barra 0 al render).
 ///
@@ -45,9 +47,12 @@ struct DailySpendingCalculator {
     /// - Parameter groups: los grupos ya agrupados por día (`groupedRecords`).
     /// - Parameter adjustment: proyecta un gasto de grupo Caso A a "mi parte" (neto) y excluye
     ///   las patas de préstamo derivadas — así el calendario cuadra con el chip del hero neteado.
+    /// - Parameter currencyCode: la divisa principal en que se pintan las barras (la del resumen).
     static func compute(
         groups: [(date: Date, records: [TransactionItem])],
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Result {
         var spendingByDay: [Date: Double] = [:]
 
@@ -61,7 +66,9 @@ struct DailySpendingCalculator {
                 // La categoría decide el bucket; acumulación signed (paridad literal con
                 // `RecordsViewModel.calculateSummary`): un monto de signo contrario a su
                 // categoría reduce el gasto del día (reembolso), no suma magnitud.
-                let amount = adjustment.amountInPreferredCurrency(record)
+                let amount = CashFlowCalculator.resolvedAmount(
+                    record, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value
                 if !TransactionClassificationLogic.isIncome(record) {
                     dayExpense -= amount
                 }

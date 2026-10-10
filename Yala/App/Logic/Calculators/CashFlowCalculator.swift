@@ -62,6 +62,51 @@ struct CashFlowSummary: Equatable {
 
 struct CashFlowCalculator {
 
+    /// El importe de UNA transacción en `currencyCode`, con signo, y la magnitud dudosa que lleva
+    /// dentro (numerador de `ApproximateMarkThreshold`).
+    ///
+    /// **Es la regla única para sumar importes en la divisa principal**, y la comparten este
+    /// calculador y el resumen de Registros (`RecordsViewModel.calculateSummary`). Registros solo
+    /// tenía la primera rama y sumaba el `amountInPreferredCurrency` guardado aunque se hubiera
+    /// guardado en OTRA divisa preferida (ticket `records-summary-mixes-preferred-currencies`).
+    ///
+    /// Dos ramas, porque saben cosas distintas:
+    /// - **la fila se convirtió a esta misma divisa al guardarse** → se lee el monto guardado, y la
+    ///   duda es la del `adjustment` (en un gasto de grupo, `Σ|patas provisionales|`);
+    /// - **se convirtió a otra** → se reconvierte desde el nativo ajustado con la tasa de su fecha, y
+    ///   la duda es la de ESTA conversión.
+    static func resolvedAmount(
+        _ tx: TransactionItem,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting
+    ) -> (value: Double, approximateMagnitude: Double) {
+        if tx.preferredCurrencyCode == currencyCode {
+            let value = adjustment.amountInPreferredCurrency(tx)
+            // Aquí no hay conversión que juzgar: el monto se convirtió al guardarse. En un gasto de
+            // grupo `value` es el NETO de varias patas, y la magnitud dudosa que hay detrás
+            // —`Σ|patas provisionales|`— puede ser mayor que él; el flag de la fila describiría solo
+            // una de las patas, y la de préstamo ni siquiera pasa por aquí.
+            return (value, adjustment.approximateMagnitude(tx, magnitude: abs(value)))
+        }
+        // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
+        let adjustedNative = adjustment.amount(tx)
+        // Convert using the transaction's date for accurate historical rate.
+        let outcome = converter.convertChecked(
+            Decimal(abs(adjustedNative)),
+            from: tx.currencyCode,
+            to: currencyCode,
+            on: tx.date
+        )
+        // Restore sign from the ADJUSTED amount (paridad con la rama preferida).
+        let magnitude = NSDecimalNumber(decimal: outcome.amount).doubleValue
+        let value = (adjustedNative < 0) ? -magnitude : magnitude
+        // Esta rama NO pregunta al `adjustment`: el número se acaba de reconvertir desde el nativo,
+        // así que su calidad es la de ESA conversión y no la de las tasas con las que se sellaron
+        // las patas.
+        return (value, outcome.quality.isExact ? 0 : magnitude)
+    }
+
     static func calculateCashFlow(
         transactions: [TransactionItem],
         interval: DateInterval,
@@ -99,38 +144,13 @@ struct CashFlowCalculator {
             // propio — así se mata el "ingreso fantasma" +lent y el neto queda en -myShare.
             guard !adjustment.isSuppressed(tx) else { continue }
 
-            // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
-            let adjustedNative = adjustment.amount(tx)
-            let decimalAmt = Decimal(abs(adjustedNative))
-
-            // Convert using the transaction's date for accurate historical rate.
-            // `approximate` es el numerador del umbral para ESTA transacción, y se resuelve por
-            // rama porque las dos saben cosas distintas.
-            let val: Double
-            let approximate: Double
-            if tx.preferredCurrencyCode == currencyCode {
-                // Use signed amount
-                val = adjustment.amountInPreferredCurrency(tx)
-                // Aquí no hay conversión que juzgar: el monto se convirtió al guardarse. En un gasto
-                // de grupo `val` es el NETO de varias patas, y la magnitud dudosa que hay detrás
-                // —`Σ|patas provisionales|`— puede ser mayor que él; el flag de la fila describiría
-                // solo una de las patas, y la de préstamo ni siquiera pasa por aquí.
-                approximate = adjustment.approximateMagnitude(tx, magnitude: abs(val))
-            } else {
-                let outcome = converter.convertChecked(
-                    decimalAmt,
-                    from: tx.currencyCode,
-                    to: currencyCode,
-                    on: tx.date
-                )
-                // Restore sign from the ADJUSTED amount (paridad con la rama preferida).
-                let magnitude = NSDecimalNumber(decimal: outcome.amount).doubleValue
-                val = (adjustedNative < 0) ? -magnitude : magnitude
-                // Esta rama NO pregunta al `adjustment`: el número se acaba de reconvertir desde el
-                // nativo, así que su calidad es la de ESA conversión y no la de las tasas con las
-                // que se sellaron las patas.
-                approximate = outcome.quality.isExact ? 0 : magnitude
-            }
+            // Importe en la divisa de destino y su magnitud dudosa, con la regla compartida con el
+            // resumen de Registros (`resolvedAmount`).
+            let resolved = resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            )
+            let val = resolved.value
+            let approximate = resolved.approximateMagnitude
 
             let isIncome = category.isIncome
             let magnitude = abs(val)
