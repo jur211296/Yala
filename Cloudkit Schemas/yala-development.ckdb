@@ -16,6 +16,7 @@ DEFINE SCHEMA
     );
 
     RECORD TYPE CD_Account (
+        CD_accountNumber             STRING,
         CD_adjustmentMode            STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_colorHex                  STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_creditCardPaymentDay      INT64 QUERYABLE SORTABLE,
@@ -47,6 +48,8 @@ DEFINE SCHEMA
         CD_category              STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_createdAt             TIMESTAMP QUERYABLE SORTABLE,
         CD_currencyCode          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_currentPeriodStart    TIMESTAMP,
+        CD_endDate               TIMESTAMP,
         CD_entityName            STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_favoriteOrder         INT64 QUERYABLE SORTABLE,
         CD_id                    STRING QUERYABLE SEARCHABLE SORTABLE,
@@ -58,6 +61,7 @@ DEFINE SCHEMA
         CD_name                  STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_natures               STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_periodType            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_startDate             TIMESTAMP,
         CD_subcategoryIDs        STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_tagIDs                STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_year                  INT64 QUERYABLE SORTABLE,
@@ -74,6 +78,7 @@ DEFINE SCHEMA
 
     RECORD TYPE CD_CashFlowLine (
         CD_category         STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_customMonthsRaw  STRING,
         CD_entityName       STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_estimationMethod STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_id               STRING QUERYABLE SEARCHABLE SORTABLE,
@@ -83,6 +88,7 @@ DEFINE SCHEMA
         CD_manualAmount     DOUBLE QUERYABLE SORTABLE,
         CD_name             STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_plan             STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_scheduledPayment STRING,
         CD_sortOrder        INT64 QUERYABLE SORTABLE,
         CD_subcategory      STRING QUERYABLE SEARCHABLE SORTABLE,
         "___createTime"     TIMESTAMP,
@@ -124,6 +130,7 @@ DEFINE SCHEMA
         CD_showAccumulatedBalance INT64,
         CD_showOtherExpenses      INT64 QUERYABLE SORTABLE,
         CD_startingBalance        DOUBLE QUERYABLE SORTABLE,
+        CD_startingBalanceDate    TIMESTAMP,
         CD_updatedAt              TIMESTAMP QUERYABLE SORTABLE,
         "___createTime"           TIMESTAMP,
         "___createdBy"            REFERENCE,
@@ -196,6 +203,7 @@ DEFINE SCHEMA
 
     RECORD TYPE CD_FavoritePayment (
         CD_account         STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_amount          DOUBLE,
         CD_createdAt       TIMESTAMP QUERYABLE SORTABLE,
         CD_currencyCode    STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_displayOrder    INT64 QUERYABLE SORTABLE,
@@ -269,6 +277,7 @@ DEFINE SCHEMA
         CD_subcategory              STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_syncID                   STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_tagIDs                   STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_targetTransactionID      STRING,
         CD_updatedAt                TIMESTAMP QUERYABLE SORTABLE,
         "___createTime"             TIMESTAMP,
         "___createdBy"              REFERENCE,
@@ -316,6 +325,7 @@ DEFINE SCHEMA
         CD_sortOrder         INT64 QUERYABLE SORTABLE,
         CD_text              STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_typeRaw           STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_weekdaysRaw       STRING,
         "___createTime"      TIMESTAMP,
         "___createdBy"       REFERENCE,
         "___etag"            STRING,
@@ -333,6 +343,7 @@ DEFINE SCHEMA
         CD_createdAt              TIMESTAMP QUERYABLE SORTABLE,
         CD_currencyCode           STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_dayOfMonth             INT64 QUERYABLE SORTABLE,
+        CD_endDate                TIMESTAMP,
         CD_entityName             STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_groupZoneID            STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_id                     STRING QUERYABLE SEARCHABLE SORTABLE,
@@ -351,6 +362,7 @@ DEFINE SCHEMA
         CD_paymentCategory        STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_recurrenceInterval     INT64 QUERYABLE SORTABLE,
         CD_recurrenceType         STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_selectedWeekdays       STRING,
         CD_skippedDatesRaw        STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_splitParticipantIDsRaw STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_splitTotalAmount       DOUBLE QUERYABLE SORTABLE,
@@ -359,6 +371,8 @@ DEFINE SCHEMA
         CD_subcategory            STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_tagIDs                 STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_transactionType        STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_yearlyDay              INT64,
+        CD_yearlyMonth            INT64,
         "___createTime"           TIMESTAMP,
         "___createdBy"            REFERENCE,
         "___etag"                 STRING,
