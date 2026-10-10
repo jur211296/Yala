@@ -122,6 +122,32 @@ Recalculado sobre los juicios ya pagados del 7-oct (`--agreement --date 2026-10-
 Sigue sin decidir: κ 0,52 no llega al 0,6 del listón. Pero ahora mide lo que mide la nota a mano, y cuesta un juicio por
 respuesta en vez de dos.
 
+### 2026-10-10: en Tendencias también juzga Gemini solo
+
+**En `trends.summary` decide Gemini 3.8 Flash solo**, y Grok 4.3 cuando el candidato es de Google. Antes decidía la
+pareja que abría Sonnet. Nadie juzga a su propio proveedor. Insights y `chat.answer` no cambian, y tampoco el modelo que
+sirve Tendencias en la app.
+
+La muestra a mano de Tendencias tenía 10 respuestas. Se amplió a 40: 30 más del 7-oct, puntuadas antes de lanzar ningún
+juez sobre ellas (`scored: 2026-10-10` en `insights.hand-scores.json`). Una respuesta entera en otro idioma que el del
+usuario cuenta como no útil. Luego juzgaron los cuatro jueces (`--judges all --max-usd 1`).
+
+| Juez en Tendencias | Respuestas | Acuerdo | κ de Cohen | Aprueba malas | Suspende buenas |
+|---|---|---|---|---|---|
+| Gemini 3.8 Flash | 33 | 79 % | 0,46 | 6 | 1 |
+| Grok 4.3 | 37 | 78 % | 0,48 | 5 | 3 |
+| gpt-oss-120b | 34 | 74 % | 0,27 | 8 | 1 |
+| Sonnet 5.5 | 27 | 44 % | 0,14 | 0 | 15 |
+| **Banco antes** (pareja que abre Sonnet) | 40 | 57 % | 0,23 | | |
+| **Banco ahora** (Gemini solo, Grok de relevo) | 40 | 80 % | 0,48 | | |
+
+- **Sonnet suspende 15 respuestas buenas y no aprueba ninguna mala.** Es más estricto que la nota a mano, como en
+  Insights, y en la pareja su «no» decidía siempre.
+- **Gemini y Grok empatan** (una respuesta de diferencia). Abre Gemini porque coincide algo más y es el mismo juez de
+  Insights. Además cuesta menos (0,0011 frente a 0,0014 USD por juicio) y tarda 2,4 s de mediana frente a 32 s.
+- **Sigue sin decidir**: κ 0,48 no llega al 0,6 del listón.
+- **Gasto de API de la medición**: 0,16 USD (98 juicios).
+
 ## Qué se midió, y cómo
 
 - **Los mismos casos y el mismo listón que el banco vigente**: 16 casos por tarea en 14 locales, el cuerpo exacto de la

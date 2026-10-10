@@ -94,7 +94,11 @@ las muestras a mano, en `docs/ai-model-bench-2026-10-claude.md`: en Insights no 
 `judgesFor`). A los candidatos de Gemini los juzga Sonnet. Ahí Sonnet coincidía con la nota a mano un 55 % y Gemini un
 85 %. Uno solo, y no la pareja, porque la pareja era Gemini + Sonnet en cualquier orden y el veredicto no cambiaba. Con
 Gemini solo, el acuerdo del banco en Insights pasa del 67 % al 87 % (κ 0,33 → 0,52) y cada respuesta cuesta un juicio,
-no dos. `trends.summary` sigue con la pareja que abre Sonnet.
+no dos.
+
+**Desde el 2026-10-10, en `trends.*` también juzga Gemini 3.8 Flash solo**, con Grok 4.3 de relevo cuando el candidato
+es de Google (`TRENDS_ORDER`). Sobre 40 respuestas puntuadas a mano: Gemini 79 %, Grok 78 %, Sonnet 44 %, la pareja de
+antes 57 % y la regla nueva 80 %. Tabla y porqué en `docs/ai-model-bench-2026-10-claude.md`.
 
 ## `chat.answer`: el juez va aparte (sesión 2 · chat y nota)
 
