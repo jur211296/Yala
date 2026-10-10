@@ -181,7 +181,7 @@ const swiftLines = (file: string) => new Set(swift(file).replace(/\\"/g, '"').sp
 
 describe("text.parse: el cuerpo de TranscriptionParserService", () => {
   const c = caseFile<TextParseCase>("text.parse.json").cases[0];
-  const body = textParseBody(c) as { messages: { role: string; content: string }[]; temperature: number; model: string };
+  const body = textParseBody(c) as { messages: { role: string; content: string }[]; temperature: number; model: string; response_format?: unknown };
   const prompt = body.messages[0].content;
 
   it("el prompt sale del Swift: toda línea fija está allí, sin interpolaciones sueltas", () => {
