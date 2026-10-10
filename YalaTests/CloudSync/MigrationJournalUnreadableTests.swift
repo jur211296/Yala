@@ -812,12 +812,13 @@ struct MigrationJournalUnreadableWiringTests {
         let view = "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
         let poll = Self.lines(try Self.body(of: "private func pollAdoptProgress() async {", in: view))
         let start = try #require(poll.firstIndex(of: "guard let next = CloudWelcomeSignInFlow.phase("))
-        #expect(Array(poll[start..<(start + 13)]) == [
+        #expect(Array(poll[start..<(start + 14)]) == [
             "guard let next = CloudWelcomeSignInFlow.phase(",
             "for: controller.uiState,",
             "claimBlocker: controller.claimBlocker,",
             "adoptClaimExit: controller.adoptClaimExit,",
-            "forwardStepExit: controller.forwardStepExitReason) else {",
+            "forwardStepExit: controller.forwardStepExitReason,",
+            "origin: adoptOrigin) else {",
             "await evaluateAutoResume(controller: controller, screenPhase: phase)",
             "do {",
             "try await Task.sleep(for: .seconds(1))",
@@ -827,7 +828,7 @@ struct MigrationJournalUnreadableWiringTests {
             "continue",
             "}",
         ])
-        #expect(poll[start + 13] == "phase = next")
+        #expect(poll[start + 14] == "phase = next")
         let retry = Self.lines(try Self.body(of: "private func retryAdoptResume() async {", in: view))
         #expect(retry.contains("if case .idle = controller.uiState, !cancelRequested {"))
     }

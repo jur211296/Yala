@@ -165,6 +165,10 @@ struct WelcomeCloudSignInView: View {
     /// quedaba en `.adopting(0)` sobre un `notStarted` ya cancelado. También impide que «Retomar» vuelva a reclamar. Se
     /// repone a `false` al empezar cada adopt.
     @State private var cancelRequested = false
+    /// De dónde viene el adopt en curso. Lo escribe `runSignInFlow(origin:)` al empezar cada adopt y lo lee el poll para
+    /// elegir la terminal de «listo»: el alta que entró en una cuenta ya creada lo dice (ticket
+    /// `born-cloud-signup-lands-on-existing-account-silently`).
+    @State private var adoptOrigin: WelcomeAdoptOrigin = .reentry
 
     var body: some View {
         screen
@@ -303,7 +307,7 @@ struct WelcomeCloudSignInView: View {
     /// Qué corre al aceptar el consent. Es el ÚNICO punto donde el flujo se bifurca por entrada.
     private func runFlowAfterConsent() async {
         switch activeEntry {
-        case .reentry, .beaconRouted: await runSignInFlow()
+        case .reentry, .beaconRouted: await runSignInFlow(origin: .reentry)
         case .bornCloud:              await runBornCloudFlow()
         }
     }
@@ -331,8 +335,9 @@ struct WelcomeCloudSignInView: View {
         // `.bornCloudReady` es terminal como `.relaunch`: la cuenta está creada y el par escrito.
         // `.reentryReady` lo es por la otra mitad del mismo hecho: la cuenta ya existía y es el ADOPT
         // el que terminó — el par está escrito y el motor corriendo, así que no hay a dónde volver.
+        // `.signUpEnteredExistingAccount` es `.reentryReady` con otro título: mismo hecho, misma falta de vuelta.
         case .checking, .creating, .adopting, .waitingLeader, .relaunch, .bornCloudReady,
-             .reentryReady: false
+             .reentryReady, .signUpEnteredExistingAccount: false
         }
     }
 
@@ -388,6 +393,8 @@ struct WelcomeCloudSignInView: View {
             bornCloudReadyContent
         case .reentryReady:
             reentryReadyContent
+        case .signUpEnteredExistingAccount:
+            signUpEnteredExistingAccountContent
         case .notFound:
             notFoundContent
         case .providerMismatch(let exits):
@@ -716,7 +723,7 @@ struct WelcomeCloudSignInView: View {
                 showConsent = true
                 return
             }
-            await runSignInFlow()
+            await runSignInFlow(origin: .reentry)
             if phase == .intro { phase = .providerMismatch(exits) }
         }
     }
@@ -884,7 +891,8 @@ struct WelcomeCloudSignInView: View {
     /// espera: por eso lleva CTA y no un texto pasivo. El copy no promete sincronización todavía —el motor
     /// acaba de arrancar— sino que la cuenta está lista, que es lo único medido en este instante.
     private var bornCloudReadyContent: some View {
-        readyContent(id: "welcome_born_cloud_ready", action: onBornCloudCompleted)
+        readyContent(id: "welcome_born_cloud_ready", title: L10n.Welcome.BornCloud.readyTitle,
+                     action: onBornCloudCompleted)
     }
 
     /// R3 · la RE-ENTRADA terminó y no hay nada que reabrir. **Misma pantalla que el alta y a propósito**
@@ -898,23 +906,34 @@ struct WelcomeCloudSignInView: View {
     /// por `runReturningUserPostChecks` sin pasar por `presentNextOnboardingScreen`. El chip le ahorra el
     /// relanzamiento sin cambiarle el destino, que era la condición de la decisión del 6-sep.
     private var reentryReadyContent: some View {
-        readyContent(id: "welcome_reentry_ready", action: onFinishedToApp)
+        readyContent(id: "welcome_reentry_ready", title: L10n.Welcome.BornCloud.readyTitle, action: onFinishedToApp)
     }
 
-    /// El cuerpo compartido de las dos terminales de «listo». **Una sola definición a propósito:** son la
-    /// MISMA pantalla para el usuario y lo único que las separa es a dónde va su botón. Duplicar el layout
+    /// El ALTA terminó dentro de una cuenta que ya existía (`.signUpEnteredExistingAccount`). La pantalla de la re-entrada,
+    /// con su salida, y un título que dice lo que pasó: «Ya tenías una cuenta, has entrado en ella» (decisión de Jürgen del
+    /// 2026-10-07). El cuerpo se queda: «todo lo que registres se guardará en tu cuenta» sigue siendo cierto.
+    private var signUpEnteredExistingAccountContent: some View {
+        readyContent(id: "welcome_signup_existing_account_ready",
+                     title: L10n.Welcome.BornCloud.readyExistingAccountTitle, action: onFinishedToApp)
+    }
+
+    /// El cuerpo compartido de las terminales de «listo». **Una sola definición a propósito:** son la
+    /// MISMA pantalla para el usuario y lo que las separa es a dónde va su botón y, en el alta que entró en una
+    /// cuenta ya creada, el título (`.signUpEnteredExistingAccount`). Duplicar el layout
     /// dejaba dos copias del mismo copy que divergirían al primer retoque — que es exactamente la clase de
     /// deriva que el ticket de este chip vino a corregir en otro sitio.
     ///
     /// El identificador de accesibilidad SÍ es distinto por terminal: el device-QA necesita distinguirlas,
     /// porque el defecto que se comprueba ahí es precisamente cuál de las dos salidas se tomó.
-    private func readyContent(id: String, action: @escaping () -> Void) -> some View {
+    ///
+    /// El título lo pasa quien llama: el alta que entró en una cuenta ya creada no puede decir «¡Tu cuenta está lista!».
+    private func readyContent(id: String, title: String, action: @escaping () -> Void) -> some View {
         VStack(spacing: DS.Spacing.lg) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(.white.opacity(0.9))
                 .accessibilityHidden(true)
-            Text(L10n.Welcome.BornCloud.readyTitle)
+            Text(title)
                 .font(DS.Typography.title2)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
@@ -1051,7 +1070,10 @@ struct WelcomeCloudSignInView: View {
             // Variante A de §f.1: la cuenta ya estaba poblada ⇒ **NO se siembra**. Con la sesión ya
             // viva, `runSignInFlow` salta el sign-in y sigue por el returning-user que YA existe
             // (`exists` → guard cross-cuenta → adopt). Sin cover nuevo y sin pantalla nueva.
-            await runSignInFlow()
+            //
+            // El origen viaja para que la terminal lo diga: la persona pidió crear una cuenta y ha entrado en la que ya
+            // tenía (ticket `born-cloud-signup-lands-on-existing-account-silently`).
+            await runSignInFlow(origin: .signUpFoundExistingAccount)
         case .show(let terminal):
             phase = terminal
         case .releaseSessionAndShowError:
@@ -1063,7 +1085,10 @@ struct WelcomeCloudSignInView: View {
 
     // MARK: - Re-entrada (H4)
 
-    private func runSignInFlow() async {
+    /// `origin` no tiene valor por defecto a propósito: cada llamador dice de dónde viene el adopt, y solo el alta que
+    /// encontró la cuenta ya creada pasa `.signUpFoundExistingAccount`.
+    private func runSignInFlow(origin: WelcomeAdoptOrigin) async {
+        adoptOrigin = origin
         phase = .checking
         guard await ensureSignedIn() else { return }
 
@@ -1213,7 +1238,8 @@ struct WelcomeCloudSignInView: View {
                 for: controller.uiState,
                 claimBlocker: controller.claimBlocker,
                 adoptClaimExit: controller.adoptClaimExit,
-                forwardStepExit: controller.forwardStepExitReason) else {
+                forwardStepExit: controller.forwardStepExitReason,
+                origin: adoptOrigin) else {
                 await evaluateAutoResume(controller: controller, screenPhase: phase)
                 do {
                     try await Task.sleep(for: .seconds(1))
@@ -1226,7 +1252,7 @@ struct WelcomeCloudSignInView: View {
             switch next {
             case .relaunch, .error, .adoptExit, .lineageExit:
                 return
-            case .reentryReady:
+            case .reentryReady, .signUpEnteredExistingAccount:
                 // Terminal de ÉXITO del adopt sin relanzamiento. Para igual que `.relaunch`, y el
                 // motivo de nombrarla explícitamente es que antes este caso LLEGABA como `.relaunch`:
                 // dejarla caer al `default` mantendría el poll vivo a 1 Hz por debajo de una pantalla

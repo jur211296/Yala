@@ -436,7 +436,7 @@ struct WelcomeNewChooserWiringTests {
         let afterConsent = try Self.body(of: "private func runFlowAfterConsent() async {",
                                          in: try Self.source(Self.signInViewPath))
         let beaconLine = try #require(afterConsent.split(separator: "\n").first { $0.contains(".beaconRouted") })
-        #expect(beaconLine.contains("runSignInFlow()"))
+        #expect(beaconLine.contains("runSignInFlow(origin: .reentry)"))
         #expect(!beaconLine.contains("runBornCloudFlow"), "con el flujo del alta, «Iniciar sesión» crearía una cuenta")
     }
 
@@ -444,7 +444,7 @@ struct WelcomeNewChooserWiringTests {
     /// huérfano borraría el faro de una cuenta viva.
     @Test("el motor recibe el método que la pantalla ACABA de firmar, no el del Keychain")
     func signInFlow_passesTheSignedMethodToTheMotor() throws {
-        let signIn = try Self.body(of: "private func runSignInFlow() async {", in: try Self.source(Self.signInViewPath))
+        let signIn = try Self.body(of: "private func runSignInFlow(origin: WelcomeAdoptOrigin) async {", in: try Self.source(Self.signInViewPath))
         #expect(signIn.contains("CloudIdentityDiscovery(sessionProviderName: { firmadoCon.rawValue })"))
         #expect(signIn.contains("let firmadoCon = provider"))
     }

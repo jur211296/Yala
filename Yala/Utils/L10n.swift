@@ -5736,6 +5736,9 @@ enum L10n {
             static var readyTitle: String { ls("welcome.bornCloud.readyTitle", comment: "") }
             static var readyBody: String { ls("welcome.bornCloud.readyBody", comment: "") }
             static var readyCta: String { ls("welcome.bornCloud.readyCta", comment: "") }
+            /// El alta encontró la cuenta ya creada (el Apple ID tenía una) y entró en ella: la terminal lo dice en vez de
+            /// «¡Tu cuenta está lista!». Ticket `born-cloud-signup-lands-on-existing-account-silently`.
+            static var readyExistingAccountTitle: String { ls("welcome.bornCloud.readyExistingAccountTitle", comment: "") }
         }
 
         /// R2 · terminal del Welcome cuando el destino elegido necesita el espejo de iCloud y este proceso

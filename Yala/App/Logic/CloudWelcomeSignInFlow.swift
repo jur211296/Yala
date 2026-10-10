@@ -62,6 +62,17 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// fases en una obliga al callback único a adivinar cuál de las dos precondiciones tiene delante, que
     /// es exactamente lo que no puede hacer.
     case reentryReady
+    /// **El ALTA terminó dentro de una cuenta que ya existía** (ticket
+    /// `born-cloud-signup-lands-on-existing-account-silently`, decisión de Jürgen del 2026-10-07). La persona tocó «Crear
+    /// otra cuenta», pero su Apple ID ya tenía una: el claim contestó `existing_stable` y el flujo entró en ella por la
+    /// re-entrada (`BornCloudSignUpFlow.continueAsReturningUser`). Entrar es lo correcto —nunca se siembra encima de una
+    /// cuenta viva—; lo que faltaba era decírselo. Antes acababa en `.reentryReady`, con «¡Tu cuenta está lista!» después
+    /// de «Creando tu cuenta…», y si el Apple ID era compartido la persona estaba en la cuenta de otro sin saberlo.
+    ///
+    /// Misma salida que `.reentryReady` (`onFinishedToApp`: el flag de onboarding ya lo marcó `onAdoptStarted`) y mismo
+    /// cuerpo de pantalla; cambia el título: «Ya tenías una cuenta, has entrado en ella». Caso propio y no un `.reentryReady`
+    /// con un flag para que cada `switch` exhaustivo tenga que decidir qué hace con él.
+    case signUpEnteredExistingAccount
     /// El Apple ID firmado no tiene cuenta Yala en la nube.
     case notFound
     /// R9 (sesión 2 Google): sin cuenta para ESTE sub, pero el faro del device dice que la
@@ -94,6 +105,14 @@ nonisolated enum CloudWelcomeSignInPhase: Equatable {
     /// **el problema no es la conexión**. Sin botón de reintentar: esperar no despierta una cuenta
     /// suspendida (ticket `reentry-counts-as-fresh-install` §3).
     case accountBlocked
+}
+
+/// De dónde viene el adopt que está corriendo en la pantalla. Solo decide el título de la terminal de «listo».
+nonisolated enum WelcomeAdoptOrigin: Equatable {
+    /// «Ya tengo cuenta», la entrada que encamina el faro o el «Iniciar sesión con…» del mismatch.
+    case reentry
+    /// El alta: el claim contestó que la cuenta ya existía y el flujo siguió por la re-entrada.
+    case signUpFoundExistingAccount
 }
 
 nonisolated enum CloudWelcomeSignInFlow {
@@ -149,11 +168,16 @@ nonisolated enum CloudWelcomeSignInFlow {
     /// **`adoptClaimExit` elige el texto del fallo** (ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`).
     /// Solo en `.failed(.migration)`, que es la tarjeta donde Almacenamiento lo lee, y detrás de `claimBlocker`, que sigue
     /// ganando como hasta hoy. `.cancelled` no es un fallo que explicar: cae al genérico, igual que allí.
+    ///
+    /// **`origin` solo toca la terminal de «listo»** (`.cloudActive`): el alta que entró en una cuenta ya creada sale por
+    /// `.signUpEnteredExistingAccount` y la re-entrada por `.reentryReady`. El progreso, los fallos y el relanzamiento
+    /// son los mismos venga de donde venga el adopt.
     static func phase(
         for uiState: CloudMigrationUIState,
         claimBlocker: ClaimBlocker? = nil,
         adoptClaimExit: AdoptClaimExit? = nil,
-        forwardStepExit: ForwardStepExitReason? = nil
+        forwardStepExit: ForwardStepExitReason? = nil,
+        origin: WelcomeAdoptOrigin = .reentry
     ) -> CloudWelcomeSignInPhase? {
         if let claimBlocker {
             switch uiState {
@@ -200,7 +224,13 @@ nonisolated enum CloudWelcomeSignInFlow {
             // siguiente paso es la app, no el onboarding de 8 pasos —que sobre una cuenta existente
             // insertaría una cuenta duplicada y podría sembrar categorías encima del pull—. El
             // razonamiento completo, en el docblock de `.reentryReady`.
-            return .reentryReady
+            //
+            // **El origen solo cambia el título**: si este adopt lo arrancó el alta al encontrarse la cuenta ya creada,
+            // la persona tiene que saber que ha entrado en una que existía (`.signUpEnteredExistingAccount`).
+            switch origin {
+            case .reentry: return .reentryReady
+            case .signUpFoundExistingAccount: return .signUpEnteredExistingAccount
+            }
         case .waitingForLeader:
             return .waitingLeader
         case .failed(let kind):
@@ -297,7 +327,7 @@ nonisolated enum BornCloudSignUpFlow {
 /// de las entradas públicas (`runGuarded`) ⇒ `isWorking == false` con fase `.adopting` significa
 /// que NADIE conduce — sostenido N ticks es una aparcada real, no una ventana entre awaits.
 /// La acotación a transicionales de adopt es estructural en el caller (el poll retorna en
-/// `.relaunch`/`.reentryReady`/`.error`/`.waitingLeader`/`.accountBlocked` — la lista creció el
+/// `.relaunch`/`.reentryReady`/`.signUpEnteredExistingAccount`/`.error`/`.waitingLeader`/`.accountBlocked` — la lista creció el
 /// 2026-09-07, cuando el adopt sobre mount neutro dejó de terminar en `.relaunch`) y en el destino
 /// (`resumeIfNeeded` → `MigrationBootDecision`,
 /// que devuelve `.none` en terminales de fallo — contrato del boot: jamás auto-re-kick de rollbacks).
