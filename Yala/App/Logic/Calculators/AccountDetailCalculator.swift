@@ -13,8 +13,8 @@
 //  - **«Entró» y «Salió» son movimiento de dinero de la cuenta**: cuentan transferencias y ajustes por registro,
 //    porque mueven su saldo. Lo único que no cuenta es el saldo inicial, que no es dinero que entre sino el punto de
 //    partida. Así «saldo al empezar + entró − salió» cuadra con la curva salvo por ese saldo inicial.
-//  - **«En qué se fue» es gasto**, con la misma regla que lo gastado por cuenta del Panel
-//    (`PanelViewModel.calculateAccountPeriodExpenses`): sin ajustes ni transferencias, categoría no de ingreso.
+//  - **«En qué se fue» es gasto**, con la misma regla que lo gastado por cuenta del Panel: `AccountSpendingLogic`
+//    (sin ajustes ni transferencias, categoría no de ingreso, y una devolución resta).
 //
 
 import Foundation
@@ -136,29 +136,36 @@ nonisolated enum AccountDetailCalculator {
         calendar: Calendar
     ) -> [DayBalance] {
         let spending = entries
-            .filter { interval.contains($0.date) && isExpense($0) }
-            .map { Entry(
-                id: $0.id, date: $0.date, amount: abs($0.amount), adjustmentType: nil, categoryKey: nil,
+            .filter { interval.contains($0.date) }
+            .compactMap { entry in spent(entry).map { Entry(
+                id: entry.id, date: entry.date, amount: $0, adjustmentType: nil, categoryKey: nil,
                 categoryName: nil, categoryColorHex: nil, categoryIsIncome: nil, title: ""
-            ) }
+            ) } }
         return dailyBalances(entries: spending, interval: interval, now: now, calendar: calendar)
     }
 
     static func isExpense(_ entry: Entry) -> Bool {
-        entry.adjustmentType == nil && entry.categoryIsIncome == false
+        AccountSpendingLogic.countsAsSpending(adjustmentType: entry.adjustmentType, categoryIsIncome: entry.categoryIsIncome)
+    }
+
+    /// Lo que el movimiento aporta a lo gastado (`nil` si no es gasto): una devolución resta.
+    static func spent(_ entry: Entry) -> Double? {
+        AccountSpendingLogic.spending(
+            amount: entry.amount, adjustmentType: entry.adjustmentType, categoryIsIncome: entry.categoryIsIncome
+        )
     }
 
     static func topCategories(in entries: [Entry]) -> [CategoryTotal] {
         var totals: [String: CategoryTotal] = [:]
         for entry in entries {
-            guard isExpense(entry), let key = entry.categoryKey
+            guard let spent = spent(entry), let key = entry.categoryKey
             else { continue }
             let previous = totals[key]?.amount ?? 0
             totals[key] = CategoryTotal(
                 key: key,
                 name: entry.categoryName ?? "",
                 colorHex: entry.categoryColorHex,
-                amount: previous + abs(entry.amount)
+                amount: previous + spent
             )
         }
         return Array(
