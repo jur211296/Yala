@@ -3296,7 +3296,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/MultiWindowUITests (YalaLane-Adapt-iPad-Pro-13 por UDID, «Apps en pantalla completa»: un registro abierto en ventana nueva aterriza con él y cada ventana conserva su sección; un enlace con dos ventanas llega a una sola) + unit:YalaTests/MultiWindowRoutingTests (sellado y drenaje por ventana, qué enseña una seguidora, quién lanzó el cierre de sesión, qué trae la líder al frente). Sin red automática: covers con dos ventanas a la vez y Split View/Stage Manager → guion del ticket ipad-real-multiwindow-with-per-scene-state. | 2026-10-07 (ipad-drop-unreadable-file-fails-silently): SceneNavigation.pendingImageEntryFailure, por ventana como pendingSharedImageURL; lo consume la hoja de imagen y lo limpian resetForNewStore y el rechazo del consentimiento de IA. xcuitest:YalaUITests/ReceiptDropUITests.",
       "owner": "",
-      "lastVerified": "2026-10-07"
+      "lastVerified": "2026-10-10"
     },
     {
       "area": "settings-grouped-list",

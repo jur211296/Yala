@@ -116,6 +116,12 @@ jobs:
       # comprueba sobre el árbol real que entre las tandas corren todas, una vez cada una.
       - name: Reparto de la UI en tandas (ci-ui-tandas.sh)
         run: bash qa/scripts/ci-ui-tandas-test.sh
+      # Versión y build de la app y de sus extensiones salen de MARKETING_VERSION y
+      # CURRENT_PROJECT_VERSION. El widget llevó su build fijo en 3 de mayo a octubre y nada
+      # falló hasta App Store Connect. El banco corre el script sobre el árbol y sobre siete
+      # regresiones que debe cazar.
+      - name: Versiones de los targets embebidos (versiones-embebidas.py)
+        run: bash qa/scripts/versiones-embebidas-test.sh
 
   # Suite del conector MCP de Claude (`mcp/`): typecheck y tests unitarios, sin red. Corre en
   # cada push, como `coverage-index`: es barata (Linux, segundos) y así un cambio de esquema que
