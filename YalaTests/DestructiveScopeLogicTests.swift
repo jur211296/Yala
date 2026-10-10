@@ -487,3 +487,77 @@ struct WipeCloudRowScopeTests {
         #expect(seen == 16)
     }
 }
+
+/// **El párrafo de «Vaciar mis datos» y la hoja de alcance nombran el mismo borrado en las cuatro celdas**
+/// (ticket `wipe-copy-reads-one-axis-while-the-sheet-reads-two`, decisión de Jürgen 2026-10-07: el texto
+/// sale de lo mismo que decide qué se borra). Las celdas son las dos variables de `wipeOperation`: ¿hay
+/// sesión privada? × ¿el store personal espeja a iCloud?
+@MainActor
+@Suite("Vaciar datos · el párrafo de la pantalla dice lo que va a hacer la hoja")
+struct WipeDescriptionParityTests {
+    typealias Op = DestructiveScopeLogic.Operation
+
+    static let cells: [(hasPrivateSession: Bool, mirror: Bool)] = [
+        (true, false), (true, true), (false, false), (false, true),
+    ]
+
+    /// Fija la discrepancia de antes: el párrafo leía SOLO `hasPrivateSession`. Esta regla vieja, escrita
+    /// aquí tal cual, discrepa de la operación en exactamente una celda — sin sesión privada y con espejo —
+    /// y en esa celda promete menos de lo que la hoja borra.
+    @Test func oldOneAxisRule_promisedLessInTheGroupsOnlyMirroredCell() {
+        var divergent: [(Bool, Bool)] = []
+        for cell in Self.cells {
+            let op = DestructiveScopeLogic.wipeOperation(
+                hasPrivateSession: cell.hasPrivateSession, personalMountAttachesMirror: cell.mirror)
+            let oldText = cell.hasPrivateSession
+                ? L10n.Settings.resetDataDescription
+                : L10n.Settings.resetDataDescriptionGroupsOnly
+            if oldText != UserDataResetView.resetDescriptionText(for: op) {
+                divergent.append((cell.hasPrivateSession, cell.mirror))
+                #expect(op == .wipeDataFull, "la celda que diverge es la de borrado completo")
+                #expect(oldText == L10n.Settings.resetDataDescriptionGroupsOnly,
+                        "la regla vieja prometía solo perfil y preferencias")
+            }
+        }
+        #expect(divergent.count == 1)
+        #expect(divergent.first.map { $0 == (false, true) } == true)
+    }
+
+    /// En las cuatro celdas, el párrafo nombra el alcance de la operación que ejecutará la hoja: completo
+    /// si y solo si la hoja es la completa. Control rojo: con el cuerpo viejo de la pantalla
+    /// (`PrivateSessionMark.hasPrivateSession() ? completo : solo perfil`) este test falla.
+    @Test func paragraphAndSheet_cannotDisagree_inAnyCell() {
+        for cell in Self.cells {
+            let op = DestructiveScopeLogic.wipeOperation(
+                hasPrivateSession: cell.hasPrivateSession, personalMountAttachesMirror: cell.mirror)
+            let text = UserDataResetView.resetDescriptionText(for: op)
+            let label = "privada=\(cell.hasPrivateSession) espejo=\(cell.mirror) → \(op)"
+            switch op {
+            case .wipeDataFull:
+                #expect(text == L10n.Settings.resetDataDescription, "\(label)")
+            case .wipeDataGroupsOnly:
+                #expect(text == L10n.Settings.resetDataDescriptionGroupsOnly, "\(label)")
+            default:
+                Issue.record("wipeOperation devolvió una operación que no es de Vaciar: \(label)")
+            }
+        }
+    }
+
+    /// Las dos claves son textos distintos en el idioma de la prueba; si fueran iguales, el test de arriba
+    /// pasaría sin distinguir nada.
+    @Test func theTwoParagraphs_areDistinct() {
+        #expect(L10n.Settings.resetDataDescription != L10n.Settings.resetDataDescriptionGroupsOnly)
+    }
+
+    /// Solo las dos operaciones de Vaciar tienen párrafo; cada una el suyo.
+    @Test func wipeDescription_onlyForWipeOperations() {
+        for op in Op.allCases {
+            let desc = DestructiveScopeLogic.wipeDescription(for: op)
+            switch op {
+            case .wipeDataFull: #expect(desc == .wholePersonalData)
+            case .wipeDataGroupsOnly: #expect(desc == .profileAndPreferences)
+            default: #expect(desc == nil, "\(op)")
+            }
+        }
+    }
+}

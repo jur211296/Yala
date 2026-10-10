@@ -325,19 +325,23 @@ struct PrivateSessionMarkWiringTests {
         #expect(wipe.contains("PrivateSessionMark.clear(defaults)"), "el relevo de humano dejó de limpiar el eje")
     }
 
-    /// La pantalla de vaciar decide el TEXTO y el ALCANCE con el mismo eje, o promete un borrado
-    /// distinto del que ejecuta — que es el daño que `wipeOperation` existe para cerrar.
-    @Test("MUTACIÓN: la copy de «Vaciar datos» sale del mismo eje que su alcance")
-    func theWipeCopyReadsTheSameAxisAsItsScope() throws {
-        // Con los espacios colapsados: lo que se fija es QUÉ lee la descripción, no la sangría. Con la
-        // sangría dentro del literal, el refactor que pasó la pantalla a lista agrupada (2c9f800d2) la
-        // bajó de 40 a 28 espacios y este caso se puso rojo con el cableado intacto.
+    /// La pantalla de vaciar saca el TEXTO de la misma operación que el ALCANCE, o promete un borrado
+    /// distinto del que ejecuta. Hasta el 2026-10-10 este caso fijaba que el párrafo leyera la marca a
+    /// pelo, y eso era el bug: la marca es UNO de los dos términos de `wipeOperation`, y en la celda sin
+    /// sesión privada + espejo la pantalla prometía «tu perfil y tus preferencias» sobre un
+    /// `.wipeDataFull` (ticket `wipe-copy-reads-one-axis-while-the-sheet-reads-two`). Lo que dice cada
+    /// operación lo fija `WipeDescriptionParityTests`; aquí, que la pantalla no lo salte.
+    @Test("MUTACIÓN: la copy de «Vaciar datos» sale de la misma operación que su alcance")
+    func theWipeCopyReadsTheSameOperationAsItsScope() throws {
+        // Con los espacios colapsados: lo que se fija es QUÉ lee la descripción, no la sangría.
         let vista = try Self.code("Yala/App/Views/Settings/UserDataResetView.swift")
             .split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        #expect(vista.contains("PrivateSessionMark.hasPrivateSession() ? L10n.Settings.resetDataDescription :"), """
-            la descripción de la pantalla volvió a leer otra cosa mientras el alcance lee la marca.
-            Divergen justo en el caso del eje: una sesión solo-grupos leía «solo tu perfil y tus
-            preferencias» sobre un `.wipeDataFull`.
+        #expect(vista.contains("Text(Self.resetDescriptionText(for: scopeOperation))"), """
+            el párrafo de la pantalla dejó de salir de `scopeOperation`, que es lo que recibe la hoja.
+            """)
+        #expect(!vista.contains("PrivateSessionMark.hasPrivateSession() ? L10n.Settings.resetDataDescription"), """
+            el párrafo volvió a leer solo la marca: discrepa de la hoja en la celda sin sesión privada
+            + espejo, donde prometía menos de lo que se borra.
             """)
     }
 
@@ -504,8 +508,8 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 19, """
-            el eje 1 tiene DIECINUEVE consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 18, """
+            el eje 1 tiene DIECIOCHO consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 
@@ -533,6 +537,10 @@ struct PrivateSessionMarkWiringTests {
             El decimonoveno (2026-10-08) es `WidgetDataCache.updateCache`, que publica para el widget si la
             sesión es solo grupos. Con la MISMA lectura que la shell: su `true` de más enseña el widget de
             siempre, que es el lado que conserva; no alcanza datos fuera del teléfono.
+
+            Y bajó a DIECIOCHO el 2026-10-10: el párrafo de «Vaciar datos» dejó de leer la marca a pelo y
+            sale de `scopeOperation` (ticket `wipe-copy-reads-one-axis-while-the-sheet-reads-two`). La
+            pantalla la sigue leyendo una vez, dentro de `scopeOperation`.
             """)
     }
 
