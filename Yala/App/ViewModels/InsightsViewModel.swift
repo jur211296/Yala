@@ -27,7 +27,8 @@ final class InsightsViewModel {
 
     private(set) var aiInsights: LLMInsightResponse?
     private(set) var isLoadingAI = false
-    private(set) var aiError: String?
+    /// Por qué falló el análisis de IA. El texto lo elige la vista (`AIInsightCardComponents.message(for:)`).
+    private(set) var aiError: AIInsightFailure?
     private(set) var aiActivated = false
 
     // MARK: - AI Generation Context (stored for on-demand button)
@@ -258,7 +259,7 @@ final class InsightsViewModel {
             )
             aiInsights = response
         } catch {
-            aiError = error.localizedDescription
+            aiError = AIInsightFailureLogic.failure(for: error, isConnected: NetworkMonitor.shared.isConnected)
             #if DEBUG
             print("InsightsViewModel: AI error: \(error)")
             #endif

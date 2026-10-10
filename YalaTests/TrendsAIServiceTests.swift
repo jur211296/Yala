@@ -134,7 +134,7 @@ struct TrendsAIViewModelTests {
         // V2-06: sin red la card vuelve a los bullets de reglas con su aviso.
         let vm = TrendsAIViewModel(isPro: { true }, hasConsent: { true }, isOnline: { false })
         await vm.generate(input: anyInput, regenerate: false)
-        #expect(vm.phase == .failed)
+        #expect(vm.phase == .failed(.offline))
         vm.reset()
         #expect(vm.phase == .idle)
     }
@@ -163,7 +163,7 @@ struct TrendsAIViewModelTests {
             isPro: { true }, hasConsent: { true }, isOnline: { true }
         )
         await vm.generate(input: anyInput, regenerate: false)
-        #expect(vm.phase == .failed)
+        #expect(vm.phase == .failed(.generic))
     }
 
     @Test func aResetDuringTheRequest_dropsTheStaleAnswer() async {

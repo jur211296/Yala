@@ -6573,3 +6573,15 @@
 
 /* Budget row: exactly one day left in the period (today counts) */
 "budgets.days.remaining.one" = "残り1日";
+
+/* Insights/Trends AI card: the analysis failed because the device is offline */
+"insights.aiError.offline" = "AI分析を作成するにはインターネット接続が必要です。";
+
+/* Insights/Trends AI card: the daily AI quota is used up (gateway 429 yala_quota_daily) */
+"insights.aiError.dailyLimit" = "今日のAI分析の上限に達しました。また明日お試しください。";
+
+/* Insights/Trends AI card: too many requests in a short time (burst limit) */
+"insights.aiError.tooManyRequests" = "短時間に分析を続けてリクエストしました。少し待ってからもう一度お試しください。";
+
+/* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
+"insights.aiError.proRequired" = "Yala Proを確認できませんでした。少ししてからもう一度お試しください。";

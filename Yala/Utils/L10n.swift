@@ -1376,6 +1376,11 @@ enum L10n {
         static var perDay: String { ls("insights.perDay", comment: "") }
         static var ofTotal: String { ls("insights.ofTotal", comment: "") }
         static var analyzingData: String { ls("insights.analyzingData", comment: "") }
+        // Tarjeta de error del análisis de IA (Resumen, Distribución y Tendencias): `AIInsightCardComponents.message(for:)`.
+        static var aiErrorOffline: String { ls("insights.aiError.offline", comment: "") }
+        static var aiErrorDailyLimit: String { ls("insights.aiError.dailyLimit", comment: "") }
+        static var aiErrorTooManyRequests: String { ls("insights.aiError.tooManyRequests", comment: "") }
+        static var aiErrorProRequired: String { ls("insights.aiError.proRequired", comment: "") }
         static var activateAITitle: String { ls("insights.activateAITitle", comment: "") }
         static var activateAIBody: String { ls("insights.activateAIBody", comment: "") }
         static var activateAIDisclaimer: String { ls("insights.activateAIDisclaimer", comment: "") }
