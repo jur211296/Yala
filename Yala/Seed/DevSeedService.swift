@@ -161,6 +161,8 @@ final class DevSeedService {
             let spResult = DevSeedScheduledPayments.create(
                 account: accounts.cuentaPrincipal,
                 subcategoryLookup: subcategoryLookup,
+                today: UITestHooks.scheduledSeedToday ?? .now,
+                includeEndOfMonthPayment: profile == .minimal,
                 in: context
             )
 
