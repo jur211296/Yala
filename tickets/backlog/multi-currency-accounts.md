@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "accounts, currency"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-10-10
 source: idea Jürgen 2026-09-09
 ---
 
@@ -36,8 +36,22 @@ El supuesto de una divisa por cuenta está en el modelo, no en la pantalla:
 
 ## Estado
 
-Medido el impacto el 2026-10-08 (sección siguiente). **Espera la decisión de Jürgen**: qué opción, y
-las preguntas cerradas del análisis. Sin spec hasta entonces.
+**Decidido.** Jürgen eligió **A1** el 2026-10-09 (16:19, Lima) y cerró las otras cuatro preguntas el
+2026-10-10 (05:55): cualquier tipo de cuenta, ofrecido primero en tarjetas de crédito; se pueden
+vincular cuentas con movimientos sin tocar el historial; las líneas no cuentan para el límite Free; y
+al registrar se elige la tarjeta y la divisa del importe decide la línea. Detalle en la sección 5 del
+[análisis](../../docs/multi-currency-accounts-impact-2026-10.md).
+
+Este ticket queda como épica. El trabajo vive en cuatro entregas:
+
+| # | Ticket | Prioridad | Depende de |
+|---|---|---|---|
+| 1 | [`multi-currency-accounts-1-model-and-sync`](multi-currency-accounts-1-model-and-sync.md): modelo, sync y esquema, sin UI | high | `personal-cloudkit-schema-snapshot-misses-optional-fields` |
+| 2 | [`multi-currency-accounts-2-card-view`](multi-currency-accounts-2-card-view.md): la tarjeta en Panel, ficha, Ajustes y formulario | medium | 1 |
+| 3 | [`multi-currency-accounts-3-pickers-and-capture`](multi-currency-accounts-3-pickers-and-capture.md): selectores, filtros, presupuestos y captura | medium | 1 |
+| 4 | [`multi-currency-accounts-4-reports-and-export`](multi-currency-accounts-4-reports-and-export.md): informes, flujo de caja y export | medium | 1 |
+
+La 1 va sola y antes que nada. La función no se publica hasta que estén la 2 y la 3.
 
 ## Análisis de impacto (2026-10-08)
 
@@ -63,6 +77,7 @@ tres opciones: [`docs/multi-currency-accounts-impact-2026-10.md`](../../docs/mul
 9. Cuatro entregas propuestas: primero modelo, sync y esquema de iCloud sin UI; después la vista de
    la tarjeta; después selectores y captura; al final, informes.
 10. Seis preguntas cerradas para Jürgen, cada una con su recomendada, en la sección 5 del documento.
+    Las seis se cerraron con la recomendada (2026-10-09/10).
 
 ## Relacionados
 

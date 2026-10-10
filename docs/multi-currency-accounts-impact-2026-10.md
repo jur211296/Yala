@@ -3,6 +3,11 @@
 Ticket: [`multi-currency-accounts`](../tickets/backlog/multi-currency-accounts.md). Medido sobre el
 árbol `e755b0d64` (`2.1` tras el PR #400). **No se ha tocado código ni se ha compilado nada.**
 
+> **Decidido (2026-10-10).** Jürgen eligió **A1** el 2026-10-09 a las 16:19 (Lima) y contestó las
+> otras cuatro preguntas el 2026-10-10 a las 05:55. Las respuestas están en la sección 5, el plan en
+> la 4 y las cuatro entregas, ya con ticket, en la 6. Las secciones 1-3 son el análisis que llevó a la
+> decisión y no se han reescrito.
+
 En este documento:
 
 - **[medido]**: leído en el código o contado con el comando que se publica al lado.
@@ -25,14 +30,16 @@ En este documento:
    pisan.
 6. **C rompe la primera mitad entera.** Toca unos 50-60 ficheros, deshace la política de divisas que
    Jürgen decidió el 9-sep y el 7-oct, y un teléfono sin actualizar daría saldos mal sin avisar.
-7. **Recomendación: A en su variante A1.** La tarjeta es la cuenta principal, y cada divisa extra es
+7. **Decisión: A en su variante A1.** La tarjeta es la cuenta principal, y cada divisa extra es
    una «línea» enlazada a ella con un solo campo nuevo. Cada línea sigue siendo una cuenta de una
    divisa, así que todo lo que ya funciona sigue funcionando.
 8. A1 encaja con quien hoy ya tiene la tarjeta partida en dos cuentas: **se vinculan sin tocar ni un
    movimiento**. Un teléfono viejo ve dos cuentas sueltas, con los números bien.
 9. Coste estimado de A1: unos 25-35 ficheros de producción, más la vista nueva de la tarjeta, en
    cuatro entregas.
-10. **Decide Jürgen:** la opción, la variante y cuatro preguntas cerradas más (sección 5).
+10. **Decidido por Jürgen:** A1, cualquier tipo de cuenta (ofrecido primero en tarjetas), vincular
+    cuentas con historial sí, las líneas no cuentan para el límite Free, y al registrar se elige la
+    tarjeta y la divisa decide la línea (sección 5). Cuatro entregas con ticket (sección 6).
 
 ---
 
@@ -659,7 +666,9 @@ cuando falta la divisa preferida. No lo empeora ni lo arregla ninguna opción.
 
 ---
 
-## 4. Recomendación: A1
+## 4. Plan decidido: A1
+
+Era la recomendación del análisis y Jürgen la aceptó el 2026-10-09 (sección 5).
 
 **Por qué.** Jürgen pide lo más robusto y de mejor práctica aunque tarde más. Aquí eso no es C, que
 toca más, sino A1:
@@ -677,7 +686,7 @@ toca más, sino A1:
 A1 gana a A2 porque una columna es mucho menos superficie que una tabla nueva: unos diez puntos de
 registro menos, sin cuarentena en clientes viejos y sin tocar tres tests de paridad.
 
-**Lo que haría fallar a A1**
+**Lo que haría fallar a A1, y cómo lo cubre el plan**
 
 - **Una interfaz a medias.** Si las líneas salen como cuentas sueltas en algún selector, filtro o
   presupuesto, la persona ve dos cuentas y la función parece rota. Mitigación: la entrega 3 recorre
@@ -688,66 +697,80 @@ registro menos, sin cuarentena en clientes viejos y sin tocar tres tests de pari
   existe como cuenta suelta (falla cerrado y visible), más un test con el UUID colapsado.
 - **Desplegar el esquema de iCloud tarde.** Si la versión sale antes del deploy a Production, el
   guardado de cuentas muere en silencio. Mitigación: deploy en la entrega 1, antes de cualquier UI,
-  y comprobar en la consola de iCloud que el campo existe en Production.
+  y comprobar en la consola de iCloud que el campo existe en Production. Como el snapshot `.ckdb` del
+  repo no es fiel (sección 7), la entrega 1 espera a
+  `personal-cloudkit-schema-snapshot-misses-optional-fields`.
+- **Vincular cuentas con historial** (respuesta 4). Dos cuentas de la misma divisa no se pueden
+  vincular, y una cuenta que ya es principal de otra tarjeta tampoco puede pasar a ser línea: no hay
+  más de un nivel. Vincular escribe solo `parentAccountID` y no toca ningún movimiento.
 - **Dos líneas en la misma divisa** creadas en dos teléfonos a la vez. Mitigación: la misma
   deduplicación del bridge (`SystemEntityMergePolicy`), por `(tarjeta, divisa)`.
 
-## 5. Preguntas cerradas para Jürgen
+## 5. Preguntas cerradas: respuestas de Jürgen
 
-1. **¿Qué opción?**
-   - **A, recomendada**;
-   - B;
-   - C.
-2. **Si A, ¿qué variante?**
-   - **A1, enlace a la cuenta principal y sin entidad nueva: recomendada**;
-   - A2, entidad «tarjeta» nueva.
-3. **¿Solo tarjetas de crédito o cualquier tipo de cuenta?**
-   - **Cualquier tipo, ofrecido primero en tarjetas de crédito: recomendada.** Cuesta lo mismo y
-     cubre cuentas bimoneda de ahorro.
-   - Solo tarjetas de crédito.
-4. **¿Se pueden vincular dos cuentas que ya tienen movimientos?**
-   - **Sí, recomendada:** vincular no toca el historial, en línea con 2A.
-   - No, solo líneas nuevas.
-5. **¿Las líneas extra cuentan para el límite Free de cuentas?**
-   - **No, la tarjeta cuenta una vez: recomendada**;
-   - Sí, cada línea cuenta.
-6. **¿Cómo se elige la línea al registrar un gasto?**
-   - **Se elige la tarjeta y la divisa del importe decide la línea; el selector enseña las líneas
-     anidadas: recomendada**;
-   - se elige siempre la línea concreta («Visa · USD»).
+Las seis se cerraron con la opción recomendada.
+
+| # | Pregunta | Respuesta | Cuándo (Lima) |
+|---|---|---|---|
+| 1 | ¿Qué opción? | **A**: una tarjeta agrupa varias cuentas de una divisa cada una. | 2026-10-09, 16:19 |
+| 2 | Si A, ¿qué variante? | **A1**: enlace a la cuenta principal, sin entidad nueva. | 2026-10-09, 16:19 |
+| 3 | ¿Solo tarjetas de crédito o cualquier tipo de cuenta? | **Cualquier tipo**, ofrecido primero en tarjetas de crédito. | 2026-10-10, 05:55 |
+| 4 | ¿Se pueden vincular dos cuentas que ya tienen movimientos? | **Sí.** Vincular no toca el historial, en línea con 2A. | 2026-10-10, 05:55 |
+| 5 | ¿Las líneas extra cuentan para el límite Free? | **No.** La tarjeta cuenta una vez. | 2026-10-10, 05:55 |
+| 6 | ¿Cómo se elige la línea al registrar un gasto? | **Se elige la tarjeta y la divisa del importe decide la línea.** El selector enseña las líneas anidadas. | 2026-10-10, 05:55 |
+
+Qué cambia en el plan por cada respuesta:
+
+- **3, cualquier tipo.** El modelo no filtra por tipo de cuenta: cualquier cuenta de usuario puede
+  tener líneas. En el formulario, «Añadir línea en otra divisa» sale a la vista en las tarjetas de
+  crédito y queda disponible, más discreta, en el resto de tipos.
+- **4, vincular con historial.** «Vincular cuenta existente» entra en la entrega 2. Escribe solo
+  `parentAccountID`: ningún movimiento cambia de cuenta, de divisa ni de importe. Se rechaza si las
+  dos cuentas tienen la misma divisa, o si la que pasa a ser línea ya tiene líneas propias.
+- **5, límite Free.** `isBillableUserAccount` excluye las líneas dentro del propio predicado, en la
+  entrega 1. La principal sigue contando como una cuenta.
+- **6, captura.** El formulario, el chat, la voz, la imagen, Siri y Apple Pay eligen la tarjeta, y
+  la divisa del importe decide la línea (entrega 3). Si la tarjeta no tiene línea en esa divisa, la
+  captura no crea una: se queda en la principal con el aviso de divisa que ya existe hoy.
 
 Ninguna exige subir la versión mínima, `MIN_SUPPORTED_BUILD`: con A1 un teléfono viejo sigue dando
 números correctos.
 
-## 6. Entregas propuestas para A1
+## 6. Entregas de A1
 
-Son propuestas: se abren como tickets cuando Jürgen decida.
+Cada entrega tiene su ticket en `tickets/backlog/`. La 1 va sola y antes que nada, porque el esquema
+de iCloud y de la nube tiene que estar desplegado antes de que ningún cliente escriba el campo. La 2,
+la 3 y la 4 dependen de la 1.
 
-1. **`multi-currency-accounts-1-model-and-sync`: modelo, sync y esquema, sin UI.**
+1. **[`multi-currency-accounts-1-model-and-sync`](../tickets/backlog/multi-currency-accounts-1-model-and-sync.md):
+   modelo, sync y esquema, sin UI.** Prioridad `high`. Bloqueada por
+   [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../tickets/backlog/personal-cloudkit-schema-snapshot-misses-optional-fields.md).
    - `parentAccountID` en `Account`.
    - Emisión, apply, manifest, DDL en `qa/cloud/` con staging, sonda y producción.
    - Deploy de `CD_Account` a Production en `yala` y `yala_dev`.
-   - Lógica pura de líneas: misma divisa, huérfana, sin ciclos ni más de un nivel.
-   - Exclusión del límite Free.
+   - Lógica pura de líneas: sin dos líneas en la misma divisa, huérfana, sin ciclos ni más de un
+     nivel, válida para cualquier tipo de cuenta.
+   - Exclusión de las líneas del límite Free.
    - Entrada en la reconstrucción de UUID colapsados.
    - Review adversarial, porque es sync.
-2. **`multi-currency-accounts-2-card-view`: la tarjeta en pantalla.**
+2. **[`multi-currency-accounts-2-card-view`](../tickets/backlog/multi-currency-accounts-2-card-view.md):
+   la tarjeta en pantalla.** Prioridad `medium`.
    - Carrusel y ficha agregados, con saldo por línea y total convertido con «≈».
    - Ajustes con líneas anidadas.
-   - Formulario: «Añadir línea en otra divisa» y «Vincular cuenta existente».
+   - Formulario: «Añadir línea en otra divisa», destacada en tarjetas de crédito y disponible en el
+     resto, y «Vincular cuenta existente», también con cuentas que ya tienen movimientos.
    - Recordatorio solo en la principal.
    - Capturas de antes y después.
-3. **`multi-currency-accounts-3-pickers-and-capture`: que en ningún sitio se vean dos cuentas.**
-   - Selector anidado.
-   - Filtros y presupuestos que incluyen las líneas.
-   - Formulario, chat, voz, imagen, Siri y Apple Pay eligen la línea por divisa dentro de la
-     tarjeta.
-4. **`multi-currency-accounts-4-reports-and-export`: informes.**
+3. **[`multi-currency-accounts-3-pickers-and-capture`](../tickets/backlog/multi-currency-accounts-3-pickers-and-capture.md):
+   que en ningún sitio se vean dos cuentas.** Prioridad `medium`.
+   - Selector anidado: la tarjeta, con sus líneas debajo.
+   - Filtros y presupuestos que incluyen las líneas al elegir la tarjeta.
+   - Formulario, chat, voz, imagen, Siri y Apple Pay: se elige la tarjeta y la divisa del importe
+     decide la línea.
+4. **[`multi-currency-accounts-4-reports-and-export`](../tickets/backlog/multi-currency-accounts-4-reports-and-export.md):
+   informes.** Prioridad `medium`.
    - Tabla de informes y flujo de caja por tarjeta o por línea.
    - Columna de tarjeta en el export.
-
-La 1 va sola y antes que nada, porque el esquema de iCloud y de la nube tiene que estar desplegado
-antes de que ningún cliente escriba el campo.
 
 ---
 
