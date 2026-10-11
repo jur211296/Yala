@@ -587,7 +587,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
 | notification-dedup-deletes-all-custom-reminders-but-one | done | tickets/done/notification-dedup-deletes-all-custom-reminders-but-one.md |
 | notification-deeplink-accounts-not-parsed | backlog | tickets/backlog/notification-deeplink-accounts-not-parsed.md |
-| notification-delegate-assigned-after-launch | backlog | tickets/backlog/notification-delegate-assigned-after-launch.md |
+| notification-delegate-assigned-after-launch | qa | tickets/qa/notification-delegate-assigned-after-launch.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | onboarding-login-should-match-the-sep15-reference | qa | tickets/qa/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |

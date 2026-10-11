@@ -1645,15 +1645,16 @@
         "Yala/Services/NotificationService.swift",
         "Yala/App/Views/Notifications/NotificationPrimerSheet.swift",
         "Yala/App/Logic/NotificationGateLogic.swift",
-        "Yala/App/Views/Settings/NotificationsSettingsView.swift"
+        "Yala/App/Views/Settings/NotificationsSettingsView.swift",
+        "Yala/App/YalaAppDelegate.swift"
       ],
       "scenarioIDs": [
         "F-NOT-02"
       ],
       "classification": "manual",
-      "coverage": "manual + §5.2.1 (2026-07-21): 2 metodos nuevos para FRONTERAS DE CUENTA — clearDeliveredNotifications() (retira las entregadas del Centro) y clearDeliveredGroupNotifications() (selectivo por userInfo['deepLink'] con prefijo 'groups/', async, best-effort desde un Task desacoplado del boot). cancelAllNotifications() NO se extendio A PROPOSITO: corre dentro de rescheduleAllNotifications, que se ejecuta en cada toggle de Ajustes y en cada ensureNotificationsScheduled del foreground — borrar ahi el historial entregado del usuario seria una regresion visible. Los consumidores son los boot-hooks de sign-out (ver area session-sign-out) y CloudSessionSignOut; cobertura de esos call-sites en unit:YalaTests/CloudSync/SignOutWipeHookTests + SecondarySessionRetirementTests. + guard del choke point isPersonalWipeArmed (private) en sendNotification y scheduleNotification: con un wipe personal armado (signOutWipeArmed || SecondarySessionStore.isWipeArmed — NUNCA groupsOnlyWipeArmed) ambos emisores hacen early-return. Es lo que hace efectiva la capa in-session frente a Tasks no estructurados ya suspendidos. Cobertura: source-scan en SignOutNotificationWiringTests.",
+      "coverage": "manual + §5.2.1 (2026-07-21): 2 metodos nuevos para FRONTERAS DE CUENTA — clearDeliveredNotifications() (retira las entregadas del Centro) y clearDeliveredGroupNotifications() (selectivo por userInfo['deepLink'] con prefijo 'groups/', async, best-effort desde un Task desacoplado del boot). cancelAllNotifications() NO se extendio A PROPOSITO: corre dentro de rescheduleAllNotifications, que se ejecuta en cada toggle de Ajustes y en cada ensureNotificationsScheduled del foreground — borrar ahi el historial entregado del usuario seria una regresion visible. Los consumidores son los boot-hooks de sign-out (ver area session-sign-out) y CloudSessionSignOut; cobertura de esos call-sites en unit:YalaTests/CloudSync/SignOutWipeHookTests + SecondarySessionRetirementTests. + guard del choke point isPersonalWipeArmed (private) en sendNotification y scheduleNotification: con un wipe personal armado (signOutWipeArmed || SecondarySessionStore.isWipeArmed — NUNCA groupsOnlyWipeArmed) ambos emisores hacen early-return. Es lo que hace efectiva la capa in-session frente a Tasks no estructurados ya suspendidos. Cobertura: source-scan en SignOutNotificationWiringTests. + delegado asignado al terminar de lanzar (2026-10-11, ticket notification-delegate-assigned-after-launch): YalaAppDelegate.didFinishLaunching llama NotificationService.installAsCenterDelegate() (unico escritor; el init ya no lo asigna y el paso 1 del bootstrap se retiro) y el cuerpo de didReceive vive en NotificationService.routeTap. unit:YalaTests/NotificationColdLaunchTapTests (centro sin delegado -> didFinishLaunching real -> delegado puesto -> toque con el arranque sin terminar se aplaza en DeferredIntentBuffer -> drenado como .navigate(.scheduledPayments); rojo sin la llamada del app delegate). El toque en frio real es device-QA (guion en el ticket).",
       "owner": "",
-      "lastVerified": "2026-09-16"
+      "lastVerified": "2026-10-11"
     },
     {
       "area": "notifications-settings-crud",
@@ -2968,9 +2969,9 @@
       ],
       "scenarioIDs": [],
       "classification": "manual",
-      "coverage": "unit:gateway/test/apns.sign.test.ts (9: firma ES256/claims, PEM con \\n literales, cache TTL+rotacion keyId, guards 404/401/503/400 via app.request, transportError sin reject) + manual:qa/cloud/pgcrypto-spike-test.sh (staging: round-trip, llave mala sanitizada, hash estable tras rekey, RLS directa+via RPC, variante GUC; auditoria de logs manual impresa al final) + manual:MODO-NUBE-G0-GUION-DEVICE.md (matriz de entrega del silent push, device fisico; pushCard en CloudSyncDebugView). Spike G0 de Grupos->backend: la prueba live HTTP/2 (paso 7 del plan) espera la .p8 del owner. Todo gateado: /v1/debug/push 404 en prod, cliente #if DEBUG/DEV_BUILD, tabla spike_enc staging con cleanup.",
+      "coverage": "unit:gateway/test/apns.sign.test.ts (9: firma ES256/claims, PEM con \\n literales, cache TTL+rotacion keyId, guards 404/401/503/400 via app.request, transportError sin reject) + manual:qa/cloud/pgcrypto-spike-test.sh (staging: round-trip, llave mala sanitizada, hash estable tras rekey, RLS directa+via RPC, variante GUC; auditoria de logs manual impresa al final) + manual:MODO-NUBE-G0-GUION-DEVICE.md (matriz de entrega del silent push, device fisico; pushCard en CloudSyncDebugView). Spike G0 de Grupos->backend: la prueba live HTTP/2 (paso 7 del plan) espera la .p8 del owner. Todo gateado: /v1/debug/push 404 en prod, cliente #if DEBUG/DEV_BUILD, tabla spike_enc staging con cleanup. + 2026-10-11: YalaAppDelegate.didFinishLaunching asigna ademas el delegado de notificaciones (ver area notifications-permissions-delivery); el registro APNs no cambia.",
       "owner": "",
-      "lastVerified": "2026-07-14"
+      "lastVerified": "2026-10-11"
     },
     {
       "area": "groups-backend-g1-server",

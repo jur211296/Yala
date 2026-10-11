@@ -59,7 +59,7 @@ encima, y eso ya no pasa (ticket `entry-to-panel-closes-sheets-of-other-tabs`).
 | Centro de Control: voz e imagen (`ControlCenterIntents`, escriben `pendingControlAction` en el App Group) | `.active` → `checkForPendingControlAction` | Como `voice-entry` / `image-entry` | No se consume; la lee el paso 21b | Sí, la clave del App Group |
 | Enlace de invitación `https://yala-app.pe/invite` | `onOpenURL` → `handleInviteLink` (y `YalaAppDelegate.application(_:continue:)`) | `.showInviteError` (critical), pantallas de unirse (contentView · normal), `.showGroupSyncError` (high) | El camino backend persiste en `PendingJoinStore` y lo retoma el reconciliador | Sí, `PendingJoinStore` |
 | Vuelta de Google Sign-In | `onOpenURL` → `GIDSignIn.handle` | Nada | — | — |
-| Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `deepLink` del `userInfo` | `.navigate(destino)`; `inbox` acaba en la hoja de la Bandeja | Se aplaza | Sí, serializable |
+| Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `routeTap` con el `deepLink` del `userInfo`. El delegado lo asigna `YalaAppDelegate.didFinishLaunching` (`installAsCenterDelegate`), antes de que termine el lanzamiento: así llega también el toque que abre la app cerrada | `.navigate(destino)`; `inbox` acaba en la hoja de la Bandeja | Se aplaza | Sí, serializable |
 | Apple Pay y Siri en lenguaje natural (no abren la app) | Cola del App Group → `InboundCaptureDrain` en el arranque y en cada `.active` | Borradores en la Bandeja → `.showInboxAlert` (contentView · high) | Se encola sin aplazar | Sí, los borradores |
 | Atajos de teclado | `.commands` → `RootCommandPerformer` | ⌘N → `.navigate(.panel)` + `.presentNewTransaction`; el resto, flags de la ventana | Solo en caliente | No |
 | Ventana nueva o restaurada (iPad) | `SceneRoot.land()` | Flags de la ventana (`pendingGroupID`, `pendingRecordID`) | — | — |
@@ -86,9 +86,6 @@ Con ticket en `tickets/backlog/`:
 - `invite-and-app-notices-present-over-other-tab-sheets`: las pantallas de unirse a un grupo (`.contentView`) y los
   avisos de `MainTabView` (prueba expirada, downgrade, hitos) presentan sin mirar si hay una hoja de otra pestaña
   abierta; el arreglo del Panel no los cubre.
-
-- `notification-delegate-assigned-after-launch`: el delegado de notificaciones se asigna en el paso 1 del arranque,
-  después de que el lanzamiento termine; un toque con la app cerrada puede no llegar.
 - `notification-deeplink-accounts-not-parsed`: `ScheduledPaymentNotificationService` manda `deepLink: "accounts"`, que
   `NotificationService.parseDestination` no reconoce; el toque no lleva a ningún sitio.
 - `widget-and-siri-entries-lost-on-background`: voz, imagen y nuevo registro desde un widget o Siri son transitorios y

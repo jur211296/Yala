@@ -196,8 +196,9 @@ final class AppBootstrapper {
         SessionSignInLog.seedIfAbsent(
             sub: CloudAuthService.shared.currentUserID ?? GroupsAccountAssociation.shared.associatedSub)
 
-        // 1. Initialize notification delegate (must be early for foreground display)
-        _ = NotificationService.shared
+        // 1. (Retirado el 2026-10-11.) El delegado de notificaciones ya no se asigna aquí: lo pone
+        //    `YalaAppDelegate.didFinishLaunching`, antes de que termine el lanzamiento, porque desde este `.task` llegaba
+        //    tarde para el toque que abre la app (ticket `notification-delegate-assigned-after-launch`).
 
         // 2. Load exchange rates (required for currency display)
         await loadExchangeRates(context: context)
