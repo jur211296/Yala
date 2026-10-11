@@ -1,10 +1,10 @@
 ---
 id: wipe-data-keeps-groups-but-drops-their-bridged-rows
-status: qa
+status: done
 priority: medium
 area: "groups, settings"
 created: 2026-09-27
-updated: 2026-09-28
+updated: 2026-10-10
 qa-status: needs-testing
 source: "review adversarial de `activation-start-fresh-drops-group-settlement-legs` (2026-09-27, lente de reglas); inferido por lectura, NO reproducido"
 ---
@@ -110,3 +110,7 @@ pagaron.
 ## Barrido de `qa` · 2026-09-28 · se queda para el iPhone
 
 Entra en la lista corta de device-QA (`qa/guion-tanda.md`, bloque F). Es el camino de «Vaciar datos» que un solo iPhone recorre, y si falla, los gastos de grupo desaparecen de tus cuentas. Se prueba con **Yala Dev compilado desde `2.1`**: el arreglo es del 27-sep y el TestFlight 14 no lo lleva. La liquidación del paso 1 es opcional: sin otra persona en el grupo, basta con el gasto que pagaste tú.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: GroupsBridgeRestoreConvergenceBehaviourTests corre contra el bridge real y el wipeAllUserData real, con mutantes; el QA era opcional y obligaba a vaciar un iPhone.

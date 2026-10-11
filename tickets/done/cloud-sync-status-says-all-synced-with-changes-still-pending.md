@@ -1,10 +1,10 @@
 ---
 id: cloud-sync-status-says-all-synced-with-changes-still-pending
-status: qa
+status: done
 priority: medium
 area: "modo-nube, sync, ajustes"
 created: 2026-09-16
-updated: 2026-10-09
+updated: 2026-10-10
 qa-status: needs-testing
 source: "decisión D11 del Paso 0 de `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-16), ampliada por su review adversarial"
 ---
@@ -112,3 +112,7 @@ este build y una cuenta **en la nube** (staging).
 
 Si en el paso 5 sigue saliendo el check verde pasados dos minutos, o en el paso 7 no vuelve, el ticket no pasa: anota
 en qué paso y qué texto salía.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: solo cambia un texto de estado; SyncStatusSectionLogicTests prueba las dos direcciones con recuento sobre store real y plurales en 16 idiomas, con control rojo.

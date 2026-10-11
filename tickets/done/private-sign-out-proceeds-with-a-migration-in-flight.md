@@ -1,10 +1,10 @@
 ---
 id: private-sign-out-proceeds-with-a-migration-in-flight
-status: qa
+status: done
 priority: medium
 area: "sesiones, modo-nube"
 created: 2026-09-27
-updated: 2026-09-27
+updated: 2026-10-10
 qa-status: needs-testing
 source: "review adversarial de `apple-id-change-boot-check-runs-before-the-migration-guard-can-see` (2026-09-26), lentes de fail-open y de cobertura; previo a ese diff"
 ---
@@ -62,3 +62,7 @@ celda y sin el seam llega a soltar la sesión.
 
 **Por qué `qa`.** Una subida EN MARCHA no se puede montar en el simulador (no hay CloudKit ni App Attest). Guion: bloque
 D del `qa/guion-tanda.md`, paso D7 — con la subida parada al 55 % en modo avión, «Cerrar sesión» no borra nada.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: solo bloquea un cierre que borraba; lo fijan PrivateSignOutMigrationGuardTests y el XCUITest SessionExitsPerCellUITests con el seam -uitest-migration-journal-unreadable. Montar una subida en vuelo a mano es difícil.

@@ -1,10 +1,10 @@
 ---
 id: voice-note-parser-prompt-knows-six-currencies
-status: qa
+status: done
 priority: medium
 area: voice, ai, currency
 created: 2026-10-07
-updated: 2026-10-09
+updated: 2026-10-10
 source: banco de text.parse (sesión 2 del gateway de IA, gateway/bench/results/2026-10-07/REPORT-chat-y-nota.md)
 ---
 
@@ -53,3 +53,7 @@ Montaje: build de `Yala Dev` o TestFlight con este cambio, Pro activo y una cuen
 2. Divisa principal **CHF** y una cuenta en CHF. Di «almuerzo 30 francos». Debe salir 30 **CHF**.
 3. Desde el chat de Yala IA, escribe «registra 28 euros e 30 en el súper»: un solo borrador de 28,30 EUR.
 4. (Opcional) Siri: «Oye Siri, anota en Yala 5000 pesos de nafta» con principal USD y una cuenta ARS: 5000 ARS.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: el banco con el modelo de producción da 102/102 sobre los mismos casos del guion, con control rojo (50 % con el prompt viejo), y TranscriptionParserCurrencyTests fija que la petición real lleva la divisa.

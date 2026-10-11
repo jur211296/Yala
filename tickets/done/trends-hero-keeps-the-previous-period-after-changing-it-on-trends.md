@@ -1,10 +1,10 @@
 ---
 id: trends-hero-keeps-the-previous-period-after-changing-it-on-trends
-status: qa
+status: done
 priority: medium
 area: statistics
 created: 2026-10-03
-updated: 2026-10-05
+updated: 2026-10-10
 source: hallazgo de trends-insight-card-v2-bullets (simulador, 2026-10-03)
 ---
 
@@ -97,3 +97,7 @@ puerta?); si sale otra cosa, ticket aparte.
    **Esperado:** el hero cambia con el filtro.
 
 Si en el paso 3 o 6 el hero se queda con lo de antes, el arreglo no llegó a ese build.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: el cálculo no cambia, solo cuándo se dispara; cifras medidas antes y después en simulador, iguales a Resumen, y StatisticsRecalculationTests y StatisticsHeroLikePanelUITests estaban rojos con la puerta vieja.

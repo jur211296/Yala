@@ -1,6 +1,6 @@
 ---
 id: image-note-uses-bank-template-instead-of-merchant
-status: qa
+status: done
 priority: high
 area: "image, pdf, ai, inbox"
 created: 2026-10-10
@@ -54,3 +54,7 @@ Necesita un build con este cambio (TestFlight o Xcode con el scheme `Yala`).
 5. Si puedes, una tercera de otro banco (Interbank, BBVA o Scotiabank) o una página de PDF de tu estado de cuenta.
 6. Pasa si las 2 o 3 notas nombran el comercio o la persona y no traen texto del banco. Si alguna sale mal, una captura
    de la alerta y de la nota basta para el siguiente ajuste.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: el banco de IA alcanza: 24/24 alertas de banco con la nota limpia, el caso de Grok incluido, sin empeorar importe, fecha ni divisa (gateway/bench/results/2026-10-10-nota-despues-v2/REPORT-nota.md).

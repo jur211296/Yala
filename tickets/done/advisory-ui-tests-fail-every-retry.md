@@ -1,10 +1,10 @@
 ---
 id: advisory-ui-tests-fail-every-retry
-status: qa
+status: done
 priority: medium
 area: testing
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-10
 source: card del tablero tablero-ui-tres-tests-de-la-suite-advisory-falla-wsc6 (QA programada de 2.1, run 37485294893)
 ---
 
@@ -117,3 +117,7 @@ Lo que los tests no cubren es el camino de un usuario nuevo DE VERDAD, que no de
    ofrece «¿era de prueba?» (la alerta sale en el Panel, al volver a él), el segundo no.
 
 Si en el paso 2 NO sale la alerta, es regresión de este ticket: anótalo aquí.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: es CI: los tres tests persistentes pasan 9/9 con -test-iterations 3 (EdgeCasesUITests.test_extremeMinimumAmountSaves), la decisión nueva la fija SetupChecklistManagerTests y las nocturnas del 9 y del 10-oct salieron verdes; no necesita a Jürgen.

@@ -1,10 +1,10 @@
 ---
 id: ai-comments-ignore-the-app-language
-status: qa
+status: done
 priority: medium
 area: insights, ai
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-10
 qa-status: needs-testing
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H1)
 ---
@@ -69,3 +69,7 @@ mira lo que ve casi todo el mundo.
 4. Vuelve a Ajustes del iPhone → Yala → Idioma → **Deutsch**, abre Yala y repite 2 y 3: todo en **alemán**, sin palabras
    sueltas en español («gasto», «presupuesto») y sin el comentario en inglés de antes.
 5. Devuelve el idioma de Yala al que tenías.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: el banco de IA da 100 % en 14 idiomas en las tres tareas (gateway/bench/results/2026-10-07-idioma) e InsightsResponseLanguageTests fija la petición real; no toca dinero ni datos.

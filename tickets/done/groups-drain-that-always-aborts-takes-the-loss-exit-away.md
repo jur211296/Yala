@@ -1,10 +1,10 @@
 ---
 id: groups-drain-that-always-aborts-takes-the-loss-exit-away
-status: qa
+status: done
 priority: low
 area: "grupos, sync, modo-nube"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-10
 source: "encargo `personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy` (2026-10-05): mirar el gemelo de Grupos"
 ---
 
@@ -80,3 +80,7 @@ TestFlight y una cuenta con grupos, es que el camino normal no cambió:
    momento, sin pasar por ningún aviso de grupos.
 
 Sin capturas: el cambio solo se ve con el fallo inyectado, y los avisos que vuelven a salir son los de siempre.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: el atasco solo se provoca con un fallo inyectado; lo fijan GroupsStuckDrainLossExitTests y FreshStartGroupsLossExitTests, y el guion de iPhone solo miraba caminos que no cambiaron.

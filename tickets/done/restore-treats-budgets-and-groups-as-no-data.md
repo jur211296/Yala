@@ -1,10 +1,10 @@
 ---
 id: restore-treats-budgets-and-groups-as-no-data
-status: qa
+status: done
 priority: medium
 area: "welcome, icloud, restore"
 created: 2026-09-20
-updated: 2026-09-23
+updated: 2026-10-10
 source: "medición durante `restore-says-no-data-when-the-icloud-import-never-settled` (2026-09-20): al buscar la población de `.notFound` concluyente apareció que es EXACTAMENTE ésta"
 ---
 
@@ -289,3 +289,7 @@ El simulador no sirve para los pasos 1-3: **CloudKit no existe ahí**. Los pasos
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con mirar las tarjetas de «Encontramos tus datos» durante el bloque B y decir si la quinta, sola en su fila, se ve mal.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: la lógica la fijan RestoreDataPresenceWiringTests e ICloudAccountSummaryTests con 21 mutantes y no borra nada; la quinta tarjeta se ve de paso en el QA de restore-start-fresh-keeps-the-imported-corpus.

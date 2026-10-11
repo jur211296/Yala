@@ -1,10 +1,10 @@
 ---
 id: welcome-adopt-cancel-dialog-says-from-here
-status: qa
+status: done
 priority: low
 area: "modo-nube, onboarding, adopt, copy"
 created: 2026-09-23
-updated: 2026-10-06
+updated: 2026-10-10
 source: "review adversarial de `welcome-adopt-effect-failure-has-no-reason-and-no-cancel` (2026-09-23), lente de SwiftUI y copy"
 ---
 
@@ -65,3 +65,7 @@ Montaje: instala el build en un iPhone sin Yala (o borra la app) y deja la red e
 
 Si el paso 2 llega tarde (la barra termina en segundos), repite con la red lenta (Ajustes → Desarrollador → Network Link
 Conditioner, «Very Bad Network»).
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: cambio de texto fijado por WelcomeAdoptExitTests en las 8 combinaciones y en los 16 idiomas; montarlo pide cancelar a tiempo con una cuenta real y red lenta.

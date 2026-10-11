@@ -1,10 +1,10 @@
 ---
 id: personal-clock-ahead-wins-every-conflict-until-real-time-catches-up
-status: qa
+status: done
 priority: low
 area: "modo-nube, sync"
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-10-10
 source: "`personal-clock-rollback-wedges-the-drain-forever` (2026-09-26): el precio del arreglo, gemelo personal de `groups-clock-ahead-wins-every-conflict-until-real-time-catches-up`"
 ---
 
@@ -90,3 +90,7 @@ encendido al empezar.
 7. **Esperado:** A y B muestran el cambio de B. Antes del arreglo, A seguía mostrando el suyo y B el suyo, o el de B
    desaparecía en el siguiente refresco.
 8. Repite 1-3 y, sin esperar, en A cámbialo dos veces seguidas («A1» y luego «A2»): tiene que quedar «A2» (orden propio).
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: evidencia fuerte de servidor (banco 33/33, sonda de staging 4/4, migración hlc01 aplicada en producción el 2026-10-07) y ClockAheadServerCapTests en el cliente; adelantar la hora de un iPhone es un caso remoto.

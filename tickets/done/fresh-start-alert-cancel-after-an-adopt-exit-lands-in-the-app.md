@@ -1,10 +1,10 @@
 ---
 id: fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app
-status: qa
+status: done
 priority: medium
 area: "onboarding, modo-nube"
 created: 2026-10-06
-updated: 2026-10-07
+updated: 2026-10-10
 source: "hallazgo de `fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes` (leído en el código el 2026-10-06, sin ejecutar)"
 ---
 
@@ -80,3 +80,7 @@ se pueda empezar a entrar.
 4. Toca «Es mi primera vez» → «Privacidad total». Sale «¿Borrar todo y continuar?».
 5. Toca «Cancelar». **Esperado:** vuelves a la elección privado/nube. **Mal:** aterrizas dentro de la app.
 6. El «OK» del aviso de fallo no se puede forzar en un iPhone: lo cubre su XCUITest con `-uitest-fail-wipe`.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: es navegación y no borra nada; dos XCUITest de WelcomeFreshStartAlertUITests ejercitan el aviso y sus botones de producción con el seam -uitest-welcome-after-adopt-exit. El QA del ticket hermano lo vuelve a mirar de paso.

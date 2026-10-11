@@ -1,10 +1,10 @@
 ---
 id: groups-stuck-drain-on-a-healthy-phone-says-try-again-later
-status: qa
+status: done
 priority: low
 area: "grupos, sync, copy"
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-10
 source: "review adversarial de `groups-drain-that-always-aborts-takes-the-loss-exit-away` (2026-10-05, lente 3)"
 ---
 
@@ -79,3 +79,7 @@ con grupos, es que lo de alrededor no cambió:
 
 Sin capturas: el aviso nuevo solo se ve con el fallo inyectado, y forzarlo pediría un atajo de depuración en el coordinador
 del cierre que nadie pidió.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: solo cambia un texto, en un estado que no se provoca sin fallo inyectado; lo fija GroupsStuckDrainHealthyPhoneCopyTests en 16 idiomas.

@@ -1,10 +1,10 @@
 ---
 id: suggestions-rewriter-drops-german-and-polish-rewrites
-status: qa
+status: done
 priority: medium
 area: chat, ai, l10n
 created: 2026-10-07
-updated: 2026-10-09
+updated: 2026-10-10
 qa-status: needs-testing
 source: banco de chat.rewrite (sesión 2 del gateway de IA, gateway/bench/results/2026-10-07/REPORT-chat-y-nota.md)
 ---
@@ -87,3 +87,7 @@ staging. La lógica la cubren los tests y el banco; esto confirma que llega a la
 5. Si hoy ya abriste el chat en alemán, las sugerencias vienen de la caché del día: repite mañana o cambia a otro
    idioma y vuelve a Deutsch.
 6. Repite los pasos 2–4 con **Polski**. Vuelve a tu idioma al terminar.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: validador puro cubierto por SuggestionsRewriterServiceTests y por el banco con el modelo de producción (alemán 6/6, polaco 9/9, 0 sugerencias inventadas).

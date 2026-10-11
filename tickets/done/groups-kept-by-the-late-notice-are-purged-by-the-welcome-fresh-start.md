@@ -1,8 +1,8 @@
 ---
 id: groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start
-status: qa
+status: done
 priority: low
-updated: 2026-10-06
+updated: 2026-10-10
 qa-status: pending
 area: "onboarding, groups"
 created: 2026-09-27
@@ -98,3 +98,7 @@ Hace falta un Apple ID con datos viejos de Yala en iCloud y estar en un grupo (o
 6. «Empezar» → «Es mi primera vez» → privado.
 7. **Comprueba**: va directo al onboarding, sin «Empezar desde cero / Detectamos datos previos». Termínalo y abre
    Grupos: el grupo sigue ahí con sus saldos, sin pedirte iniciar sesión.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: edge case remoto (aviso tardío + cancelar + elegir privado) de prioridad baja; el cambio solo quita un borrado, lo cubre el XCUITest WelcomeLateNoticeKeptGroupsUITests y la card ya marcaba el QA como opcional.

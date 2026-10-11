@@ -1,10 +1,10 @@
 ---
 id: restore-says-no-data-when-the-icloud-import-never-settled
-status: qa
+status: done
 priority: high
 area: "welcome, icloud, restore"
 created: 2026-09-17
-updated: 2026-09-23
+updated: 2026-10-10
 source: "review adversarial de `reinstall-without-network-has-no-cloud-door` (lente de poblaciones), 2026-09-17"
 ---
 
@@ -223,3 +223,7 @@ fuerza un error de red, no uno terminal de cuota o cuenta gestionada, que no se 
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los pasos 1 y 2 con el Network Link Conditioner (paso B2 del guion). El paso 3 se intenta al principio del bloque A, antes de crear datos, si el iCloud de Yala Dev está vacío; si no lo está, lo cubre `RestoreStartFreshGateTests`.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: solo añade una confirmación y un texto que no niega datos: reduce el riesgo de borrado. Montarlo pide dos Apple ID y red degradada; RestoreImportSettlementTests y RestoreStartFreshGateTests con mutantes. La puerta se ve en el QA de restore-start-fresh-keeps-the-imported-corpus.

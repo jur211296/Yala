@@ -1,10 +1,10 @@
 ---
 id: apple-id-change-check-stays-off-after-a-failed-migration
-status: qa
+status: done
 priority: low
 area: "sesiones, modo-nube"
 created: 2026-09-27
-updated: 2026-10-06
+updated: 2026-10-10
 qa-status: needs-testing
 source: "review adversarial de `apple-id-change-boot-check-runs-before-the-migration-guard-can-see` (2026-09-26), lente de falso bloqueo"
 ---
@@ -111,3 +111,7 @@ Hace falta Yala compilado desde `2.1` (con este cambio), en iCloud y sin ninguna
 Si algún día un teléfono real se queda con una tarjeta «No pudimos activar la nube…» y el botón «Reintentar» en
 Almacenamiento: desde este cambio, «Cerrar sesión» en Ajustes ya no responde «El paso de tus datos entre iCloud y la nube
 todavía no terminó» (salvo en el primer arranque tras el fallo, si quedó algo por deshacer).
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: la migración fallida no se provoca a mano (techo de 15 min o 72 h); la cubren el XCUITest SessionExitsPerCellUITests con el seam -uitest-migration-failed y AppleIDChangeFailedMigrationCloseTests con un mutante por término. El guion de iPhone era opcional.

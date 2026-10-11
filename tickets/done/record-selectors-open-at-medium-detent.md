@@ -1,10 +1,10 @@
 ---
 id: record-selectors-open-at-medium-detent
-status: qa
+status: done
 priority: medium
 area: "transactions, groups, ui"
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-10
 source: encargo 2026-10-04-en-un-registro-nuevo-cuenta-etiquetas-y-xs4y (Jürgen, antes del QA del lunes)
 ---
 
@@ -48,3 +48,7 @@ abren igual: media altura, estirable a grande.
    media altura. Toca «Detalles» → Cuenta: también media altura.
 9. Ajustes de iOS → Accesibilidad → Tamaño de texto → el máximo con «Tamaños más grandes». Repite el paso 2: abre
    grande.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: medido en simulador con capturas antes y después (PR #349) y fijado por el XCUITest TransactionsCrudUITests.test_recordSelectorsOpenAtMediumDetent; la card ya era de Frank.

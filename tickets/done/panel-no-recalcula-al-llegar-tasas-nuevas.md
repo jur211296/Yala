@@ -1,10 +1,10 @@
 ---
 id: panel-no-recalcula-al-llegar-tasas-nuevas
-status: qa
+status: done
 priority: medium
 area: panel/currency
 created: 2026-09-07
-updated: 2026-10-09
+updated: 2026-10-10
 source: review adversarial de fx-pnl-education-card (2026-09-07)
 ---
 
@@ -77,3 +77,7 @@ Hace falta un día en el que la tasa de hoy aún no esté en el teléfono, y que
 5. **Esperado**: en uno o dos segundos el «≈» del saldo desaparece y el importe cambia a la tasa de hoy,
    sin tocar nada más. **Antes del arreglo** el «≈» se quedaba hasta tocar un filtro o volver a segundo
    plano.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: no cambia cómo se calcula el saldo, solo cuándo; PanelWakesOnNewRatesTests y PanelApproximateMarkClearsTests salen rojos con el código viejo, y el estado depende de que iOS no mate la app de noche.

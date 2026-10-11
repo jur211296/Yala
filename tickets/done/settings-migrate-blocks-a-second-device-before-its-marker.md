@@ -1,10 +1,10 @@
 ---
 id: settings-migrate-blocks-a-second-device-before-its-marker
-status: qa
+status: done
 priority: high
 area: "modo-nube, settings"
 created: 2026-09-16
-updated: 2026-10-09
+updated: 2026-10-10
 qa-status: needs-testing
 source: "review adversarial de `settings-migrate-to-cloud-adopts-silently-instead-of-migrating` (Paso 0 · D14: Jürgen, ticket aparte), 2026-09-16"
 ---
@@ -152,3 +152,7 @@ desplegado en producción.
 
 Si en el paso 3 sale el texto viejo: puede que el faro de iCloud-KV aún no haya llegado a B (tarda segundos, a veces minutos).
 Cierra la hoja, espera un minuto y vuelve a tocar.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: solo cambia el texto de un bloqueo que ya existía: StorageMigrationIdentityGateLogicTests fija que ninguna cuenta recibe una migración nueva y el gateway tiene humo en staging y producción; la carrera con dos iPhone es muy difícil de montar.

@@ -1,6 +1,6 @@
 ---
 id: wipe-copy-reads-one-axis-while-the-sheet-reads-two
-status: qa
+status: done
 priority: medium
 area: "sesiones, settings, copy"
 created: 2026-09-13
@@ -95,3 +95,7 @@ divergente; el guion comprueba que las alcanzables no retroceden.
    repite 2-4. El párrafo debe hablar de restablecer perfil y preferencias, y la hoja decir que los
    grupos no se tocan. Cancela.
 6. Si ambos casos cuadran, el ticket pasa a `done`.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: solo cambia de dónde sale un texto, no qué se borra; la única celda que cambia no se monta a mano y la cubre WipeDescriptionParityTests con control rojo.

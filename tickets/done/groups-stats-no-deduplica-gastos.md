@@ -1,10 +1,10 @@
 ---
 id: groups-stats-no-deduplica-gastos
-status: qa
+status: done
 priority: medium
 area: "groups, stats"
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-10-10
 qa-status: needs-testing
 source: hallazgo de la review adversarial de groups-budget (2026-09-07)
 ---
@@ -97,3 +97,7 @@ No se puede forzar un duplicado a mano. Esto comprueba que no se rompió nada:
 - «Mi parte» suma los repartos (`SplitShare`) sin deduplicarlos por su propio `id`: un reparto
   repetido la dobla. Es el mismo hueco que `group-balance-service-shares-not-deduped`, y allí queda
   anotado.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: un duplicado por id solo lo crea un merge del sync y no se provoca a mano; GroupStatsViewModelTests (5 nuevos, rojos con el código viejo: 2.630 frente a 2.150) y un mutante fijan que el total cuadra. QA marcado opcional.

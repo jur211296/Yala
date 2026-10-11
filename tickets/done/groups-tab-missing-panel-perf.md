@@ -1,10 +1,10 @@
 ---
 id: groups-tab-missing-panel-perf
-status: qa
+status: done
 priority: high
 area: "groups, performance, cloudkit"
 created: 2026-04-17
-updated: 2026-10-05
+updated: 2026-10-10
 qa-status: needs-testing
 qa-notes: falta el guion de dos aparatos de la seccion 2026-10-05; el codigo y sus tests estan hechos
 source: YalaWiki/Bugs/qa_groups-tab-no-perf-patterns.md
@@ -571,3 +571,7 @@ algo que se pueda mirar:
   `:243`), pendiente de volver a decidirse.
 
 Coordenadas medidas por un lector del barrido sobre `2.1` @ `bebd57a57`.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: rendimiento puro: RecalculationDebouncerTests y GroupsCoalescedRecalculationTests (104 tests, 18 mutantes muertos) fijan el freno; el guion de dos aparatos se leía en la consola de Xcode, no es validación de Jürgen.

@@ -1,10 +1,10 @@
 ---
 id: personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy
-status: qa
+status: done
 priority: low
 area: "modo-nube, sync, copy"
 created: 2026-09-26
-updated: 2026-10-05
+updated: 2026-10-10
 source: "review adversarial de `personal-sign-out-reads-an-unfinished-drain-as-nothing-pending` (2026-09-26, lente del cierre)"
 ---
 
@@ -81,3 +81,7 @@ no deja guardar. Lo que sí se puede mirar, con un build de TestFlight y una cue
 
 El texto nuevo («Algunos de tus últimos cambios no se pudieron preparar…») solo se ve con el fallo inyectado; lo fijan los
 tests unitarios (`CloudStuckDrainPersonalLossLogicTests`, los `signOutPushAll_*` de `CloudSyncRuntimeTests`).
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: el caso no se provoca sin fallo inyectado; lo fijan CloudStuckDrainPersonalLossLogicTests y los signOutPushAll_* de CloudSyncRuntimeTests, y el cierre normal se ve en cualquier otro QA de nube.

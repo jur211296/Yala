@@ -1,6 +1,6 @@
 ---
 id: shared-scheduled-expense-shows-twice-in-inbox
-status: qa
+status: done
 priority: high
 area: "inbox, grupos, pagos-programados"
 created: 2026-10-10
@@ -73,3 +73,7 @@ importe y la misma fecha, pidiéndote que elijas la categoría. La categoría ya
    categoría del pago.
 5. Si antes tenías alguno de esos borradores «elige categoría» de un gasto planificado, tras abrir la app ya no
    está, y su movimiento tiene la categoría del pago.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: GroupScheduledExpenseSingleDraftTests reproduce el doble borrador (rojo en 2.1, verde con el arreglo) y el barrido de lo viejo es idempotente y con control; Jürgen lo verá en su uso diario.

@@ -1,7 +1,7 @@
 ---
 id: ipad-drop-unreadable-file-fails-silently
-status: qa
-updated: 2026-10-07
+status: done
+updated: 2026-10-10
 qa-status: needs-testing
 priority: low
 area: "image"
@@ -66,3 +66,7 @@ Pasos:
 - [[keyboard-shortcut-command-f-uitest-goes-red-on-a-used-ipad-simulator]]
 - [[declining-ai-consent-keeps-a-dropped-or-shared-photo-pending]]
 - [[image-entry-uitests-save-stays-off-for-a-complete-record]]
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: prioridad baja y cubierto por ReceiptDropHandlerTests y el XCUITest ReceiptDropUITests, que suelta por el manejador real.

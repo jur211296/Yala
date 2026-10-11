@@ -1,7 +1,7 @@
 ---
 id: group-expense-views-redesign
-status: qa
-updated: 2026-10-04
+status: done
+updated: 2026-10-10
 priority: medium
 area: "groups"
 created: 2026-10-04
@@ -100,3 +100,7 @@ grupo lo ven todos los miembros, y C hace fácil cambiarlo sin querer.
   balanceo) no cambia.
 - XCUITest que fijan el flujo actual: `GroupsSmokeUITests` (`group_expense_detail_edit`,
   `group_expense_split_chip`, `group_expense_paidby_chip`, `group_expense_twoperson_chip`).
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: Jürgen aprobó el rediseño sobre capturas (propuesta B «con aire», 2026-10-04); la lógica de reparto no cambia y GroupsSmokeUITests fija el flujo.

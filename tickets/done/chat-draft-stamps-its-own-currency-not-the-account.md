@@ -1,10 +1,10 @@
 ---
 id: chat-draft-stamps-its-own-currency-not-the-account
-status: qa
+status: done
 priority: medium
 area: "chat, currency"
 created: 2026-09-08
-updated: 2026-09-23
+updated: 2026-10-10
 source: review adversarial de chat-draft-drops-the-expense-sign (2026-09-08)
 ---
 
@@ -150,3 +150,7 @@ cuenta cambia la etiqueta del monto **a la vista**, antes de guardar.
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el bloque A del guion (dictar en dólares sobre una cuenta en soles).
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: ChatDraftAccountCurrencyTests con 7 mutantes rojos, incluida la coherencia del tipo de cambio; la parte visible la mira el paso 3 del QA de la tarjeta del chat.

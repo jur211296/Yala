@@ -1,10 +1,10 @@
 ---
 id: distribution-subviews-miss-the-new-panel-hero
-status: qa
+status: done
 priority: medium
 area: "panel, statistics"
 created: 2026-09-09
-updated: 2026-10-04
+updated: 2026-10-10
 qa-status: needs-testing
 source: idea Jürgen 2026-09-09
 ---
@@ -106,3 +106,7 @@ Montaje: build de TestFlight o `Yala Dev` desde Xcode en tu iPhone, con datos de
 8. **Planificación → Pagos planificados**: «Total del mes · Este mes» arriba a la izquierda y la cifra debajo.
 
 Falla si en algún punto la cabecera sale centrada, si falta el rótulo o si en alguna pestaña no están los dos botones.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: lo cubre el XCUITest StatisticsHeroLikePanelUITests y Jürgen ya vio el hero nuevo en su iPhone (reporte del hueco del 10-oct, arreglado en el PR #449); ninguna cifra cambia.

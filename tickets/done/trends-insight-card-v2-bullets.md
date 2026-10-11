@@ -1,10 +1,10 @@
 ---
 id: trends-insight-card-v2-bullets
-status: qa
+status: done
 priority: medium
 area: stats
 created: 2026-05-13
-updated: 2026-10-03
+updated: 2026-10-10
 source: YalaWiki/Backlog/trends-insight-card-v2-bullets.md
 ---
 
@@ -366,3 +366,7 @@ La respuesta real de la IA no se puede probar en simulador (App Attest). Lo dem�
 
 Hallazgos abiertos en ticket aparte: `trends-hero-keeps-the-previous-period-after-changing-it-on-trends`,
 `trends-insight-title-capitalizes-the-period-mid-sentence`.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: las viñetas por reglas las cubre TrendsInsightCardUITests y la respuesta real de la IA pasó el banco al 100 % con el cuerpo exacto de la app; lo que queda (regenerar, sin red, AX5) es de riesgo bajo.

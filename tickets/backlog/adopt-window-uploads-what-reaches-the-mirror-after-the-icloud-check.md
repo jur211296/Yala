@@ -1,10 +1,10 @@
 ---
 id: adopt-window-uploads-what-reaches-the-mirror-after-the-icloud-check
-status: qa
+status: backlog
 priority: medium
 area: "modo-nube, migración"
 created: 2026-09-25
-updated: 2026-10-05
+updated: 2026-10-10
 qa-status: needs-testing
 source: "residual y review adversarial (lente de bypass) de `adopt-on-an-empty-store-uploads-what-the-mirror-imports-before-the-relaunch`, 2026-09-25"
 ---
@@ -149,3 +149,7 @@ nube de PRUEBAS y un iPhone de pruebas, nunca tus datos reales.**
      más estrecho de lo que el ticket temía.
 5. Limpieza: borra la cuenta de nube de pruebas (Ajustes → «Tu cuenta de Yala» → «Eliminar mi cuenta») y cierra sesión
    de iCloud en ese iPhone.
+
+## Barrido de QA (2026-10-10)
+
+Vuelto a backlog en el barrido de QA 2026-10: el canario (decisión A) está en 2.1 y no cambia lo que sube, así que no necesita device-QA; el montaje (dos Apple ID y un iPhone sin iCloud) es muy difícil y el número lo dará la flota tras el lanzamiento. Queda abierta la política (no subir, pedir prueba o avisar), que Jürgen decide con esos números.

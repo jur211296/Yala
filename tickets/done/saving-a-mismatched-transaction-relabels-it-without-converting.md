@@ -1,10 +1,10 @@
 ---
 id: saving-a-mismatched-transaction-relabels-it-without-converting
-status: qa
+status: done
 priority: medium
 area: "transactions, currency, fx"
 created: 2026-09-08
-updated: 2026-10-08
+updated: 2026-10-10
 source: barrido de chat-draft-stamps-its-own-currency-not-the-account (2026-09-08)
 ---
 
@@ -100,3 +100,7 @@ cierra con los tests (`MismatchedTransactionSaveTests`).
 1. Abre ese movimiento: el importe sale con el símbolo de SU divisa (p. ej. «$ 50» en una cuenta en soles).
 2. Guardar sin tocar nada › en Registros el importe y su símbolo no cambian.
 3. Ábrelo otra vez, cambia el importe › Guardar: queda con el símbolo que enseñaba la pantalla.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: ninguna ruta ni seed crea hoy una fila desemparejada; MismatchedTransactionSaveTests (rojo con el guardado viejo) fija que se conserva importe y divisa, como prevé el propio ticket.

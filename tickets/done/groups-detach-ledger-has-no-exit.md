@@ -1,6 +1,6 @@
 ---
 id: groups-detach-ledger-has-no-exit
-status: qa
+status: done
 priority: medium
 area: "groups, modo-nube"
 created: 2026-09-11
@@ -88,3 +88,7 @@ Mutantes: 14, y los 14 mueren. El M01 es el código de antes, es decir, el hueco
 5. Cierra la app del todo (deslizar en el selector de apps) y ábrela otra vez.
 6. **PASS:** el gasto del grupo vuelve a pedir su movimiento personal (borrador en el Inbox o movimiento en Registros).
    **FAIL:** no vuelve nada.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: edge case remoto (desasociar, conservar, reasociar y borrar a mano) con evidencia fuerte: GroupsDetachedLedgerExitTests, 18 casos contra el bridge real con stores en disco y 14 mutantes muertos.

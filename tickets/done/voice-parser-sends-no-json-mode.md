@@ -1,10 +1,10 @@
 ---
 id: voice-parser-sends-no-json-mode
-status: qa
+status: done
 priority: medium
 area: voice, chat, ai
 created: 2026-10-07
-updated: 2026-10-09
+updated: 2026-10-10
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H5)
 ---
 
@@ -69,3 +69,7 @@ pasa: el gateway no registra nada (ver `gateway-does-not-record-ai-token-usage`)
 
 Lo cubre el guion de `voice-note-parser-prompt-knows-six-currencies`: si los cuatro pasos registran sin «no pude
 entenderlo», el modo estricto funciona en producción.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: estructura de respuesta del gateway, medida con el banco en producción (0 respuestas ilegibles en 102); una respuesta mal formada no se provoca a mano.

@@ -1,10 +1,10 @@
 ---
 id: reverse-upload-unreadable-sample-waits-the-long-ceiling
-status: qa
+status: done
 priority: low
 area: "modo-nube, migración"
 created: 2026-09-23
-updated: 2026-10-06
+updated: 2026-10-10
 qa-status: needs-testing
 source: "decisión aparcada de `an-incomplete-inventory-reads-as-the-whole-corpus` (2026-09-23, cola nocturna)"
 ---
@@ -106,3 +106,7 @@ cambio `cloudReverseUploadAborted` con detalle `localFailure` dice cuántos sale
 
 - `an-incomplete-inventory-reads-as-the-whole-corpus`.
 - `reverse-upload-has-no-ceiling-and-no-exit` — el techo de esta espera.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: la base ilegible no se provoca a mano; la cubren MigrationRunnerTests §13-ter y ReverseUploadCeilingLogicTests, y la vuelta normal se ve en el QA de reverse-cutover-cerrado-para-cuentas-born-cloud.

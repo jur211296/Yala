@@ -1,10 +1,10 @@
 ---
 id: late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud
-status: qa
+status: done
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-27
-updated: 2026-10-04
+updated: 2026-10-10
 qa-status: needs-testing
 source: "review adversarial de `private-gate-back-from-found-keeps-a-resumed-arm` (2026-09-27, lente del arranque); leído en código, la ventana NO reproducida"
 ---
@@ -97,3 +97,7 @@ ticket describe y no se pudo provocar a mano.
 
 - [[private-gate-back-from-found-keeps-a-resumed-arm]]
 - [[late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed]]
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: el estado real (borrado de iCloud atascado al activar la nube) es muy difícil de provocar y el guion admite que puede no salir; el diálogo lo cubre el XCUITest PendingICloudWipeMigrationUITests y el cambio solo pregunta o aplaza un borrado, nunca borra más.

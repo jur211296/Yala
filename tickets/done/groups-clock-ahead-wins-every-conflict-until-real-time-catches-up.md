@@ -1,10 +1,10 @@
 ---
 id: groups-clock-ahead-wins-every-conflict-until-real-time-catches-up
-status: qa
+status: done
 priority: low
 area: "groups, sync"
 created: 2026-09-26
-updated: 2026-10-08
+updated: 2026-10-10
 source: "review adversarial de `groups-clock-rollback-wedges-the-drain-forever` (2026-09-26), lentes HLC y regresión"
 ---
 
@@ -84,3 +84,7 @@ con «Ajuste automático» de la hora encendido al empezar.
 7. **Esperado:** A y B muestran el cambio de B. Antes del arreglo, A seguía mostrando el suyo y B el suyo, o el de B
    desaparecía en el siguiente refresco.
 8. Repite 1-3 y, sin esperar, en A cambia ese gasto dos veces seguidas: tiene que quedar el segundo importe (orden propio).
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: evidencia fuerte de servidor: banco qa/cloud/hlc01-cap-test.sh 33/33 con la función real y 9 mutantes, sonda de staging 4/4 y migración hlc01 aplicada en staging y producción el 2026-10-07; un teléfono con la hora adelantada es un caso remoto.

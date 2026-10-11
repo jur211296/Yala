@@ -1,10 +1,10 @@
 ---
 id: archived-accounts-still-count-in-the-panel-total
-status: qa
+status: done
 priority: medium
 area: "accounts, panel, balance"
 created: 2026-10-03
-updated: 2026-10-03
+updated: 2026-10-10
 source: hallazgo de panel-accounts-redesign, 2026-10-03
 ---
 
@@ -49,3 +49,7 @@ Jürgen: lo que decide si una cuenta suma o se cuenta es «Excluir de las estad�
 7. En el Panel: el total ya no incluye esa cuenta y dice una cuenta menos.
 8. Vuelve a la cuenta (Perfil → Cuentas → **Archivadas** → la cuenta), apaga «Excluir de las estadísticas» y guarda.
    El Panel vuelve a sumarla y a contarla, y la cuenta sigue archivada.
+
+## Barrido de QA (2026-10-10)
+
+Cerrado en el barrido de QA 2026-10: no calcula importes nuevos (reusa «Excluir de estadísticas»); lo cubren PanelTotalAccountsLogicTests y el XCUITest AccountsCrudUITests.test_archivingAccount_turnsOnExcludeAndShowsNotice, que recorre el flujo real.
