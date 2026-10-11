@@ -228,6 +228,22 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     const r = summarize(legs, lk, period, { ...ctx, groups });
     expect(r.sin_categoria).toEqual({ movimientos: 1, importe_absoluto: 100 });
   });
+
+  it("sin categoría: tu parte guardada con otra divisa principal se reconvierte, como en la app", () => {
+    const groupsAcc = uuid(2005);
+    const lk = buildLookup({ accounts: [account({ sync_id: acc }), account({ sync_id: groupsAcc, is_system_account: true })] });
+    // Las dos patas se guardaron cuando la principal era USD y no se recalcularon: tu parte (100 USD) vale
+    // 100 × 3,40 = 340 PEN, no 100.
+    const usd = { currency_code: "USD", preferred_currency_code: "USD" };
+    const legs = [
+      tx({ ...base, ...usd, amount: -300, amount_in_preferred_currency: -300, split_expense_id: "s3" }),
+      tx({ ...base, ...usd, account_ref: groupsAcc, category_ref: uuid(2998), amount: 200, amount_in_preferred_currency: 200, split_expense_id: "s3" }),
+    ];
+    const groups = buildGroupAdjustment(legs, lk.accounts, lk.subcategories);
+    const r = summarize(legs, lk, period, { ...ctx, groups });
+    expect(r.sin_categoria.movimientos).toBe(1);
+    expect(r.sin_categoria.importe_absoluto).toBeCloseTo(340);
+  });
 });
 
 describe("presupuestos (port de BudgetsViewModel.calculateSpending)", () => {

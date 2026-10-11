@@ -1,10 +1,10 @@
 ---
 id: yala-ia-context-sums-stored-amounts-from-other-preferred-currencies
-status: backlog
+status: done
 priority: low
 area: "currency, ai"
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 source: barrido de stats-aggregators-sum-stored-amounts-from-other-preferred-currencies (2026-10-10)
 ---
 
@@ -33,5 +33,18 @@ con Estadísticas.
 
 ## Criterio de hecho
 
-- [ ] Los tres sitios resuelven en la divisa vigente.
-- [ ] Test con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+- [x] Los tres sitios resuelven en la divisa vigente.
+- [x] Test con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+
+## Cierre (2026-10-11)
+
+- Sugerencias del chat: las sumas del mes salen a `ChatSuggestionsLLMService.monthSums` y resuelven cada fila
+  con `CashFlowCalculator.resolvedAmount` (`adjustment: .none`, como antes).
+- Contexto y anomalías: solo la rama de la pata real de un gasto de grupo pasa a `resolvedAmount`; el resto
+  sigue con `chatAmount`, que ya miraba la divisa. La réplica TS del conector (`mcp/src/logic/summary.ts`,
+  `chatMagnitude`) hace lo mismo, con su test en `mcp/test/logic.test.ts`. El golden de paridad no se movió:
+  no compara ese campo.
+- Tests: `YalaTests/AIAndHealthPreferredCurrencyTests` (mezcla y una sola divisa por superficie), control
+  rojo con la producción vieja y mutante «reconvierte siempre».
+- Hallazgos con ticket propio: `chat-suggestions-context-counts-the-whole-group-expense` y
+  `chat-top-transactions-per-subcategory-rank-by-native-amount`.

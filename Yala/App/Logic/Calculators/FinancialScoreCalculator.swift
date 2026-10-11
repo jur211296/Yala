@@ -397,7 +397,13 @@ enum FinancialScoreCalculator {
         )
 
         // 2. Carga
-        let income = sumIncomeTransactions(transactions, interval: cmtInterval, adjustment: adjustment)
+        let income = sumIncomeTransactions(
+            transactions,
+            interval: cmtInterval,
+            currencyCode: preferredCurrencyCode,
+            adjustment: adjustment,
+            converter: converter
+        )
         let loadScore = computeLoadScore(
             commitmentsTotal: pendingTotal, income: income
         )
@@ -496,9 +502,18 @@ enum FinancialScoreCalculator {
 
     /// Suma ingresos del período (excluye balance adjustments). Income-aware: suprime las patas
     /// de préstamo derivadas del bridge de grupos (ingreso fantasma +lent) y netea la pata real.
-    private static func sumIncomeTransactions(
-        _ transactions: [TransactionItem], interval: DateInterval,
-        adjustment: GroupBridgeStatsAdjustment
+    ///
+    /// Cada fila se resuelve con `CashFlowCalculator.resolvedAmount`, la regla de Estadísticas: una
+    /// fila guardada con otra divisa principal (cambio de divisa sin recalcular) se reconvierte a
+    /// `currencyCode` con la tasa de su día. Sumar su `amountInPreferredCurrency` tal cual mezclaba
+    /// dos escalas en el denominador de la carga de Compromisos.
+    /// Interno (no privado) para poder probarlo sin montar pagos programados.
+    static func sumIncomeTransactions(
+        _ transactions: [TransactionItem],
+        interval: DateInterval,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting
     ) -> Double {
         transactions
             .filter {
@@ -507,7 +522,11 @@ enum FinancialScoreCalculator {
                     && ($0.category?.isIncome ?? false)
                     && !adjustment.isSuppressed($0)
             }
-            .reduce(0) { $0 + abs(adjustment.amountInPreferredCurrency($1)) }
+            .reduce(0) {
+                $0 + abs(CashFlowCalculator.resolvedAmount(
+                    $1, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value)
+            }
     }
 
     /// Itera occurrences mes por mes dentro del intervalo, filtrando al rango exacto.
