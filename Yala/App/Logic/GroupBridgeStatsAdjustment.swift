@@ -125,7 +125,8 @@ struct GroupBridgeStatsAdjustment {
     /// - Parameter magnitude: la magnitud que el llamador está sumando al DENOMINADOR de esa misma
     ///   TX. Solo se usa para las filas sin ajuste (ahí el numerador es esa misma magnitud, o cero);
     ///   pedirla en vez de recalcularla es lo que mantiene numerador y denominador en la misma
-    ///   unidad cuando el llamador aplica su propio fallback (`WidgetDataCache.preferredAmount`).
+    ///   unidad que el importe que el llamador suma (`CashFlowCalculator.resolvedAmount` le pasa
+    ///   `abs(value)`).
     func approximateMagnitude(_ tx: TransactionItem, magnitude: Double) -> Double {
         if let ajustada = adjustedReal[tx.persistentModelID] { return ajustada.approximatePreferred }
         return tx.isExchangeRateProvisional ? magnitude : 0

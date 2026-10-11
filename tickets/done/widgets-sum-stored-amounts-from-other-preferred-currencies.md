@@ -1,6 +1,6 @@
 ---
 id: widgets-sum-stored-amounts-from-other-preferred-currencies
-status: backlog
+status: done
 priority: medium
 area: "currency, widgets"
 created: 2026-10-10
@@ -40,5 +40,12 @@ con ella para filas sin recalcular: su comentario ya no es verdad hasta que este
 
 ## Criterio de hecho
 
-- [ ] Los totales del snapshot salen en la divisa vigente.
-- [ ] Test con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+- [x] Los totales del snapshot salen en la divisa vigente.
+- [x] Test con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+
+## Resolución (2026-10-11)
+
+- `WidgetDataCache` resuelve cada fila con `CashFlowCalculator.resolvedAmount`, la regla de la app, en las seis superficies del snapshot: totales de ingreso y gasto, categorías, subcategorías y flujo por día (con el ajuste de grupos), y el saldo del período y la curva de saldo (fila entera, `adjustment: .none`, como `TrendDataProcessor.balanceAmount`). La marca «≈» sale de esa misma resolución.
+- Se retiró `preferredAmount` y su «si el convertido es 0, usa el nativo»: ningún otro sitio de la app lo tenía, así que el widget podía enseñar otro número.
+- Camino de emergencia del widget: el snapshot escribe en `WidgetTransaction.amountInPreferredCurrency` el importe YA resuelto (`WidgetDataCache.widgetTransaction`), y en `isExchangeRateProvisional` si esa resolución fue aproximada. Sin campo nuevo en el DTO de los dos targets.
+- Tests: `YalaTests/WidgetPreferredCurrencyTests.swift` (15 casos). Tres source-scans de `ApproximateMarkWiringTests` pasan a fijar el cableado nuevo.

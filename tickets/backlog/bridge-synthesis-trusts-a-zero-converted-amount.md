@@ -55,3 +55,5 @@ esa pata como dudosa — no es que la tasa fuera mala, es que no hubo tasa.
 - `WidgetDataCache.preferredAmount(_:)` sigue tratando el cero como «sin convertir» y cae a `tx.amount`: los dos criterios siguen opuestos.
 
 Triage 2026-10-08: abierto · low → low · los dos criterios del cero siguen opuestos; la ventana es estrecha porque el bridge convierte al crear las patas.
+
+**Nota del 2026-10-11** (`widgets-sum-stored-amounts-from-other-preferred-currencies`): `WidgetDataCache.preferredAmount` ya no existe. El widget resuelve con `CashFlowCalculator.resolvedAmount`, que lee el cero guardado como importe, igual que la síntesis del bridge. El criterio del cero ya es el mismo en los dos; lo que sigue abierto es si ese cero se puede creer.

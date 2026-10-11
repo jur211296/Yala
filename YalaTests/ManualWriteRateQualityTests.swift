@@ -113,7 +113,8 @@ struct ManualWriteRateQualityTests {
         "Yala/Services/WidgetDataCache.swift": (
             reason: """
                 No escribe una transacción: construye `WidgetTransaction`, una `struct Codable` para \
-                el widget que COPIA un monto ya calculado y persistido. No hay tasa que evaluar.
+                el widget. Su importe sale de `CashFlowCalculator.resolvedAmount` y su flag, de la \
+                magnitud aproximada de esa MISMA resolución: la calidad viaja con el número.
                 """,
             sentinel: "struct WidgetTransaction: Codable"
         ),
