@@ -318,7 +318,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
-| first-expense-practice-alert-tears-down-the-success-screen | backlog | tickets/backlog/first-expense-practice-alert-tears-down-the-success-screen.md |
+| first-expense-practice-alert-tears-down-the-success-screen | done | tickets/done/first-expense-practice-alert-tears-down-the-success-screen.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |

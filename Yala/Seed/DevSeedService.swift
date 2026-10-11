@@ -61,6 +61,11 @@ enum DevSeedProfile: String {
     /// asentada SIN canal backend (para que el editor la trate como puntero muerto).
     /// No arranca el generador aleatorio. Ver `DevSeedTransactions.createDeadPointerFixture`.
     case deadPointer = "dead-pointer"
+    /// Usuario recién llegado: categorías y cuentas, y **ningún registro** (tampoco saldos iniciales, que son
+    /// `TransactionItem`). Es el único estado en el que guardar un gasto arma «¿era de prueba?»
+    /// (`SetupChecklistManager.markFirstCreation` lo ofrece solo si lo guardado es lo único de su tipo). Ver
+    /// `FirstExpensePracticeAlertUITests`.
+    case sinRegistros = "sin-registros"
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -69,7 +74,7 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso: return 7
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
@@ -107,6 +112,18 @@ final class DevSeedService {
         // más arriba, en `applyUITestSeed`.
         if profile == .deadPointer {
             seedDeadPointerFixtures(in: context)
+            return
+        }
+        if profile == .sinRegistros {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            _ = DevSeedAccounts.create(in: context)
+            do { try context.save() } catch {
+                print("DevSeedService: sin-registros save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
             return
         }
 

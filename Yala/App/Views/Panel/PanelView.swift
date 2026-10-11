@@ -98,16 +98,6 @@ struct PanelView: View {
         return !proTourActive
     }
 
-    // MARK: - Practice Cleanup
-
-    private func consumePendingPracticeCleanup() {
-        let mgr = SetupChecklistManager.shared
-        if let pending = mgr.pendingPracticeCleanup {
-            sheets.practiceCleanupItem = pending
-            mgr.pendingPracticeCleanup = nil
-        }
-    }
-
     // MARK: - Setup Checklist Navigation
 
     private func handleSetupStep(_ step: SetupStepID) {
@@ -665,12 +655,7 @@ struct PanelView: View {
                         scheduledCount: viewModel.scheduledPayments.count
                     )
                     mgr.checkReExpand()
-
-                    consumePendingPracticeCleanup()
-                }
-                .onChange(of: SetupChecklistManager.shared.pendingPracticeCleanup?.id) { _, newID in
-                    guard newID != nil else { return }
-                    consumePendingPracticeCleanup()
+                    // «¿Era de prueba?» lo enciende `PanelShell` detrás del candado del Panel (`drainPanelIfActive`).
                 }
             }
 

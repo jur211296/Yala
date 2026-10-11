@@ -1,10 +1,10 @@
 ---
 id: first-expense-practice-alert-tears-down-the-success-screen
-status: backlog
+status: done
 priority: medium
 area: "transactions, panel, presentaciones"
 created: 2026-09-28
-updated: 2026-10-08
+updated: 2026-10-11
 source: "iphone-small-screens-and-safe-areas-audit (carril adaptativo, paso 3), visto en simulador el 2026-09-28"
 ---
 
@@ -58,3 +58,18 @@ Inferido del código, sin verificar en simulador. Sigue en backlog con el «Qué
 - `PanelSheetsModifier.swift:217-219` enciende `showPracticeAlert` en el acto. Ningún commit posterior al #384 toca este camino.
 
 Triage 2026-10-08: abierto · medium → medium · `PanelView.swift:671-674` sigue consumiendo `pendingPracticeCleanup` con la hoja de Nuevo registro encima; el #384 (`17e0281cb`) solo cambió cuándo se arma.
+
+## 2026-10-11 · Arreglado
+
+Medido en `origin/2.1` (fed08c788) con un XCUITest nuevo, `FirstExpensePracticeAlertUITests`, sobre el seed nuevo
+`sin-registros` (cuentas y categorías, cero registros): **rojo antes** —«No apareció la pantalla de éxito», el aviso
+salía directamente sobre el Panel con el formulario ya cerrado— y **verde después**.
+
+El arreglo reutiliza el candado del Panel en vez de inventar otro: el aviso deja de encenderlo `PanelView` y lo enciende
+`PanelShell.drainPanelIfActive`, detrás de `RouterConsumerGateLogic.panelCanDrain` (con la sonda de ventana del #453 y
+su reintento de 300 ms). Mientras quede una hoja en la ventana, o el Panel no sea la pestaña activa, el aviso espera;
+cerrar la hoja re-drena y lo enciende. Si en esa misma pasada el router presenta un intent del Panel, el aviso espera a
+que esa hoja se cierre.
+
+Efecto colateral asumido: el aviso del primer presupuesto o pago creado desde Planificación sale al volver al Panel, no
+encima de Planificación.
