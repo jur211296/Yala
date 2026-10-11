@@ -83,11 +83,15 @@ export function preferredAmount(
 /**
  * Magnitud en divisa preferida como la cuenta el chat para lo que no tiene categoría: port de
  * `FullFinancialContextBuilder.convertAmount` + `TransactionItem.chatAmount`. Si el ajuste de grupos cambió el
- * importe, «tu parte»; si no, el nativo cuando ya está en la divisa preferida, luego el guardado, y si no, convertido
- * con la tasa de su día.
+ * importe, «tu parte» resuelta con `preferredAmount` (la regla de `CashFlowCalculator.resolvedAmount`: guardada con
+ * otra divisa principal, se reconvierte desde el nativo); si no, el nativo cuando ya está en la divisa preferida,
+ * luego el guardado, y si no, convertido con la tasa de su día.
  */
 function chatMagnitude(tx: TxRow, preferredCurrency: string, rates: RateBook, groups: GroupAdjustment): number | null {
-  if (groups.isAdjusted(tx)) return Math.abs(groups.amountInPreferred(tx) ?? 0);
+  if (groups.isAdjusted(tx)) {
+    const resolved = preferredAmount(tx, preferredCurrency, rates, groups);
+    return resolved ? Math.abs(resolved.value) : null;
+  }
   const pref = preferredCurrency.toUpperCase();
   const native = num(tx.amount) ?? 0;
   if ((tx.currency_code ?? "USD").toUpperCase() === pref) return Math.abs(native);

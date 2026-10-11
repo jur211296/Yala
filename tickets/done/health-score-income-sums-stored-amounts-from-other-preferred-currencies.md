@@ -1,10 +1,10 @@
 ---
 id: health-score-income-sums-stored-amounts-from-other-preferred-currencies
-status: backlog
+status: done
 priority: low
 area: currency
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 source: barrido de stats-aggregators-sum-stored-amounts-from-other-preferred-currencies (2026-10-10)
 ---
 
@@ -31,5 +31,13 @@ converter.
 
 ## Criterio de hecho
 
-- [ ] El ingreso de la puntuación se resuelve en la divisa vigente.
-- [ ] Test con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+- [x] El ingreso de la puntuación se resuelve en la divisa vigente.
+- [x] Test con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+
+## Cierre (2026-10-11)
+
+`FinancialScoreCalculator.sumIncomeTransactions` (ahora `static` interno, para probarlo sin pagos programados)
+recibe la divisa principal y el converter que el calculador ya tenía y resuelve cada fila con
+`CashFlowCalculator.resolvedAmount`, con el ajuste de grupos como antes. Los presupuestos de la puntuación ya
+convertían desde la divisa nativa (`BudgetsViewModel.budgetAmount`). Tests en
+`YalaTests/AIAndHealthPreferredCurrencyTests`, con control rojo y mutante.

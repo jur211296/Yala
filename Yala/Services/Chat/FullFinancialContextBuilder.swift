@@ -19,7 +19,8 @@
 //     mes pasado hasta el día equivalente a hoy, la misma alineación que el hero de Tendencias
 //   - tx.balanceAdjustmentType != nil → filtrado
 //   - tx.date > now → filtrado (drafts en futuro)
-//   - multi-currency → amountInPreferredCurrency con guard isFinite
+//   - multi-currency → `chatAmount` (guardado si su divisa principal es la vigente; si no, reconvertido)
+//     y la pata real de un gasto de grupo con `CashFlowCalculator.resolvedAmount`; guard isFinite
 //   - budget.limitAmount == 0 → status="no_limit", usage_pct=null
 //   - 5+ años de data → fetch acotado a últimos 13 meses
 //
@@ -1057,11 +1058,15 @@ final class FullFinancialContextBuilder {
     // MARK: - Helpers
 
     private func convertAmount(_ tx: TransactionItem, currencyCode: String, converter: CurrencyConverting, adjustment: GroupBridgeStatsAdjustment) -> Double {
-        // Pata REAL Caso A: el neto proyectado (`-myShare`, moneda preferida) difiere del monto
-        // crudo → usar esa magnitud. Resto: `chatAmount` con conversión de moneda intacta.
+        // Pata REAL Caso A: el neto proyectado (`-myShare`) difiere del monto crudo → usar esa
+        // magnitud, resuelta con la regla de Estadísticas (`CashFlowCalculator.resolvedAmount`): si
+        // la fila se guardó con otra divisa principal, el neto guardado está en esa escala y se
+        // reconvierte desde el nativo. Resto: `chatAmount` con conversión de moneda intacta.
         let adjusted = adjustment.amountInPreferredCurrency(tx)
         if adjusted != tx.amountInPreferredCurrency {
-            return abs(adjusted)
+            return abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
         }
         return tx.chatAmount(in: currencyCode, converter: converter)
     }

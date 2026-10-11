@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (863)
+## Index (868)
 
 | id | status | path |
 |---|---|---|
@@ -169,7 +169,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-rows-sealed-before-the-fix-have-no-repair-path | done | tickets/done/chat-rows-sealed-before-the-fix-have-no-repair-path.md |
 | chat-rows-with-unsigned-amount-have-no-repair-path | done | tickets/done/chat-rows-with-unsigned-amount-have-no-repair-path.md |
 | chat-sends-every-past-turn-to-the-model | backlog | tickets/backlog/chat-sends-every-past-turn-to-the-model.md |
+| chat-suggestions-context-counts-the-whole-group-expense | backlog | tickets/backlog/chat-suggestions-context-counts-the-whole-group-expense.md |
 | chat-suggestions-reject-the-users-own-recurring-payments | backlog | tickets/backlog/chat-suggestions-reject-the-users-own-recurring-payments.md |
+| chat-top-transactions-per-subcategory-rank-by-native-amount | backlog | tickets/backlog/chat-top-transactions-per-subcategory-rank-by-native-amount.md |
 | chat-total-ignores-the-panel-groups-toggle | done | tickets/done/chat-total-ignores-the-panel-groups-toggle.md |
 | ci-allowlist-no-cubre-encargos-ni-qa-scripts | discarded | tickets/discarded/ci-allowlist-no-cubre-encargos-ni-qa-scripts.md |
 | ci-avisador-de-rojos-advisory-tiene-la-clave-mal | done | tickets/done/ci-avisador-de-rojos-advisory-tiene-la-clave-mal.md |
@@ -462,7 +464,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | guest-decline-has-no-screen | done | tickets/done/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
 | handover-leaves-the-storage-mode-without-a-session | backlog | tickets/backlog/handover-leaves-the-storage-mode-without-a-session.md |
-| health-score-income-sums-stored-amounts-from-other-preferred-currencies | backlog | tickets/backlog/health-score-income-sums-stored-amounts-from-other-preferred-currencies.md |
+| health-score-income-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/health-score-income-sums-stored-amounts-from-other-preferred-currencies.md |
 | hero-estadisticas-stock-vs-flujo-entre-pestanas | done | tickets/done/hero-estadisticas-stock-vs-flujo-entre-pestanas.md |
 | history-token-guard-echo-blind-spot | discarded | tickets/discarded/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | backlog | tickets/backlog/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
@@ -911,5 +913,5 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | xcode-27-1-with-the-iphone-duo-simulator | backlog | tickets/backlog/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
-| yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | backlog | tickets/backlog/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
+| yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |
