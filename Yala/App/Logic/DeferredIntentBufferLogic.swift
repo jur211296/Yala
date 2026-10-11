@@ -9,10 +9,14 @@
 //  persists a serializable proxy in UserDefaults. On the next ready window
 //  the buffer drains via the gate.
 //
-//  Not every intent is serializable (`.requestAIConsent(PendingAIInput)` is not —
-//  its payload holds live runtime objects). Those have no proxy: `serialize`
-//  returns nil and the gate drops them with its canary. When a payload DOES have a
+//  Not every intent is serializable (`.presentNewTransactionFromChatDraft` carries a live
+//  prefill, the monetization prompts are re-decided on their own). Those have no proxy:
+//  `serialize` returns nil and the gate drops them with its canary. When a payload DOES have a
 //  stable identity, it gets its own case (`.navigateGroupDetail(groupID:)`).
+//
+//  El buffer tiene un segundo productor desde el 2026-10-11: `AppRouter.resetTransients` aparca aquí, al pasar a
+//  segundo plano, las entradas pedidas desde fuera que aún no se habían presentado (`parksOnBackground`). Sin eso se
+//  tiraban con el resto de transitorios (ticket `widget-and-siri-entries-lost-on-background`).
 //
 
 import Foundation
@@ -48,6 +52,14 @@ enum SerializableIntent: Codable, Equatable {
     /// 2026-10-10 este intent no se serializaba y el aplazamiento lo tiraba en silencio (canario «DROP
     /// non-serializable deferred intent»); lo recuperaba solo la siguiente ventana lista.
     case presentSharedImage(path: String)
+    /// Entradas sin payload pedidas desde fuera (widget, Siri, Centro de Control, ⌘N) que seguían en cola al pasar a
+    /// segundo plano. Las aparca `AppRouter.resetTransients`; caducan antes que el resto (`parkedEntryTTL`).
+    case presentVoiceEntry
+    case presentImageEntry
+    case presentNewTransaction
+    /// El consentimiento de IA que pidió una entrada de voz o imagen. `input` es el `rawValue` de `PendingAIInput`: un
+    /// valor que este build no conozca se descarta al drenar.
+    case requestAIConsent(input: String)
 }
 
 enum DeferredIntentBufferLogic {
@@ -92,8 +104,48 @@ enum DeferredIntentBufferLogic {
         case .presentSharedImage(let url):
             guard url.isFileURL else { return nil }
             return .presentSharedImage(path: url.path)
+        case .presentVoiceEntry:
+            return .presentVoiceEntry
+        case .presentImageEntry:
+            return .presentImageEntry
+        case .presentNewTransaction:
+            return .presentNewTransaction
+        case .requestAIConsent(let input):
+            return .requestAIConsent(input: input.rawValue)
         default:
             return nil
+        }
+    }
+
+    /// Lo que `AppRouter.resetTransients` aparca en el buffer al pasar a segundo plano en vez de tirarlo: las entradas
+    /// que la persona pidió desde fuera y aún no ha visto. No traen datos (abren la hoja de voz, de imagen o de nuevo
+    /// registro), pero sin esto el toque se perdía si había una hoja abierta u otra pestaña delante y la app salía antes
+    /// de presentarlas.
+    ///
+    /// Fuera, a propósito: la hoja de Yala Pro (un paywall que vuelve solo al volver no es lo que la persona pidió), el
+    /// borrador del chat (lo pide la propia app, con un payload vivo) y `.navigate` (otra conversación). La foto
+    /// compartida tampoco: su fuente durable es `PendingImages/`.
+    static func parksOnBackground(_ intent: RouterIntent) -> Bool {
+        switch intent {
+        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Cuánto puede estar la app fuera con una entrada aparcada. Pasado esto, al volver no se presenta: una hoja de dictar
+    /// que aparece horas después al abrir Yala desde el icono sorprende más que ayuda. El reloj arranca en cada paso a
+    /// segundo plano (`createdAt` es el momento del aparcamiento), así que mide la ausencia, no la edad de la petición.
+    static let parkedEntryTTL: TimeInterval = 15 * 60
+
+    /// La caducidad de `payload`: la de las entradas aparcadas si lo es, y `fallback` (las 24 h del buffer) si no.
+    static func ttl(for payload: SerializableIntent, fallback: TimeInterval) -> TimeInterval {
+        switch payload {
+        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent:
+            return min(parkedEntryTTL, fallback)
+        case .navigate, .navigateGroupDetail, .showInboxAlert, .presentSharedImage:
+            return fallback
         }
     }
 
@@ -119,6 +171,15 @@ enum DeferredIntentBufferLogic {
             // Ya consumida (la hoja la leyó y la borró) o purgada: no hay nada que presentar.
             guard fileExists(path) else { return nil }
             return .presentSharedImage(URL(fileURLWithPath: path))
+        case .presentVoiceEntry:
+            return .presentVoiceEntry
+        case .presentImageEntry:
+            return .presentImageEntry
+        case .presentNewTransaction:
+            return .presentNewTransaction
+        case .requestAIConsent(let raw):
+            guard let input = PendingAIInput(rawValue: raw) else { return nil }
+            return .requestAIConsent(input)
         }
     }
 
@@ -159,13 +220,14 @@ enum DeferredIntentBufferLogic {
         return entries
     }
 
-    /// Drops entries older than `ttl`. Default TTL = 24h.
+    /// Drops entries older than `ttl`. Default TTL = 24h. Las entradas aparcadas al pasar a segundo plano caducan antes
+    /// (`ttl(for:fallback:)`).
     static func purgeExpired(
         _ entries: [DeferredEntry],
         now: Date,
         ttl: TimeInterval = 24 * 60 * 60
     ) -> [DeferredEntry] {
-        entries.filter { now.timeIntervalSince($0.createdAt) < ttl }
+        entries.filter { now.timeIntervalSince($0.createdAt) < DeferredIntentBufferLogic.ttl(for: $0.payload, fallback: ttl) }
     }
 
     // MARK: - Internals

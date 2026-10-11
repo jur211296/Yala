@@ -244,8 +244,9 @@ struct RoutingIntegrationTests {
         let buffer = DeferredIntentBuffer(defaults: isolatedDefaults)
         buffer.clear()
 
-        // .presentNewTransaction is fire-and-forget — not serializable.
-        buffer.deferIntent(.presentNewTransaction)
+        // La oferta de prueba se re-decide sola: no tiene proxy. (Era `.presentNewTransaction` hasta el 2026-10-11, cuando
+        // pasó a aparcarse al ir a segundo plano — `WidgetAndSiriEntriesBackgroundTests`.)
+        buffer.deferIntent(.presentTrialOffer)
         #expect(buffer.isEmpty)
     }
 

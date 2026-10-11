@@ -1,10 +1,10 @@
 ---
 id: widget-and-siri-entries-lost-on-background
-status: backlog
+status: done
 priority: low
 area: routing
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 source: auditoría de puntos de entrada del encargo 2026-10-10-share-image-reading-does-not-always-start
 ---
 
@@ -23,3 +23,16 @@ Si una entrada desde fuera debe llevar al Panel (como la foto compartida) y si d
 Hoy es coherente con «lo pediste y no lo viste, vuelve a tocarlo»; la foto compartida no lo es porque trae un fichero.
 
 Ver `docs/entry-points.md`.
+
+## Resuelto (2026-10-11)
+
+Al pasar a segundo plano, `AppRouter.resetTransients` aparca en `DeferredIntentBuffer` las entradas de voz, imagen y
+nuevo registro (y el consentimiento de IA que piden) que seguían en cola, y vuelven por el drenaje del buffer en la
+siguiente vuelta a primer plano o en el arranque. Caducan si la app pasa fuera más de 15 min
+(`DeferredIntentBufferLogic.parkedEntryTTL`). La hoja de Yala Pro no se aparca.
+
+Medido: `WidgetEntryBackgroundUITests` (Estadísticas delante → enlace desde fuera → segundo plano → vuelta → al ir al
+Panel se abre la voz / el Nuevo registro) y `WidgetAndSiriEntriesBackgroundTests`.
+
+La otra pregunta de este ticket —si deben llevar al Panel— sigue abierta en
+`widget-and-siri-entries-wait-for-the-panel-tab`.

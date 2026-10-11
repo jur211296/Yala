@@ -72,9 +72,10 @@ struct DeferredIntentBufferLogicTests {
     }
 
     @Test func serialize_nonSerializable_returnsNil() {
-        // .presentNewTransaction is fire-and-forget — no payload to persist meaningfully.
-        // (Decision: only intents with stable proxy survive defer.)
-        #expect(DeferredIntentBufferLogic.serialize(.presentNewTransaction) == nil)
+        // Only intents with stable proxy survive defer. `.presentNewTransaction` lo fue hasta el 2026-10-11 («sin payload
+        // que persistir»); desde entonces se aparca al pasar a segundo plano para que el toque del widget no se pierda
+        // (`WidgetAndSiriEntriesBackgroundTests`).
+        #expect(DeferredIntentBufferLogic.serialize(.presentUpgradeSheet(.voice)) == nil)
         #expect(DeferredIntentBufferLogic.serialize(.iCloudMismatch) == nil)
     }
 
