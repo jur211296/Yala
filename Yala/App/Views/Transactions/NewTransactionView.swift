@@ -393,6 +393,7 @@ struct NewTransactionView: View {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                         dismiss()
                     }
+                    .accessibilityIdentifier("new_transaction_close")
                 }
 
                 if !isBridgedReadOnly {

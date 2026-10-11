@@ -117,7 +117,8 @@ struct RoutingIntegrationTests {
         // Gate cerrado (paywall del shell arriba): el consumidor no drena.
         #expect(!RouterConsumerGateLogic.panelCanDrain(
             selectedTab: .panel, chatSheetOpen: false,
-            shellBlocker: "proTrialOffer", mainTabModalVisible: false, panelModalVisible: false
+            shellBlocker: "proTrialOffer", mainTabModalVisible: false, panelModalVisible: false,
+            windowPresentationVisible: false
         ))
         #expect(router.peekNext(for: .panel, in: nil) != nil)
         #expect(router.contains { if case .presentInboxSheet = $0 { return true }; return false })
@@ -125,7 +126,8 @@ struct RoutingIntegrationTests {
         // Paywall cierra → gate abierto → el intent retenido drena AHORA.
         #expect(RouterConsumerGateLogic.panelCanDrain(
             selectedTab: .panel, chatSheetOpen: false,
-            shellBlocker: nil, mainTabModalVisible: false, panelModalVisible: false
+            shellBlocker: nil, mainTabModalVisible: false, panelModalVisible: false,
+            windowPresentationVisible: false
         ))
         let drained = router.drainNext(for: .panel, in: nil)
         guard case .presentInboxSheet = drained else {

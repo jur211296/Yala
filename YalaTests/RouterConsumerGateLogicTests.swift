@@ -65,14 +65,34 @@ struct RouterConsumerGateLogicTests {
         chat: Bool = false,
         shell: String? = nil,
         mainTabModal: Bool = false,
-        panelModal: Bool = false
+        panelModal: Bool = false,
+        windowPresentation: Bool = false
     ) -> Bool {
         RouterConsumerGateLogic.panelCanDrain(
             selectedTab: tab,
             chatSheetOpen: chat,
             shellBlocker: shell,
             mainTabModalVisible: mainTabModal,
-            panelModalVisible: panelModal
+            panelModalVisible: panelModal,
+            windowPresentationVisible: windowPresentation
+        )
+    }
+
+    private func holdsOnlyForUnpublished(
+        tab: AppTab = .panel,
+        chat: Bool = false,
+        shell: String? = nil,
+        mainTabModal: Bool = false,
+        panelModal: Bool = false,
+        windowPresentation: Bool = false
+    ) -> Bool {
+        RouterConsumerGateLogic.panelHoldsOnlyForUnpublishedPresentation(
+            selectedTab: tab,
+            chatSheetOpen: chat,
+            shellBlocker: shell,
+            mainTabModalVisible: mainTabModal,
+            panelModalVisible: panelModal,
+            windowPresentationVisible: windowPresentation
         )
     }
 
@@ -100,6 +120,34 @@ struct RouterConsumerGateLogicTests {
 
     @Test func panel_ownModalVisible_holds() {
         #expect(!canDrain(panelModal: true))
+    }
+
+    /// Ticket entry-to-panel-closes-sheets-of-other-tabs: una foto compartida lleva al Panel con un «Nuevo registro» a
+    /// medias abierto en Estadísticas. Ningún flag lo publica; solo UIKit sabe que hay algo presentado. El Panel espera.
+    @Test func panel_unpublishedPresentationInWindow_holds() {
+        #expect(!canDrain(windowPresentation: true))
+    }
+
+    // MARK: - panelHoldsOnlyForUnpublishedPresentation (quién re-drena)
+
+    /// Retenido SOLO por la hoja sin flag: nadie avisará al cerrarse, el Panel vuelve a mirar por su cuenta.
+    @Test func holdsOnly_unpublishedPresentationAlone_true() {
+        #expect(holdsOnlyForUnpublished(windowPresentation: true))
+    }
+
+    /// Sin nada presentado no hay nada que esperar.
+    @Test func holdsOnly_nothingPresented_false() {
+        #expect(!holdsOnlyForUnpublished())
+    }
+
+    /// Con otra dimensión cerrando además, re-drena el `onChange` de esa dimensión; el reintento no hace falta. En otra
+    /// pestaña, el `onChange` de la pestaña.
+    @Test func holdsOnly_anotherDimensionAlsoHolds_false() {
+        #expect(!holdsOnlyForUnpublished(tab: .statistics, windowPresentation: true))
+        #expect(!holdsOnlyForUnpublished(chat: true, windowPresentation: true))
+        #expect(!holdsOnlyForUnpublished(shell: "proTrialOffer", windowPresentation: true))
+        #expect(!holdsOnlyForUnpublished(mainTabModal: true, windowPresentation: true))
+        #expect(!holdsOnlyForUnpublished(panelModal: true, windowPresentation: true))
     }
 }
 

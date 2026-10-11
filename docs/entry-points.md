@@ -20,8 +20,9 @@ tiene cuatro reglas, y ninguna entrada se las salta:
    en el paso 20 del arranque, en cada vuelta a primer plano y al completarse el onboarding
    (`resumeEntriesAfterOnboarding`).
 3. **Nada se presenta tapado.** Cada consumidor retiene su cola mientras algo esté encima (`RouterConsumerGateLogic`,
-   `ContentViewReadinessLogic`). Al cerrarse lo que tapaba, sale lo pendiente. Medido el 2026-10-10 también con una
-   hoja del Panel que ningún flag publica (el «?» de un widget): la lectura sale al cerrarla, sin comprobación extra.
+   `ContentViewReadinessLogic`). Al cerrarse lo que tapaba, sale lo pendiente. El Panel pregunta además a UIKit si su
+   ventana tiene algo presentado (`ModalPresentationProbe`), porque las hojas de OTRA pestaña no publican ningún flag;
+   como cerrarlas tampoco avisa a nadie, el Panel vuelve a mirar cada 300 ms mientras solo eso lo retiene.
 4. **Lo que tiene una fuente durable se vuelve a pedir desde ella.** Los intents transitorios se tiran al pasar a
    segundo plano (`AppRouter.resetTransients`); la foto compartida se re-emite desde `PendingImages/` en el arranque y
    en cada vuelta a primer plano, y la invitación desde `PendingJoinStore`.
@@ -41,8 +42,9 @@ su anchor, y el de `ContentView` tapa a los demás.
 **Por defecto, propuesto el 2026-10-10 y pendiente de que Jürgen lo confirme:** entre una invitación y una foto
 compartida, gana la invitación (va en el anchor de `ContentView`, que tapa al Panel) y la foto espera en cola hasta que
 se conteste. Una foto compartida no cierra una hoja abierta para presentarse: espera a que la persona la cierre (la hoja
-podría tener un formulario a medias). Ir al Panel sí cierra las hojas de OTRA pestaña, porque cambiar de pestaña las
-desmonta; eso no es de este cambio y viene de antes.
+podría tener un formulario a medias), sea del Panel o de otra pestaña. Ir al Panel desde fuera cambia la pestaña por
+debajo de una hoja de otra pestaña **sin cerrarla** (medido el 2026-10-11); lo que la cerraba era que el Panel presentara
+encima, y eso ya no pasa (ticket `entry-to-panel-closes-sheets-of-other-tabs`).
 
 ## Entradas
 
@@ -80,6 +82,10 @@ desmonta; eso no es de este cambio y viene de antes.
 ## Huecos conocidos que siguen abiertos
 
 Con ticket en `tickets/backlog/`:
+
+- `invite-and-app-notices-present-over-other-tab-sheets`: las pantallas de unirse a un grupo (`.contentView`) y los
+  avisos de `MainTabView` (prueba expirada, downgrade, hitos) presentan sin mirar si hay una hoja de otra pestaña
+  abierta; el arreglo del Panel no los cubre.
 
 - `notification-delegate-assigned-after-launch`: el delegado de notificaciones se asigna en el paso 1 del arranque,
   después de que el lanzamiento termine; un toque con la app cerrada puede no llegar.
