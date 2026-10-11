@@ -185,7 +185,8 @@ struct TrendDataProcessor {
                 accounts: accounts,
                 interval: effectiveInterval,  // Use the matched interval
                 grouping: grouping,
-                calendar: calendar
+                calendar: calendar,
+                valueTransform: { balanceAmount($0, currencyCode: currencyCode, converter: converter) }
             )
 
         case .income:
@@ -306,6 +307,23 @@ struct TrendDataProcessor {
         min(range.lowerBound, value)...max(range.upperBound, value)
     }
 
+    /// Lo que una fila suma al saldo acumulado, en `currencyCode`.
+    ///
+    /// La fila ENTERA (`adjustment: .none`): el saldo es de la cuenta, y en la cuenta salió el pago
+    /// completo, no «mi parte». `resolvedAmount` es la regla de la curva de ingreso y gasto: el monto
+    /// guardado si se guardó en la divisa vigente, y si no, el nativo reconvertido con la tasa de su
+    /// fecha — que es justo lo que habría guardado (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`).
+    /// También la usan las curvas de saldo por cuenta de Estadísticas.
+    static func balanceAmount(
+        _ transaction: TransactionItem,
+        currencyCode: String,
+        converter: CurrencyConverting
+    ) -> Double {
+        CashFlowCalculator.resolvedAmount(
+            transaction, currencyCode: currencyCode, adjustment: .none, converter: converter
+        ).value
+    }
+
     /// Fill balance buckets with running balance calculation
     private static func fillBalanceBuckets(
         _ buckets: inout [Date: Double],
@@ -313,14 +331,15 @@ struct TrendDataProcessor {
         accounts: [Account],
         interval: DateInterval,
         grouping: TrendGrouping,
-        calendar: Calendar
+        calendar: Calendar,
+        valueTransform: (TransactionItem) -> Double
     ) {
         // Start with 0 - initial balance is now a transaction
         var runningBalance = 0.0
 
         // Add transactions before interval
         for transaction in transactions where transaction.date < interval.start {
-            runningBalance += transaction.amountInPreferredCurrency
+            runningBalance += valueTransform(transaction)
         }
 
         // Group transactions by bucket date
@@ -335,7 +354,7 @@ struct TrendDataProcessor {
         for date in sortedDates {
             if let txns = transactionsByBucket[date] {
                 for txn in txns {
-                    runningBalance += txn.amountInPreferredCurrency
+                    runningBalance += valueTransform(txn)
                 }
             }
             buckets[date] = runningBalance

@@ -51,10 +51,10 @@ enum BalanceKPICalculator {
         /// **Hoy solo se rellena en el régimen VIVO.** Ahí el número lo arma `LiveBalanceCalculator`
         /// convirtiendo cada bucket con el TC de hoy, y su `Breakdown` mide la calidad de cada
         /// conversión, así que la señal viene con el valor. En el régimen CERRADO el número es el
-        /// último punto de la curva acumulada de `TrendDataProcessor`, que suma
-        /// `amountInPreferredCurrency` sin acumular la calidad de nadie: **no hay señal que leer**,
-        /// ni aquí ni en ninguna otra pantalla que muestre ese saldo. `false` ahí dice «no lo sé»,
-        /// no «es exacto».
+        /// último punto de la curva acumulada de `TrendDataProcessor`, que suma el importe resuelto
+        /// de cada fila y descarta su calidad (`TrendDataProcessor.balanceAmount` se queda con el
+        /// valor): **la curva no acumula la señal**, ni aquí ni en ninguna otra pantalla que muestre
+        /// ese saldo. `false` ahí dice «no lo sé», no «es exacto».
         ///
         /// **Y que conste que es alcance, no imposibilidad** — la review adversarial del 2026-09-09
         /// tenía razón en señalarlo. El ingrediente (`tx.isExchangeRateProvisional`) está a mano:
@@ -134,7 +134,10 @@ enum BalanceKPICalculator {
             interval: interval,
             currencyCode: currencyCode,
             adjustment: adjustment,
-            liveBalanceOverride: liveOverride
+            liveBalanceOverride: liveOverride,
+            // La curva del período cerrado reconvierte las filas guardadas en otra divisa
+            // principal: con el mismo converter que el saldo vivo de arriba.
+            converter: converter
         ).finalBalance
 
         // Régimen cerrado (o sin datos): `finalBalance` sale de la curva histórica, que no lleva

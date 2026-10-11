@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "currency, widgets"
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 source: barrido de stats-aggregators-sum-stored-amounts-from-other-preferred-currencies (2026-10-10)
 ---
 
@@ -31,6 +31,12 @@ En `WidgetDataCache`, `CashFlowCalculator.resolvedAmount` con la divisa del snap
 fichero cae a `"USD"` si falta la key, ticket `preferred-currency-has-three-different-defaults`). El
 camino del widget necesita que el DTO lleve la divisa de cada fila o el importe ya resuelto; un
 campo nuevo del DTO va opcional y en los DOS lados (regla de `swiftdata-cloudkit.md`).
+
+**Nota del 2026-10-11** (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`): la
+curva de saldo de la app (`TrendDataProcessor.fillBalanceBuckets`) ya reconvierte, con
+`TrendDataProcessor.balanceAmount` (fila entera, `adjustment: .none`). El saldo del widget
+(`WidgetDataCache.swift:825`, «Matches TrendDataProcessor.fillBalanceBuckets logic») dejó de coincidir
+con ella para filas sin recalcular: su comentario ya no es verdad hasta que este ticket la alinee.
 
 ## Criterio de hecho
 
