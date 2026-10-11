@@ -3055,9 +3055,10 @@ final class AppBootstrapper {
     private func enqueueSharedImage(_ url: URL) {
         // La misma puerta Pro que el resto de entradas (`executeAction(.imageEntry)`): hasta el 2026-10-04 compartir
         // una foto registraba sin ser Pro. La foto se descarta: si se quedara en `PendingImages/`, la recuperación del
-        // arranque volvería a enseñar el aviso en cada vuelta a la app.
+        // arranque volvería a enseñar el aviso en cada vuelta a la app. Con varias compartidas a la vez se va la tanda
+        // entera: el aviso sale una vez, no una por foto.
         guard FeatureGateService.shared.canAccess(.imageInput) else {
-            SharedContainerService.removePendingImage(at: url)
+            SharedContainerService.removePendingImageBatch(containing: url)
             RouterEntryGate.shared.submit(.navigate(.panel))
             RouterEntryGate.shared.submit(.presentUpgradeSheet(.image))
             return

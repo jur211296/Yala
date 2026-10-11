@@ -6562,6 +6562,12 @@
 /* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
 "image.entry.pagesLeftOutMany" = "Nie odczytano stron: %1$d. Naraz odczytuje się do %2$d. Aby je odczytać, prześlij je w innym PDF.";
 
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "Nie odczytano 1 zdjęcia: naraz odczytuje się do %d. Aby je odczytać, udostępnij je osobno.";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "Nie odczytano zdjęć: %1$d. Naraz odczytuje się do %2$d. Aby je odczytać, udostępnij je osobno.";
+
 /* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
 "image.entry.trialLeftOutOne" = "Wykorzystano zdjęcia na próbę: 1 nie zostało odczytane.";
 

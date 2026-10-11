@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (862)
+## Index (863)
 
 | id | status | path |
 |---|---|---|
@@ -533,6 +533,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | done | tickets/done/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
+| sharing-several-photos-hides-yala | qa | tickets/qa/sharing-several-photos-hides-yala.md |
 | stats-hero-detail-row-truncates-at-accessibility-text | backlog | tickets/backlog/stats-hero-detail-row-truncates-at-accessibility-text.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace | backlog | tickets/backlog/late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace.md |

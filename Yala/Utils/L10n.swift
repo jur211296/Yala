@@ -6842,6 +6842,12 @@ enum L10n {
                     ? String(format: ls("image.entry.pagesLeftOutOne", comment: ""), limit)
                     : String(format: ls("image.entry.pagesLeftOutMany", comment: ""), count, limit)
             }
+            /// Fotos compartidas de una vez que no entraron en la tanda; `limit` es el tope de fotos por vez.
+            static func sharedPhotosLeftOut(_ count: Int, limit: Int) -> String {
+                count == 1
+                    ? String(format: ls("image.entry.sharedLeftOutOne", comment: ""), limit)
+                    : String(format: ls("image.entry.sharedLeftOutMany", comment: ""), count, limit)
+            }
             /// El cupo de prueba se acabó a mitad de la tanda: `count` fotos o páginas sin leer.
             static func trialLeftOut(_ count: Int) -> String {
                 count == 1

@@ -6560,6 +6560,12 @@
 /* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
 "image.entry.pagesLeftOutMany" = "%1$d pagine non sono state lette: se ne leggono fino a %2$d alla volta. Per leggerle, caricale in un altro PDF.";
 
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "1 foto non è stata letta: se ne leggono fino a %d alla volta. Per leggerla, condividila a parte.";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "%1$d foto non sono state lette: se ne leggono fino a %2$d alla volta. Per leggerle, condividile a parte.";
+
 /* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
 "image.entry.trialLeftOutOne" = "Hai usato le tue foto di prova: 1 non è stata letta.";
 
