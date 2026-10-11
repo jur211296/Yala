@@ -19,8 +19,18 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     private override init() {
         super.init()
-        // Set delegate to show notifications while app is in foreground
-        notificationCenter.delegate = self
+    }
+
+    /// Pone el servicio como delegado del centro de notificaciones: enseña los avisos con la app delante
+    /// (`willPresent`) y recibe el toque (`didReceive`).
+    ///
+    /// **Lo llama `YalaAppDelegate.application(_:didFinishLaunchingWithOptions:)` y nadie más.** Apple pide asignar
+    /// el delegado antes de que termine el lanzamiento: con la app cerrada, el toque que la abre se entrega justo
+    /// después, y sin delegado se pierde. Hasta el 2026-10-11 lo asignaba este `init`, cuyo primer acceso era el paso 1
+    /// de `AppBootstrapper.bootstrap`, en el `.task` de `ContentView`: tarde (ticket
+    /// `notification-delegate-assigned-after-launch`). Por eso el `init` ya no lo asigna: un solo escritor.
+    static func installAsCenterDelegate() {
+        shared.notificationCenter.delegate = shared
     }
 
     // MARK: - UNUserNotificationCenterDelegate
@@ -46,17 +56,27 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         // sellado a ESA ventana (fase 4 del carril adaptativo).
         let targetSessionID = response.targetScene?.session.persistentIdentifier
 
-        if let destination = userInfo["deepLink"] as? String,
-           let dest = Self.parseDestination(destination) {
+        if let destination = userInfo["deepLink"] as? String {
             Task { @MainActor in
-                if let targetSessionID {
-                    SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
-                }
-                RouterEntryGate.shared.submit(.navigate(dest))
+                Self.routeTap(deepLink: destination, targetSessionID: targetSessionID)
             }
         }
 
         completionHandler()
+    }
+
+    /// Lo que hace el toque en una notificación: lleva a su destino por el router. Antes de que el arranque termine,
+    /// `RouterEntryGate` aplaza el `.navigate` en `DeferredIntentBuffer` y el paso 20 del arranque lo drena.
+    ///
+    /// Separado de `didReceive` porque `UNNotificationResponse` no tiene inicializador público: es lo que permite
+    /// probar el camino entero del toque en frío (`NotificationColdLaunchTapTests`).
+    @MainActor
+    static func routeTap(deepLink destination: String, targetSessionID: String?) {
+        guard let dest = parseDestination(destination) else { return }
+        if let targetSessionID {
+            SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
+        }
+        RouterEntryGate.shared.submit(.navigate(dest))
     }
 
     /// Parse deep link string to DeepLinkDestination

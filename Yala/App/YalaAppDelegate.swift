@@ -17,6 +17,11 @@ class YalaAppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // El delegado de notificaciones, antes de que termine el lanzamiento (Apple lo exige): con la app cerrada, el
+        // toque en una notificación se entrega justo después de este método, y sin delegado se pierde. Lo que el toque
+        // pida antes de que acabe el arranque se aplaza en `DeferredIntentBuffer` y lo drena el paso 20.
+        NotificationService.installAsCenterDelegate()
+
         // CKSyncEngine requires APNs registration for silent push notifications.
         // The engine handles push routing internally via CKDatabaseSubscription.
         application.registerForRemoteNotifications()
