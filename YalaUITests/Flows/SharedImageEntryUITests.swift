@@ -109,9 +109,11 @@ final class SharedImageEntryUITests: XCTestCase {
         assertReadingStarts(app, "Al cerrar la Bandeja, la foto compartida tenía que leerse.")
     }
 
-    /// c) Con una hoja de OTRA pestaña abierta (el detalle de un registro en Estadísticas › Registros). Ir al Panel
-    /// cierra esa hoja (medido en 2.1 el 2026-10-10) y la lectura arranca.
-    func test_foreignSheetOpen_sharedImage_startsReading() {
+    /// c) Con una hoja de OTRA pestaña abierta (el detalle de un registro en Estadísticas › Registros). Hasta el
+    /// 2026-10-11 la lectura se presentaba encima y tumbaba esa hoja; ahora espera a que se cierre, como con las hojas
+    /// del Panel (ticket entry-to-panel-closes-sheets-of-other-tabs; el formulario a medias, en
+    /// `ExternalEntryForeignSheetUITests`).
+    func test_foreignSheetOpen_sharedImage_startsReadingWhenItCloses() {
         let app = launch()
         app.tabBars.buttons.element(boundBy: 1).tap()
         let recordsChip = app.buttons["detail_chip_registros"]
@@ -122,13 +124,19 @@ final class SharedImageEntryUITests: XCTestCase {
         let firstRow = app.buttons.matching(identifier: "record_row").element(boundBy: 0)
         XCTAssertTrue(firstRow.waitForExistence(timeout: 10), "No hay filas de registro (record_row).")
         firstRow.tap()
-        XCTAssertTrue(app.buttons["transaction_detail_close"].waitForExistence(timeout: 10),
-                      "No se abrió el detalle del registro.")
+        let detailClose = app.buttons["transaction_detail_close"]
+        XCTAssertTrue(detailClose.waitForExistence(timeout: 10), "No se abrió el detalle del registro.")
 
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")
         openShare()
-        assertReadingStarts(app, "Con el detalle de un registro abierto, la foto compartida tenía que leerse.")
+        // El detalle no se puede cerrar solo: se espera a que desaparezca y lo correcto es agotar la espera.
+        let closes = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: detailClose)
+        XCTAssertEqual(XCTWaiter().wait(for: [closes], timeout: 10), .timedOut,
+                       "La foto compartida cerró el detalle del registro abierto en Estadísticas.")
+
+        detailClose.tap()
+        assertReadingStarts(app, "Al cerrar el detalle del registro, la foto compartida tenía que leerse.")
     }
 
     /// c) Con una hoja del Panel que ningún flag publica (el «?» de un widget): la lectura se pide con esa hoja arriba

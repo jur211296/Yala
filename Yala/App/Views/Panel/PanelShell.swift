@@ -14,6 +14,8 @@ import SwiftUI
 struct PanelShell: View {
     @State private var viewModel = PanelViewModel()
     @State private var sheets = PanelSheetState()
+    /// Reintento del drenaje mientras el Panel retiene solo por una hoja que ningún flag publica (la de otra pestaña).
+    @State private var unpublishedPresentationRedrain: Task<Void, Never>?
     @Environment(SessionState.self) private var sessionState
     @Environment(SceneNavigation.self) private var navigation
 
@@ -69,6 +71,7 @@ struct PanelShell: View {
             .onChange(of: navigation.showNewTransactionFromChat) { _, showing in
                 if !showing { drainPanelIfActive() }
             }
+            .onDisappear { cancelUnpublishedPresentationRedrain() }
     }
 
     private func drainPanelIfActive() {
@@ -76,14 +79,28 @@ struct PanelShell: View {
         // arriba), el intent ESPERA en cola en vez de consumirse tapado —
         // `sheets.showInbox = true` bajo un paywall jamás presentaba (bug
         // TestFlight: tap de notificación que nunca abría la Bandeja).
+        let panelModalVisible = sheets.hasActivePresentation || navigation.showNewTransactionFromChat
+        // Una hoja de OTRA pestaña no publica nada: se pregunta a UIKit por la ventana. Ver `panelCanDrain`.
+        let windowPresentationVisible = ModalPresentationProbe.isAnythingPresented(
+            in: SceneRegistry.shared.windowScene(for: navigation.id))
         guard RouterConsumerGateLogic.panelCanDrain(
             selectedTab: navigation.selectedMainTab,
             chatSheetOpen: sheets.showChatSheet,
             shellBlocker: navigation.shellModalBlocker,
             mainTabModalVisible: navigation.isMainTabModalVisible,
-            panelModalVisible: sheets.hasActivePresentation
-                || navigation.showNewTransactionFromChat
+            panelModalVisible: panelModalVisible,
+            windowPresentationVisible: windowPresentationVisible
         ) else {
+            if RouterConsumerGateLogic.panelHoldsOnlyForUnpublishedPresentation(
+                selectedTab: navigation.selectedMainTab,
+                chatSheetOpen: sheets.showChatSheet,
+                shellBlocker: navigation.shellModalBlocker,
+                mainTabModalVisible: navigation.isMainTabModalVisible,
+                panelModalVisible: panelModalVisible,
+                windowPresentationVisible: windowPresentationVisible
+            ), AppRouter.shared.peekNext(for: .panel, in: navigation.id) != nil {
+                scheduleUnpublishedPresentationRedrain()
+            }
             // Canario D4: solo con el tab correcto y por flags PUBLICADOS
             // (shellModalBlocker / isMainTabModalVisible) — tab equivocado,
             // chat abierto o sheet propio del panel son estado local real
@@ -104,6 +121,27 @@ struct PanelShell: View {
         guard let intent = AppRouter.shared.drainNext(for: .panel, in: navigation.id) else { return }
         RouterHoldCanary.shared.noteDrained(intentID: intent.id)
         handlePanelIntent(intent)
+    }
+
+    /// Cerrar una hoja de otra pestaña no cambia nada que el Panel observe, así que nadie re-drenaría: se vuelve a mirar
+    /// cada 300 ms mientras siga retenido solo por eso. Un reintento a la vez; cada vuelta que siga retenida programa la
+    /// siguiente desde `drainPanelIfActive`, y la última, la que drena, no programa nada.
+    private func scheduleUnpublishedPresentationRedrain() {
+        guard unpublishedPresentationRedrain == nil else { return }
+        unpublishedPresentationRedrain = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+            } catch {
+                return  // Cancelado: el Panel se desmontó o dejó de estar delante.
+            }
+            unpublishedPresentationRedrain = nil
+            drainPanelIfActive()
+        }
+    }
+
+    private func cancelUnpublishedPresentationRedrain() {
+        unpublishedPresentationRedrain?.cancel()
+        unpublishedPresentationRedrain = nil
     }
 
     /// Drain handler for `.panel` intents. Mutates `sheets` which drive the
