@@ -43,6 +43,9 @@ struct PanelShell: View {
             .routerConsumer(.panel) {
                 drainPanelIfActive()
             }
+            // «¿Era de prueba?» llega armado desde un editor (primer gasto, presupuesto o pago) y entra por el mismo
+            // candado que los intents del Panel: ver `presentPendingPracticeCleanup`.
+            .modifier(PanelPracticeCleanupTrigger(onPending: drainPanelIfActive))
             .onChange(of: navigation.selectedMainTab) { _, _ in
                 drainPanelIfActive()
             }
@@ -98,7 +101,8 @@ struct PanelShell: View {
                 mainTabModalVisible: navigation.isMainTabModalVisible,
                 panelModalVisible: panelModalVisible,
                 windowPresentationVisible: windowPresentationVisible
-            ), AppRouter.shared.peekNext(for: .panel, in: navigation.id) != nil {
+            ), AppRouter.shared.peekNext(for: .panel, in: navigation.id) != nil
+                || SetupChecklistManager.shared.pendingPracticeCleanup != nil {
                 scheduleUnpublishedPresentationRedrain()
             }
             // Canario D4: solo con el tab correcto y por flags PUBLICADOS
@@ -118,9 +122,27 @@ struct PanelShell: View {
             }
             return
         }
-        guard let intent = AppRouter.shared.drainNext(for: .panel, in: navigation.id) else { return }
-        RouterHoldCanary.shared.noteDrained(intentID: intent.id)
-        handlePanelIntent(intent)
+        if let intent = AppRouter.shared.drainNext(for: .panel, in: navigation.id) {
+            RouterHoldCanary.shared.noteDrained(intentID: intent.id)
+            handlePanelIntent(intent)
+        }
+        presentPendingPracticeCleanup()
+    }
+
+    /// Enciende «¿era de prueba?» con el candado del Panel ya abierto (lo comprueba `drainPanelIfActive`, el único
+    /// llamador). Lo arma el editor al guardar —`SetupChecklistManager.markFirstCreation`— con su hoja todavía arriba, y
+    /// el Panel lo encendía en el acto: el `.alert` desmontaba el formulario de Nuevo registro antes de su pantalla de
+    /// éxito (ticket `first-expense-practice-alert-tears-down-the-success-screen`). Ahora espera, como los intents, a
+    /// que no quede ninguna hoja en la ventana; cerrarla re-drena y llega aquí.
+    ///
+    /// Si el intent que se acaba de drenar presentó algo, el aviso espera también a que esa hoja se cierre: dos
+    /// presentaciones en la misma pasada se tumban entre sí.
+    private func presentPendingPracticeCleanup() {
+        let checklist = SetupChecklistManager.shared
+        guard let pending = checklist.pendingPracticeCleanup else { return }
+        guard !sheets.hasActivePresentation, !navigation.showNewTransactionFromChat else { return }
+        sheets.practiceCleanupItem = pending
+        checklist.pendingPracticeCleanup = nil
     }
 
     /// Cerrar una hoja de otra pestaña no cambia nada que el Panel observe, así que nadie re-drenaría: se vuelve a mirar
@@ -182,5 +204,18 @@ struct PanelShell: View {
         default:
             break  // Non-panel intents ignored (router shouldn't route them here).
         }
+    }
+}
+
+/// Re-drena el Panel cuando un editor arma «¿era de prueba?». Va en su propio `ViewModifier` para no alargar la cadena
+/// del `body` de `PanelShell` (límite del type-checker del CI, `.claude/rules/swiftui-ds.md`).
+private struct PanelPracticeCleanupTrigger: ViewModifier {
+    let onPending: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: SetupChecklistManager.shared.pendingPracticeCleanup?.id) { _, id in
+                if id != nil { onPending() }
+            }
     }
 }
