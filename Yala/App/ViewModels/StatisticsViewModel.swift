@@ -508,14 +508,32 @@ final class StatisticsViewModel: Filterable {
             accounts: accounts,
             criteria: criteria
         )
-        let entries: [TrendHistoryEntry] = filtered.compactMap { tx in
-            guard tx.balanceAdjustmentType == nil, !adjustment.isSuppressed(tx) else { return nil }
-            let isIncome = TransactionClassificationLogic.isIncome(tx)
-            let amount = adjustment.amountInPreferredCurrency(tx)
-            return TrendHistoryEntry(date: tx.date, isIncome: isIncome, amount: isIncome ? amount : -amount)
-        }
+        let entries = Self.historyEntries(
+            filtered: filtered, currencyCode: defaultCurrencyCode, adjustment: adjustment
+        )
         let points = TrendHistoryLogic.aggregate(entries: entries, intervals: intervals)
         if points != historicalTotals { historicalTotals = points }
+    }
+
+    /// Las entradas del histórico: ingreso y gasto de cada fila, con la clasificación de
+    /// `periodTotals`. Cada importe se resuelve con `CashFlowCalculator.resolvedAmount`: una fila
+    /// guardada en otra divisa principal se reconvierte, o el histórico y el total del período que
+    /// tiene al lado darían números distintos para el mismo mes
+    /// (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`).
+    static func historyEntries(
+        filtered: [TransactionItem],
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [TrendHistoryEntry] {
+        filtered.compactMap { tx in
+            guard tx.balanceAdjustmentType == nil, !adjustment.isSuppressed(tx) else { return nil }
+            let isIncome = TransactionClassificationLogic.isIncome(tx)
+            let amount = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
+            return TrendHistoryEntry(date: tx.date, isIncome: isIncome, amount: isIncome ? amount : -amount)
+        }
     }
 
     // MARK: - Sankey Data
@@ -807,59 +825,19 @@ final class StatisticsViewModel: Filterable {
         ]
 
         for (index, account) in accounts.enumerated() {
-            var buckets: [Date: Double] = Dictionary(
-                uniqueKeysWithValues: bucketDates.map { ($0, 0.0) })
-
             let accountTransactions = transactions.filter {
                 $0.account?.persistentModelID == account.persistentModelID
             }
-
-            switch selectedMetric {
-            case .balance:
-                // Initial balance is now a transaction, start from 0
-                var runningBalance = 0.0
-
-                // Add transactions before interval
-                let allAccountTxns = transactions.filter {
-                    $0.account?.persistentModelID == account.persistentModelID
-                }
-                for txn in allAccountTxns where txn.date < interval.start {
-                    runningBalance += txn.amountInPreferredCurrency
-                }
-
-                // Fill buckets
-                let transactionsByBucket = Dictionary(grouping: accountTransactions) { txn in
-                    trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                }
-
-                for date in bucketDates.sorted() {
-                    if let txns = transactionsByBucket[date] {
-                        for txn in txns {
-                            runningBalance += txn.amountInPreferredCurrency
-                        }
-                    }
-                    buckets[date] = runningBalance
-                }
-
-            case .income:
-                // Clasificación por categoría; signed (paridad con TrendDataProcessor).
-                // `adjustment` proyecta el Caso A a "mi parte" y excluye patas de préstamo.
-                for txn in accountTransactions
-                where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
-                    && TransactionClassificationLogic.isIncome(txn) {
-                    let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                    buckets[bucketDate, default: 0] += adjustment.amountInPreferredCurrency(txn)
-                }
-
-            case .expense:
-                // Signed: gasto (monto negativo) sube la curva; reembolso la baja.
-                for txn in accountTransactions
-                where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
-                    && !TransactionClassificationLogic.isIncome(txn) {
-                    let bucketDate = trendGrouping.dateKey(for: txn.date, calendar: calendar)
-                    buckets[bucketDate, default: 0] -= adjustment.amountInPreferredCurrency(txn)
-                }
-            }
+            let buckets = Self.accountBuckets(
+                metric: selectedMetric,
+                accountTransactions: accountTransactions,
+                bucketDates: bucketDates,
+                intervalStart: interval.start,
+                grouping: trendGrouping,
+                calendar: calendar,
+                currencyCode: defaultCurrencyCode,
+                adjustment: adjustment
+            )
 
             let points = buckets.map { date, value in
                 PanelViewModel.BarPoint(date: date, value: value)
@@ -891,6 +869,81 @@ final class StatisticsViewModel: Filterable {
             trendPoints = first.points
             dataMetric = selectedMetric
         }
+    }
+
+    /// Los puntos de la curva de UNA cuenta, por fecha de bucket.
+    ///
+    /// Cada importe sale en `currencyCode` aunque la fila se guardara con otra divisa principal
+    /// (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`), con la misma regla
+    /// que la vista agregada: ingreso y gasto con `CashFlowCalculator.resolvedAmount` y «mi parte»
+    /// de los gastos de grupo; el saldo con `TrendDataProcessor.balanceAmount`, la fila entera. Sin
+    /// esto, pasar de la vista agregada a la de cuentas cambiaba el número del mismo período.
+    static func accountBuckets(
+        metric: TrendMetric,
+        accountTransactions: [TransactionItem],
+        bucketDates: [Date],
+        intervalStart: Date,
+        grouping: TrendGrouping,
+        calendar: Calendar,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> [Date: Double] {
+        var buckets: [Date: Double] = Dictionary(
+            uniqueKeysWithValues: bucketDates.map { ($0, 0.0) })
+
+        switch metric {
+        case .balance:
+            // Initial balance is now a transaction, start from 0
+            var runningBalance = 0.0
+
+            // Add transactions before interval
+            for txn in accountTransactions where txn.date < intervalStart {
+                runningBalance += TrendDataProcessor.balanceAmount(
+                    txn, currencyCode: currencyCode, converter: converter
+                )
+            }
+
+            // Fill buckets
+            let transactionsByBucket = Dictionary(grouping: accountTransactions) { txn in
+                grouping.dateKey(for: txn.date, calendar: calendar)
+            }
+
+            for date in bucketDates.sorted() {
+                if let txns = transactionsByBucket[date] {
+                    for txn in txns {
+                        runningBalance += TrendDataProcessor.balanceAmount(
+                            txn, currencyCode: currencyCode, converter: converter
+                        )
+                    }
+                }
+                buckets[date] = runningBalance
+            }
+
+        case .income:
+            // Clasificación por categoría; signed (paridad con TrendDataProcessor).
+            // `adjustment` proyecta el Caso A a "mi parte" y excluye patas de préstamo.
+            for txn in accountTransactions
+            where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
+                && TransactionClassificationLogic.isIncome(txn) {
+                let bucketDate = grouping.dateKey(for: txn.date, calendar: calendar)
+                buckets[bucketDate, default: 0] += CashFlowCalculator.resolvedAmount(
+                    txn, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value
+            }
+
+        case .expense:
+            // Signed: gasto (monto negativo) sube la curva; reembolso la baja.
+            for txn in accountTransactions
+            where txn.balanceAdjustmentType == nil && !adjustment.isSuppressed(txn)
+                && !TransactionClassificationLogic.isIncome(txn) {
+                let bucketDate = grouping.dateKey(for: txn.date, calendar: calendar)
+                buckets[bucketDate, default: 0] -= CashFlowCalculator.resolvedAmount(
+                    txn, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+                ).value
+            }
+        }
+        return buckets
     }
 
     // MARK: - Filter Actions

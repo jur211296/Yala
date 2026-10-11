@@ -1,10 +1,10 @@
 ---
 id: trends-aggregators-sum-stored-amounts-from-other-preferred-currencies
-status: backlog
+status: done
 priority: medium
 area: currency
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-11
 source: barrido de stats-aggregators-sum-stored-amounts-from-other-preferred-currencies (2026-10-10)
 ---
 
@@ -42,5 +42,12 @@ cosas en el mismo cambio.
 
 ## Criterio de hecho
 
-- [ ] Cada sitio de la lista resuelve el importe en la divisa vigente.
-- [ ] Un test por superficie con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+- [x] Cada sitio de la lista resuelve el importe en la divisa vigente.
+- [x] Un test por superficie con dos filas de `preferredCurrencyCode` distinto, control rojo y mutante.
+
+## Resolución (2026-10-11)
+
+- **Ingreso y gasto** (curvas por cuenta e histórico) con `CashFlowCalculator.resolvedAmount`, como la vista agregada. Se extrajeron a `StatisticsViewModel.accountBuckets` y `StatisticsViewModel.historyEntries` para poder probarlos.
+- **Saldos acumulados:** reconvierten con la tasa de su fecha, con la misma regla y `adjustment: .none` (`TrendDataProcessor.balanceAmount`). Es lo que habría guardado una fila sellada en la divisa vigente, y conserva lo de antes: el saldo cuenta la fila entera, no «mi parte». El punto de «hoy» sigue saliendo de `LiveBalanceCalculator`. Lo usan la curva agregada (que alimenta también la comparativa de Tendencias, la tarjeta del Panel y el KPI de saldo de período cerrado) y las curvas de saldo por cuenta.
+- `BalanceKPICalculator` pasa su `converter` a `processTrendData`: su camino de período cerrado convertía con el compartido.
+- Tests: `YalaTests/TrendsPreferredCurrencyTests.swift` (8 casos). Control rojo con la lectura vieja: caen los 4 de mezcla y los de una sola divisa siguen verdes. Mutante del saldo de arranque solo: caen los 4 de saldo. Mutante del converter del KPI solo: cae el del KPI.
