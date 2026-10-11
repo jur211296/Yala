@@ -386,6 +386,10 @@ enum WidgetDataCache {
 
         // Get preferred currency from user settings (single source of truth)
         let preferredCurrency = UserDefaults.standard.string(forKey: CurrencyDefaults.preferredCurrencyKey) ?? "USD"
+        // Reconvierte las filas guardadas con otra divisa principal (`CashFlowCalculator.resolvedAmount`).
+        // Memoizado para este snapshot: cada fila se resuelve en hasta ~20 superficies (8 períodos,
+        // saldo, curva) y cada conversión del converter compartido lee sus tasas del store.
+        let converter: CurrencyConverting = SnapshotMemoizedConverter(base: CurrencyConverter.shared)
 
         // Total balance: TC actual sobre saldo nativo (LiveBalanceCalculator).
         // El widget consume este Double ya convertido — el calculator NO se
@@ -398,21 +402,7 @@ enum WidgetDataCache {
 
         // Build widget transactions (last 10 for display, from recent 90 days, excluyendo cuentas excluidas de stats)
         let widgetTransactions = Array(eligibleRecentTransactions.prefix(10)).map { tx in
-            WidgetTransaction(
-                id: tx.persistentModelID.hashValue.description,
-                date: tx.date,
-                amount: tx.amount,
-                currencyCode: tx.currencyCode,
-                note: tx.note,
-                categoryName: tx.category?.name,
-                categoryColor: tx.category?.colorHex,
-                categoryIcon: tx.category?.iconName,
-                subcategoryIcon: tx.subcategory?.iconName ?? tx.category?.iconName,
-                subcategoryName: tx.subcategory?.name,
-                isIncome: isIncomeTx(tx),
-                amountInPreferredCurrency: tx.amountInPreferredCurrency,
-                isExchangeRateProvisional: tx.isExchangeRateProvisional
-            )
+            widgetTransaction(tx, currencyCode: preferredCurrency, converter: converter)
         }
 
         // Build widget budgets with spent calculation
@@ -464,7 +454,12 @@ enum WidgetDataCache {
         }
 
         // Build trend data with multiple granularities (uses eligible transactions)
-        let trendData = buildTrendData(transactions: eligibleTransactions, totalBalance: totalBalance)
+        let trendData = buildTrendData(
+            transactions: eligibleTransactions,
+            totalBalance: totalBalance,
+            currencyCode: preferredCurrency,
+            converter: converter
+        )
 
         // Build account balances for widgets (only visible accounts shown as cards).
         // Cada card muestra el saldo en moneda NATIVA de la cuenta. Una sola
@@ -505,7 +500,8 @@ enum WidgetDataCache {
                 periodEnd: interval.end,
                 currencyCode: preferredCurrency,
                 allTransactionsForBalance: eligibleTransactions,
-                adjustment: adjustment
+                adjustment: adjustment,
+                converter: converter
             )
             periodSummaries[period.rawValue] = summary
         }
@@ -516,7 +512,8 @@ enum WidgetDataCache {
             periodStart: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date.now)) ?? Date.now,
             periodEnd: Date.now,
             currencyCode: preferredCurrency,
-            adjustment: adjustment
+            adjustment: adjustment,
+            converter: converter
         )
 
         let allTimeSummary = periodSummaries[DetailPeriod.allTime.rawValue] ?? buildPeriodSummary(
@@ -524,7 +521,8 @@ enum WidgetDataCache {
             periodStart: Date.distantPast,
             periodEnd: Date.now,
             currencyCode: preferredCurrency,
-            adjustment: adjustment
+            adjustment: adjustment,
+            converter: converter
         )
 
         return WidgetDataSnapshot(
@@ -590,18 +588,50 @@ enum WidgetDataCache {
         accounts.filter { !$0.isArchived && !$0.excludeFromStatistics }
     }
 
-    /// Monto en moneda preferida con fallback al monto nativo si la conversión
-    /// aún no se ha calculado (`amountInPreferredCurrency == 0`).
-    static func preferredAmount(_ tx: TransactionItem) -> Double {
-        tx.amountInPreferredCurrency != 0 ? tx.amountInPreferredCurrency : tx.amount
+    /// La fila tal como la ve la pantalla de inicio.
+    ///
+    /// `amountInPreferredCurrency` lleva el importe YA RESUELTO en la divisa principal vigente
+    /// (`CashFlowCalculator.resolvedAmount`, fila entera), no el monto guardado: el camino de
+    /// emergencia del widget (`WidgetDataService.buildPeriodSummary`) suma este campo, y la fila no
+    /// viaja con la divisa en que se guardó. Así no hace falta un campo nuevo en el DTO, que está
+    /// duplicado en dos targets. `isExchangeRateProvisional` dice si ESA resolución es aproximada.
+    /// El widget de últimos registros pinta el importe nativo y no lee ninguno de los dos.
+    static func widgetTransaction(
+        _ tx: TransactionItem,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> WidgetTransaction {
+        let resolved = CashFlowCalculator.resolvedAmount(
+            tx, currencyCode: currencyCode, adjustment: .none, converter: converter
+        )
+        return WidgetTransaction(
+            id: tx.persistentModelID.hashValue.description,
+            date: tx.date,
+            amount: tx.amount,
+            currencyCode: tx.currencyCode,
+            note: tx.note,
+            categoryName: tx.category?.name,
+            categoryColor: tx.category?.colorHex,
+            categoryIcon: tx.category?.iconName,
+            subcategoryIcon: tx.subcategory?.iconName ?? tx.category?.iconName,
+            subcategoryName: tx.subcategory?.name,
+            isIncome: isIncomeTx(tx),
+            amountInPreferredCurrency: resolved.value,
+            isExchangeRateProvisional: resolved.approximateMagnitude > 0
+        )
     }
 
-    /// Igual que `preferredAmount(_:)` pero proyectando el gasto de grupo bridgeado a
-    /// "mi parte" (neto). Con `adjustment == .none` es byte-idéntico al de arriba.
-    /// SOLO para superficies de gasto/ingreso — NUNCA para saldos/tendencia.
-    static func preferredAmount(_ tx: TransactionItem, adjustment: GroupBridgeStatsAdjustment) -> Double {
-        let preferred = adjustment.amountInPreferredCurrency(tx)
-        return preferred != 0 ? preferred : adjustment.amount(tx)
+    /// Lo que una fila suma al SALDO, en `currencyCode`, con su magnitud dudosa: la regla de la curva
+    /// de saldo de la app (`TrendDataProcessor.balanceAmount`, fila entera con `adjustment: .none`).
+    /// Existe aparte porque aquella devuelve solo el valor, y el saldo del widget lleva marca «≈».
+    private static func balanceAmount(
+        _ tx: TransactionItem,
+        currencyCode: String,
+        converter: CurrencyConverting
+    ) -> (value: Double, approximateMagnitude: Double) {
+        CashFlowCalculator.resolvedAmount(
+            tx, currencyCode: currencyCode, adjustment: .none, converter: converter
+        )
     }
 
     /// Extracts display properties (icon, color) from a budget based on its subcategories
@@ -621,14 +651,23 @@ enum WidgetDataCache {
         return ("arrow.trianglehead.2.clockwise.rotate.90", "#6366F1")
     }
 
-    private static func buildTrendData(transactions: [TransactionItem], totalBalance: Double) -> WidgetTrendData {
+    static func buildTrendData(
+        transactions: [TransactionItem],
+        totalBalance: Double,
+        currencyCode: String,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> WidgetTrendData {
         let calendar = Calendar.current
 
-        // Group transactions by day (amount already has correct sign)
+        // Group transactions by day (amount already has correct sign). La curva se recorre hacia
+        // atrás desde `totalBalance`, que ya está en la divisa vigente: cada día tiene que restar en
+        // esa misma divisa.
         var transactionsByDay: [Date: Double] = [:]
         for tx in transactions {
             let day = calendar.startOfDay(for: tx.date)
-            transactionsByDay[day, default: 0] += preferredAmount(tx)
+            transactionsByDay[day, default: 0] += TrendDataProcessor.balanceAmount(
+                tx, currencyCode: currencyCode, converter: converter
+            )
         }
 
         // Find the earliest transaction date to avoid showing flat line before data exists
@@ -784,7 +823,8 @@ enum WidgetDataCache {
         periodEnd: Date,
         currencyCode: String,
         allTransactionsForBalance: [TransactionItem]? = nil,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> WidgetPeriodSummary {
         // Filter transactions for the period, excluding balance adjustments
         let periodTransactions = transactions.filter { tx in
@@ -804,11 +844,15 @@ enum WidgetDataCache {
         for tx in periodTransactions {
             guard tx.category != nil else { continue }
             if adjustment.isSuppressed(tx) { continue }
-            let amount = preferredAmount(tx, adjustment: adjustment)
-            // Este cache NO convierte: lee el monto ya guardado. La única vía de la señal es el
-            // flag — el del `adjustment`, que en un gasto de grupo hace el OR de todas las patas
-            // que forman `amount`; el de la fila describiría solo una de ellas.
-            let approximate = adjustment.approximateMagnitude(tx, magnitude: abs(amount))
+            // La regla de la app (`CashFlowCalculator.resolvedAmount`): el monto guardado si se
+            // guardó en la divisa vigente —y entonces la señal es la del `adjustment`, que en un
+            // gasto de grupo cuenta todas las patas—; si no, el nativo reconvertido con la tasa de
+            // su fecha, y la señal es la de esa conversión.
+            let resolved = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            )
+            let amount = resolved.value
+            let approximate = resolved.approximateMagnitude
             if isIncomeTx(tx) {
                 totalIncome += abs(amount)
                 incomeApproximateMagnitude += approximate
@@ -822,7 +866,9 @@ enum WidgetDataCache {
 
         // Calculate historical balance at end of period
         // This is the sum of ALL transactions up to periodEnd (not just period transactions)
-        // Matches TrendDataProcessor.fillBalanceBuckets logic
+        // Matches TrendDataProcessor.fillBalanceBuckets logic (también en la divisa: la fila guardada
+        // con otra divisa principal se reconvierte, como en esa curva desde
+        // `trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`)
         var periodBalance: Double = 0
         // Numerador en MAGNITUDES aunque el saldo sea una resta: los errores de dos conversiones
         // distintas no se cancelan entre sí. El denominador, en cambio, es el saldo mismo — ver el
@@ -830,9 +876,9 @@ enum WidgetDataCache {
         var balanceApproximateMagnitude: Double = 0
         if let allTx = allTransactionsForBalance {
             for tx in allTx where tx.date < periodEnd {
-                let amount = preferredAmount(tx)
-                periodBalance += amount
-                if tx.isExchangeRateProvisional { balanceApproximateMagnitude += abs(amount) }
+                let resolved = balanceAmount(tx, currencyCode: currencyCode, converter: converter)
+                periodBalance += resolved.value
+                balanceApproximateMagnitude += resolved.approximateMagnitude
             }
         }
 
@@ -841,7 +887,9 @@ enum WidgetDataCache {
             transactions: periodTransactions,
             totalExpense: totalExpense,
             limit: 20,
-            adjustment: adjustment
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
         )
 
         // Build top subcategories (expenses only, top 20 for Large widgets)
@@ -849,7 +897,9 @@ enum WidgetDataCache {
             transactions: periodTransactions,
             totalExpense: totalExpense,
             limit: 20,
-            adjustment: adjustment
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
         )
 
         // Build cash flow by day
@@ -857,7 +907,9 @@ enum WidgetDataCache {
             transactions: periodTransactions,
             periodStart: periodStart,
             periodEnd: periodEnd,
-            adjustment: adjustment
+            currencyCode: currencyCode,
+            adjustment: adjustment,
+            converter: converter
         )
 
         return WidgetPeriodSummary(
@@ -901,7 +953,9 @@ enum WidgetDataCache {
         transactions: [TransactionItem],
         totalExpense: Double,
         limit: Int,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetCategory] {
         // Group expenses by category
         var categoryTotals: [String: (category: Category, amount: Double)] = [:]
@@ -914,7 +968,9 @@ enum WidgetDataCache {
             guard !isIncomeTx(tx) else { continue }
             guard let category = tx.category else { continue }
 
-            let amount = abs(preferredAmount(tx, adjustment: adjustment))
+            let amount = abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
             let key = category.name
 
             if var existing = categoryTotals[key] {
@@ -946,7 +1002,9 @@ enum WidgetDataCache {
         transactions: [TransactionItem],
         totalExpense: Double,
         limit: Int,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetSubcategory] {
         // Group expenses by subcategory
         var subcategoryTotals: [String: (subcategory: Subcategory, category: Category, amount: Double)] = [:]
@@ -960,7 +1018,9 @@ enum WidgetDataCache {
             guard let subcategory = tx.subcategory,
                   let category = tx.category else { continue }
 
-            let amount = abs(preferredAmount(tx, adjustment: adjustment))
+            let amount = abs(CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value)
             let key = "\(category.name)_\(subcategory.name)"
 
             if var existing = subcategoryTotals[key] {
@@ -993,7 +1053,9 @@ enum WidgetDataCache {
         transactions: [TransactionItem],
         periodStart: Date,
         periodEnd: Date,
-        adjustment: GroupBridgeStatsAdjustment = .none
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment = .none,
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [WidgetCashFlowPoint] {
         let calendar = Calendar.current
 
@@ -1008,7 +1070,9 @@ enum WidgetDataCache {
             if adjustment.isSuppressed(tx) { continue }
 
             let day = calendar.startOfDay(for: tx.date)
-            let rawAmount = preferredAmount(tx, adjustment: adjustment)
+            let rawAmount = CashFlowCalculator.resolvedAmount(
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
+            ).value
 
             var existing = dailyData[day] ?? (income: 0, expense: 0)
             if isIncomeTx(tx) {
@@ -1062,5 +1126,51 @@ enum WidgetDataCache {
         }
 
         return points
+    }
+}
+
+/// Memo de conversiones para UN snapshot del widget.
+///
+/// `buildSnapshot` resuelve la misma fila en muchas superficies, y la rama de reconversión de
+/// `CashFlowCalculator.resolvedAmount` llama al converter con los mismos argumentos cada vez. El
+/// converter compartido lee las tasas de esa fecha del store en cada llamada, en el hilo principal.
+/// Vive lo que vive el snapshot: no puede servir una tasa vieja a otro.
+private final class SnapshotMemoizedConverter: CurrencyConverting {
+    private struct Key: Hashable {
+        let amount: Decimal
+        let from: String
+        let to: String
+        let date: Date
+    }
+
+    private let base: CurrencyConverting
+    private var checked: [Key: (amount: Decimal, quality: RateQuality)] = [:]
+
+    init(base: CurrencyConverting) {
+        self.base = base
+    }
+
+    func convertChecked(_ amount: Decimal, from: String, to: String, on date: Date)
+        -> (amount: Decimal, quality: RateQuality)
+    {
+        let key = Key(amount: amount, from: from, to: to, date: date)
+        if let hit = checked[key] { return hit }
+        let result = base.convertChecked(amount, from: from, to: to, on: date)
+        checked[key] = result
+        return result
+    }
+
+    func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
+        convertChecked(amount, from: from, to: to, on: date).amount
+    }
+
+    func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal {
+        base.convertWithLatestRate(amount, from: from, to: to)
+    }
+
+    func convertCheckedWithLatestRate(_ amount: Decimal, from: String, to: String)
+        -> (amount: Decimal, quality: RateQuality)
+    {
+        base.convertCheckedWithLatestRate(amount, from: from, to: to)
     }
 }

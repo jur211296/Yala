@@ -318,7 +318,9 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
             `Σ|monto|` de denominador la marca no sale casi nunca, y falla justo en quien más
             historial tiene. Lo cazó la review adversarial del 2026-09-09.
             """)
-        #expect(cache.contains("isExchangeRateProvisional: tx.isExchangeRateProvisional"), """
+        // Desde `widgets-sum-stored-amounts-from-other-preferred-currencies` la fila viaja con el
+        // importe YA resuelto en la divisa vigente, y el flag dice si ESA resolución es aproximada.
+        #expect(cache.contains("isExchangeRateProvisional: resolved.approximateMagnitude > 0"), """
             El flag tiene que viajar en `WidgetTransaction`, o el camino de emergencia del widget
             recalcula los totales y los declara exactos sin saberlo.
             """)
@@ -450,9 +452,15 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
         (fichero: "Yala/App/ViewModels/RecordsViewModel.swift",
          desde: "private func calculateSummary(", hasta: "let newSummary = RecordsSummary(",
          accessor: "let resolved = CashFlowCalculator.resolvedAmount("),
+        // El widget delega en el helper desde el 2026-10-11
+        // (`widgets-sum-stored-amounts-from-other-preferred-currencies`), y su numerador sale de esa
+        // MISMA resolución, como el hero.
         (fichero: "Yala/Services/WidgetDataCache.swift",
          desde: "static func buildPeriodSummary(", hasta: "var balanceApproximateMagnitude",
-         accessor: "adjustment.approximateMagnitude(tx, magnitude: abs(amount))"),
+         accessor: "let resolved = CashFlowCalculator.resolvedAmount("),
+        (fichero: "Yala/Services/WidgetDataCache.swift",
+         desde: "static func buildPeriodSummary(", hasta: "var balanceApproximateMagnitude",
+         accessor: "let approximate = resolved.approximateMagnitude"),
     ])
     func thresholdNumeratorsReadTheAdjustmentMagnitude(
         ambito: (fichero: String, desde: String, hasta: String, accessor: String)
@@ -476,7 +484,11 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
     /// correcto, porque el importe que los acompaña **no** lleva ajuste de bridge. Sin esto, el
     /// arreglo de este ticket invita a cablear el accessor también aquí, y ahí sí cambiaría el
     /// número que se muestra.
-    @Test("El saldo histórico y la fila del widget siguen leyendo el flag de la fila")
+    ///
+    /// Desde `widgets-sum-stored-amounts-from-other-preferred-currencies` el saldo resuelve con
+    /// `CashFlowCalculator.resolvedAmount` y `adjustment: .none`: en la rama de la misma divisa su
+    /// magnitud dudosa ES el flag de la fila; en la de reconversión, la calidad de esa conversión.
+    @Test("El saldo histórico y la fila del widget resuelven la fila entera, sin ajuste")
     func unadjustedSurfacesKeepTheRowFlag() throws {
         let cache = try Self.code("Yala/Services/WidgetDataCache.swift")
 
@@ -484,10 +496,18 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
             cache, from: "if let allTx = allTransactionsForBalance {",
             to: "let topCategories = buildTopCategories("
         )
-        #expect(saldo.contains("tx.isExchangeRateProvisional"), """
-            El saldo histórico suma `preferredAmount(tx)` SIN ajuste —los saldos reflejan montos
-            reales, no «mi parte»—, así que su marca es la de la fila. Cablear aquí el accessor del
-            ajuste emparejaría una magnitud neteada con un importe sin netear.
+        #expect(saldo.contains("balanceAmount(tx, currencyCode: currencyCode, converter: converter)"), """
+            El saldo histórico suma la fila ENTERA —los saldos reflejan montos reales, no «mi
+            parte»—, así que su marca es la de la fila. Cablear aquí el accessor del ajuste
+            emparejaría una magnitud neteada con un importe sin netear.
+            """)
+        let helper = try Self.scope(
+            cache, from: "private static func balanceAmount(",
+            to: "private static func getPaymentDisplayProperties("
+        )
+        #expect(helper.contains("tx, currencyCode: currencyCode, adjustment: .none, converter: converter"), """
+            `balanceAmount` tiene que resolver con `adjustment: .none`: con el ajuste, el saldo
+            contaría «mi parte» de los gastos de grupo y no lo que salió de la cuenta.
             """)
 
         // La fila de `WidgetTransaction` también lleva su flag crudo, y eso ya lo fija

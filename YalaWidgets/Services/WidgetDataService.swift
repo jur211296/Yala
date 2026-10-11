@@ -487,6 +487,9 @@ enum WidgetDataService {
         var incomeApproximateMagnitude: Double = 0
         var expenseApproximateMagnitude: Double = 0
 
+        // `amountInPreferredCurrency` llega YA resuelto en la divisa principal vigente: la app lo
+        // escribe así (`WidgetDataCache.widgetTransaction`), porque la fila no viaja con la divisa
+        // en que se guardó y este camino no podría reconvertirla.
         for tx in transactions {
             let amount = abs(tx.amountInPreferredCurrency)
             let isApproximate = tx.isExchangeRateProvisional ?? false

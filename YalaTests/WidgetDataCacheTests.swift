@@ -155,7 +155,8 @@ struct WidgetDataCacheTests {
         let top = WidgetDataCache.buildTopCategories(
             transactions: [refund, expense],
             totalExpense: 100,
-            limit: 10
+            limit: 10,
+            currencyCode: "PEN"
         )
 
         #expect(top.count == 1)
@@ -173,7 +174,8 @@ struct WidgetDataCacheTests {
         let points = WidgetDataCache.buildCashFlowByDay(
             transactions: [refund, expense],
             periodStart: Calendar.current.startOfDay(for: day),
-            periodEnd: Calendar.current.date(byAdding: .day, value: 1, to: day) ?? day
+            periodEnd: Calendar.current.date(byAdding: .day, value: 1, to: day) ?? day,
+            currencyCode: "PEN"
         )
 
         let dayPoint = points.first

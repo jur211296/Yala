@@ -707,8 +707,9 @@ struct ApproximateMarkNewProducersTests {
 
     // MARK: - El widget de la pantalla de inicio
 
-    /// El widget no convierte: copia montos ya sellados. Su única vía es el flag de la transacción,
-    /// y hasta hoy no lo miraba nadie.
+    /// Con todo guardado en la divisa vigente, el widget no convierte: suma montos ya sellados, y su
+    /// única vía es el flag de la transacción. (Las filas guardadas con otra divisa principal se
+    /// reconvierten desde 2026-10-11: `WidgetPreferredCurrencyTests`.)
     @Test("El resumen del widget marca el gasto cuando la parte aproximada pesa")
     func widgetSummary_marksExpenseWhenApproximateWeighs() {
         let account = Account(name: "Main", currencyCode: "USD", colorHex: "#6366F1", iconName: "creditcard", type: "bank")
