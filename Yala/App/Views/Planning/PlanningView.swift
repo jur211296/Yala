@@ -72,9 +72,8 @@ struct PlanningView: View {
 
                 tabContent
             }
-            .safeAreaInset(edge: .top) {
+            .navigationChipsInset {
                 navigationChipsBar
-                    .padding(.vertical, DS.Spacing.sm)
             }
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Planning.title)

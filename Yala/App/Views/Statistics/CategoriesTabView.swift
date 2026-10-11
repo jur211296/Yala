@@ -396,7 +396,7 @@ struct CategoriesTabView: View {
             }
         }
         // Sin margen lateral propio: el del scroll ya pone el eje izquierdo del resto de la pantalla.
-        .padding(.vertical, summaryVerticalPadding)
+        .heroVerticalPadding(summaryVerticalPadding)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }

@@ -159,9 +159,8 @@ struct GroupDetailView: View {
             }
         }
         .yalaScreenBackground(.panel)
-        .safeAreaInset(edge: .top) {
+        .navigationChipsInset {
             navigationChipsBar
-                .padding(.vertical, DS.Spacing.sm)
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.large)

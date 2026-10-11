@@ -40,6 +40,21 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
             "\(place): falta Yala IA (fab_chat) junto a «+».", file: file, line: line)
     }
 
+    /// El hero queda a la misma distancia de los chips que el contenido de Planificación o del detalle de grupo, el aire
+    /// del Panel (ticket de tablero `hay-un-vacio-sobrante-entre-los-chips-y`, 2026-10-10). Del borde inferior del chip al
+    /// del rótulo había 42 pt en un iPhone 17 Pro, porque el hero sumaba su propio margen superior (12 pt, y más con el
+    /// texto grande) a los de la barra y el scroll; sin él quedan 30. El umbral de 36 separa los dos.
+    private func assertHeroHugsChips(_ app: XCUIApplication, chip identifier: String, in place: String,
+                                     file: StaticString = #filePath, line: UInt = #line) {
+        let caption = app.staticTexts["stats_hero_caption"]
+        XCTAssertTrue(caption.waitForExistence(timeout: 15), "\(place): no se ve el rótulo del hero.", file: file, line: line)
+        let gap = caption.frame.minY - app.buttons[identifier].frame.maxY
+        XCTAssertLessThan(
+            gap, 36,
+            "\(place): hay \(gap) pt entre los chips y el rótulo del hero; volvió el hueco sobrante bajo los chips.",
+            file: file, line: line)
+    }
+
     /// Una página del carrusel existe en el árbol aunque esté fuera de pantalla (el `LazyHStack` monta la vecina):
     /// lo que dice que el carrusel llegó a ella es que su centro caiga dentro de la ventana.
     private func waitUntilOnScreen(_ element: XCUIElement, timeout: TimeInterval = 5) -> Bool {
@@ -73,15 +88,19 @@ final class StatisticsHeroLikePanelUITests: XCTestCase {
 
         app.tabBars.buttons.element(boundBy: 1).tap()
         assertPanelHero(app, in: "Resumen")
+        assertHeroHugsChips(app, chip: "detail_chip_insights", in: "Resumen")
 
         openChip(app, "detail_chip_tendencias")
         assertPanelHero(app, in: "Tendencias")
+        assertHeroHugsChips(app, chip: "detail_chip_tendencias", in: "Tendencias")
 
         openChip(app, "detail_chip_categorías")
         assertPanelHero(app, in: "Distribución")
+        assertHeroHugsChips(app, chip: "detail_chip_categorías", in: "Distribución")
 
         openChip(app, "detail_chip_registros")
         assertPanelHero(app, in: "Registros")
+        assertHeroHugsChips(app, chip: "detail_chip_registros", in: "Registros")
     }
 
     /// «Ver más en Tendencias» abre Estadísticas directamente en Tendencias, sin pasar por Resumen. El hero de

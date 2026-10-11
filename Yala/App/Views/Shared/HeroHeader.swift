@@ -41,6 +41,27 @@ struct HeroHeader<Label: View, Period: View, Content: View>: View {
     }
 }
 
+/// El margen vertical del hero en Estadísticas: arriba y abajo `value` (un `@ScaledMetric` de cada pestaña), salvo
+/// debajo de una barra de chips de navegación (`navigationChipsInset`), donde arriba no suma nada y el hero queda a la
+/// misma distancia de los chips que el contenido de Planificación o del detalle de grupo (`NavigationChipsBar.swift`).
+/// Registros reutiliza la misma pestaña sin chips encima y conserva el margen de siempre.
+private struct HeroVerticalPadding: ViewModifier {
+    let value: CGFloat
+    @Environment(\.sitsBelowNavigationChips) private var sitsBelowNavigationChips
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.top, sitsBelowNavigationChips ? DS.Spacing.none : value)
+            .padding(.bottom, value)
+    }
+}
+
+extension View {
+    func heroVerticalPadding(_ value: CGFloat) -> some View {
+        modifier(HeroVerticalPadding(value: value))
+    }
+}
+
 /// El rótulo del hero: lo que dice qué es la cifra. Mismo estilo en el Panel y en Estadísticas.
 struct HeroHeaderLabel: View {
     let text: String
