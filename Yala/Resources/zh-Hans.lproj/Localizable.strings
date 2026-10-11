@@ -6562,6 +6562,12 @@
 /* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
 "image.entry.pagesLeftOutMany" = "有 %1$d 页未读取：每次最多读取 %2$d 页。如需读取，请放在另一个 PDF 中上传。";
 
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "有 1 张照片未读取：每次最多读取 %d 张。如需读取，请单独分享。";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "有 %1$d 张照片未读取：每次最多读取 %2$d 张。如需读取，请单独分享。";
+
 /* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
 "image.entry.trialLeftOutOne" = "你已用完试用照片识别：有 1 张未读取。";
 

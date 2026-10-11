@@ -5824,6 +5824,12 @@
 /* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
 "image.entry.pagesLeftOutMany" = "%1$d páginas não foram lidas: são lidas até %2$d de cada vez. Para as ler, envia-as noutro PDF.";
 
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "1 fotografia não foi lida: são lidas até %d de cada vez. Para a ler, partilha-a à parte.";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "%1$d fotografias não foram lidas: são lidas até %2$d de cada vez. Para as ler, partilha-as à parte.";
+
 /* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
 "image.entry.trialLeftOutOne" = "Já usaste as tuas fotografias de teste: 1 não foi lida.";
 

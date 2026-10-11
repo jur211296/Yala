@@ -65,6 +65,20 @@ enum SharedContainerService {
         items.sorted { $0.date > $1.date }.map(\.url)
     }
 
+    /// Las fotos de la tanda de `url` que siguen en `PendingImages/`, en su orden (`SharedImageBatch`). Un fichero sin
+    /// tanda —un recibo soltado en el iPad, o lo guardado por una extensión anterior— es una tanda de uno.
+    static func pendingImageBatch(containing url: URL) -> [URL] {
+        SharedImageBatch.batch(containing: url, among: pendingImageURLs())
+    }
+
+    /// Retira la tanda entera de `url`. La usa la puerta Pro: si quedara alguna, la recuperación del arranque volvería a
+    /// enseñar el aviso por ella.
+    static func removePendingImageBatch(containing url: URL) {
+        for member in pendingImageBatch(containing: url) where FileManager.default.fileExists(atPath: member.path) {
+            removePendingImage(at: member)
+        }
+    }
+
     /// Removes a processed image
     static func removePendingImage(at url: URL) {
         do {

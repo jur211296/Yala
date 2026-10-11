@@ -5819,6 +5819,12 @@
 /* Registro por imagen: páginas del PDF fuera del tope; %1$d = páginas, %2$d = tope */
 "image.entry.pagesLeftOutMany" = "%1$d pages weren’t read: up to %2$d are read at a time. To read them, upload them in another PDF.";
 
+/* Registro por imagen: una foto compartida no entró en el tope; %d = tope de fotos */
+"image.entry.sharedLeftOutOne" = "1 photo wasn’t read: up to %d are read at a time. To read it, share it separately.";
+
+/* Registro por imagen: fotos compartidas fuera del tope; %1$d = fotos, %2$d = tope */
+"image.entry.sharedLeftOutMany" = "%1$d photos weren’t read: up to %2$d are read at a time. To read them, share them separately.";
+
 /* Registro por imagen: el cupo de prueba se acabó a mitad y una foto o página quedó sin leer */
 "image.entry.trialLeftOutOne" = "You’ve used your trial photos: 1 wasn’t read.";
 

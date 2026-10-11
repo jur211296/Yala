@@ -50,6 +50,8 @@ struct ImageSelectionView: View {
     @State private var documentPages: Set<ObjectIdentifier> = []
     /// Páginas de PDF que no entraron por el tope de la tanda; se avisan en lo leído.
     @State private var pagesLeftOut = 0
+    /// Fotos compartidas de una vez que no entraron por el tope de la tanda (`SharedImageBatch`); se avisan en lo leído.
+    @State private var sharedPhotosLeftOut = 0
     /// Los ficheros de Archivo (o el PDF soltado) mientras se abren; se detiene en un PDF con contraseña.
     @State private var fileBatch: ImageFileBatch?
     /// La contraseña que se está escribiendo. Solo vive aquí: se borra al usarla y al cerrar la hoja.
@@ -458,6 +460,10 @@ struct ImageSelectionView: View {
                         pagesLeftOutNote
                     }
 
+                    if sharedPhotosLeftOut > 0 {
+                        sharedPhotosLeftOutNote
+                    }
+
                     if !allSaved {
                         Text(L10n.Voice.reviewInboxNote)
                             .font(DS.Typography.caption)
@@ -565,6 +571,21 @@ struct ImageSelectionView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("image_pages_left_out")
+    }
+
+    /// Más fotos compartidas que el tope: lo leído son las primeras, y la persona sabe cuántas quedaron y qué hacer.
+    private var sharedPhotosLeftOutNote: some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            Image(systemName: "photo.on.rectangle")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text(L10n.Image.Entry.sharedPhotosLeftOut(sharedPhotosLeftOut, limit: maxPhotos))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("image_shared_left_out")
     }
 
     private var reviewTitle: String {
@@ -869,8 +890,10 @@ struct ImageSelectionView: View {
         startReading(batch.images, documentPages: batch.documentPages, pagesLeftOut: batch.pagesLeftOut)
     }
 
-    /// Una foto compartida desde otra app (o soltada en el iPad) llega ya elegida: se lee directamente. Lo soltado que no
-    /// se pudo abrir llega como su fallo (`ReceiptDropHandler`) y se enseña sin pasar por elegir.
+    /// Una foto compartida desde otra app (o soltada en el iPad) llega ya elegida: se lee directamente. Varias compartidas
+    /// de una vez llegan como una tanda (`SharedImageBatch`): la URL es una de ellas y aquí se leen todas, como una
+    /// selección múltiple de Fotos. Lo soltado que no se pudo abrir llega como su fallo (`ReceiptDropHandler`) y se
+    /// enseña sin pasar por elegir.
     private func checkForSharedImage() {
         if let failure = navigation.pendingImageEntryFailure {
             navigation.pendingImageEntryFailure = nil
@@ -879,6 +902,34 @@ struct ImageSelectionView: View {
         }
         guard let url = navigation.pendingSharedImageURL else { return }
         navigation.pendingSharedImageURL = nil
+        let batch = SharedContainerService.pendingImageBatch(containing: url)
+        guard batch.count > 1 else {
+            readSharedFile(url)
+            return
+        }
+        var loaded: [UIImage] = []
+        for member in batch {
+            do {
+                let data = try Data(contentsOf: member)
+                if let image = UIImage(data: data) {
+                    loaded.append(image)
+                }
+            } catch {
+                #if DEBUG
+                print("ImageSelectionView: Error loading shared image \(member.lastPathComponent): \(error)")
+                #endif
+            }
+            SharedContainerService.removePendingImage(at: member)
+        }
+        guard !loaded.isEmpty else {
+            phase = .failure(.unreadable)
+            return
+        }
+        startReading(loaded, sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
+    }
+
+    /// Un solo fichero compartido o soltado: una foto, o un PDF que se trocea aquí.
+    private func readSharedFile(_ url: URL) {
         do {
             let data = try Data(contentsOf: url)
             SharedContainerService.removePendingImage(at: url)
@@ -891,7 +942,7 @@ struct ImageSelectionView: View {
                 phase = .failure(.unreadable)
                 return
             }
-            startReading([image])
+            startReading([image], sharedPhotosLeftOut: SharedImageBatch.leftOutCount(for: url))
         } catch {
             SharedContainerService.removePendingImage(at: url)
             #if DEBUG
@@ -906,12 +957,14 @@ struct ImageSelectionView: View {
     private func startReading(
         _ batch: [UIImage],
         documentPages pages: Set<ObjectIdentifier> = [],
-        pagesLeftOut leftOut: Int = 0
+        pagesLeftOut leftOut: Int = 0,
+        sharedPhotosLeftOut sharedLeftOut: Int = 0
     ) {
         guard !batch.isEmpty else { return }
         images = batch
         documentPages = pages
         pagesLeftOut = leftOut
+        sharedPhotosLeftOut = sharedLeftOut
         failedImages = []
         failedReasons = []
         drafts = []
@@ -1108,6 +1161,7 @@ struct ImageSelectionView: View {
         failedReasons = []
         documentPages = []
         pagesLeftOut = 0
+        sharedPhotosLeftOut = 0
         fileBatch = nil
         pdfPassword = ""
         saveFailed = false

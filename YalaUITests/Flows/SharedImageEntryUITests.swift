@@ -24,18 +24,20 @@ final class SharedImageEntryUITests: XCTestCase {
     private let shareURL = URL(string: "yaladev://shared-image?uitest-stage=readable")!
 
     /// Abre la URL del share por el sistema. Si SpringBoard pregunta «¿Abrir en …?», se acepta.
-    private func openShare() {
-        XCUIDevice.shared.system.open(shareURL)
+    private func openShare(_ url: URL? = nil) {
+        XCUIDevice.shared.system.open(url ?? shareURL)
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let open = springboard.alerts.buttons.element(boundBy: 1)
         if springboard.alerts.firstMatch.waitForExistence(timeout: 3), open.exists { open.tap() }
     }
 
-    private func launch(_ extra: [String] = [], inboxAlert: Bool = false, deeplinkURL: String? = nil) -> XCUIApplication {
+    private func launch(
+        _ extra: [String] = [], inboxAlert: Bool = false, deeplinkURL: String? = nil, imageResult: String = "one"
+    ) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchForUITest(
             pro: true, deeplinkURL: deeplinkURL, inboxAlert: inboxAlert, aiConsent: true,
-            extraArguments: ["-uitest-image-result", "one"] + extra)
+            extraArguments: ["-uitest-image-result", imageResult] + extra)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         return app
     }
@@ -169,5 +171,36 @@ final class SharedImageEntryUITests: XCTestCase {
         XCTAssertTrue(dismiss.waitForExistence(timeout: 10), "El aviso tenía que seguir delante.")
         dismiss.tap()
         assertReadingStarts(app, "Al contestar el aviso de arranque, la foto compartida tenía que leerse.")
+    }
+
+    // MARK: - Varias fotos de una vez (tablero-yala-no-aparece-al-compartir-varias-capt-3ut5)
+
+    /// La extensión deja una tanda (`uitest-shared=N` la reproduce): cada foto se lee y da su registro. Con `pages`, la
+    /// lectura fingida da un movimiento distinto por foto, para que la deduplicación no junte dos en uno.
+    private func waitForSharedBatchReview(
+        _ app: XCUIApplication, rows: Int, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: 30 + Double(rows) * 5),
+                      "La tanda compartida tenía que leerse (image_review_title).", file: file, line: line)
+        XCTAssertEqual(app.buttons.matching(identifier: "voice_draft_row").count, rows,
+                       "Tenía que haber un registro por foto compartida.", file: file, line: line)
+    }
+
+    /// El rojo del ticket, del lado de la app: con el código de antes solo se leía UNA de las fotos compartidas.
+    func test_threeSharedPhotos_eachOneIsRead() {
+        let app = launch(imageResult: "pages")
+        openShare(URL(string: "yaladev://shared-image?uitest-stage=readable&uitest-shared=3")!)
+        waitForSharedBatchReview(app, rows: 3)
+        XCTAssertFalse(app.staticTexts["image_shared_left_out"].exists, "Tres fotos caben: no hay aviso de tope.")
+    }
+
+    /// Más fotos que el tope: se leen las diez primeras y la hoja dice cuántas quedaron fuera.
+    func test_moreSharedPhotosThanTheCap_readsTheFirstTen_andSaysHowManyWereLeft() {
+        let app = launch(imageResult: "pages")
+        openShare(URL(string: "yaladev://shared-image?uitest-stage=readable&uitest-shared=12")!)
+        waitForSharedBatchReview(app, rows: 10)
+        let note = app.staticTexts["image_shared_left_out"]
+        XCTAssertTrue(note.waitForExistence(timeout: 5), "Faltaba el aviso de las fotos sin leer (image_shared_left_out).")
+        XCTAssertTrue(note.label.contains("2 "), "El aviso tenía que decir cuántas quedaron: «\(note.label)».")
     }
 }
