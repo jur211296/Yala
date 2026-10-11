@@ -504,7 +504,7 @@
 "common.loading" = "Ładowanie...";
 "common.error" = "Błąd";
 "common.success" = "Sukces";
-"common.dataPrivacy" = "Twoje dane nigdy nie opuszczają urządzenia";
+"common.dataPrivacy" = "Gdzie są Twoje dane";
 "common.active" = "Aktywne";
 "common.hidden" = "Ukryte";
 "common.inactive" = "Nieaktywne";
@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "Analizuję twoje dane...";
 "insights.activateAITitle" = "Inteligentny przegląd dostępny";
 "insights.activateAIBody" = "Włącz i dostosuj go w Profil > Funkcje AI.";
-"insights.activateAIDisclaimer" = "Do OpenAI wysyłane są tylko zagregowane dane (sumy, procenty, trendy). Twoje pojedyncze transakcje i dane osobowe nigdy nie są udostępniane.";
 "insights.activate" = "Aktywuj";
 "insights.goToSettings" = "Przejdź do ustawień";
 "insights.notInterested" = "Nie interesuje mnie";
@@ -1148,8 +1147,8 @@
 "profile.allowedChars" = "Tylko litery, cyfry i podkreślenia";
 "profile.aliasAvailable" = "Alias dostępny";
 "profile.aliasHelper" = "3-20 znaków. Tylko litery, cyfry i podkreślenia.";
-"profile.privacyTitle" = "Twoje dane nigdy nie opuszczają urządzenia";
-"profile.privacyDesc" = "Yala przechowuje twoje dane osobowe wyłącznie na urządzeniu. Funkcje AI (głos, obraz, obserwacje) są opcjonalne i przetwarzają tylko zagregowane dane — nigdy pojedynczych transakcji ani danych osobowych.";
+"profile.privacyTitle" = "Gdzie są Twoje dane";
+"profile.privacyDesc" = "Z kontem w Twoim prywatnym iCloud Twoje dane są przechowywane na urządzeniu i w Twoim iCloud. Z kontem w chmurze są przechowywane na serwerach Yala. To, co dodajesz w grupie, razem z Twoim pseudonimem, jest przechowywane na serwerach Yala, żeby grupa to widziała. Funkcje AI (głos, obraz, obserwacje) są opcjonalne: to, co do nich wysyłasz, trafia przez nasz serwer do OpenAI, które to przetwarza.";
 "profile.aliasFutureNote" = "Uwaga: walidacja unikalności aliasu będzie dostępna, gdy zostanie wdrożona funkcja wydatków współdzielonych.";
 "profile.proMember" = "Członek PRO";
 "profile.choosePhoto" = "Wybierz zdjęcie";
@@ -1829,10 +1828,9 @@
 "onboarding.usageMode.fullControl.desc" = "Uwzględniasz wszystko w saldzie — konta, karty oraz to, co krąży między tobą a innymi. Liczba, którą widzisz, to to, co naprawdę masz.";
 "onboarding.privacyTitle" = "Wszystko gotowe";
 "onboarding.privacySubtitle" = "Możesz zaczynać korzystać z Yala";
-"onboarding.privacyLocal" = "Twoje dane finansowe pozostają na urządzeniu";
+"onboarding.privacyLocal" = "Twoje dane finansowe są przechowywane na Twoim koncie";
 "onboarding.privacyNoTracking" = "Bez śledzenia i reklam";
-"onboarding.privacyIcloud" = "Tylko ty masz dostęp do swoich danych";
-"onboarding.privacyNoSharing" = "Funkcje AI nie udostępniają ani nie zapisują wrażliwych danych";
+"onboarding.privacyIcloud" = "Do swoich danych wchodzisz przez swoje konto";
 "onboarding.categoriesDefault" = "Domyślne kategorie";
 "onboarding.categoriesCustom" = "Niestandardowe kategorie";
 "onboarding.privacyTutorialsHint" = "Odkryj samouczki i wskazówki Yala";
@@ -1858,10 +1856,11 @@
 "onboarding.balanceManualOption" = "Znam swoje saldo";
 "onboarding.balanceManualHint" = "Wpisujesz je ręcznie";
 "onboarding.balanceGuidedIncompleteHint" = "Nie ukończyłeś obliczeń. Dotknij, aby kontynuować.";
-"onboarding.privacyLocalShort" = "Dane na Twoim urządzeniu";
+"onboarding.privacyLocalShort" = "Dane na Twoim koncie";
 "onboarding.privacyNoTrackingShort" = "Bez śledzenia ani reklam";
-"onboarding.privacyIcloudShort" = "Dostęp tylko dla Ciebie";
-"onboarding.privacyNoSharingShort" = "Bezpieczna SI";
+"onboarding.privacyIcloudShort" = "Dostęp przez Twoje konto";
+"onboarding.privacyAIShort" = "AI przez nasz serwer";
+"onboarding.privacyAIDetail" = "Ty decydujesz, czy z niej korzystać";
 "onboarding.accountBalanceGuideTitle" = "Jak obliczyć moje saldo?";
 "onboarding.accountBalanceGuideIntro" = "Saldo początkowe mówi Yala, z jaką kwotą startujesz. Nie musi być co do grosza — szacunek wystarczy. Oto jak o nim myśleć w zależności od typu wybranego konta.";
 "onboarding.accountBalanceGuideGeneral" = "Jeśli używasz konta ogólnego, aby zgromadzić wszystkie metody płatności w jednej walucie, twoje saldo odzwierciedla, ile masz dostępnych pieniędzy.\n\nZsumuj wszystko: konta bieżące, oszczędności, gotówka. Jeśli masz oczekujące obciążenia karty kredytowej, możesz je odjąć dla większej precyzji — albo śledzić każdą kartę jako osobne konto.\n\nTa końcowa liczba to twoje saldo początkowe.";
@@ -4153,7 +4152,7 @@
 "welcome.hero.title" = "Twoje finanse osobiste,";
 "welcome.hero.titleAccent" = "bez wysiłku.";
 "welcome.hero.cta" = "Zaczynaj";
-"welcome.hero.trust" = "100% prywatne · Twoje dane zostają z Tobą";
+"welcome.hero.trust" = "Bez śledzenia ani reklam";
 
 "welcome.hero.cards.capture.title" = "Zdjęcie paragonu";
 "welcome.hero.cards.capture.body" = "Wyceluj. Yala odczyta.";
@@ -4168,7 +4167,7 @@
 "welcome.hero.cards.import.title" = "Importuj swoją historię";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Gotowe.";
 "welcome.hero.cards.icloud.title" = "Prywatny iCloud";
-"welcome.hero.cards.icloud.body" = "Twoje dane, w Twoim iCloud. Bez serwerów.";
+"welcome.hero.cards.icloud.body" = "Twoje dane, w Twoim iCloud.";
 "welcome.hero.cards.more.title" = "I wiele więcej";
 "welcome.hero.cards.more.body" = "Odkryjmy to razem.";
 
@@ -4438,7 +4437,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Ten wspólny wydatek już nie istnieje w grupie.";
 "whatsNew.v20.groups.title" = "Grupy (Beta)";
-"whatsNew.v20.groups.description" = "Twórz grupy, aby dzielić wydatki, a Yala obliczy, kto komu ile jest winien. I bez obaw: wszystko przechodzi przez twój prywatny iCloud, nigdy przez nasze serwery.";
+"whatsNew.v20.groups.description" = "Twórz grupy, aby dzielić wydatki, a Yala obliczy, kto komu ile jest winien.";
 "whatsNew.v20.ai.title" = "Poznaj Yala AI";
 "whatsNew.v20.ai.description" = "Twój asystent finansowy ze sztuczną inteligencją. Zadawaj pytania o swoje pieniądze, poproś o zapisanie wydatków i otrzymuj przejrzyste analizy miesiąca. Jak znajomy, który zna się na finansach – w zasięgu jednej wiadomości.";
 "whatsNew.v20.redesign.title" = "Zupełnie nowy wygląd";

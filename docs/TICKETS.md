@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (856)
+## Index (862)
 
 | id | status | path |
 |---|---|---|
@@ -480,6 +480,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | image-reading-sends-the-full-resolution-photo | done | tickets/done/image-reading-sends-the-full-resolution-photo.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
+| in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
 | in-app-privacy-copy-says-data-never-leaves-the-device | backlog | tickets/backlog/in-app-privacy-copy-says-data-never-leaves-the-device.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
@@ -531,6 +532,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | done | tickets/done/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
+| stats-hero-detail-row-truncates-at-accessibility-text | backlog | tickets/backlog/stats-hero-detail-row-truncates-at-accessibility-text.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace | backlog | tickets/backlog/late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace.md |
 | late-icloud-wipe-stays-frozen-after-a-settled-failed-migration | done | tickets/done/late-icloud-wipe-stays-frozen-after-a-settled-failed-migration.md |
@@ -569,6 +571,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
+| multi-currency-accounts-1-model-and-sync | backlog | tickets/backlog/multi-currency-accounts-1-model-and-sync.md |
+| multi-currency-accounts-2-card-view | backlog | tickets/backlog/multi-currency-accounts-2-card-view.md |
+| multi-currency-accounts-3-pickers-and-capture | backlog | tickets/backlog/multi-currency-accounts-3-pickers-and-capture.md |
+| multi-currency-accounts-4-reports-and-export | backlog | tickets/backlog/multi-currency-accounts-4-reports-and-export.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
@@ -601,7 +607,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | qa | tickets/qa/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
-| personal-cloudkit-schema-snapshot-misses-optional-fields | backlog | tickets/backlog/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
+| personal-cloudkit-cashflow-override-line-declared-as-reference | backlog | tickets/backlog/personal-cloudkit-cashflow-override-line-declared-as-reference.md |
+| personal-cloudkit-schema-snapshot-misses-optional-fields | blocked | tickets/blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
 | personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | qa | tickets/qa/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
 | personal-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/personal-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |

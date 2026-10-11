@@ -28,8 +28,6 @@
 	<string>Yala uses your photos to extract transaction details from screenshots and receipts. Selected images are sent to OpenAI for processing.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Yala saves the group summaries you choose to save to your photo library. Nothing is saved without you asking for it.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>Yala uses Face ID to protect your financial information.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>com.jurgenschmidt.yala.widget-refresh</string>

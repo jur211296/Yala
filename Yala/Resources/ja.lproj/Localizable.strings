@@ -504,7 +504,7 @@
 "common.loading" = "読み込み中...";
 "common.error" = "エラー";
 "common.success" = "成功";
-"common.dataPrivacy" = "データはデバイスの外に出ません";
+"common.dataPrivacy" = "データの保存先";
 "common.active" = "アクティブ";
 "common.hidden" = "非表示";
 "common.inactive" = "非アクティブ";
@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "データを分析中...";
 "insights.activateAITitle" = "スマート概要を利用できます";
 "insights.activateAIBody" = "プロフィール > AI機能で有効化・カスタマイズできます。";
-"insights.activateAIDisclaimer" = "OpenAIには集計データのみが送信されます(合計、割合、推移)。個別の取引や個人情報は共有されません。";
 "insights.activate" = "有効化";
 "insights.goToSettings" = "設定に移動";
 "insights.notInterested" = "興味なし";
@@ -1148,8 +1147,8 @@
 "profile.allowedChars" = "英数字とアンダースコアのみ";
 "profile.aliasAvailable" = "このエイリアスは利用可能です";
 "profile.aliasHelper" = "3〜20文字。英数字とアンダースコアのみ。";
-"profile.privacyTitle" = "データはデバイスの外に出ません";
-"profile.privacyDesc" = "Yalaは個人データをこのデバイス上にのみ保存します。AI機能(音声、画像、インサイト)は任意で、集計データのみを処理し、個別の取引や個人情報は扱いません。";
+"profile.privacyTitle" = "データの保存先";
+"profile.privacyDesc" = "プライベートなiCloudのアカウントでは、データはこの端末とあなたのiCloudに保存されます。クラウドのアカウントでは、Yalaのサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してOpenAIに届き、そこで処理されます。";
 "profile.aliasFutureNote" = "備考: エイリアスの一意性チェックは、シェア支出機能の実装時に利用可能になります。";
 "profile.proMember" = "PROメンバー";
 "profile.choosePhoto" = "写真を選ぶ";
@@ -1829,10 +1828,9 @@
 "onboarding.usageMode.fullControl.desc" = "口座、カード、他人とのやり取りまで、すべてを残高に含めます。表示される数字が本当に自分のお金です。";
 "onboarding.privacyTitle" = "準備完了";
 "onboarding.privacySubtitle" = "Yalaを使い始める準備ができました";
-"onboarding.privacyLocal" = "金融データはデバイス内に保存されます";
+"onboarding.privacyLocal" = "家計データはあなたのアカウントに保存されます";
 "onboarding.privacyNoTracking" = "トラッキングや広告はありません";
-"onboarding.privacyIcloud" = "データにアクセスできるのはあなただけ";
-"onboarding.privacyNoSharing" = "AI機能は機微データを共有・保存しません";
+"onboarding.privacyIcloud" = "データにはあなたのアカウントでアクセスします";
 "onboarding.categoriesDefault" = "既定のカテゴリー";
 "onboarding.categoriesCustom" = "カスタムカテゴリー";
 "onboarding.privacyTutorialsHint" = "Yalaのチュートリアルとヒントを見る";
@@ -1858,10 +1856,11 @@
 "onboarding.balanceManualOption" = "残高を知っています";
 "onboarding.balanceManualHint" = "自分で入力します";
 "onboarding.balanceGuidedIncompleteHint" = "計算が完了していません。タップして再開してください。";
-"onboarding.privacyLocalShort" = "データはあなたの端末に";
+"onboarding.privacyLocalShort" = "データはあなたのアカウントに";
 "onboarding.privacyNoTrackingShort" = "追跡や広告なし";
-"onboarding.privacyIcloudShort" = "あなただけがアクセス";
-"onboarding.privacyNoSharingShort" = "安全な AI";
+"onboarding.privacyIcloudShort" = "アカウントでアクセス";
+"onboarding.privacyAIShort" = "AIは当社のサーバーを経由";
+"onboarding.privacyAIDetail" = "使うかどうかはあなたが決めます";
 "onboarding.accountBalanceGuideTitle" = "残高はどう計算する？";
 "onboarding.accountBalanceGuideIntro" = "初期残高は、Yalaに「いくらから始めるか」を伝えるものです。1円単位の正確さは不要、おおよその額で十分です。選んだ口座の種類ごとの考え方を以下に示します。";
 "onboarding.accountBalanceGuideGeneral" = "1つの通貨で支払い手段をまとめた一般口座を使う場合、残高は使えるお金の合計を表します。\n\n計算するには普通預金、貯蓄、現金などすべてを合算します。クレジットカードの未払い分があれば、より正確に把握するために差し引いてもよいですし、あとで各カードを別の口座として管理することもできます。\n\nその最終値が初期残高です。";
@@ -4153,7 +4152,7 @@
 "welcome.hero.title" = "あなたの個人ファイナンスを、";
 "welcome.hero.titleAccent" = "簡単に。";
 "welcome.hero.cta" = "はじめる";
-"welcome.hero.trust" = "100%プライベート · あなたの情報はあなたのもの";
+"welcome.hero.trust" = "追跡や広告なし";
 
 "welcome.hero.cards.capture.title" = "レシートを撮影";
 "welcome.hero.cards.capture.body" = "カメラを向けるだけ。Yalaが読み取ります。";
@@ -4168,7 +4167,7 @@
 "welcome.hero.cards.import.title" = "履歴をインポート";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
 "welcome.hero.cards.icloud.title" = "プライベートiCloud";
-"welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。サーバーなし。";
+"welcome.hero.cards.icloud.body" = "あなたのデータは、あなたのiCloudに。";
 "welcome.hero.cards.more.title" = "さらに多くの機能";
 "welcome.hero.cards.more.body" = "一緒に発見していきましょう。";
 
@@ -4438,7 +4437,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "この共有支出はグループにもう存在しません。";
 "whatsNew.v20.groups.title" = "グループ（ベータ版）";
-"whatsNew.v20.groups.description" = "グループを作って費用を分担すると、Yala が誰が誰にいくら払うかを計算します。ご安心ください。データはすべてあなたのプライベートな iCloud を経由し、当社のサーバーは通りません。";
+"whatsNew.v20.groups.description" = "グループを作って費用を分担すると、Yala が誰が誰にいくら払うかを計算します。";
 "whatsNew.v20.ai.title" = "Yala AI のご紹介";
 "whatsNew.v20.ai.description" = "AI を搭載したあなたの家計アシスタント。お金について質問したり、支出の記録を頼んだり、今月の分かりやすい分析を受け取れます。お金に詳しい友だちのように、メッセージひとつですぐそばに。";
 "whatsNew.v20.redesign.title" = "全面リニューアル";

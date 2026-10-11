@@ -504,7 +504,7 @@
 "common.loading" = "Loading...";
 "common.error" = "Error";
 "common.success" = "Success";
-"common.dataPrivacy" = "Your data never leaves your device";
+"common.dataPrivacy" = "Where your data lives";
 "common.active" = "Active";
 "common.hidden" = "Hidden";
 "common.inactive" = "Inactive";
@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "Analyzing your data...";
 "insights.activateAITitle" = "Smart Overview available";
 "insights.activateAIBody" = "Enable and customize it in Profile > AI Features.";
-"insights.activateAIDisclaimer" = "Only summarized data is sent to OpenAI (totals, percentages, trends). Your individual transactions and personal data are never shared.";
 "insights.activate" = "Activate";
 "insights.goToSettings" = "Go to settings";
 "insights.notInterested" = "Not interested";
@@ -1148,8 +1147,8 @@
 "profile.allowedChars" = "Only letters, numbers, and underscores";
 "profile.aliasAvailable" = "Alias available";
 "profile.aliasHelper" = "3-20 characters. Only letters, numbers, and underscores.";
-"profile.privacyTitle" = "Your data never leaves your device";
-"profile.privacyDesc" = "Yala stores your personal data solely on your device. AI features (voice, image, and insights) are optional and only process summarized data — never your individual transactions or personal information.";
+"profile.privacyTitle" = "Where your data lives";
+"profile.privacyDesc" = "With your account in your private iCloud, your data is stored on your device and in your iCloud. With your account in the cloud, it's stored on Yala's servers. What you add to a group, along with your alias, is stored on Yala's servers so the group can see it. AI features (voice, image and insights) are optional: what you send them goes through our server to OpenAI, which processes it.";
 "profile.aliasFutureNote" = "Note: Alias uniqueness validation will be available when shared expenses functionality is implemented.";
 "profile.proMember" = "PRO Member";
 "profile.choosePhoto" = "Choose photo";
@@ -1829,10 +1828,9 @@
 "onboarding.usageMode.fullControl.desc" = "You include everything in your balance — accounts, cards and what comes and goes with other people. The number you see is what's truly yours.";
 "onboarding.privacyTitle" = "All Set";
 "onboarding.privacySubtitle" = "You're ready to start using Yala";
-"onboarding.privacyLocal" = "Your financial data stays on your device";
+"onboarding.privacyLocal" = "Your financial data is stored in your account";
 "onboarding.privacyNoTracking" = "No tracking or ads";
-"onboarding.privacyIcloud" = "Only you have access to your data";
-"onboarding.privacyNoSharing" = "AI features don't share or store sensitive data";
+"onboarding.privacyIcloud" = "You access your data with your account";
 "onboarding.categoriesDefault" = "Default categories";
 "onboarding.categoriesCustom" = "Custom categories";
 "onboarding.privacyTutorialsHint" = "Discover Yala's tutorials and tips";
@@ -1858,10 +1856,11 @@
 "onboarding.balanceManualOption" = "I know my balance";
 "onboarding.balanceManualHint" = "Type it in yourself";
 "onboarding.balanceGuidedIncompleteHint" = "You haven't finished the calculation. Tap to pick it up again.";
-"onboarding.privacyLocalShort" = "Data on your device";
+"onboarding.privacyLocalShort" = "Data in your account";
 "onboarding.privacyNoTrackingShort" = "No tracking or ads";
-"onboarding.privacyIcloudShort" = "Only you have access";
-"onboarding.privacyNoSharingShort" = "Safe AI";
+"onboarding.privacyIcloudShort" = "Access with your account";
+"onboarding.privacyAIShort" = "AI through our server";
+"onboarding.privacyAIDetail" = "You decide whether to use it";
 "onboarding.accountBalanceGuideTitle" = "How do I calculate my balance?";
 "onboarding.accountBalanceGuideIntro" = "Your initial balance tells Yala how much money you're starting with. It doesn't need to be exact to the penny — a rough estimate works great. Here's how to think about it depending on the type of account you chose.";
 "onboarding.accountBalanceGuideGeneral" = "If you're using a general account to group all your payment methods in one currency, your balance reflects how much money you have available.\n\nTo calculate it, add up everything: checking accounts, savings, cash. If you have pending credit card charges, you can subtract them for a more precise picture — or track each card as a separate account later.\n\nThat final number is your initial balance.";
@@ -4126,7 +4125,7 @@
 "welcome.hero.title" = "Your personal finances,";
 "welcome.hero.titleAccent" = "effortless.";
 "welcome.hero.cta" = "Get started";
-"welcome.hero.trust" = "100% private · Your info stays with you";
+"welcome.hero.trust" = "No tracking or ads";
 
 "welcome.hero.cards.capture.title" = "Snap a receipt";
 "welcome.hero.cards.capture.body" = "Point your camera. Yala reads it.";
@@ -4141,7 +4140,7 @@
 "welcome.hero.cards.import.title" = "Import your history";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Done.";
 "welcome.hero.cards.icloud.title" = "Private iCloud";
-"welcome.hero.cards.icloud.body" = "Your data, in your iCloud. No servers.";
+"welcome.hero.cards.icloud.body" = "Your data, in your iCloud.";
 "welcome.hero.cards.more.title" = "And much more";
 "welcome.hero.cards.more.body" = "Let's discover it together.";
 
@@ -4432,7 +4431,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "This shared expense no longer exists in the group.";
 "whatsNew.v20.groups.title" = "Groups (Beta)";
-"whatsNew.v20.groups.description" = "Create groups to share expenses and let Yala work out who owes whom. And don't worry: everything travels through your private iCloud, never our servers.";
+"whatsNew.v20.groups.description" = "Create groups to share expenses and let Yala work out who owes whom.";
 "whatsNew.v20.ai.title" = "Meet Yala AI";
 "whatsNew.v20.ai.description" = "Your AI-powered financial assistant. Ask about your money, have it log your expenses, and get clear insights on your month. Like a friend who knows finance, just a message away.";
 "whatsNew.v20.redesign.title" = "A whole new look";

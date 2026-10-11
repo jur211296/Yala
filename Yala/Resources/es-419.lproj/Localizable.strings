@@ -504,7 +504,7 @@
 "common.loading" = "Cargando...";
 "common.error" = "Error";
 "common.success" = "Éxito";
-"common.dataPrivacy" = "Tus datos nunca salen de tu dispositivo";
+"common.dataPrivacy" = "Dónde viven tus datos";
 "common.active" = "Activas";
 "common.hidden" = "Ocultas";
 "common.inactive" = "Inactivas";
@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "Analizando tus datos...";
 "insights.activateAITitle" = "Resumen inteligente disponible";
 "insights.activateAIBody" = "Actívalo y personalízalo en Perfil > Funcionalidades con IA.";
-"insights.activateAIDisclaimer" = "Solo se envían datos resumidos a OpenAI (totales, porcentajes, tendencias). Nunca se comparten tus gastos individuales ni datos personales.";
 "insights.activate" = "Activar";
 "insights.goToSettings" = "Ir a ajustes";
 "insights.notInterested" = "No me interesa";
@@ -1148,8 +1147,8 @@
 "profile.allowedChars" = "Solo letras, números y guiones bajos";
 "profile.aliasAvailable" = "Alias disponible";
 "profile.aliasHelper" = "3-20 caracteres. Solo letras, números y guiones bajos.";
-"profile.privacyTitle" = "Tus datos nunca salen de tu dispositivo";
-"profile.privacyDesc" = "Yala almacena tus datos personales únicamente en tu dispositivo. Las funciones de IA (voz, imagen e insights) son opcionales y solo procesan datos resumidos — nunca tus gastos individuales ni información personal.";
+"profile.privacyTitle" = "Dónde viven tus datos";
+"profile.privacyDesc" = "Con tu cuenta en tu iCloud privado, tus datos se guardan en tu dispositivo y en tu iCloud. Con tu cuenta en la nube, se guardan en los servidores de Yala. Lo que apuntas en un grupo, con tu alias, se guarda en los servidores de Yala para que el grupo lo vea. Las funciones de IA (voz, imagen e insights) son opcionales: lo que les envías pasa por nuestro servidor hasta OpenAI, que lo procesa.";
 "profile.aliasFutureNote" = "Nota: La validación de unicidad del alias estará disponible cuando se implemente la funcionalidad de gastos compartidos.";
 "profile.proMember" = "Miembro PRO";
 "profile.choosePhoto" = "Elegir foto";
@@ -1827,10 +1826,9 @@
 "onboarding.usageMode.fullControl.desc" = "Incluyes todo en tu saldo — cuentas, tarjetas y lo que va y viene con otras personas. El número que ves es el que realmente es tuyo.";
 "onboarding.privacyTitle" = "Todo listo";
 "onboarding.privacySubtitle" = "Ya puedes empezar a usar Yala";
-"onboarding.privacyLocal" = "Tus datos financieros se guardan en tu dispositivo";
+"onboarding.privacyLocal" = "Tus datos financieros se guardan en tu cuenta";
 "onboarding.privacyNoTracking" = "Sin rastreo ni anuncios";
-"onboarding.privacyIcloud" = "Solo tú tienes acceso a tus datos";
-"onboarding.privacyNoSharing" = "Las funciones de IA no comparten ni almacenan datos sensibles";
+"onboarding.privacyIcloud" = "Accedes a tus datos con tu cuenta";
 "onboarding.categoriesDefault" = "Categorías predeterminadas";
 "onboarding.categoriesCustom" = "Categorías personalizadas";
 "onboarding.privacyTutorialsHint" = "Descubre los tutoriales y consejos de Yala";
@@ -1856,10 +1854,11 @@
 "onboarding.balanceManualOption" = "Conozco mi saldo";
 "onboarding.balanceManualHint" = "Lo escribes a mano";
 "onboarding.balanceGuidedIncompleteHint" = "Aún no completaste el cálculo. Toca para retomar.";
-"onboarding.privacyLocalShort" = "Datos en tu dispositivo";
+"onboarding.privacyLocalShort" = "Datos en tu cuenta";
 "onboarding.privacyNoTrackingShort" = "Sin rastreo ni anuncios";
-"onboarding.privacyIcloudShort" = "Solo tú accedes";
-"onboarding.privacyNoSharingShort" = "IA segura";
+"onboarding.privacyIcloudShort" = "Acceso con tu cuenta";
+"onboarding.privacyAIShort" = "IA a través de nuestro servidor";
+"onboarding.privacyAIDetail" = "Tú decides si usarla";
 "onboarding.accountBalanceGuideTitle" = "¿Cómo calculo mi saldo?";
 "onboarding.accountBalanceGuideIntro" = "Tu saldo inicial le dice a Yala con cuánto dinero arrancas. No necesita ser exacto al centavo — una aproximación está bien. Aquí te explicamos cómo pensarlo según el tipo de cuenta que elegiste.";
 "onboarding.accountBalanceGuideGeneral" = "Si usas una cuenta general para agrupar todos tus medios de pago en una divisa, tu saldo refleja cuánto dinero tienes disponible.\n\nPara calcularlo, suma todo lo que tienes: cuentas de débito, ahorros, efectivo. Si tienes consumos pendientes en tarjetas de crédito, puedes restarlos para una foto más precisa — o llevar cada tarjeta como cuenta aparte más adelante.\n\nEsa cifra final es tu saldo inicial.";
@@ -4111,7 +4110,7 @@
 "welcome.hero.title" = "Tus finanzas personales,";
 "welcome.hero.titleAccent" = "sin esfuerzo.";
 "welcome.hero.cta" = "Empezar";
-"welcome.hero.trust" = "100% privado · Tu info siempre contigo";
+"welcome.hero.trust" = "Sin rastreo ni anuncios";
 
 "welcome.hero.cards.capture.title" = "Captura por foto";
 "welcome.hero.cards.capture.body" = "Apunta el ticket. Yala lo lee.";
@@ -4126,7 +4125,7 @@
 "welcome.hero.cards.import.title" = "Importa tu historial";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Listo.";
 "welcome.hero.cards.icloud.title" = "iCloud privado";
-"welcome.hero.cards.icloud.body" = "Tu info, en tu iCloud. Sin servidores.";
+"welcome.hero.cards.icloud.body" = "Tu info, en tu iCloud.";
 "welcome.hero.cards.more.title" = "Y mucho más";
 "welcome.hero.cards.more.body" = "Vamos a descubrirlo juntos.";
 
@@ -4440,7 +4439,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Este gasto compartido ya no existe en el grupo.";
 "whatsNew.v20.groups.title" = "Grupos (Beta)";
-"whatsNew.v20.groups.description" = "Crea grupos para compartir gastos y Yala calcula quién le debe a quién. Y tranquilo: todo viaja por tu iCloud privado, sin servidores nuestros.";
+"whatsNew.v20.groups.description" = "Crea grupos para compartir gastos y Yala calcula quién le debe a quién.";
 "whatsNew.v20.ai.title" = "Te presentamos a Yala IA";
 "whatsNew.v20.ai.description" = "Tu asistente financiero con inteligencia artificial. Hazle preguntas sobre tu dinero, pídele que registre tus gastos y recibe análisis claros de tu mes. Como un amigo que sabe de finanzas, a un mensaje de distancia.";
 "whatsNew.v20.redesign.title" = "Rediseño completo";

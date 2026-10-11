@@ -1,10 +1,10 @@
 ---
 id: personal-cloudkit-schema-snapshot-misses-optional-fields
-status: backlog
+status: blocked
 priority: high
 area: "cloudkit, sync, schema"
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-10-10
 source: análisis de impacto de multi-currency-accounts (2026-10-08)
 ---
 
@@ -81,6 +81,17 @@ encargo prohibía tocar producción.
 - `CD_GroupBridgePreference` faltaba en todos los entornos con un sitio de escritura vivo en producción
   (`c76b5c2a8`).
 
+## Estado al 2026-10-10 (espera a Jürgen: acceso a la consola)
+
+Diff medido contra el modelo REAL (`NSManagedObjectModel` de SwiftData) y guía de deploy en
+`docs/cloudkit-schema-diff-2.1.md`. Corrige la tabla de arriba: `CD_ExchangeRate.CD_result` era un falso
+positivo del script; faltaban además `CD_CashFlowLine.CD_scheduledPayment` y
+`CD_InboxDraft.CD_targetTransactionID` (14 en total). Los cuatro `.ckdb` llevan ahora los campos que faltaban
+y `PersonalCloudKitSchemaParityTests` vigila el contrato. **No es regresión de 2.1**: los escriben los mismos
+sitios en `v2.0.4`. Lo que queda es mirar Production y, si faltan, desplegar (pasos 1-4 del doc).
+
+Bloqueado por: token de gestión de CloudKit (la Mini no tiene; `cktool get-teams` → «No management token»).
+
 ## Criterio de hecho (AC)
 
 - [ ] Abierto el esquema de Production de `iCloud.<contenedor personal>` en la consola de CloudKit:
@@ -88,12 +99,17 @@ encargo prohibía tocar producción.
 - [ ] Si faltan: desplegados todos los de la tabla a Production en los dos contenedores personales, y
       snapshots regenerados.
 - [ ] Si existen: snapshots regenerados para que el repo diga la verdad.
-- [ ] Un test de paridad del `.ckdb` personal contra los modelos, al estilo de
+- [ ] Tras el deploy (o la comprobación), re-exportados los cuatro `.ckdb` con `cktool export-schema` y el
+      test en verde contra el export real (paso 6 del doc).
+- [x] Un test de paridad del `.ckdb` personal contra los modelos, al estilo de
       `CloudKitGroupsSchemaParityTests`, para que un campo opcional no vuelva a quedarse fuera sin que
       nadie lo vea.
 
 ## Relacionados
 
+- **Bloquea a [`multi-currency-accounts-1-model-and-sync`](../backlog/multi-currency-accounts-1-model-and-sync.md)**
+  (2026-10-10): esa entrega añade `CD_Account.CD_parentAccountID` y lo despliega a Production, y
+  necesita un snapshot fiel y el test de paridad de este ticket.
 - `multi-currency-accounts`: la opción recomendada añade un campo opcional a `CD_Account`, y este
   ticket dice por qué no basta con fiarse del snapshot
   (`docs/multi-currency-accounts-impact-2026-10.md`, secciones 2.12 y 4).

@@ -502,7 +502,7 @@
 "common.loading" = "Chargement...";
 "common.error" = "Erreur";
 "common.success" = "Succes";
-"common.dataPrivacy" = "Vos donnees ne quittent jamais votre appareil";
+"common.dataPrivacy" = "Où vivent tes données";
 "common.active" = "Actives";
 "common.hidden" = "Masquees";
 "common.inactive" = "Inactives";
@@ -1090,7 +1090,6 @@
 "insights.analyzingData" = "Analyse de vos données...";
 "insights.activateAITitle" = "Aperçu intelligent disponible";
 "insights.activateAIBody" = "Activez et personnalisez dans Profil > Fonctionnalités IA.";
-"insights.activateAIDisclaimer" = "Seules des données résumées sont envoyées à OpenAI (totaux, pourcentages, tendances). Tes dépenses individuelles et données personnelles ne sont jamais partagées.";
 "insights.activate" = "Activer";
 "insights.goToSettings" = "Aller aux réglages";
 "insights.notInterested" = "Pas intéressé";
@@ -1150,8 +1149,8 @@
 "profile.allowedChars" = "Uniquement lettres, chiffres et underscores";
 "profile.aliasAvailable" = "Alias disponible";
 "profile.aliasHelper" = "3-20 caracteres. Uniquement lettres, chiffres et underscores.";
-"profile.privacyTitle" = "Vos donnees ne quittent jamais votre appareil";
-"profile.privacyDesc" = "Yala stocke tes données personnelles uniquement sur ton appareil. Les fonctions d'IA (voix, image et insights) sont optionnelles et ne traitent que des données résumées — jamais tes dépenses individuelles ni tes informations personnelles.";
+"profile.privacyTitle" = "Où vivent tes données";
+"profile.privacyDesc" = "Avec ton compte dans ton iCloud privé, tes données sont stockées sur ton appareil et dans ton iCloud. Avec ton compte dans le cloud, elles sont stockées sur les serveurs de Yala. Ce que tu ajoutes dans un groupe, avec ton alias, est stocké sur les serveurs de Yala pour que le groupe le voie. Les fonctions d'IA (voix, image et insights) sont optionnelles : ce que tu leur envoies passe par notre serveur jusqu'à OpenAI, qui le traite.";
 "profile.aliasFutureNote" = "Note: La validation de l'unicite de l'alias sera disponible lorsque la fonctionnalite de depenses partagees sera implementee.";
 "profile.proMember" = "Membre PRO";
 "profile.choosePhoto" = "Choisir une photo";
@@ -1830,10 +1829,9 @@
 "onboarding.usageMode.fullControl.desc" = "Tu inclus tout dans ton solde — comptes, cartes et ce qui va et vient avec d'autres personnes. Le chiffre que tu vois est ce qui est vraiment à toi.";
 "onboarding.privacyTitle" = "Tout est prêt";
 "onboarding.privacySubtitle" = "Tu peux commencer à utiliser Yala";
-"onboarding.privacyLocal" = "Tes données financières restent sur ton appareil";
+"onboarding.privacyLocal" = "Vos données financières sont stockées dans votre compte";
 "onboarding.privacyNoTracking" = "Ni suivi, ni publicité";
-"onboarding.privacyIcloud" = "Toi seul as accès à tes données";
-"onboarding.privacyNoSharing" = "Les fonctions IA ne partagent ni ne stockent de données sensibles";
+"onboarding.privacyIcloud" = "Vous accédez à vos données avec votre compte";
 "onboarding.categoriesDefault" = "Catégories par défaut";
 "onboarding.categoriesCustom" = "Catégories personnalisées";
 "onboarding.privacyTutorialsHint" = "Découvre les tutoriels et conseils de Yala";
@@ -1855,10 +1853,11 @@
 "onboarding.balanceManualOption" = "Je connais mon solde";
 "onboarding.balanceManualHint" = "Vous le saisissez vous-même";
 "onboarding.balanceGuidedIncompleteHint" = "Vous n'avez pas terminé le calcul. Appuyez pour le reprendre.";
-"onboarding.privacyLocalShort" = "Données sur votre appareil";
+"onboarding.privacyLocalShort" = "Données dans votre compte";
 "onboarding.privacyNoTrackingShort" = "Sans suivi ni publicités";
-"onboarding.privacyIcloudShort" = "Vous seul y accédez";
-"onboarding.privacyNoSharingShort" = "IA sécurisée";
+"onboarding.privacyIcloudShort" = "Accès avec votre compte";
+"onboarding.privacyAIShort" = "IA via notre serveur";
+"onboarding.privacyAIDetail" = "Tu décides si tu l'utilises";
 "onboarding.accountBalanceGuideTitle" = "Comment calculer mon solde ?";
 "onboarding.accountBalanceGuideIntro" = "Ton solde initial indique à Yala avec combien d'argent tu démarres. Pas besoin d'être exact au centime — une approximation suffit. Voici comment y réfléchir selon le type de compte que tu as choisi.";
 "onboarding.accountBalanceGuideGeneral" = "Si tu utilises un compte général pour regrouper tous tes moyens de paiement dans une devise, ton solde reflète combien d'argent tu as disponible.\n\nPour le calculer, additionne tout : comptes courants, épargne, espèces. Si tu as des dépenses en cours sur des cartes de crédit, tu peux les soustraire pour une image plus précise — ou suivre chaque carte comme un compte séparé plus tard.\n\nCe chiffre final est ton solde initial.";
@@ -4122,7 +4121,7 @@
 "welcome.hero.title" = "Vos finances personnelles,";
 "welcome.hero.titleAccent" = "sans effort.";
 "welcome.hero.cta" = "Commencer";
-"welcome.hero.trust" = "100% privé · Vos infos restent avec vous";
+"welcome.hero.trust" = "Sans suivi ni publicités";
 
 "welcome.hero.cards.capture.title" = "Photo de ticket";
 "welcome.hero.cards.capture.body" = "Photographiez. Yala lit.";
@@ -4137,7 +4136,7 @@
 "welcome.hero.cards.import.title" = "Importez votre historique";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Voilà.";
 "welcome.hero.cards.icloud.title" = "iCloud privé";
-"welcome.hero.cards.icloud.body" = "Vos données, dans votre iCloud. Sans serveur.";
+"welcome.hero.cards.icloud.body" = "Vos données, dans votre iCloud.";
 "welcome.hero.cards.more.title" = "Et bien plus";
 "welcome.hero.cards.more.body" = "Découvrons-le ensemble.";
 
@@ -4427,7 +4426,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Cette dépense partagée n'existe plus dans le groupe.";
 "whatsNew.v20.groups.title" = "Groupes (Bêta)";
-"whatsNew.v20.groups.description" = "Crée des groupes pour partager les dépenses et Yala calcule qui doit quoi à qui. Et rassure-toi : tout passe par ton iCloud privé, jamais par nos serveurs.";
+"whatsNew.v20.groups.description" = "Crée des groupes pour partager les dépenses et Yala calcule qui doit quoi à qui.";
 "whatsNew.v20.ai.title" = "Voici Yala IA";
 "whatsNew.v20.ai.description" = "Ton assistant financier doté d'intelligence artificielle. Pose-lui des questions sur ton argent, demande-lui d'enregistrer tes dépenses et reçois des analyses claires de ton mois. Comme un ami qui s'y connaît en finances, à portée de message.";
 "whatsNew.v20.redesign.title" = "Tout nouveau design";

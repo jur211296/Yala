@@ -504,7 +504,7 @@
 "common.loading" = "加载中...";
 "common.error" = "错误";
 "common.success" = "成功";
-"common.dataPrivacy" = "你的数据永远不会离开你的设备";
+"common.dataPrivacy" = "你的数据存放在哪里";
 "common.active" = "活跃";
 "common.hidden" = "已隐藏";
 "common.inactive" = "未活跃";
@@ -1092,7 +1092,6 @@
 "insights.analyzingData" = "正在分析你的数据...";
 "insights.activateAITitle" = "智能概览可用";
 "insights.activateAIBody" = "在「个人资料 > AI 功能」中启用并自定义。";
-"insights.activateAIDisclaimer" = "只有汇总数据(总计、百分比、趋势)会发送到 OpenAI。你的单笔交易和个人数据从不会被共享。";
 "insights.activate" = "启用";
 "insights.goToSettings" = "前往设置";
 "insights.notInterested" = "不感兴趣";
@@ -1148,8 +1147,8 @@
 "profile.allowedChars" = "只能包含字母、数字和下划线";
 "profile.aliasAvailable" = "别名可用";
 "profile.aliasHelper" = "3-20 个字符。只能包含字母、数字和下划线。";
-"profile.privacyTitle" = "你的数据永远不会离开你的设备";
-"profile.privacyDesc" = "Yala 仅在你的设备上存储个人数据。AI 功能(语音、图片和洞察)是可选的,只处理汇总数据 — 永远不会处理你的单笔交易或个人信息。";
+"profile.privacyTitle" = "你的数据存放在哪里";
+"profile.privacyDesc" = "使用私人 iCloud 账户时，你的数据保存在你的设备和你的 iCloud 中。使用云端账户时，数据保存在 Yala 的服务器上。你在群组中记录的内容会连同你的昵称保存在 Yala 的服务器上，以便群组成员查看。AI 功能(语音、图片和洞察)是可选的：你发送的内容会经由我们的服务器传到 OpenAI 进行处理。";
 "profile.aliasFutureNote" = "注意:别名唯一性验证将在共享支出功能上线时可用。";
 "profile.proMember" = "PRO 会员";
 "profile.choosePhoto" = "选择照片";
@@ -1829,10 +1828,9 @@
 "onboarding.usageMode.fullControl.desc" = "你把所有都计入余额 — 账户、卡片以及与他人之间的往来。你看到的数字是真正属于你的。";
 "onboarding.privacyTitle" = "全部就绪";
 "onboarding.privacySubtitle" = "你已准备好开始使用 Yala";
-"onboarding.privacyLocal" = "你的财务数据保留在你的设备上";
+"onboarding.privacyLocal" = "你的财务数据保存在你的账户中";
 "onboarding.privacyNoTracking" = "无跟踪、无广告";
-"onboarding.privacyIcloud" = "只有你能访问你的数据";
-"onboarding.privacyNoSharing" = "AI 功能不分享或存储敏感数据";
+"onboarding.privacyIcloud" = "你用自己的账户访问你的数据";
 "onboarding.categoriesDefault" = "默认类别";
 "onboarding.categoriesCustom" = "自定义类别";
 "onboarding.privacyTutorialsHint" = "探索 Yala 的教程和技巧";
@@ -1858,10 +1856,11 @@
 "onboarding.balanceManualOption" = "我知道我的余额";
 "onboarding.balanceManualHint" = "你自己输入";
 "onboarding.balanceGuidedIncompleteHint" = "你还没完成计算。点击继续。";
-"onboarding.privacyLocalShort" = "数据保存在你的设备";
+"onboarding.privacyLocalShort" = "数据保存在你的账户中";
 "onboarding.privacyNoTrackingShort" = "无跟踪、无广告";
-"onboarding.privacyIcloudShort" = "只有你可以访问";
-"onboarding.privacyNoSharingShort" = "安全 AI";
+"onboarding.privacyIcloudShort" = "用你的账户访问";
+"onboarding.privacyAIShort" = "AI 经由我们的服务器";
+"onboarding.privacyAIDetail" = "是否使用由你决定";
 "onboarding.accountBalanceGuideTitle" = "我怎么算我的余额?";
 "onboarding.accountBalanceGuideIntro" = "初始余额告诉 Yala 你从多少开始。不需要精确到分 — 粗略估计就行。下面是按你所选账户类型的思考方式。";
 "onboarding.accountBalanceGuideGeneral" = "如果你用一个通用账户来汇总同一货币的所有付款方式,你的余额反映你有多少可用的钱。\n\n要计算它,把所有相加:活期账户、储蓄、现金。如果有未付的信用卡费用,可以减去以更精确 — 或者之后把每张卡作为单独账户跟踪。\n\n最终的数字就是你的初始余额。";
@@ -4153,7 +4152,7 @@
 "welcome.hero.title" = "你的个人财务,";
 "welcome.hero.titleAccent" = "轻松搞定。";
 "welcome.hero.cta" = "开始";
-"welcome.hero.trust" = "100% 私密 · 你的信息始终与你同在";
+"welcome.hero.trust" = "无跟踪、无广告";
 
 "welcome.hero.cards.capture.title" = "拍照即录";
 "welcome.hero.cards.capture.body" = "拍下来,Yala 自动识别。";
@@ -4168,7 +4167,7 @@
 "welcome.hero.cards.import.title" = "导入你的历史";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel,一键搞定。";
 "welcome.hero.cards.icloud.title" = "私享 iCloud";
-"welcome.hero.cards.icloud.body" = "你的数据,在你的 iCloud。无服务器。";
+"welcome.hero.cards.icloud.body" = "你的数据,在你的 iCloud。";
 "welcome.hero.cards.more.title" = "还有更多";
 "welcome.hero.cards.more.body" = "我们一起来发现。";
 
@@ -4438,7 +4437,7 @@
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "此共享支出在群组中已不存在。";
 "whatsNew.v20.groups.title" = "群组（测试版）";
-"whatsNew.v20.groups.description" = "创建群组分摊支出，Yala 自动算出谁欠谁多少。请放心：所有数据只经过你的私人 iCloud，绝不经过我们的服务器。";
+"whatsNew.v20.groups.description" = "创建群组分摊支出，Yala 自动算出谁欠谁多少。";
 "whatsNew.v20.ai.title" = "认识 Yala AI";
 "whatsNew.v20.ai.description" = "你的 AI 财务助手。向它询问你的财务状况，让它帮你记账，获取清晰的本月分析。就像一位懂理财的朋友，一条消息即可触达。";
 "whatsNew.v20.redesign.title" = "全新设计";
