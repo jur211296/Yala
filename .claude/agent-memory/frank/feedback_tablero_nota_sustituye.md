@@ -1,6 +1,6 @@
 ---
 name: tablero-nota-sustituye
-description: `tablero editar --nota` SUSTITUYE la nota entera; para añadir, lee la nota con `tablero ver` y concatena
+description: `tablero editar --nota` y `--enlace` SUSTITUYEN el campo entero; para añadir, lee con `tablero ver` y repite lo que había
 metadata:
   type: feedback
 ---
@@ -16,3 +16,7 @@ su texto) al apuntar el PR; se repuso a mano porque la salida del comando imprim
 PRIMER párrafo; los siguientes vienen sin el prefijo `note` y se pierden al concatenar. Pasó así y hubo
 que reponer dos párrafos a mano. Lee el bloque `/^note/,/^<campo siguiente>/` entero, o copia la nota del
 `ver` completo, antes de reescribirla.
+
+**Y `--enlace` también sustituye (2026-10-11):** al apuntar el PR #458 con un solo `--enlace`, las dos tarjetas
+perdieron el enlace al ticket y al PR #438. Se repusieron pasando los tres `--enlace` en la misma llamada (es
+repetible). Antes de `--enlace`, `tablero ver <id>` y repite los que ya tenía.

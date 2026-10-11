@@ -25,7 +25,7 @@
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 
 ## Cómo mido y cómo entrego
-- [`tablero --nota` sustituye](feedback_tablero_nota_sustituye.md) — lee la nota antes y concatena; borró una decisión.
+- [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
 - [El marco de celda no es el bloque](feedback_el_marco_de_celda_no_es_el_bloque.md) — mide bordes de List en píxeles; los marcos XCUI mienten.
 - [El final del ciclo borra la prueba](feedback_el_final_del_ciclo_borra_la_prueba.md) — «haz el ciclo y lee Y»: la purga de la cola borraba Y.
