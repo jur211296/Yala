@@ -251,9 +251,8 @@ struct DetailContainerView: View {
 
                 tabContent
             }
-            .safeAreaInset(edge: .top) {
+            .navigationChipsInset {
                 navigationChipsBar
-                    .padding(.vertical, DS.Spacing.sm)
             }
 
             // Yala IA y «+» en las cuatro pestañas, no solo en Registros: en el Panel «Nuevo registro» está siempre a

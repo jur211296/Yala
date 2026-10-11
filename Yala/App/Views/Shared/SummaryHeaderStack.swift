@@ -76,7 +76,7 @@ struct SummaryHeaderStack<Period: View, Caption: View, Figure: View, Detail: Vie
                     figure
                     detail
                 }
-                .padding(.vertical, verticalPadding)
+                .heroVerticalPadding(verticalPadding)
             }
         }
         // Sin margen lateral propio en ninguno de los dos: el del scroll (`scrollViewGlassEdges`) ya pone los 16 pt
