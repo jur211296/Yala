@@ -142,7 +142,20 @@ final class AppRouter {
     /// desde su fuente en la próxima ventana ready: invites desde su intent persistido
     /// (el reconciler de join) y shared-image desde el App Group `PendingImages/`
     /// (`checkForPendingSharedImage`, en bootstrap post-init Y `handleBecameActive`).
+    ///
+    /// Las entradas pedidas desde fuera que siguen en cola (voz, imagen, nuevo registro y su consentimiento,
+    /// `DeferredIntentBufferLogic.parksOnBackground`) no tienen fuente durable: se aparcan en `buffer` antes de tirarlas,
+    /// y vuelven por el drenaje del buffer en la siguiente vuelta a primer plano (o en el arranque, si el proceso murió),
+    /// salvo que la app pase fuera más de `parkedEntryTTL`. Ticket `widget-and-siri-entries-lost-on-background`.
     func resetTransients() {
+        resetTransients(parkingIn: DeferredIntentBuffer.shared)
+    }
+
+    /// `resetTransients()` con el buffer inyectado (los tests usan uno con su propio `UserDefaults`).
+    func resetTransients(parkingIn buffer: DeferredIntentBuffer) {
+        for queued in queue where DeferredIntentBufferLogic.parksOnBackground(queued.intent) {
+            buffer.deferIntent(queued.intent)
+        }
         let before = queue.count
         queue = queue.filter { !$0.intent.isTransient }
         if queue.count != before { bumpRevision() }

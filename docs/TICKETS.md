@@ -888,7 +888,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-private-fresh-start-skips-icloud-check | qa | tickets/qa/welcome-private-fresh-start-skips-icloud-check.md |
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
-| widget-and-siri-entries-lost-on-background | backlog | tickets/backlog/widget-and-siri-entries-lost-on-background.md |
+| widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
+| widget-and-siri-entries-wait-for-the-panel-tab | backlog | tickets/backlog/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |
