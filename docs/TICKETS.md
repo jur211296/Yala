@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (858)
+## Index (862)
 
 | id | status | path |
 |---|---|---|
@@ -481,6 +481,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
+| in-app-privacy-copy-says-data-never-leaves-the-device | backlog | tickets/backlog/in-app-privacy-copy-says-data-never-leaves-the-device.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
 | inbox-dismiss-x-does-not-delete-the-draft-for-good | qa | tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
@@ -626,6 +627,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | done | tickets/done/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
+| privacy-manifest-misses-cloud-account-data | backlog | tickets/backlog/privacy-manifest-misses-cloud-account-data.md |
+| privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion | backlog | tickets/backlog/privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion.md |
 | private-exit-export-wait-cached-zero-misses-outside-writes | backlog | tickets/backlog/private-exit-export-wait-cached-zero-misses-outside-writes.md |
 | private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-exit-materialized-drafts-do-not-refresh-the-inbox | backlog | tickets/backlog/private-exit-materialized-drafts-do-not-refresh-the-inbox.md |
@@ -675,6 +678,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rejoin-tap-renotifies-admins | done | tickets/done/rejoin-tap-renotifies-admins.md |
 | relay-identity-ledger-missing-after-an-update-mid-migration | discarded | tickets/discarded/relay-identity-ledger-missing-after-an-update-mid-migration.md |
 | relay-row-rekeyed-then-deleted-tombstones-the-leader-identity | done | tickets/done/relay-row-rekeyed-then-deleted-tombstones-the-leader-identity.md |
+| release-plist-leftovers-widget-build-faceid-appattest | backlog | tickets/backlog/release-plist-leftovers-widget-build-faceid-appattest.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |
 | remote-wipe-alert-skips-the-router | done | tickets/done/remote-wipe-alert-skips-the-router.md |
 | remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark | done | tickets/done/remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark.md |
