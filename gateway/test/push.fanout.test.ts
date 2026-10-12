@@ -7,14 +7,17 @@
  *      `prune_push_token` aún no existen). TRAS aplicar: cambiar `describe.skip(` → `describe(` y re-correr.
  *      El fetch a `*.push.apple.com` se INTERCEPTA (mock); el resto pega a staging real.
  *
- * NO corre en CI (necesita red + i5-user-a/b). Los tokens dummy sembrados se limpian al final de cada test.
+ * NO corre en CI (necesita red + i5-user-a/b). Los tokens dummy sembrados se limpian al final de cada test, y los
+ * grupos del bloque fan-out se relevan al custodio en su `afterAll` (ver `corpusRelevo.ts`): sin eso, cada corrida
+ * dejaba 3 grupos más en el pull de A y de B, para siempre.
  */
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { describeStaging } from "./staging";
 import { exportPKCS8, generateKeyPair } from "jose";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import type { GroupPushResponse } from "../src/groups/types";
+import { credencialCustodio, describirResiduo, entrar, puertoStaging, relevarGrupos, type Actor } from "./corpusRelevo";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -182,11 +185,16 @@ describeStaging("G8 goldens · fan-out machine-role + revoke (post-aplicación g
   let apnsEnv: Env;
   let appleHits: Array<{ url: string; init?: RequestInit }>;
   let appleResponder: () => Response;
+  let custodio: Actor;
+  /** Los grupos que crea este bloque; los apunta `setupSharedGroup`, el único sitio que crea. */
+  const gidsDeEstaCorrida: string[] = [];
 
   beforeAll(async () => {
     if (!PUSH_ROLE_JWT) {
       throw new Error("G8-3: falta PUSH_ROLE_JWT en el entorno — export PUSH_ROLE_JWT=<jwt yala_push> antes de npm test");
     }
+    const c = credencialCustodio(process.env);
+    custodio = await entrar(URL, ANON, "Custodio", c.email, c.password);
     const pem = await makeApnsPem();
     apnsEnv = {
       ...env,
@@ -199,6 +207,32 @@ describeStaging("G8 goldens · fan-out machine-role + revoke (post-aplicación g
   });
 
   afterEach(() => vi.unstubAllGlobals());
+
+  // Relevo al custodio de los grupos de este bloque; falla si alguno sigue en el pull de A o B.
+  afterAll(async () => {
+    vi.unstubAllGlobals();
+    if (gidsDeEstaCorrida.length === 0) return;
+    const pushNoop = async (jwt: string, deltas: unknown[]) => {
+      const res = await app.fetch(
+        new Request("https://gw.local/groups/push", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${jwt}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ deltas }),
+        }),
+        env,
+        NOOP_CTX,
+      );
+      return { status: res.status, body: (await res.json()) as GroupPushResponse };
+    };
+    const r = await relevarGrupos(
+      puertoStaging({ url: URL, anon: ANON, encKey: ENC_KEY, push: pushNoop }),
+      gidsDeEstaCorrida,
+      { a: { nombre: "A", jwt: jwtA, sub: subA }, b: { nombre: "B", jwt: jwtB, sub: subB }, custodio },
+    );
+    if (r.residuo.length > 0) {
+      throw new Error(`[corpus] ${r.residuo.length} grupo(s) de G8 siguen en el pull de A/B:\n${describirResiduo(r)}`);
+    }
+  }, 120_000);
 
   /** Wrap selectivo: apple → mock (registrado en appleHits); el resto → fetch REAL capturado antes del stub. */
   function installApnsInterceptor() {
@@ -257,6 +291,7 @@ describeStaging("G8 goldens · fan-out machine-role + revoke (post-aplicación g
   }
   async function setupSharedGroup(): Promise<string> {
     const gid = `g8-fanout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    gidsDeEstaCorrida.push(gid);
     await rpc(jwtA, "create_group", { p_group_id: gid, p_name: "G8 fanout", p_currency_code: "PEN", p_icon_name: "star", p_color_hex: "#112233", p_display_name: "Alice", p_default_split_type: "equal" });
     const inv = await rpc(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
     const joined = await rpc(jwtB, "join_group", { p_token: inv as string, p_display_name: "Bob", p_legacy_member_key: null });

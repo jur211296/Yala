@@ -3,18 +3,25 @@
  * end-to-end vía `app.fetch(...)`: los handlers verifican el JWT (ES256/JWKS), validan forma/pull_only,
  * y llaman al RPC `apply_group_delta` (SECURITY INVOKER; RLS por membership + column grants).
  *
- * NO corren en CI (necesitan red + los 2 usuarios de test i5-user-a/b). `group_id`s ÚNICOS por corrida
- * (`g2-goldens-<ts>-<rand>`): sin cleanup (DELETE revocado por diseño). JAMÁS se llama groups_forget_user
- * (es DESTRUCTIVO global: transfiere/tombstonea TODOS los grupos del caller → rompería re-corridas que
- * comparten users A/B). Los 2 fallos PREEXISTENTES de account.goldens (cuenta B claimeada) NO son de G2.
+ * NO corren en CI (necesitan red + los usuarios de test i5-user-a/b y el custodio). `group_id`s ÚNICOS por
+ * corrida (`g2-goldens-<ts>-<rand>`). JAMÁS se llama groups_forget_user (es DESTRUCTIVO global: transfiere/
+ * tombstonea TODOS los grupos del caller → rompería re-corridas que comparten users A/B).
+ *
+ * RELEVO AL TERMINAR (2026-10-12). El DELETE está revocado y el dueño no puede salir de un grupo, así que hasta ese
+ * día cada corrida dejaba 19 grupos más en el pull de A y 14 en el de B, para siempre — y un pull cuesta 5
+ * peticiones por grupo: con A en 736 y B en 838 estos goldens ya no cabían en su timeout. Ahora `rpc`/`rpcGw` apuntan
+ * cada `create_group` que sale bien, y el `afterAll` traspasa esos grupos al CUSTODIO y saca a A y B
+ * (`corpusRelevo.ts`). El `afterAll` FALLA si alguno sigue en el pull de A o B: esa es la guarda de que la corrida no
+ * deja nada. Un `create_group` nuevo va por esos dos helpers, o su grupo se queda.
  */
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { describeStaging } from "./staging";
 import app from "../src/index";
 import type { Env } from "../src/env";
 import type { GroupPushResponse, GroupPullResponse, GroupMerkleResponse } from "../src/groups/types";
 import { GROUP_ENTITIES } from "../src/groups/manifest";
 import { entityHash, hex, merkleRoot } from "../src/sync/merkle";
+import { credencialCustodio, describirResiduo, entrar, puertoStaging, relevarGrupos, type Actor } from "./corpusRelevo";
 
 // Node expone `process` en runtime (vitest env node), pero el tsconfig del Worker no trae @types/node → declaración
 // mínima type-only para leer la llave G7 del entorno (nunca inline: la llave JAMÁS commiteada).
@@ -54,6 +61,14 @@ let jwtA = "";
 let jwtB = "";
 let subA = "";
 let subB = "";
+let custodio: Actor = { nombre: "Custodio", jwt: "", sub: "" };
+
+/** Los grupos que crea ESTA corrida. Los apunta el punto único (`rpc`/`rpcGw`), no cada test. */
+const gidsDeEstaCorrida = new Set<string>();
+function apuntarSiCrea(fn: string, args: unknown, status: number): void {
+  const gid = (args as { p_group_id?: unknown } | null)?.p_group_id;
+  if (fn === "create_group" && status === 200 && typeof gid === "string") gidsDeEstaCorrida.add(gid);
+}
 
 function decodeSub(jwt: string): string {
   let p = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
@@ -101,6 +116,7 @@ async function rpc(jwt: string, fn: string, args: Record<string, unknown>): Prom
     body: JSON.stringify(finalArgs),
   });
   const text = await res.text();
+  apuntarSiCrea(fn, args, res.status);
   return { status: res.status, body: text ? JSON.parse(text) : null };
 }
 
@@ -203,7 +219,26 @@ beforeAll(async () => {
   jwtB = await login(userB.email, userB.password);
   subA = decodeSub(jwtA);
   subB = decodeSub(jwtB);
+  // Antes de crear nada: sin custodio no hay relevo, y la corrida volvería a dejar sus grupos en A y B.
+  const c = credencialCustodio(process.env);
+  custodio = await entrar(URL, ANON, "Custodio", c.email, c.password);
 }, 30_000);
+
+afterAll(async () => {
+  if (gidsDeEstaCorrida.size === 0) return;
+  const r = await relevarGrupos(
+    puertoStaging({ url: URL, anon: ANON, encKey: ENC_KEY, push }),
+    [...gidsDeEstaCorrida],
+    { a: { nombre: "A", jwt: jwtA, sub: subA }, b: { nombre: "B", jwt: jwtB, sub: subB }, custodio },
+  );
+  console.info(
+    `[corpus] grupos de esta corrida: ${gidsDeEstaCorrida.size} · relevados ${r.relevados.length} · ` +
+      `sin A ni B ${r.intactos.length} · residuo ${r.residuo.length}`,
+  );
+  if (r.residuo.length > 0) {
+    throw new Error(`[corpus] ${r.residuo.length} grupo(s) de esta corrida siguen en el pull de A/B:\n${describirResiduo(r)}`);
+  }
+}, 300_000);
 
 describeStaging("G2 goldens · /groups/* contra staging real", () => {
   it("2. push A (expense gmoney + 2 shares gshare) → applied; pull B ve grupo/members/expense/shares con p_group_id/p_sync_id correctos", async () => {
@@ -448,10 +483,10 @@ describeStaging("G2 goldens · /groups/* contra staging real", () => {
     const confirmCursor = confirm.cursors[gid];
     if (confirmCursor !== undefined) expect(confirmCursor).toBe(cursorAtDone); // ausente o sin avance
     // 6 pulls (baseline + 4 del bucle + confirm). El timeout NO es holgura de cortesía: un pull cuesta
-    // 5 peticiones POR GRUPO del que el usuario es miembro —haya cambios o no—, y el corpus de los users
-    // de test solo crece (sin cleanup por diseño: el DELETE está revocado). Medido el 2026-09-08 con A en
-    // 530 grupos: 16 183 peticiones, 130 s de los 360 disponibles. Cada corrida completa añade ~20 grupos
-    // a A, así que este margen se estrecha solo. Ver `goldens-de-staging-solo-pasan-a-trozos`.
+    // 5 peticiones POR GRUPO del que el usuario es miembro —haya cambios o no—. Medido el 2026-09-08 con A
+    // en 530 grupos: 16 183 peticiones, 130 s de los 360 disponibles. Desde el 2026-10-12 el `afterAll`
+    // releva al custodio los grupos de cada corrida, así que el número ya no crece con ellas; si este test
+    // vuelve a ir justo, mira primero cuántos grupos tiene A (`qa/cloud/README.md` §Corpus de Grupos).
   }, 360_000);
 
   it("8. merkle autosuficiente: root ESTABLE sobre filas conocidas (2 fetches idénticos, != vacío) + no-member ve root de corpus VACÍO", async () => {
@@ -513,6 +548,7 @@ async function rpcGw(jwt: string | null, fn: string, body: unknown): Promise<{ s
     env,
   );
   const text = await res.text();
+  apuntarSiCrea(fn, body, res.status);
   return { status: res.status, body: text ? JSON.parse(text) : null };
 }
 
@@ -722,19 +758,23 @@ describeStaging("G3 goldens · /groups/rpc/* contra staging real", () => {
   // no-oráculo: con un token INVENTADO el servidor sigue diciendo `yala_invalid_invite` y no revela
   // nada, porque el error nuevo solo se alcanza DESPUÉS de validar que el token existe, no está
   // revocado, no ha caducado y no está agotado. Quien lo recibe tenía un token real que alguien le dio.
+  //
+  // Lo crea y lo borra el CUSTODIO, no A (2026-10-12): un grupo borrado no admite traspaso de dueño
+  // (`transfer_group_ownership` exige `deleted=false`) y su dueño no puede salir, así que con A dejaba
+  // un grupo para siempre en su pull por corrida. B no llega a entrar. El contrato es el mismo.
   it("3-quater. grupo borrado ≠ enlace inválido: token válido → yala_group_deleted; token inventado → yala_invalid_invite (g13_03)", async () => {
     const gid = freshGid();
-    const cg = await rpcGw(jwtA, "create_group", {
+    const cg = await rpcGw(custodio.jwt, "create_group", {
       p_group_id: gid, p_name: "G13-03 borrado", p_currency_code: "PEN", p_icon_name: "star",
-      p_color_hex: "#778899", p_display_name: "Alice", p_default_split_type: "equal",
+      p_color_hex: "#778899", p_display_name: "Custodio", p_default_split_type: "equal",
     });
     expect(cg.status).toBe(200);
 
-    const inv = await rpcGw(jwtA, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
+    const inv = await rpcGw(custodio.jwt, "create_group_invite", { p_group_id: gid, p_ttl_seconds: 3600, p_max_uses: null });
     expect(inv.status).toBe(200);
     const token = inv.body as string;
 
-    // A borra el grupo (tombstone del meta ⇒ split_groups.deleted = true).
+    // El custodio borra el grupo (tombstone del meta ⇒ split_groups.deleted = true).
     //
     // El HLC va al FUTURO y no a `T0 + n` como el resto del archivo: `apply_group_delta` solo aplica el
     // tombstone si `p_row_hlc > v_row_hlc`, y la fila de `split_groups` ya existe con el `server_hlc()`
@@ -742,7 +782,7 @@ describeStaging("G3 goldens · /groups/rpc/* contra staging real", () => {
     // pasado el tombstone sale `noop` y el grupo seguiría vivo, con lo que el test pasaría a medir otra
     // cosa. Medido: así es como falló la primera versión de este golden.
     const hDel = hlc(Date.now() + 3_600_000);
-    const del = await push(jwtA, [
+    const del = await push(custodio.jwt, [
       { entity_type: "split_groups", group_id: gid, sync_id: null, op: "tombstone", fields: {}, field_hlcs: {}, hlc: hDel, client_mutation_id: uuid() },
     ]);
     expect(del.body.results[0].status).toBe("applied");

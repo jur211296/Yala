@@ -1,6 +1,6 @@
 ---
 id: corpus-de-test-de-staging-crece-sin-limite
-status: backlog
+status: done
 priority: high
 area: "qa, cloud"
 created: 2026-09-08
@@ -66,11 +66,11 @@ una investigación completa.
 
 ## Acceptance Criteria
 
-- [ ] Decisión del owner sobre cuál de los cuatro caminos.
-- [ ] Si se limpia: el conteo de grupos de A y B queda medido antes y después, y los goldens se
+- [x] Decisión sobre el camino: la tomó el encargo del 2026-10-12 (relevo al custodio, ver abajo).
+- [x] Si se limpia: el conteo de grupos de A y B queda medido antes y después, y los goldens se
       vuelven a correr para dejar el número nuevo escrito.
-- [ ] El margen (cuánto del timeout consume el golden más ajustado) queda anotado donde se consulte,
-      para que la próxima vez se lea en un minuto y no en un día.
+- [x] El margen (cuánto del timeout consume el golden más ajustado) queda anotado donde se consulte,
+      para que la próxima vez se lea en un minuto y no en un día (`qa/cloud/README.md` §Corpus de Grupos).
 
 ---
 
@@ -119,3 +119,52 @@ de goldens fallan al CARGAR** (`groups.goldens`, `push.fanout`, y `account.golde
 Eso se lee como «el código está roto» cuando es «falta un export» — y es la clase de confusión que hace
 perder una vuelta de diagnóstico. Están en `~/Secrets/yala-groups-enc/staging*` y
 `~/Secrets/yala-supabase-test/test-users.env`.
+
+---
+
+## 2026-10-12 — Decisión y plan de purga (escrito ANTES de ejecutarla)
+
+**Camino elegido** (encargo `2026-10-12-corpus-test-staging-grupos`, Paso 0): ni vaciar por SQL ni subir timeouts.
+Un **relevo** con RPCs públicos: al terminar cada corrida, los grupos que creó se le traspasan a un cuarto usuario de
+test, el **custodio** (`i5-goldens-custodio@test.yala`, creado hoy por SQL como C), y A y B salen. El dueño no puede
+salir de un grupo por ninguna vía pública, así que siempre queda una membresía: la del custodio, con quien ningún golden
+hace pull. Nunca `groups_forget_user`, nunca `service_role`.
+
+**Medido antes** (staging `fostjbbwstyuunmmefuk`, predicado del pull): A **736**, B **838**. Una corrida completa de
+`groups.goldens` crea 19 grupos (19 al pull de A, 14 al de B) y `push.fanout` 3 más en los dos.
+
+**Qué se va a relevar** — criterio: grupo con prefijo `g2-goldens-` o `g8-fanout-` en el que A o B están en el set del
+pull (`deleted=false`, `status in (active,pendingApproval,rejected)`). **960 grupos distintos** (A 705, B 799):
+
+| Clase | Grupos | Qué hace el relevo |
+|---|---|---|
+| dueño A, con B dentro | 432 | B sale; el custodio entra; A traspasa y sale |
+| dueño B (G10·1) | 249 | A sale; el custodio entra; B traspasa y sale |
+| solo A | 143 | el custodio entra; A traspasa y sale |
+| archivado | 68 | su dueño lo desarchiva; luego como arriba |
+| B pendiente | 41 | B sale; luego como «solo A» |
+| B rechazado | 9 | B vuelve a entrar con invitación nueva y sale; luego como arriba |
+| **borrado** | **18** | **no se toca**: un grupo borrado no admite traspaso. Queda en el pull de A como residuo |
+
+**Fuera de alcance, sin tocar**: `g6-migrate-*` (A 31, B 26), `rls-g1*` (B 13) y cualquier grupo de otros usuarios.
+Ningún borrado de filas: lo que cambia es el `status` de la membresía de A/B (`left`) y el dueño del grupo (custodio).
+
+**Cómo**: `gateway/scripts/relevo-corpus-staging.ts` — dry-run por defecto (dio exactamente estas cifras), piloto con
+`--solo=` sobre un grupo de cada clase, y luego `--aplicar` entero.
+
+## 2026-10-12 — Hecho
+
+| | A | B |
+|---|---|---|
+| antes | 736 | 838 |
+| tras la purga (935 relevados, 18 borrados de residuo) | 49 | 39 |
+| tras una corrida completa de `groups.goldens` + `push.fanout` (22 grupos creados, 34/34 verdes) | **49** | **39** |
+
+- **El conteo deja de crecer por corrida**: los helpers apuntan cada `create_group`, el `afterAll` releva al custodio y
+  **falla** si un grupo de la corrida sigue en el pull de A o B. La corrida de verificación lo dijo así: `[corpus] grupos
+  de esta corrida: 19 · relevados 18 · sin A ni B 1 · residuo 0` (el que no tenía a A ni B es el de `3-quater`, que ahora
+  es del custodio).
+- Nada fuera de staging; solo membresías de A y B (`status` → `left`) y dueños de grupo (→ custodio); ninguna fila
+  borrada; nunca `groups_forget_user`.
+- **Hallazgo aparte**: con el corpus ya pequeño, los pulls siguen siendo lentos porque el `fetch` de Node 26 serializa los
+  POST al mismo origen. Card `tablero-los-goldens-del-gateway-hacen-en-serie-l-j93f`.

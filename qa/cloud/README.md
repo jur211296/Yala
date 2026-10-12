@@ -2,9 +2,9 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (36 entradas)
+## Índice (37 entradas)
 
-> **No hace falta leer este fichero entero** — son 144 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 147 KB. Localiza la entrada
 > aquí y salta a ella.
 
 - `—` [Running the RLS gate](#running-the-rls-gate)
@@ -28,6 +28,7 @@
 - `—` [I14 — UI real de migración + consent + claimAction + relaunch asistido + encendido de flags](#i14--ui-real-de-migracin--consent--claimaction--relaunch-asistido--encendido-de-flags)
 - `—` [transfer_group_ownership (G10 / D10) — batch "salir de todos mis grupos" — APLICADA EN AMBOS ENVS ✅](#transfergroupownership-g10--d10--batch-salir-de-todos-mis-grupos--aplicada-en-ambos-envs)
 - `—` [G7 — cifrado pgcrypto de columnas † de grupos (data-at-rest)](#g7--cifrado-pgcrypto-de-columnas--de-grupos-data-at-rest)
+- `2026-10-12` [Corpus de Grupos de staging: relevo al custodio (2026-10-12)](#corpus-de-grupos-de-staging-relevo-al-custodio-2026-10-12)
 - `2026-10-09` [g17_01 — el claim de la vuelta conserva `reverted_at` en una cuenta que ya volvió (2026-10-09)](#g1701--el-claim-de-la-vuelta-conserva-revertedat-en-una-cuenta-que-ya-volvi-2026-10-09)
 - `2026-10-07` [hlc01 — tope a un HLC del futuro, canal personal + Grupos (2026-10-07)](#hlc01--tope-a-un-hlc-del-futuro-canal-personal--grupos-2026-10-07)
 - `2026-09-24` [g16_04 — después del cutover no hay relevo: quien llega entra en la cuenta (2026-09-24)](#g1604--despus-del-cutover-no-hay-relevo-quien-llega-entra-en-la-cuenta-2026-09-24)
@@ -71,7 +72,12 @@ goldens del gateway o los E2E de Swift:
 export USER_A_PASS='…'      # i5-user-a@test.yala
 export USER_B_PASS='…'      # i5-user-b@test.yala
 export USER_C_PASS='…'      # opcional; solo cross-member-rls-test.sh (sin ella, ese sub-caso cae a B)
+export USER_CUSTODIO_PASS='…'   # i5-goldens-custodio@test.yala — groups.goldens y push.fanout la EXIGEN
 ```
+
+**El custodio** (2026-10-12) recibe al terminar cada corrida los grupos que crearon `groups.goldens` y
+`push.fanout`, para que el pull de A y B no crezca. Sin su contraseña, esos dos ficheros fallan en su
+`beforeAll` antes de crear nada. Ver [Corpus de Grupos de staging](#corpus-de-grupos-de-staging-relevo-al-custodio-2026-10-12).
 
 Sin ellas, cada frente falla de forma explícita en vez de dar `invalid_credentials`: los `.sh`
 mueren nombrando la variable que falta, los goldens del gateway lanzan en su `beforeAll`, y los
@@ -148,6 +154,54 @@ DELETE FROM public.profiles WHERE id IN (
 
 Los tests que necesitan estado `migration_in_progress` lo fijan por un PATCH directo a PostgREST con el
 JWT del propio dueño (RLS UPDATE lo permite) y lo revierten al terminar.
+
+## Corpus de Grupos de staging: relevo al custodio (2026-10-12)
+
+**El problema.** Un pull de Grupos cuesta 5 peticiones por grupo del usuario, y el DELETE está revocado: hasta el
+2026-10-12 cada corrida completa de `groups.goldens` dejaba 19 grupos más en el pull de A y 14 en el de B (y
+`push.fanout`, 3 en los dos), para siempre. Con A en 736 y B en 838 los goldens que hacen pull caían por timeout sin
+línea de aserción, que no distingue «el código está roto» de «el corpus creció».
+
+**El relevo.** El dueño de un grupo no puede salir por ninguna vía pública y `groups_forget_user` está prohibido en los
+tests, así que una membresía se queda siempre. Se queda la del **custodio** (`i5-goldens-custodio@test.yala`), con quien
+ningún golden hace pull. Al terminar, `groups.goldens` y `push.fanout` le traspasan los grupos de la corrida y A y B salen
+(`gateway/test/corpusRelevo.ts`, con su test offline `corpusRelevo.unit.test.ts`). **El `afterAll` falla si algún grupo de
+la corrida sigue en el pull de A o B**, nombrando el `gid` y el motivo. Un grupo borrado no admite traspaso: por eso
+`3-quater` lo crea y lo borra el custodio, no A.
+
+**Cuánto tiene cada uno**, con el predicado del pull (por SQL en staging o por el dry-run de abajo):
+
+```sql
+select u.email, count(*) from auth.users u join group_members gm on gm.user_id = u.id
+where u.email in ('i5-user-a@test.yala','i5-user-b@test.yala') and not gm.deleted
+  and gm.status in ('active','pendingApproval','rejected') group by 1;
+```
+
+| | A | B |
+|---|---|---|
+| 2026-10-12, antes | 736 | 838 |
+| tras la purga | 49 | 39 |
+| tras una corrida completa (22 grupos creados) | **49** | **39** |
+
+Los 49 de A son 31 `g6-migrate-*`, 18 grupos de goldens ya BORRADOS (no admiten relevo) y nada más; los 39 de B, 26
+`g6-migrate-*` y 13 `rls-*`. Ninguno lo crea hoy una corrida de goldens.
+
+**Purgar lo acumulado** si vuelve a pasar (otra suite, un golden nuevo que cree grupos por fuera de los helpers), con las
+credenciales cargadas, desde `gateway/`:
+
+```bash
+npx vite-node scripts/relevo-corpus-staging.ts                        # dry-run: cuenta y clasifica
+npx vite-node scripts/relevo-corpus-staging.ts -- --aplicar --solo=<gid>,<gid>   # piloto
+npx vite-node scripts/relevo-corpus-staging.ts -- --aplicar           # todo
+```
+
+Solo toca membresías de A y B en grupos `g2-goldens-*` y `g8-fanout-*`, solo con RPCs públicos y aborta si la URL no es
+staging. El 2026-10-12 relevó 935 grupos en 20 min.
+
+**El margen, medido el 2026-10-12 con A en 49 y B en 39** (34/34 en verde): `G2 · 7` 294 s de 360 (82 %), `3-ter` 85 s de
+120, `g7-roundtrip` 58 s de 90, `3-bis` 43 s de 120, `G2 · 2` 36 s de 60. **Ya no lo marca el corpus sino el cliente**: el
+`fetch` nativo de Node 26 (undici 8.5) serializa los POST al mismo origen —medido: 20 POST en paralelo tardan lo mismo que
+en serie, ~180 ms cada uno— y un pull son 5 POST por grupo. Card aparte.
 
 ## IdentityRemap (§b.4, DIFERIDOS #29) — traducción client-side, op first-class diferido a v2
 
