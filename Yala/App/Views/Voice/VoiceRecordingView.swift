@@ -308,7 +308,7 @@ struct VoiceRecordingView: View {
             hasAccount: draft.account != nil,
             accountIsArchived: draft.account?.isArchived ?? false,
             hasSubcategory: draft.subcategory != nil,
-            isFutureDate: draft.effectiveDate > Date.now
+            isFutureDate: DraftFutureDateLogic.isFuture(draft.effectiveDate)
         )
     }
 

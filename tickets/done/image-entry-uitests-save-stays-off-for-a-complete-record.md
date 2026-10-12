@@ -1,10 +1,10 @@
 ---
 id: image-entry-uitests-save-stays-off-for-a-complete-record
-status: backlog
+status: done
 priority: medium
 area: "image"
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-10-12
 source: hallazgo del encargo 2026-10-07-ipad-drop-unreadable-file-fails-silently
 ---
 
@@ -36,3 +36,24 @@ Los otros dos casos de la suite pasan.
 - El seam sigue fechando «hoy» como `yyyy-MM-dd` en `en_US_POSIX` (`ImageSelectionView.swift:1019-1022`). La hipótesis de la fecha futura sigue sin medir.
 
 Triage 2026-10-08: abierto · medium → medium · sin arreglo desde el 07-oct; la causa sigue sin medir y podría ser de producto (`ImageSelectionView.swift:472`, `isFutureDate`).
+
+## Causa medida (2026-10-12)
+
+Bug de producto, no del seam. La foto y la voz fijan la fecha leída a las 12:00 de ese día
+(`VisionDraftFactory.parseDate`, `TranscriptionParserService.convertToParsedTransaction`), y «Guardar» de las hojas de
+imagen y voz y la Bandeja (`DraftService.approveDraft` y `bulkApprove`) comparaban esa fecha con el instante actual.
+Hasta el mediodía local, un registro de hoy contaba como futuro: «Guardar» apagado en la hoja y «No se pueden aprobar
+transacciones con fecha futura» en la Bandeja.
+
+- La hipótesis UTC/Lima no explica nada: el seam formatea y el parser lee en la misma zona (`TimeZone.current`).
+  Lo que separa verde de rojo es la hora local frente al mediodía.
+- CI: las nocturnas arrancan de hecho ~14-15 UTC (el cron de 08:17 sale con retraso) y la app corre en la zona del
+  host, así que pasaban; el dispatch 38202370371 corrió ~04-05 UTC y cayó.
+- Local, 2026-10-12 00:49 Lima, binario sin arreglo: los tres casos en rojo en sus mismas líneas (L60, L96, L107),
+  los otros tres verdes.
+
+## Arreglo
+
+`DraftFutureDateLogic.isFuture` decide por DÍA (`Calendar.current`, granularidad `.day`), el criterio del formulario
+manual (`NewTransactionViewModel.preValidate`), y lo usan los cuatro sitios. El seam no cambia.
+Tests: `YalaTests/DraftFutureDateLogicTests` y los tres casos de `ImageEntryReviewUITests`.
