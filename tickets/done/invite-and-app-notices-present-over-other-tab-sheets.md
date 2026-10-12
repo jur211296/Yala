@@ -1,6 +1,6 @@
 ---
 id: invite-and-app-notices-present-over-other-tab-sheets
-status: backlog
+status: done
 priority: medium
 area: routing
 created: 2026-10-11
@@ -28,3 +28,18 @@ cierra y lo escrito se pierde.
 `.contentView` mezcla avisos críticos (`remoteWipe`, `iCloudMismatch`, Apple ID cambiado) que no deberían esperar a que
 la persona cierre un formulario. Medir primero con un XCUITest (molde: `ExternalEntryForeignSheetUITests`) y decidir qué
 espera y qué no.
+
+## Resuelto (2026-10-11)
+
+**Medido el rojo** (simulador iPhone 17 Pro, iOS 27.0, build sin el arreglo): con «Nuevo registro» a medias en
+Estadísticas, un enlace de invitación (`yaladev://invite?s=…`, respuesta «Enlace no válido»), la oferta de prueba
+(`.contentView`) y la prueba expirada (`.mainTab`) cerraban el formulario y se perdía el 1234 escrito. El aviso crítico
+(cuenta de iCloud cambiada) salía al momento.
+
+**Arreglo**: `ContentView` y `MainTabView` preguntan a UIKit por la ventana (`ModalPresentationProbe.isAnythingPresented(in:)`,
+el candado del Panel) y los avisos diferibles esperan a que se cierre la hoja; los críticos salen como hoy. Clasificación
+en `RouterConsumerGateLogic.waitsForForeignPresentation` (tabla en `docs/entry-points.md`). Un diferible retenido no tapa
+a un crítico (`AppRouter.drainNext(for:in:skipping:)`); reintento de 300 ms porque cerrar la hoja no avisa a nadie. La
+respuesta a una invitación que no vale, el archivado y el hito se aparcan al ir a segundo plano (15 min).
+
+**Verde**: `ExternalEntryForeignSheetUITests` (invitación, oferta, prueba expirada y el crítico) + `ForeignSheetNoticesTests`.

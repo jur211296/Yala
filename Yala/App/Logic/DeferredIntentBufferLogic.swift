@@ -60,6 +60,13 @@ enum SerializableIntent: Codable, Equatable {
     /// El consentimiento de IA que pidió una entrada de voz o imagen. `input` es el `rawValue` de `PendingAIInput`: un
     /// valor que este build no conozca se descarta al drenar.
     case requestAIConsent(input: String)
+    /// Avisos diferibles que esperaban a que se cerrara una hoja de otra pestaña y no tienen fuente que los vuelva a
+    /// pedir: la respuesta a un enlace de invitación (que no vale, o cuyo grupo está archivado) y el hito de registros,
+    /// que solo se pide al guardar el registro N exacto. Los aparca `AppRouter.resetTransients` (ticket
+    /// `invite-and-app-notices-present-over-other-tab-sheets`).
+    case showInviteError(detail: String)
+    case showGroupArchivedNotice(groupID: String, groupName: String)
+    case presentMilestoneUpgrade(milestone: Int)
 }
 
 enum DeferredIntentBufferLogic {
@@ -112,6 +119,12 @@ enum DeferredIntentBufferLogic {
             return .presentNewTransaction
         case .requestAIConsent(let input):
             return .requestAIConsent(input: input.rawValue)
+        case .showInviteError(let detail):
+            return .showInviteError(detail: detail)
+        case .showGroupArchivedNotice(let groupID, let groupName):
+            return .showGroupArchivedNotice(groupID: groupID, groupName: groupName)
+        case .presentMilestoneUpgrade(let milestone):
+            return .presentMilestoneUpgrade(milestone: milestone)
         default:
             return nil
         }
@@ -125,9 +138,16 @@ enum DeferredIntentBufferLogic {
     /// Fuera, a propósito: la hoja de Yala Pro (un paywall que vuelve solo al volver no es lo que la persona pidió), el
     /// borrador del chat (lo pide la propia app, con un payload vivo) y `.navigate` (otra conversación). La foto
     /// compartida tampoco: su fuente durable es `PendingImages/`.
+    ///
+    /// Y los avisos diferibles sin fuente que los re-emita (`showInviteError`, `showGroupArchivedNotice`,
+    /// `presentMilestoneUpgrade`): desde que esperan a que se cierre una hoja de otra pestaña pueden seguir en cola al
+    /// salir de la app, y tirarlos ahí los perdía. Los demás diferibles vuelven solos: la invitación desde
+    /// `PendingJoinStore`, la prueba expirada y el downgrade desde sus productores, el aviso de la Bandeja desde los
+    /// borradores, la oferta y Novedades en el arranque siguiente.
     static func parksOnBackground(_ intent: RouterIntent) -> Bool {
         switch intent {
-        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent:
+        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent,
+             .showInviteError, .showGroupArchivedNotice, .presentMilestoneUpgrade:
             return true
         default:
             return false
@@ -142,7 +162,8 @@ enum DeferredIntentBufferLogic {
     /// La caducidad de `payload`: la de las entradas aparcadas si lo es, y `fallback` (las 24 h del buffer) si no.
     static func ttl(for payload: SerializableIntent, fallback: TimeInterval) -> TimeInterval {
         switch payload {
-        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent:
+        case .presentVoiceEntry, .presentImageEntry, .presentNewTransaction, .requestAIConsent,
+             .showInviteError, .showGroupArchivedNotice, .presentMilestoneUpgrade:
             return min(parkedEntryTTL, fallback)
         case .navigate, .navigateGroupDetail, .showInboxAlert, .presentSharedImage:
             return fallback
@@ -180,6 +201,12 @@ enum DeferredIntentBufferLogic {
         case .requestAIConsent(let raw):
             guard let input = PendingAIInput(rawValue: raw) else { return nil }
             return .requestAIConsent(input)
+        case .showInviteError(let detail):
+            return .showInviteError(detail)
+        case .showGroupArchivedNotice(let groupID, let groupName):
+            return .showGroupArchivedNotice(groupID: groupID, groupName: groupName)
+        case .presentMilestoneUpgrade(let milestone):
+            return .presentMilestoneUpgrade(milestone)
         }
     }
 

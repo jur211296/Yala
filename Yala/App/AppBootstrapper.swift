@@ -2491,6 +2491,11 @@ final class AppBootstrapper {
                 setOrDeferDeepLink(.groups)
             }
 
+        #if DEBUG
+        case "uitest-notice":
+            UITestRouterNoticeStage.submitIfRequested(by: url)
+        #endif
+
         default:
             #if DEBUG
             print("AppBootstrapper: Unknown deep link host: \(url.host ?? "nil")")

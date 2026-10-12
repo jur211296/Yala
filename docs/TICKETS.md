@@ -497,7 +497,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | insights-precomputed-icon-lookup | backlog | tickets/backlog/insights-precomputed-icon-lookup.md |
 | insights-rate-limit-runs-before-the-cache | backlog | tickets/backlog/insights-rate-limit-runs-before-the-cache.md |
 | invite-aasa-requires-s-param | backlog | tickets/backlog/invite-aasa-requires-s-param.md |
-| invite-and-app-notices-present-over-other-tab-sheets | backlog | tickets/backlog/invite-and-app-notices-present-over-other-tab-sheets.md |
+| invite-and-app-notices-present-over-other-tab-sheets | done | tickets/done/invite-and-app-notices-present-over-other-tab-sheets.md |
 | invite-backend-stale-config | done | tickets/done/invite-backend-stale-config.md |
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | backlog | tickets/backlog/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
