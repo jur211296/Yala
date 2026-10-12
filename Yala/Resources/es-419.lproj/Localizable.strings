@@ -2205,8 +2205,6 @@
 "tipkit.pro.imageInput.message" = "Adjunta una foto de cualquier comprobante y Yala extrae una o más transacciones por ti.";
 "tipkit.pro.smartInsights.title" = "Resumen inteligente";
 "tipkit.pro.smartInsights.message" = "Activa esto para que Yala genere observaciones con IA sobre tus finanzas.";
-"tipkit.pro.exportExtended.title" = "Exportar sin límites";
-"tipkit.pro.exportExtended.message" = "Exporta tus datos por año completo, todo el historial o un rango personalizado.";
 "tipkit.pro.premiumIcons.title" = "Iconos exclusivos";
 "tipkit.pro.premiumIcons.message" = "Elige entre iconos premium para personalizar tu app.";
 "tipkit.pro.proThemes.title" = "Temas premium";
@@ -2682,7 +2680,6 @@
 "featureGate.proThemes" = "Temas Pro";
 "featureGate.smartInsightsAI" = "Insights inteligentes con IA";
 "featureGate.cashFlowAdvanced" = "Flujo de caja avanzado";
-"featureGate.exportExtendedPeriods" = "Periodos de exportación extendidos";
 
 // Titles
 "featureGate.limitReachedTitle" = "Límite alcanzado";
@@ -2889,7 +2886,7 @@
 "aiPrivacy.revokeConfirmTitle" = "¿Desactivar esta función?";
 "aiPrivacy.revokeConfirmMessage" = "Dejaremos de procesar tus datos de IA para esta función. Puedes reactivarla cuando quieras.";
 "aiPrivacy.revokeConfirmAction" = "Desactivar";
-"aiPrivacy.footerHint" = "Tus datos solo se procesan al usar Insights, Asistente o registros con voz e imagen. Nunca compartimos tu información personal.";
+"aiPrivacy.footerHint" = "Tus datos solo se envían cuando usas Insights, el Asistente o los registros con voz e imagen, y llegan a OpenAI a través de nuestro servidor. No los vendemos ni los usamos para publicidad.";
 "aiPrivacy.policyLink" = "Política de Privacidad";
 
 // MARK: - AI Consent
@@ -4841,7 +4838,7 @@
 "groups.consent.point1" = "Los grupos son compartidos por naturaleza: viven en la nube de Yala para que todos vean los mismos gastos, al día.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Solo se comparte lo mínimo: tu alias y los gastos del grupo. Tu correo no sale de tu dispositivo.";
+"groups.consent.point2" = "Con el grupo solo se comparte lo mínimo: tu alias y los gastos del grupo. Los demás miembros no ven tu correo.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Tus finanzas personales no se mueven: siguen donde tú elegiste, privadas como siempre.";

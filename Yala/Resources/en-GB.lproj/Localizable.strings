@@ -804,7 +804,7 @@
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.processingTitle" = "Voice & Image Processing";
 "aiPrivacy.chatRow" = "Pro Assistant";
-"aiPrivacy.footerHint" = "Your data is only processed when using Insights, Assistant, or voice/image entries. We never share your personal information.";
+"aiPrivacy.footerHint" = "Your data is only sent when you use Insights, the Assistant or voice and image entries, and it reaches OpenAI through our server. We don't sell it or use it for advertising.";
 "aiPrivacy.insightsRow" = "Smart Insights";
 "aiPrivacy.policyLink" = "Privacy Policy";
 "aiPrivacy.processingRow" = "Processing (voice & image)";
@@ -1503,7 +1503,6 @@
 "featureGate.budgets" = "Budgets";
 "featureGate.cashFlowAdvanced" = "Advanced Cash Flow";
 "featureGate.chatAssistant" = "Chat assistant";
-"featureGate.exportExtendedPeriods" = "Extended export periods";
 "featureGate.imageInput" = "Image input";
 "featureGate.limitInfo" = "%d of %d";
 "featureGate.limitReachedMessage" = "You've reached the %@ limit on the free plan. Upgrade to Pro to create more.";
@@ -3241,8 +3240,6 @@
 "tipkit.pro.aiSummary.title" = "Your AI summary";
 "tipkit.pro.chatFab.message" = "Ask Yala about your spending, budgets, and more.";
 "tipkit.pro.chatFab.title" = "Your financial assistant";
-"tipkit.pro.exportExtended.message" = "Export your data by full year, all history, or a custom range.";
-"tipkit.pro.exportExtended.title" = "Unlimited export";
 "tipkit.pro.fab.message" = "Tap here to record by voice, image, or manually. Now you have all three options.";
 "tipkit.pro.fab.title" = "New ways to record";
 "tipkit.pro.imageInput.message" = "Attach a photo of any receipt or invoice and Yala extracts one or more transactions for you.";
@@ -4089,7 +4086,7 @@
 "groups.consent.point1" = "Groups are shared by nature: they live in Yala's cloud so everyone sees the same expenses, up to date.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Only the minimum is shared: your alias and the group's expenses. Your email never leaves your device.";
+"groups.consent.point2" = "Only the minimum is shared with the group: your alias and the group's expenses. Other members don't see your email.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Your personal finances don't move: they stay where you chose, private as always.";

@@ -2207,8 +2207,6 @@
 "tipkit.pro.imageInput.message" = "Attach a photo of any receipt or invoice and Yala extracts one or more transactions for you.";
 "tipkit.pro.smartInsights.title" = "Smart insights";
 "tipkit.pro.smartInsights.message" = "Turn this on so Yala generates AI-powered observations about your finances.";
-"tipkit.pro.exportExtended.title" = "Unlimited export";
-"tipkit.pro.exportExtended.message" = "Export your data by full year, all history, or a custom range.";
 "tipkit.pro.premiumIcons.title" = "Exclusive icons";
 "tipkit.pro.premiumIcons.message" = "Choose from premium icons to personalize your app.";
 "tipkit.pro.proThemes.title" = "Premium themes";
@@ -2496,7 +2494,6 @@
 "featureGate.proThemes" = "Pro Themes";
 "featureGate.smartInsightsAI" = "Smart Insights AI";
 "featureGate.cashFlowAdvanced" = "Advanced Cash Flow";
-"featureGate.exportExtendedPeriods" = "Extended export periods";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limit reached";
@@ -2939,7 +2936,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Disable this feature?";
 "aiPrivacy.revokeConfirmMessage" = "We'll stop processing your AI data for this feature. You can re-enable it anytime.";
 "aiPrivacy.revokeConfirmAction" = "Disable";
-"aiPrivacy.footerHint" = "Your data is only processed when using Insights, Assistant, or voice/image entries. We never share your personal information.";
+"aiPrivacy.footerHint" = "Your data is only sent when you use Insights, the Assistant or voice and image entries, and it reaches OpenAI through our server. We don't sell it or use it for advertising.";
 "aiPrivacy.policyLink" = "Privacy Policy";
 
 // MARK: - AI Consent
@@ -4830,7 +4827,7 @@
 "groups.consent.point1" = "Groups are shared by nature: they live in Yala's cloud so everyone sees the same expenses, up to date.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Only the minimum is shared: your alias and the group's expenses. Your email never leaves your device.";
+"groups.consent.point2" = "Only the minimum is shared with the group: your alias and the group's expenses. Other members don't see your email.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Your personal finances don't move: they stay where you chose, private as always.";

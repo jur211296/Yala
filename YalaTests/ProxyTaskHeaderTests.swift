@@ -13,10 +13,12 @@
 //
 
 import Foundation
+import ImageIO
 import OpenAI
 import SwiftData
 import Testing
 import UIKit
+import UniformTypeIdentifiers
 @testable import Yala
 
 /// Captura cada petición y contesta como el gateway: transcripción con texto, chat con un JSON vacío.
@@ -158,6 +160,72 @@ struct ProxyTaskHeaderTests {
         let image = try #require(UIImage(data: jpeg))
         let longest = max(image.size.width * image.scale, image.size.height * image.scale)
         #expect(longest == CGFloat(PhotoUploadSizing.defaultMaxEdge), "la foto subió a \(longest) px")
+    }
+
+    /// La foto sale sin sus metadatos (decisión de Lola, 2026-10-12, y la política de privacidad lo promete): ni GPS, ni
+    /// fecha, ni cámara, ni orientación. Se mira el JPEG que va DE VERDAD en la petición, en las dos ramas de
+    /// `uploadJPEG`: la foto pequeña, que antes subía con `jpegData` sin redibujar, y la grande, que se reduce.
+    @Test("foto: el JPEG enviado no lleva GPS ni EXIF de la cámara", arguments: [800, 4032])
+    func photoReadStripsMetadata(width: Int) async throws {
+        let original = try cameraJPEG(width: width, height: width * 3 / 4)
+        // Control: la foto de partida SÍ lleva lo que tiene que desaparecer.
+        let before = try properties(of: original)
+        #expect(before["{GPS}"] != nil && before["{TIFF}"] != nil)
+        #expect((before["{Exif}"] as? [String: Any])?["DateTimeOriginal"] != nil)
+        let photo = try #require(UIImage(data: original))
+
+        let sent = await capture {
+            _ = try? await ImageVisionService().analyze(image: photo, currency: VisionCurrencyContext(mainCurrency: "PEN", accountCurrencies: ["PEN"]))
+        }
+        let body = try #require(sent.first?.body)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let messages = try #require(json["messages"] as? [[String: Any]])
+        let parts = try #require(messages.last?["content"] as? [[String: Any]])
+        let url = try #require((parts.first { $0["type"] as? String == "image_url" }?["image_url"] as? [String: Any])?["url"] as? String)
+        let b64 = try #require(url.components(separatedBy: "base64,").last)
+        let jpeg = try #require(Data(base64Encoded: b64))
+
+        let after = try properties(of: jpeg)
+        #expect(after["{GPS}"] == nil, "el JPEG enviado lleva GPS: \(after)")
+        #expect(after["{TIFF}"] == nil, "el JPEG enviado lleva un bloque TIFF (marca, modelo u orientación): \(after)")
+        #expect(after["{ExifAux}"] == nil && after["{MakerApple}"] == nil && after["{IPTC}"] == nil)
+        #expect(after["Orientation"] == nil, "el JPEG enviado lleva orientación: \(after)")
+        // ImageIO escribe siempre un `{Exif}` con el tamaño en píxeles; nada más de la foto puede quedar ahí.
+        let exifKeys = Set(((after["{Exif}"] as? [String: Any]) ?? [:]).keys)
+        #expect(exifKeys.isSubset(of: ["PixelXDimension", "PixelYDimension"]), "EXIF de la foto en el envío: \(exifKeys)")
+    }
+
+    /// Un JPEG como los que salen de Fotos: con ubicación, fecha, objetivo, marca, modelo y orientación.
+    private func cameraJPEG(width: Int, height: Int) throws -> Data {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let pixels = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { ctx in
+            UIColor.white.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        let cgImage = try #require(pixels.cgImage)
+        let data = NSMutableData()
+        let destination = try #require(CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil))
+        let metadata: [CFString: Any] = [
+            kCGImagePropertyOrientation: 6,
+            kCGImagePropertyGPSDictionary: [
+                kCGImagePropertyGPSLatitude: 12.0464, kCGImagePropertyGPSLatitudeRef: "S",
+                kCGImagePropertyGPSLongitude: 77.0428, kCGImagePropertyGPSLongitudeRef: "W",
+            ],
+            kCGImagePropertyExifDictionary: [
+                kCGImagePropertyExifDateTimeOriginal: "2026:10:12 10:00:00",
+                kCGImagePropertyExifLensModel: "iPhone 17 Pro back triple camera",
+            ],
+            kCGImagePropertyTIFFDictionary: [kCGImagePropertyTIFFMake: "Apple", kCGImagePropertyTIFFModel: "iPhone 17 Pro"],
+        ]
+        CGImageDestinationAddImage(destination, cgImage, metadata as CFDictionary)
+        #expect(CGImageDestinationFinalize(destination))
+        return data as Data
+    }
+
+    private func properties(of jpeg: Data) throws -> [String: Any] {
+        let source = try #require(CGImageSourceCreateWithData(jpeg as CFData, nil))
+        return try #require(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any])
     }
 
     @Test("leer una nota: text.parse, con JSON estricto y las divisas del usuario en el prompt")

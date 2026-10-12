@@ -2207,8 +2207,6 @@
 "tipkit.pro.imageInput.message" = "Dołącz zdjęcie paragonu lub faktury, a Yala wyodrębni jedną lub więcej transakcji.";
 "tipkit.pro.smartInsights.title" = "Inteligentne obserwacje";
 "tipkit.pro.smartInsights.message" = "Włącz, aby Yala generowała obserwacje o twoich finansach przy pomocy AI.";
-"tipkit.pro.exportExtended.title" = "Nielimitowany eksport";
-"tipkit.pro.exportExtended.message" = "Eksportuj dane z całego roku, całej historii lub niestandardowego zakresu.";
 "tipkit.pro.premiumIcons.title" = "Ekskluzywne ikony";
 "tipkit.pro.premiumIcons.message" = "Wybierz spośród premium ikon, aby spersonalizować aplikację.";
 "tipkit.pro.proThemes.title" = "Motywy premium";
@@ -2496,7 +2494,6 @@
 "featureGate.proThemes" = "Motywy Pro";
 "featureGate.smartInsightsAI" = "Inteligentne obserwacje AI";
 "featureGate.cashFlowAdvanced" = "Zaawansowany przepływ środków";
-"featureGate.exportExtendedPeriods" = "Rozszerzone okresy eksportu";
 
 // Titles
 "featureGate.limitReachedTitle" = "Osiągnięto limit";
@@ -2892,7 +2889,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Wyłączyć tę funkcję?";
 "aiPrivacy.revokeConfirmMessage" = "Przestaniemy przetwarzać twoje dane AI dla tej funkcji. Możesz ją włączyć ponownie w każdej chwili.";
 "aiPrivacy.revokeConfirmAction" = "Wyłącz";
-"aiPrivacy.footerHint" = "Twoje dane są przetwarzane tylko podczas korzystania z Obserwacji, Asystenta lub wpisów głosowych/obrazowych. Nigdy nie udostępniamy danych osobowych.";
+"aiPrivacy.footerHint" = "Twoje dane są wysyłane tylko podczas korzystania z Obserwacji, Asystenta lub wpisów głosowych/obrazowych i trafiają do OpenAI przez nasz serwer. Nie sprzedajemy ich ani nie używamy do reklam.";
 "aiPrivacy.policyLink" = "Polityka prywatności";
 
 // MARK: - AI Consent
@@ -4836,7 +4833,7 @@
 "groups.consent.point1" = "Grupy są z natury wspólne: żyją w chmurze Yala, aby wszyscy widzieli te same wydatki, zawsze aktualne.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Udostępniane jest tylko minimum: twój pseudonim i wydatki grupy. Twój e-mail nie opuszcza twojego urządzenia.";
+"groups.consent.point2" = "Z grupą udostępniane jest tylko minimum: twój pseudonim i wydatki grupy. Pozostali członkowie nie widzą twojego e-maila.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Twoje osobiste finanse się nie przenoszą: zostają tam, gdzie wybrano, prywatne jak zawsze.";

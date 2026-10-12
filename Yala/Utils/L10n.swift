@@ -8125,8 +8125,6 @@ enum L10n {
         static var proImageInputMessage: String { ls("tipkit.pro.imageInput.message", comment: "") }
         static var proSmartInsightsTitle: String { ls("tipkit.pro.smartInsights.title", comment: "") }
         static var proSmartInsightsMessage: String { ls("tipkit.pro.smartInsights.message", comment: "") }
-        static var proExportExtendedTitle: String { ls("tipkit.pro.exportExtended.title", comment: "") }
-        static var proExportExtendedMessage: String { ls("tipkit.pro.exportExtended.message", comment: "") }
         static var proPremiumIconsTitle: String { ls("tipkit.pro.premiumIcons.title", comment: "") }
         static var proPremiumIconsMessage: String { ls("tipkit.pro.premiumIcons.message", comment: "") }
         static var proProThemesTitle: String { ls("tipkit.pro.proThemes.title", comment: "") }

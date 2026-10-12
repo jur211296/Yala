@@ -2207,8 +2207,6 @@
 "tipkit.pro.imageInput.message" = "附上任意收据或发票的照片,Yala 会为你提取一笔或多笔交易。";
 "tipkit.pro.smartInsights.title" = "智能洞察";
 "tipkit.pro.smartInsights.message" = "打开它,Yala 会用 AI 生成关于你财务的观察。";
-"tipkit.pro.exportExtended.title" = "无限导出";
-"tipkit.pro.exportExtended.message" = "按完整年份、全部历史或自定义范围导出你的数据。";
 "tipkit.pro.premiumIcons.title" = "专属图标";
 "tipkit.pro.premiumIcons.message" = "从高级图标中选一个,个性化你的应用。";
 "tipkit.pro.proThemes.title" = "高级主题";
@@ -2496,7 +2494,6 @@
 "featureGate.proThemes" = "Pro 主题";
 "featureGate.smartInsightsAI" = "智能 AI 洞察";
 "featureGate.cashFlowAdvanced" = "高级现金流";
-"featureGate.exportExtendedPeriods" = "扩展导出时段";
 
 // Titles
 "featureGate.limitReachedTitle" = "已达上限";
@@ -2892,7 +2889,7 @@
 "aiPrivacy.revokeConfirmTitle" = "禁用此功能?";
 "aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
 "aiPrivacy.revokeConfirmAction" = "禁用";
-"aiPrivacy.footerHint" = "你的数据仅在使用洞察、助理或语音/图片输入时被处理。我们绝不分享你的个人信息。";
+"aiPrivacy.footerHint" = "只有在你使用洞察、助理或语音/图片输入时，你的数据才会被发送，并经由我们的服务器传给 OpenAI。我们不会出售你的数据，也不会将其用于广告。";
 "aiPrivacy.policyLink" = "隐私政策";
 
 // MARK: - AI Consent
@@ -4836,7 +4833,7 @@
 "groups.consent.point1" = "群组天生就是共享的：它们保存在 Yala 云端，让每个成员都能看到同样的最新支出。";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "只分享最少的信息：你的昵称和群组的支出。你的邮箱不会离开你的设备。";
+"groups.consent.point2" = "与群组分享的只有最少的信息：你的昵称和群组的支出。其他成员看不到你的邮箱。";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "你的个人财务不会移动：它们留在你选择的地方，一如既往地私密。";

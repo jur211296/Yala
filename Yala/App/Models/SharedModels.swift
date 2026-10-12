@@ -181,14 +181,6 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Whether this period requires Pro for export
-    var isProExportPeriod: Bool {
-        switch self {
-        case .thisYear, .lastYear, .allTime, .custom: return true
-        default: return false
-        }
-    }
-
     /// Calendar icon for the selector
     var iconName: String { "calendar" }
 
