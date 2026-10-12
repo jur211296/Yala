@@ -99,7 +99,10 @@ final class ReceiptDropUITests: XCTestCase {
         let app = launch(drop: "pdf3", aiConsent: true, extraArguments: ["-uitest-image-result", "pages"])
         waitForReview(app, rows: 3)
         XCTAssertFalse(app.otherElements["image_failed_photos"].exists, "Ninguna página falló: no hay aviso.")
-        XCTAssertFalse(app.otherElements["image_pages_left_out"].exists, "Tres páginas caben: no hay aviso de tope.")
+        // Por `descendants(matching: .any)`: el aviso es una fila `.combine` y sale como `StaticText`. Buscado como
+        // `otherElements` no existía nunca y esta aserción pasaba aunque el aviso estuviera en pantalla.
+        XCTAssertFalse(
+            app.descendants(matching: .any)["image_pages_left_out"].exists, "Tres páginas caben: no hay aviso de tope.")
     }
 
     /// Con contraseña: la hoja la pide, dice «incorrecta» si no abre (no «ilegible») y con la buena lee las tres.
