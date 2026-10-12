@@ -186,6 +186,20 @@ final class SceneNavigation: Identifiable {
     /// con prefill desde chat. La vista lo limpia tras consumir el payload.
     var showNewTransactionFromChat: Bool = false
 
+    /// El registro por imagen está abierto en «elige una foto»: nada leído ni elegido todavía. Lo escribe
+    /// `ImageSelectionView` al aparecer, al cambiar de fase y al desaparecer. Una foto compartida que llega con la hoja
+    /// así puede cerrarla y empezar la lectura (`SharedPhotoPanelSheetLogic`, decisión de Jürgen del 2026-10-12).
+    var isImageEntryChoosing: Bool = false
+
+    /// El «?» de un widget del Panel está abierto sin un tamaño cambiado por guardar. Lo escribe `WidgetInfoSheet` (solo
+    /// con el VM del Panel), y `PanelShell` lo baja al pedir que se cierre. Ninguna bandera de `PanelSheetState` lo
+    /// publica: la hoja es de cada widget.
+    var isCleanPanelWidgetInfoVisible: Bool = false
+
+    /// Petición de cerrar el «?» del Panel para que se lea una foto compartida: `WidgetInfoSheet` lo observa y se cierra
+    /// si sigue sin cambios. Contador, para que dos peticiones seguidas se vean.
+    var panelWidgetInfoCloseRequest: Int = 0
+
     // MARK: - Lo que tapa esta ventana
 
     /// Mirrors PanelShell `sheets.showInbox` so the RouterEntryGate can drop

@@ -136,6 +136,7 @@ struct ImageSelectionView: View {
         }
         .onAppear(perform: checkForSharedImage)
         .onDisappear(perform: tearDown)
+        .modifier(ImageEntryChoosingPublisher(isChoosing: phase == .choose))
     }
 
     private var isSetupTrial: Bool { onSetupTrialCompleted != nil }
@@ -1370,4 +1371,19 @@ private struct ImageReadingPhoto: View {
     ImageSelectionView()
         .environment(SceneNavigation())
         .modelContainer(for: [InboxDraft.self, Account.self, Subcategory.self])
+}
+
+/// Publica en la ventana si la hoja está en «elige una foto» (`SceneNavigation.isImageEntryChoosing`): una foto
+/// compartida puede cerrarla entonces y empezar la lectura (`SharedPhotoPanelSheetLogic`). En cualquier otra fase —una
+/// contraseña a medias, una lectura, la revisión, un fallo— la foto espera a que se cierre.
+private struct ImageEntryChoosingPublisher: ViewModifier {
+    let isChoosing: Bool
+    @Environment(SceneNavigation.self) private var navigation
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { navigation.isImageEntryChoosing = isChoosing }
+            .onChange(of: isChoosing) { _, choosing in navigation.isImageEntryChoosing = choosing }
+            .onDisappear { navigation.isImageEntryChoosing = false }
+    }
 }

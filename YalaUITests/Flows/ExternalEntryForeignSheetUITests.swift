@@ -31,10 +31,12 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
     }
 
     /// Lanza, va a Estadísticas y deja «Nuevo registro» abierto con `1234` escrito. Devuelve el campo del importe.
-    private func launchWithHalfFilledFormInStatistics() -> (XCUIApplication, XCUIElement) {
+    private func launchWithHalfFilledFormInStatistics(
+        extraArguments: [String] = ["-uitest-image-result", "one"]
+    ) -> (XCUIApplication, XCUIElement) {
         let app = XCUIApplication()
         // Pro y consentimiento: la foto compartida va directa a la lectura, sin la hoja de Pro ni la del consentimiento.
-        app.launchForUITest(pro: true, aiConsent: true, extraArguments: ["-uitest-image-result", "one"])
+        app.launchForUITest(pro: true, aiConsent: true, extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // Estadísticas es el 2.º tab del config default [panel, statistics, planning].
@@ -96,6 +98,23 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         closeForm(app)
         XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: 30),
                       "Al cerrar el formulario, la foto compartida tenía que leerse (image_review_title).")
+    }
+
+    /// La voz desde un widget o Siri lleva al Panel desde el 2026-10-12 (ticket
+    /// `widget-and-siri-entries-wait-for-the-panel-tab`). Con el formulario a medias en Estadísticas, la pestaña cambia
+    /// por debajo y el dictado espera: sale en el Panel al cerrar el formulario, sin haberlo cerrado él.
+    func test_halfFilledFormInAnotherTab_voiceEntry_keepsTheFormAndOpensOnThePanelWhenClosed() {
+        let (app, amountField) = launchWithHalfFilledFormInStatistics(extraArguments: ["-uitest-voice-result", "one"])
+        openFromOutside("yaladev://voice-entry")
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace de voz no trajo Yala delante.")
+
+        assertFormSurvives(app, amountField, seconds: 8, capture: "formulario-tras-voz")
+        XCTAssertFalse(app.buttons["voice_done"].exists, "El dictado salió con el formulario abierto.")
+        closeForm(app)
+        XCTAssertTrue(app.buttons["voice_done"].waitForExistence(timeout: 15),
+                      "Al cerrar el formulario, el dictado pedido desde el widget tenía que abrirse (voice_done).")
+        XCTAssertTrue(app.tabBars.buttons.element(boundBy: 0).isSelected,
+                      "Debajo del dictado tenía que quedar el Panel.")
     }
 
     // MARK: - Invitaciones y avisos de la app (ticket invite-and-app-notices-present-over-other-tab-sheets)

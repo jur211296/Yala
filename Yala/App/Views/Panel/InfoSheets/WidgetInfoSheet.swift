@@ -91,6 +91,11 @@ struct WidgetInfoSheet<Preview: View>: View {
             initialSize = current
             didLoadInitialSize = true
         }
+        .modifier(PanelWidgetInfoSharedPhotoClose(
+            isInPanelWindow: viewModel != nil,
+            isClean: draftSize == initialSize,
+            dismiss: { dismiss() }
+        ))
     }
 
     @ViewBuilder
@@ -168,5 +173,33 @@ struct WidgetInfoSheet<Preview: View>: View {
     private func persistDraftToViewModel() {
         guard didLoadInitialSize, let viewModel, let widgetType else { return }
         viewModel.setWidgetSize(widgetType, size: draftSize)
+    }
+}
+
+/// El «?» de un widget del Panel se cierra solo si llega una foto compartida y no hay un tamaño cambiado por guardar
+/// (`SharedPhotoPanelSheetLogic`). Publica si está abierto y sin cambios (`SceneNavigation.isCleanPanelWidgetInfoVisible`)
+/// y atiende la petición de cierre de `PanelShell`. Fuera del Panel (Estadísticas) no hace nada: esa hoja es de otra
+/// pestaña y espera.
+private struct PanelWidgetInfoSharedPhotoClose: ViewModifier {
+    let isInPanelWindow: Bool
+    let isClean: Bool
+    let dismiss: () -> Void
+    @Environment(SceneNavigation.self) private var navigation
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: isClean, initial: true) { _, clean in publish(clean) }
+            .onChange(of: navigation.panelWidgetInfoCloseRequest) { _, _ in closeIfClean() }
+            .onDisappear { if isInPanelWindow { navigation.isCleanPanelWidgetInfoVisible = false } }
+    }
+
+    private func publish(_ clean: Bool) {
+        guard isInPanelWindow else { return }
+        navigation.isCleanPanelWidgetInfoVisible = clean
+    }
+
+    private func closeIfClean() {
+        guard isInPanelWindow, isClean else { return }
+        dismiss()
     }
 }

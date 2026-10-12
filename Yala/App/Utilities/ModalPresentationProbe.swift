@@ -48,4 +48,22 @@ enum ModalPresentationProbe {
         guard let scene else { return isAnythingPresented }
         return scene.windows.contains { $0.rootViewController?.presentedViewController != nil }
     }
+
+    /// Cuántas presentaciones hay apiladas en la ventana `scene`, la más alta de sus ventanas: 0 sin nada, 1 con una
+    /// hoja, 2 con algo encima de esa hoja (un editor, el selector de fotos, un aviso). Una foto compartida solo cierra
+    /// una hoja del Panel si está sola (`SharedPhotoPanelSheetLogic`): con algo encima, lo de encima puede tener datos.
+    /// Sin escena conocida, la ventana con la pila más alta de todas.
+    static func presentationDepth(in scene: UIWindowScene?) -> Int {
+        let windows: [UIWindow] = scene.map(\.windows)
+            ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows)
+        return windows.map { window in
+            var depth = 0
+            var presented = window.rootViewController?.presentedViewController
+            while let current = presented {
+                depth += 1
+                presented = current.presentedViewController
+            }
+            return depth
+        }.max() ?? 0
+    }
 }

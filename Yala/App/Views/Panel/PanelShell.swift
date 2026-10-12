@@ -105,6 +105,7 @@ struct PanelShell: View {
                 || SetupChecklistManager.shared.pendingPracticeCleanup != nil {
                 scheduleUnpublishedPresentationRedrain()
             }
+            closeDataFreeSheetForSharedPhoto()
             // Canario D4: solo con el tab correcto y por flags PUBLICADOS
             // (shellModalBlocker / isMainTabModalVisible) — tab equivocado,
             // chat abierto o sheet propio del panel son estado local real
@@ -143,6 +144,43 @@ struct PanelShell: View {
         guard !sheets.hasActivePresentation, !navigation.showNewTransactionFromChat else { return }
         sheets.practiceCleanupItem = pending
         checklist.pendingPracticeCleanup = nil
+    }
+
+    /// Una foto compartida que espera detrás de una hoja del Panel sin nada por guardar (la Bandeja, el registro por
+    /// imagen en «elige una foto», el «?» de un widget) la cierra, y la lectura sale en cuanto UIKit termina de
+    /// cerrarla: el cierre re-drena por `hasActivePresentation`, y mientras la hoja se va, el reintento de 300 ms. Cualquier
+    /// otra hoja sigue esperando a la persona. Decide `SharedPhotoPanelSheetLogic` (decisión de Jürgen del 2026-10-12).
+    private func closeDataFreeSheetForSharedPhoto() {
+        let snapshot = SharedPhotoPanelSheetLogic.Snapshot(
+            intent: AppRouter.shared.peekNext(for: .panel, in: navigation.id),
+            selectedTab: navigation.selectedMainTab,
+            shellBlocker: navigation.shellModalBlocker,
+            mainTabModalVisible: navigation.isMainTabModalVisible,
+            chatDraftFormOpen: navigation.showNewTransactionFromChat,
+            onlyInboxOpen: sheets.isOnlyPresenting(\.showInbox),
+            onlyImageEntryOpen: sheets.isOnlyPresenting(\.showImageSelection),
+            imageEntryChoosing: navigation.isImageEntryChoosing,
+            imageEntrySetupTrial: sheets.isImageSetupTrial,
+            noPanelSheetFlag: !sheets.hasActivePresentation,
+            cleanWidgetInfoVisible: navigation.isCleanPanelWidgetInfoVisible,
+            presentationDepth: ModalPresentationProbe.presentationDepth(
+                in: SceneRegistry.shared.windowScene(for: navigation.id))
+        )
+        switch SharedPhotoPanelSheetLogic.sheetToClose(snapshot) {
+        case .inbox:
+            sheets.showInbox = false
+        case .imageEntryChoosing:
+            sheets.showImageSelection = false
+        case .widgetInfo:
+            // Se baja aquí para no volver a pedirlo en cada reintento mientras la hoja se cierra.
+            navigation.isCleanPanelWidgetInfoVisible = false
+            navigation.panelWidgetInfoCloseRequest += 1
+        case nil:
+            return
+        }
+        #if DEBUG
+        print("PanelShell: la foto compartida cierra una hoja del Panel sin nada por guardar")
+        #endif
     }
 
     /// Cerrar una hoja de otra pestaña no cambia nada que el Panel observe, así que nadie re-drenaría: se vuelve a mirar
