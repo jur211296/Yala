@@ -392,8 +392,9 @@ final class DraftService {
             return tx
         }
 
-        // Validate: block future dates
-        guard draft.effectiveDate <= Date.now else {
+        // Validate: block future dates. Por DÍA, no por instante: la foto y la voz fijan la fecha a las 12:00, y un
+        // registro de hoy era «futuro» hasta el mediodía (`DraftFutureDateLogic`).
+        guard !DraftFutureDateLogic.isFuture(draft.effectiveDate) else {
             throw DraftServiceError.futureDateNotAllowed
         }
 
@@ -535,8 +536,8 @@ final class DraftService {
                 continue
             }
 
-            // Skip drafts with future dates (solo path genérico personal).
-            guard draft.effectiveDate <= Date.now else { continue }
+            // Skip drafts with future dates (solo path genérico personal). Por día, como `approveDraft`.
+            guard !DraftFutureDateLogic.isFuture(draft.effectiveDate) else { continue }
 
             guard let account = draft.account,
                   !account.isArchived,
