@@ -2203,8 +2203,6 @@
 "tipkit.pro.imageInput.message" = "Anexe uma foto de qualquer comprovante e o Yala extrai uma ou mais transações para você.";
 "tipkit.pro.smartInsights.title" = "Resumo inteligente";
 "tipkit.pro.smartInsights.message" = "Ative isso para que o Yala gere observações com IA sobre suas finanças.";
-"tipkit.pro.exportExtended.title" = "Exportação ilimitada";
-"tipkit.pro.exportExtended.message" = "Exporte seus dados por ano completo, todo o histórico ou um período personalizado.";
 "tipkit.pro.premiumIcons.title" = "Ícones exclusivos";
 "tipkit.pro.premiumIcons.message" = "Escolha entre ícones premium para personalizar seu app.";
 "tipkit.pro.proThemes.title" = "Temas premium";
@@ -2492,7 +2490,6 @@
 "featureGate.proThemes" = "Temas Pro";
 "featureGate.smartInsightsAI" = "Insights inteligentes com IA";
 "featureGate.cashFlowAdvanced" = "Fluxo de caixa avançado";
-"featureGate.exportExtendedPeriods" = "Períodos de exportação estendidos";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limite atingido";
@@ -2888,7 +2885,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Desativar esta função?";
 "aiPrivacy.revokeConfirmMessage" = "Pararemos de processar seus dados de IA para esta função. Você pode reativá-la quando quiser.";
 "aiPrivacy.revokeConfirmAction" = "Desativar";
-"aiPrivacy.footerHint" = "Seus dados só são processados ao usar Insights, Assistente ou registros com voz e imagem. Nunca compartilhamos suas informações pessoais.";
+"aiPrivacy.footerHint" = "Seus dados só são enviados quando você usa Insights, o Assistente ou registros com voz e imagem, e chegam à OpenAI pelo nosso servidor. Não os vendemos nem os usamos para publicidade.";
 "aiPrivacy.policyLink" = "Política de Privacidade";
 
 // MARK: - AI Consent
@@ -4824,7 +4821,7 @@
 "groups.consent.point1" = "Grupos são compartilhados por natureza: eles vivem na nuvem do Yala para que todos vejam os mesmos gastos, sempre em dia.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Só o mínimo é compartilhado: seu apelido e os gastos do grupo. Seu e-mail não sai do seu dispositivo.";
+"groups.consent.point2" = "Com o grupo só se compartilha o mínimo: seu apelido e os gastos do grupo. Os outros membros não veem seu e-mail.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Suas finanças pessoais não se movem: continuam onde você escolheu, privadas como sempre.";

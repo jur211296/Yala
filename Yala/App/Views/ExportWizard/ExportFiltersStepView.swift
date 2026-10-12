@@ -83,21 +83,12 @@ struct ExportFiltersStepView: View {
         )
     }
 
-    private var isProUser: Bool {
-        FeatureGateService.shared.isProUser
-    }
-
     // MARK: - Body
 
     var body: some View {
         mainContent
             .onAppear {
                 viewModel.setContext(modelContext)
-                // Reset to free period if non-Pro user has a Pro period selected
-                if !isProUser && selectedPeriod.isProExportPeriod {
-                    selectedPeriod = .last30Days
-                    customDateRange = nil
-                }
             }
             .sheet(isPresented: $showCategoriesSheet) {
                 categoriesSheetView
@@ -502,6 +493,8 @@ struct ExportFiltersStepView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("export_period_row")
+        .accessibilityValue(periodDisplayText)
     }
 
     private var noteContent: some View {
@@ -528,11 +521,6 @@ private struct ExportPeriodPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @State private var showCustomPicker = false
-    @State private var showUpgradePrompt = false
-
-    private var isProUser: Bool {
-        FeatureGateService.shared.isProUser
-    }
 
     /// Periods to show (exclude .custom, handled separately)
     private var standardPeriods: [DetailPeriod] {
@@ -575,38 +563,26 @@ private struct ExportPeriodPickerSheet: View {
                     }
                 )
             }
-            .sheet(isPresented: $showUpgradePrompt) {
-                UpgradePromptSheet(
-                    feature: .exportExtendedPeriods,
-                    context: .proFeature,
-                    source: "exportPeriod"
-                )
-            }
         }
     }
 
+    /// Todos los períodos se pueden exportar, también en el plan gratis (decisión de 2026-10-12: la exportación
+    /// completa es portabilidad y no se cobra). Antes «Este año», «Año pasado», «Todo» y «Personalizado» eran Pro.
     @ViewBuilder
     private func periodRow(for period: DetailPeriod) -> some View {
         let isSelected = selectedPeriod == period
-        let isLocked = !isProUser && period.isProExportPeriod
 
         Button {
-            if isLocked {
-                showUpgradePrompt = true
-            } else {
-                onSelect(period)
-            }
+            onSelect(period)
         } label: {
             HStack {
                 Text(period.displayName)
                     .font(DS.Typography.body)
-                    .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
+                    .foregroundStyle(.thPrimaryText)
 
                 Spacer()
 
-                if isLocked {
-                    ProBadge(size: .small)
-                } else if isSelected {
+                if isSelected {
                     Image(systemName: "checkmark")
                         .foregroundStyle(theme.accent)
                         .font(DS.Typography.headline)
@@ -617,25 +593,20 @@ private struct ExportPeriodPickerSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("export_period_\(period.rawValue)")
     }
 
     private var customPeriodRow: some View {
-        let isLocked = !isProUser
-
-        return Button {
-            if isLocked {
-                showUpgradePrompt = true
-            } else {
-                showCustomPicker = true
-            }
+        Button {
+            showCustomPicker = true
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Period.custom)
                         .font(DS.Typography.body)
-                        .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
+                        .foregroundStyle(.thPrimaryText)
 
-                    if !isLocked, let range = customDateRange {
+                    if let range = customDateRange {
                         Text(formattedRange(range))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
@@ -644,25 +615,22 @@ private struct ExportPeriodPickerSheet: View {
 
                 Spacer()
 
-                if isLocked {
-                    ProBadge(size: .small)
-                } else {
-                    if selectedPeriod == .custom {
-                        Image(systemName: "checkmark")
-                            .foregroundStyle(theme.accent)
-                            .font(DS.Typography.headline)
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.labelSmall)
-                        .foregroundStyle(.tertiary)
+                if selectedPeriod == .custom {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(theme.accent)
+                        .font(DS.Typography.headline)
                 }
+
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("export_period_custom")
     }
 
     private func formattedRange(_ range: DateInterval) -> String {

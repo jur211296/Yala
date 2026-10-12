@@ -2207,8 +2207,6 @@
 "tipkit.pro.imageInput.message" = "Voeg een foto toe van een bon of factuur en Yala haalt er één of meer transacties uit.";
 "tipkit.pro.smartInsights.title" = "Slimme inzichten";
 "tipkit.pro.smartInsights.message" = "Zet dit aan en Yala genereert AI-gestuurde observaties over je financiën.";
-"tipkit.pro.exportExtended.title" = "Onbeperkt exporteren";
-"tipkit.pro.exportExtended.message" = "Exporteer je gegevens per heel jaar, hele geschiedenis of een eigen periode.";
 "tipkit.pro.premiumIcons.title" = "Exclusieve iconen";
 "tipkit.pro.premiumIcons.message" = "Kies uit premium-iconen om je app te personaliseren.";
 "tipkit.pro.proThemes.title" = "Premium-thema's";
@@ -2496,7 +2494,6 @@
 "featureGate.proThemes" = "Pro-thema's";
 "featureGate.smartInsightsAI" = "Slimme AI-inzichten";
 "featureGate.cashFlowAdvanced" = "Geavanceerde kasstroom";
-"featureGate.exportExtendedPeriods" = "Uitgebreide exportperiodes";
 
 // Titles
 "featureGate.limitReachedTitle" = "Limiet bereikt";
@@ -2892,7 +2889,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Deze functie uitschakelen?";
 "aiPrivacy.revokeConfirmMessage" = "We stoppen met het verwerken van je AI-gegevens voor deze functie. Je kunt het altijd weer aanzetten.";
 "aiPrivacy.revokeConfirmAction" = "Uitschakelen";
-"aiPrivacy.footerHint" = "Je gegevens worden alleen verwerkt wanneer je Inzichten, Assistent of spraak/afbeeldingsinvoer gebruikt. We delen je persoonlijke informatie nooit.";
+"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je Inzichten, Assistent of spraak- en afbeeldingsinvoer gebruikt, en gaan via onze server naar OpenAI. We verkopen ze niet en gebruiken ze niet voor advertenties.";
 "aiPrivacy.policyLink" = "Privacybeleid";
 
 // MARK: - AI Consent
@@ -4836,7 +4833,7 @@
 "groups.consent.point1" = "Groepen zijn van nature gedeeld: ze leven in de cloud van Yala zodat iedereen dezelfde uitgaven ziet, altijd actueel.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Alleen het minimale wordt gedeeld: je alias en de uitgaven van de groep. Je e-mail verlaat je apparaat niet.";
+"groups.consent.point2" = "Met de groep wordt alleen het minimale gedeeld: je alias en de uitgaven van de groep. Andere leden zien je e-mail niet.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Je persoonlijke financiën verhuizen niet: ze blijven waar jij hebt gekozen, privé zoals altijd.";

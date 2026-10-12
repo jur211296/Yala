@@ -718,7 +718,7 @@
 "aiConsent.processingMessage" = "Estas funções usam OpenAI para processar os teus dados:\n\n• Voz: a tua gravação de áudio é transcrita\n• Imagens: a foto (recibo ou captura de ecrã) é analisada para extrair os dados da despesa\n\nApenas o que envias nesse momento é processado. A OpenAI não usa estes dados para treinar os seus modelos.";
 "aiConsent.processingTitle" = "Processamento de voz e imagens";
 "aiPrivacy.chatRow" = "Assistente Pro";
-"aiPrivacy.footerHint" = "Seus dados só são processados ao usar Insights, Assistente ou registros com voz e imagem. Nunca compartilhamos suas informações pessoais.";
+"aiPrivacy.footerHint" = "Os teus dados só são enviados quando usas Insights, o Assistente ou registos com voz e imagem, e chegam à OpenAI através do nosso servidor. Não os vendemos nem os usamos para publicidade.";
 "aiPrivacy.insightsRow" = "Insights inteligentes";
 "aiPrivacy.policyLink" = "Política de Privacidade";
 "aiPrivacy.processingRow" = "Processamento (voz e imagem)";
@@ -1441,7 +1441,6 @@
 "featureGate.budgets" = "Orçamentos";
 "featureGate.cashFlowAdvanced" = "Fluxo de caixa avançado";
 "featureGate.chatAssistant" = "Assistente de chat";
-"featureGate.exportExtendedPeriods" = "Períodos de exportação estendidos";
 "featureGate.imageInput" = "Entrada por imagem";
 "featureGate.limitInfo" = "%d de %d";
 "featureGate.limitReachedMessage" = "Você atingiu o limite de %@ no plano gratuito. Atualize para Pro para criar mais.";
@@ -3221,8 +3220,6 @@
 "tipkit.pro.aiSummary.title" = "Seu resumo com IA";
 "tipkit.pro.chatFab.message" = "Pergunte ao Yala sobre seus gastos, orçamentos e mais.";
 "tipkit.pro.chatFab.title" = "Seu assistente financeiro";
-"tipkit.pro.exportExtended.message" = "Exporte seus dados por ano completo, todo o histórico ou um período personalizado.";
-"tipkit.pro.exportExtended.title" = "Exportação ilimitada";
 "tipkit.pro.fab.message" = "Toque aqui para registrar por voz, imagem ou manualmente. Agora você tem as três opções.";
 "tipkit.pro.fab.title" = "Novas formas de registrar";
 "tipkit.pro.imageInput.message" = "Anexe uma foto de qualquer comprovante e o Yala extrai uma ou mais transações para você.";
@@ -4094,7 +4091,7 @@
 "groups.consent.point1" = "Os grupos são partilhados por natureza: vivem na nuvem do Yala para que todos vejam as mesmas despesas, sempre em dia.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Só se partilha o mínimo: o teu alias e as despesas do grupo. O teu e-mail não sai do teu dispositivo.";
+"groups.consent.point2" = "Com o grupo só se partilha o mínimo: o teu alias e as despesas do grupo. Os outros membros não veem o teu e-mail.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "As tuas finanças pessoais não se movem: ficam onde escolheste, privadas como sempre.";

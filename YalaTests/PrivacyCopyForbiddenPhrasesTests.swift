@@ -9,8 +9,13 @@
 //
 //  Las frases son las que había en 2.0 (ticket
 //  `in-app-privacy-copy-says-data-never-leaves-the-device`). Se comparan en minúsculas y
-//  por subcadena, contra el VALOR de cada clave. Ojo al añadir una: «Tu correo no sale de
-//  tu dispositivo» (`groups.consent.point2`) es verdad y no debe cazarse.
+//  por subcadena, contra el VALOR de cada clave.
+//
+//  Desde el 2026-10-12 (textos legales de 2.1) caza también dos frases que se daban por buenas:
+//  «Tu correo no sale de tu dispositivo» (`groups.consent.point2`) — para usar Grupos inicias
+//  sesión y nuestro proveedor de inicio de sesión recibe y guarda tu email — y «Nunca compartimos
+//  tu información personal» (`aiPrivacy.footerHint`) — la IA manda nombres y saldos de cuentas a
+//  OpenAI por nuestro servidor.
 //
 //  Desde el ticket `in-app-ai-privacy-claims-need-a-policy-check` también caza lo que la app
 //  prometía sobre la IA sin que la política lo dijera: que es «segura», que «no comparte ni
@@ -62,6 +67,19 @@ struct PrivacyCopyForbiddenPhrasesTests {
         // IA: «IA segura» en ja y zh-Hans. Van aquí y no en `forbiddenWholePhrases` porque sin espacios
         // entre palabras el límite de letra no existe: «より安全な AI» llevaría un kanji pegado delante.
         "安全な ai", "安全 ai",
+
+        // Grupos: «tu correo no sale de tu dispositivo» (`groups.consent.point2`, hasta 2026-10-12)
+        "tu correo no sale de tu dispositivo", "your email never leaves your device", "deine e-mail verlässt dein gerät nicht",
+        "ton e-mail ne quitte pas ton appareil", "la tua email non lascia il tuo dispositivo",
+        "メールアドレスがデバイスの外に出ることはありません", "je e-mail verlaat je apparaat niet",
+        "twój e-mail nie opuszcza twojego urządzenia", "seu e-mail não sai do seu dispositivo",
+        "o teu e-mail não sai do teu dispositivo", "你的邮箱不会离开你的设备",
+        // IA: «nunca compartimos tu información personal» (`aiPrivacy.footerHint`, hasta 2026-10-12)
+        "nunca compartimos tu información personal", "we never share your personal information",
+        "wir teilen deine persönlichen informationen nie", "nous ne partageons jamais vos informations personnelles",
+        "non condividiamo mai le tue informazioni personali", "個人情報を共有することはありません",
+        "we delen je persoonlijke informatie nooit", "nigdy nie udostępniamy danych osobowych",
+        "nunca compartilhamos suas informações pessoais", "我们绝不分享你的个人信息",
     ]
 
     /// Frases prohibidas que solo cuentan como frase ENTERA: sin letra justo antes ni justo después.
@@ -171,10 +189,24 @@ struct PrivacyCopyForbiddenPhrasesTests {
         #expect(!Self.violations(in: line, file: "fixture").isEmpty)
     }
 
-    /// Lo que sí es verdad en 2.1 no se caza.
+    /// Las dos frases que se daban por verdad hasta el 2026-10-12, tal cual estaban.
     @Test(arguments: [
         #""groups.consent.point2" = "Solo se comparte lo mínimo: tu alias y los gastos del grupo. Tu correo no sale de tu dispositivo.";"#,
         #""groups.consent.point2" = "Only the minimum is shared: your alias and the group's expenses. Your email never leaves your device.";"#,
+        #""groups.consent.point2" = "只分享最少的信息：你的昵称和群组的支出。你的邮箱不会离开你的设备。";"#,
+        #""aiPrivacy.footerHint" = "Tus datos solo se procesan al usar Insights, Asistente o registros con voz e imagen. Nunca compartimos tu información personal.";"#,
+        #""aiPrivacy.footerHint" = "Deine Daten werden nur verarbeitet, wenn du Insights, Assistent oder Sprach-/Bildeinträge nutzt. Wir teilen deine persönlichen Informationen nie.";"#,
+        #""aiPrivacy.footerHint" = "データはインサイト、アシスタント、音声・画像入力を使うときのみ処理されます。個人情報を共有することはありません。";"#,
+    ])
+    func scanner_catchesTheEmailAndSharingPromises(line: String) {
+        #expect(!Self.violations(in: line, file: "fixture").isEmpty)
+    }
+
+    /// Lo que sí es verdad en 2.1 no se caza.
+    @Test(arguments: [
+        #""groups.consent.point2" = "Con el grupo solo se comparte lo mínimo: tu alias y los gastos del grupo. Los demás miembros no ven tu correo.";"#,
+        #""groups.consent.point2" = "Only the minimum is shared with the group: your alias and the group's expenses. Other members don't see your email.";"#,
+        #""aiPrivacy.footerHint" = "Tus datos solo se envían cuando usas Insights, el Asistente o los registros con voz e imagen, y llegan a OpenAI a través de nuestro servidor. No los vendemos ni los usamos para publicidad.";"#,
         #""profile.privacyTitle" = "Dónde viven tus datos";"#,
         #""onboarding.privacyAIShort" = "IA a través de nuestro servidor";"#,
         #""onboarding.privacyAIShort" = "AI through our server";"#,

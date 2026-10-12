@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import ImageIO
+import UniformTypeIdentifiers
 import Observation
 import OpenAI
 
@@ -245,19 +247,36 @@ final class ImageVisionService {
 
     // MARK: - Private Methods
 
-    /// La foto como sube: reducida a `maxEdge` px de lado mayor (nunca ampliada) y en JPEG al 80 %. El renderer con
-    /// escala 1 trabaja en píxeles y aplica la orientación de la foto.
+    /// La foto como sube: reducida a `maxEdge` px de lado mayor (nunca ampliada), en JPEG al 80 % y SIN metadatos.
+    /// El renderer con escala 1 trabaja en píxeles, aplica la orientación y dibuja solo los píxeles; el JPEG se escribe
+    /// con ImageIO sin propiedades, así que no lleva GPS, fecha, cámara ni orientación. La política de privacidad lo
+    /// promete desde el 2026-10-12: antes se mandaba `jpegData` sin redibujar cuando la foto no pasaba de `maxEdge`.
     static func uploadJPEG(_ image: UIImage, maxEdge: Int) -> Data? {
         let pixels = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
-        guard let target = PhotoUploadSizing.targetPixelSize(for: pixels, maxEdge: maxEdge) else {
-            return image.jpegData(compressionQuality: 0.8)
-        }
+        let target = PhotoUploadSizing.targetPixelSize(for: pixels, maxEdge: maxEdge) ?? pixels
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
-        let resized = UIGraphicsImageRenderer(size: target, format: format).image { _ in
+        let rendered = UIGraphicsImageRenderer(size: target, format: format).image { _ in
             image.draw(in: CGRect(origin: .zero, size: target))
         }
-        return resized.jpegData(compressionQuality: 0.8)
+        guard let cgImage = rendered.cgImage else { return nil }
+        return metadataFreeJPEG(cgImage, quality: 0.8)
+    }
+
+    /// JPEG sin metadatos de la foto original. ImageIO escribe siempre un bloque `{Exif}` con el ancho y el alto en
+    /// píxeles (medido el 2026-10-12, no se puede suprimir); nada más: ni `{GPS}`, ni `{TIFF}`, ni fecha o cámara.
+    static func metadataFreeJPEG(_ cgImage: CGImage, quality: CGFloat) -> Data? {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
+            return nil
+        }
+        let options: [CFString: Any] = [
+            kCGImageDestinationLossyCompressionQuality: quality,
+            kCGImageMetadataShouldExcludeGPS: true,
+        ]
+        CGImageDestinationAddImage(destination, cgImage, options as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return data as Data
     }
 
     private func currentDayAndDateString() -> String {

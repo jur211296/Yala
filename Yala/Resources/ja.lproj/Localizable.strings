@@ -2207,8 +2207,6 @@
 "tipkit.pro.imageInput.message" = "レシートや請求書の写真を添付すると、Yalaが1件以上の取引を抽出します。";
 "tipkit.pro.smartInsights.title" = "スマートインサイト";
 "tipkit.pro.smartInsights.message" = "これを有効にすると、YalaがAIで資産状況に関するインサイトを生成します。";
-"tipkit.pro.exportExtended.title" = "無制限エクスポート";
-"tipkit.pro.exportExtended.message" = "1年分、全履歴、カスタム範囲でデータをエクスポートできます。";
 "tipkit.pro.premiumIcons.title" = "限定アイコン";
 "tipkit.pro.premiumIcons.message" = "プレミアムアイコンからアプリを自分仕様に。";
 "tipkit.pro.proThemes.title" = "プレミアムテーマ";
@@ -2496,7 +2494,6 @@
 "featureGate.proThemes" = "Proテーマ";
 "featureGate.smartInsightsAI" = "スマートインサイトAI";
 "featureGate.cashFlowAdvanced" = "高度なキャッシュフロー";
-"featureGate.exportExtendedPeriods" = "拡張エクスポート期間";
 
 // Titles
 "featureGate.limitReachedTitle" = "上限に達しました";
@@ -2892,7 +2889,7 @@
 "aiPrivacy.revokeConfirmTitle" = "この機能を無効にしますか？";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
 "aiPrivacy.revokeConfirmAction" = "無効化";
-"aiPrivacy.footerHint" = "データはインサイト、アシスタント、音声・画像入力を使うときのみ処理されます。個人情報を共有することはありません。";
+"aiPrivacy.footerHint" = "データが送信されるのは、インサイト、アシスタント、音声・画像入力を使うときだけで、当社のサーバーを経由してOpenAIに届きます。データを販売したり、広告に使ったりすることはありません。";
 "aiPrivacy.policyLink" = "プライバシーポリシー";
 
 // MARK: - AI Consent
@@ -4836,7 +4833,7 @@
 "groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、Yalaのクラウドに保存されます。";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "共有されるのは最小限だけ：あなたのニックネームとグループの支出。メールアドレスがデバイスの外に出ることはありません。";
+"groups.consent.point2" = "グループと共有されるのは最小限だけ：あなたのニックネームとグループの支出。ほかのメンバーにメールアドレスは表示されません。";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "あなた個人の家計データは動きません。選んだ場所に、これまでどおりプライベートなまま残ります。";

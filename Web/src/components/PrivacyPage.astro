@@ -9,6 +9,8 @@ interface Props {
 const { lang } = Astro.props;
 const t = getTranslation(lang);
 const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
+// **negrita** → <strong>, como en el resto de secciones.
+const md = (text: string) => text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
 ---
 
 <main class="min-h-screen">
@@ -54,28 +56,46 @@ const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
       <!-- 3. iCloud -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyIcloudTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed">{t.privacyIcloudText}</p>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyIcloudText)} />
       </section>
 
-      <!-- 4. Yala AI + Smart Features -->
+      <!-- 4. Cloud account -->
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyProTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={t.privacyProText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyCloudTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyCloudText)} />
       </section>
 
       <!-- 5. Groups (Beta) -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyGroupsTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed" set:html={t.privacyGroupsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyGroupsText)} />
       </section>
 
-      <!-- 6. Anonymous Analytics -->
+      <!-- 6. Yala AI + Smart Features -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyProTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={t.privacyProText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
+      </section>
+
+      <!-- 7. Own analytics -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyAnalyticsTitle}</h2>
         <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={t.privacyAnalyticsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />
       </section>
 
-      <!-- 6. What we don't do -->
+      <!-- 8. Identifiers -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyIdsTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyIdsText)} />
+      </section>
+
+      <!-- 9. Providers -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyProvidersTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyProvidersText)} />
+      </section>
+
+      <!-- 10. What we don't do -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyNotDoTitle}</h2>
         <ul class="space-y-3 text-neutral-300">
@@ -98,19 +118,25 @@ const homeUrl = lang === 'es' ? '/' : `/${lang}/`;
         </ul>
       </section>
 
-      <!-- 7. Your Rights -->
+      <!-- 11. Retention -->
       <section class="mb-8">
-        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyRightsTitle}</h2>
-        <p class="text-neutral-300 leading-relaxed">{t.privacyRightsText}</p>
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyRetentionTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyRetentionText)} />
       </section>
 
-      <!-- 8. Changes -->
+      <!-- 12. Your Rights -->
+      <section class="mb-8">
+        <h2 class="text-xl font-semibold text-white mb-3">{t.privacyRightsTitle}</h2>
+        <p class="text-neutral-300 leading-relaxed whitespace-pre-line" set:html={md(t.privacyRightsText)} />
+      </section>
+
+      <!-- 13. Changes -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyChangesTitle}</h2>
         <p class="text-neutral-300 leading-relaxed">{t.privacyChangesText}</p>
       </section>
 
-      <!-- 9. Contact -->
+      <!-- 14. Contact -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.privacyContactTitle}</h2>
         <p class="text-neutral-300 leading-relaxed">

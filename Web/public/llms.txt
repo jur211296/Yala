@@ -1,9 +1,10 @@
 # Yala
 
 > App de finanzas personales para iPhone (iOS 26 o superior). Anota gastos e ingresos, presupuestos con
-> alertas, pagos planificados, widgets, 48 divisas, importación y exportación en CSV/Excel. Con Yala Pro:
-> lectura de capturas y recibos, dictado por voz, el asistente Yala IA y reportes avanzados. Los datos
-> viven en el iPhone del usuario y en su iCloud personal; Yala no se conecta a bancos ni pide credenciales.
+> alertas, pagos planificados, widgets, más de 50 divisas, importación y exportación en CSV/Excel. Con Yala
+> Pro: lectura de capturas y recibos, dictado por voz, el asistente Yala IA y reportes avanzados. Los datos
+> viven en el iPhone y el iCloud personal del usuario, o en su cuenta en la nube de Yala si la elige; Yala no
+> se conecta a bancos ni pide credenciales bancarias.
 > Hecha en Lima, Perú. En la App Store desde marzo de 2026.
 
 ## Qué es y qué no es
@@ -26,10 +27,14 @@
 
 ## Privacidad
 
-- Los datos viven en el iPhone y en el iCloud personal del usuario. No hay cuenta ni contraseña de Yala.
-- Solo sale información del teléfono cuando el usuario activa Yala IA, la voz o la foto —se le avisa
-  antes— y para consultar tipos de cambio.
-- Grupos comparte gastos, saldos y el nombre con los demás miembros del grupo.
+- El usuario elige dónde viven sus datos: en el iPhone y su iCloud personal, sin cuenta de Yala, o en su
+  cuenta en la nube de Yala, con inicio de sesión de Apple o Google y servidores en Estados Unidos. No hay
+  contraseña de Yala.
+- Sale información del teléfono con la cuenta en la nube y con Grupos (que también pide iniciar sesión),
+  cuando el usuario activa Yala IA, la voz o la foto —se le avisa antes—, para consultar tipos de cambio y
+  en una analítica mínima sin datos financieros.
+- Grupos comparte gastos, saldos y el alias con los demás miembros del grupo.
+- Exportar todos los datos en CSV o Excel es gratis.
 - Detalle: /privacy · Términos: /terms
 
 ## Páginas
