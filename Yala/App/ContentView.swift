@@ -155,6 +155,9 @@ struct ContentView: View {
     @State private var activeInviteError: InviteAlertContent?
     /// Group bridge/sync error message, carried by .showGroupSyncError intent (P0-1).
     @State private var activeGroupSyncError: String?
+    /// Reintento del drenaje de `.contentView` mientras un aviso diferible espera a una hoja que ningún flag publica (la
+    /// de otra pestaña). Ver `scheduleForeignPresentationRedrain`.
+    @State private var foreignPresentationRedrain: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.yalaTheme) private var theme
@@ -1196,6 +1199,15 @@ struct ContentView: View {
     /// drain — handler may enqueue new intents, they process next tick.
     @MainActor
     private func drainContentViewIntents() {
+        // Una hoja de OTRA pestaña no publica nada: se pregunta a UIKit por la ventana, como el Panel. Se mide ANTES del
+        // derribo de la cadena del Welcome de abajo, y solo con la matriz libre (`contentViewHoldsForForeignPresentation`).
+        let shellClear = ContentViewReadinessLogic.blocker(state: currentShellReadinessState()) == nil
+        let windowPresentationVisible = shellClear && ModalPresentationProbe.isAnythingPresented(
+            in: SceneRegistry.shared.windowScene(for: navigation.id))
+        let heldForForeignPresentation: (RouterIntent) -> Bool = {
+            RouterConsumerGateLogic.contentViewHoldsForForeignPresentation(
+                $0, shellClear: shellClear, windowPresentationVisible: windowPresentationVisible)
+        }
         // B4-04: un intent que supersede la cadena welcome (los sheets del invite backend)
         // está diseñado para REEMPLAZARLA, no apilarse. El cover del WelcomeFlow
         // bloquea el readiness que necesita drenar ese intent → deadlock: el welcome
@@ -1207,7 +1219,15 @@ struct ContentView: View {
             dismissWelcomeChainForSupersedingIntent(for: next.id)
             applyContentViewReadiness()  // recompute síncrono → markReady(.contentView)
         }
-        guard let intent = AppRouter.shared.drainNext(for: .contentView, in: navigation.id) else { return }
+        // Los diferibles esperan a que se cierre la hoja; los críticos que vengan detrás salen igual.
+        guard let intent = AppRouter.shared.drainNext(
+            for: .contentView, in: navigation.id, skipping: heldForForeignPresentation)
+        else {
+            if AppRouter.shared.peekNext(for: .contentView, in: navigation.id, where: heldForForeignPresentation) != nil {
+                scheduleForeignPresentationRedrain()
+            }
+            return
+        }
         switch intent {
         case .showInboxAlert(let notif):
             activeInboxNotification = notif
@@ -1329,6 +1349,27 @@ struct ContentView: View {
             }
         default:
             break
+        }
+    }
+
+    /// Cerrar una hoja de otra pestaña no cambia nada que `ContentView` observe, así que nadie re-drenaría: se vuelve a
+    /// mirar cada 300 ms mientras quede un aviso diferible retenido por eso (molde de
+    /// `PanelShell.scheduleUnpublishedPresentationRedrain`). Un reintento a la vez; cada vuelta que siga retenida programa
+    /// la siguiente desde `drainContentViewIntents`.
+    @MainActor
+    private func scheduleForeignPresentationRedrain() {
+        guard foreignPresentationRedrain == nil else { return }
+        foreignPresentationRedrain = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+            } catch {
+                return
+            }
+            foreignPresentationRedrain = nil
+            // `ContentView` no tiene `onDisappear` que cancele esto: si esta ventana dejó de ser la líder (se cerró, o
+            // ascendió otra), su `ContentView` ya no drena y el bucle se corta aquí.
+            guard SceneRegistry.shared.leaderID == navigation.id else { return }
+            drainContentViewIntents()
         }
     }
 
@@ -3506,6 +3547,9 @@ struct MainTabView: View {
     /// Milestone number for the upgrade sheet — also drives sheet
     /// presentation (non-nil → shown). Carried by .presentMilestoneUpgrade.
     @State private var activeMilestone: Int?
+    /// Reintento del drenaje de `.mainTab` mientras un aviso espera a una hoja que ningún flag publica (la de otra
+    /// pestaña). Ver `scheduleForeignPresentationRedrain`.
+    @State private var foreignPresentationRedrain: Task<Void, Never>?
 
     private var tabConfig: TabBarConfiguration {
         TabBarConfiguration.fromJSON(tabConfigJSON)
@@ -3682,7 +3726,10 @@ struct MainTabView: View {
             // Un `MainTabView` que se desmonta con una hoja propia abierta (una seguidora que pasa a esperar, una
             // ventana que asciende a líder) no llega a publicar que se cerró: sin esto el flag se quedaba en `true` y
             // retenía `.panel` y la matriz del shell para el resto de la sesión (review adversarial, 2026-10-02).
-            .onDisappear { navigation.isMainTabModalVisible = false }
+            .onDisappear {
+                navigation.isMainTabModalVisible = false
+                cancelForeignPresentationRedrain()
+            }
             .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: showTrialExpired) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: activeMilestone) { _, _ in publishMainTabModalVisibilityAndRedrain() }
@@ -3709,12 +3756,32 @@ struct MainTabView: View {
     /// tapado (one-shots quemados sin verse, presentaciones "que saltan").
     private func drainMainTabIntents() {
         guard let next = AppRouter.shared.peekNext(for: .mainTab, in: navigation.id) else { return }
+        // Una hoja de OTRA pestaña no publica nada: se pregunta a UIKit por la ventana, como el Panel.
+        let windowPresentationVisible = ModalPresentationProbe.isAnythingPresented(
+            in: SceneRegistry.shared.windowScene(for: navigation.id))
         let decision = RouterConsumerGateLogic.mainTabDecision(
             intent: next,
             shellBlocker: navigation.shellModalBlocker,
-            ownModalVisible: ownModalVisible
+            ownModalVisible: ownModalVisible,
+            windowPresentationVisible: windowPresentationVisible
         )
         guard decision == .drain else {
+            if RouterConsumerGateLogic.mainTabHoldsOnlyForUnpublishedPresentation(
+                intent: next,
+                shellBlocker: navigation.shellModalBlocker,
+                ownModalVisible: ownModalVisible,
+                windowPresentationVisible: windowPresentationVisible
+            ) {
+                scheduleForeignPresentationRedrain()
+                // Lo que no presenta hoja (`navigate`) no espera detrás del aviso retenido: cambiar de pestaña no
+                // cierra la hoja de la otra.
+                if let passing = AppRouter.shared.drainNext(
+                    for: .mainTab, in: navigation.id, skipping: { RouterConsumerGateLogic.presentsModal($0) }) {
+                    RouterHoldCanary.shared.noteDrained(intentID: passing.id)
+                    handleMainTabIntent(passing)
+                }
+                return
+            }
             // Canario D4: solo los flags PUBLICADOS pueden quedar pegados
             // (shellModalBlocker); ownModalVisible es @State local atado a
             // sheets reales que SwiftUI resetea en el dismiss.
@@ -3729,6 +3796,26 @@ struct MainTabView: View {
         guard let intent = AppRouter.shared.drainNext(for: .mainTab, in: navigation.id) else { return }
         RouterHoldCanary.shared.noteDrained(intentID: intent.id)
         handleMainTabIntent(intent)
+    }
+
+    /// Cerrar una hoja de otra pestaña no cambia nada que `MainTabView` observe: se vuelve a mirar cada 300 ms mientras
+    /// el aviso siga retenido solo por eso (molde de `PanelShell.scheduleUnpublishedPresentationRedrain`).
+    private func scheduleForeignPresentationRedrain() {
+        guard foreignPresentationRedrain == nil else { return }
+        foreignPresentationRedrain = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+            } catch {
+                return  // Cancelado: `MainTabView` se desmontó.
+            }
+            foreignPresentationRedrain = nil
+            drainMainTabIntents()
+        }
+    }
+
+    private func cancelForeignPresentationRedrain() {
+        foreignPresentationRedrain?.cancel()
+        foreignPresentationRedrain = nil
     }
 
     private func handleMainTabIntent(_ intent: RouterIntent) {

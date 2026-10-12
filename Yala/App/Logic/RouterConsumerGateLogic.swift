@@ -39,13 +39,91 @@ enum RouterConsumerGateLogic {
     /// Decisión peek-first de `.mainTab`: los intents no-modales drenan
     /// siempre; los modales solo con el shell libre y sin sheet propio arriba.
     /// `.hold` deja el intent EN COLA (no se pierde).
+    ///
+    /// `windowPresentationVisible` es la misma pregunta a UIKit que hace el Panel (`panelCanDrain`): una hoja de OTRA
+    /// pestaña no publica ningún flag, y prueba expirada, downgrade e hitos la tumbaban al presentarse encima (ticket
+    /// `invite-and-app-notices-present-over-other-tab-sheets`). Los tres son diferibles
+    /// (`waitsForForeignPresentation`): esperan a que se cierre.
     static func mainTabDecision(
         intent: RouterIntent,
         shellBlocker: String?,
-        ownModalVisible: Bool
+        ownModalVisible: Bool,
+        windowPresentationVisible: Bool = false
     ) -> MainTabDrainDecision {
         guard presentsModal(intent) else { return .drain }
-        return (shellBlocker == nil && !ownModalVisible) ? .drain : .hold
+        guard shellBlocker == nil && !ownModalVisible else { return .hold }
+        return windowPresentationVisible && waitsForForeignPresentation(intent) ? .hold : .drain
+    }
+
+    /// ¿`.mainTab` retiene `intent` SOLO por una presentación que ningún flag publica? Entonces nadie avisará al
+    /// cerrarse y `MainTabView` tiene que volver a mirar por su cuenta (molde de `panelHoldsOnlyForUnpublishedPresentation`).
+    /// Es también lo que deja pasar por delante a lo que no presenta hoja (`navigate`): esa espera es nueva y no debe
+    /// dejar un cambio de pestaña detrás de un aviso durante todo lo que dure un formulario.
+    static func mainTabHoldsOnlyForUnpublishedPresentation(
+        intent: RouterIntent,
+        shellBlocker: String?,
+        ownModalVisible: Bool,
+        windowPresentationVisible: Bool
+    ) -> Bool {
+        windowPresentationVisible
+            && mainTabDecision(intent: intent, shellBlocker: shellBlocker, ownModalVisible: ownModalVisible,
+                               windowPresentationVisible: true) == .hold
+            && mainTabDecision(intent: intent, shellBlocker: shellBlocker, ownModalVisible: ownModalVisible,
+                               windowPresentationVisible: false) == .drain
+    }
+
+    // MARK: - Avisos de `.contentView` y `.mainTab` con una hoja de otra pestaña
+
+    /// **¿Espera este aviso a que se cierre una hoja abierta en la ventana que ningún flag publica?** La clasificación del
+    /// ticket `invite-and-app-notices-present-over-other-tab-sheets` (tabla en `docs/entry-points.md`).
+    ///
+    /// Un aviso que se presenta desde el anchor de `ContentView` o de `MainTabView` con una hoja de otra pestaña abierta
+    /// la tumba, y lo escrito en un formulario a medias se pierde. Los **diferibles** (`true`) esperan a que se cierre.
+    /// Los **críticos** (`false`) salen como siempre: protegen la cuenta o los datos y no pueden quedarse en cola detrás de
+    /// un formulario. Un caso dudoso cuenta como crítico.
+    ///
+    /// El `switch` no tiene `default` a propósito: un caso nuevo de `RouterIntent` no compila hasta que alguien decida
+    /// si espera o no.
+    static func waitsForForeignPresentation(_ intent: RouterIntent) -> Bool {
+        switch intent {
+        // Diferibles: invitaciones a grupos, ofertas, celebraciones y avisos informativos.
+        case .showInboxAlert, .presentTrialOffer, .presentWhatsNew,
+             .showInviteError, .showGroupArchivedNotice,
+             .presentGroupsConsent, .presentGroupsSignIn, .presentGroupBackendInviteOnboarding,
+             .presentGroupsInviteNeutralGate,
+             .presentDowngradeResolution, .presentTrialExpired, .presentMilestoneUpgrade:
+            return true
+        // Críticos: integridad de la cuenta o de los datos.
+        case .remoteWipe, .iCloudMismatch, .appleIDChangedClosePrivate, .presentRemoteWipeNotice,
+             .presentLateICloudMirrorNotice, .remoteOnboardingCompleted:
+            return false
+        // Dudosos ⇒ como críticos. El error de un gasto de grupo que no llegó a su sitio, y dos respuestas a un toque
+        // DENTRO de la app que no son avisos: «Activar Yala completo» se toca desde la propia hoja de Ajustes, y
+        // esperar a que se cierre dejaría el toque sin respuesta; el paso del organizador lo encadena su propio flujo.
+        case .showGroupSyncError, .presentFullModeActivation, .presentGroupsOrganizerStep:
+            return false
+        // No presentan una hoja de Yala: cambiar de pestaña no cierra la hoja (medido el 2026-10-11) y pedir reseña es
+        // un overlay del sistema.
+        case .navigate, .requestAppStoreReview:
+            return false
+        // De otros consumidores, con su propio candado (`panelCanDrain`, el de Planificación).
+        case .presentInboxSheet, .presentSharedImage, .presentNewTransaction, .presentNewTransactionFromChatDraft,
+             .presentVoiceEntry, .presentImageEntry, .presentUpgradeSheet, .requestAIConsent,
+             .autoOpenBudgetEditor, .autoOpenScheduledEditor:
+            return false
+        }
+    }
+
+    /// ¿`.contentView` retiene `intent` por una hoja que ningún flag publica? Solo con la matriz del shell LIBRE: con
+    /// ella tapada el consumidor ya no drena, y cuando drena igual —la invitación que derriba la cadena del Welcome
+    /// (B4-04)— lo que la ventana tiene presentado es ese cover yéndose, y retener ahí colgaría la invitación que lo
+    /// cerró. Quien llama mide la ventana ANTES de ese derribo.
+    static func contentViewHoldsForForeignPresentation(
+        _ intent: RouterIntent,
+        shellClear: Bool,
+        windowPresentationVisible: Bool
+    ) -> Bool {
+        shellClear && windowPresentationVisible && waitsForForeignPresentation(intent)
     }
 
     /// Gate de drain de `.panel`: conjunción de las 6 dimensiones que pueden

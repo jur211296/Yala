@@ -91,8 +91,19 @@ final class AppRouter {
     /// with a single-shot `if let` (not a `while` loop — that would consume
     /// intents enqueued by the handler in the same tick).
     func drainNext(for consumer: ConsumerID, in scene: UUID?) -> RouterIntent? {
+        drainNext(for: consumer, in: scene, skipping: { _ in false })
+    }
+
+    /// Lo mismo, saltando los intents que `held` retiene: sale el primero de la cola que no esté retenido, y los
+    /// retenidos se quedan en su sitio. Lo usan los consumidores que retienen unos intents y otros no por la misma causa
+    /// (un aviso diferible tras una hoja de otra pestaña no debe tapar a uno crítico que llegó después).
+    func drainNext(
+        for consumer: ConsumerID, in scene: UUID?, skipping held: (RouterIntent) -> Bool
+    ) -> RouterIntent? {
         guard readyScoped.contains(ScopedConsumer(consumer: consumer, scene: scene)) else { return nil }
-        guard let index = queue.firstIndex(where: { matches($0, consumer: consumer, scene: scene) }) else { return nil }
+        guard let index = queue.firstIndex(where: {
+            matches($0, consumer: consumer, scene: scene) && !held($0.intent)
+        }) else { return nil }
         let intent = queue.remove(at: index).intent
         bumpRevision()
         return intent
@@ -104,6 +115,11 @@ final class AppRouter {
     /// intents). Readiness is NOT required for peeking.
     func peekNext(for consumer: ConsumerID, in scene: UUID?) -> RouterIntent? {
         queue.first(where: { matches($0, consumer: consumer, scene: scene) })?.intent
+    }
+
+    /// El primer intent de `consumer` en `scene` que cumple `predicate`, sin quitarlo.
+    func peekNext(for consumer: ConsumerID, in scene: UUID?, where predicate: (RouterIntent) -> Bool) -> RouterIntent? {
+        queue.first(where: { matches($0, consumer: consumer, scene: scene) && predicate($0.intent) })?.intent
     }
 
     /// Marks a consumer ready in window `scene`. Idempotent.

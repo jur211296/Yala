@@ -6,7 +6,9 @@
 //  entry-to-panel-closes-sheets-of-other-tabs). Medido el 2026-10-11 (iPhone 17 Pro, iOS 27.0): ir al Panel cambia la
 //  pestaña por debajo y la hoja sigue abierta; lo que la cerraba era lo que el Panel PRESENTABA después (la lectura de
 //  una foto compartida), porque su candado solo miraba sus propias hojas. Un «Nuevo registro» a medias en Estadísticas
-//  se perdía sin aviso. Ahora el Panel espera a que la ventana no tenga nada presentado.
+//  se perdía sin aviso. Ahora el Panel espera a que la ventana no tenga nada presentado. Desde el mismo día, también las
+//  invitaciones y los avisos diferibles de `ContentView` y `MainTabView`; los críticos siguen saliendo al momento
+//  (ticket invite-and-app-notices-present-over-other-tab-sheets).
 //  Los enlaces se abren con `XCUIDevice.shared.system.open`, como los abriría otra app o un widget:
 //  `XCUIApplication.open(_:)` relanza la app (regla de `.claude/rules/testing.md`). Scheme `Yala Dev` ⇒ `yaladev://`.
 //
@@ -94,6 +96,63 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
         closeForm(app)
         XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: 30),
                       "Al cerrar el formulario, la foto compartida tenía que leerse (image_review_title).")
+    }
+
+    // MARK: - Invitaciones y avisos de la app (ticket invite-and-app-notices-present-over-other-tab-sheets)
+
+    /// Una invitación con el formulario a medias: hasta el 2026-10-11 su respuesta salía encima desde el anchor de
+    /// `ContentView` y cerraba el formulario. Es la invitación real: un enlace del canal CKShare retirado, que contesta
+    /// «Enlace no válido» (`.showInviteError`, diferible). Ahora espera y sale al cerrar el formulario.
+    func test_halfFilledFormInAnotherTab_inviteLink_keepsTheFormAndAnswersWhenClosed() {
+        let (app, amountField) = launchWithHalfFilledFormInStatistics()
+        openFromOutside("yaladev://invite?s=uitest-retired-channel")
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace de invitación no trajo Yala delante.")
+
+        assertFormSurvives(app, amountField, seconds: 10, capture: "formulario-tras-invitacion")
+        XCTAssertFalse(app.alerts.firstMatch.exists, "La respuesta a la invitación salió con el formulario abierto.")
+        closeForm(app)
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 10),
+                      "Al cerrar el formulario, la respuesta a la invitación tenía que salir.")
+    }
+
+    /// Un aviso de `ContentView` (la oferta de prueba): espera y sale al cerrar el formulario.
+    func test_halfFilledFormInAnotherTab_trialOffer_waitsForTheForm() {
+        let (app, amountField) = launchWithHalfFilledFormInStatistics()
+        openFromOutside("yaladev://uitest-notice?kind=trial-offer")
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
+
+        assertFormSurvives(app, amountField, seconds: 8, capture: "formulario-tras-oferta")
+        XCTAssertFalse(app.buttons["trial_offer_dismiss"].exists, "La oferta salió con el formulario abierto.")
+        closeForm(app)
+        XCTAssertTrue(app.buttons["trial_offer_dismiss"].waitForExistence(timeout: 10),
+                      "Al cerrar el formulario, la oferta de prueba tenía que salir.")
+    }
+
+    /// Un aviso de `MainTabView` (la prueba expirada): espera y sale al cerrar el formulario.
+    func test_halfFilledFormInAnotherTab_trialExpired_waitsForTheForm() {
+        let (app, amountField) = launchWithHalfFilledFormInStatistics()
+        openFromOutside("yaladev://uitest-notice?kind=trial-expired")
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
+
+        assertFormSurvives(app, amountField, seconds: 8, capture: "formulario-tras-prueba-expirada")
+        XCTAssertFalse(app.buttons["upgrade_prompt_cta"].exists, "La prueba expirada salió con el formulario abierto.")
+        closeForm(app)
+        XCTAssertTrue(app.buttons["upgrade_prompt_cta"].waitForExistence(timeout: 10),
+                      "Al cerrar el formulario, el aviso de prueba expirada tenía que salir.")
+    }
+
+    /// Un aviso crítico (la cuenta de iCloud cambió) NO espera al formulario: sale al momento, como siempre.
+    func test_halfFilledFormInAnotherTab_criticalNotice_showsRightAway() {
+        let (app, _) = launchWithHalfFilledFormInStatistics()
+        openFromOutside("yaladev://uitest-notice?kind=icloud-mismatch")
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "El enlace no trajo Yala delante.")
+
+        XCTAssertTrue(app.alerts.firstMatch.waitForExistence(timeout: 10),
+                      "El aviso crítico tenía que salir con el formulario abierto, sin esperar a que se cerrara.")
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "aviso-critico-con-formulario"
+        shot.lifetime = .keepAlways
+        add(shot)
     }
 
     /// Ir al Panel desde fuera, sin nada que presentar, nunca cerró la hoja (medido el 2026-10-11): la pestaña cambia
