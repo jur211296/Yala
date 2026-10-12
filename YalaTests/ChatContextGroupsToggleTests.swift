@@ -238,6 +238,6 @@ struct ChatContextGroupsToggleTests {
         }
 
         let service = try read("Yala/Services/ChatAssistantService.swift")
-        #expect(service.contains("includeAnomalies: needsAnomalies,\n            includeGroupsInTotal: includeGroupsInTotal\n"))
+        #expect(service.contains("includeAnomalies: needsAnomalies,\n            includeGroupsInTotal: includeGroupsInTotal,\n"))
     }
 }

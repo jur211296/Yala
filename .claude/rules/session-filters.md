@@ -112,6 +112,11 @@ inyectado (`includeGroupsInTotal`, desde `ChatSheetView` → `ChatAssistantViewM
 **El conector `mcp/` no**: no conoce las preferencias del teléfono y suma siempre las cuentas de Grupos (`mcp/src/logic/balances.ts`). Un consumidor nuevo del contexto
 pasa el ajuste; el default `true` de `buildFromArrays` es para tests y el golden.
 
+**El interruptor de Estadísticas (`includeGroupTransactionsInStats`) también lo recibe, desde el 2026-10-12**:
+`ChatAssistantService.runAskFlow` lo lee como las sugerencias (clave de `UserDefaults`, default ON) y el builder
+aplica `BridgedTransactionFilter` una vez, a todo lo que suma movimientos menos **presupuestos** (su pantalla mira el
+«incluir gastos compartidos» de cada uno) y **saldos** (montos reales). El conector `mcp/` tampoco lo conoce.
+
 ## La UI tiene que decir lo mismo que el número
 
 Si el saldo suma N cuentas, el carrusel marca esas N y el chip dice cuántas son. Un carrusel que

@@ -166,7 +166,12 @@ final class ChatAssistantService {
             language: language,
             country: country,
             includeAnomalies: needsAnomalies,
-            includeGroupsInTotal: includeGroupsInTotal
+            includeGroupsInTotal: includeGroupsInTotal,
+            // El interruptor «Incluir gastos de grupo en estadísticas», leído como las sugerencias del chat y
+            // el Panel (default ON): apagado, los movimientos de grupo no cuentan en lo que ve Yala IA.
+            includeGroupTransactionsInStats: (UserDefaults.standard.object(
+                forKey: AppPreferences.Keys.includeGroupTransactionsInStats
+            ) as? Bool) ?? true
         )
 
         let systemPrompt = buildSystemPrompt(

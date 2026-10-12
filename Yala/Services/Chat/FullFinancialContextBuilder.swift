@@ -15,6 +15,11 @@
 //     `balances` son las del conteo del Panel (`PanelTotalAccountsLogic.countableAccounts`).
 //   - «Grupos en el total» apagado → `balances.total_balance` deja fuera las cuentas de Grupos con la misma regla
 //     que el Panel (`PanelTotalAccountsLogic.accountsForTotal`); siguen listadas en `balances.accounts`
+//   - «Incluir gastos de grupo en estadísticas» apagado → los movimientos de grupo (`splitExpenseID` o
+//     `splitSettlementID`) salen de periodos, categorías, comercios, patrones, etiquetas, destacados y
+//     anomalías con `BridgedTransactionFilter`, como el Panel, Estadísticas y las sugerencias del chat.
+//     Presupuestos y saldos no lo siguen, igual que en la app: el presupuesto tiene su propio
+//     «incluir gastos compartidos» y el saldo son montos reales
 //   - comparar el mes en curso → `periods.last_month_to_date` y `total_last_month_to_date`: el
 //     mes pasado hasta el día equivalente a hoy, la misma alineación que el hero de Tendencias
 //   - tx.balanceAdjustmentType != nil → filtrado
@@ -39,6 +44,8 @@ final class FullFinancialContextBuilder {
         let includedAnomalies: Bool
         /// El ajuste con el que se calculó el total: si cambia, la caché no vale.
         let includedGroupsInTotal: Bool
+        /// El interruptor de Estadísticas con el que se calcularon los movimientos: si cambia, tampoco.
+        let includedGroupTransactionsInStats: Bool
     }
 
     private var cache: CacheEntry?
@@ -57,6 +64,7 @@ final class FullFinancialContextBuilder {
         country: String,
         includeAnomalies: Bool,
         includeGroupsInTotal: Bool,
+        includeGroupTransactionsInStats: Bool,
         now: Date = .now
     ) -> FullFinancialContext {
         let calendar = Calendar.current
@@ -78,6 +86,7 @@ final class FullFinancialContextBuilder {
             country: country,
             includeAnomalies: includeAnomalies,
             includeGroupsInTotal: includeGroupsInTotal,
+            includeGroupTransactionsInStats: includeGroupTransactionsInStats,
             adjustment: adjustment,
             now: now
         )
@@ -90,6 +99,10 @@ final class FullFinancialContextBuilder {
     ///
     /// `includeGroupsInTotal` es el ajuste «Grupos en el total» del Panel (`AppPreferences.includeGroupsInPanelTotal`):
     /// lo pasa quien construye el contexto. Su default `true` es el default del ajuste.
+    ///
+    /// `includeGroupTransactionsInStats` es «Incluir gastos de grupo en estadísticas»
+    /// (`AppPreferences.includeGroupTransactionsInStats`), el interruptor que siguen el Panel y Estadísticas.
+    /// También lo pasa quien construye el contexto, y su default `true` también es el del ajuste.
     func buildFromArrays(
         transactions: [TransactionItem],
         budgets: [Budget],
@@ -103,12 +116,14 @@ final class FullFinancialContextBuilder {
         country: String,
         includeAnomalies: Bool,
         includeGroupsInTotal: Bool = true,
+        includeGroupTransactionsInStats: Bool = true,
         adjustment: GroupBridgeStatsAdjustment = .none,
         now: Date = .now
     ) -> FullFinancialContext {
         if let entry = cache,
            now.timeIntervalSince(entry.timestamp) < Self.ttlSeconds,
            entry.includedGroupsInTotal == includeGroupsInTotal,
+           entry.includedGroupTransactionsInStats == includeGroupTransactionsInStats,
            includeAnomalies == false || entry.includedAnomalies {
             return entry.context
         }
@@ -131,11 +146,21 @@ final class FullFinancialContextBuilder {
                 && tx.account?.excludeFromStatistics != true
                 && tx.date <= now
         }
+        // Lo que cuentan las estadísticas: con el interruptor de grupos apagado, sin movimientos de grupo
+        // (pata real y pata de préstamo), con la misma regla que el Panel. Los presupuestos siguen con
+        // `eligibleTx`: su pantalla no mira este interruptor sino el «incluir gastos compartidos» de cada uno.
+        let statsTx = eligibleTx.filter { tx in
+            BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: tx.splitExpenseID,
+                splitSettlementID: tx.splitSettlementID,
+                includeGroupsToggle: includeGroupTransactionsInStats
+            )
+        }
 
         let intervals = buildIntervals(now: now, calendar: calendar)
         // `!= true` keeps tx with category=nil in the expense bucket → uncategorized
         // bucket sees them. Income tx (isIncome==true) are excluded.
-        let currentMonthExpenseTx = eligibleTx.filter {
+        let currentMonthExpenseTx = statsTx.filter {
             intervals.currentMonth.contains($0.date) && $0.category?.isIncome != true
         }
 
@@ -158,7 +183,7 @@ final class FullFinancialContextBuilder {
         )
 
         let periods = buildPeriods(
-            tx: eligibleTx,
+            tx: statsTx,
             intervals: intervals,
             currencyCode: currencyCode,
             converter: converter,
@@ -168,7 +193,7 @@ final class FullFinancialContextBuilder {
         )
 
         let categories = buildCategories(
-            tx: eligibleTx,
+            tx: statsTx,
             intervals: intervals,
             currencyCode: currencyCode,
             converter: converter,
@@ -183,7 +208,7 @@ final class FullFinancialContextBuilder {
         )
 
         let merchantsTop20 = buildMerchantsTop20(
-            tx: eligibleTx,
+            tx: statsTx,
             intervals: intervals,
             currencyCode: currencyCode,
             converter: converter,
@@ -209,7 +234,7 @@ final class FullFinancialContextBuilder {
         )
 
         let patterns = buildPatterns(
-            tx: eligibleTx,
+            tx: statsTx,
             currencyCode: currencyCode,
             converter: converter,
             now: now,
@@ -235,7 +260,7 @@ final class FullFinancialContextBuilder {
 
         let anomalies: [AnomalyEntry]? = includeAnomalies
             ? AnomalyDetectionCalculator.detect(
-                allTransactions: eligibleTx,
+                allTransactions: statsTx,
                 periodTransactions: currentMonthExpenseTx,
                 interval: intervals.currentMonth,
                 currencyCode: currencyCode,
@@ -263,7 +288,8 @@ final class FullFinancialContextBuilder {
             context: context,
             timestamp: now,
             includedAnomalies: includeAnomalies,
-            includedGroupsInTotal: includeGroupsInTotal
+            includedGroupsInTotal: includeGroupsInTotal,
+            includedGroupTransactionsInStats: includeGroupTransactionsInStats
         )
         return context
     }
