@@ -407,14 +407,26 @@ extension XCUIApplication {
         openSelectorFirstRow(chip: chipID, rowPrefix: rowPrefix, timeout: timeout, file: file, line: line).tap()
     }
 
-    /// Espera a que el teclado termine de entrar o salir y `element` esté quieto: dos lecturas
-    /// seguidas con el mismo marco. Devuelve `false` si no se asienta antes de `timeout`.
+    /// Espera a que el teclado termine de entrar o salir y `element` esté quieto: tres lecturas
+    /// seguidas con el teclado en su sitio y el mismo marco. Devuelve `false` si no se asienta
+    /// antes de `timeout`.
+    ///
+    /// **El plazo acota el movimiento, no el coste de leer** (medido el 2026-10-10 en la tanda 2 del
+    /// CI, iPhone 17 Pro iOS 26.5): en un runner frío cada consulta a la UI tarda 1–3,5 s y una
+    /// vuelta del bucle hace tres, así que en 5 s cabían dos lecturas y nunca la tercera. El helper
+    /// devolvía «no dejó de moverse» con todo quieto, y `test_distributionHeroFollowsANewRecord`
+    /// caía 3 de 3. Por eso se hacen siempre las `minimumReads` aunque el plazo venza a mitad: son
+    /// las justas para poder concluir «quieto». Si en ellas algo se mueve, sigue saliendo `false`.
     func waitForSettledLayout(of element: XCUIElement, timeout: TimeInterval = 5) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)
         let windowMaxY = windows.firstMatch.frame.maxY
+        // La que fija el marco y dos iguales detrás.
+        let minimumReads = 3
+        var reads = 0
         var lastFrame: CGRect?
         var stableReads = 0
-        while Date() < deadline {
+        while Date() < deadline || reads < minimumReads {
+            reads += 1
             let keyboard = keyboards.firstMatch
             // Entrando o saliendo, el teclado asoma por debajo de la ventana.
             let keyboardSettled = !keyboard.exists || keyboard.frame.maxY <= windowMaxY + 0.5
