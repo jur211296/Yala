@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (869)
+## Index (870)
 
 | id | status | path |
 |---|---|---|
@@ -807,6 +807,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stall-canaries-have-no-test-for-which-clock-they-publish | backlog | tickets/backlog/stall-canaries-have-no-test-for-which-clock-they-publish.md |
 | stall-clock-charges-a-closed-app-gap-to-a-one-off-cause | backlog | tickets/backlog/stall-clock-charges-a-closed-app-gap-to-a-one-off-cause.md |
 | start-fresh-dialog-promises-what-the-gate-undoes | backlog | tickets/backlog/start-fresh-dialog-promises-what-the-gate-undoes.md |
+| statistics-calculators-count-an-unwritten-conversion-as-zero | done | tickets/done/statistics-calculators-count-an-unwritten-conversion-as-zero.md |
 | stats-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/stats-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |

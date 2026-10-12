@@ -87,8 +87,7 @@ struct CashFlowCalculator {
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> (value: Double, approximateMagnitude: Double) {
-        if tx.preferredCurrencyCode == currencyCode,
-           adjustment.isAdjusted(tx) || !storedConversionIsMissing(tx) {
+        if readsStoredAmount(tx, currencyCode: currencyCode, adjustment: adjustment) {
             let value = adjustment.amountInPreferredCurrency(tx)
             // Aquí no hay conversión que juzgar: el monto se convirtió al guardarse. En un gasto de
             // grupo `value` es el NETO de varias patas, y la magnitud dudosa que hay detrás
@@ -104,6 +103,24 @@ struct CashFlowCalculator {
             adjustment.amount(tx), from: tx.currencyCode, to: currencyCode, on: tx.date,
             converter: converter
         )
+    }
+
+    /// `true` si el importe de `tx` en `currencyCode` se LEE del guardado
+    /// (`adjustment.amountInPreferredCurrency`) en vez de reconvertirse desde el nativo: es la primera
+    /// rama de `resolvedAmount`. La fila se convirtió a esta misma divisa al guardarse, y o es una pata
+    /// ajustada de un gasto de grupo (su importe es la síntesis) o su convertido sí se escribió.
+    ///
+    /// Los calculadores que suman el guardado por su cuenta —tartas y rankings de Estadísticas, día de la
+    /// semana, tendencia por necesidad, real del Flujo de caja, avisos de informe, Observaciones—
+    /// preguntan aquí en vez de comparar solo la divisa: comparando solo la divisa, un movimiento con la
+    /// conversión sin escribir contaba 0 (card `tablero-las-tartas-y-rankings-de-estadisticas-si-985z`).
+    static func readsStoredAmount(
+        _ tx: TransactionItem,
+        currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment
+    ) -> Bool {
+        tx.preferredCurrencyCode == currencyCode
+            && (adjustment.isAdjusted(tx) || !storedConversionIsMissing(tx))
     }
 
     /// `true` si el `amountInPreferredCurrency` guardado de `tx` no es un importe sino una conversión

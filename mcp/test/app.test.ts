@@ -83,6 +83,31 @@ describe("protocolo MCP", () => {
     expect(lastCall.url.searchParams.get("and")).toContain(`sync_id.lt.${uuid(9101)}`);
   });
 
+  it("buscar_movimientos no enseña como importe un convertido sin escribir (0 con nativo distinto de 0)", async () => {
+    const sinConvertir = uuid(9150);
+    const convertido = uuid(9151);
+    const cero = uuid(9152);
+    const rows = [
+      tx({ sync_id: sinConvertir, date: "2026-09-12T15:00:00+00:00", amount: -50, currency_code: "USD", amount_in_preferred_currency: 0, preferred_currency_code: "PEN" }),
+      tx({ sync_id: convertido, date: "2026-09-11T15:00:00+00:00", amount: -50, currency_code: "USD", amount_in_preferred_currency: -185, preferred_currency_code: "PEN" }),
+      tx({ sync_id: cero, date: "2026-09-10T15:00:00+00:00", amount: 0, currency_code: "USD", amount_in_preferred_currency: 0, preferred_currency_code: "PEN" }),
+    ];
+    const { w, token } = await connected({
+      tx_items: rows, accounts: [], categories: [], subcategories: [], tags: [],
+      user_preferences: [{ key: "defaultCurrencyCode", value: "PEN" }],
+    });
+    const { body } = await callTool(w, token, "buscar_movimientos", {});
+    const data = JSON.parse(body!.result.content[0]!.text);
+    const byId = new Map<string, { importe_en_divisa_preferida: number | null }>(
+      data.movimientos.map((m: { id: string; importe_en_divisa_preferida: number | null }) => [m.id, m]),
+    );
+    // Con el bug: 0, que parece un importe real.
+    expect(byId.get(sinConvertir)!.importe_en_divisa_preferida).toBeNull();
+    // Controles: el convertido escrito se enseña, y un importe de 0 de verdad sigue siendo 0.
+    expect(byId.get(convertido)!.importe_en_divisa_preferida).toBe(-185);
+    expect(byId.get(cero)!.importe_en_divisa_preferida).toBe(0);
+  });
+
   it("un cursor manipulado es un error de entrada, no una consulta", async () => {
     const { w, token } = await connected({ tx_items: [], accounts: [], categories: [], subcategories: [], tags: [], user_preferences: [] });
     const id = uuid(9200);

@@ -63,7 +63,7 @@ struct NeedTrendHelper {
                 let doubleAmount: Double
 
                 // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
-                if tx.preferredCurrencyCode == currencyCode {
+                if CashFlowCalculator.readsStoredAmount(tx, currencyCode: currencyCode, adjustment: adjustment) {
                     // Use signed amount
                     doubleAmount = adjustment.amountInPreferredCurrency(tx)
                 } else {

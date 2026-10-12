@@ -66,7 +66,7 @@ struct WeekdaySpendingCalculator {
 
             // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
             let amount: Double
-            if tx.preferredCurrencyCode == currencyCode {
+            if CashFlowCalculator.readsStoredAmount(tx, currencyCode: currencyCode, adjustment: adjustment) {
                 amount = abs(adjustment.amountInPreferredCurrency(tx))
             } else {
                 let converted = converter.convert(

@@ -503,13 +503,18 @@ struct InsightsCalculator {
 
     /// Convenience for TransactionItem → target currency
     /// `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto) antes de convertir.
+    /// El guardado solo se ofrece si `resolvedAmount` también lo leería (`readsStoredAmount`): un
+    /// convertido sin escribir (0) no es un importe y se reconvierte desde el nativo.
     private static func txAmount(_ tx: TransactionItem, currencyCode: String, adjustment: GroupBridgeStatsAdjustment, converter: CurrencyConverting) -> Double {
-        convertedAmount(
+        let readsStored = CashFlowCalculator.readsStoredAmount(
+            tx, currencyCode: currencyCode, adjustment: adjustment
+        )
+        return convertedAmount(
             adjustment.amount(tx),
             from: tx.currencyCode,
             to: currencyCode,
             preferredCode: tx.preferredCurrencyCode,
-            preferredAmount: adjustment.amountInPreferredCurrency(tx),
+            preferredAmount: readsStored ? adjustment.amountInPreferredCurrency(tx) : nil,
             on: tx.date,
             converter: converter
         )

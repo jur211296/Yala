@@ -64,7 +64,7 @@ struct TopSpendingCategoriesCalculator {
 
             // Convert using the transaction's date for accurate historical rate
             let doubleAmount: Double
-            if transaction.preferredCurrencyCode == currencyCode {
+            if CashFlowCalculator.readsStoredAmount(transaction, currencyCode: currencyCode, adjustment: adjustment) {
                 doubleAmount = adjustment.amountInPreferredCurrency(transaction)
             } else {
                 let convertedAmount = converter.convert(
