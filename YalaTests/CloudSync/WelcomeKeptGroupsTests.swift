@@ -383,9 +383,9 @@ struct WelcomeKeptGroupsTests {
                 "la puerta del organizador vuelve a ver los grupos conservados como datos de otro")
         let deviceGate = try Self.body(of: "private var deviceCorpusGate: WelcomePrivateICloudGateView.DeviceCorpus? {",
                                        in: container)
-        #expect(deviceGate.contains("return .init(hasData: { welcomeDeviceDataNow() },"))
+        #expect(deviceGate.contains("return .init(read: { welcomeDeviceDataReading() },"))
         let decided = try Self.caseBody("case .freshStartDeviceWipe:", in: container)
-        #expect(decided.contains("deviceCorpus: .init(hasData: { hasLocalDataNow() },"), """
+        #expect(decided.contains("deviceCorpus: .init(read: { hasLocalDataNow() ? .present : .none },"), """
             el borrado del teléfono ya decidido en el alert pregunta qué queda con el detector entero
             """)
         // La puerta privada del Welcome sigue limpiando nombre y divisa al borrar: es «Empezar de cero» de un corpus.

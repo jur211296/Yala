@@ -963,6 +963,10 @@ final class MigrationRunner {
     private let sleeper: (Double) async -> Void
     private let quiescenceTimeoutSeconds: Double
     private let quiescenceTickSeconds: Double
+    /// Dónde vive el borrado pendiente del iCloud privado que `resetAfterRollback` marca al salir del fallo (ticket
+    /// `retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`). `.standard` en producción; los tests
+    /// pasan uno aislado.
+    private let wipeDefaults: UserDefaults
 
     /// Guarda contra un bucle de trabajo sin progreso (bug de secuenciación) — alto, nunca alcanzado en
     /// flujos correctos.
@@ -1053,7 +1057,8 @@ final class MigrationRunner {
             }
         },
         quiescenceTimeoutSeconds: Double = 120,
-        quiescenceTickSeconds: Double = 0.5
+        quiescenceTickSeconds: Double = 0.5,
+        wipeDefaults: UserDefaults = .standard
     ) {
         self.context = context
         self.executor = executor
@@ -1064,6 +1069,7 @@ final class MigrationRunner {
         self.sleeper = sleeper
         self.quiescenceTimeoutSeconds = quiescenceTimeoutSeconds
         self.quiescenceTickSeconds = quiescenceTickSeconds
+        self.wipeDefaults = wipeDefaults
     }
 
     // MARK: - Entradas públicas (todas gateadas por quiescencia ANTES del primer save)
@@ -1157,6 +1163,14 @@ final class MigrationRunner {
             // este arreglo mata. Si el drenaje lanza, `runGuarded` aborta el reset y el journal queda intacto:
             // el tap se convierte en un reintento del abort, que es la semántica correcta.
             try await self.drainPendingEffects(isResume: true)
+            // **Un borrado del iCloud privado que sobrevivió a esta ida fallida no se reanuda a ciegas en el reposo**
+            // (ticket `retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`, opción A de Jürgen). Con
+            // el fallo a la vista el arranque ya pregunta; esta es la única arista de `failedRollback` al reposo, y sin la
+            // marca el arranque siguiente leía `notStarted` y lo terminaba sin pantalla. Antes del save: un kill entre los
+            // dos deja la marca con el fallo todavía journaleado, donde no cambia nada.
+            if phase == .failedRollback {
+                StorageModePersistence.markICloudCorpusWipeCrossedFailedMigration(self.wipeDefaults)
+            }
             state.setPhase(target)
             state.setPendingEffects([])
             state.leaderDeviceID = nil

@@ -403,6 +403,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-drain-failure-reads-as-nothing-pending | done | tickets/done/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save | backlog | tickets/backlog/groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save.md |
 | groups-drain-that-always-aborts-takes-the-loss-exit-away | done | tickets/done/groups-drain-that-always-aborts-takes-the-loss-exit-away.md |
+| groups-entry-left-half-done-reaches-the-private-gate-with-group-rows | backlog | tickets/backlog/groups-entry-left-half-done-reaches-the-private-gate-with-group-rows.md |
 | groups-entry-on-a-mirrored-store-still-blocks-the-owner | qa | tickets/qa/groups-entry-on-a-mirrored-store-still-blocks-the-owner.md |
 | groups-equal-split-shows-not-participating-on-peer | done | tickets/done/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | done | tickets/done/groups-expense-notif-only-on-foreground.md |
@@ -638,7 +639,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-exit-materialized-drafts-do-not-refresh-the-inbox | backlog | tickets/backlog/private-exit-materialized-drafts-do-not-refresh-the-inbox.md |
 | private-exit-warning-recounts-materialized-captures | backlog | tickets/backlog/private-exit-warning-recounts-materialized-captures.md |
 | private-gate-back-from-found-keeps-a-resumed-arm | done | tickets/done/private-gate-back-from-found-keeps-a-resumed-arm.md |
-| private-gate-device-notice-has-no-forward-exit | backlog | tickets/backlog/private-gate-device-notice-has-no-forward-exit.md |
+| private-gate-device-notice-has-no-forward-exit | qa | tickets/qa/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-device-wipe-navigates-after-its-gate-unmounted | backlog | tickets/backlog/private-gate-device-wipe-navigates-after-its-gate-unmounted.md |
 | private-gate-leave-after-a-halfway-wipe-forgets-the-zone | done | tickets/done/private-gate-leave-after-a-halfway-wipe-forgets-the-zone.md |
 | private-gate-remote-wipe-can-strand-its-arm | done | tickets/done/private-gate-remote-wipe-can-strand-its-arm.md |
@@ -710,7 +711,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-treats-budgets-and-groups-as-no-data | done | tickets/done/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
-| retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | backlog | tickets/backlog/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
+| retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | qa | tickets/qa/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
 | reverse-before-mount-has-no-way-to-abandon-the-return | done | tickets/done/reverse-before-mount-has-no-way-to-abandon-the-return.md |
 | reverse-before-mount-stays-stuck-with-an-expired-session | done | tickets/done/reverse-before-mount-stays-stuck-with-an-expired-session.md |

@@ -339,12 +339,15 @@ struct MigrationRunnerTests {
         tick: Double = 0.5,
         // C-1: reloj inyectable (default = `fixedNow`, idéntico a antes). Solo los tests del tope del paso 4
         // pasan un `MutableClock` para poder avanzar el tiempo.
-        now: (() -> Date)? = nil
+        now: (() -> Date)? = nil,
+        // El borrado pendiente del iCloud privado que `resetAfterRollback` marca: AISLADO por defecto, para que ningún
+        // test escriba en el `UserDefaults.standard` del simulador.
+        wipeDefaults: UserDefaults = makeIsolatedDefaults(prefix: "mrunner")
     ) -> MigrationRunner {
         MigrationRunner(
             context: context, executor: executor, deviceID: deviceID, policy: policy,
             quiescenceSignal: quiescence, now: now ?? { self.fixedNow }, sleeper: { _ in },
-            quiescenceTimeoutSeconds: timeout, quiescenceTickSeconds: tick)
+            quiescenceTimeoutSeconds: timeout, quiescenceTickSeconds: tick, wipeDefaults: wipeDefaults)
     }
 
     @discardableResult
@@ -1136,6 +1139,104 @@ struct MigrationRunnerTests {
         #expect(j.readPhase().phase == .notStarted)
         #expect(j.readPendingEffects().isEmpty)
         #expect(j.cutoverICloudVerdictRaw == nil)
+    }
+
+    // MARK: - 9d. «Reintentar» y el borrado pendiente del iCloud privado
+    // (ticket `retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`, opción A de Jürgen del 2026-10-12)
+
+    /// **EL PIN DEL TICKET, de punta a punta.** Un borrado armado sobrevive a una ida fallida; la persona pulsa
+    /// «Reintentar» y el journal vuelve al reposo. El arranque siguiente decide con lo que quedó en disco. Sin la marca que
+    /// deja la salida del fallo, esa decisión era `.resume`: el borrado se terminaba sin pantalla.
+    @Test func resetAfterRollback_withAnArmedWipe_theNextLaunchAsksInsteadOfResuming() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let d = makeIsolatedDefaults(prefix: "mrunner")
+        StorageModePersistence.armICloudCorpusWipe(d)
+        try seedJournal(context, phase: .failedRollback)
+
+        await makeRunner(context, FakeExecutor(), wipeDefaults: d).resetAfterRollback()
+
+        #expect(try journal(context).readPhase().phase == .notStarted, "«Reintentar» deja el journal en reposo")
+        #expect(StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(d))
+        let launch = WelcomePrivateICloudGateLogic.lateWipeLaunch(
+            armed: StorageModePersistence.isICloudCorpusWipeArmed(d),
+            leftHalfway: StorageModePersistence.isICloudCorpusWipeLeftHalfway(d),
+            cancelledInCloudNoticePending: false,
+            waivedForCloud: StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(d),
+            migrationAtRest: true, migrationFailedAndSettled: false,
+            armCrossedFailedMigration: StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(d),
+            storageMode: .icloud)
+        #expect(launch == .askAfterFailedMigration, "en reposo tras el fallo se pregunta, no se reanuda a ciegas")
+    }
+
+    /// Con la renuncia de «Activar la nube sin borrar»: mientras dura el fallo gana la renuncia; tras «Reintentar» caduca en
+    /// el reposo (como siempre) y, con la marca, el arranque pregunta en vez de terminar el borrado.
+    @Test func resetAfterRollback_withAWaivedWipe_theWaiverLapsesAndTheLaunchAsks() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let d = makeIsolatedDefaults(prefix: "mrunner")
+        StorageModePersistence.armICloudCorpusWipe(d)
+        StorageModePersistence.waivePendingICloudCorpusWipeForTheCloud(d)
+        try seedJournal(context, phase: .failedRollback)
+
+        await makeRunner(context, FakeExecutor(), wipeDefaults: d).resetAfterRollback()
+
+        if WelcomePrivateICloudGateLogic.waiverLapses(
+            waivedForCloud: StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(d),
+            migrationAtRest: true, storageMode: .icloud) {
+            StorageModePersistence.clearICloudCorpusWipeWaiver(d)
+        }
+        #expect(!StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(d), "la renuncia caduca en reposo")
+        #expect(WelcomePrivateICloudGateLogic.lateWipeLaunch(
+            armed: StorageModePersistence.isICloudCorpusWipeArmed(d), leftHalfway: false,
+            cancelledInCloudNoticePending: false, waivedForCloud: false,
+            migrationAtRest: true, migrationFailedAndSettled: false,
+            armCrossedFailedMigration: StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(d),
+            storageMode: .icloud) == .askAfterFailedMigration)
+    }
+
+    /// Sin borrado pendiente no se apunta nada: la marca es un sub-estado del arm.
+    @Test func resetAfterRollback_withoutAnArmedWipe_leavesNoMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let d = makeIsolatedDefaults(prefix: "mrunner")
+        try seedJournal(context, phase: .failedRollback)
+
+        await makeRunner(context, FakeExecutor(), wipeDefaults: d).resetAfterRollback()
+
+        #expect(try journal(context).readPhase().phase == .notStarted)
+        #expect(!StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(d))
+    }
+
+    /// Solo la salida de la IDA marca: la de la vuelta (`reverseFailedRollback`) no es una ida que fallara, y en `.cloud`
+    /// el arm se retira igual. Y fuera de los dos terminales el reset es no-op y tampoco marca.
+    @Test(arguments: [MigrationPhase.reverseFailedRollback, .verifying])
+    func resetAfterRollback_outsideTheForwardFailure_leavesNoMark(phase: MigrationPhase) async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let d = makeIsolatedDefaults(prefix: "mrunner")
+        StorageModePersistence.armICloudCorpusWipe(d)
+        try seedJournal(context, phase: phase)
+
+        await makeRunner(context, FakeExecutor(), wipeDefaults: d).resetAfterRollback()
+
+        #expect(!StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(d), "\(phase)")
+    }
+
+    /// Si el drenaje lanza, el reset no avanza y tampoco marca: el fallo sigue a la vista, que ya pregunta.
+    @Test func resetAfterRollback_drainThrows_leavesNoMark() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let d = makeIsolatedDefaults(prefix: "mrunner")
+        StorageModePersistence.armICloudCorpusWipe(d)
+        let fake = FakeExecutor()
+        fake.effectErrors[.persistICloudMode] = FakeError()
+        try seedJournal(context, phase: .failedRollback, pending: [.persistICloudMode, .rollback])
+
+        await makeRunner(context, fake, wipeDefaults: d).resetAfterRollback()
+
+        #expect(try journal(context).readPhase().phase == .failedRollback)
+        #expect(!StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(d))
     }
 
     // MARK: - 10. Claim no-success (los 3 outcomes) → journal intacto, sin evento, sin rollback

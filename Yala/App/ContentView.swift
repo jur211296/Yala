@@ -525,6 +525,7 @@ struct ContentView: View {
             hasExistingData: hasExistingData,
             hasLocalDataNow: { checkHasExistingData() },
             welcomeDeviceDataNow: { checkHasWelcomeDeviceData() },
+            welcomeDeviceDataReading: { readWelcomeDeviceDataForTheGate() },
             groupsKeptForThisPersonNow: { LateNoticeKeptGroupsMark.vouchesNow() },
             // **Las dos señales de «hay datos» bajan aquí**: son `@State` de esta vista y
             // `wipeAllUserData` no llama a `incrementDataVersion`, así que el `.onChange(of: dataVersion)`
@@ -1585,6 +1586,41 @@ struct ContentView: View {
             groupsKeptForThisPerson: LateNoticeKeptGroupsMark.vouchesNow())
     }
 
+    /// **La lectura de la puerta privada del Welcome, con «no se pudo leer» aparte** (ticket
+    /// `private-gate-device-notice-has-no-forward-exit`, decisión de Jürgen del 2026-10-12). Mismas entidades y misma
+    /// excepción de los grupos conservados que `checkHasWelcomeDeviceData`, pero un fetch que lanza no se lee como «hay
+    /// datos»: la puerta enseñaba entonces «Ya hay datos en este teléfono» con borrar o volver, sin un solo dato detrás.
+    /// Solo la usa esa puerta; el alert de «Es mi primera vez» y las puertas de organizador e invitado siguen con el
+    /// detector que falla cerrado. La regla de las dos mitades es `WelcomePrivateICloudGateLogic.deviceDataReading`.
+    private func readWelcomeDeviceDataForTheGate() -> WelcomePrivateICloudGateLogic.DeviceDataReading {
+        var personal: Bool?
+        var groups: Bool?
+        do {
+            let accounts = try modelContext.fetchCount(FetchDescriptor<Account>(
+                predicate: #Predicate<Account> { !$0.isSystemAccount }))
+            let categories = try modelContext.fetchCount(FetchDescriptor<Category>(
+                predicate: #Predicate<Category> { !$0.isSystem }))
+            personal = accounts > 0 || categories > 0
+        } catch {
+            #if DEBUG
+            print("ContentView: readWelcomeDeviceDataForTheGate personal failed: \(error)")
+            #endif
+        }
+        do {
+            let groupRows = try modelContext.fetchCount(FetchDescriptor<SplitGroup>())
+            let bridged = try modelContext.fetchCount(FetchDescriptor<TransactionItem>(
+                predicate: #Predicate<TransactionItem> { $0.splitExpenseID != nil }))
+            groups = groupRows > 0 || bridged > 0
+        } catch {
+            #if DEBUG
+            print("ContentView: readWelcomeDeviceDataForTheGate groups failed: \(error)")
+            #endif
+        }
+        return WelcomePrivateICloudGateLogic.deviceDataReading(
+            personal: personal, groups: groups,
+            groupsKeptForThisPerson: LateNoticeKeptGroupsMark.vouchesNow())
+    }
+
     /// Show a positive confirmation toast for ~3s. Used for remote onboarding
     /// completed and remote restore completed — the only events where a brief
     /// "your data is here" reassurance is worth interrupting the silent sync rule.
@@ -2056,6 +2092,10 @@ struct ContentView: View {
         // lectura, `migrationFailedAndSettled`, del MISMO `MigrationRestReading`: la renuncia sigue mandando y nada se
         // reanuda a ciegas (`lateWipeLaunch`). Solo se paga con algo que decidir. Se espera al bootstrap antes de leer: sin
         // el journal configurado la lectura dice `notStarted`, que es el lado que concede.
+        //
+        // **Y «Reintentar» no lo convierte en un borrado a ciegas** (ticket
+        // `retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`): el reposo que deja la salida del fallo
+        // lleva la marca de que este arm pasó por la ida, y con ella `lateWipeLaunch` pregunta en vez de reanudar.
         var migrationAtRest = true
         var migrationFailedAndSettled = false
         if CloudSyncFlags.storageMode == .icloud,
@@ -2085,6 +2125,7 @@ struct ContentView: View {
             waivedForCloud: StorageModePersistence.isPendingICloudCorpusWipeWaivedForTheCloud(),
             migrationAtRest: migrationAtRest,
             migrationFailedAndSettled: migrationFailedAndSettled,
+            armCrossedFailedMigration: StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(),
             storageMode: CloudSyncFlags.storageMode
         ) {
         case .none:
@@ -2154,7 +2195,8 @@ struct ContentView: View {
             // borra. El borrado sigue pendiente y la renuncia no caduca hasta el reposo estricto.
             return
         case .askAfterFailedMigration:
-            // **Tras una ida fallida y asentada, el arm no se reanuda a ciegas: se vuelve a preguntar.** Se clasifica como
+            // **Tras una ida fallida y asentada —o tras su «Reintentar», con la marca del arm—, el arm no se reanuda a
+            // ciegas: se vuelve a preguntar.** Se clasifica como
             // un borrado que falló: con la zona de iCloud ya ida, «a medias» y su pantalla (la marca va antes de desarmar,
             // así que un kill la vuelve a preguntar). Sin tocar nada, sigue la comprobación de siempre, donde el aviso del
             // espejo tardío vuelve a preguntar con el corpus, y **el arm se queda puesto hasta que la persona contesta**
@@ -2743,6 +2785,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// «Es mi primera vez», la pregunta del corpus del teléfono con mount neutro y la puerta del organizador. El guard
     /// cross-cuenta de la nube sigue con `hasLocalDataNow`.
     let welcomeDeviceDataNow: @MainActor @Sendable () -> Bool
+    /// La misma lectura con «no se pudo leer» aparte, solo para la puerta privada (`ContentView.readWelcomeDeviceDataForTheGate`).
+    let welcomeDeviceDataReading: @MainActor @Sendable () -> WelcomePrivateICloudGateLogic.DeviceDataReading
     /// ¿Son de quien está delante los grupos de este teléfono? La marca del aviso tardío, leída en el momento
     /// (`LateNoticeKeptGroupsMark.vouchesNow`). Con ella, «Es mi primera vez → privado» no es la frontera de otra persona.
     let groupsKeptForThisPersonNow: @MainActor @Sendable () -> Bool
@@ -2973,6 +3017,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                     },
                     hasLocalDataNow: hasLocalDataNow,
                     welcomeDeviceDataNow: welcomeDeviceDataNow,
+                    welcomeDeviceDataReading: welcomeDeviceDataReading,
                     // Paso 4: el borrado vive aquí porque necesita el `modelContext`. La puerta solo
                     // decide y enseña.
                     //

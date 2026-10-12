@@ -6576,3 +6576,12 @@
 
 /* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
 "insights.aiError.proRequired" = "Não conseguimos confirmar seu Yala Pro. Tente de novo em instantes.";
+
+/* Private gate: reading the data already on this phone failed */
+"welcome.privateICloud.deviceUnreadableTitle" = "Não conseguimos verificar este telefone";
+
+/* Private gate: body when the phone's data could not be read */
+"welcome.privateICloud.deviceUnreadableBody" = "Algo deu errado ao ver o que já está neste telefone, então não sabemos se ele tem dados. Nada foi alterado. Tente de novo em instantes.";
+
+/* Private gate: secondary button that goes back to the choice */
+"welcome.privateICloud.deviceUnreadableBack" = "Voltar";

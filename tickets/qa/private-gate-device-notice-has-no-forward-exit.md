@@ -1,10 +1,10 @@
 ---
 id: private-gate-device-notice-has-no-forward-exit
-status: backlog
+status: qa
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-13
-updated: 2026-10-08
+updated: 2026-10-12
 source: "review adversarial de `groups-only-private-restart-skips-the-wipe-alert`, lentes de camino (F5) y de datos (A6)"
 ---
 
@@ -64,3 +64,22 @@ dos opciones sobre la mesa:
 Con A, la prioridad es `medium`.
 
 Triage 2026-10-08: abierto · medium → medium · `foundDeviceContent` sigue con dos salidas (dejarlo o borrar) y `checkHasExistingData` sigue fallando cerrado (`ContentView.swift:1463`).
+
+## Resuelto (2026-10-12) — decisión de Jürgen: «solo lo alcanzable»
+
+Medido antes de construir: una sesión solo-grupos completada no vuelve al Welcome, así que «Activar Yala completo» desde
+este aviso no tendría quien lo use (el único camino, inferido, es un alta de grupos a medias: ticket
+`groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`). Se hizo la otra mitad de A:
+
+- Un error al leer los datos del teléfono ya no cuenta como «hay datos». La puerta enseña «No pudimos revisar este
+  teléfono» con «Reintentar» (vuelve a medir) y «Volver», sin ningún borrado. El resto de consumidores del detector sigue
+  fallando cerrado a propósito.
+- Probado: `PrivateGateDeviceUnreadableTests` (tres suites), mutante de fallo cerrado verificado, y el XCUITest
+  `PrivateGateDeviceUnreadableUITests` (pantalla nueva + control con datos legibles), con el seam
+  `-uitest-private-gate-device-reading`. Capturas: `capturas/antes.png` y `capturas/despues.png` del PR.
+
+## QA
+
+Ya cubierto por XCUITest. En device no se puede provocar el error de lectura sin un build de desarrollo; si se quiere
+ver: build `Yala Dev`, lanzar con `-uitest -uitest-reset -uitest-private-gate-device-reading unreadable`, «Empezar» →
+«Es mi primera vez». Esperado: la pantalla nueva; «Reintentar» la repite; «Volver» vuelve a la elección.

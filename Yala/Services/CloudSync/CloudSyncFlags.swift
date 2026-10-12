@@ -338,6 +338,8 @@ nonisolated enum StorageModePersistence {
     static let icloudCorpusWipeOwnsNeutralMountKey = "cloudSync.icloudCorpusWipeOwnsNeutralMount"
 
     static func armICloudCorpusWipe(_ defaults: UserDefaults = .standard) {
+        // Armar es la persona confirmando AHORA: lo que este borrado viviera antes (una ida fallida) ya no lo describe.
+        defaults.removeObject(forKey: icloudCorpusWipeCrossedFailedMigrationKey)
         defaults.set(true, forKey: icloudCorpusWipeArmedKey)
         // Re-armar su propio borrado no cambia de dueño: el neutro ya está y la marca ya es suya.
         guard !isNeutralMountArmed(defaults) else { return }
@@ -356,6 +358,7 @@ nonisolated enum StorageModePersistence {
     static func clearICloudCorpusWipeArm(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: icloudCorpusWipeArmedKey)
         defaults.removeObject(forKey: icloudCorpusWipeZoneDoneKey)
+        defaults.removeObject(forKey: icloudCorpusWipeCrossedFailedMigrationKey)
         // El alcance describe el borrado pendiente, y «a medias» también lo es: solo se va si no queda ninguno.
         if !isICloudCorpusWipeLeftHalfway(defaults) {
             defaults.removeObject(forKey: icloudCorpusWipeScopeKey)
@@ -465,6 +468,29 @@ nonisolated enum StorageModePersistence {
 
     static func clearICloudCorpusWipeWaiver(_ defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: icloudCorpusWipeWaivedForCloudKey)
+    }
+
+    /// **«Este borrado armado sobrevivió a una ida a la nube que FALLÓ»** (ticket
+    /// `retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`, opción A de Jürgen del 2026-10-12). Con la
+    /// ida fallida y asentada el arranque PREGUNTA y nunca reanuda (`lateWipeLaunch` → `.askAfterFailedMigration`), pero
+    /// «Reintentar» devuelve el journal a `notStarted` y el arranque siguiente lee reposo: sin esta marca, el arm se
+    /// reanudaba a ciegas. Con ella, el arranque en reposo pregunta igual que con el fallo a la vista.
+    ///
+    /// **La escribe quien SALE del fallo**, `MigrationRunner.resetAfterRollback`, antes de journalear `notStarted`: es la
+    /// única arista de `failedRollback` al reposo, así que un kill entre las dos deja la marca con el fallo a la vista
+    /// (inerte: ahí ya se pregunta). Es un sub-estado del arm, como la marca de la zona: solo se escribe con el arm puesto,
+    /// se va con `clearICloudCorpusWipeArm` (quedar «a medias», «Déjalo así», retirarlo en la nube) y con
+    /// `armICloudCorpusWipe`, que es la persona volviendo a confirmar: un kill a mitad de ESE borrado se reanuda, como
+    /// cualquier otro. `cloudSync.*` como sus vecinas: el barrido de preferencias no se la lleva.
+    static let icloudCorpusWipeCrossedFailedMigrationKey = "cloudSync.icloudCorpusWipeCrossedFailedMigration"
+
+    static func markICloudCorpusWipeCrossedFailedMigration(_ defaults: UserDefaults = .standard) {
+        guard isICloudCorpusWipeArmed(defaults) else { return }
+        defaults.set(true, forKey: icloudCorpusWipeCrossedFailedMigrationKey)
+    }
+
+    static func hasICloudCorpusWipeCrossedFailedMigration(_ defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: icloudCorpusWipeCrossedFailedMigrationKey)
     }
 
     /// El arranque en la nube con la renuncia puesta: retira el borrado pendiente sin dejar el aviso.
