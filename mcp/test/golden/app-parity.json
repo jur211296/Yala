@@ -132,28 +132,28 @@
           "to" : "EUR"
         }
       ],
-      "description" : "Septiembre en PEN con movimientos en USD, EUR y GBP, un gasto de grupo pagado por mí, un préstamo suelto, un «me deben» de saldo inicial, un grupo con una cuenta que no resuelve, cuentas excluida y archivada, futuros, transferencias y sin categoría.",
+      "description" : "Septiembre en PEN con movimientos en USD, EUR y GBP, un gasto de grupo pagado por mí, un préstamo suelto, un «me deben» de saldo inicial, un grupo con una cuenta que no resuelve, cuentas excluida y archivada, futuros, transferencias y sin categoría. Y dos gastos de grupo con una pata que no se puede creer: una sin convertir (importe guardado 0) y otra guardada con otra divisa principal.",
       "expected" : {
         "balances" : {
           "accounts" : {
             "00000000-0000-4000-8000-000000001001" : 9917.5,
-            "00000000-0000-4000-8000-000000001002" : 940,
+            "00000000-0000-4000-8000-000000001002" : 870,
             "00000000-0000-4000-8000-000000001003" : 360,
             "00000000-0000-4000-8000-000000001004" : -999,
             "00000000-0000-4000-8000-000000001005" : -888,
-            "00000000-0000-4000-8000-000000001006" : 60
+            "00000000-0000-4000-8000-000000001006" : 100
           },
           "aproximado" : true,
-          "total" : 12421.70616
+          "total" : 12322.70616
         },
         "budgets" : {
-          "00000000-0000-4000-8000-000000006001" : 3555.805468,
-          "00000000-0000-4000-8000-000000006002" : 297,
+          "00000000-0000-4000-8000-000000006001" : 3654.805468,
+          "00000000-0000-4000-8000-000000006002" : 396,
           "00000000-0000-4000-8000-000000006003" : 120.5,
           "00000000-0000-4000-8000-000000006004" : 3233.805468,
-          "00000000-0000-4000-8000-000000006005" : 1077.516809,
+          "00000000-0000-4000-8000-000000006005" : 1107.516809,
           "00000000-0000-4000-8000-000000006006" : 3169.6162789999998,
-          "00000000-0000-4000-8000-000000006007" : 386.189189
+          "00000000-0000-4000-8000-000000006007" : 485.189189
         },
         "conversions" : [
           {
@@ -230,10 +230,30 @@
             "amountInPreferred" : 30,
             "suppressed" : false
           },
+          "00000000-0000-4000-8000-00000000701e" : {
+            "amount" : -20,
+            "amountInPreferred" : -68,
+            "suppressed" : false
+          },
+          "00000000-0000-4000-8000-00000000701f" : {
+            "amount" : 30,
+            "amountInPreferred" : 0,
+            "suppressed" : true
+          },
           "00000000-0000-4000-8000-000000007009" : {
             "amount" : -100,
             "amountInPreferred" : -100,
             "suppressed" : false
+          },
+          "00000000-0000-4000-8000-000000007020" : {
+            "amount" : -10,
+            "amountInPreferred" : -34,
+            "suppressed" : false
+          },
+          "00000000-0000-4000-8000-000000007021" : {
+            "amount" : 10,
+            "amountInPreferred" : 10,
+            "suppressed" : true
           }
         },
         "periods" : {
@@ -243,11 +263,11 @@
               "ingresos" : false,
               "neto" : true
             },
-            "gasto_medio_diario" : 8.686712,
-            "gastos" : 2232.48504,
+            "gasto_medio_diario" : 9.0835989999999995,
+            "gastos" : 2334.48504,
             "ingresos" : 7120,
-            "neto" : 4887.5149600000004,
-            "tasa_de_ahorro_pct" : 68.644873000000004
+            "neto" : 4785.5149600000004,
+            "tasa_de_ahorro_pct" : 67.212288999999998
           },
           "mes_actual" : {
             "aproximado" : {
@@ -255,11 +275,11 @@
               "ingresos" : false,
               "neto" : true
             },
-            "gasto_medio_diario" : 124.748931,
-            "gastos" : 1746.48504,
+            "gasto_medio_diario" : 132.03464600000001,
+            "gastos" : 1848.48504,
             "ingresos" : 4120,
-            "neto" : 2373.51496,
-            "tasa_de_ahorro_pct" : 57.609586
+            "neto" : 2271.51496,
+            "tasa_de_ahorro_pct" : 55.133857999999996
           },
           "mes_pasado" : {
             "aproximado" : {
@@ -1357,6 +1377,94 @@
             "split_expense_id" : "G6",
             "subcategory_ref" : "00000000-0000-4000-8000-000000003005",
             "sync_id" : "00000000-0000-4000-8000-00000000701d",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001002",
+            "amount" : -50,
+            "amount_in_preferred_currency" : -170,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002001",
+            "currency_code" : "USD",
+            "date" : "2026-09-14T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : "Taxi",
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : "G7",
+            "subcategory_ref" : "00000000-0000-4000-8000-000000003004",
+            "sync_id" : "00000000-0000-4000-8000-00000000701e",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001006",
+            "amount" : 30,
+            "amount_in_preferred_currency" : 0,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002003",
+            "currency_code" : "USD",
+            "date" : "2026-09-14T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : "G7",
+            "subcategory_ref" : "00000000-0000-4000-8000-000000003002",
+            "sync_id" : "00000000-0000-4000-8000-00000000701f",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001002",
+            "amount" : -20,
+            "amount_in_preferred_currency" : -68,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002001",
+            "currency_code" : "USD",
+            "date" : "2026-09-10T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : "Museo",
+            "preferred_currency_code" : "PEN",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : "G8",
+            "subcategory_ref" : "00000000-0000-4000-8000-000000003004",
+            "sync_id" : "00000000-0000-4000-8000-000000007020",
+            "tag_refs" : [
+
+            ],
+            "transfer_pair_id" : null
+          },
+          {
+            "account_ref" : "00000000-0000-4000-8000-000000001006",
+            "amount" : 10,
+            "amount_in_preferred_currency" : 10,
+            "balance_adjustment_type" : null,
+            "category_ref" : "00000000-0000-4000-8000-000000002003",
+            "currency_code" : "USD",
+            "date" : "2026-09-10T12:00:00Z",
+            "is_exchange_rate_provisional" : false,
+            "local_day" : null,
+            "need_override" : null,
+            "note" : null,
+            "preferred_currency_code" : "USD",
+            "scheduled_payment_ref" : null,
+            "split_expense_id" : "G8",
+            "subcategory_ref" : "00000000-0000-4000-8000-000000003002",
+            "sync_id" : "00000000-0000-4000-8000-000000007021",
             "tag_refs" : [
 
             ],

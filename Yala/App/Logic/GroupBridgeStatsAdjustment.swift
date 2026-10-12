@@ -38,6 +38,11 @@
 //  numeradores de `ApproximateMarkThreshold` (HeroBucketsCalculator, CashFlowCalculator rama «misma
 //  divisa», RecordsViewModel.calculateSummary, WidgetDataCache.buildPeriodSummary).
 //
+//  UN IMPORTE GUARDADO QUE NO SE PUEDE CREER SE RECONVIERTE. Si una pata trae su importe convertido
+//  a 0 (con nativo distinto de 0) o guardado en otra divisa preferida que la pata real, sumarlo tal
+//  cual da el importe del grupo entero, y sin «≈». Esa pata se reconvierte desde su nativo con la
+//  regla de `CashFlowCalculator.resolvedAmount` (`preferredContribution(of:in:converter:)`).
+//
 //  CONSUMIDORES (mantener sincronizado — un consumidor de gasto que olvide cablearse vuelve a
 //  inflar el Caso A). Expense-magnitude: TagSpending / TopSpendingCategories / TopSubcategories /
 //  Weekday / DailySpending / PivotTable / CashFlowProjection calculators; BudgetsViewModel;
@@ -153,9 +158,13 @@ struct GroupBridgeStatsAdjustment {
     ///   SOLO para desambiguar una pata de préstamo SUELTA (sin hermana de costo) de un "saldo
     ///   inicial: me deben" (ambos `+income`). En el caso común (hay pata de costo) basta el signo.
     ///   Vacío ⇒ las patas sueltas se conservan (comportamiento previo — sin falsos positivos).
+    ///
+    /// - Parameter converter: solo se consulta para reconvertir una pata cuyo importe guardado no se
+    ///   puede creer (ver `storedPreferred(_:isUsableIn:)`). En el caso normal no se llama nunca.
     static func build(
         from transactions: [TransactionItem],
-        loanToGroupsSubcatIDs: Set<PersistentIdentifier> = []
+        loanToGroupsSubcatIDs: Set<PersistentIdentifier> = [],
+        converter: CurrencyConverting = CurrencyConverter.shared
     ) -> GroupBridgeStatsAdjustment {
         // Agrupar SOLO gastos bridgeados. Settlements usan `splitSettlementID` (splitExpenseID nil)
         // y las TX personales también → quedan fuera de todo grupo.
@@ -186,18 +195,19 @@ struct GroupBridgeStatsAdjustment {
                 // la pata de costo ya vale `-myShare` → no se ajusta.
                 if let realLeg = real.first {
                     let native = realLeg.amount + loanBySign.reduce(0) { $0 + $1.amount }
-                    let preferred = realLeg.amountInPreferredCurrency
-                        + loanBySign.reduce(0) { $0 + $1.amountInPreferredCurrency }
+                    // Cada pata aporta su importe en la divisa preferida de la pata REAL —que es la
+                    // que `CashFlowCalculator.resolvedAmount` compara— y la magnitud dudosa que lleva.
+                    let target = realLeg.preferredCurrencyCode
+                    let legs = ([realLeg] + loanBySign).map {
+                        preferredContribution(of: $0, in: target, converter: converter)
+                    }
+                    let preferred = legs.reduce(0) { $0 + $1.value }
                     // La incertidumbre viaja con el monto, y se acumula en MAGNITUDES: las patas
                     // de préstamo se suprimen del recorrido, así que esta suma es la única vía por
                     // la que su tasa dudosa llega a un calculador. Sumarla con signo la cancelaría
                     // contra la pata real justo cuando más pesa — el neto de una resta apalancada
                     // no mide su propia incertidumbre.
-                    let approximate = (realLeg.isExchangeRateProvisional
-                        ? abs(realLeg.amountInPreferredCurrency) : 0)
-                        + loanBySign.reduce(0) {
-                            $0 + ($1.isExchangeRateProvisional ? abs($1.amountInPreferredCurrency) : 0)
-                        }
+                    let approximate = legs.reduce(0) { $0 + $1.approximateMagnitude }
                     adjustedReal[realLeg.persistentModelID] = AdjustedAmounts(
                         native: native, preferred: preferred, approximatePreferred: approximate
                     )
@@ -222,14 +232,55 @@ struct GroupBridgeStatsAdjustment {
         return GroupBridgeStatsAdjustment(adjustedReal: adjustedReal, suppressed: suppressed)
     }
 
+    /// Lo que UNA pata aporta al importe sintetizado, en `target`, y la magnitud dudosa que lleva.
+    ///
+    /// Lo normal es el importe guardado, con la duda de su propio flag. Pero un importe guardado que
+    /// no se puede creer **no es un importe: es una conversión que falta**, y sumarlo tal cual hacía
+    /// salir un gasto de grupo de 1.000 del que me tocan 100 como **1.000, y sin «≈»** — la pata de
+    /// préstamo aportaba 0 al importe y 0 a la duda (`bridge-synthesis-trusts-a-zero-converted-amount`).
+    /// Esa pata se reconvierte desde su nativo con la regla de `CashFlowCalculator.resolvedAmount`
+    /// (la tasa de su fecha; dudosa si la tasa no es exacta), así que el número es «mi parte» y lleva
+    /// la marca solo cuando de verdad la tasa es aproximada.
+    private static func preferredContribution(
+        of leg: TransactionItem,
+        in target: String,
+        converter: CurrencyConverting
+    ) -> (value: Double, approximateMagnitude: Double) {
+        if storedPreferred(leg, isUsableIn: target) {
+            let value = leg.amountInPreferredCurrency
+            return (value, leg.isExchangeRateProvisional ? abs(value) : 0)
+        }
+        return CashFlowCalculator.reconverted(
+            leg.amount, from: leg.currencyCode, to: target, on: leg.date, converter: converter
+        )
+    }
+
+    /// `false` en los dos casos en que el `amountInPreferredCurrency` guardado de una pata no vale
+    /// para sumarlo con el de la pata real:
+    /// - **es 0 con un nativo distinto de 0**: la conversión no llegó a escribirse (sync de una fila
+    ///   incompleta, o una pata creada sin contexto de tasas). Ninguna tasa usable convierte un
+    ///   importe no nulo en cero — «una tasa inservible es una tasa AUSENTE» (`currency-fx.md`), y un
+    ///   importe convertido a cero tampoco es un importe;
+    /// - **se guardó en OTRA divisa preferida** que la de la pata real: sumarlos mezcla divisas, la
+    ///   misma forma que `resolvedAmount` ya resuelve para una fila suelta.
+    private static func storedPreferred(_ leg: TransactionItem, isUsableIn target: String) -> Bool {
+        guard leg.preferredCurrencyCode == target else { return false }
+        return !(leg.amountInPreferredCurrency == 0 && leg.amount != 0)
+    }
+
     /// Conveniencia para callers con `ModelContext`: resuelve los ids `loanToGroups` (read-only)
     /// y delega en el `build` puro. Construir desde el set MÁS AMPLIO del caller (con AMBAS
     /// hermanas). El `build(from:loanToGroupsSubcatIDs:)` puro se conserva para tests.
     @MainActor
-    static func build(from transactions: [TransactionItem], context: ModelContext) -> GroupBridgeStatsAdjustment {
+    static func build(
+        from transactions: [TransactionItem],
+        context: ModelContext,
+        converter: CurrencyConverting = CurrencyConverter.shared
+    ) -> GroupBridgeStatsAdjustment {
         build(
             from: transactions,
-            loanToGroupsSubcatIDs: GroupBridgeSystemEntities.loanToGroupsSubcategoryIDs(context: context)
+            loanToGroupsSubcatIDs: GroupBridgeSystemEntities.loanToGroupsSubcategoryIDs(context: context),
+            converter: converter
         )
     }
 }

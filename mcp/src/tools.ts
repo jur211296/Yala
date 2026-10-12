@@ -109,7 +109,12 @@ function todayUtcKey(ctx: ToolContext): string {
  * Ajuste de gastos de grupo construido con el conjunto MÁS AMPLIO: los movimientos leídos más las patas hermanas que
  * se quedaron fuera del rango (misma `split_expense_id`), como pide `GroupBridgeStatsAdjustment.build`.
  */
-async function loadGroupAdjustment(ctx: ToolContext, txs: TxRow[], lookup: Lookup): Promise<GroupAdjustment> {
+async function loadGroupAdjustment(
+  ctx: ToolContext,
+  txs: TxRow[],
+  lookup: Lookup,
+  rates: RateBook,
+): Promise<GroupAdjustment> {
   const ids = [...new Set(txs.map((t) => t.split_expense_id).filter((v): v is string => !!v))];
   const siblings: TxRow[] = [];
   for (let i = 0; i < ids.length; i += 50) {
@@ -122,7 +127,7 @@ async function loadGroupAdjustment(ctx: ToolContext, txs: TxRow[], lookup: Looku
     ]);
     siblings.push(...rows);
   }
-  return buildGroupAdjustment([...txs, ...siblings], lookup.accounts, lookup.subcategories);
+  return buildGroupAdjustment([...txs, ...siblings], lookup.accounts, lookup.subcategories, rates);
 }
 
 async function loadLookup(ctx: ToolContext): Promise<Lookup> {
@@ -467,7 +472,7 @@ const resumenPeriodo: ToolDef = {
       loadRates(ctx, addDays(period.desde, -2), lastKey),
       loadTxInRange(ctx, period.desde, period.hasta, tz),
     ]);
-    const groups = await loadGroupAdjustment(ctx, txs.rows, lookup);
+    const groups = await loadGroupAdjustment(ctx, txs.rows, lookup, rates);
     const preferred = resolvePreferredCurrency(prefs, txs.rows.map((t) => t.preferred_currency_code));
     const result = summarize(txs.rows, lookup, period, {
       today,
@@ -520,7 +525,7 @@ const estadoPresupuestos: ToolDef = {
       if (!to || p.hasta > to) to = p.hasta;
     }
     const txs = from && to ? await loadTxInRange(ctx, from, to, tz) : { rows: [] as TxRow[], truncated: false };
-    const groups = await loadGroupAdjustment(ctx, txs.rows, lookup);
+    const groups = await loadGroupAdjustment(ctx, txs.rows, lookup, rates);
     const result = budgetStatuses(budgets.rows, txs.rows, lookup, { today, todayUtc, tz, rates, groups, firstWeekday: fw, soloActivos });
     return {
       ...result,

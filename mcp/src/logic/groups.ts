@@ -16,9 +16,15 @@
  *
  * Los saldos NUNCA se ajustan: reflejan el dinero que de verdad salió de tu cuenta.
  *
+ * Una pata cuyo importe guardado no se puede creer —0 con un nativo distinto de 0 (la conversión no se escribió), o
+ * guardado con otra divisa preferida que la pata real— se reconvierte desde su nativo con la tasa de su día, como
+ * `preferredContribution(of:in:converter:)` de la app; si no, «tu parte» salía con el importe del grupo entero y sin
+ * «≈» (ticket `bridge-synthesis-trusts-a-zero-converted-amount`).
+ *
  * El ajuste se construye con el conjunto MÁS AMPLIO de movimientos (las dos patas presentes) y se consulta desde el
  * subconjunto filtrado, igual que en la app.
  */
+import { buildRateBook, convertOn, utcDateKey, type RateBook } from "./fx";
 import { num, type AccountRow, type SubcategoryRow, type TxRow } from "./types";
 
 /**
@@ -41,7 +47,17 @@ export const LOAN_TO_GROUPS_NAMES: readonly string[] = Object.freeze([
 
 type LegTx = Pick<
   TxRow,
-  "sync_id" | "amount" | "account_ref" | "subcategory_ref" | "split_expense_id" | "amount_in_preferred_currency" | "is_exchange_rate_provisional"
+  | "sync_id"
+  | "amount"
+  | "account_ref"
+  | "subcategory_ref"
+  | "split_expense_id"
+  | "amount_in_preferred_currency"
+  | "is_exchange_rate_provisional"
+  | "currency_code"
+  | "preferred_currency_code"
+  | "date"
+  | "local_day"
 >;
 
 interface Adjusted {
@@ -67,11 +83,41 @@ export interface GroupAdjustment {
 /** Un `null` del wire vale el default del modelo: `amount` y `amountInPreferredCurrency` nacen a 0. */
 const amountOf = (tx: LegTx) => num(tx.amount) ?? 0;
 const preferredOf = (tx: LegTx) => num(tx.amount_in_preferred_currency) ?? 0;
+/** Un null del wire vale el default del modelo: `preferredCurrencyCode = "PEN"`. */
+const preferredCodeOf = (tx: LegTx) => (tx.preferred_currency_code ?? "PEN").toUpperCase();
 
+/**
+ * Lo que UNA pata aporta al importe sintetizado, en `target`, y la magnitud dudosa que lleva. Port de
+ * `GroupBridgeStatsAdjustment.preferredContribution(of:in:converter:)`.
+ */
+function preferredContribution(leg: LegTx, target: string, rates: RateBook): { value: number; approximate: number } {
+  const stored = preferredOf(leg);
+  const usable = preferredCodeOf(leg) === target && !(stored === 0 && amountOf(leg) !== 0);
+  if (!usable) {
+    // La regla de `preferredAmount` (rama «se convirtió a otra»): el nativo con la tasa de su día.
+    const native = amountOf(leg);
+    // Un null del wire vale el default del modelo (`TransactionItem.currencyCode = "USD"`).
+    const from = leg.currency_code ?? "USD";
+    const key = (leg.date ? utcDateKey(leg.date) : null) ?? leg.local_day;
+    const out = key ? convertOn(Math.abs(native), from, target, key, rates) : null;
+    if (out) {
+      const magnitude = Math.abs(out.value);
+      return { value: native < 0 ? -magnitude : magnitude, approximate: out.quality === "exact" ? 0 : magnitude };
+    }
+    // Divisa que la app no conoce o sin día: se queda lo guardado (diferencia declarada en `fx.ts`).
+  }
+  return { value: stored, approximate: leg.is_exchange_rate_provisional === true ? Math.abs(stored) : 0 };
+}
+
+/**
+ * @param rates solo se consulta para reconvertir una pata cuyo importe guardado no se puede creer. Sin tasas, una pata
+ *   así se convierte con la tabla estática y sale marcada.
+ */
 export function buildGroupAdjustment(
   txs: LegTx[],
   accounts: Map<string, AccountRow>,
   subcategories: Map<string, SubcategoryRow>,
+  rates: RateBook = buildRateBook([]),
 ): GroupAdjustment {
   const byExpense = new Map<string, LegTx[]>();
   const seen = new Set<string>();
@@ -110,10 +156,12 @@ export function buildGroupAdjustment(
       const realLeg = real[0];
       if (realLeg) {
         const native = amountOf(realLeg) + loanBySign.reduce((s, l) => s + amountOf(l), 0);
-        const preferred = preferredOf(realLeg) + loanBySign.reduce((s, l) => s + preferredOf(l), 0);
-        const approx =
-          (realLeg.is_exchange_rate_provisional === true ? Math.abs(preferredOf(realLeg)) : 0) +
-          loanBySign.reduce((s, l) => s + (l.is_exchange_rate_provisional === true ? Math.abs(preferredOf(l)) : 0), 0);
+        // Cada pata, en la divisa preferida de la pata REAL (la que compara `preferredAmount`).
+        const target = preferredCodeOf(realLeg);
+        const parts = [realLeg, ...loanBySign].map((l) => preferredContribution(l, target, rates));
+        const preferred = parts.reduce((s, p) => s + p.value, 0);
+        // Magnitudes, nunca el neto (ver `approximateMagnitude` de la app).
+        const approx = parts.reduce((s, p) => s + p.approximate, 0);
         adjusted.set(realLeg.sync_id, { native, preferred, approximatePreferred: approx });
       }
       for (const l of loanBySign) suppressed.add(l.sync_id);

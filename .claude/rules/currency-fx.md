@@ -61,6 +61,14 @@ de arriba por otra puerta. En el destino era peor: devolvía **0**, que parece u
 tienen que ser **la misma**: `CurrencyConverter.isUsableRate`. Al añadir un camino que lea tasas,
 fíltralo por ahí o los escalones no podrán rescatar la divisa.
 
+**Lo mismo con un importe ya convertido (2026-10-11).** Un `amountInPreferredCurrency == 0` con
+`amount != 0` no es un importe: es una conversión que no se escribió. Sumado tal cual, un gasto de
+grupo con la pata de préstamo así salía con el importe del grupo entero y sin «≈» (aportaba 0 al
+importe y 0 a la duda). `GroupBridgeStatsAdjustment` reconvierte esa pata —y la guardada con otra
+divisa preferida— con `CashFlowCalculator.reconverted`, la segunda rama de `resolvedAmount`: si
+necesitas reconvertir un nativo, llama ahí, no copies la conversión. **Una fila suelta con ese cero
+sigue contando 0** en `resolvedAmount` (ticket `resolved-amount-trusts-a-zero-converted-amount`).
+
 ## Reabrir una fila para que el reparador la recalcule NO es neutro
 
 `isExchangeRateProvisional = true` parece una marca inocente —«que la mire otro»— y no lo es:

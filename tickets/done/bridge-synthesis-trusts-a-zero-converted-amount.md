@@ -1,11 +1,11 @@
 ---
 id: bridge-synthesis-trusts-a-zero-converted-amount
-status: backlog
+status: done
 priority: low
 area: "groups, currency, fx"
 created: 2026-09-09
 source: review adversarial de bridge-de-grupos-pierde-la-marca-de-sus-patas (2026-09-09)
-updated: 2026-10-08
+updated: 2026-10-11
 ---
 
 # Una pata sin convertir hace que el gasto de grupo salga con el importe del grupo entero
@@ -39,10 +39,10 @@ esa pata como dudosa — no es que la tasa fuera mala, es que no hubo tasa.
 
 ## Criterio de hecho (AC)
 
-- [ ] Un gasto de grupo con una pata sin convertir no presenta el importe del grupo entero como si
+- [x] Un gasto de grupo con una pata sin convertir no presenta el importe del grupo entero como si
       fuera «mi parte».
-- [ ] Y si el importe no se puede sintetizar bien, el número sale marcado.
-- [ ] El criterio del cero es el mismo en `GroupBridgeStatsAdjustment` y en `WidgetDataCache`.
+- [x] Y si el importe no se puede sintetizar bien, el número sale marcado.
+- [x] El criterio del cero es el mismo en `GroupBridgeStatsAdjustment` y en `WidgetDataCache`.
 
 ## Relacionados
 
@@ -57,3 +57,24 @@ esa pata como dudosa — no es que la tasa fuera mala, es que no hubo tasa.
 Triage 2026-10-08: abierto · low → low · los dos criterios del cero siguen opuestos; la ventana es estrecha porque el bridge convierte al crear las patas.
 
 **Nota del 2026-10-11** (`widgets-sum-stored-amounts-from-other-preferred-currencies`): `WidgetDataCache.preferredAmount` ya no existe. El widget resuelve con `CashFlowCalculator.resolvedAmount`, que lee el cero guardado como importe, igual que la síntesis del bridge. El criterio del cero ya es el mismo en los dos; lo que sigue abierto es si ese cero se puede creer.
+
+## Cerrado el 2026-10-11
+
+Medido en `origin/2.1` antes de tocar nada: el bug seguía. #452 igualó el criterio del widget con el
+de la síntesis —los dos se fiaban del cero—, pero no arregló la síntesis.
+
+- **Criterio único:** un `amountInPreferredCurrency == 0` con `amount != 0` es una conversión
+  AUSENTE, no un importe. También lo es el importe guardado con otra divisa preferida que la pata
+  real (sumarlo mezclaba divisas).
+- **Qué hace la síntesis con esa pata:** la reconvierte desde su nativo con
+  `CashFlowCalculator.reconverted`, la segunda rama de `resolvedAmount` sacada aparte (una sola
+  regla). Cuenta como duda solo si la tasa de esa reconversión no es exacta: con tasa exacta el
+  número es «mi parte» y es correcto. Las patas que sí se pueden creer conservan su valor y su flag.
+- **Dónde:** en `GroupBridgeStatsAdjustment.build`, una vez. Los consumidores (los que van por
+  `resolvedAmount` y los nueve que leen `amountInPreferredCurrency(_:)`) reciben el número bueno sin
+  tocarlos. El widget pasa por el mismo ajuste, así que el criterio es el mismo en los dos.
+- **`mcp/`:** `groups.ts` repetía la suma; portado, con dos grupos nuevos en el golden de paridad.
+- **Tests:** `GroupBridgeUnconvertedLegTests` (rojo con la suma vieja), `MCPAppParityGoldenTests`,
+  `mcp/test/logic.test.ts`.
+- **Fuera:** una fila suelta (no de grupo) con el importe convertido a 0 sigue contando 0 —
+  `resolved-amount-trusts-a-zero-converted-amount`.
