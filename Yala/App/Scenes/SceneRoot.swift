@@ -93,6 +93,8 @@ extension SceneNavigation {
         pendingImageEntryFailure = nil
         pendingChatDraftPrefill = nil
         showNewTransactionFromChat = false
+        isImageEntryChoosing = false
+        isCleanPanelWidgetInfoVisible = false
         isInboxSheetVisible = false
         isMainTabModalVisible = false
         shellModalBlocker = "splash"

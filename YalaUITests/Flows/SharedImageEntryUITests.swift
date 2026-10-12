@@ -42,12 +42,20 @@ final class SharedImageEntryUITests: XCTestCase {
         return app
     }
 
+    /// Con `capture`, deja la captura de lo que ve la persona al llegar la lectura o al agotarse la espera (las del
+    /// antes/después del PR).
     private func assertReadingStarts(
-        _ app: XCUIApplication, timeout: TimeInterval = 30, _ message: String,
+        _ app: XCUIApplication, timeout: TimeInterval = 30, capture: String? = nil, _ message: String,
         file: StaticString = #filePath, line: UInt = #line
     ) {
-        XCTAssertTrue(app.staticTexts["image_review_title"].waitForExistence(timeout: timeout), message,
-                      file: file, line: line)
+        let started = app.staticTexts["image_review_title"].waitForExistence(timeout: timeout)
+        if let capture {
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            shot.name = capture
+            shot.lifetime = .keepAlways
+            add(shot)
+        }
+        XCTAssertTrue(started, message, file: file, line: line)
     }
 
     /// a) En frío: la URL entra antes de que el arranque termine.
@@ -93,8 +101,10 @@ final class SharedImageEntryUITests: XCTestCase {
         assertReadingStarts(app, "La segunda foto compartida tenía que leerse al cerrar la primera.")
     }
 
-    /// c) Con la Bandeja abierta: la lectura espera a que se cierre y arranca sola al cerrarla.
-    func test_inboxOpen_sharedImage_startsReadingWhenInboxCloses() {
+    /// c) Con la Bandeja abierta: la foto compartida la cierra y empieza la lectura (opción B de Jürgen del 2026-10-12,
+    /// ticket `shared-photo-waits-silently-behind-an-open-panel-sheet`). Hasta ese día esperaba en silencio a que la
+    /// persona cerrara la Bandeja.
+    func test_inboxOpen_sharedImage_closesTheInboxAndStartsReading() {
         let app = launch()
         let inboxButton = app.buttons["panel_inbox_button"]
         XCTAssertTrue(inboxButton.waitForExistence(timeout: 10), "Falta el botón de la Bandeja (panel_inbox_button).")
@@ -105,10 +115,8 @@ final class SharedImageEntryUITests: XCTestCase {
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")
         openShare()
-        XCTAssertTrue(close.waitForExistence(timeout: 10), "La Bandeja tenía que seguir abierta al volver.")
-
-        close.tap()
-        assertReadingStarts(app, "Al cerrar la Bandeja, la foto compartida tenía que leerse.")
+        assertReadingStarts(app, capture: "bandeja-y-foto-compartida",
+                            "Con la Bandeja abierta, la foto compartida tenía que cerrarla y leerse.")
     }
 
     /// c) Con una hoja de OTRA pestaña abierta (el detalle de un registro en Estadísticas › Registros). Hasta el
@@ -141,10 +149,9 @@ final class SharedImageEntryUITests: XCTestCase {
         assertReadingStarts(app, "Al cerrar el detalle del registro, la foto compartida tenía que leerse.")
     }
 
-    /// c) Con una hoja del Panel que ningún flag publica (el «?» de un widget): la lectura se pide con esa hoja arriba
-    /// y sale al cerrarla. Medido el 2026-10-10: pasa igual sin comprobar la ventana en el Panel (el mutante que la
-    /// apagaba sobrevivió), así que esa comprobación no se añadió; este caso queda como red del escenario.
-    func test_unpublishedPanelSheetOpen_sharedImage_startsReadingWhenItCloses() {
+    /// c) Con una hoja del Panel que ningún flag de `PanelSheetState` publica (el «?» de un widget) y sin un tamaño
+    /// cambiado: la foto compartida la cierra y empieza la lectura (opción B, 2026-10-12).
+    func test_widgetInfoOpen_sharedImage_closesItAndStartsReading() {
         let app = launch()
         let info = app.buttons["widget_info_trend"]
         XCTAssertTrue(info.waitForExistence(timeout: 10), "Falta el «?» del widget de tendencia (widget_info_trend).")
@@ -155,10 +162,52 @@ final class SharedImageEntryUITests: XCTestCase {
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")
         openShare()
-        XCTAssertTrue(close.waitForExistence(timeout: 10), "La hoja de información tenía que seguir abierta al volver.")
+        assertReadingStarts(app, capture: "info-widget-y-foto-compartida",
+                            "Con el «?» de un widget abierto, la foto compartida tenía que cerrarlo y leerse.")
+    }
 
+    /// c) Con el registro por imagen abierto en «elige una foto»: la foto compartida lo cierra y la lee (opción B).
+    func test_imageEntryChoosingOpen_sharedImage_closesItAndStartsReading() {
+        let app = launch()
+        let image = app.buttons["panel_action_image"]
+        XCTAssertTrue(image.waitForExistence(timeout: 10), "Falta el botón de imagen del Panel (panel_action_image).")
+        image.tap()
+        XCTAssertTrue(app.staticTexts["image_choose_title"].waitForExistence(timeout: 10),
+                      "No se abrió el registro por imagen en «elige una foto» (image_choose_title).")
+
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")
+        openShare()
+        assertReadingStarts(app, capture: "elige-foto-y-foto-compartida",
+                            "Con «elige una foto» abierto, la foto compartida tenía que leerse.")
+    }
+
+    /// c) Con un «Nuevo registro» a medias en el Panel: tiene datos sin guardar, así que la foto espera y no lo cierra;
+    /// se lee al cerrarlo (lo que la opción B no toca).
+    func test_halfFilledFormInThePanel_sharedImage_keepsTheFormAndReadsWhenClosed() {
+        let app = launch()
+        let newRecord = app.buttons["panel_action_new"]
+        XCTAssertTrue(newRecord.waitForExistence(timeout: 10), "Falta «Nuevo registro» del Panel (panel_action_new).")
+        newRecord.tap()
+        let amountField = app.textFields["new_transaction_amount"]
+        XCTAssertTrue(amountField.waitForExistence(timeout: 10), "No se abrió Nuevo registro (new_transaction_amount).")
+        amountField.tap()
+        amountField.typeText("1234")
+
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 15), "Yala no pasó a segundo plano.")
+        openShare()
+        let closes = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: amountField)
+        XCTAssertEqual(XCTWaiter().wait(for: [closes], timeout: 8), .timedOut,
+                       "La foto compartida cerró el Nuevo registro que estaba a medias en el Panel.")
+        let typed = (amountField.value as? String) ?? ""
+        XCTAssertTrue(typed.contains("1234") || typed.contains("1.234") || typed.contains("1,234"),
+                      "El importe escrito se perdió (valor: «\(typed)»).")
+
+        let close = app.buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
         close.tap()
-        assertReadingStarts(app, "Al cerrar la hoja de información, la foto compartida tenía que leerse.")
+        assertReadingStarts(app, "Al cerrar el formulario, la foto compartida tenía que leerse.")
     }
 
     /// c) Con un aviso de arranque delante (el de la Bandeja): la lectura espera a que se conteste.

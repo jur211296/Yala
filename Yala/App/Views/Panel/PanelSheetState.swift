@@ -105,4 +105,13 @@ struct PanelSheetState {
             || showYalaAIOnboarding
             || showAIConsentAlert
     }
+
+    /// `true` si la bandera `sheet` está puesta y es la ÚNICA de `hasActivePresentation`. Lo usa
+    /// `SharedPhotoPanelSheetLogic` para saber qué hoja cerraría una foto compartida: con dos puestas, no se cierra nada.
+    func isOnlyPresenting(_ sheet: WritableKeyPath<PanelSheetState, Bool>) -> Bool {
+        guard self[keyPath: sheet] else { return false }
+        var others = self
+        others[keyPath: sheet] = false
+        return !others.hasActivePresentation
+    }
 }

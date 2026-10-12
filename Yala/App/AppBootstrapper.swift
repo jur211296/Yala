@@ -2175,7 +2175,14 @@ final class AppBootstrapper {
     /// Enqueues a panel-action intent, respecting feature toggles and Pro gates.
     /// Router handles readiness gating — intents queued while splash/wipe
     /// active drain automatically when consumers become ready.
+    ///
+    /// Lleva al Panel antes de la hoja, como `enqueueSharedImage` (decisión de Jürgen del 2026-10-12, ticket
+    /// `widget-and-siri-entries-wait-for-the-panel-tab`): hasta ese día, con otra pestaña delante, el toque del widget
+    /// traía Yala y la hoja esperaba a que la persona volviera al Panel por su cuenta. La hoja de Pro y la del
+    /// consentimiento también salen en el Panel. Con una hoja abierta en otra pestaña, la pestaña cambia por debajo sin
+    /// cerrarla y el Panel espera a que se cierre para presentar.
     private func executeAction(_ action: PanelAction) {
+        RouterEntryGate.shared.submit(.navigate(.panel))
         switch action {
         case .newTransaction:
             RouterEntryGate.shared.submit(.presentNewTransaction)

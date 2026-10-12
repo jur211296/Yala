@@ -776,7 +776,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settlement-direction-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-direction-edited-after-approval-leaves-the-bank-stale.md |
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | share-image-reading-does-not-always-start | qa | tickets/qa/share-image-reading-does-not-always-start.md |
-| shared-photo-waits-silently-behind-an-open-panel-sheet | backlog | tickets/backlog/shared-photo-waits-silently-behind-an-open-panel-sheet.md |
+| shared-photo-waits-silently-behind-an-open-panel-sheet | done | tickets/done/shared-photo-waits-silently-behind-an-open-panel-sheet.md |
 | shared-scheduled-expense-shows-twice-in-inbox | done | tickets/done/shared-scheduled-expense-shows-twice-in-inbox.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | sheet-size-follows-the-device-not-the-window | done | tickets/done/sheet-size-follows-the-device-not-the-window.md |
@@ -893,7 +893,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
-| widget-and-siri-entries-wait-for-the-panel-tab | backlog | tickets/backlog/widget-and-siri-entries-wait-for-the-panel-tab.md |
+| widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
 | widget-fallback-summary-uses-ten-rows | discarded | tickets/discarded/widget-fallback-summary-uses-ten-rows.md |
 | widget-period-balance-ignores-group-bridge-adjustment | backlog | tickets/backlog/widget-period-balance-ignores-group-bridge-adjustment.md |

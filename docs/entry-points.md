@@ -49,8 +49,12 @@ su anchor, y el de `ContentView` tapa a los demás.
 
 **Por defecto, propuesto el 2026-10-10 y pendiente de que Jürgen lo confirme:** entre una invitación y una foto
 compartida, gana la invitación (va en el anchor de `ContentView`, que tapa al Panel) y la foto espera en cola hasta que
-se conteste. Una foto compartida no cierra una hoja abierta para presentarse: espera a que la persona la cierre (la hoja
-podría tener un formulario a medias), sea del Panel o de otra pestaña. Ir al Panel desde fuera cambia la pestaña por
+se conteste. Una foto compartida no cierra una hoja con datos sin guardar: espera a que la persona la cierre (un
+formulario a medias, Ajustes, el chat, una hoja de otra pestaña). **Desde el 2026-10-12 sí cierra las del Panel que no
+tienen nada por guardar** y empieza la lectura (opción B de Jürgen, ticket
+`shared-photo-waits-silently-behind-an-open-panel-sheet`): la Bandeja, el registro por imagen en «elige una foto» y el
+«?» de un widget sin un tamaño cambiado, siempre que estén solas en la ventana (`SharedPhotoPanelSheetLogic`). Con algo
+encima —un borrador en edición, el selector de fotos, un aviso— espera. Ir al Panel desde fuera cambia la pestaña por
 debajo de una hoja de otra pestaña **sin cerrarla** (medido el 2026-10-11); lo que la cerraba era que el Panel presentara
 encima, y eso ya no pasa (ticket `entry-to-panel-closes-sheets-of-other-tabs`).
 
@@ -95,10 +99,10 @@ mirar cada 300 ms mientras haya algo retenido solo por eso.
 | **Hoja de compartir** (`YalaShare`): aparece con 1 a 100 fotos, guarda las 10 primeras en `PendingImages/` como una tanda (`batch_<tanda>_<nn>_<compartidas>.jpg`, `SharedImageBatch`) y abre `yala://shared-image` | `onOpenURL` (`WindowURLEntry`) → `handleIncomingURL` → `enqueueSharedImage`. El intent lleva UNA foto; la hoja de lectura la expande a su tanda y lee todas | Puerta Pro (se lleva la tanda entera) → `.presentUpgradeSheet(.image)` · o `.navigate(.panel)` + `.presentSharedImage(url)` (panel · high) · o `.requestAIConsent(.image)` si falta el consentimiento | Espera (`EntryReadinessLogic`) y se trata en el paso 20b | Sí: los ficheros son durables, el intent aplazado guarda su ruta |
 | Foto compartida que la app no llegó a abrir (la extensión no pudo abrir Yala, o la app murió) | Paso 21 del arranque y cada `.active` → `checkForPendingSharedImage` (`SharedImageRecoveryGate`) | Igual que la fila anterior | Solo corre tras el arranque | Sí, `PendingImages/` (se purga a las 24 h) |
 | Recibo soltado en el iPad | `onDrop` → `ReceiptDropHandler` → `presentDroppedReceipt` → `enqueueSharedImage` | Igual que la hoja de compartir; el fallo abre la hoja en su error | Solo en caliente | El fichero, sí |
-| Widget o Siri: `yala://voice-entry`, `image-entry`, `new-transaction` | `onOpenURL` → `executeAction` | `.presentVoiceEntry` / `.presentImageEntry` / `.presentNewTransaction` (panel · normal), o la hoja de Pro / el consentimiento. No lleva al Panel: con otra pestaña delante, espera a que la persona vuelva a él | Espera (`EntryReadinessLogic`) | Sí, si la app sale antes de presentarla: se aparca en `DeferredIntentBuffer` y vuelve al volver (≤ 15 min fuera). La hoja de Pro, no |
+| Widget o Siri: `yala://voice-entry`, `image-entry`, `new-transaction` | `onOpenURL` → `executeAction` | `.navigate(.panel)` + `.presentVoiceEntry` / `.presentImageEntry` / `.presentNewTransaction` (panel · normal), o la hoja de Pro / el consentimiento, también en el Panel. Lleva al Panel desde el 2026-10-12, como la foto compartida; con una hoja abierta en otra pestaña, la pestaña cambia por debajo y la hoja sale al cerrarse | Espera (`EntryReadinessLogic`) | Sí, si la app sale antes de presentarla: se aparca en `DeferredIntentBuffer` y vuelve al volver (≤ 15 min fuera). La hoja de Pro, no |
 | Widget: `yala://panel`, `statistics[/records\|/categories]`, `planning`, `budgets`, `records`, `groups[/<id>]` | `onOpenURL` → `setOrDeferDeepLink` | `.navigate(destino)` (mainTab · normal) | Se aplaza (`DeferredIntentBuffer`) | Sí, serializable |
 | Widget solo-grupos: `yala://activate-full` | `onOpenURL` | `.presentFullModeActivation` (contentView · normal) o `.navigate(.panel)` | Espera (`EntryReadinessLogic`) | No |
-| Centro de Control: voz e imagen (`ControlCenterIntents`, escriben `pendingControlAction` en el App Group) | `.active` → `checkForPendingControlAction` | Como `voice-entry` / `image-entry` | No se consume; la lee el paso 21b | Sí, la clave del App Group; ya leída, se aparca como `voice-entry` |
+| Centro de Control: voz e imagen (`ControlCenterIntents`, escriben `pendingControlAction` en el App Group) | `.active` → `checkForPendingControlAction` | Como `voice-entry` / `image-entry`: lleva al Panel | No se consume; la lee el paso 21b | Sí, la clave del App Group; ya leída, se aparca como `voice-entry` |
 | Enlace de invitación `https://yala-app.pe/invite` | `onOpenURL` → `handleInviteLink` (y `YalaAppDelegate.application(_:continue:)`) | `.showInviteError` (critical), pantallas de unirse (contentView · normal), `.showGroupSyncError` (high) | El camino backend persiste en `PendingJoinStore` y lo retoma el reconciliador | Sí, `PendingJoinStore` |
 | Vuelta de Google Sign-In | `onOpenURL` → `GIDSignIn.handle` | Nada | — | — |
 | Toque en una notificación local (sin categorías ni acciones) | `NotificationService.userNotificationCenter(didReceive:)` → `routeTap` con el `deepLink` del `userInfo`. El delegado lo asigna `YalaAppDelegate.didFinishLaunching` (`installAsCenterDelegate`), antes de que termine el lanzamiento: así llega también el toque que abre la app cerrada | `.navigate(destino)`; `inbox` acaba en la hoja de la Bandeja | Se aplaza | Sí, serializable |
@@ -127,6 +131,3 @@ Con ticket en `tickets/backlog/`:
 
 - `notification-deeplink-accounts-not-parsed`: `ScheduledPaymentNotificationService` manda `deepLink: "accounts"`, que
   `NotificationService.parseDestination` no reconoce; el toque no lleva a ningún sitio.
-- `widget-and-siri-entries-wait-for-the-panel-tab`: voz, imagen y nuevo registro desde un widget o Siri no llevan al
-  Panel (la foto compartida sí): con otra pestaña delante, esperan sin aviso a que la persona vuelva a él. Falta decidir
-  si deben llevar al Panel.
