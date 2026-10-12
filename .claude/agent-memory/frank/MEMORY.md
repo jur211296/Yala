@@ -25,6 +25,7 @@
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 
 ## Cómo mido y cómo entrego
+- [El defecto del servidor no es el de la app](feedback_el_defecto_del_servidor_no_es_el_que_usa_la_app.md) — cité 30 días de la RPC; la app pasa 7.
 - [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
 - [El marco de celda no es el bloque](feedback_el_marco_de_celda_no_es_el_bloque.md) — mide bordes de List en píxeles; los marcos XCUI mienten.
