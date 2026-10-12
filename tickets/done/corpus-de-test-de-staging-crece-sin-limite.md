@@ -1,6 +1,6 @@
 ---
 id: corpus-de-test-de-staging-crece-sin-limite
-status: in-progress
+status: done
 priority: high
 area: "qa, cloud"
 created: 2026-09-08
@@ -66,11 +66,11 @@ una investigación completa.
 
 ## Acceptance Criteria
 
-- [ ] Decisión del owner sobre cuál de los cuatro caminos.
-- [ ] Si se limpia: el conteo de grupos de A y B queda medido antes y después, y los goldens se
+- [x] Decisión sobre el camino: la tomó el encargo del 2026-10-12 (relevo al custodio, ver abajo).
+- [x] Si se limpia: el conteo de grupos de A y B queda medido antes y después, y los goldens se
       vuelven a correr para dejar el número nuevo escrito.
-- [ ] El margen (cuánto del timeout consume el golden más ajustado) queda anotado donde se consulte,
-      para que la próxima vez se lea en un minuto y no en un día.
+- [x] El margen (cuánto del timeout consume el golden más ajustado) queda anotado donde se consulte,
+      para que la próxima vez se lea en un minuto y no en un día (`qa/cloud/README.md` §Corpus de Grupos).
 
 ---
 
@@ -151,3 +151,20 @@ Ningún borrado de filas: lo que cambia es el `status` de la membresía de A/B (
 
 **Cómo**: `gateway/scripts/relevo-corpus-staging.ts` — dry-run por defecto (dio exactamente estas cifras), piloto con
 `--solo=` sobre un grupo de cada clase, y luego `--aplicar` entero.
+
+## 2026-10-12 — Hecho
+
+| | A | B |
+|---|---|---|
+| antes | 736 | 838 |
+| tras la purga (935 relevados, 18 borrados de residuo) | 49 | 39 |
+| tras una corrida completa de `groups.goldens` + `push.fanout` (22 grupos creados, 34/34 verdes) | **49** | **39** |
+
+- **El conteo deja de crecer por corrida**: los helpers apuntan cada `create_group`, el `afterAll` releva al custodio y
+  **falla** si un grupo de la corrida sigue en el pull de A o B. La corrida de verificación lo dijo así: `[corpus] grupos
+  de esta corrida: 19 · relevados 18 · sin A ni B 1 · residuo 0` (el que no tenía a A ni B es el de `3-quater`, que ahora
+  es del custodio).
+- Nada fuera de staging; solo membresías de A y B (`status` → `left`) y dueños de grupo (→ custodio); ninguna fila
+  borrada; nunca `groups_forget_user`.
+- **Hallazgo aparte**: con el corpus ya pequeño, los pulls siguen siendo lentos porque el `fetch` de Node 26 serializa los
+  POST al mismo origen. Card `tablero-los-goldens-del-gateway-hacen-en-serie-l-j93f`.

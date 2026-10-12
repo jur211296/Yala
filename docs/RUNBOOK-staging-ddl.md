@@ -1,5 +1,5 @@
 ---
-updated: 2026-10-08
+updated: 2026-10-12
 tags: [runbook, staging, ddl, owner]
 ---
 
@@ -31,6 +31,11 @@ tags: [runbook, staging, ddl, owner]
 > **Lo que NO se verificó como se esperaba:** los goldens completos dieron 15/25, y **no por las
 > migraciones** — son timeouts, y los mismos tests pasan en 1,3 s al correrlos solos. Ver
 > `tickets/backlog/goldens-de-staging-solo-pasan-a-trozos.md`.
+>
+> **Causa de esos timeouts, cerrada el 2026-10-12:** el corpus de grupos de A y B crecía con cada corrida
+> y el pull cuesta 5 peticiones por grupo. Ahora los goldens relevan sus grupos a un usuario custodio al
+> terminar y lo acumulado se purgó por la misma vía. Antes de culpar a una migración por un timeout de
+> los goldens de Grupos, cuenta los grupos de A y B: `qa/cloud/README.md` §«Corpus de Grupos de staging».
 
 ## Cómo se hizo (registro)
 

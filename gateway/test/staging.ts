@@ -16,6 +16,7 @@ const CREDENCIALES_STAGING = [
   "USER_C_PASS",
   "GROUPS_ENC_KEY",
   "PUSH_ROLE_JWT",
+  "USER_CUSTODIO_PASS",
 ] as const;
 
 export const SIN_STAGING = CREDENCIALES_STAGING.every((nombre) => !process.env[nombre]);
