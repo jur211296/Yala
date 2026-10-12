@@ -975,15 +975,19 @@ final class FullFinancialContextBuilder {
             .prefix(10)
 
         return ranked.map { item in
+            // Se eligen y se ordenan por el MISMO importe que se manda, ya en la divisa principal. Con
+            // el nativo, 100 USD (≈ S/ 370) quedaban detrás de S/ 150 y, con más de 10 movimientos,
+            // podían quedarse fuera (ticket `chat-top-transactions-per-subcategory-rank-by-native-amount`).
             let topTxs = item.txs
-                .sorted { abs(adjustment.amount($0)) > abs(adjustment.amount($1)) }
+                .map { (tx: $0, amount: safeDouble(convertAmount($0, currencyCode: currencyCode, converter: converter, adjustment: adjustment))) }
+                .sorted { $0.amount > $1.amount }
                 .prefix(10)
-                .map { tx -> FullFinancialContext.TxLite in
+                .map { entry -> FullFinancialContext.TxLite in
                     FullFinancialContext.TxLite(
-                        date: Self.isoDateFormatter.string(from: tx.date),
-                        amount: safeDouble(convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)),
-                        merchant: canonicalMerchant(tx),
-                        account: tx.account?.name
+                        date: Self.isoDateFormatter.string(from: entry.tx.date),
+                        amount: entry.amount,
+                        merchant: canonicalMerchant(entry.tx),
+                        account: entry.tx.account?.name
                     )
                 }
             return FullFinancialContext.SubcategoryTxEntry(
@@ -1062,8 +1066,9 @@ final class FullFinancialContextBuilder {
         // magnitud, resuelta con la regla de Estadísticas (`CashFlowCalculator.resolvedAmount`): si
         // la fila se guardó con otra divisa principal, el neto guardado está en esa escala y se
         // reconvierte desde el nativo. Resto: `chatAmount` con conversión de moneda intacta.
-        let adjusted = adjustment.amountInPreferredCurrency(tx)
-        if adjusted != tx.amountInPreferredCurrency {
+        // Se pregunta al ajuste, no se comparan valores: con "mi parte" = 0 y la pata guardada a 0 los
+        // dos coinciden, la fila caía en `chatAmount` y éste reconvertía el gasto ENTERO.
+        if adjustment.isAdjusted(tx) {
             return abs(CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             ).value)

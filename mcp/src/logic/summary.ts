@@ -12,7 +12,9 @@
  * - Gastos de grupo: la pata real cuenta por «tu parte» y la de préstamo no cuenta (`GroupBridgeStatsAdjustment`,
  *   ver groups.ts).
  * - Importe en divisa preferida: el `amount_in_preferred_currency` guardado (ajustado) si el movimiento se guardó en
- *   la misma preferida; si no, se reconvierte desde el nativo ajustado con la tasa DEL DÍA del movimiento.
+ *   la misma preferida; si no, se reconvierte desde el nativo ajustado con la tasa DEL DÍA del movimiento. Un guardado
+ *   de 0 con nativo distinto de 0 es una conversión que no se escribió y también se reconvierte
+ *   (`storedConversionMissing`).
  * - «≈» por lado y en el neto, con el umbral de la app (`ApproximateMarkThreshold`, ver approx.ts).
  */
 import { categoryOf, type Lookup } from "./lookup";
@@ -54,6 +56,15 @@ export function eligibleForStats(tx: TxRow, lookup: Lookup, today: string, tz: s
 }
 
 /**
+ * `true` si el `amount_in_preferred_currency` guardado no es un importe sino una conversión que no se escribió: 0 con un
+ * nativo distinto de 0. Port de `CashFlowCalculator.storedConversionIsMissing` (ticket
+ * `resolved-amount-trusts-a-zero-converted-amount`). Un null del wire vale el default del modelo, 0.
+ */
+export function storedConversionMissing(tx: Pick<TxRow, "amount" | "amount_in_preferred_currency">): boolean {
+  return (num(tx.amount_in_preferred_currency) ?? 0) === 0 && (num(tx.amount) ?? 0) !== 0;
+}
+
+/**
  * Importe con signo en la divisa preferida, como lo cuenta `CashFlowCalculator`, y cuánta magnitud dudosa hay detrás
  * (el numerador del «≈»). `null` si la divisa no se puede convertir.
  */
@@ -64,7 +75,12 @@ export function preferredAmount(
   groups: GroupAdjustment = NO_GROUP_ADJUSTMENT,
 ): { value: number; approximate: number } | null {
   // Un null del wire vale el default del modelo: `preferredCurrencyCode = "PEN"`, `amountInPreferredCurrency = 0`.
-  if ((tx.preferred_currency_code ?? "PEN").toUpperCase() === preferredCurrency.toUpperCase()) {
+  // Un 0 guardado con nativo distinto de 0 va a la reconversión, salvo en la pata real de un gasto de grupo: su
+  // importe es la síntesis de groups.ts, que ya reconvierte cada pata sin convertir.
+  if (
+    (tx.preferred_currency_code ?? "PEN").toUpperCase() === preferredCurrency.toUpperCase() &&
+    (groups.isAdjusted(tx) || !storedConversionMissing(tx))
+  ) {
     const stored = groups.amountInPreferred(tx) ?? 0;
     return { value: stored, approximate: groups.approximateMagnitude(tx, Math.abs(stored)) };
   }
@@ -85,7 +101,7 @@ export function preferredAmount(
  * `FullFinancialContextBuilder.convertAmount` + `TransactionItem.chatAmount`. Si el ajuste de grupos cambió el
  * importe, «tu parte» resuelta con `preferredAmount` (la regla de `CashFlowCalculator.resolvedAmount`: guardada con
  * otra divisa principal, se reconvierte desde el nativo); si no, el nativo cuando ya está en la divisa preferida,
- * luego el guardado, y si no, convertido con la tasa de su día.
+ * luego el guardado (si no es un 0 sin convertir), y si no, convertido con la tasa de su día.
  */
 function chatMagnitude(tx: TxRow, preferredCurrency: string, rates: RateBook, groups: GroupAdjustment): number | null {
   if (groups.isAdjusted(tx)) {
@@ -95,7 +111,9 @@ function chatMagnitude(tx: TxRow, preferredCurrency: string, rates: RateBook, gr
   const pref = preferredCurrency.toUpperCase();
   const native = num(tx.amount) ?? 0;
   if ((tx.currency_code ?? "USD").toUpperCase() === pref) return Math.abs(native);
-  if ((tx.preferred_currency_code ?? "PEN").toUpperCase() === pref) return Math.abs(num(tx.amount_in_preferred_currency) ?? 0);
+  if ((tx.preferred_currency_code ?? "PEN").toUpperCase() === pref && !storedConversionMissing(tx)) {
+    return Math.abs(num(tx.amount_in_preferred_currency) ?? 0);
+  }
   const key = (tx.date ? utcDateKey(tx.date) : null) ?? tx.local_day;
   if (!key) return null;
   const out = convertOn(Math.abs(native), tx.currency_code ?? "USD", preferredCurrency, key, rates);

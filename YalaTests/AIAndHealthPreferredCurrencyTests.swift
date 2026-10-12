@@ -117,6 +117,8 @@ struct AIAndHealthPreferredCurrencyTests {
             txs,
             tagCatalog: Tag.byIDLookup([e.etiqueta]),
             currencyCode: "PEN",
+            adjustment: .none,
+            includeGroupTransactions: true,
             converter: MockCurrencyConverter(fixedRate: tasa)
         )
     }

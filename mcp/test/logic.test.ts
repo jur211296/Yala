@@ -192,6 +192,21 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     expect(agosto.gasto_medio_diario).toBe(10);
   });
 
+  it("una fila suelta con el importe convertido a 0 se reconvierte con la tasa de su día, con «≈»", () => {
+    // Ticket `resolved-amount-trusts-a-zero-converted-amount`: el 0 guardado es una conversión que no se escribió.
+    // 10 USD con la tasa del 9-sep (sin fila del 10) = 34 PEN, arrastrada ⇒ «≈». Con el bug: 0 y sin marca.
+    const sinConvertir = tx({ ...base, category_ref: food, currency_code: "USD", amount: -10, amount_in_preferred_currency: 0 });
+    const r = summarize([sinConvertir], lookup, period, ctx);
+    expect(r.gastos).toBeCloseTo(34);
+    expect(r.aproximado_detalle.gastos).toBe(true);
+    // Control: con el importe convertido escrito, manda lo guardado.
+    const convertida = tx({ ...base, category_ref: food, currency_code: "USD", amount: -10, amount_in_preferred_currency: -37 });
+    expect(summarize([convertida], lookup, period, ctx).gastos).toBeCloseTo(37);
+    // Y el «sin categoría», que porta el importe del chat (`chatAmount`), tampoco cuenta 0.
+    const sinCategoria = tx({ ...base, currency_code: "USD", amount: -10, amount_in_preferred_currency: 0 });
+    expect(summarize([sinCategoria], lookup, period, ctx).sin_categoria.importe_absoluto).toBeCloseTo(34);
+  });
+
   it("agrupa comercios por nota canónica y ordena el top por gasto", () => {
     const r = summarize(txs, lookup, period, ctx);
     expect(r.top_comercios_gasto[0]).toEqual({ comercio: "TAMBO", importe: 150, movimientos: 2 });

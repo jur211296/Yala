@@ -66,8 +66,19 @@ fíltralo por ahí o los escalones no podrán rescatar la divisa.
 grupo con la pata de préstamo así salía con el importe del grupo entero y sin «≈» (aportaba 0 al
 importe y 0 a la duda). `GroupBridgeStatsAdjustment` reconvierte esa pata —y la guardada con otra
 divisa preferida— con `CashFlowCalculator.reconverted`, la segunda rama de `resolvedAmount`: si
-necesitas reconvertir un nativo, llama ahí, no copies la conversión. **Una fila suelta con ese cero
-sigue contando 0** en `resolvedAmount` (ticket `resolved-amount-trusts-a-zero-converted-amount`).
+necesitas reconvertir un nativo, llama ahí, no copies la conversión. **Desde el mismo día, una fila
+suelta también**: `resolvedAmount` y `TransactionItem.chatAmount` (Yala IA) mandan ese cero a la
+reconversión, y el clasificador de una fila sin categoría (`TransactionClassificationLogic`) lee el
+signo del nativo. La pata real de un gasto de grupo NO: su importe es la síntesis, y es el mismo que
+leen quienes no pasan por `resolvedAmount`. El criterio vive en UN sitio,
+`CashFlowCalculator.storedConversionIsMissing`, y la síntesis del bridge lo llama; su port en `mcp/`
+es `storedConversionMissing` (`summary.ts`, con golden). **«¿Es una pata ajustada?» se pregunta con
+`adjustment.isAdjusted(_:)`, nunca comparando su importe con el guardado**: con «mi parte» = 0 y la
+pata guardada a 0 los dos coinciden, la fila pasaba por suelta y Yala IA reconvertía el gasto entero
+(lo cazó la review del 2026-10-11).
+Un calculador nuevo que lea `amountInPreferredCurrency` en su rama «misma divisa» pasa por
+`resolvedAmount` o pregunta a ese predicado. **Siete todavía no lo hacen** (tartas y rankings de
+Estadísticas, avisos de informe, `InsightsCalculator`): card `tablero-las-tartas-y-rankings-de-estadisticas-si-985z`.
 
 ## Reabrir una fila para que el reparador la recalcule NO es neutro
 

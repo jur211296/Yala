@@ -194,7 +194,12 @@ final class ChatSuggestionsLLMService {
                 predicate: #Predicate<TransactionItem> { $0.date >= monthStart },
                 sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
             )
-            let txs = try modelContext.fetch(descriptor).filter {
+            let monthTxs = try modelContext.fetch(descriptor)
+            // Gastos de grupo: "mi parte" y la pata de préstamo fuera, como el hero del Panel (el
+            // contexto del chat aplica el ajuste pero no el interruptor de abajo). Se construye con el fetch CRUDO del mes: la pata de préstamo vive en la cuenta
+            // sistema de Grupos y el ajuste necesita las dos hermanas antes de filtrar cuentas.
+            let adjustment = GroupBridgeStatsAdjustment.build(from: monthTxs, context: modelContext)
+            let txs = monthTxs.filter {
                 $0.balanceAdjustmentType == nil && $0.account?.excludeFromStatistics != true
             }
 
@@ -212,6 +217,11 @@ final class ChatSuggestionsLLMService {
                 txs,
                 tagCatalog: Tag.byIDLookup(allTagsFetched),
                 currencyCode: CurrencyDefaults.currentPreferred,
+                adjustment: adjustment,
+                // El interruptor que sigue el hero del Panel para ingreso/gasto (default ON).
+                includeGroupTransactions: (UserDefaults.standard.object(
+                    forKey: AppPreferences.Keys.includeGroupTransactionsInStats
+                ) as? Bool) ?? true,
                 converter: CurrencyConverter.shared
             )
             totalIncome = sums.totalIncome
@@ -282,17 +292,29 @@ final class ChatSuggestionsLLMService {
     /// fila guardada con otra divisa principal (cambio de divisa sin recalcular) se reconvierte a
     /// `currencyCode` con la tasa de su día. Sumar su `amountInPreferredCurrency` tal cual mezclaba
     /// dos escalas en los totales y en el orden de los rankings que recibe la IA.
-    /// `adjustment: .none`: las sugerencias nunca netearon los gastos de grupo.
+    ///
+    /// Un gasto de grupo cuenta como en el Panel: `adjustment` lo proyecta a "mi parte" y su pata de
+    /// préstamo se salta (no es un ingreso), e `includeGroupTransactions` es el interruptor de
+    /// Estadísticas (`BridgedTransactionFilter`). Con `.none` el resumen sumaba el gasto entero y el
+    /// préstamo como ingreso (ticket `chat-suggestions-context-counts-the-whole-group-expense`).
     static func monthSums(
         _ txs: [TransactionItem],
         tagCatalog: [UUID: Tag],
         currencyCode: String,
+        adjustment: GroupBridgeStatsAdjustment,
+        includeGroupTransactions: Bool,
         converter: CurrencyConverting
     ) -> MonthSums {
         var sums = MonthSums()
         for tx in txs {
+            if adjustment.isSuppressed(tx) { continue }
+            guard BridgedTransactionFilter.shouldInclude(
+                splitExpenseID: tx.splitExpenseID,
+                splitSettlementID: tx.splitSettlementID,
+                includeGroupsToggle: includeGroupTransactions
+            ) else { continue }
             let amount = abs(CashFlowCalculator.resolvedAmount(
-                tx, currencyCode: currencyCode, adjustment: .none, converter: converter
+                tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             ).value)
             if tx.category?.isIncome == true {
                 sums.totalIncome += amount

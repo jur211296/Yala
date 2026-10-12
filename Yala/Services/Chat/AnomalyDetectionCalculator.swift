@@ -134,8 +134,9 @@ enum AnomalyDetectionCalculator {
         // magnitud, resuelta con la regla de Estadísticas (`CashFlowCalculator.resolvedAmount`): si
         // la fila se guardó con otra divisa principal, el neto guardado está en esa escala y se
         // reconvierte desde el nativo. Resto: `chatAmount` con conversión de moneda intacta.
-        let adjusted = adjustment.amountInPreferredCurrency(tx)
-        if adjusted != tx.amountInPreferredCurrency {
+        // Se pregunta al ajuste, no se comparan valores: con "mi parte" = 0 y la pata guardada a 0 los
+        // dos coinciden, la fila caía en `chatAmount` y éste reconvertía el gasto ENTERO.
+        if adjustment.isAdjusted(tx) {
             return abs(CashFlowCalculator.resolvedAmount(
                 tx, currencyCode: currencyCode, adjustment: adjustment, converter: converter
             ).value)

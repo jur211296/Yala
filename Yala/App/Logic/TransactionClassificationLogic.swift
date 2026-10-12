@@ -24,7 +24,12 @@ enum TransactionClassificationLogic {
 
     /// `true` si la transacción cuenta como ingreso, `false` si gasto.
     /// La categoría manda; si no existe, el signo del monto es el fallback.
+    ///
+    /// El signo se lee del convertido guardado salvo cuando éste no se escribió (0 con nativo distinto
+    /// de 0, `CashFlowCalculator.storedConversionIsMissing`): ese 0 decía «ingreso» y, desde que el
+    /// importe se reconvierte, un gasto sin categoría sumaba en negativo a los ingresos.
     static func isIncome(_ tx: TransactionItem) -> Bool {
-        tx.category?.isIncome ?? (tx.amountInPreferredCurrency >= 0)
+        let signed = CashFlowCalculator.storedConversionIsMissing(tx) ? tx.amount : tx.amountInPreferredCurrency
+        return tx.category?.isIncome ?? (signed >= 0)
     }
 }

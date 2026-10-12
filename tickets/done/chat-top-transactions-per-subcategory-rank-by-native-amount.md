@@ -1,6 +1,6 @@
 ---
 id: chat-top-transactions-per-subcategory-rank-by-native-amount
-status: backlog
+status: done
 priority: very-low
 area: "ai, currency"
 created: 2026-10-11
@@ -32,3 +32,10 @@ Ojo con el golden de paridad con el conector `mcp/` si replica ese orden.
 
 - [ ] El orden usa el importe en la divisa principal.
 - [ ] Test con dos divisas nativas donde el orden nativo y el convertido difieren.
+
+## Cerrado el 2026-10-11
+
+`buildTopTxBySubcategory` calcula una vez el importe que manda (`convertAmount`, ya en la divisa principal) y ordena
+por él antes del `.prefix(10)`. `mcp/` no replica los destacados (medido: ni `top_tx` ni equivalente), así que el golden
+no cambia por esto. Test `topTxBySubcategory_mixedNativeCurrencies_ranksByConvertedAmount` (diez cenas de S/ 150 y una
+de 100 USD ≈ S/ 370), rojo con el orden nativo.
