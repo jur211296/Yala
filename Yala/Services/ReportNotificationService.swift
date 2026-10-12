@@ -292,7 +292,7 @@ final class ReportNotificationService {
             let amount: Decimal
             // Check currency and convert if needed (BalanceHelper pattern); el signo
             // se preserva desde el monto ajustado (Caso A ⇒ `-myShare`).
-            if tx.preferredCurrencyCode == currencyCode {
+            if CashFlowCalculator.readsStoredAmount(tx, currencyCode: currencyCode, adjustment: adjustment) {
                 amount = Decimal(adjustment.amountInPreferredCurrency(tx))
             } else {
                 let sourceCurrency = CurrencyCode(rawValue: normalizeCurrencyCode(tx.currencyCode))

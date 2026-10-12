@@ -30,7 +30,7 @@ import { buildRateBook, CARRY_FORWARD_LOOKBACK, utcDateKey, type RateBook } from
 import { buildGroupAdjustment, type GroupAdjustment } from "./logic/groups";
 import { buildLookup, categoryOf, type Lookup } from "./logic/lookup";
 import { computeBalances } from "./logic/balances";
-import { summarize } from "./logic/summary";
+import { storedConversionMissing, summarize } from "./logic/summary";
 import { budgetPeriod, budgetStatuses, isBudgetActive } from "./logic/budgets";
 import { listRecurring } from "./logic/recurring";
 import {
@@ -396,7 +396,13 @@ const buscarMovimientos: ToolDef = {
 
     const movimientos = page.map((tx) => {
       const sub = tx.subcategory_ref ? lookup.subcategories.get(tx.subcategory_ref) : undefined;
-      const inPreferred = tx.preferred_currency_code?.toUpperCase() === preferred.code ? num(tx.amount_in_preferred_currency) : null;
+      // Un 0 guardado con nativo distinto de 0 es una conversión que no se escribió, no un importe
+      // (`storedConversionMissing`, la regla de `CashFlowCalculator.storedConversionIsMissing`): sin importe guardado
+      // que enseñar, `null`, como cuando se guardó en otra divisa.
+      const inPreferred =
+        tx.preferred_currency_code?.toUpperCase() === preferred.code && !storedConversionMissing(tx)
+          ? num(tx.amount_in_preferred_currency)
+          : null;
       return {
         id: tx.sync_id,
         fecha: txDay(tx, tz),

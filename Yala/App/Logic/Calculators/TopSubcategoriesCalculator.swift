@@ -81,7 +81,7 @@ struct TopSubcategoriesCalculator {
             // Convert using the transaction's date for accurate historical rate
             // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
             let doubleVal: Double
-            if transaction.preferredCurrencyCode == currencyCode {
+            if CashFlowCalculator.readsStoredAmount(transaction, currencyCode: currencyCode, adjustment: adjustment) {
                 doubleVal = adjustment.amountInPreferredCurrency(transaction)
             } else {
                 let decimalAmount = Decimal(abs(adjustment.amount(transaction)))

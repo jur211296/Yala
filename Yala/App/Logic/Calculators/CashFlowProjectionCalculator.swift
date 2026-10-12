@@ -90,7 +90,7 @@ struct TransactionIndex {
 
             // `adjustment` proyecta el gasto de grupo Caso A a "mi parte" (neto).
             let magnitude: Double
-            if tx.preferredCurrencyCode == currencyCode {
+            if CashFlowCalculator.readsStoredAmount(tx, currencyCode: currencyCode, adjustment: adjustment) {
                 magnitude = abs(adjustment.amountInPreferredCurrency(tx))
             } else {
                 let decimalAmt = Decimal(abs(adjustment.amount(tx)))

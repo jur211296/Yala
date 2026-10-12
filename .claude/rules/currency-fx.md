@@ -77,8 +77,14 @@ es `storedConversionMissing` (`summary.ts`, con golden). **«¿Es una pata ajust
 pata guardada a 0 los dos coinciden, la fila pasaba por suelta y Yala IA reconvertía el gasto entero
 (lo cazó la review del 2026-10-11).
 Un calculador nuevo que lea `amountInPreferredCurrency` en su rama «misma divisa» pasa por
-`resolvedAmount` o pregunta a ese predicado. **Siete todavía no lo hacen** (tartas y rankings de
-Estadísticas, avisos de informe, `InsightsCalculator`): card `tablero-las-tartas-y-rankings-de-estadisticas-si-985z`.
+`resolvedAmount` o pregunta `CashFlowCalculator.readsStoredAmount`, que es la condición de su primera
+rama (misma divisa **y**, o pata ajustada, o convertido escrito). Comparar solo la divisa es el bug:
+desde el 2026-10-12 lo usan los siete que sumaban el guardado por su cuenta —tartas y rankings de
+Estadísticas, día de la semana, tendencia por necesidad, real del Flujo de caja (`TransactionIndex`),
+avisos de informe y `InsightsCalculator`—, con un test por calculador en
+`StatisticsCalculatorsZeroConvertedTests`. Ninguno de esos siete pinta «≈»: la marca sigue siendo de
+los totales que pasan por `resolvedAmount`. En `mcp/`, `buscar_movimientos` enseña `null` en
+`importe_en_divisa_preferida` cuando la conversión no se escribió.
 
 ## Reabrir una fila para que el reparador la recalcule NO es neutro
 
