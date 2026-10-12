@@ -96,6 +96,13 @@ struct GroupBridgeStatsAdjustment {
         adjustedReal[tx.persistentModelID]?.preferred ?? tx.amountInPreferredCurrency
     }
 
+    /// `true` si la TX es la pata REAL de un gasto de grupo proyectada a "mi parte". Pregúntalo así y no
+    /// comparando `amountInPreferredCurrency(_:)` con el guardado: con "mi parte" = 0 y la pata guardada
+    /// a 0 los dos valores coinciden y la fila parecía suelta.
+    func isAdjusted(_ tx: TransactionItem) -> Bool {
+        adjustedReal[tx.persistentModelID] != nil
+    }
+
     /// `true` si la TX es una pata de préstamo derivada que NO debe contarse como ingreso/gasto
     /// en superficies income-aware (mata el "ingreso fantasma" +lent).
     func isSuppressed(_ tx: TransactionItem) -> Bool {
@@ -265,7 +272,7 @@ struct GroupBridgeStatsAdjustment {
     ///   misma forma que `resolvedAmount` ya resuelve para una fila suelta.
     private static func storedPreferred(_ leg: TransactionItem, isUsableIn target: String) -> Bool {
         guard leg.preferredCurrencyCode == target else { return false }
-        return !(leg.amountInPreferredCurrency == 0 && leg.amount != 0)
+        return !CashFlowCalculator.storedConversionIsMissing(leg)
     }
 
     /// Conveniencia para callers con `ModelContext`: resuelve los ids `loanToGroups` (read-only)

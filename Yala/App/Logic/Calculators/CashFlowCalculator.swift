@@ -73,15 +73,22 @@ struct CashFlowCalculator {
     /// Dos ramas, porque saben cosas distintas:
     /// - **la fila se convirtió a esta misma divisa al guardarse** → se lee el monto guardado, y la
     ///   duda es la del `adjustment` (en un gasto de grupo, `Σ|patas provisionales|`);
-    /// - **se convirtió a otra** → se reconvierte desde el nativo ajustado con la tasa de su fecha, y
-    ///   la duda es la de ESTA conversión.
+    /// - **se convirtió a otra, o la conversión no llegó a escribirse** → se reconvierte desde el
+    ///   nativo ajustado con la tasa de su fecha, y la duda es la de ESTA conversión.
+    ///
+    /// Un `amountInPreferredCurrency == 0` con nativo distinto de 0 no es un importe: es una
+    /// conversión ausente (`storedConversionIsMissing`). Leído tal cual, un movimiento suelto contaba
+    /// 0 y sin «≈» (ticket `resolved-amount-trusts-a-zero-converted-amount`). La pata real de un gasto
+    /// de grupo NO: su importe es la síntesis de `GroupBridgeStatsAdjustment`, que ya reconvierte cada
+    /// pata sin convertir (#460), y es el mismo número que leen los calculadores que no pasan por aquí.
     static func resolvedAmount(
         _ tx: TransactionItem,
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment,
         converter: CurrencyConverting
     ) -> (value: Double, approximateMagnitude: Double) {
-        if tx.preferredCurrencyCode == currencyCode {
+        if tx.preferredCurrencyCode == currencyCode,
+           adjustment.isAdjusted(tx) || !storedConversionIsMissing(tx) {
             let value = adjustment.amountInPreferredCurrency(tx)
             // Aquí no hay conversión que juzgar: el monto se convirtió al guardarse. En un gasto de
             // grupo `value` es el NETO de varias patas, y la magnitud dudosa que hay detrás
@@ -97,6 +104,18 @@ struct CashFlowCalculator {
             adjustment.amount(tx), from: tx.currencyCode, to: currencyCode, on: tx.date,
             converter: converter
         )
+    }
+
+    /// `true` si el `amountInPreferredCurrency` guardado de `tx` no es un importe sino una conversión
+    /// que no se escribió: **0 con un nativo distinto de 0** (una fila que llegó incompleta por sync,
+    /// o que se creó sin contexto de tasas). Ninguna tasa usable convierte un importe no nulo en cero
+    /// —«una tasa inservible es una tasa AUSENTE» (`currency-fx.md`)—, así que se reconvierte.
+    ///
+    /// Es el criterio ÚNICO: lo usan `resolvedAmount`, `TransactionItem.chatAmount` (Yala IA) y la
+    /// síntesis de un gasto de grupo (`GroupBridgeStatsAdjustment`). Su port en `mcp/` es
+    /// `storedConversionMissing` (`mcp/src/logic/summary.ts`).
+    static func storedConversionIsMissing(_ tx: TransactionItem) -> Bool {
+        tx.amountInPreferredCurrency == 0 && tx.amount != 0
     }
 
     /// Un importe NATIVO reconvertido a `currencyCode` con la tasa de `date`, con su signo, y la

@@ -265,6 +265,35 @@ struct FullFinancialContextBuilderTests {
         #expect(entry?.transactions.last?.amount == 30)
     }
 
+    /// Ticket `chat-top-transactions-per-subcategory-rank-by-native-amount`. Divisa principal PEN. Diez
+    /// cenas de S/ 150 y una de 100 USD (≈ S/ 370, ya convertida al guardarse). Por el importe NATIVO la
+    /// de dólares (100) era la undécima y se quedaba fuera; por el importe que se manda va la primera.
+    @MainActor @Test func topTxBySubcategory_mixedNativeCurrencies_ranksByConvertedAmount() {
+        let food = makeCategory(name: "Food")
+        let restaurants = makeSubcategory(name: "Restaurants", category: food)
+        var txs = (1...10).map { i in
+            makeTx(
+                amount: -150, date: currentMonthDate(offset: 1), currencyCode: "PEN",
+                category: food, subcategory: restaurants, note: "Cena \(i)",
+                amountInPreferredCurrency: -150, preferredCurrencyCode: "PEN"
+            )
+        }
+        txs.append(makeTx(
+            amount: -100, date: currentMonthDate(offset: 2), currencyCode: "USD",
+            category: food, subcategory: restaurants, note: "Cena en dólares",
+            amountInPreferredCurrency: -370, preferredCurrencyCode: "PEN"
+        ))
+
+        let result = buildContext(transactions: txs, currencyCode: "PEN")
+
+        let entry = result.topTxBySubcategory.first { $0.subcategoryName == "Restaurants" }
+        #expect(entry?.transactions.count == 10)
+        #expect(entry?.transactions.first?.amount == 370, """
+            La de dólares es la mayor en soles. Ordenando por el nativo (100 < 150) quedaba fuera del top 10.
+            """)
+        #expect(entry?.transactions.first?.merchant == MerchantCanonicalizer.canonicalize("Cena en dólares"))
+    }
+
     // MARK: - Anomalies gating
 
     @MainActor @Test func anomalies_excludedByDefault() {

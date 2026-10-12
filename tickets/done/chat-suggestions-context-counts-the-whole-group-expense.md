@@ -1,6 +1,6 @@
 ---
 id: chat-suggestions-context-counts-the-whole-group-expense
-status: backlog
+status: done
 priority: low
 area: "ai, groups"
 created: 2026-10-11
@@ -36,3 +36,16 @@ a `monthSums`, saltar `adjustment.isSuppressed` y aplicar el interruptor de grup
 
 - [ ] Un gasto de grupo Caso A suma «mi parte» y su préstamo no cuenta como ingreso.
 - [ ] Test con la pareja de patas, control rojo con `adjustment: .none`.
+
+## Cerrado el 2026-10-11
+
+Medido en `origin/2.1` antes de tocar: `monthSums` resolvía con `adjustment: .none` y no saltaba las patas suprimidas.
+
+- `buildContext` construye el ajuste con `GroupBridgeStatsAdjustment.build(from:context:)` sobre el fetch CRUDO del
+  mes (la pata de préstamo vive en la cuenta sistema de Grupos) y lo pasa a `monthSums`, que salta
+  `adjustment.isSuppressed` y resuelve con ese ajuste.
+- **Interruptor:** el que sigue el hero del Panel para ingreso/gasto, `includeGroupTransactionsInStats`
+  (`BridgedTransactionFilter`). «Grupos en el total» recorta cuentas de un saldo, y el resumen no tiene saldo.
+- **Tests:** `ChatSuggestionsGroupExpenseTests` (mi parte, préstamo fuera, interruptor apagado, control sin grupos) y
+  `ChatSuggestionsGroupExpenseWiringTests` (source-scan del cableado). Control rojo verificado con el código viejo.
+- **Fuera:** el contexto de Yala IA no sigue ese interruptor — card `tablero-el-contexto-de-yala-ia-suma-los-gastos-d-l0cq`.
