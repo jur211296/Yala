@@ -72,3 +72,26 @@ Por qué: la versión anterior lo daba a entender opcional («señales mínimas�
 
 **D10 · Tickets y tablero.** → Los dos tickets pasan a `tickets/qa/` con `status: qa` en este PR; las cards bis6 e i6tj a `in qa`. La parte de i6tj que toca la ficha y las capturas de la tienda queda anotada en el ticket como pendiente de Lola.
 Por qué: el encargo lo pide. El ticket i6tj cubre también la ficha, que no se toca aquí.
+
+## Paso 0 bis — correcciones de Lola (2026-10-12, con la delegación de Jürgen)
+
+> Lola aprobó el texto con correcciones y autorizó el merge con CI verde. Lista entera en
+> `~/Claude/tmp-frank/textos-legales-2-1-correcciones.md`. Supersede a D1, D3 (en lo que dejaba fuera), D5 y D7.
+
+**D11 · Exportación del plan gratis.** → Todo gratis: todos los períodos (también «Todo el tiempo» y «Personalizado»), en CSV y en Excel. Se retira la función Pro `exportExtendedPeriods`, la insignia y la oferta del selector, y el paso «Exportar sin límites» del tour Pro.
+Por qué: lo contestó Lola (opción 1) al preguntar. Su encargo decía «formatos avanzados siguen en Pro», pero Excel ya era gratis (`ExportSummaryStepView.swift:172-182`) y la única puerta era el período (`SharedModels.swift:185-190`). Alternativa descartada: pasar Excel a Pro, que quitaba algo a los usuarios gratis.
+
+**D12 · El ancla `coachMarkAnchor("proExportExtended")` de `ProfileView` se queda, huérfana.** → No se toca `ProfileView`.
+Por qué: es inofensiva (solo registra un marco que nadie lee) y tocar `ProfileView` arrastra 40 suites de XCUITest al gate. Alternativa descartada: borrarla y correr las 40.
+
+**D13 · Conector de Claude.** → Fuera de la política, los términos y la web hasta que se abra (supersede D1).
+
+**D14 · Fotos.** → Se envían sin metadatos: el JPEG se reescribe con ImageIO sin propiedades. ImageIO deja siempre un `{Exif}` con el ancho y el alto en píxeles, y no se puede quitar (medido); el test lo admite y nada más.
+
+**D15 · Copias de seguridad de Supabase.** → «hasta 7 días» (supersede D7 en ese punto). La cifra viene de la medición que cita Lola; en esta sesión el token de gestión de `~/Secrets/yala-supabase-mgmt` devolvió «Invalid access token» y no se pudo volver a medir.
+
+**D16 · Claves sin uso.** → Se borran las tres que nombra Lola (`privacyNot3`, `groupsBullet3`, `groupsNote`) y otras tres sin uso que decían algo falso: `groupsSubtitle` (Grupos «vía tu iCloud»), `pricingPro7` y `howStep2Desc` (auto-categorización).
+
+**D17 · `Web/privacy_content.md`.** → Se borra: nada lo usa y es una copia vieja de la política que sigue nombrando TelemetryDeck.
+
+**D18 · La ficha de la App Store («45+ divisas», en `marketing/`).** → No se toca: es territorio de Lola.
