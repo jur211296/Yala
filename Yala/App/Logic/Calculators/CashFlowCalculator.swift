@@ -90,20 +90,38 @@ struct CashFlowCalculator {
             return (value, adjustment.approximateMagnitude(tx, magnitude: abs(value)))
         }
         // `adjustment` proyecta un gasto de grupo Caso A a "mi parte" (neto).
-        let adjustedNative = adjustment.amount(tx)
+        // Esta rama NO pregunta al `adjustment` por la duda: el número se acaba de reconvertir desde
+        // el nativo, así que su calidad es la de ESA conversión y no la de las tasas con las que se
+        // sellaron las patas.
+        return reconverted(
+            adjustment.amount(tx), from: tx.currencyCode, to: currencyCode, on: tx.date,
+            converter: converter
+        )
+    }
+
+    /// Un importe NATIVO reconvertido a `currencyCode` con la tasa de `date`, con su signo, y la
+    /// magnitud dudosa de esa conversión (toda, si la tasa no es exacta; cero si lo es).
+    ///
+    /// Es la segunda rama de `resolvedAmount`, sacada aparte para que la síntesis de un gasto de
+    /// grupo (`GroupBridgeStatsAdjustment.build`) reconvierta una pata cuyo importe guardado no se
+    /// puede creer con **la misma** regla, y no con una copia.
+    static func reconverted(
+        _ native: Double,
+        from: String,
+        to currencyCode: String,
+        on date: Date,
+        converter: CurrencyConverting
+    ) -> (value: Double, approximateMagnitude: Double) {
         // Convert using the transaction's date for accurate historical rate.
         let outcome = converter.convertChecked(
-            Decimal(abs(adjustedNative)),
-            from: tx.currencyCode,
+            Decimal(abs(native)),
+            from: from,
             to: currencyCode,
-            on: tx.date
+            on: date
         )
-        // Restore sign from the ADJUSTED amount (paridad con la rama preferida).
+        // Restore sign from the native amount.
         let magnitude = NSDecimalNumber(decimal: outcome.amount).doubleValue
-        let value = (adjustedNative < 0) ? -magnitude : magnitude
-        // Esta rama NO pregunta al `adjustment`: el número se acaba de reconvertir desde el nativo,
-        // así que su calidad es la de ESA conversión y no la de las tasas con las que se sellaron
-        // las patas.
+        let value = (native < 0) ? -magnitude : magnitude
         return (value, outcome.quality.isExact ? 0 : magnitude)
     }
 

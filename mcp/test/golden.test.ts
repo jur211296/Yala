@@ -109,7 +109,7 @@ for (const s of golden.scenarios) {
     const exp = s.expected as Expected;
     const lookup = buildLookup(s.rows);
     const book = buildRateBook(s.rows.exchange_rates);
-    const groups = buildGroupAdjustment(s.rows.tx_items, lookup.accounts, lookup.subcategories);
+    const groups = buildGroupAdjustment(s.rows.tx_items, lookup.accounts, lookup.subcategories, book);
     const tz = "UTC";
     const today = dayInZone(new Date(s.now), tz);
     const nowUtc = utcDateKey(s.now) as string;

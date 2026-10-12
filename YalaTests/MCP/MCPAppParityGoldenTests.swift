@@ -165,7 +165,7 @@ struct MCPAppParityGoldenTests {
         let converter = CurrencyConverter()
         converter.setContext(context)
         let allTx = txs.map(\.model)
-        let adjustment = GroupBridgeStatsAdjustment.build(from: allTx, context: context)
+        let adjustment = GroupBridgeStatsAdjustment.build(from: allTx, context: context, converter: converter)
 
         let chat = FullFinancialContextBuilder().buildFromArrays(
             transactions: allTx,

@@ -244,6 +244,33 @@ describe("resumen de periodo (port de CashFlowCalculator)", () => {
     expect(r.sin_categoria.movimientos).toBe(1);
     expect(r.sin_categoria.importe_absoluto).toBeCloseTo(340);
   });
+
+  it("un gasto de grupo con la pata de préstamo sin convertir cuenta tu parte, no el grupo entero", () => {
+    const groupsAcc = uuid(2006);
+    const loanCat = uuid(2104);
+    const lk = buildLookup({
+      accounts: [account({ sync_id: acc }), account({ sync_id: groupsAcc, name: "Grupos", is_system_account: true })],
+      categories: [category({ sync_id: food, name: "Comida" }), category({ sync_id: loanCat, name: "Cobros de grupos", is_income: true })],
+    });
+    // 100 USD del 9-sep (fila exacta, 3,40): tu parte son 10 USD = 34 PEN. La pata de préstamo llegó con su importe
+    // convertido a 0 y, sumándolo tal cual, salían los 340 del grupo entero.
+    const usd = { currency_code: "USD", date: "2026-09-09T15:00:00Z" };
+    const legs = [
+      tx({ ...base, ...usd, category_ref: food, amount: -100, amount_in_preferred_currency: -340, split_expense_id: "s4" }),
+      tx({ ...base, ...usd, account_ref: groupsAcc, category_ref: loanCat, amount: 90, amount_in_preferred_currency: 0, split_expense_id: "s4" }),
+    ];
+    const exacta = summarize(legs, lk, period, { ...ctx, groups: buildGroupAdjustment(legs, lk.accounts, lk.subcategories, RATES) });
+    expect(exacta.gastos).toBeCloseTo(34);
+    expect(exacta.aproximado_detalle.gastos).toBe(false);
+    // Sin fila ese día (10-sep → la del 9): la misma cifra, con «≈».
+    const arrastrada = legs.map((l) => ({ ...l, date: "2026-09-10T15:00:00Z" }));
+    const r = summarize(arrastrada, lk, period, {
+      ...ctx,
+      groups: buildGroupAdjustment(arrastrada, lk.accounts, lk.subcategories, RATES),
+    });
+    expect(r.gastos).toBeCloseTo(34);
+    expect(r.aproximado_detalle.gastos).toBe(true);
+  });
 });
 
 describe("presupuestos (port de BudgetsViewModel.calculateSpending)", () => {
