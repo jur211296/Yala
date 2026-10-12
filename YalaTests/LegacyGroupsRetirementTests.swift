@@ -617,6 +617,8 @@ struct LegacyGroupsRetirementWiringTests {
         let code = Self.codeLines(try Self.source("Yala/Seed/DevSeedGroups.swift"))
         let constructions = code.filter { $0.contains("SplitGroup(") }.count
         let marks = code.filter { $0.contains("isBackendGroup = true") }.count
+        // 6 desde el 2026-10-12: `createFichaMX` (perfil `ficha-mx`, capturas de la ficha en es-MX) construye
+        // sus tres grupos con UN `SplitGroup(` dentro de su helper `seedGroup`, que marca backend justo debajo.
         // 5 desde el 2026-09-06: `createAsPendingMember` (el grupo con un gasto sembrado que sostiene
         // «el pendiente no ve contenido financiero») suma el suyo, y nace backend como los otros cuatro.
         // Los 4 anteriores venían del 2026-09-04, cuando `createAsBackendJoiner` (perfil
@@ -626,7 +628,7 @@ struct LegacyGroupsRetirementWiringTests {
         // Y lo protegió: el seed pasó a 5 en `a620118e` y el pin se quedó en 4, así que `2.1` llevaba
         // este rojo desde ese merge. Comprobado antes de subir el número, que es lo único que hace útil
         // subirlo: las 5 construcciones tienen sus 5 marcas — el grupo nuevo NO nace legacy.
-        #expect(constructions == 5, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
+        #expect(constructions == 6, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
         #expect(marks == constructions,
                 "Un grupo del seed volvió a nacer legacy: la retirada lo oculta y los XCUITest de Grupos se quedan sin datos.")
     }
