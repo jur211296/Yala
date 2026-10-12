@@ -66,6 +66,10 @@ enum DevSeedProfile: String {
     /// (`SetupChecklistManager.markFirstCreation` lo ofrece solo si lo guardado es lo único de su tipo). Ver
     /// `FirstExpensePracticeAlertUITests`.
     case sinRegistros = "sin-registros"
+    /// Capturas de la ficha de la App Store en es-MX: tres grupos con nombres de México, montos en MXN y
+    /// saldos abiertos, sin vida personal (la captura es de Grupos y una cuenta en PEN delataría el seed).
+    /// Ver `DevSeedGroups.createFichaMX`.
+    case fichaMX = "ficha-mx"
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -74,7 +78,7 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros: return 7
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX: return 7
         case .realista: return 730
         case .pesado: return 3650
         }
@@ -84,11 +88,14 @@ enum DevSeedProfile: String {
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
             || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
+            || self == .fichaMX
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
     /// `.soloGrupos` no — sólo grupos. `.deadPointer` tampoco: va por su fixture aislado.
-    var seedsPersonalData: Bool { self != .soloGrupos && self != .deadPointer && self != .soloGruposTrasAviso }
+    var seedsPersonalData: Bool {
+        self != .soloGrupos && self != .deadPointer && self != .soloGruposTrasAviso && self != .fichaMX
+    }
 }
 
 @MainActor @Observable
@@ -233,6 +240,7 @@ final class DevSeedService {
             case .gruposSinFlag:  DevSeedGroups.createAsBackendJoiner(in: context)
             case .gruposPendiente: DevSeedGroups.createAsPendingMember(in: context)
             case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
+            case .fichaMX:        DevSeedGroups.createFichaMX(in: context)
             default:              DevSeedGroups.create(in: context)
             }
         }

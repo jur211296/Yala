@@ -156,6 +156,98 @@ enum DevSeedGroups {
         }
     }
 
+    /// Perfil `.fichaMX`: los grupos de las capturas de la ficha en es-MX. Tres grupos en MXN, de 3 a 5
+    /// miembros, con saldos abiertos para que la lista y el detalle tengan «te deben» y «debes».
+    /// Todo canal backend (`isBackendGroup`), por el mismo motivo que `create`.
+    static func createFichaMX(in context: ModelContext) {
+        let cal = Calendar.current
+        func daysAgo(_ n: Int) -> Date {
+            cal.date(byAdding: .day, value: -n, to: Date.now) ?? Date.now
+        }
+        typealias Gasto = (desc: String, amount: Double, payer: Int, subcat: String?, daysAgo: Int)
+
+        func seedGroup(name: String, icon: String, color: String, others: [String], gastos: [Gasto]) -> SplitGroup {
+            let group = SplitGroup(name: name, iconName: icon, colorHex: color, currencyCode: "MXN", isOwner: true)
+            group.isBackendGroup = true
+            context.insert(group)
+            let zoneID = group.cloudKitZoneID
+            var members = [SplitMember(
+                groupZoneID: zoneID, displayName: "Tú",
+                cloudKitUserRecordID: "uitest-current-user",
+                role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true
+            )]
+            for other in others {
+                members.append(SplitMember(
+                    groupZoneID: zoneID, displayName: other,
+                    cloudKitUserRecordID: "uitest-member-\(other.lowercased())", status: .active
+                ))
+            }
+            for m in members { context.insert(m) }
+            let memberIDs = members.map { $0.id.uuidString }
+            for g in gastos {
+                let payerID = memberIDs[g.payer]
+                let expense = SplitExpense(
+                    groupZoneID: zoneID, amount: g.amount, currencyCode: "MXN",
+                    expenseDescription: g.desc, paidByMemberID: payerID,
+                    splitType: "equal",
+                    subcategoryName: g.subcat
+                )
+                expense.date = daysAgo(g.daysAgo)
+                context.insert(expense)
+                let perHead = ((g.amount / Double(memberIDs.count)) * 100).rounded() / 100
+                for mid in memberIDs {
+                    context.insert(SplitShare(
+                        expenseID: expense.id, memberID: mid, amount: perHead,
+                        isPaid: mid == payerID, groupZoneID: zoneID
+                    ))
+                }
+            }
+            return group
+        }
+
+        // Índice del pagador: 0 = tú, 1… = `others` en orden.
+        let oaxaca = seedGroup(
+            name: "Viaje a Oaxaca", icon: "airplane", color: "#F97316",
+            others: ["Mariana", "Diego", "Sofía"],
+            gastos: [
+                ("Casa en Jalatlaco", 7200, 0, "Alojamiento", 12),
+                ("Cena en el centro", 2480, 1, "Restaurantes", 11),
+                ("Tour a Hierve el Agua", 1600, 2, "Entretenimiento", 10),
+                ("Gasolina", 1150, 0, "Transporte", 10),
+                ("Mezcalería", 960, 3, "Restaurantes", 9),
+                ("Mercado 20 de Noviembre", 640, 1, "Compras", 9),
+            ]
+        )
+        _ = seedGroup(
+            name: "Depa Roma Norte", icon: "house.fill", color: "#0EA5E9",
+            others: ["Valeria", "Andrés"],
+            gastos: [
+                ("Renta de octubre", 21000, 1, nil, 11),
+                ("Internet", 599, 0, nil, 8),
+                ("Luz", 840, 2, nil, 6),
+                ("Súper de la semana", 2350, 0, "Compras", 3),
+                ("Garrafones de agua", 180, 2, "Compras", 1),
+            ]
+        )
+        _ = seedGroup(
+            name: "Carne asada del sábado", icon: "flame.fill", color: "#EF4444",
+            others: ["Luis", "Fer", "Pau", "Emilio"],
+            gastos: [
+                ("Arrachera y chorizo", 1350, 1, "Compras", 2),
+                ("Cervezas", 720, 0, "Compras", 2),
+                ("Carbón y tortillas", 280, 2, "Compras", 2),
+            ]
+        )
+        if UITestHooks.isActive {
+            UserDefaults.standard.set(oaxaca.id.uuidString, forKey: UITestHooks.seededGroupIDKey)
+        }
+        do {
+            try context.save()
+        } catch {
+            print("DevSeedGroups: fichaMX save error: \(error)")
+        }
+    }
+
     /// Variante SALDADA (perfil `.gruposSaldado`): el MISMO dataset de `create` (2 grupos, multi-moneda,
     /// yo owner) MÁS las liquidaciones CONFIRMADAS que dejan el neto del usuario actual en CERO en todos
     /// sus grupos y monedas. Es el único perfil con grupos VIVOS y SIN deuda, que es el estado que ofrece
