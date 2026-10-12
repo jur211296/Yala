@@ -67,10 +67,12 @@ struct WelcomePrivateICloudGateView: View {
     var deviceCorpus: DeviceCorpus?
 
     /// Las dos mitades del corpus local, juntas para que no puedan separarse: quien pregunta «¿hay datos?»
-    /// es quien tiene que saber borrarlos. `hasData` se evalúa VIVO (un snapshot no vale: el espejo puede
-    /// estar re-importando mientras el Welcome está en pantalla).
+    /// es quien tiene que saber borrarlos. `read` se evalúa VIVO (un snapshot no vale: el espejo puede
+    /// estar re-importando mientras el Welcome está en pantalla), y contesta también «no se pudo leer»
+    /// (ticket `private-gate-device-notice-has-no-forward-exit`): leído como «hay datos» ofrecía borrar lo
+    /// que nadie había visto.
     struct DeviceCorpus {
-        var hasData: @MainActor () -> Bool
+        var read: @MainActor () -> WelcomePrivateICloudGateLogic.DeviceDataReading
         /// Borra las filas del teléfono, purga el dominio de Grupos y escribe el sello del handover.
         /// `nil` si fue bien, o el motivo del fallo.
         var wipe: @MainActor () async -> String?
@@ -155,6 +157,9 @@ struct WelcomePrivateICloudGateView: View {
         case wipeFailed(zoneGone: Bool)
         case noICloud
         case unreachable
+        /// **No se pudo leer lo que hay en este teléfono** (ticket `private-gate-device-notice-has-no-forward-exit`). Nada
+        /// que borrar ni que contar: reintentar o volver.
+        case deviceUnreadable
         // MARK: Las cuatro del corpus que ya está en el TELÉFONO
         //
         // Son fases propias y no un flag al lado de las de arriba **porque el flag se hereda en silencio**:
@@ -296,6 +301,20 @@ struct WelcomePrivateICloudGateView: View {
                 identifier: "welcome_private_icloud_error",
                 primaryAction: { phase = .checking },
                 secondaryAction: exitWithoutValidating)
+        case .deviceUnreadable:
+            // **Un error de lectura no es «hay datos»** (ticket `private-gate-device-notice-has-no-forward-exit`, decisión
+            // de Jürgen del 2026-10-12). Hasta ese día esta lectura fallaba CERRADA y salía «Ya hay datos en este
+            // teléfono» con dos salidas, borrar o volver, sin un solo dato detrás. Aquí no hay nada que borrar:
+            // «Reintentar» vuelve a medir, que es la salida hacia delante, y «Volver» es la de siempre (`leaveGate`).
+            twoWayNoticeContent(
+                icon: "iphone.gen3",
+                title: L10n.Welcome.PrivateICloud.deviceUnreadableTitle,
+                body: L10n.Welcome.PrivateICloud.deviceUnreadableBody,
+                primary: L10n.Action.retry,
+                secondary: L10n.Welcome.PrivateICloud.deviceUnreadableBack,
+                identifier: "welcome_private_icloud_device_unreadable",
+                primaryAction: { phase = .checking },
+                secondaryAction: { leaveGate() })
         case .wipeFailed(let zoneGone):
             // El borrado falló. Continuar sería mentirle. Dos salidas: reintentar, o irse — y ese «irse» es el
             // ÚNICO sitio donde se retira el arm, porque es el único donde consta que la persona ya no quiere el
@@ -858,7 +877,10 @@ struct WelcomePrivateICloudGateView: View {
         // del Welcome; decidirlo dentro de `decide` dejaba el `await` de la sonda igualmente pagado, y que
         // hoy no muerda es un accidente del simulador (sin cuenta iCloud), no el invariante que este
         // fichero afirma. Es el mismo orden que `WelcomeFlowContainer.task` y `WelcomeGroupsGateView`.
-        guard !SwiftDataConfiguration.isUITesting else {
+        // La única excepción es el seam que finge la LECTURA del teléfono (`-uitest-private-gate-device-reading`): sin
+        // él, las pantallas del corpus del teléfono no tienen XCUITest. Tampoco toca la red: iCloud cuenta «sin cuenta».
+        let forcedDeviceReading = UITestHooks.privateGateDeviceReading
+        guard !SwiftDataConfiguration.isUITesting || forcedDeviceReading != nil else {
             onProceed()
             return
         }
@@ -879,16 +901,21 @@ struct WelcomePrivateICloudGateView: View {
         // datos que van a acabar en este dispositivo?», y a eso solo contesta CloudKit. Quien declara que
         // no hay cuenta es él, con su `notAuthenticated`. (`mirrorWillSync` sigue siendo el pre-filtro
         // correcto del aviso TARDÍO, donde la pregunta sí es sobre el espejo que ya está puesto.)
-        let outcome = await ICloudPersonalCorpusProbe.probe()
+        let outcome: ICloudProbeOutcome
+        if forcedDeviceReading != nil {
+            outcome = .noAccount
+        } else {
+            outcome = await ICloudPersonalCorpusProbe.probe()
+        }
         // La cancelación es COOPERATIVA y la sonda solo la mira entre páginas: sin este guard, quien toca
         // «volver» mientras CloudKit contesta vería la pantalla cambiar bajo el dedo, o peor, saldría del
         // Welcome solo.
         guard !Task.isCancelled else { return }
-        let deviceHasData = deviceCorpus?.hasData() ?? false
+        let deviceData = forcedDeviceReading ?? deviceCorpus?.read() ?? .none
 
         switch WelcomePrivateICloudGateLogic.decide(skipValidation: false,
                                                     outcome: outcome,
-                                                    deviceHasData: deviceHasData) {
+                                                    deviceData: deviceData) {
         case .proceed:
             // **Acaba de medir que no queda nada que borrar, así que el arm se va con la medida.** Este
             // es el desenlace de quien vuelve aquí tras un kill con el borrado a medias: si la zona ya
@@ -926,6 +953,8 @@ struct WelcomePrivateICloudGateView: View {
             phase = .noICloud
         case .unreachable:
             phase = .unreachable
+        case .deviceUnreadable:
+            phase = .deviceUnreadable
         }
     }
 

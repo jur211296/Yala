@@ -1,10 +1,10 @@
 ---
 id: retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly
-status: backlog
+status: qa
 priority: low
 area: "sesiones, modo-nube"
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-10-12
 source: "review adversarial de `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration` (2026-10-08), lente de reglas de área — hallazgo 2"
 ---
 
@@ -38,3 +38,21 @@ Almacenamiento, la siguiente vez que abre Yala el borrado se termina solo, sin p
 
 - `late-icloud-wipe-stays-frozen-after-a-settled-failed-migration`.
 - `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud` (la renuncia y su caducidad).
+
+## Resuelto (2026-10-12, opción A de Jürgen)
+
+- «Reintentar» (`MigrationRunner.resetAfterRollback`, rama `.failedRollback`) apunta la marca durable
+  `cloudSync.icloudCorpusWipeCrossedFailedMigration` sobre el arm, antes del save. Con ella, el arranque en reposo da
+  `.askAfterFailedMigration` (pregunta) en vez de `.resume`. Se retira con el arm y al volver a confirmar el borrado.
+- Probado: §9d de `MigrationRunnerTests` (de punta a punta: arm + fallo → «Reintentar» → la decisión del arranque
+  pregunta; con el sello quitado sale `.resume` — mutante verificado), `RetryAfterFailedMigrationWipeMarkTests` y la tabla
+  de 192 celdas de `PendingICloudWipeCloudLogicTests`. Review adversarial de dos lentes: sin hallazgos altos.
+- Residual escrito en `swiftdata-cloudkit.md`: sin testigo del espejo tardío, o con la sonda en `.standDown`, el arm se
+  queda quieto también tras «Reintentar» (antes lo «desatascaba» el borrado a ciegas).
+
+## Device-QA (Jürgen, cuando pueda)
+
+No se puede montar en simulador (pide una ida a la nube real que falle). En un teléfono con iCloud: pedir «Borrar» en el
+aviso de iCloud, cortar con un kill antes de que termine, activar la nube y forzar el fallo (sin red durante la subida),
+pulsar «Reintentar» en Almacenamiento y relanzar Yala. Esperado: Yala pregunta (aviso de iCloud o «quedó a medias") y no
+borra nada sin pantalla.

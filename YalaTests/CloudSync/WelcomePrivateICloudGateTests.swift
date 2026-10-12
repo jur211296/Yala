@@ -44,7 +44,7 @@ struct WelcomePrivateICloudGateDecisionTests {
     @Test("iCloud con datos ⇒ se avisa con las cifras, y NO se sigue solo")
     func foundData_asks() {
         let found = corpus(transactions: 128, accounts: 3)
-        let decision = Gate.decide(skipValidation: false, outcome: .measured(found), deviceHasData: false)
+        let decision = Gate.decide(skipValidation: false, outcome: .measured(found), deviceData: .none)
         #expect(decision == .foundData(found))
         #expect(!Gate.advancesWithoutAsking(decision), """
             si esto avanzara solo, la pantalla de reinicio volvería a ser ciega y el onboarding se montaría
@@ -54,7 +54,7 @@ struct WelcomePrivateICloudGateDecisionTests {
 
     @Test("iCloud vacío ⇒ onboarding directo, sin aviso (fila «A · iCloud vacío» de la matriz)")
     func emptyICloud_proceeds() {
-        let decision = Gate.decide(skipValidation: false, outcome: .measured(.empty), deviceHasData: false)
+        let decision = Gate.decide(skipValidation: false, outcome: .measured(.empty), deviceData: .none)
         #expect(decision == .proceed)
         #expect(Gate.advancesWithoutAsking(decision))
     }
@@ -71,12 +71,12 @@ struct WelcomePrivateICloudGateDecisionTests {
                       corpus(budgets: 1)])
     func anyCountTriggersTheNotice(_ c: ICloudPersonalCorpus) {
         #expect(c.hasAnyData)
-        #expect(Gate.decide(skipValidation: false, outcome: .measured(c), deviceHasData: false) == .foundData(c))
+        #expect(Gate.decide(skipValidation: false, outcome: .measured(c), deviceData: .none) == .foundData(c))
     }
 
     @Test("sin cuenta de iCloud (estado K) ⇒ se informa y se sigue en local, jamás se bloquea")
     func noAccount_informsAndContinues() {
-        let decision = Gate.decide(skipValidation: false, outcome: .noAccount, deviceHasData: false)
+        let decision = Gate.decide(skipValidation: false, outcome: .noAccount, deviceData: .none)
         #expect(decision == .noICloud)
         // No avanza SOLO: la persona tiene que leer el aviso y tocar «seguir». Ahí es donde se escribe el
         // testigo del aviso tardío, así que colapsar esto con `.proceed` perdería las dos cosas.
@@ -88,7 +88,7 @@ struct WelcomePrivateICloudGateDecisionTests {
     /// conexión. Si esta fila cayera en `.proceed` o en `.noICloud`, el bug volvería con otro disfraz.
     @Test("la sonda falla ⇒ se ofrece reintentar, NI se sigue NI se trata como «sin iCloud»")
     func failure_offersRetry() {
-        let decision = Gate.decide(skipValidation: false, outcome: .failed("CKError"), deviceHasData: false)
+        let decision = Gate.decide(skipValidation: false, outcome: .failed("CKError"), deviceData: .none)
         #expect(decision == .unreachable("CKError"))
         #expect(decision != .proceed)
         #expect(decision != .noICloud)
@@ -103,16 +103,16 @@ struct WelcomePrivateICloudGateDecisionTests {
           arguments: [ICloudProbeOutcome.noAccount,
                       .failed("boom"),
                       .measured(corpus(transactions: 999, accounts: 9))],
-          [false, true])
+          [WelcomePrivateICloudGateLogic.DeviceDataReading.none, .present, .unreadable])
     func uiTest_skipsValidationWhateverTheProbeSays(_ outcome: ICloudProbeOutcome,
-                                                   _ deviceHasData: Bool) {
+                                                   _ deviceData: WelcomePrivateICloudGateLogic.DeviceDataReading) {
         // **El término del teléfono se barre en los DOS valores, y por eso el argumento es una matriz.**
         // Con `true` fijo en `false` este test pasaría aunque el corpus local se colara por delante de la
         // hermeticidad — y ese es justo el modo de fallo que rompería `WelcomeFreshStartAlertUITests`, que
         // entra por aquí CON datos sembrados.
         #expect(Gate.decide(skipValidation: true,
                             outcome: outcome,
-                            deviceHasData: deviceHasData) == .proceed)
+                            deviceData: deviceData) == .proceed)
     }
 }
 
@@ -130,7 +130,7 @@ struct WelcomePrivateGateDeviceCorpusTests {
     func deviceData_asks() {
         let decision = Gate.decide(skipValidation: false,
                                    outcome: .measured(.empty),
-                                   deviceHasData: true)
+                                   deviceData: .present)
         #expect(decision == .foundDeviceData(iCloudUnverified: false))
         #expect(!Gate.advancesWithoutAsking(decision), """
             si esto avanzara solo volvería el bug entero: relanzamiento ciego, onboarding «de cero» montado
@@ -144,7 +144,7 @@ struct WelcomePrivateGateDeviceCorpusTests {
     /// contarse.
     @Test("sin cuenta de iCloud, el corpus del teléfono gana al estado K")
     func noAccount_withDeviceData_stillAsks() {
-        let decision = Gate.decide(skipValidation: false, outcome: .noAccount, deviceHasData: true)
+        let decision = Gate.decide(skipValidation: false, outcome: .noAccount, deviceData: .present)
         #expect(decision == .foundDeviceData(iCloudUnverified: true))
         #expect(decision != .noICloud)
     }
@@ -155,7 +155,7 @@ struct WelcomePrivateGateDeviceCorpusTests {
     func failure_withDeviceData_stillAsks() {
         let decision = Gate.decide(skipValidation: false,
                                    outcome: .failed("CKError"),
-                                   deviceHasData: true)
+                                   deviceData: .present)
         #expect(decision == .foundDeviceData(iCloudUnverified: true))
         #expect(decision != .unreachable("CKError"))
     }
@@ -169,7 +169,7 @@ struct WelcomePrivateGateDeviceCorpusTests {
                       (.noAccount, true),
                       (.failed("boom"), true)])
     func unverifiedFlagFollowsTheProbe(_ outcome: ICloudProbeOutcome, _ expected: Bool) {
-        #expect(Gate.decide(skipValidation: false, outcome: outcome, deviceHasData: true)
+        #expect(Gate.decide(skipValidation: false, outcome: outcome, deviceData: .present)
                 == .foundDeviceData(iCloudUnverified: expected))
     }
 
@@ -182,7 +182,7 @@ struct WelcomePrivateGateDeviceCorpusTests {
         let found = corpus(transactions: 40, accounts: 2)
         #expect(Gate.decide(skipValidation: false,
                             outcome: .measured(found),
-                            deviceHasData: true) == .foundData(found))
+                            deviceData: .present) == .foundData(found))
     }
 
     /// El control negativo de toda la familia: sin datos en ninguno de los dos lados, la puerta sigue
@@ -192,7 +192,7 @@ struct WelcomePrivateGateDeviceCorpusTests {
     func freshInstall_stillProceeds() {
         let decision = Gate.decide(skipValidation: false,
                                    outcome: .measured(.empty),
-                                   deviceHasData: false)
+                                   deviceData: .none)
         #expect(decision == .proceed)
         #expect(Gate.advancesWithoutAsking(decision))
     }
@@ -534,12 +534,12 @@ struct ICloudPersonalCorpusProbeSeamTests {
     @Test("un escaneo truncado nunca se lee como «iCloud vacío»")
     func truncatedNeverReadsAsEmpty() {
         let cortado = corpus(truncated: true)
-        #expect(Gate.decide(skipValidation: false, outcome: .measured(cortado), deviceHasData: false)
+        #expect(Gate.decide(skipValidation: false, outcome: .measured(cortado), deviceData: .none)
                 == .foundData(cortado))
         #expect(Gate.decideLateMirror(watching: true, iCloudAvailable: true,
                                       outcome: .measured(cortado)) == .ask(cortado))
         // Y el control en la dirección contraria: sin truncar, cero cifras SÍ es «vacío».
-        #expect(Gate.decide(skipValidation: false, outcome: .measured(.empty), deviceHasData: false) == .proceed)
+        #expect(Gate.decide(skipValidation: false, outcome: .measured(.empty), deviceData: .none) == .proceed)
         #expect(Gate.decideLateMirror(watching: true, iCloudAvailable: true,
                                       outcome: .measured(.empty)) == .standDown)
     }
@@ -795,7 +795,9 @@ struct WelcomePrivateICloudGateWiringTests {
             """)
         // El detector del Welcome desde el 2026-10-06 (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`):
         // el mismo fetch VIVO, que con la marca del aviso tardío deja fuera los grupos que ese aviso conservó.
-        #expect(gate.contains("hasData: { welcomeDeviceDataNow() }"), """
+        // Desde `private-gate-device-notice-has-no-forward-exit` (2026-10-12) la puerta lee la versión con «no se pudo
+        // leer» aparte: la otra falla cerrada y enseñaba «Ya hay datos» sin datos detrás.
+        #expect(gate.contains("read: { welcomeDeviceDataReading() }"), """
             el fetch tiene que ir VIVO: el espejo puede estar re-importando mientras esta pantalla está
             montada, y un snapshot del arranque diría «no hay datos» sobre un store que se está llenando.
             """)
@@ -936,18 +938,18 @@ struct WelcomePrivateICloudGateWiringTests {
     func measureFeedsTheDeviceTermIntoTheDecision() throws {
         let src = try Self.code("Yala/App/Views/Onboarding/WelcomePrivateICloudGateView.swift")
         let measure = try Self.body(of: "private func measure() async {", in: src)
-        #expect(measure.contains("let deviceHasData = deviceCorpus?.hasData() ?? false"), """
+        #expect(measure.contains("let deviceData = forcedDeviceReading ?? deviceCorpus?.read() ?? .none"), """
             `measure()` dejó de contar lo que hay en el teléfono: con ese término en `false` la puerta
             vuelve a salir de largo y el aviso se pierde entero — el bug de este ticket, sin tocar la
             tabla.
             """)
-        #expect(measure.contains("deviceHasData: deviceHasData"), """
+        #expect(measure.contains("deviceData: deviceData"), """
             se mide pero no se pasa: la tabla decide con un término que nadie le dio.
             """)
         // El `?? false` importa en la dirección contraria: con `?? true`, la activación de Yala completo
         // —que pasa `deviceCorpus: nil`— le enseñaría a quien está activando un aviso de datos cuyo único
         // desenlace es el fallo, porque no hay corpus que borrar.
-        #expect(!measure.contains("?? true"), """
+        #expect(!measure.contains("?? .present") && !measure.contains("?? .unreadable"), """
             `?? true` le enseña el aviso a quien monta la puerta SIN corpus (la activación de Yala
             completo), y ahí el único desenlace posible es la pantalla de error.
             """)
@@ -955,7 +957,7 @@ struct WelcomePrivateICloudGateWiringTests {
         // que tarde CloudKit—, y en una sesión solo-grupos el canal sigue aplicando pulls durante ese rato:
         // el aviso se perdería sobre las filas que llegaron mientras se preguntaba.
         let sonda = try #require(measure.range(of: "await ICloudPersonalCorpusProbe.probe()"))
-        let medir = try #require(measure.range(of: "deviceCorpus?.hasData()"))
+        let medir = try #require(measure.range(of: "deviceCorpus?.read()"))
         let decidir = try #require(measure.range(of: "WelcomePrivateICloudGateLogic.decide("))
         #expect(sonda.lowerBound < medir.lowerBound, """
             el conteo del teléfono volvió a hacerse antes del `await` de la sonda: deja de ser vivo, que es

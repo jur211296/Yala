@@ -174,6 +174,25 @@ final class UITestHooks {
         #endif
     }
 
+    /// Valor de `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado»
+    /// mide en vez de salir de largo, con iCloud «sin cuenta» y la LECTURA del teléfono fingida (ticket
+    /// `private-gate-device-notice-has-no-forward-exit`). En el simulador esa pantalla es inalcanzable por construcción
+    /// —bajo XCUITest la puerta no mide y el mount nunca es neutro—, así que sin esto no hay XCUITest ni capturas.
+    /// **Finge la entrada, no la decisión**: lo que se pinta lo decide `WelcomePrivateICloudGateLogic.decide`. No toca la
+    /// red ni persiste nada. Un valor desconocido se ignora. Solo DEBUG.
+    nonisolated static var privateGateDeviceReading: WelcomePrivateICloudGateLogic.DeviceDataReading? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-private-gate-device-reading", from: ProcessInfo.processInfo.arguments) {
+        case "present":    return .present
+        case "unreadable": return .unreadable
+        default:           return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     /// Valor de `-uitest-pending-migration-block <personalData|personalDataApple>`: el controller nace con un aviso de
     /// «Migrar a la nube» ya publicado, con «Usar otra cuenta» (y, con `…Apple`, la cuenta rechazada de Apple). Existe para
     /// el XCUITest de la cadena hoja → elección de Apple/Google, que con una sesión fingida no se puede recorrer: la

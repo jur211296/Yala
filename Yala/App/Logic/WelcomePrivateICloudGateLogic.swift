@@ -27,7 +27,7 @@ import Foundation
 /// ¿Qué le enseña la puerta a quien acaba de elegir «privado»?
 nonisolated enum WelcomePrivateICloudGateLogic {
 
-    /// Los CINCO desenlaces. Ninguno es un camino muerto: los cuatro que no siguen adelante tienen salida
+    /// Los SEIS desenlaces. Ninguno es un camino muerto: los cinco que no siguen adelante tienen salida
     /// visible, que es la mitad de lo que el ADR pide del Welcome entero.
     enum Decision: Equatable {
         /// iCloud está vacío (o no hace falta preguntar) **y el teléfono tampoco tiene datos**. Sigue al
@@ -69,6 +69,32 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         /// por la puerta de atrás. Y tampoco cae en `noICloud`, porque allí el remedio no existe y aquí
         /// sí.
         case unreachable(String)
+        /// **No se pudo leer lo que hay en ESTE TELÉFONO**, y en iCloud no hay nada que avisar (vacío, sin cuenta o sin
+        /// red). Ticket `private-gate-device-notice-has-no-forward-exit`, decisión de Jürgen del 2026-10-12: un error de
+        /// lectura no es «hay datos». Hasta ese día el detector fallaba CERRADO y la persona veía «Ya hay datos en este
+        /// teléfono» con dos salidas —borrar o volver— sin un solo dato detrás. Aquí se le dice que no se pudo revisar y
+        /// se le ofrece reintentar; tampoco cae en `proceed`, porque seguir a ciegas montaría el onboarding encima de lo
+        /// que no se pudo contar.
+        case deviceUnreadable
+    }
+
+    /// Lo que contestó la lectura del teléfono. Tres valores y no un `Bool`, porque «no se pudo leer» no es ninguno de
+    /// los otros dos: leído como «hay datos» ofrecía borrar lo que nadie había visto, y como «no hay» seguiría al
+    /// onboarding encima de ello.
+    enum DeviceDataReading: Equatable {
+        case none
+        case present
+        case unreadable
+    }
+
+    /// **La regla de la lectura del Welcome con sus dos mitades** (`nil` = esa mitad no se pudo leer). Lo que SÍ se leyó
+    /// y cuenta gana: con datos personales a la vista da igual que los grupos no se dejen leer. Los grupos que conservó el
+    /// aviso tardío son de quien está delante (`WelcomeKeptGroupsLogic`) y no cuentan, tampoco como ilegibles.
+    static func deviceDataReading(personal: Bool?, groups: Bool?, groupsKeptForThisPerson: Bool) -> DeviceDataReading {
+        let groupsCount = !groupsKeptForThisPerson
+        if personal == true || (groupsCount && groups == true) { return .present }
+        if personal == nil || (groupsCount && groups == nil) { return .unreadable }
+        return .none
     }
 
     /// La tabla completa. Un solo sitio donde se escribe, y por eso no puede divergir de la vista.
@@ -81,7 +107,7 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// garantiza esa identidad: cualquier otro orden haría que el simulador (sin cuenta iCloud) cayera en
     /// `noICloud` y viera una pantalla nueva.
     ///
-    /// **`deviceHasData` va SIN valor por defecto**, y eso es lo que impide que el hueco vuelva: la puerta
+    /// **`deviceData` va SIN valor por defecto**, y eso es lo que impide que el hueco vuelva: la puerta
     /// la usan dos sitios con respuestas OPUESTAS —el Welcome pregunta por el corpus del teléfono, la
     /// activación de Yala completo jamás (esos datos son de la misma persona y se conservan)—, así que el
     /// compilador obliga a cada uno a pronunciarse en vez de heredar un default que solo le sirve a uno.
@@ -89,10 +115,17 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// **Y va DESPUÉS del corpus remoto, no antes.** Cuando los dos tienen datos gana el aviso de iCloud:
     /// es el único que ofrece «traer mis datos», la salida que no destruye nada, y su borrado ya se lleva
     /// las filas locales por delante.
+    ///
+    /// **Y el teléfono que no se deja leer pregunta antes que nada salvo el corpus de iCloud** (`.deviceUnreadable`, ticket
+    /// `private-gate-device-notice-has-no-forward-exit`): «no se pudo leer» no es «hay datos». Con el corpus remoto a la
+    /// vista gana su aviso por lo mismo que gana a los datos del teléfono.
     static func decide(skipValidation: Bool,
                        outcome: ICloudProbeOutcome,
-                       deviceHasData: Bool) -> Decision {
+                       deviceData: DeviceDataReading) -> Decision {
         guard !skipValidation else { return .proceed }
+        if case .measured(let corpus) = outcome, corpus.hasAnyData { return .foundData(corpus) }
+        if deviceData == .unreadable { return .deviceUnreadable }
+        let deviceHasData = deviceData == .present
         switch outcome {
         case .noAccount:
             // El estado K **deja de ser terminal cuando el teléfono sí tiene datos**: no poder preguntarle
@@ -100,8 +133,7 @@ nonisolated enum WelcomePrivateICloudGateLogic {
             return deviceHasData ? .foundDeviceData(iCloudUnverified: true) : .noICloud
         case .failed(let reason):
             return deviceHasData ? .foundDeviceData(iCloudUnverified: true) : .unreachable(reason)
-        case .measured(let corpus):
-            if corpus.hasAnyData { return .foundData(corpus) }
+        case .measured:
             return deviceHasData ? .foundDeviceData(iCloudUnverified: false) : .proceed
         }
     }
@@ -221,7 +253,9 @@ nonisolated enum WelcomePrivateICloudGateLogic {
         /// gana la renuncia, ni se pregunta ni se borra. El borrado sigue pendiente y la renuncia no caduca: con «Reintentar»
         /// a la vista todavía puede servir (`waiverLapses` sigue exigiendo reposo estricto).
         case holdForWaiver
-        /// **La ida terminó en un fallo ASENTADO y el borrado estaba ARMADO** (mismo ticket): no se reanuda a ciegas, se
+        /// **La ida terminó en un fallo ASENTADO y el borrado estaba ARMADO** (mismo ticket), **o el arm sobrevivió a ese
+        /// fallo y la persona pulsó «Reintentar»** (`retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`:
+        /// el journal está en reposo, pero el borrado sigue siendo uno que pasó por la ida): no se reanuda a ciegas, se
         /// vuelve a preguntar. Quien lo atiende lo clasifica como un borrado que falló (`classifyLateWipeFailure`): con la
         /// zona de iCloud ya ida pasa a «a medias» y se enseña esa pantalla; sin tocar nada se desarma y el aviso del espejo
         /// tardío vuelve a preguntar con el corpus. El motivo del congelado —la ida está subiendo— no aplica: no sube nada.
@@ -262,8 +296,17 @@ nonisolated enum WelcomePrivateICloudGateLogic {
     /// `migrationAtRest`, el estricto, y `migrationFailedAndSettled`. Con el fallo asentado no se reanuda nunca —el arm
     /// pregunta (`.askAfterFailedMigration`) y «a medias» pregunta como siempre—, salvo con la renuncia puesta, que gana
     /// (`.holdForWaiver`). Hasta ese ticket el borrado se quedaba congelado hasta que la persona pulsara «Reintentar».
+    ///
+    /// **Y «Reintentar» tampoco lo reanuda a ciegas** (ticket `retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`,
+    /// opción A de Jürgen del 2026-10-12). «Reintentar» devuelve el journal al reposo, y en reposo un arm se reanudaba: el
+    /// borrado que la ida fallida dejaba en pregunta se terminaba solo en el arranque siguiente, y con la renuncia, en
+    /// cuanto caducaba. `armCrossedFailedMigration` es la marca que deja la salida del fallo
+    /// (`StorageModePersistence.markICloudCorpusWipeCrossedFailedMigration`): con ella, el reposo pregunta igual que el
+    /// fallo a la vista (`.askAfterFailedMigration`). Sin default, por lo mismo que el resto de entradas: el compilador
+    /// obliga a cada llamador a leerla.
     static func lateWipeLaunch(armed: Bool, leftHalfway: Bool, cancelledInCloudNoticePending: Bool,
                                waivedForCloud: Bool, migrationAtRest: Bool, migrationFailedAndSettled: Bool,
+                               armCrossedFailedMigration: Bool,
                                storageMode: StorageMode) -> LateWipeLaunch {
         switch storageMode {
         case .cloud:
@@ -276,7 +319,8 @@ nonisolated enum WelcomePrivateICloudGateLogic {
                 if waivedForCloud { return .holdForWaiver }
                 return armed ? .askAfterFailedMigration : .askLeftHalfway
             }
-            return armed ? .resume : .askLeftHalfway
+            guard armed else { return .askLeftHalfway }
+            return armCrossedFailedMigration ? .askAfterFailedMigration : .resume
         }
     }
 

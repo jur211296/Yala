@@ -6591,3 +6591,12 @@
 
 /* Insights/Trends AI card: the server could not confirm the Pro subscription (gateway 403 yala_pro_required) */
 "insights.aiError.proRequired" = "Yala Proを確認できませんでした。少ししてからもう一度お試しください。";
+
+/* Private gate: reading the data already on this phone failed */
+"welcome.privateICloud.deviceUnreadableTitle" = "この端末を確認できませんでした";
+
+/* Private gate: body when the phone's data could not be read */
+"welcome.privateICloud.deviceUnreadableBody" = "この端末にすでにあるデータを確認中に問題が発生したため、データがあるかどうかわかりません。何も変更していません。少し待ってからもう一度お試しください。";
+
+/* Private gate: secondary button that goes back to the choice */
+"welcome.privateICloud.deviceUnreadableBack" = "戻る";

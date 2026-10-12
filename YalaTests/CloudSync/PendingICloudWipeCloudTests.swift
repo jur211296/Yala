@@ -39,7 +39,7 @@ struct PendingICloudWipeCloudLogicTests {
     }
 
     private static func expected(armed: Bool, leftHalfway: Bool, notice: Bool, waived: Bool, rest: Rest,
-                                 mode: StorageMode) -> Logic.LateWipeLaunch {
+                                 crossed: Bool, mode: StorageMode) -> Logic.LateWipeLaunch {
         switch mode {
         case .cloud:
             if armed || leftHalfway { return waived ? .retireWaivedInCloud : .retireInCloud }
@@ -51,26 +51,31 @@ struct PendingICloudWipeCloudLogicTests {
             case .failedAndSettled:
                 if waived { return .holdForWaiver }
                 return armed ? .askAfterFailedMigration : .askLeftHalfway
-            case .atRest: return armed ? .resume : .askLeftHalfway
+            case .atRest:
+                guard armed else { return .askLeftHalfway }
+                return crossed ? .askAfterFailedMigration : .resume
             }
         }
     }
 
-    /// La tabla entera, 96 celdas: un término mal puesto decide si un borrado se reanuda en mitad de la migración, si se
-    /// retira en silencio, si se cuenta dos veces o si se queda congelado tras un fallo.
+    /// La tabla entera, 192 celdas: un término mal puesto decide si un borrado se reanuda en mitad de la migración, si se
+    /// retira en silencio, si se cuenta dos veces, si se queda congelado tras un fallo o si «Reintentar» lo termina a ciegas.
     @Test(arguments: [false, true], [false, true])
     func launch_fullTable(armed: Bool, leftHalfway: Bool) {
         for notice in [false, true] {
             for waived in [false, true] {
                 for rest in Rest.allCases {
-                    for mode in [StorageMode.cloud, .icloud] {
-                        let got = Logic.lateWipeLaunch(armed: armed, leftHalfway: leftHalfway,
-                                                       cancelledInCloudNoticePending: notice, waivedForCloud: waived,
-                                                       migrationAtRest: rest.atRestFlag,
-                                                       migrationFailedAndSettled: rest.failedFlag, storageMode: mode)
-                        #expect(got == Self.expected(armed: armed, leftHalfway: leftHalfway, notice: notice,
-                                                     waived: waived, rest: rest, mode: mode),
-                                "armed=\(armed) halfway=\(leftHalfway) notice=\(notice) waived=\(waived) \(rest) \(mode)")
+                    for crossed in [false, true] {
+                        for mode in [StorageMode.cloud, .icloud] {
+                            let got = Logic.lateWipeLaunch(armed: armed, leftHalfway: leftHalfway,
+                                                           cancelledInCloudNoticePending: notice, waivedForCloud: waived,
+                                                           migrationAtRest: rest.atRestFlag,
+                                                           migrationFailedAndSettled: rest.failedFlag,
+                                                           armCrossedFailedMigration: crossed, storageMode: mode)
+                            #expect(got == Self.expected(armed: armed, leftHalfway: leftHalfway, notice: notice,
+                                                         waived: waived, rest: rest, crossed: crossed, mode: mode),
+                                    "armed=\(armed) halfway=\(leftHalfway) notice=\(notice) waived=\(waived) \(rest) crossed=\(crossed) \(mode)")
+                        }
                     }
                 }
             }
@@ -80,13 +85,13 @@ struct PendingICloudWipeCloudLogicTests {
     /// **EL PIN DEL TICKET.** En la nube, un borrado pendiente sin renuncia se retira CONTÁNDOLO.
     @Test func cloud_withoutWaiver_retiresAndTells() {
         #expect(Logic.lateWipeLaunch(armed: true, leftHalfway: false, cancelledInCloudNoticePending: false,
-                                     waivedForCloud: false, migrationAtRest: false, migrationFailedAndSettled: false, storageMode: .cloud) == .retireInCloud)
+                                     waivedForCloud: false, migrationAtRest: false, migrationFailedAndSettled: false, armCrossedFailedMigration: false, storageMode: .cloud) == .retireInCloud)
     }
 
     /// Con la renuncia de Ajustes, sin contarlo otra vez.
     @Test func cloud_withWaiver_retiresSilently() {
         #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: true, cancelledInCloudNoticePending: false,
-                                     waivedForCloud: true, migrationAtRest: false, migrationFailedAndSettled: false, storageMode: .cloud) == .retireWaivedInCloud)
+                                     waivedForCloud: true, migrationAtRest: false, migrationFailedAndSettled: false, armCrossedFailedMigration: false, storageMode: .cloud) == .retireWaivedInCloud)
     }
 
     /// **El hallazgo de la review.** Con la ida en vuelo, ni se reanuda ni se pregunta: sin esto, la renuncia que
@@ -94,7 +99,7 @@ struct PendingICloudWipeCloudLogicTests {
     @Test func icloud_migrationInFlight_holdsThePendingWipe() {
         for (armed, halfway) in [(true, false), (false, true), (true, true)] {
             #expect(Logic.lateWipeLaunch(armed: armed, leftHalfway: halfway, cancelledInCloudNoticePending: false,
-                                         waivedForCloud: true, migrationAtRest: false, migrationFailedAndSettled: false,
+                                         waivedForCloud: true, migrationAtRest: false, migrationFailedAndSettled: false, armCrossedFailedMigration: false,
                                          storageMode: .icloud) == .holdForMigration, "armed=\(armed) halfway=\(halfway)")
         }
     }
@@ -122,15 +127,15 @@ struct PendingICloudWipeCloudLogicTests {
     ) {
         #expect(Logic.lateWipeLaunch(armed: c.armed, leftHalfway: c.halfway, cancelledInCloudNoticePending: false,
                                      waivedForCloud: c.waived, migrationAtRest: c.atRest,
-                                     migrationFailedAndSettled: c.failed, storageMode: .icloud) == c.expected)
+                                     migrationFailedAndSettled: c.failed, armCrossedFailedMigration: false, storageMode: .icloud) == c.expected)
     }
 
     /// Un aviso pendiente de un arranque que murió antes de enseñarlo se vuelve a contar — solo en la nube.
     @Test func noticePending_isToldOnlyInTheCloud() {
         #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: false, cancelledInCloudNoticePending: true,
-                                     waivedForCloud: false, migrationAtRest: true, migrationFailedAndSettled: false, storageMode: .cloud) == .tellCancelledInCloud)
+                                     waivedForCloud: false, migrationAtRest: true, migrationFailedAndSettled: false, armCrossedFailedMigration: false, storageMode: .cloud) == .tellCancelledInCloud)
         #expect(Logic.lateWipeLaunch(armed: false, leftHalfway: false, cancelledInCloudNoticePending: true,
-                                     waivedForCloud: false, migrationAtRest: true, migrationFailedAndSettled: false, storageMode: .icloud) == .none)
+                                     waivedForCloud: false, migrationAtRest: true, migrationFailedAndSettled: false, armCrossedFailedMigration: false, storageMode: .icloud) == .none)
     }
 
     @Test(arguments: [false, true], [false, true])
@@ -370,6 +375,11 @@ struct PendingICloudWipeCloudWiringTests {
         #expect(launchArgs.contains("migrationAtRest: migrationAtRest,")
                 && launchArgs.contains("migrationFailedAndSettled: migrationFailedAndSettled,")
                 && !launchArgs.contains("||") && !launchArgs.contains("&&"), "Tramo leído: \(launchArgs)")
+        // «Reintentar» tras la ida fallida (`retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly`): la
+        // marca que deja la salida del fallo se lee VIVA de lo persistido. Un `false` literal aquí reanudaría a ciegas.
+        #expect(launchArgs.contains(
+            "armCrossedFailedMigration: StorageModePersistence.hasICloudCorpusWipeCrossedFailedMigration(),"),
+                "Tramo leído: \(launchArgs)")
         let lapseArgs = try Self.slice(from: "if WelcomePrivateICloudGateLogic.waiverLapses(", to: ") {", in: check)
         #expect(lapseArgs.contains("migrationAtRest: migrationAtRest,") && !lapseArgs.contains("migrationFailedAndSettled")
                 && !lapseArgs.contains("||"), "la renuncia caduca solo con el reposo ESTRICTO. Tramo leído: \(lapseArgs)")

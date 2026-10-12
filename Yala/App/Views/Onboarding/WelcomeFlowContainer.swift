@@ -113,6 +113,10 @@ struct WelcomeFlowContainer: View {
     /// puerta del organizador y la pregunta del corpus del teléfono con mount neutro (`deviceCorpusGate`). El borrado
     /// del teléfono ya decidido (`.freshStartDeviceWipe`) sigue con `hasLocalDataNow`: ahí se pregunta qué queda.
     var welcomeDeviceDataNow: @MainActor @Sendable () -> Bool
+    /// **La misma lectura, con «no se pudo leer» aparte**, y solo para la puerta privada (ticket
+    /// `private-gate-device-notice-has-no-forward-exit`): allí un error de lectura enseñaba «Ya hay datos» con borrar o
+    /// volver. El resto de consumidores sigue con `welcomeDeviceDataNow`, que falla cerrado a propósito.
+    var welcomeDeviceDataReading: @MainActor @Sendable () -> WelcomePrivateICloudGateLogic.DeviceDataReading
     /// Paso 4: el borrado del corpus de iCloud. Vive en `ContentView` —es quien tiene el `modelContext`,
     /// y el borrado tiene que llevarse también las filas que el espejo hubiera bajado ya—; el container
     /// solo lo reenvía a la puerta.
@@ -140,6 +144,7 @@ struct WelcomeFlowContainer: View {
         onGroupsGateInviteProceed: @escaping (String) -> Void,
         hasLocalDataNow: @escaping @MainActor @Sendable () -> Bool,
         welcomeDeviceDataNow: @escaping @MainActor @Sendable () -> Bool,
+        welcomeDeviceDataReading: @escaping @MainActor @Sendable () -> WelcomePrivateICloudGateLogic.DeviceDataReading,
         performICloudCorpusWipe: @escaping @MainActor () async -> String?,
         performDeviceCorpusWipe: @escaping @MainActor () async -> String?
     ) {
@@ -155,6 +160,7 @@ struct WelcomeFlowContainer: View {
         self.onGroupsGateInviteProceed = onGroupsGateInviteProceed
         self.hasLocalDataNow = hasLocalDataNow
         self.welcomeDeviceDataNow = welcomeDeviceDataNow
+        self.welcomeDeviceDataReading = welcomeDeviceDataReading
         self.performICloudCorpusWipe = performICloudCorpusWipe
         self.performDeviceCorpusWipe = performDeviceCorpusWipe
         self._step = State(initialValue: initialStep)
@@ -330,7 +336,7 @@ struct WelcomeFlowContainer: View {
                     // **Con el corpus del teléfono SIEMPRE**, y no con `deviceCorpusGate`, que lo pide solo con el mount
                     // neutro: aquí el borrado ya se decidió en el alert del shell, que es el camino del mount que espeja.
                     // El borrado es `performDeviceCorpusWipe`, el mismo del alert más la espera del import y la subida.
-                    deviceCorpus: .init(hasData: { hasLocalDataNow() },
+                    deviceCorpus: .init(read: { hasLocalDataNow() ? .present : .none },
                                         wipe: { await performDeviceCorpusWipe() }),
                     unverifiedExit: .proceedWatchingTheMirror,
                     // Mismo Welcome y mismo borrado que la puerta de arriba. Esta entrada no borra iCloud, así que no
@@ -487,7 +493,7 @@ struct WelcomeFlowContainer: View {
             mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) else { return nil }
         // El detector del WELCOME: con los grupos que conservó el aviso tardío, no se pregunta por ellos — el borrado que
         // cuelga de aquí los purga y sella (`groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start`).
-        return .init(hasData: { welcomeDeviceDataNow() },
+        return .init(read: { welcomeDeviceDataReading() },
                      wipe: { await performDeviceCorpusWipe() })
     }
 

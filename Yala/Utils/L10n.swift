@@ -5582,6 +5582,17 @@ enum L10n {
             static var foundDeviceKeep: String {
                 ls("welcome.privateICloud.foundDeviceKeep", comment: "")
             }
+            /// «No pudimos revisar este teléfono» (ticket `private-gate-device-notice-has-no-forward-exit`): la lectura del
+            /// teléfono falló. Ni «hay datos» ni «no hay»: nada que borrar, solo reintentar o volver.
+            static var deviceUnreadableTitle: String {
+                ls("welcome.privateICloud.deviceUnreadableTitle", comment: "")
+            }
+            static var deviceUnreadableBody: String {
+                ls("welcome.privateICloud.deviceUnreadableBody", comment: "")
+            }
+            static var deviceUnreadableBack: String {
+                ls("welcome.privateICloud.deviceUnreadableBack", comment: "")
+            }
             /// Reintentar un BORRADO que falló. `Welcome.Restore.retry` dice «Reintentar búsqueda», que
             /// aquí no significa nada: no hay ninguna búsqueda que repetir. Se usa en las dos fases de
             /// fallo de borrado; `.unreachable` conserva aquél, porque ahí sí se vuelve a medir.

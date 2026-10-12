@@ -64,6 +64,9 @@ extension XCUIApplication {
         settlementAmountChange: Bool = false,
         lateNoticeKeptGroups: Bool = false,
         welcomeAfterAdoptExit: Bool = false,
+        // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
+        // esa lectura del teléfono fingida e iCloud «sin cuenta» (ticket `private-gate-device-notice-has-no-forward-exit`).
+        privateGateDeviceReading: String? = nil,
         scheduledSeedDay: Int? = nil,
         extraArguments: [String] = []
     ) -> XCUIApplication {
@@ -180,6 +183,10 @@ extension XCUIApplication {
         // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
         // verdad, la comprobación no podría (sin sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la
         // hoja. Su nombre y sus valores los fija un test de paridad con `UITestHooks` (`MigrationIdentityGateWiringTests`).
+        if let privateGateDeviceReading {
+            args.append("-uitest-private-gate-device-reading")
+            args.append(privateGateDeviceReading)
+        }
         if let fakeMigrationIdentity {
             args.append("-uitest-fake-migration-identity")
             args.append(fakeMigrationIdentity)
