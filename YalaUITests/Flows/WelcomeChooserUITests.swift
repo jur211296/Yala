@@ -189,7 +189,7 @@ final class WelcomeChooserUITests: XCTestCase {
                       "Con faro, «Soy nuevo» no encaminó a entrar con el método del faro.")
         // Y el origen NOMBRA el método del faro: la variante genérica es solo para el faro sin método.
         XCTAssertTrue(app.staticTexts["welcome_cloud_beacon_origin"].exists,
-                      "El intro no dice de dónde viene: falta «Este Apple ID ya tiene una cuenta de Yala creada con …».")
+                      "El intro no dice de dónde viene: falta «Con este Apple ID ya se creó una cuenta de Yala con …».")
 
         // …pero no decide: «Crear otra cuenta» está ahí.
         let createAnother = app.buttons["welcome_cloud_create_another"]

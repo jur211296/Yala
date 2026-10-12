@@ -263,7 +263,33 @@ struct FXPnLLogicTests {
         let jpy = try #require(summary.rows.first { $0.code == "JPY" })
         #expect(!usd.isApproximate)
         #expect(jpy.isApproximate)
-        #expect(summary.isApproximate, "el TOTAL agrega las dos: basta una inexacta")
+        // JPY aporta 220 de un P&L de 520: un 42 %, así que el total pesa y lleva «≈».
+        #expect(summary.isApproximate, "la fila dudosa pesa en el total")
+        #expect(summary.hasApproximateRow)
+    }
+
+    /// Decisión B del 2026-10-12 (`dos-criterios-de-aproximado-en-la-misma-pantalla`): el total del
+    /// P&L sigue `ApproximateMarkThreshold`, como el resto del Panel. Con el OR anterior este caso
+    /// salía marcado por 5 de 3.005.
+    @Test func approximateMark_onTheTotal_needsTheDoubtfulRowToWeigh() throws {
+        let acc = makeAccount()
+        let txs = [
+            tx(10000, "USD", on: 1, account: acc, historical: 35000),
+            tx(1000, "JPY", on: 1, account: acc, historical: 23)
+        ]
+        let summary = try #require(
+            run(
+                accounts: [acc], transactions: txs,
+                converter: FXConverter(
+                    todayRates: ["USD": 3.8, "JPY": Decimal(28) / Decimal(1000)],
+                    todayQualities: ["USD": .exact, "JPY": .carriedForward(fromDateKey: "2026-09-06")]
+                )
+            )
+        )
+        let jpy = try #require(summary.rows.first { $0.code == "JPY" })
+        #expect(jpy.isApproximate, "la fila sigue marcada: su número sí es dudoso")
+        #expect(summary.hasApproximateRow, "y la hoja explica el glifo de esa fila")
+        #expect(!summary.isApproximate, "5 de un P&L de 3.005 (0,17 %) no marca el total")
     }
 
     // MARK: - Datos guardados que no sirven

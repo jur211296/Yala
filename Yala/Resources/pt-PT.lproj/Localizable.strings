@@ -258,7 +258,7 @@
 "groups.reconnect.alreadyMember.body" = "Levamos-te ao grupo.";
 "groups.reconnect.alreadyMember.cta" = "Abrir grupo";
 "groups.reconnect.alreadyMember.title" = "Já pertences a %@";
-"groups.reconnect.archived.body" = "O admin arquivou-o e já não aceita alterações.";
+"groups.reconnect.archived.body" = "O admin arquivou-o e já não aceita novos membros.";
 "groups.reconnect.archived.cta" = "Entendido";
 "groups.reconnect.archived.title" = "%@ foi arquivado";
 "groups.reconnect.deletedForAll.body" = "Este grupo foi eliminado pelo seu criador.";
@@ -1133,11 +1133,11 @@
 "continent.middleEast" = "Oriente Médio";
 "continent.northAmerica" = "América do Norte";
 "continent.oceania" = "Oceania";
-"control.imageEntry.description" = "Registre com uma imagem ou foto";
-"control.imageEntry.displayName" = "Registro por imagem";
+"control.imageEntry.description" = "Regista com uma foto ou um ficheiro";
+"control.imageEntry.displayName" = "Foto ou ficheiro";
 "control.imageEntry.intentDescription" = "Abre o Yala em modo câmera para registrar";
-"control.imageEntry.intentTitle" = "Abrir registro por imagem";
-"control.imageEntry.label" = "Registro por imagem";
+"control.imageEntry.intentTitle" = "Abrir registo com foto ou ficheiro";
+"control.imageEntry.label" = "Foto ou ficheiro";
 "control.quickExpense.description" = "Registre um gasto rapidamente";
 "control.quickExpense.displayName" = "Gasto rápido";
 "control.quickExpense.intentDescription" = "Abre o Yala para registrar um gasto";
@@ -1441,7 +1441,7 @@
 "featureGate.budgets" = "Orçamentos";
 "featureGate.cashFlowAdvanced" = "Fluxo de caixa avançado";
 "featureGate.chatAssistant" = "Assistente de chat";
-"featureGate.imageInput" = "Entrada por imagem";
+"featureGate.imageInput" = "Entrada por foto ou ficheiro";
 "featureGate.limitInfo" = "%d de %d";
 "featureGate.limitReachedMessage" = "Você atingiu o limite de %@ no plano gratuito. Atualize para Pro para criar mais.";
 "featureGate.limitReachedTitle" = "Limite atingido";
@@ -2187,7 +2187,7 @@
 "panel.liveAnchorEducation.bodyLineOneFormat" = "Isso é o que seu dinheiro vale agora se você o convertesse tudo para %@.";
 "panel.liveAnchorEducation.bodyLineThree" = "Por que a diferença? Você tem dinheiro em outras moedas, e essas moedas valem de forma diferente hoje.";
 "panel.liveAnchorEducation.bodyLineTwoFormat" = "Se em vez disso somássemos cada movimento ao valor que tinha no dia em que aconteceu, seria %@.";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ hoje";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "%@ hoje";
 "panel.liveAnchorEducation.breakdownToggle" = "Ver por moeda";
 "panel.liveAnchorEducation.coachMessage" = "Quando você tem dinheiro em outras moedas, o valor dele muda dia a dia. Toque para entender o que está acontecendo.";
 "panel.liveAnchorEducation.coachTitle" = "Seu saldo se move sozinho";
@@ -2841,10 +2841,10 @@
 "shortcut.error.database" = "Não foi possível acessar o banco de dados";
 "shortcut.error.noAccount" = "Nenhuma conta disponível. Crie uma conta primeiro.";
 "shortcut.error.save" = "Não foi possível salvar o registro";
-"shortcut.imageEntry.description" = "Abre o seletor de imagens para registrar despesas de fotos";
-"shortcut.imageEntry.opening" = "Abrindo entrada por imagem...";
-"shortcut.imageEntry.shortTitle" = "Registrar por imagem";
-"shortcut.imageEntry.title" = "Registrar por imagem";
+"shortcut.imageEntry.description" = "Regista despesas a partir de uma foto ou de um ficheiro, como um PDF";
+"shortcut.imageEntry.opening" = "A abrir registo com foto ou ficheiro...";
+"shortcut.imageEntry.shortTitle" = "Foto ou ficheiro";
+"shortcut.imageEntry.title" = "Registar com foto ou ficheiro";
 "shortcut.notification.body" = "Foi registrado(a) um(a) %@ de %@%@. Abra o app para aprovar.";
 "shortcut.notification.expense" = "despesa";
 "shortcut.notification.income" = "receita";
@@ -2891,12 +2891,12 @@
 "siriShortcuts.faq.title" = "Perguntas frequentes";
 "siriShortcuts.phrase.applePay" = "Regista Apple Pay no Yala";
 "siriShortcuts.phrase.automation" = "Regista a partir de automatização no Yala";
-"siriShortcuts.phrase.image" = "Regista com imagem no Yala";
+"siriShortcuts.phrase.image" = "Regista com foto ou ficheiro no Yala";
 "siriShortcuts.phrase.quick" = "Regista no Yala";
 "siriShortcuts.phrase.voice" = "Regista com voz no Yala";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "Automatização";
-"siriShortcuts.shortcut.image" = "Entrada por imagem";
+"siriShortcuts.shortcut.image" = "Registar com foto ou ficheiro";
 "siriShortcuts.shortcut.quick" = "Registo rápido";
 "siriShortcuts.shortcut.voice" = "Entrada por voz";
 "siriShortcuts.siri.alt1" = "Também podes dizer: \"Anota uma despesa no Yala\"";
@@ -3223,7 +3223,7 @@
 "tipkit.pro.fab.message" = "Toque aqui para registrar por voz, imagem ou manualmente. Agora você tem as três opções.";
 "tipkit.pro.fab.title" = "Novas formas de registrar";
 "tipkit.pro.imageInput.message" = "Anexe uma foto de qualquer comprovante e o Yala extrai uma ou mais transações para você.";
-"tipkit.pro.imageInput.title" = "Registro com imagem";
+"tipkit.pro.imageInput.title" = "Registo com foto ou ficheiro";
 "tipkit.pro.premiumIcons.message" = "Escolha entre ícones premium para personalizar seu app.";
 "tipkit.pro.premiumIcons.title" = "Ícones exclusivos";
 "tipkit.pro.proThemes.message" = "Descubra temas de cores exclusivos que dão seu toque pessoal ao Yala.";
@@ -3909,7 +3909,7 @@
 "storage.adopt.body" = "Esta conta já tem os seus dados na nuvem. Vamos ativá-la neste dispositivo.";
 "storage.adopt.button" = "Ativar neste dispositivo";
 "storage.revert.title" = "Voltar ao iCloud";
-"storage.revert.body" = "Volte para o modo privado. Os seus dados regressam ao seu dispositivo e ao seu iCloud, sem perder nada.";
+"storage.revert.body" = "Volte para o modo privado. Os seus dados passam a ficar no seu dispositivo e no seu iCloud, sem perder nada.";
 "storage.revert.button" = "Voltar ao iCloud";
 "storage.revert.ineligible" = "De momento não pode voltar ao iCloud a partir deste dispositivo.";
 "storage.sync.title" = "Sincronização";
@@ -3931,7 +3931,7 @@
 "storage.confirm.migrate2Body" = "A nuvem será ativada neste dispositivo.";
 "storage.confirm.migrate2Confirm" = "Sim, ativar a nuvem";
 "storage.confirm.revertTitle" = "Voltar ao iCloud?";
-"storage.confirm.revertBody" = "Os seus dados regressarão ao seu dispositivo e ao seu iCloud. Não perderá nada.";
+"storage.confirm.revertBody" = "Os seus dados passarão a ficar no seu dispositivo e no seu iCloud. Não perderá nada.";
 "storage.confirm.revertContinue" = "Continuar";
 "storage.confirm.revert2Title" = "Tem a certeza?";
 "storage.confirm.revert2Body" = "A nuvem será desativada neste dispositivo.";
@@ -4036,7 +4036,7 @@
 "welcome.cloud.notFoundTitle" = "Não encontrámos uma conta";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "Este ID Apple ainda não tem uma conta Yala na nuvem.";
+"welcome.cloud.notFoundBody" = "Ainda não há uma conta Yala na nuvem para o acesso que usaste.";
 "welcome.cloud.notFoundCta" = "Criar a minha conta";
 
 /* Title when foreign local data blocks sign-in */
@@ -4204,16 +4204,16 @@
 "welcome.cloud.providerMismatchTitle" = "Essa conta usa outro método";
 
 /* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "A tua conta Yala foi criada com %@.";
+"welcome.cloud.providerMismatchBody" = "A conta Yala deste ID Apple foi criada com %@.";
 
 /* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "A tua conta Yala foi criada com outro método de acesso.";
+"welcome.cloud.providerMismatchBodyGeneric" = "A conta Yala deste ID Apple foi criada com outro método de acesso.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "Este ID Apple já tem uma conta Yala criada com %@.";
+"welcome.cloud.beaconOrigin" = "Com este ID Apple já foi criada uma conta Yala com %@.";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "Este ID Apple já tem uma conta Yala.";
+"welcome.cloud.beaconOriginGeneric" = "Com este ID Apple já foi criada uma conta Yala.";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "Criar outra conta";
@@ -5669,7 +5669,7 @@
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
-"image.entry.title" = "Registar com imagem";
+"image.entry.title" = "Registar com foto ou ficheiro";
 /* Image entry: what the user can bring and what Yala reads */
 "image.entry.subtitle" = "Um recibo, uma captura do banco ou um PDF. Eu retiro o valor, o estabelecimento e a data.";
 /* Image entry source: take a photo */

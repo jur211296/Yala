@@ -740,7 +740,7 @@
 "panel.liveAnchorEducation.todayQuestion" = "你今天的余额";
 "panel.liveAnchorEducation.whyQuestion" = "为什么是这个数？";
 "panel.liveAnchorEducation.breakdownToggle" = "按货币查看";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "今天约 %@";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "今天 %@";
 "panel.liveAnchorEducation.coachTitle" = "你的余额会自己变动";
 "panel.liveAnchorEducation.coachMessage" = "当你有其他货币的钱时,它的价值每天都会变化。点一下我,看看是怎么回事。";
 "panel.liveAnchorEducation.dotA11yLabel" = "按当前汇率计算的今日余额。点击查看详情。";
@@ -2203,7 +2203,7 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "语音输入";
 "tipkit.pro.voiceInput.message" = "现在你可以口述支出了。直接说,Yala 会替你记录。";
-"tipkit.pro.imageInput.title" = "图片输入";
+"tipkit.pro.imageInput.title" = "照片或文件输入";
 "tipkit.pro.imageInput.message" = "附上任意收据或发票的照片,Yala 会为你提取一笔或多笔交易。";
 "tipkit.pro.smartInsights.title" = "智能洞察";
 "tipkit.pro.smartInsights.message" = "打开它,Yala 会用 AI 生成关于你财务的观察。";
@@ -2264,10 +2264,10 @@
 "shortcut.voiceEntry.opening" = "正在打开语音记录...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "图片记录";
-"shortcut.imageEntry.description" = "打开图片选择器以从照片记录支出";
-"shortcut.imageEntry.shortTitle" = "图片记录";
-"shortcut.imageEntry.opening" = "正在打开图片记录...";
+"shortcut.imageEntry.title" = "照片或文件记录";
+"shortcut.imageEntry.description" = "从照片或文件（如 PDF）记录支出";
+"shortcut.imageEntry.shortTitle" = "照片或文件";
+"shortcut.imageEntry.opening" = "正在打开照片或文件记录...";
 
 // MARK: - Apple Pay Intent
 
@@ -2314,10 +2314,10 @@
 "control.voiceEntry.intentTitle" = "打开语音记录";
 "control.voiceEntry.intentDescription" = "以语音录音模式打开 Yala";
 
-"control.imageEntry.label" = "图片记录";
-"control.imageEntry.displayName" = "图片记录";
-"control.imageEntry.description" = "用图片或照片记录";
-"control.imageEntry.intentTitle" = "打开图片记录";
+"control.imageEntry.label" = "照片或文件";
+"control.imageEntry.displayName" = "照片或文件";
+"control.imageEntry.description" = "用照片或文件记录";
+"control.imageEntry.intentTitle" = "打开照片或文件记录";
 "control.imageEntry.intentDescription" = "以相机模式打开 Yala 进行记录";
 
 // MARK: - Notifications
@@ -2489,7 +2489,7 @@
 "featureGate.accounts" = "账户";
 "featureGate.budgets" = "预算";
 "featureGate.voiceInput" = "语音输入";
-"featureGate.imageInput" = "图片输入";
+"featureGate.imageInput" = "照片或文件输入";
 "featureGate.premiumIcons" = "高级图标";
 "featureGate.proThemes" = "Pro 主题";
 "featureGate.smartInsightsAI" = "智能 AI 洞察";
@@ -2852,7 +2852,7 @@
 "siriShortcuts.all.title" = "其他快捷指令";
 "siriShortcuts.shortcut.quick" = "快速记录";
 "siriShortcuts.shortcut.voice" = "语音输入";
-"siriShortcuts.shortcut.image" = "图片输入";
+"siriShortcuts.shortcut.image" = "用照片或文件记账";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "自动化";
 "siriShortcuts.desc.quick" = "一键打开记录表单。";
@@ -2862,7 +2862,7 @@
 "siriShortcuts.desc.automation" = "用系统快捷指令创建自动记录。";
 "siriShortcuts.phrase.quick" = "在 Yala 中记录";
 "siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
-"siriShortcuts.phrase.image" = "用图片在 Yala 中记录";
+"siriShortcuts.phrase.image" = "用照片或文件在 Yala 中记录";
 "siriShortcuts.phrase.applePay" = "在 Yala 记录 Apple Pay";
 "siriShortcuts.phrase.automation" = "在 Yala 记录自动化";
 "siriShortcuts.faq.title" = "常见问题";
@@ -3499,7 +3499,7 @@
 "groups.reconnect.subtitle" = "你被邀请加入一个共享群组";
 "groups.reconnect.fallbackGroupName" = "此群组";
 "groups.reconnect.archived.title" = "%@ 已归档";
-"groups.reconnect.archived.body" = "管理员已归档此群组，不再接受变更。";
+"groups.reconnect.archived.body" = "管理员已归档此群组，不再接受新成员。";
 "groups.reconnect.archived.cta" = "知道了";
 "groups.reconnect.alreadyMember.title" = "你已是 %@ 的成员";
 "groups.reconnect.alreadyMember.body" = "我们带你前往群组。";
@@ -4651,7 +4651,7 @@
 "storage.adopt.body" = "此账户的数据已在云端。我们将在此设备上启用它。";
 "storage.adopt.button" = "在此设备上启用";
 "storage.revert.title" = "返回 iCloud";
-"storage.revert.body" = "返回私密模式。您的数据将回到设备和 iCloud，不会丢失任何内容。";
+"storage.revert.body" = "返回私密模式。您的数据将保存在设备和 iCloud 中，不会丢失任何内容。";
 "storage.revert.button" = "返回 iCloud";
 "storage.revert.ineligible" = "目前无法从此设备返回 iCloud。";
 "storage.sync.title" = "同步";
@@ -4673,7 +4673,7 @@
 "storage.confirm.migrate2Body" = "将在此设备上启用云端。";
 "storage.confirm.migrate2Confirm" = "是，启用云端";
 "storage.confirm.revertTitle" = "返回 iCloud？";
-"storage.confirm.revertBody" = "您的数据将回到设备和 iCloud，不会丢失任何内容。";
+"storage.confirm.revertBody" = "您的数据将保存在设备和 iCloud 中，不会丢失任何内容。";
 "storage.confirm.revertContinue" = "继续";
 "storage.confirm.revert2Title" = "确定吗？";
 "storage.confirm.revert2Body" = "将在此设备上停用云端。";
@@ -4778,7 +4778,7 @@
 "welcome.cloud.notFoundTitle" = "未找到账户";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "此 Apple ID 还没有 Yala 云端账户。";
+"welcome.cloud.notFoundBody" = "你使用的登录方式还没有 Yala 云端账户。";
 "welcome.cloud.notFoundCta" = "创建账户";
 
 /* Title when foreign local data blocks sign-in */
@@ -4946,16 +4946,16 @@
 "welcome.cloud.providerMismatchTitle" = "该账户使用其他登录方式";
 
 /* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "你的 Yala 账户是通过%@创建的。";
+"welcome.cloud.providerMismatchBody" = "此 Apple ID 的 Yala 账户是通过%@创建的。";
 
 /* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "你的 Yala 账户是通过其他方式创建的。";
+"welcome.cloud.providerMismatchBodyGeneric" = "此 Apple ID 的 Yala 账户是通过其他方式创建的。";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "此 Apple ID 已有一个通过%@创建的 Yala 账户。";
+"welcome.cloud.beaconOrigin" = "此 Apple ID 曾通过%@创建过 Yala 账户。";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "此 Apple ID 已有一个 Yala 账户。";
+"welcome.cloud.beaconOriginGeneric" = "此 Apple ID 曾创建过 Yala 账户。";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "创建另一个账户";
@@ -6407,7 +6407,7 @@
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
-"image.entry.title" = "用图片记账";
+"image.entry.title" = "用照片或文件记账";
 /* Image entry: what the user can bring and what Yala reads */
 "image.entry.subtitle" = "收据、银行截图或 PDF 都可以。我会读出金额、商家和日期。";
 /* Image entry source: take a photo */

@@ -1,10 +1,10 @@
 ---
 id: stats-hero-detail-row-truncates-at-accessibility-text
-status: backlog
+status: done
 priority: low
 area: "estadisticas, a11y"
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-12
 source: "capturas del encargo `2026-10-10-spacing-chips-to-title-matches-panel` (tablero `hay-un-vacio-sobrante-entre-los-chips-y`)"
 ---
 
@@ -28,3 +28,7 @@ en el Panel, que comparte `HeroHeader`.
 
 Decisión de diseño antes que código: apilar entradas y salidas en dos filas a tamaños de accesibilidad, o soltar el
 chip de variación a la línea siguiente. Molde existente: `AdaptiveRowStack` (`swiftui-ds.md`).
+
+## Resuelto (2026-10-12, encargo `pulido-textos-2-1`)
+
+Opción A de Jürgen (2026-10-12). Con letra de accesibilidad, en Estadísticas › Resumen y › Tendencias entradas y salidas van cada una en su línea (`AdaptiveRowStack`) y el chip de variación baja bajo su cifra (`AmountWithChipStack`). El Panel y Registros ya usaban `AdaptiveRowStack` y no tienen chip. Medido en el simulador a AX3: antes «S/274,…50», ahora la cifra entera; a tamaño normal el diff de píxeles sale vacío.

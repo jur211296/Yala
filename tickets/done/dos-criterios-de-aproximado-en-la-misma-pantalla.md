@@ -1,10 +1,10 @@
 ---
 id: dos-criterios-de-aproximado-en-la-misma-pantalla
-status: backlog
+status: done
 priority: low
 area: "currency, fx, ui"
 created: 2026-09-08
-updated: 2026-10-08
+updated: 2026-10-12
 source: review adversarial de approximate-mark-ors-over-whole-period (2026-09-08)
 ---
 
@@ -68,3 +68,7 @@ vecinos**. Salió de la review adversarial del cambio, no de un fallo funcional.
 - Recomendación: **B**. El helper ya existe y centraliza el umbral, así que el coste es bajo y el «≈» pasa a significar una sola cosa. Prioridad con B: `low` (no hay datos en riesgo, es coherencia del glifo).
 
 Triage 2026-10-08: abierto · medium → low · el panorama (`LiveBalanceCalculator.swift:144`) y el P&L (`FXPnLLogic.swift:112`) siguen con OR mientras el período usa `ApproximateMarkThreshold`; falta la decisión de producto.
+
+## Resuelto (2026-10-12, encargo `pulido-textos-2-1`)
+
+Opción B de Jürgen (2026-10-12): el panorama (`LiveBalanceCalculator`: Σ|convertido dudoso| / |saldo|) y el total del P&L cambiario (`FXPnLLogic`: Σ|pnl de filas dudosas| / |P&L total|) usan `ApproximateMarkThreshold`. Las filas por divisa siguen marcándose solas. Portado al conector `mcp/` (`balances.ts`). Test de coincidencia: `ApproximateMarkPanelCoherenceTests`, con mutantes en rojo.

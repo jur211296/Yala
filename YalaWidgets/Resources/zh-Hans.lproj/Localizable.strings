@@ -104,7 +104,7 @@
 "widget.ui.ofLimit" = "/ %@";
 "widget.ui.newRecord" = "快速记录";
 "widget.ui.voiceRecord" = "语音记录";
-"widget.ui.scanReceipt" = "图片记录";
+"widget.ui.scanReceipt" = "照片或文件";
 "widget.ui.upcomingPayments" = "即将到期付款";
 "widget.ui.budgets" = "预算";
 "widget.ui.latestRecords" = "最新记录";
@@ -139,8 +139,8 @@
 // MARK: - Control Widgets
 "widget.control.voiceExpense" = "语音记录";
 "widget.control.voiceExpense.desc" = "向 Yala 口述你的记录";
-"widget.control.photoExpense" = "图片记录";
-"widget.control.photoExpense.desc" = "在 Yala 中用图片记录";
+"widget.control.photoExpense" = "照片或文件";
+"widget.control.photoExpense.desc" = "在 Yala 中用照片或文件记录";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "其他";

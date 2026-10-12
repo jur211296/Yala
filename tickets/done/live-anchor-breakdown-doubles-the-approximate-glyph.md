@@ -1,10 +1,10 @@
 ---
 id: live-anchor-breakdown-doubles-the-approximate-glyph
-status: backlog
+status: done
 priority: low
 area: "currency, ui, l10n"
 created: 2026-09-09
-updated: 2026-10-08
+updated: 2026-10-12
 source: device-QA de fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
 ---
 
@@ -97,3 +97,7 @@ Sigue igual: `"≈ %@ hoy"` (`es.lproj:743`) + `isEstimate: row.convertedIsAppro
 Recomendación: **A**, que es lo que el «≈» ya significa en el resto de la app. Con A la prioridad es `low`.
 
 Triage 2026-10-08: abierto · medium → low · el doble glifo sigue: formato `"≈ %@ hoy"` (`es.lproj:743`) más `isEstimate:` en `BalanceLiveAnchorEducationSheet.swift:175`; falta decidir el copy.
+
+## Resuelto (2026-10-12, encargo `pulido-textos-2-1`)
+
+Opción A de Jürgen (2026-10-12): `breakdownRowConvertedFormat` pierde su «≈» en las 16 locales (y el «约» de zh-Hans); el glifo de la fila significa solo «tasa de otro día». Docblock en la fila; test de las 16 locales: `LiveAnchorBreakdownGlyphTests`. `stats.insights.need.dailyFormat` y el «≈ » a mano de `TransactionDetailSheet` quedan anotados en `.claude/rules/currency-fx.md`.

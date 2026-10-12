@@ -47,11 +47,15 @@ struct YalaShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: ImageEntryIntent(),
             phrases: [
-                // Spanish
+                // Spanish. La primera es la que enseña Ajustes › Siri (`siriShortcuts.phrase.image`)
+                // desde que la entrada se llama «Registrar con foto o archivo» (2026-10-12); las de
+                // «imagen» se quedan como sinónimos para quien ya las dice.
+                "Registra con foto o archivo en \(.applicationName)",
                 "Registra con imagen en \(.applicationName)",
                 "Entrada por imagen en \(.applicationName)",
                 "Escanear gasto en \(.applicationName)",
                 // English
+                "Record with photo or file in \(.applicationName)",
                 "Record with image in \(.applicationName)",
                 "Image entry in \(.applicationName)",
                 "Scan expense in \(.applicationName)"

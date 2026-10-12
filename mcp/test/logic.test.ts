@@ -130,6 +130,15 @@ describe("saldos", () => {
     expect(r.cuentas.map((c) => c.nombre)).not.toContain("Vieja");
   });
 
+  it("una divisa con tasa de otro día que no pesa no marca el total, como el panorama de la app", () => {
+    // Decisión B del 2026-10-12: el mismo umbral del 5 % que la app. 340 PEN dudosos sobre ~101.239 no marcan.
+    const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 100000, currency_code: "PEN" }], "PEN", RATES, {
+      incluirArchivadas: false,
+      todayUtc: "2026-09-26",
+    });
+    expect(r.total.aproximado).toBe(false);
+  });
+
   it("una divisa que la app no conoce no se suma y se declara", () => {
     const r = computeBalances(accounts, [...txs, { account_ref: pen, amount: 7, currency_code: "XXX" }], "PEN", RATES, {
       incluirArchivadas: false,

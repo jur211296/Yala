@@ -13,6 +13,7 @@
  *   día UTC de hoy, y si le falta la divisa, las anteriores o la tabla estática). Es «lo que tienes hoy», no la suma
  *   de conversiones históricas. Los gastos de grupo NO se ajustan: el saldo es el dinero que de verdad se movió.
  */
+import { marksApproximate } from "./approx";
 import { convertOn, type RateBook } from "./fx";
 import { num, round2, type AccountRow, type TxRow } from "./types";
 
@@ -77,7 +78,9 @@ export function computeBalances(
   }
 
   let total = 0;
-  let approximate = false;
+  // «≈» con el umbral de la app (decisión B del 2026-10-12, `dos-criterios-de-aproximado-en-la-misma-pantalla`):
+  // magnitud de lo convertido con tasa no exacta sobre el total que se muestra. Port de `LiveBalanceCalculator`.
+  let approximateMagnitude = 0;
   const unconverted: { divisa: string; importe: number }[] = [];
   for (const [code, amount] of native) {
     if (code === preferredCurrency.toUpperCase()) {
@@ -89,9 +92,10 @@ export function computeBalances(
       unconverted.push({ divisa: code, importe: round2(amount) });
     } else {
       total += converted.value;
-      if (converted.quality !== "exact") approximate = true;
+      if (converted.quality !== "exact") approximateMagnitude += Math.abs(converted.value);
     }
   }
+  const approximate = marksApproximate(approximateMagnitude, total);
 
   const cuentas = accounts
     .filter((a) => opts.incluirArchivadas || a.is_archived !== true)
