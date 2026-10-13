@@ -1,6 +1,6 @@
 ---
 id: retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly
-status: qa
+status: done
 priority: low
 area: "sesiones, modo-nube"
 created: 2026-10-08
@@ -56,3 +56,7 @@ No se puede montar en simulador (pide una ida a la nube real que falle). En un t
 aviso de iCloud, cortar con un kill antes de que termine, activar la nube y forzar el fallo (sin red durante la subida),
 pulsar «Reintentar» en Almacenamiento y relanzar Yala. Esperado: Yala pregunta (aviso de iCloud o «quedó a medias") y no
 borra nada sin pantalla.
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-10-12: la decisión A de Jürgen está implementada (PR #470) y el cambio solo pregunta donde antes borraba. MigrationRunnerTests §9d recorre arm + fallo + «Reintentar» + arranque con un mutante rojo, y la tabla de 192 celdas de PendingICloudWipeCloudLogicTests fija el resto. Montarlo a mano pide una ida a la nube real que falle a propósito.

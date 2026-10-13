@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (870)
+## Index (873)
 
 | id | status | path |
 |---|---|---|
@@ -507,11 +507,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
 | ipad-drop-unreadable-file-fails-silently | done | tickets/done/ipad-drop-unreadable-file-fails-silently.md |
-| ipad-group-detail-keeps-the-first-group-after-switching | qa | tickets/qa/ipad-group-detail-keeps-the-first-group-after-switching.md |
+| ipad-group-detail-keeps-the-first-group-after-switching | done | tickets/done/ipad-group-detail-keeps-the-first-group-after-switching.md |
 | ipad-keyboard-shortcuts-pointer-context-menus-and-drop | done | tickets/done/ipad-keyboard-shortcuts-pointer-context-menus-and-drop.md |
 | ipad-large-and-extra-large-widgets | done | tickets/done/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | done | tickets/done/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
 | ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |
+| ipad-locked-pdf-password-may-crash-on-open | qa | tickets/qa/ipad-locked-pdf-password-may-crash-on-open.md |
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
 | ipad-narrowing-the-window-on-groups-crashes-the-app | done | tickets/done/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
 | ipad-native-app | done | tickets/done/ipad-native-app.md |
@@ -586,7 +587,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
-| nightly-ui-suite-hits-its-110-minute-cap-every-night | qa | tickets/qa/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
+| nightly-ui-suite-hits-its-110-minute-cap-every-night | done | tickets/done/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
 | no-test-seam-for-account-exists-blocks-xcuitest-of-identity | backlog | tickets/backlog/no-test-seam-for-account-exists-blocks-xcuitest-of-identity.md |
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
@@ -614,7 +615,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
 | personal-cloudkit-cashflow-override-line-declared-as-reference | backlog | tickets/backlog/personal-cloudkit-cashflow-override-line-declared-as-reference.md |
-| personal-cloudkit-schema-snapshot-misses-optional-fields | blocked | tickets/blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
+| personal-cloudkit-schema-snapshot-misses-optional-fields | done | tickets/done/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
 | personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | done | tickets/done/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
 | personal-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/personal-loss-without-a-count-covers-own-edits-made-after-the-notice.md |
 | personal-sign-out-reads-an-unfinished-drain-as-nothing-pending | done | tickets/done/personal-sign-out-reads-an-unfinished-drain-as-nothing-pending.md |
@@ -634,13 +635,13 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | presentation-net-desarm-has-no-automated-net | done | tickets/done/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
 | privacy-manifest-misses-cloud-account-data | backlog | tickets/backlog/privacy-manifest-misses-cloud-account-data.md |
-| privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion | qa | tickets/qa/privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion.md |
+| privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion | done | tickets/done/privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion.md |
 | private-exit-export-wait-cached-zero-misses-outside-writes | backlog | tickets/backlog/private-exit-export-wait-cached-zero-misses-outside-writes.md |
 | private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |
 | private-exit-materialized-drafts-do-not-refresh-the-inbox | backlog | tickets/backlog/private-exit-materialized-drafts-do-not-refresh-the-inbox.md |
 | private-exit-warning-recounts-materialized-captures | backlog | tickets/backlog/private-exit-warning-recounts-materialized-captures.md |
 | private-gate-back-from-found-keeps-a-resumed-arm | done | tickets/done/private-gate-back-from-found-keeps-a-resumed-arm.md |
-| private-gate-device-notice-has-no-forward-exit | qa | tickets/qa/private-gate-device-notice-has-no-forward-exit.md |
+| private-gate-device-notice-has-no-forward-exit | done | tickets/done/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-device-wipe-navigates-after-its-gate-unmounted | backlog | tickets/backlog/private-gate-device-wipe-navigates-after-its-gate-unmounted.md |
 | private-gate-leave-after-a-halfway-wipe-forgets-the-zone | done | tickets/done/private-gate-leave-after-a-halfway-wipe-forgets-the-zone.md |
 | private-gate-remote-wipe-can-strand-its-arm | done | tickets/done/private-gate-remote-wipe-can-strand-its-arm.md |
@@ -712,7 +713,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-treats-budgets-and-groups-as-no-data | done | tickets/done/restore-treats-budgets-and-groups-as-no-data.md |
 | restore-unverified-message-depends-on-a-single-gateway-host | backlog | tickets/backlog/restore-unverified-message-depends-on-a-single-gateway-host.md |
 | retire-guest-vocabulary-for-session-terms | done | tickets/done/retire-guest-vocabulary-for-session-terms.md |
-| retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | qa | tickets/qa/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
+| retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly | done | tickets/done/retry-after-a-failed-migration-resumes-the-pending-icloud-wipe-blindly.md |
 | reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date | backlog | tickets/backlog/reverse-abort-rejected-leaves-a-frozen-cloud-saying-up-to-date.md |
 | reverse-before-mount-has-no-way-to-abandon-the-return | done | tickets/done/reverse-before-mount-has-no-way-to-abandon-the-return.md |
 | reverse-before-mount-stays-stuck-with-an-expired-session | done | tickets/done/reverse-before-mount-stays-stuck-with-an-expired-session.md |
