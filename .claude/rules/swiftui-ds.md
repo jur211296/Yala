@@ -207,6 +207,13 @@ paths:
     la lista después de retirarla.
 - **Un `navigationDestination` de la columna de lista presenta en la de detalle** (medido con presupuestos): sus filas
   no se tocaron. En compacta, empuja como siempre.
+- **Lo que se abre en la columna de detalle lleva `.id(<identidad de lo abierto>)`** (medido el 2026-10-12 en el iPad
+  Pro 13). Al abrir otro elemento, SwiftUI REUTILIZA la vista del detalle —con `navigationDestination(item:)` y también
+  con `NavigationLink(value:)`—, así que su `@State` iniciado en el `init`, en `onAppear` o en una `.task` se queda con
+  el anterior: el grupo nuevo enseñaba los gastos, el saldo y los miembros del primero, y el presupuesto nuevo el
+  gastado del anterior, con el título ya cambiado. En iPhone no se ve porque cada empuje crea la vista. Molde:
+  `RecordsStandaloneView.detailColumn`, `GroupsContainerView`, `BudgetsListView`. Test:
+  `AdaptiveNavigationUITests#test_switchingGroups_*` y `#test_switchingBudgets_*`.
 - **El `horizontalSizeClass` se lee FUERA del split**, en la vista que lo monta: dentro, la columna de lista es
   compacta aunque la ventana sea ancha.
 - **Lo abierto vive fuera del split** (`RecordsViewModel.openRecordID`) y se resuelve contra lo cargado, nunca con

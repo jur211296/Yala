@@ -83,6 +83,10 @@ struct BudgetsListView: View {
         .navigationDestination(for: BudgetNavigationID.self) { navID in
             BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
                 .announcesShownInDetailColumn()
+                // En la columna de detalle SwiftUI reutiliza el destino al abrir otro presupuesto, y el resumen
+                // (`@State`, calculado en `onAppear`) se quedaba con el gastado del anterior (medido en el iPad el
+                // 2026-10-12). Con la identidad del presupuesto, cada uno es una vista nueva.
+                .id(navID.id)
         }
         // `editingBudget`: `nil` crea (el FAB y el empty state lo ponen a `nil` antes); un presupuesto lo edita
         // (menú contextual de la fila, fase 3). Hasta entonces nadie lo leía y la hoja creaba siempre.

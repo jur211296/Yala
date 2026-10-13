@@ -140,6 +140,9 @@ struct BudgetDetailView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
                     .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                    // Lo lee `AdaptiveNavigationUITests` para comprobar que, al abrir otro presupuesto en la columna
+                    // de detalle, el gastado es el del presupuesto nuevo.
+                    .accessibilityIdentifier("budget_detail_spent")
 
                 Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), limitText))
                     .font(DS.Typography.subheadline)

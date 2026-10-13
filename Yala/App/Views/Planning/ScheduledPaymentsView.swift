@@ -166,6 +166,9 @@ private struct ScheduledPaymentDetailDestination: View {
     var body: some View {
         if let payment = modelContext.model(for: paymentID) as? ScheduledPayment {
             ScheduledPaymentDetailView(payment: payment, viewModel: viewModel)
+                // Mismo caso que el presupuesto: en la columna de detalle la vista se reutiliza al abrir otro pago, y
+                // sus `@State` (los registros enlazados de la `.task`, la ocurrencia elegida) serían del anterior.
+                .id(paymentID)
         } else {
             ContentUnavailableView(
                 NSLocalizedString("scheduled.detail.not.found", comment: "Payment not found"),
