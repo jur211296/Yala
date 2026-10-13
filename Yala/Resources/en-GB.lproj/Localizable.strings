@@ -5854,3 +5854,6 @@
 
 /* Private gate: secondary button that goes back to the choice */
 "welcome.privateICloud.deviceUnreadableBack" = "Go back";
+
+/* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
+"welcome.bornCloud.readyExistingAccountTitle" = "You already had an account, and you're now signed in to it.";

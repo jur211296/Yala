@@ -266,7 +266,7 @@ struct CloudConsentRegistrationWiringTests {
     @Test("en `runSignInFlow` hay UNA sola escritura y va antes de arrancar el adopt")
     func signInFlow_writesOnlyOnTheAdoptBranch_beforeTheMachine() throws {
         let src = try Self.code(Self.welcomePath)
-        let flow = try Self.body(of: "private func runSignInFlow() async {", in: src)
+        let flow = try Self.body(of: "private func runSignInFlow(origin: WelcomeAdoptOrigin) async {", in: src)
 
         let calls = flow.components(separatedBy: "persistConsentIfDue(").count - 1
         #expect(calls == 1, """

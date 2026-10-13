@@ -438,8 +438,11 @@ struct BornCloudSignUpOrderWiringTests {
     /// sin onboarding. Ningún test tocaba esto antes del 2026-09-13 — medido con `git grep`.
     @Test("cada terminal de «listo» va a su salida: el alta al onboarding, la re-entrada a la app")
     func readyTerminals_areNotSwapped() throws {
-        let src = try Self.codeOnly(Self.viewPath)
-        #expect(src.contains(#"readyContent(id: "welcome_born_cloud_ready", action: onBornCloudCompleted)"#))
-        #expect(src.contains(#"readyContent(id: "welcome_reentry_ready", action: onFinishedToApp)"#))
+        // Espacios colapsados: una llamada partida en dos líneas sigue siendo la misma llamada.
+        let src = try Self.codeOnly(Self.viewPath).replacing(/\s+/, with: " ")
+        #expect(src.contains(#"readyContent(id: "welcome_born_cloud_ready", title: L10n.Welcome.BornCloud.readyTitle, action: onBornCloudCompleted)"#))
+        #expect(src.contains(#"readyContent(id: "welcome_reentry_ready", title: L10n.Welcome.BornCloud.readyTitle, action: onFinishedToApp)"#))
+        // El alta que entró en una cuenta ya creada sale como la re-entrada: el onboarding sembraría encima de la cuenta.
+        #expect(src.contains(#"readyContent(id: "welcome_signup_existing_account_ready", title: L10n.Welcome.BornCloud.readyExistingAccountTitle, action: onFinishedToApp)"#))
     }
 }
