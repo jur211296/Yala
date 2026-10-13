@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Yala · portada de reel 1080×1920</title>
+<link rel="stylesheet" href="yala.css">
+<style>
+  body{width:1080px;height:1920px}
+  .lamina{width:1080px;height:1920px}
+  /* Zonas seguras de un Reel: arriba ~250 px y abajo ~340 px los tapa la interfaz de IG. */
+  .texto{left:90px;right:90px;top:380px}
+  .titular{font-size:96px;margin-top:44px}
+  .sub{font-size:50px;margin-top:32px}
+  .telefono{left:50%;top:980px;width:440px;transform:translateX(-50%) rotate(-4deg)}
+  .logo{top:262px;bottom:auto;left:50%;transform:translateX(-50%);width:180px}
+  .guia{position:absolute;left:0;right:0;border:2px dashed rgba(255,255,255,.25);pointer-events:none;z-index:9}
+</style></head>
+<body>
+<!-- EDITA AQUÍ. Es la portada del Reel; el vídeo sale de ../remotion/. -->
+<div class="lamina" data-acento="rosa"
+     data-destellos="70,420,70,azul,12,1; 940,330,90,rosa,-8,1; 980,1250,64,teal,6,.9; 60,1380,80,teal,-15,.85; 900,1560,70,azul,18,.8">
+  <div class="halo" style="left:-160px;top:900px"></div>
+  <div class="texto">
+    <span class="pill">Compartir</span>
+    <h1 class="titular">Hasta 10 capturas a la <u>vez</u></h1>
+    <p class="sub">Fotos → Compartir → Yala.</p>
+  </div>
+  <div class="telefono"><img src="../screenshots-appstore/generator/public/screenshots/es/captura-imagen.png" alt=""></div>
+  <img class="logo" src="../screenshots-appstore/generator/public/yala-spark.png" alt="yala">
+  <!-- Guías de zona segura: añade ?guias a la URL para verlas. No salen al exportar. -->
+  <div class="guia" id="g1" style="top:0;height:250px;display:none"></div>
+  <div class="guia" id="g2" style="bottom:0;height:340px;display:none"></div>
+</div>
+<script src="destellos.js"></script>
+<script>if(location.search.includes("guias"))document.querySelectorAll(".guia").forEach(g=>g.style.display="")</script>
+</body></html>
