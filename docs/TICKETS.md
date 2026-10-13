@@ -98,6 +98,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-every-call-sends-its-task-and-passes-the-bench | qa | tickets/qa/ai-every-call-sends-its-task-and-passes-the-bench.md |
 | ai-insights-error-card-shows-raw-english-errors | done | tickets/done/ai-insights-error-card-shows-raw-english-errors.md |
 | ai-model-choice-lives-in-the-app-binary | done | tickets/done/ai-model-choice-lives-in-the-app-binary.md |
+| ai-onboarding-demo-speaks-english-and-dollars | backlog | tickets/backlog/ai-onboarding-demo-speaks-english-and-dollars.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
 | ai-responses-use-json-object-not-a-strict-schema | backlog | tickets/backlog/ai-responses-use-json-object-not-a-strict-schema.md |
 | ai-text-model-generation-upgrade | done | tickets/done/ai-text-model-generation-upgrade.md |
@@ -305,6 +306,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ensure-rates-for-existing-transactions-has-no-callers | backlog | tickets/backlog/ensure-rates-for-existing-transactions-has-no-callers.md |
 | entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo | backlog | tickets/backlog/entitlement-sync-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | entry-to-panel-closes-sheets-of-other-tabs | done | tickets/done/entry-to-panel-closes-sheets-of-other-tabs.md |
+| es-419-category-names-use-peruvian-words | backlog | tickets/backlog/es-419-category-names-use-peruvian-words.md |
 | es-ar-detach-and-signout-copy-lost-the-voseo | discarded | tickets/discarded/es-ar-detach-and-signout-copy-lost-the-voseo.md |
 | es-ar-storage-groups-block-is-in-tuteo-not-voseo | backlog | tickets/backlog/es-ar-storage-groups-block-is-in-tuteo-not-voseo.md |
 | escritores-de-tasas-que-no-avisan | backlog | tickets/backlog/escritores-de-tasas-que-no-avisan.md |
@@ -537,6 +539,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed | done | tickets/done/late-icloud-notice-exit-after-a-failed-wipe-leaves-the-blind-resume-armed.md |
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
+| panel-balance-chart-contradicts-its-own-figure | backlog | tickets/backlog/panel-balance-chart-contradicts-its-own-figure.md |
 | sharing-several-photos-hides-yala | qa | tickets/qa/sharing-several-photos-hides-yala.md |
 | stats-hero-detail-row-truncates-at-accessibility-text | done | tickets/done/stats-hero-detail-row-truncates-at-accessibility-text.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
@@ -815,6 +818,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
 | step-flows-should-match-the-sep15-reference | qa | tickets/qa/step-flows-should-match-the-sep15-reference.md |
 | storage-actions-release-the-working-flag-under-a-running-resume | discarded | tickets/discarded/storage-actions-release-the-working-flag-under-a-running-resume.md |
+| storage-groups-copy-says-iphone-on-ipad | backlog | tickets/backlog/storage-groups-copy-says-iphone-on-ipad.md |
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
 | storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal | backlog | tickets/backlog/storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal.md |
 | storage-mode-unknown-raw-reads-as-icloud | backlog | tickets/backlog/storage-mode-unknown-raw-reads-as-icloud.md |
