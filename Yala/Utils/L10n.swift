@@ -6946,6 +6946,7 @@ enum L10n {
     enum TrialOffer {
         static var title: String { ls("subscription.trialOffer.title", comment: "") }
         static var subtitle: String { ls("subscription.trialOffer.subtitle", comment: "") }
+        static var pricesUnavailable: String { ls("subscription.trialOffer.pricesUnavailable", comment: "Oferta de prueba: no cargaron los precios de la App Store") }
         static var startTrial: String { ls("subscription.trialOffer.startTrial", comment: "") }
         static var maybeLater: String { ls("subscription.trialOffer.maybeLater", comment: "") }
     }

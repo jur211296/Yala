@@ -299,6 +299,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
 | duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
 | edgecases-extreme-minimum-flaky-under-load | done | tickets/done/edgecases-extreme-minimum-flaky-under-load.md |
+| edgecases-minimum-amount-account-chip-never-settles-on-ios-27 | backlog | tickets/backlog/edgecases-minimum-amount-account-chip-never-settles-on-ios-27.md |
 | el-aviso-de-cierre-cita-el-pr-de-otra-sesion | backlog | tickets/backlog/el-aviso-de-cierre-cita-el-pr-de-otra-sesion.md |
 | el-gate-no-corre-un-check-que-el-ci-si-bloquea | backlog | tickets/backlog/el-gate-no-corre-un-check-que-el-ci-si-bloquea.md |
 | el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo | done | tickets/done/el-hook-que-prohibe-atribuir-a-una-ia-no-corre-en-este-repo.md |

@@ -2716,7 +2716,7 @@
 "settings.notifications" = "Notificacoes";
 "settings.organization" = "Organizacao";
 "settings.permissions" = "Permissoes";
-"settings.personalization" = "Personalizacao";
+"settings.personalization" = "Personalização";
 "settings.personalizationDescription" = "Ajuste como o Yala funciona de acordo com suas preferencias.";
 "settings.plannedPayments" = "Pagamentos agendados";
 "settings.preferences" = "Preferencias";
@@ -3158,6 +3158,7 @@
 "subscription.trial.subscribe" = "Assinar";
 "subscription.trial.title" = "Teste gratuito";
 "subscription.trialOffer.maybeLater" = "Talvez depois";
+"subscription.trialOffer.pricesUnavailable" = "Não conseguimos carregar os preços. Verifica a tua ligação.";
 "subscription.trialOffer.startTrial" = "Começar teste grátis";
 "subscription.trialOffer.subtitle" = "30 dias com todas as funcionalidades. Sem compromisso, cancele quando quiser.";
 "subscription.trialOffer.title" = "Experimente Yala Pro grátis";

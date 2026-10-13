@@ -3179,6 +3179,7 @@
 "subscription.trial.subscribe" = "Subscribe";
 "subscription.trial.title" = "Free trial";
 "subscription.trialOffer.maybeLater" = "Maybe later";
+"subscription.trialOffer.pricesUnavailable" = "We couldn't load the prices. Check your connection.";
 "subscription.trialOffer.startTrial" = "Start free trial";
 "subscription.trialOffer.subtitle" = "30 days with all features. No commitment, cancel anytime.";
 "subscription.trialOffer.title" = "Try Yala Pro for free";

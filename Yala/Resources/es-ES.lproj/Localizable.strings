@@ -3156,6 +3156,7 @@
 "subscription.trial.subscribe" = "Suscribirse";
 "subscription.trial.title" = "Prueba gratuita";
 "subscription.trialOffer.maybeLater" = "Quizás después";
+"subscription.trialOffer.pricesUnavailable" = "No pudimos cargar los precios. Revisa tu conexión.";
 "subscription.trialOffer.startTrial" = "Empezar prueba gratis";
 "subscription.trialOffer.subtitle" = "30 días con todas las funciones. Sin compromiso, cancela cuando quieras.";
 "subscription.trialOffer.title" = "Prueba Yala Pro gratis";

@@ -74,9 +74,11 @@ struct ProTrialOfferSheet: View {
                         .opacity(contentOpacity)
                 } else if productLoadFailed {
                     VStack(spacing: DS.Spacing.sm) {
-                        Text(L10n.Subscription.errorTitle)
+                        // No cargaron los precios: no hubo compra, así que no es «Error de compra».
+                        Text(L10n.TrialOffer.pricesUnavailable)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.thSecondaryText)
+                            .multilineTextAlignment(.center)
                         Button(L10n.Action.retry) {
                             productLoadFailed = false
                             Task { await loadProductsWithTimeout() }

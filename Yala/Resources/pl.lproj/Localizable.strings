@@ -2547,6 +2547,7 @@
 "subscription.trialOffer.subtitle" = "30 dni ze wszystkimi funkcjami. Bez zobowiązań, możesz anulować w każdej chwili.";
 "subscription.trialOffer.startTrial" = "Rozpocznij darmowy okres próbny";
 "subscription.trialOffer.maybeLater" = "Może później";
+"subscription.trialOffer.pricesUnavailable" = "Nie udało się wczytać cen. Sprawdź połączenie.";
 
 // MARK: - Shortcut Notifications
 
