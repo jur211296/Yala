@@ -128,6 +128,70 @@ final class ChatAssistantViewModel {
         ]
     }
 
+    /// `-uitest-chat-reply <perfil>`: la respuesta a lo que el usuario acaba de enviar, sin red. Espera un momento con
+    /// el indicador de «pensando» a la vista y contesta por el mismo camino que una respuesta real (mensaje con sus
+    /// borradores, turno del día y sesión guardada), así que la card y su «Guardar» son los de producción. Un perfil
+    /// que no existe, o sin cuenta en la semilla, acaba como cualquier fallo: aviso genérico y el texto de vuelta en la
+    /// caja.
+    private func answerForUITest(profile: String, question: String, context ctx: ModelContext) async {
+        do {
+            try await Task.sleep(for: .milliseconds(1200))
+        } catch {
+            print("ChatAssistantViewModel: answerForUITest sleep cancelled: \(error)")
+            return
+        }
+        guard let drafts = uiTestReplyDrafts(profile: profile, ctx) else {
+            print("ChatAssistantViewModel: -uitest-chat-reply sin respuesta para el perfil «\(profile)»")
+            handleError(.parseFailed)
+            return
+        }
+        let text = drafts.count == 1 ? L10n.Chat.Draft.confirmRegisterSingular : L10n.Chat.Draft.confirmRegisterPlural
+        let assistantMessage = ChatMessage(
+            role: .assistant, text: text, timestamp: Date.now, attachments: [.drafts(drafts)]
+        )
+        messages.append(assistantMessage)
+        allTurns.append(QAPair(
+            question: question,
+            response: text,
+            timestamp: Date.now,
+            messageID: assistantMessage.id,
+            attachments: [.drafts(drafts)]
+        ))
+        persistSession()
+    }
+
+    /// Los borradores de cada perfil de `-uitest-chat-reply`, resueltos contra la semilla. `pizza`: un gasto de 280 en
+    /// la cuenta principal de la divisa preferida (con `ficha-mx-vida`, «Cuenta principal» en MXN), en Restaurantes y
+    /// con fecha de hoy.
+    private func uiTestReplyDrafts(profile: String, _ ctx: ModelContext) -> [ChatTransactionDraft]? {
+        guard profile == "pizza" else { return nil }
+        let accounts: [Account]
+        let subcategories: [Subcategory]
+        do {
+            accounts = try ctx.fetch(FetchDescriptor<Account>(predicate: #Predicate { !$0.isArchived }))
+            subcategories = try ctx.fetch(FetchDescriptor<Subcategory>(predicate: #Predicate { $0.isVisible == true }))
+        } catch {
+            print("ChatAssistantViewModel: uiTestReplyDrafts fetch failed: \(error)")
+            return nil
+        }
+        let preferred = CurrencyDefaults.currentPreferred
+        let inPreferred = accounts.filter { $0.currencyCode == preferred }
+        guard let account = inPreferred.first(where: { $0.name == L10n.DevSeed.accountMain })
+            ?? inPreferred.first
+            ?? accounts.first
+        else { return nil }
+        let expenseSubs = subcategories.filter { !$0.safeCategory.isIncome }
+        let restaurants = expenseSubs.first(where: { $0.name == L10n.Subcategory.restaurants })
+            ?? expenseSubs.first(where: { $0.name.localizedCaseInsensitiveContains("restaurant") })
+            ?? expenseSubs.first(where: { $0.safeCategory.name == L10n.Category.food })
+        return [
+            ChatTransactionDraft(
+                amount: 280, currencyCode: account.currencyCode, isExpense: true, note: "Pizza",
+                date: Date.now, accountID: account.persistentModelID, subcategoryID: restaurants?.persistentModelID
+            ),
+        ]
+    }
+
     /// `-uitest-chat-suggestions`: las tres sugerencias del chat vacío, fijas.
     private static let uiTestSuggestions = [
         ChatSuggestion(text: "¿Cómo se distribuyeron mis gastos en Hogar y Personal?", icon: "chart.pie", type: .biggestCategory),
@@ -228,6 +292,14 @@ final class ChatAssistantViewModel {
         // Add user message
         let userMessage = ChatMessage(role: .user, text: trimmed, timestamp: Date.now)
         messages.append(userMessage)
+
+        #if DEBUG
+        if let profile = UITestHooks.chatReply {
+            await answerForUITest(profile: profile, question: trimmed, context: context)
+            isLoading = false
+            return
+        }
+        #endif
 
         do {
             let currencyCode = CurrencyDefaults.currentPreferred

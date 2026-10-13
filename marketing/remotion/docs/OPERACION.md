@@ -39,6 +39,22 @@ Checklist de toma, y cada punto está aquí porque ya falló una vez:
 - [ ] **Un solo gesto por plano.** Si dudas dos segundos antes de tocar, se nota.
 - [ ] **Sin notificaciones.** Modo avión o No molestar.
 
+### 1 bis · O grábala desde el simulador, sin manos
+
+Si la función tiene un XCUITest de demo (hoy: `DemoIAPizzaUITests`), la toma sale sola y
+cumple la checklist de arriba por construcción: tema oscuro, barra a las 9:41, datos de la
+semilla, sin notificaciones y el mismo recorrido cada vez.
+
+```bash
+./scripts/grabar-demo-sim.sh                         # DemoIAPizza, ~3 min
+./scripts/grabar-demo-sim.sh --test YalaUITests/<Clase>/<método> --salida <carpeta>
+```
+
+Deja `demo.mp4` (H.264, 60 fps, recortado de «inicio» a «fin») y `marcas.json` con el
+segundo de cada beat, que va directo a los `fromSec` de `copy.ts`. El test marca cada beat
+con `print("DEMO-MARCA:<id> t=<epoch>")`. El script se niega a correr de 9:00 a 11:00 de
+Lima, con carga ≥ 8 o con otro simulador encendido, y lo apaga al acabar.
+
 ### 2 · Copia el fichero
 
 ```bash
@@ -205,6 +221,12 @@ renderizar. No lo cambies.
 
 **`scripts/*.sh` están escritos para bash 3.2**, que es el que trae macOS. Sin `mapfile` y
 sin expandir arrays vacíos bajo `set -u`: las dos cosas revientan ahí.
+
+**El vídeo de `simctl io recordVideo` se lee con `-fflags +igndts`** (2026-10-13). Su H.264
+trae DTS que no casan con los PTS, y ffmpeg 8.1 los usa: sin la opción, `-ss`, `fps` y
+`select` caen hasta 4 s antes de su sitio y enseñan otra pantalla. ffprobe lee bien los PTS.
+Y la marca de un XCUITest llega 0,4–2,3 s después de que el estado se vea: por eso
+`anclar-marcas.py` busca el primer fotograma visible de cada estado.
 
 ---
 
