@@ -538,6 +538,14 @@ class SessionState {
         didSet { UserDefaults.standard.set(needsPostOnboardingTrial, forKey: "needsPostOnboardingTrial") }
     }
 
+    /// Ya llegó un momento de la oferta de prueba (tras un registro guardado o al completar «Primeros pasos»)
+    /// y la oferta aún no se presentó. Es la red del arranque: el intent es transitorio y, sin esta marca, una
+    /// oferta pedida y tirada por un paso a segundo plano no volvería hasta el siguiente registro. Ver
+    /// `TrialOfferMomentLogic` (UX 2.2 · L1-12). Se apaga junto con `needsPostOnboardingTrial` en el drenaje.
+    var trialOfferMomentReached: Bool = UserDefaults.standard.bool(forKey: "trialOfferMomentReached") {
+        didSet { UserDefaults.standard.set(trialOfferMomentReached, forKey: "trialOfferMomentReached") }
+    }
+
     // MARK: - Splash State
 
     /// Whether the splash screen has been dismissed (gate for router readiness).

@@ -88,6 +88,7 @@
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
+- [Tras un mutante, la app instalada es el mutante](feedback_tras_un_mutante_la_app_instalada_es_el_mutante.md) — recompila antes de capturar; axe type, no type_text.
 - [El vídeo del simulador salta pantallas cortas](feedback_el_video_del_simulador_salta_pantallas_cortas.md) — el «después» breve se conduce a mano y screenshot.
 - [Una tanda de capturas cuesta ~12 GB](feedback_una_tanda_de_capturas_cuesta_diez_gigas.md) — .ddp, base y `erase` de los iPhone del carril al cerrar; los iPad no.
 - [DerivedData en /Volumes/ExtDev](reference_deriveddata_en_extdev.md) — disk-report lo da 0B; el .app y los huérfanos están ahí.

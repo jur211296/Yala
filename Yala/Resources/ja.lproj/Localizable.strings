@@ -1797,7 +1797,7 @@
 "onboarding.categoriesTitle" = "始めるためのカテゴリー";
 "onboarding.categoriesSubtitle" = "初日から支出を整理しやすいよう、よく使うカテゴリーを用意しました。";
 "onboarding.categoriesYes" = "このカテゴリーで始める";
-"onboarding.categoriesNo" = "ゼロから始める";
+"onboarding.categoriesNo" = "カテゴリなしで、自分で作る";
 "onboarding.categoriesRecommended" = "おすすめ";
 "onboarding.categoriesInfo" = "各カテゴリーには詳細なサブカテゴリーが含まれます。プロフィール > カテゴリーで確認・カスタマイズできます。";
 "onboarding.notificationsTitle" = "お知らせを受け取りますか？";
@@ -1807,7 +1807,7 @@
 "onboarding.notificationsDeselectAll" = "すべて無効";
 "onboarding.recommended" = "おすすめ";
 "onboarding.languageTitle" = "言語を選択";
-"onboarding.languageSubtitle" = "お使いの言語にはまだ対応していません。以下から1つ選んでください！";
+"onboarding.languageSubtitle" = "Yala はまだお使いの端末の言語に対応していません。1つ選んでください。あとから「プロフィール > パーソナライズ」でいつでも変更できます。";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "Yalaをどう使いますか？";
@@ -1826,7 +1826,7 @@
 "onboarding.usageMode.fullControl" = "実残高";
 "onboarding.usageMode.fullControl.quote" = "「持っているお金、借りているお金、貸しているお金、すべてを1つの数字で管理したい」";
 "onboarding.usageMode.fullControl.desc" = "口座、カード、他人とのやり取りまで、すべてを残高に含めます。表示される数字が本当に自分のお金です。";
-"onboarding.privacyTitle" = "準備完了";
+"onboarding.privacyTitle" = "プライバシー";
 "onboarding.privacySubtitle" = "Yalaを使い始める準備ができました";
 "onboarding.privacyLocal" = "家計データはあなたのアカウントに保存されます";
 "onboarding.privacyNoTracking" = "トラッキングや広告はありません";
@@ -1932,17 +1932,14 @@
 "onboarding.purpose.control" = "お金を総合的に管理";
 "onboarding.purpose.controlDesc" = "支出、収入、保有額";
 // Accounts step (binary)
-"onboarding.accounts.title" = "Yalaでお金をどう整理しますか？";
 "onboarding.accounts.single" = "1つの口座にまとめる";
 "onboarding.accounts.singleDesc" = "通貨ごとにメイン口座を1つ、そこにすべてのお金を入れる";
-"onboarding.accounts.multiple" = "口座ごとに分ける";
-"onboarding.accounts.multipleDesc" = "貯蓄、デビット、クレジット...各口座の残高を把握";
 // Account type step
-"onboarding.accountType.title" = "最初の口座を作りましょう";
-"onboarding.accountType.subtitle" = "今すぐ作成する口座を選んでください。あとでプロフィールから追加できます。";
+"onboarding.accountType.title" = "お金はどこにありますか？";
+"onboarding.accountType.subtitle" = "最初に使う口座を選んでください。あとでプロフィールから追加できます。";
 "onboarding.accountType.checkingHint" = "普段使う銀行口座";
 "onboarding.accountType.savingsHint" = "貯蓄を保管する口座";
-"onboarding.accountType.creditHint" = "クレジットカード";
+"onboarding.accountType.creditHint" = "カードで買って、まだ銀行に返していない金額";
 "onboarding.accountType.cashHint" = "手元にある紙幣と硬貨";
 // Name hint
 "onboarding.nameHint" = "本名、ニックネーム、お好きなものでOK";
@@ -1954,7 +1951,7 @@
 "onboarding.currencyName.subtitleSeparate" = "名前と使用する通貨を選んでください。";
 // Balance step
 "onboarding.balance.title" = "この口座にいくらありますか？";
-"onboarding.balance.subtitle" = "おおよそで大丈夫です。いつでも調整できます。";
+"onboarding.balance.subtitle" = "おおよそで大丈夫です。わからなければ 0 と入力して、あとで調整してください。";
 // Confirmation step
 "onboarding.confirm.title" = "Yalaのセットアップ内容";
 "onboarding.confirm.accountLabel" = "口座";
@@ -5285,7 +5282,7 @@
 
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "続けるにはアップデートが必要です";
-"appUpdate.force.message" = "このバージョンのYalaはサポートを終了しました。引き続きご利用いただくには、アップデートしてください。";
+"appUpdate.force.message" = "Yala の新しいバージョンがあり、使い続けるには更新が必要です。更新しても、記録したデータは消えません。";
 "appUpdate.force.updateButton" = "今すぐアップデート";
 
 /* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
@@ -5731,7 +5728,7 @@
 "welcome.privateICloud.noAccountTitle" = "iCloudを確認できませんでした";
 
 /* Private branch iCloud gate: body when there is no iCloud account */
-"welcome.privateICloud.noAccountBody" = "この iPhone は iCloud がオフなので、以前に何か保存したかどうかわかりません。このまま進められます。データは当面ここに残り、iCloud をオンにしたら、何かが混ざる前にお知らせします。";
+"welcome.privateICloud.noAccountBody" = "このまま始められます。データは当面ここに残ります。あとで iCloud をオンにしたら、何かが混ざる前にお知らせします。";
 
 /* Private branch iCloud gate: continue button when there is no iCloud account */
 "welcome.privateICloud.noAccountCta" = "このまま進む";
@@ -6601,3 +6598,18 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "すでにアカウントをお持ちだったため、そのアカウントにログインしました。";
+
+/* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
+"welcome.privateICloud.noAccountProceedTitle" = "この iPhone は iCloud がオフです";
+
+/* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
+"welcome.mirrorRelaunch.privacyNote" = "これで Yala があなただけの iCloud につながり、データはずっと非公開のままです。ほかの誰も読めません。私たちも読めません。";
+
+/* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
+"onboarding.purpose.changeLaterHint" = "あとから「プロフィール > パーソナライズ」でいつでも変更できます。";
+
+/* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
+"onboarding.currencyName.titleExpenses" = "どの通貨で支払いますか？";
+
+/* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
+"onboarding.currencyName.subtitleExpenses" = "支出はこの通貨で記録されます。口座名は自由に変えられます。";

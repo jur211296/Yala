@@ -782,6 +782,11 @@ final class AppBootstrapper {
             //    token `seeded-first` del deep link rutearía a un grupo fantasma.
             UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
             SessionState.shared.isExpensesOnlyMode = false
+            //  · las dos marcas de la oferta de prueba (UX 2.2 · L1-12). El wipe las borra del disco, pero la
+            //    copia de `SessionState` ya se leyó en su init. `-uitest-trial-offer-armed` la deja ARMADA sin
+            //    momento, que es como queda un alta recién terminada.
+            SessionState.shared.needsPostOnboardingTrial = UITestHooks.armTrialOffer
+            SessionState.shared.trialOfferMomentReached = false
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
             //  · el idioma elegido DENTRO de la app (`appLanguageOverride`, App Group + KV). Vive fuera de
             //    SwiftData y gana al `-AppleLanguages (es)` que fija `launchForUITest`: uno que quedara

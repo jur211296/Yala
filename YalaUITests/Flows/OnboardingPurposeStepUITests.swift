@@ -99,11 +99,47 @@ final class OnboardingPurposeStepUITests: XCTestCase {
         next.tap()
 
         XCTAssertTrue(
-            app.buttons["onboarding_accounts_multiple"].waitForExistence(timeout: 10),
+            app.buttons["onboarding_accounts_single"].waitForExistence(timeout: 10),
             """
             El tap de 'Llevar el control' se perdió: con .expensesOnly todavía puesto el siguiente \
-            paso es el de moneda, no el de cuentas.
+            paso es el de moneda, no el de «¿Dónde está tu dinero?».
             """
         )
+    }
+
+    /// UX 2.2 · L1-5: el paso Propósito dice que la elección se cambia luego.
+    func test_purposeStep_saysTheChoiceCanBeChangedLater() {
+        let app = launchAtPurposeStep()
+        XCTAssertTrue(
+            app.staticTexts["onboarding_purpose_change_later_hint"].waitForExistence(timeout: 10),
+            "El paso Propósito ya no dice que el modo se cambia en Perfil > Personalización."
+        )
+    }
+
+    /// UX 2.2 · L1-9: «¿Cómo organizas?» y «Tipo de cuenta» son UN paso. Tras Propósito llega directamente
+    /// la lista con «Todo junto» y los cuatro tipos; «Siguiente» espera a que se elija una, y elegir
+    /// «Todo junto» lleva al paso de nombre y divisa (el saldo sigue siendo su propio paso, después).
+    func test_whereIsYourMoney_isOneStep_andNextWaitsForAChoice() {
+        let app = launchAtPurposeStep()
+
+        let next = app.buttons["onboarding_next_button"]
+        XCTAssertTrue(app.buttons["onboarding_purpose_control"].waitForExistence(timeout: 10))
+        next.tap()
+
+        let single = app.buttons["onboarding_accounts_single"]
+        XCTAssertTrue(single.waitForExistence(timeout: 10), "No llegó el paso «¿Dónde está tu dinero?».")
+        let types = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "onboarding_account_type_"))
+        XCTAssertEqual(types.count, 4,
+                       "«¿Dónde está tu dinero?» tiene que ofrecer los cuatro tipos junto a «Todo junto»; hay \(types.count).")
+        XCTAssertFalse(app.buttons["onboarding_accounts_multiple"].exists,
+                       "Volvió el paso «¿Cómo organizas?» por separado.")
+        XCTAssertFalse(next.isEnabled, "«Siguiente» tiene que esperar a que se elija una opción.")
+
+        single.tap()
+        XCTAssertTrue(next.isEnabled, "Elegir «Todo junto» no activó «Siguiente».")
+        next.tap()
+
+        XCTAssertTrue(app.textFields["onboarding_account_name"].waitForExistence(timeout: 10),
+                      "Tras «¿Dónde está tu dinero?» tiene que venir el nombre y la divisa de la cuenta.")
     }
 }

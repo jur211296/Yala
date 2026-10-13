@@ -114,13 +114,15 @@ struct PanelView: View {
             sheets.isPresentingSettings = true
             SetupChecklistManager.shared.markCompleted(.exploreSettings)
         case .discoverFeatures:
-            if FeatureGateService.shared.isProUser {
-                SetupChecklistManager.shared.markCompleted(.discoverFeatures)
-            } else {
+            let checklist = SetupChecklistManager.shared
+            // Si este paso termina «Primeros pasos», lo que sale es la oferta de prueba que pide el cierre de la
+            // lista (UX 2.2 · L1-12, `TrialOfferMomentLogic`): abrir además el paywall general serían dos muros
+            // seguidos.
+            if !FeatureGateService.shared.isProUser && !checklist.wouldCompleteAll(by: .discoverFeatures) {
                 sheets.subscriptionBannerSource = "setupChecklist"
                 sheets.showSubscriptionFromBanner = true
-                SetupChecklistManager.shared.markCompleted(.discoverFeatures)
             }
+            checklist.markCompleted(.discoverFeatures)
         case .tryVoiceInput:
             FeatureGateService.shared.enableSetupTrial(for: .voiceInput)
             sheets.isVoiceSetupTrial = true

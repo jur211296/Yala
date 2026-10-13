@@ -22,7 +22,7 @@ struct OnboardingStepPlanTests {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: nil, prefilledAccountsCount: 0,
             prefilledCurrencyCode: nil, prefilledCategoriesCount: 0,
-            hasPrefill: false, expensesOnly: false, dayToDay: false
+            hasPrefill: false, expensesOnly: false
         )
         #expect(OnboardingStepPlan.firstStep(skipping: skip) == .name)
     }
@@ -34,7 +34,7 @@ struct OnboardingStepPlanTests {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: "Pia", prefilledAccountsCount: 0,
             prefilledCurrencyCode: "PEN", prefilledCategoriesCount: 5,
-            hasPrefill: true, expensesOnly: false, dayToDay: false
+            hasPrefill: true, expensesOnly: false
         )
         #expect(skip.contains(.name))
         #expect(OnboardingStepPlan.firstStep(skipping: skip) == .purpose)
@@ -45,7 +45,7 @@ struct OnboardingStepPlanTests {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: nil, prefilledAccountsCount: 3,
             prefilledCurrencyCode: "USD", prefilledCategoriesCount: 0,
-            hasPrefill: true, expensesOnly: false, dayToDay: false
+            hasPrefill: true, expensesOnly: false
         )
         #expect(!skip.contains(.name))
         #expect(OnboardingStepPlan.firstStep(skipping: skip) == .name)
@@ -57,9 +57,9 @@ struct OnboardingStepPlanTests {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: "Pia", prefilledAccountsCount: 2,
             prefilledCurrencyCode: "PEN", prefilledCategoriesCount: 5,
-            hasPrefill: true, expensesOnly: false, dayToDay: false
+            hasPrefill: true, expensesOnly: false
         )
-        #expect(skip == [.name, .accounts, .accountType, .balance, .currencyName, .categories])
+        #expect(skip == [.name, .accountType, .balance, .currencyName, .categories])
         // `.purpose` y `.confirmation` nunca se saltan.
         #expect(OnboardingStepPlan.effectiveSteps(skipping: skip) == [.purpose, .confirmation])
     }
@@ -69,7 +69,7 @@ struct OnboardingStepPlanTests {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: "Pia", prefilledAccountsCount: 2,
             prefilledCurrencyCode: "PEN", prefilledCategoriesCount: 5,
-            hasPrefill: false, expensesOnly: false, dayToDay: false
+            hasPrefill: false, expensesOnly: false
         )
         #expect(skip.isEmpty)
         #expect(OnboardingStepPlan.firstStep(skipping: skip) == .name)
@@ -81,18 +81,22 @@ struct OnboardingStepPlanTests {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: nil, prefilledAccountsCount: 0,
             prefilledCurrencyCode: nil, prefilledCategoriesCount: 0,
-            hasPrefill: false, expensesOnly: true, dayToDay: false
+            hasPrefill: false, expensesOnly: true
         )
-        #expect(skip == [.accounts, .accountType, .balance])
+        #expect(skip == [.accountType, .balance])
     }
 
-    @Test func skippedSteps_dayToDay_skipsAccountType() {
+    /// «Llevar el control» sin prefill no salta nada: 7 pasos (UX 2.2 · L1-9). Antes «una sola cuenta»
+    /// saltaba el paso del tipo; ahora «Todo junto» es una opción DE ese paso, y saltarlo dejaría a quien la
+    /// eligió sin poder volver a cambiarla.
+    @Test func skippedSteps_control_skipsNothing() {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: nil, prefilledAccountsCount: 0,
             prefilledCurrencyCode: nil, prefilledCategoriesCount: 0,
-            hasPrefill: false, expensesOnly: false, dayToDay: true
+            hasPrefill: false, expensesOnly: false
         )
-        #expect(skip == [.accountType])
+        #expect(skip.isEmpty)
+        #expect(OnboardingStepPlan.effectiveSteps(skipping: skip).count == 7)
     }
 
     @Test func skippedSteps_combinesPrefillAndUsageMode() {
@@ -100,16 +104,16 @@ struct OnboardingStepPlanTests {
         let skip = OnboardingStepPlan.skippedSteps(
             prefilledUserName: "Pia", prefilledAccountsCount: 0,
             prefilledCurrencyCode: nil, prefilledCategoriesCount: 0,
-            hasPrefill: true, expensesOnly: true, dayToDay: false
+            hasPrefill: true, expensesOnly: true
         )
-        #expect(skip == [.name, .accounts, .accountType, .balance])
+        #expect(skip == [.name, .accountType, .balance])
     }
 
     // MARK: - effectiveSteps orden
 
     @Test func effectiveSteps_noSkip_isFullOrderedList() {
         #expect(OnboardingStepPlan.effectiveSteps(skipping: []) == [
-            .name, .purpose, .accounts, .accountType, .currencyName, .balance, .categories, .confirmation
+            .name, .purpose, .accountType, .currencyName, .balance, .categories, .confirmation
         ])
     }
 }

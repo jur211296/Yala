@@ -28,9 +28,9 @@
 //
 //  EL MODO `.dayToDay` NO ES UN DETALLE: `OnboardingUsageMode` tiene TRES casos, no dos, y
 //  `.dayToDay` es ALCANZABLE desde este mismo paso (medido en el árbol de C5):
-//  `OnboardingView` lo escribe en el paso `.accounts` («Una sola cuenta», `:585`), ese paso NO
-//  se salta con `.dayToDay` (`OnboardingStepPlan.skippedSteps` solo le quita `.accountType`) y
-//  el flujo tiene botón atrás (`OnboardingView.goBack()`), cuyo `previousStep(before: .accounts)`
+//  `OnboardingView` lo escribe en el paso `.accountType` («Todo junto en una sola cuenta»; desde
+//  UX 2.2 · L1-9 ese paso fusiona el antiguo `.accounts`), ese paso NO se salta con `.dayToDay` y
+//  el flujo tiene botón atrás (`OnboardingView.goBack()`), cuyo `previousStep(before: .accountType)`
 //  es `.purpose`. También llega por la migración legacy del `.task` (`OnboardingView:307`).
 //  ⇒ el arreglo aparentemente natural —`isSelected: selectedUsageMode == .fullControl`— dejaría
 //  CERO cards marcadas en ese estado, cambiando un bug por otro. `.dayToDay` es una variante de

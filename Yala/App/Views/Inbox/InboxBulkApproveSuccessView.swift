@@ -82,6 +82,8 @@ struct InboxBulkApproveSuccessView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.thBackground)
+        // Momento de éxito: aquí se pide la oferta de prueba armada (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
+        .onAppear { TrialOfferMoments.noteRecordSaved() }
     }
 }
 

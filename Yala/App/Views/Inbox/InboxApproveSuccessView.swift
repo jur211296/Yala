@@ -169,6 +169,8 @@ struct InboxApproveSuccessView: View {
             }
         }
         .onAppear {
+            // Momento de éxito: aquí se pide la oferta de prueba armada (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
+            TrialOfferMoments.noteRecordSaved()
             if reduceMotion {
                 showHero = true
                 showCheckmark = true

@@ -5508,6 +5508,9 @@ enum L10n {
             /// Estado K: no hay iCloud en el dispositivo. Distinto de `errorTitle`, y no es un matiz: allí
             /// hay un remedio (reintentar) y aquí no.
             static var noAccountTitle: String { ls("welcome.privateICloud.noAccountTitle", comment: "") }
+            /// El título de la salida que SIGUE (UX 2.2 · L1-3): el hecho («este teléfono no tiene iCloud
+            /// activo»), no un fallo nuestro. La salida que vuelve atrás conserva `noAccountTitle`.
+            static var noAccountProceedTitle: String { ls("welcome.privateICloud.noAccountProceedTitle", comment: "") }
             static var noAccountBody: String { ls("welcome.privateICloud.noAccountBody", comment: "") }
             static var noAccountCta: String { ls("welcome.privateICloud.noAccountCta", comment: "") }
             static var errorTitle: String { ls("welcome.privateICloud.errorTitle", comment: "") }
@@ -5761,6 +5764,8 @@ enum L10n {
         /// corpus que ya existe; aquí el usuario acaba de elegir y todavía no tiene datos.
         enum MirrorRelaunch {
             static var title: String { ls("welcome.mirrorRelaunch.title", comment: "") }
+            /// Por qué hay que reabrir (UX 2.2 · L1-4, decisión de Jürgen: el reinicio se queda y se explica).
+            static var privacyNote: String { ls("welcome.mirrorRelaunch.privacyNote", comment: "") }
             /// R0 · el cuerpo dice ya la variante AUTO-EXIT («ve a la pantalla de inicio y vuelve»), porque
             /// desde este chip el terminal se cierra solo al pasar a background y pedir que el usuario
             /// mate la app a mano sería instrucción de más.
@@ -6163,13 +6168,12 @@ enum L10n {
         static var purposeExpensesDesc: String { ls("onboarding.purpose.expensesDesc", comment: "") }
         static var purposeControl: String { ls("onboarding.purpose.control", comment: "") }
         static var purposeControlDesc: String { ls("onboarding.purpose.controlDesc", comment: "") }
-        // Accounts step (binary: una cuenta vs varias)
-        static var accountsTitle: String { ls("onboarding.accounts.title", comment: "") }
+        /// Que el modo se cambia luego (UX 2.2 · L1-5): quita el miedo a equivocarse al elegir.
+        static var purposeChangeLaterHint: String { ls("onboarding.purpose.changeLaterHint", comment: "") }
+        // «Todo junto en una sola cuenta»: primera opción del paso «¿Dónde está tu dinero?» (UX 2.2 · L1-9).
         static var accountsSingle: String { ls("onboarding.accounts.single", comment: "") }
         static var accountsSingleDesc: String { ls("onboarding.accounts.singleDesc", comment: "") }
-        static var accountsMultiple: String { ls("onboarding.accounts.multiple", comment: "") }
-        static var accountsMultipleDesc: String { ls("onboarding.accounts.multipleDesc", comment: "") }
-        // Account type step (fullControl only)
+        // «¿Dónde está tu dinero?»: una sola cuenta o un tipo de cuenta (antes, dos pasos)
         static var accountTypeTitle: String { ls("onboarding.accountType.title", comment: "") }
         static var accountTypeSubtitle: String { ls("onboarding.accountType.subtitle", comment: "") }
         static var accountTypeCheckingHint: String { ls("onboarding.accountType.checkingHint", comment: "") }
@@ -6186,6 +6190,10 @@ enum L10n {
         static var currencyNameSubtitleSingle: String { ls("onboarding.currencyName.subtitleSingle", comment: "") }
         static var currencyNameTitleSeparate: String { ls("onboarding.currencyName.titleSeparate", comment: "") }
         static var currencyNameSubtitleSeparate: String { ls("onboarding.currencyName.subtitleSeparate", comment: "") }
+        /// «Solo gastos» tiene su propio copy (UX 2.2 · L1-11): el de una sola cuenta habla de «llevar el control»,
+        /// justo lo que esa persona acaba de decir que no quiere.
+        static var currencyNameTitleExpenses: String { ls("onboarding.currencyName.titleExpenses", comment: "") }
+        static var currencyNameSubtitleExpenses: String { ls("onboarding.currencyName.subtitleExpenses", comment: "") }
         // Balance step
         static var balanceTitle: String { ls("onboarding.balance.title", comment: "") }
         static var balanceSubtitle: String { ls("onboarding.balance.subtitle", comment: "") }

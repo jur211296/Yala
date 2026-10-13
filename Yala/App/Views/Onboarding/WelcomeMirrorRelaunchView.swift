@@ -55,6 +55,15 @@ struct WelcomeMirrorRelaunchView: View {
                         .foregroundStyle(.white.opacity(0.7))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
+
+                    // El porqué del reinicio (UX 2.2 · L1-4). Decisión de Jürgen: el paso se queda —Yala empuja
+                    // la nube y el alta privada paga este reinicio—, pero quien lo paga tiene que saber para qué.
+                    Text(L10n.Welcome.MirrorRelaunch.privacyNote)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .accessibilityIdentifier("welcome_mirror_relaunch_privacy_note")
                 }
 
                 Spacer(minLength: DS.Spacing.xl)

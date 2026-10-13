@@ -120,6 +120,11 @@ final class SetupChecklistManager {
     /// Pending practice cleanup item (set by editors, consumed by PanelView).
     var pendingPracticeCleanup: PracticeCleanupItem?
 
+    /// Lo que pasa al completar «Primeros pasos»: la oferta de prueba (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
+    /// Inyectable porque el de producción escribe en `SessionState` y pide al router, y un test que complete la
+    /// lista no debe dejar una oferta armada al resto de la suite.
+    var onAllStepsCompleted: () -> Void = { TrialOfferMoments.note(.setupChecklistCompleted) }
+
     // MARK: - Init
 
     private init() {
@@ -171,6 +176,11 @@ final class SetupChecklistManager {
         } else {
             markCompleted(step)
         }
+    }
+
+    /// Si marcar `step` completaría «Primeros pasos»: es el único paso que falta.
+    func wouldCompleteAll(by step: SetupStepID) -> Bool {
+        !isAllComplete && SetupStepID.allCases.allSatisfy { $0 == step || stepCompleted[$0] == true }
     }
 
     /// Lo recién guardado es lo único de su tipo: no había nada antes.
@@ -275,6 +285,8 @@ final class SetupChecklistManager {
             #if DEBUG
             print("SetupChecklist: All steps completed! 🎉")
             #endif
+
+            onAllStepsCompleted()
         }
     }
 }

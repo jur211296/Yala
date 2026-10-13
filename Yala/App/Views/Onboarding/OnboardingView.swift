@@ -136,8 +136,7 @@ struct OnboardingView: View {
             prefilledCurrencyCode: prefilledData?.primaryCurrencyCode,
             prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
             hasPrefill: prefilledData != nil,
-            expensesOnly: false,
-            dayToDay: false
+            expensesOnly: false
         )
         _currentStep = State(initialValue: OnboardingStepPlan.firstStep(skipping: initialSkip))
     }
@@ -149,8 +148,10 @@ struct OnboardingView: View {
     /// con `effectiveSteps` desde el `init`. `Step` queda como alias local.
     typealias Step = OnboardingStep
 
-    /// Account types for fullControl picker (no .general — separate accounts have real types)
-    private let fullControlAccountTypes: [AccountType] = [.checking, .savings, .creditCard, .cash]
+    /// La opción marcada en «¿Dónde está tu dinero?». SSOT de la marca y del «Siguiente» de ese paso.
+    private var selectedAccountChoice: OnboardingAccountChoice? {
+        OnboardingAccountChoiceLogic.selectedChoice(mode: selectedUsageMode, accountType: selectedAccountType)
+    }
 
     /// Color de tint del icono por tipo de cuenta. Diferenciado para que el user
     /// asocie visualmente cada tipo con un color distinto, restringido a la
@@ -177,8 +178,7 @@ struct OnboardingView: View {
             prefilledCurrencyCode: prefilledData?.primaryCurrencyCode,
             prefilledCategoriesCount: prefilledData?.categoriesCount ?? 0,
             hasPrefill: prefilledData != nil,
-            expensesOnly: expensesOnlyMode,
-            dayToDay: selectedUsageMode == .dayToDay,
+            expensesOnly: expensesOnlyMode
         )
     }
 
@@ -258,7 +258,6 @@ struct OnboardingView: View {
                         switch currentStep {
                         case .name: nameStep(logoTopSpacing: logoTopSpacing)
                         case .purpose: purposeStep
-                        case .accounts: accountsStep
                         case .accountType: accountTypeStep
                         case .currencyName: currencyNameStep
                         case .balance: balanceStep
@@ -476,6 +475,15 @@ struct OnboardingView: View {
                             .foregroundStyle(primaryTextStyle)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, DS.Spacing.xl)
+
+                        // Que se cambia luego (UX 2.2 · L1-5): quien no sabe cuál le conviene dudaba o elegía
+                        // al azar. Es verdad: el interruptor «Solo gastos» de Perfil > Personalización.
+                        Text(L10n.Onboarding.purposeChangeLaterHint)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(secondaryTextStyle)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, DS.Spacing.xl)
+                            .accessibilityIdentifier("onboarding_purpose_change_later_hint")
                     }
                     .padding(.top, DS.Spacing.xl)
 
@@ -522,72 +530,6 @@ struct OnboardingView: View {
                 .frame(minHeight: geometry.size.height)
             }
             .scrollBounceBehavior(.basedOnSize)
-        }
-    }
-
-    // MARK: - Step 3: Accounts (binary)
-
-    private var accountsStep: some View {
-        GeometryReader { geometry in
-            ScrollView {
-                VStack(spacing: DS.Spacing.xl) {
-                    VStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "building.columns.fill")
-                            .font(.system(size: heroIconSize))
-                            .foregroundStyle(primaryTextStyle)
-                            .accessibilityHidden(true)
-
-                        Text(L10n.Onboarding.accountsTitle)
-                            .font(DS.Typography.title)
-                            .fontWeight(.bold)
-                            .foregroundStyle(primaryTextStyle)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, DS.Spacing.xl)
-                    }
-                    .padding(.top, DS.Spacing.xl)
-
-                    VStack(spacing: DS.Spacing.sm) {
-                        binaryCard(
-                            isSelected: wantsSeparateAccounts,
-                            icon: "rectangle.stack",
-                            iconColor: .priorityNeedNew,
-                            title: L10n.Onboarding.accountsMultiple,
-                            description: L10n.Onboarding.accountsMultipleDesc,
-                            accessibilityId: "onboarding_accounts_multiple"
-                        ) {
-                            selectedUsageMode = .fullControl
-                            selectedMindset = "cashFlow"
-                            selectedAccountType = .checking
-                        }
-
-                        binaryCard(
-                            isSelected: !wantsSeparateAccounts,
-                            icon: "creditcard",
-                            iconColor: .hotPink,
-                            title: L10n.Onboarding.accountsSingle,
-                            description: L10n.Onboarding.accountsSingleDesc,
-                            accessibilityId: "onboarding_accounts_single"
-                        ) {
-                            selectedUsageMode = .dayToDay
-                            selectedMindset = "patrimonial"
-                            selectedAccountType = .general
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-
-                    Spacer()
-                }
-                .frame(minHeight: geometry.size.height)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-        }
-        .onAppear {
-            if !wantsSeparateAccounts {
-                selectedMindset = "patrimonial"
-                selectedAccountType = .general
-            } else {
-                selectedMindset = "cashFlow"
-            }
         }
     }
 
@@ -647,7 +589,11 @@ struct OnboardingView: View {
         .accessibilityIdentifier(accessibilityId)
     }
 
-    // MARK: - Step 4: Account Type (fullControl only)
+    // MARK: - Step 3: ¿Dónde está tu dinero? (una sola cuenta o un tipo)
+
+    /// «¿Cómo organizas?» y «Tipo de cuenta» en una sola pantalla (UX 2.2 · L1-9, decisión de Jürgen del
+    /// 2026-10-13). Qué guarda cada opción y por qué no hay nada preseleccionado:
+    /// `OnboardingAccountChoiceLogic`. El saldo sigue en su propio paso, a propósito.
 
     private var accountTypeStep: some View {
         GeometryReader { geometry in
@@ -675,19 +621,27 @@ struct OnboardingView: View {
                     .padding(.top, DS.Spacing.xl)
 
                     VStack(spacing: DS.Spacing.sm) {
-                        ForEach(fullControlAccountTypes) { type in
+                        binaryCard(
+                            isSelected: selectedAccountChoice == .single,
+                            icon: "creditcard",
+                            iconColor: .hotPink,
+                            title: L10n.Onboarding.accountsSingle,
+                            description: L10n.Onboarding.accountsSingleDesc,
+                            accessibilityId: "onboarding_accounts_single"
+                        ) {
+                            selectAccountChoice(.single)
+                        }
+
+                        ForEach(OnboardingAccountChoiceLogic.accountTypes) { type in
                             binaryCard(
-                                isSelected: selectedAccountType == type,
+                                isSelected: selectedAccountChoice == .type(type),
                                 icon: iconName(for: type),
                                 iconColor: iconTint(for: type),
                                 title: type.localizedName,
                                 description: type.typeDescription,
                                 accessibilityId: "onboarding_account_type_\(type.rawValue)"
                             ) {
-                                if selectedAccountType != type {
-                                    selectedAccountType = type
-                                    calcFieldState.reset()
-                                }
+                                selectAccountChoice(.type(type))
                             }
                         }
                     }
@@ -701,7 +655,18 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 5: Account Name + Currency
+    /// Guarda la opción elegida. Cambiar de opción vacía la calculadora del saldo: sus campos dependen del
+    /// tipo de cuenta (igual que hacía el paso de tipo de cuenta de antes).
+    private func selectAccountChoice(_ choice: OnboardingAccountChoice) {
+        guard selectedAccountChoice != choice else { return }
+        let applied = OnboardingAccountChoiceLogic.apply(choice)
+        selectedUsageMode = applied.mode
+        selectedAccountType = applied.accountType
+        selectedMindset = applied.mindset
+        calcFieldState.reset()
+    }
+
+    // MARK: - Step 4: Account Name + Currency
 
     private var recommendedCurrency: CurrencyCode {
         CurrencyDefaults.detectCurrencyFromRegion()
@@ -727,6 +692,20 @@ struct OnboardingView: View {
         }
     }
 
+    /// «Solo gastos» tiene su propio copy (UX 2.2 · L1-11): el de una sola cuenta dice «donde llevas el
+    /// control de tu dinero», justo lo que esa persona acaba de decir que no quiere.
+    private var currencyNameTitle: String {
+        if wantsSeparateAccounts { return L10n.Onboarding.currencyNameTitleSeparate }
+        return expensesOnlyMode ? L10n.Onboarding.currencyNameTitleExpenses : L10n.Onboarding.currencyNameTitleSingle
+    }
+
+    private var currencyNameSubtitle: String {
+        if wantsSeparateAccounts { return L10n.Onboarding.currencyNameSubtitleSeparate }
+        return expensesOnlyMode
+            ? L10n.Onboarding.currencyNameSubtitleExpenses
+            : L10n.Onboarding.currencyNameSubtitleSingle
+    }
+
     private var currencyNameStep: some View {
         ScrollView {
             VStack(spacing: DS.Spacing.xxl) {
@@ -736,18 +715,14 @@ struct OnboardingView: View {
                         .foregroundStyle(primaryTextStyle)
                         .accessibilityHidden(true)
 
-                    Text(wantsSeparateAccounts
-                         ? L10n.Onboarding.currencyNameTitleSeparate
-                         : L10n.Onboarding.currencyNameTitleSingle)
+                    Text(currencyNameTitle)
                         .font(DS.Typography.title)
                         .fontWeight(.bold)
                         .foregroundStyle(primaryTextStyle)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, DS.Spacing.xl)
 
-                    Text(wantsSeparateAccounts
-                         ? L10n.Onboarding.currencyNameSubtitleSeparate
-                         : L10n.Onboarding.currencyNameSubtitleSingle)
+                    Text(currencyNameSubtitle)
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(secondaryTextStyle)
                         .multilineTextAlignment(.center)
@@ -822,7 +797,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Step 6: Balance (auto-launch calculator)
+    // MARK: - Step 5: Balance (auto-launch calculator)
 
     private var balanceStep: some View {
         GeometryReader { geometry in
@@ -868,7 +843,8 @@ struct OnboardingView: View {
 
                         binaryCard(
                             isSelected: balanceMode == .guided,
-                            icon: "arrow.triangle.2.circlepath",
+                            // Icono de cálculo (UX 2.2 · L1-7): el de «recargar» no decía que aquí se calcula.
+                            icon: "plus.forwardslash.minus",
                             iconColor: .hotPink,
                             title: L10n.Onboarding.accountBalanceLearnMore,
                             description: L10n.Onboarding.balanceGuideHint,
@@ -1093,7 +1069,7 @@ struct OnboardingView: View {
         .padding(.top, DS.Spacing.xxs)
     }
 
-    // MARK: - Step 7: Confirmation
+    // MARK: - Step 7: Confirmation (último)
 
     private var confirmationMotivation: String {
         switch selectedUsageMode {
@@ -1254,7 +1230,7 @@ struct OnboardingView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Step 8: Categories
+    // MARK: - Step 6: Categories
 
     private var filteredSeedCategories: [SeedCategoryPreview.CategoryInfo] {
         if expensesOnlyMode {
@@ -1614,7 +1590,7 @@ struct OnboardingView: View {
             step: currentStep,
             userName: userName,
             accountName: accountName,
-            isAccountTypeValid: fullControlAccountTypes.contains(selectedAccountType),
+            isAccountTypeValid: selectedAccountChoice != nil,
             initialBalanceText: initialBalanceText
         )
     }
