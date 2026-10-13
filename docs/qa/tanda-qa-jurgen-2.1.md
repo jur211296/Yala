@@ -13,8 +13,9 @@ Los ids de card van sin el prefijo `tablero-`. «Sin card» quiere decir que el 
 
 ## Antes de empezar
 
-1. **Sube un build nuevo a TestFlight desde la Mini**, con `2.1` en `1add0d930` o posterior. Todo lo de esta lista
-   necesita los arreglos de hoy (#454, #456, #468, #470): con un build anterior, varias pruebas fallan sin ser fallos.
+1. **Usa el build 16 de TestFlight (versión 2.1)**, subido la noche del 12 al 13 de octubre desde `2.1` en
+   `7ac7d21a6` (#476). Lleva todo lo de esta lista: los arreglos de hoy (#454, #456, #468, #470) y #472 a #476. Con el
+   build 15 o anterior, varias pruebas fallan sin ser fallos.
 2. En tu iPhone, instálalo encima del que tienes. **No borres Yala**: la prueba D2 empieza con el build anterior. Si
    quieres hacer D2, hazla primero en el iPhone de pruebas.
 3. Ten a mano: el iPhone de pruebas con Yala Dev contra staging (grupo C), el segundo iPhone (grupo E) y el iPad
