@@ -1,6 +1,6 @@
 ---
 name: auditoria-ui-glass-se-queda-jerarquiza
-description: Criterio de Jürgen para auditar UI en Yala — el glass se queda, se jerarquiza con contraste/rellenos/movimiento; instruir sin pasos extra; adaptar, no transformar; referencia Kargul; solo lo del lote
+description: Criterio de Jürgen para auditar UI en Yala — el glass se queda, se jerarquiza con rellenos SÓLIDOS/contraste/movimiento; sin degradados ni brillos; instruir sin pasos extra; adaptar; Kargul; solo el lote
 metadata:
   type: feedback
 ---
@@ -14,8 +14,11 @@ Al auditar la UI de Yala (auditoría UX 2.2, desde el lote 2):
    ayuda contextual dentro de la misma pantalla. Si no entiende qué pasa, deja la app.
 3. **Adaptar la app, no transformarla.** Se mejora lo que hay; no se rediseña la pantalla entera.
 4. **Referencia principal: `~/Claude/referencias-ui/kargul-2026-10-07/`** (la que más le gusta): fichas con
-   color sólido e icono blanco, filtros elegidos rellenos, barras con degradado y brillo, píldoras de
-   tendencia, tarjeta lateral que explica qué va a pasar.
+   color sólido e icono blanco, filtros elegidos rellenos, píldoras de tendencia, tarjeta lateral que explica
+   qué va a pasar. **De Kargul NO se copian los degradados ni los brillos** (ver 6).
+6. **Sin degradados, brillos ni sombras de color** (2026-10-13). Aceptó las ocho L1UI recomendadas y rechazó su
+   aspecto: «se ve hecho con IA». El foco sale de rellenos SÓLIDOS (lo elegido en blanco sólido, como la pestaña
+   activa de Kargul), contraste, tipografía y transiciones. Y el botón principal («Siguiente») no se decora.
 5. **Solo lo del lote.** «Si tu lote no tiene calculadoras, no es tuyo»: lo que se ve de otro lote va a su
    card, no a esta sesión.
 
