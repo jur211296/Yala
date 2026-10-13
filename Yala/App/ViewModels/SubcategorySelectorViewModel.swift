@@ -36,21 +36,9 @@ final class SubcategorySelectorViewModel {
 
         for transaction in recentTransactions {
             guard let subcategory = transaction.subcategory else { continue }
-            guard subcategory.isVisible else { continue }
-
-            // Check if matches current transaction type
-            let category = subcategory.safeCategory
-            let matchesType: Bool
-            switch transactionType {
-            case .expense:
-                matchesType = !category.isIncome
-            case .income:
-                matchesType = category.isIncome
-            case .transfer:
-                matchesType = false
-            }
-
-            guard matchesType else { continue }
+            // Misma regla que la rejilla: sin ella, el saldo inicial («Ajustes de saldo») salía el
+            // primero en Recientes al terminar el onboarding (lote 2, B6).
+            guard ManualSubcategoryPickerLogic.isPickable(subcategory, for: transactionType) else { continue }
 
             let id = subcategory.persistentModelID
             if !seen.contains(id) {
@@ -68,21 +56,7 @@ final class SubcategorySelectorViewModel {
     /// puede asignarlas, nunca el usuario en pickers manuales.
     var groupedSubcategories: [(category: Category, subcategories: [Subcategory])] {
         let filtered = allSubcategories.filter { subcategory in
-            guard subcategory.isVisible else { return false }
-            guard !subcategory.isAnySystem else { return false }
-
-            let category = subcategory.safeCategory
-            guard category.isVisible else { return false }
-            guard !category.isSystem else { return false }
-
-            switch transactionType {
-            case .expense:
-                return !category.isIncome
-            case .income:
-                return category.isIncome
-            case .transfer:
-                return false  // Transfers don't need subcategories
-            }
+            ManualSubcategoryPickerLogic.isPickable(subcategory, for: transactionType)
         }
 
         // Group by category

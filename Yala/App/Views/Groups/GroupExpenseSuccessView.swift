@@ -258,7 +258,7 @@ struct GroupExpenseSuccessView: View {
             }
 
             if let account = data.accountName {
-                detailRow(icon: "creditcard", label: L10n.Account.selectAccount,
+                detailRow(icon: "creditcard", label: L10n.Transaction.account,
                           value: account, dotColorHex: data.accountColorHex)
             }
 

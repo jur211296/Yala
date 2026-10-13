@@ -41,3 +41,10 @@ helper, que se agota. No es el mismo síntoma: el arreglo cambió el sitio donde
 2. Si `TransactionsCrudUITests.test_createTransaction` y `QuickActionsFavoritesUITests` (mismo helper) caen igual.
 3. Hasta que se arregle: este rojo es conocido y **no bloquea gates de ramas que no tocan el formulario de registro**,
    siempre que se re-mida en la base como aquí.
+
+## 2026-10-13 · gate del lote 2: verde
+
+En el gate del lote 2 (rama `encargo/2026-10-13-auditoria-ux-2-2-lote-2-apuntar-a-mano`, sobre `origin/2.2` 7000aef89,
+que toca el formulario de registro) `test_extremeMinimumAmountSaves` pasó en 39,5 s dentro de una corrida de 15 suites
+(39 tests, 0 fallos, centinela en 0, simulador recién borrado). Un verde no cierra el ticket: el rojo del lote 1 fue
+aislado y repetido. Si el próximo gate también sale verde, mirar si el `erase` previo del simulador es lo que cambia.
