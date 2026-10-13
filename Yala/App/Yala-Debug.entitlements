@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  App Attest: el entorno sale de APP_ATTEST_ENVIRONMENT (build setting del target Yala), no de este fichero,
+  porque lo comparten tres configuraciones con gateways distintos. Sigue al bundle, igual que el gateway:
+  Debug (bundle com.jurgenschmidt.yala, gateway de producción) → production;
+  Debug-Dev y Release-Dev (bundle .dev) → development.
+  Con development, el gateway de producción rechaza la atestación (AAGUID de desarrollo).
+-->
 <plist version="1.0">
 <dict>
 	<key>aps-environment</key>
@@ -12,6 +19,8 @@
 	<array>
 		<string>applinks:yala-app.pe</string>
 	</array>
+	<key>com.apple.developer.devicecheck.appattest-environment</key>
+	<string>$(APP_ATTEST_ENVIRONMENT)</string>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.com.jurgenschmidt.yala</string>

@@ -28,8 +28,9 @@
 //    el gateway, lo que quedaba —relanzar el mismo día y tocar IA dentro de esos 15 min— no compensa
 //    gastar la escalera de `AttestRefreshBackoffLogic` en un llamador que no atiende a ningún usuario: un
 //    warm-up que falla sube la racha y el toque REAL que llega después se encuentra la ventana ya
-//    consumida. Si algún día hace falta de verdad, mídelo primero — y ojo, no se puede medir con un build
-//    de Xcode: el AAGUID de desarrollo da 401 contra producción SIEMPRE (ver `.claude/rules/gateway-attest.md`).
+//    consumida. Si algún día hace falta de verdad, mídelo primero: desde el 2026-10-12 el Debug del scheme
+//    `Yala` declara `appattest-environment = production` y puede atestar contra producción; un build con
+//    entorno `development` contra producción da 401 SIEMPRE (ver `.claude/rules/gateway-attest.md`).
 //
 
 import CryptoKit
@@ -231,7 +232,7 @@ final class AppAttestClient {
             // este endpoint devuelve es `yala_attest_invalid` (`gateway/src/attest/routes.ts:107` y
             // `:119`), y cubre dos casos donde una key NUEVA no ayuda: el challenge caducado
             // (transitorio — el siguiente intento trae otro) y la atestación rechazada por AAGUID,
-            // permanente por diseño en un build firmado en desarrollo. Ahí descartar solo quema keys. Lo
+            // permanente por diseño en un build cuyo entorno de attest no es el del gateway. Ahí descartar solo quema keys. Lo
             // que sí descarta es el veredicto LOCAL de DeviceCheck sobre la key
             // (`invalidInput`/`invalidKey`) — el caso de la key rancia que sobrevivió a una reinstalación.
             if AttestKeyRecoveryLogic.decide(assertError: error) == .discardKeyAndRegister {

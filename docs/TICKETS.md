@@ -688,7 +688,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | rejoin-tap-renotifies-admins | done | tickets/done/rejoin-tap-renotifies-admins.md |
 | relay-identity-ledger-missing-after-an-update-mid-migration | discarded | tickets/discarded/relay-identity-ledger-missing-after-an-update-mid-migration.md |
 | relay-row-rekeyed-then-deleted-tombstones-the-leader-identity | done | tickets/done/relay-row-rekeyed-then-deleted-tombstones-the-leader-identity.md |
-| release-plist-leftovers-widget-build-faceid-appattest | backlog | tickets/backlog/release-plist-leftovers-widget-build-faceid-appattest.md |
+| release-plist-leftovers-widget-build-faceid-appattest | qa | tickets/qa/release-plist-leftovers-widget-build-faceid-appattest.md |
 | remote-onboarding-signal-ignores-the-session-axis | backlog | tickets/backlog/remote-onboarding-signal-ignores-the-session-axis.md |
 | remote-wipe-alert-skips-the-router | done | tickets/done/remote-wipe-alert-skips-the-router.md |
 | remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark | done | tickets/done/remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark.md |

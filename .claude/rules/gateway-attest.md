@@ -408,10 +408,19 @@ encendido de Grupos solo le dio una superficie visible.
 
 ### Un build de Xcode NO puede validar un fix de attest contra producción
 
+> **Revisado el 2026-10-12.** Desde que el App ID tiene App Attest, el entorno lo declara
+> `com.apple.developer.devicecheck.appattest-environment`, y **sigue al bundle, igual que el gateway**:
+> `production` en Release y en el Debug del scheme `Yala` (vía `APP_ATTEST_ENVIRONMENT` en el target, porque
+> `Yala-Debug.entitlements` lo comparten Debug, Debug-Dev y Release-Dev), `development` en `Yala Dev`. Con eso
+> un build de Xcode del scheme `Yala` **debería** obtener sesión contra producción; está medido que la firma lo
+> lleva (`codesign`), **no** que el gateway lo acepte — falta la prueba en device. Lo de abajo sigue siendo
+> verdad para cualquier build que mande `development` a producción.
+
 `verifyAttestation.ts:79` compara el AAGUID byte a byte: con `ATTEST_ENV = "production"` exige
-`"appattest"+7×0x00`, y un build firmado en desarrollo manda `"appattestdevelop"` ⇒ **401
-`yala_attest_invalid: AAGUID no corresponde al entorno 'production'`**, siempre, por diseño. El scheme `Yala`
-en Debug tiene el bundle de producción y habla con producción, así que jamás obtendrá sesión.
+`"appattest"+7×0x00`, y un build con entorno `development` manda `"appattestdevelop"` ⇒ **401
+`yala_attest_invalid: AAGUID no corresponde al entorno 'production'`**, siempre, por diseño. Antes del
+2026-10-12 el scheme `Yala` en Debug tenía el bundle de producción, hablaba con producción y atestaba en
+`development`, así que jamás obtenía sesión.
 
 ⇒ **el build de Xcode es una herramienta de DIAGNÓSTICO, no de validación.** Sirve para ver el error (los
 logs de `#if DEBUG` viven ahí) y para distinguir «murió antes de postear» de «llegó al servidor»: que aparezca
