@@ -2,8 +2,13 @@
 //  LanguageSelectionView.swift
 //  Yala
 //
-//  Pre-onboarding screen shown when the device language is not one of the 6 supported locales.
+//  Pre-onboarding screen shown when the device language is not one of the supported locales.
 //  The user picks their preferred language, which is set as an in-app override before onboarding begins.
+//
+//  La lista va en un `ScrollView` y el botón en `safeAreaInset`, NO en un `VStack` con `Spacer`s: con los
+//  14 idiomas seleccionables la columna mide más que la pantalla de un iPhone 17 Pro, y el `VStack` empujaba
+//  el título bajo la barra de estado y el botón «Siguiente» fuera de la pantalla — sin él no había forma
+//  de salir de aquí (medido en el simulador el 2026-10-13, iPhone en coreano).
 //
 
 import SwiftUI
@@ -16,47 +21,51 @@ struct LanguageSelectionView: View {
     var onComplete: () -> Void
 
     var body: some View {
-        VStack(spacing: DS.Spacing.none) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: DS.Spacing.none) {
+                // Header
+                VStack(spacing: DS.Spacing.md) {
+                    Image(systemName: "globe")
+                        .font(.system(size: heroSize))
+                        .foregroundStyle(Color.electricIndigo)
+                        .accessibilityHidden(true)
 
-            // Header
-            VStack(spacing: DS.Spacing.md) {
-                Image(systemName: "globe")
-                    .font(.system(size: heroSize))
-                    .foregroundStyle(Color.electricIndigo)
-                    .accessibilityHidden(true)
+                    Text(L10n.Onboarding.languageTitle)
+                        .font(DS.Typography.title)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
 
-                Text(L10n.Onboarding.languageTitle)
-                    .font(DS.Typography.title)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.Onboarding.languageSubtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, DS.Spacing.xl)
-            }
-            .padding(.bottom, DS.Spacing.xxl)
-
-            // Language list
-            VStack(spacing: DS.Spacing.sm) {
-                ForEach(LanguageManager.supportedLanguages) { lang in
-                    languageRow(code: lang.code, name: lang.nativeName, flag: lang.flag)
+                    Text(L10n.Onboarding.languageSubtitle)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, DS.Spacing.xl)
                 }
+                .padding(.top, DS.Spacing.xxl)
+                .padding(.bottom, DS.Spacing.xl)
+
+                // Language list
+                VStack(spacing: DS.Spacing.sm) {
+                    ForEach(LanguageManager.supportedLanguages) { lang in
+                        languageRow(code: lang.code, name: lang.nativeName, flag: lang.flag)
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.lg)
             }
-            .padding(.horizontal, DS.Spacing.xl)
-
-            Spacer()
-            Spacer()
-
-            // Continue button
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .safeAreaInset(edge: .bottom) {
+            // Continue button — fijo abajo, visible con cualquier número de idiomas y tamaño de letra.
             YalaPrimaryButton(L10n.Action.next) {
                 LanguageManager.overrideLanguage = selectedLanguage
                 onComplete()
             }
+            .accessibilityIdentifier("language_selection_next")
             .padding(.horizontal, DS.Spacing.xl)
-            .padding(.bottom, DS.Spacing.xxxl)
+            .padding(.top, DS.Spacing.sm)
+            .padding(.bottom, DS.Spacing.lg)
         }
         .yalaScreenBackground(.panel)
     }

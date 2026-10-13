@@ -1358,11 +1358,12 @@ struct OnboardingView: View {
 
     /// Grid of category icons with staggered animation
     private var categoryIconsGrid: some View {
+        // `.top`: con nombres de dos líneas, los iconos de una fila siguen alineados entre sí.
         let columns = [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-            GridItem(.flexible())
+            GridItem(.flexible(), alignment: .top),
+            GridItem(.flexible(), alignment: .top),
+            GridItem(.flexible(), alignment: .top),
+            GridItem(.flexible(), alignment: .top)
         ]
 
         let circleOpacity: Double = (backgroundStyle == .heroFlow ? 0.25 : 0.2)
@@ -1381,10 +1382,12 @@ struct OnboardingView: View {
                             .accessibilityHidden(true)
                     }
 
+                    // Dos líneas: con una, «Mascotas y animales» salía «Mascotas y animal…».
                     Text(category.name)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(secondaryTextStyle)
-                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.8)
                 }
                 .opacity(showCategoryIcons ? 1 : 0)

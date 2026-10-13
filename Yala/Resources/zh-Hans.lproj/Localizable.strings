@@ -2547,6 +2547,7 @@
 "subscription.trialOffer.subtitle" = "30 天解锁全部功能。无承诺,可随时取消。";
 "subscription.trialOffer.startTrial" = "开始免费试用";
 "subscription.trialOffer.maybeLater" = "之后再说";
+"subscription.trialOffer.pricesUnavailable" = "无法加载价格。请检查网络连接。";
 
 // MARK: - Shortcut Notifications
 

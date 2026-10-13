@@ -448,7 +448,7 @@
 "settings.theme" = "Temas";
 "settings.currency" = "Moeda";
 "settings.appIcon" = "Icone do aplicativo";
-"settings.personalization" = "Personalizacao";
+"settings.personalization" = "Personalização";
 "settings.accounts" = "Contas";
 "settings.categories" = "Categorias";
 "settings.tags" = "Etiquetas";
@@ -2543,6 +2543,7 @@
 "subscription.trialOffer.subtitle" = "30 dias com todas as funcionalidades. Sem compromisso, cancele quando quiser.";
 "subscription.trialOffer.startTrial" = "Começar teste grátis";
 "subscription.trialOffer.maybeLater" = "Talvez depois";
+"subscription.trialOffer.pricesUnavailable" = "Não conseguimos carregar os preços. Verifique sua conexão.";
 
 // MARK: - Shortcut Notifications
 

@@ -2547,6 +2547,7 @@
 "subscription.trialOffer.subtitle" = "30日間すべての機能が使えます。縛りなし、いつでもキャンセル可能。";
 "subscription.trialOffer.startTrial" = "無料トライアル開始";
 "subscription.trialOffer.maybeLater" = "あとで";
+"subscription.trialOffer.pricesUnavailable" = "価格を読み込めませんでした。接続を確認してください。";
 
 // MARK: - Shortcut Notifications
 

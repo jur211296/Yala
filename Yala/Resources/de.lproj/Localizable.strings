@@ -2543,6 +2543,7 @@
 "subscription.trialOffer.subtitle" = "30 Tage mit allen Funktionen. Unverbindlich, jederzeit kündbar.";
 "subscription.trialOffer.startTrial" = "Kostenlose Testphase starten";
 "subscription.trialOffer.maybeLater" = "Vielleicht später";
+"subscription.trialOffer.pricesUnavailable" = "Die Preise konnten nicht geladen werden. Prüfe deine Verbindung.";
 
 // MARK: - Shortcut Notifications
 

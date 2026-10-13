@@ -2547,6 +2547,7 @@
 "subscription.trialOffer.subtitle" = "30 dagen met alle functies. Geen verplichtingen, altijd opzegbaar.";
 "subscription.trialOffer.startTrial" = "Start gratis proefperiode";
 "subscription.trialOffer.maybeLater" = "Misschien later";
+"subscription.trialOffer.pricesUnavailable" = "We konden de prijzen niet laden. Controleer je verbinding.";
 
 // MARK: - Shortcut Notifications
 

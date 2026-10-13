@@ -783,6 +783,12 @@ final class AppBootstrapper {
             UserDefaults.standard.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)
             SessionState.shared.isExpensesOnlyMode = false
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
+            //  · el idioma elegido DENTRO de la app (`appLanguageOverride`, App Group + KV). Vive fuera de
+            //    SwiftData y gana al `-AppleLanguages (es)` que fija `launchForUITest`: uno que quedara
+            //    puesto —un arranque manual en un simulador en otro idioma basta— cambiaría el idioma de toda
+            //    la suite y escondería el selector de idioma que vigila `LanguageSelectionUITests`. El setter
+            //    es no-op si ya es `nil`, así que en el caso normal no toca el KV.
+            LanguageManager.overrideLanguage = nil
             //  · el EJE 1 (`-uitest-group-invite` escribe la marca en `false` más abajo):
             //    misma clase que su vecina de arriba y PEOR, porque `cloudSync.*` está excluido del
             //    barrido de preferencias a propósito —para que la marca sobreviva a «Vaciar datos»—,
