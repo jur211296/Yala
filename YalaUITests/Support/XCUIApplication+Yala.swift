@@ -68,6 +68,12 @@ extension XCUIApplication {
         // esa lectura del teléfono fingida e iCloud «sin cuenta» (ticket `private-gate-device-notice-has-no-forward-exit`).
         privateGateDeviceReading: String? = nil,
         scheduledSeedDay: Int? = nil,
+        // Idioma y región de la corrida. El default es el de toda la suite (ver abajo); solo lo cambia un test que
+        // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
+        // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
+        // que este harness quiera depender de medir.
+        appleLanguages: String = "(es)",
+        appleLocale: String = XCUIApplication.uiTestLocaleIdentifier,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -226,7 +232,7 @@ extension XCUIApplication {
         // se verificó en un idioma, así que se declara en vez de heredarlo del entorno.
         // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
         // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
-        args += ["-AppleLanguages", "(es)", "-AppleLocale", Self.uiTestLocaleIdentifier]
+        args += ["-AppleLanguages", appleLanguages, "-AppleLocale", appleLocale]
         launchArguments = args
         launch()
         return self

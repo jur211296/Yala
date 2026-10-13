@@ -450,6 +450,20 @@ final class UITestHooks {
     /// en pantalla para capturar y probar su diseño.
     nonisolated static var chatDraft: Bool { hasArg("-uitest-chat-draft") }
 
+    /// Valor de `-uitest-chat-reply <pizza>`: enviar en el chat no llama a la red. El mensaje del usuario entra en el
+    /// hilo, el indicador de «pensando» se ve un momento y Yala IA contesta con lo que diga el perfil, resuelto contra
+    /// los datos sembrados (`pizza`: un gasto completo «Pizza», 280 en la divisa principal, Restaurantes, hoy). Existe
+    /// para la demo grabada del chat (`DemoIAPizzaUITests`): `-uitest-chat-draft` abre con la respuesta ya puesta, y el
+    /// vídeo tiene que ver escribir y contestar.
+    nonisolated static var chatReply: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-chat-reply", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// Valor de `-uitest-voice-result <one|incomplete|two|trial-used-up>`: el registro por voz no graba ni llama a la red.
     /// La hoja abre escuchando sin pedir el micro y, al tocar Listo, «entiende» lo que diga el perfil, resuelto contra los
     /// datos sembrados (`one`: un gasto completo · `incomplete`: sin subcategoría · `two`: dos gastos completos ·
