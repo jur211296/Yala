@@ -70,6 +70,10 @@ enum DevSeedProfile: String {
     /// saldos abiertos, sin vida personal (la captura es de Grupos y una cuenta en PEN delataría el seed).
     /// Ver `DevSeedGroups.createFichaMX`.
     case fichaMX = "ficha-mx"
+    /// La ficha es-MX completa: la vida personal de `.realista` (un año) pasada a MXN, más los tres grupos de
+    /// `.fichaMX`. Una sola persona para todas las capturas, así que las cifras cuadran entre pantallas. Ver
+    /// `relabelPersonalDataToMXN`.
+    case fichaMXVida = "ficha-mx-vida"
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -79,6 +83,7 @@ enum DevSeedProfile: String {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX: return 7
+        case .fichaMXVida: return 365
         case .realista: return 730
         case .pesado: return 3650
         }
@@ -88,7 +93,7 @@ enum DevSeedProfile: String {
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
             || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
-            || self == .fichaMX
+            || self == .fichaMX || self == .fichaMXVida
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
@@ -231,6 +236,12 @@ final class DevSeedService {
             )
         }
 
+        // Step 9.9: la ficha es-MX quiere pesos. Va ANTES de los grupos: sus gastos ya nacen en MXN y no
+        // se deben escalar otra vez.
+        if profile == .fichaMXVida {
+            relabelPersonalDataToMXN(in: context)
+        }
+
         // Step 10: Grupos (perfiles .grupos / .gruposInvitado / .gruposSaldado / .soloGrupos) — grupo local
         // para QA del tab Grupos
         if profile.seedsGroups {
@@ -240,7 +251,7 @@ final class DevSeedService {
             case .gruposSinFlag:  DevSeedGroups.createAsBackendJoiner(in: context)
             case .gruposPendiente: DevSeedGroups.createAsPendingMember(in: context)
             case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
-            case .fichaMX:        DevSeedGroups.createFichaMX(in: context)
+            case .fichaMX, .fichaMXVida: DevSeedGroups.createFichaMX(in: context)
             default:              DevSeedGroups.create(in: context)
             }
         }
@@ -273,6 +284,58 @@ final class DevSeedService {
         updateStep(L10n.DevSeed.stepDone, progress: 1.0)
         try? await Task.sleep(for: .milliseconds(500))
         isSeeding = false
+    }
+
+    // MARK: - Ficha es-MX (vida personal en MXN)
+
+    /// Pesos por sol para `.fichaMXVida`: con el dólar a 3.70 soles y a 18.50 pesos, 5 pesos por sol.
+    static let mxnPerPEN = 5.0
+
+    /// Pasa a MXN lo que el generador personal escribe en PEN: cuentas, registros, presupuestos, pagos
+    /// planificados, borradores y la fila de tipos de cambio. Multiplica por `mxnPerPEN` en vez de reescribir el
+    /// generador, así que las proporciones de `.realista` se conservan y solo cambia la divisa.
+    private func relabelPersonalDataToMXN(in context: ModelContext) {
+        let factor = Self.mxnPerPEN
+        do {
+            try context.save()
+            for account in try context.fetch(FetchDescriptor<Account>()) where account.currencyCode == "PEN" {
+                account.currencyCode = "MXN"
+            }
+            for tx in try context.fetch(FetchDescriptor<TransactionItem>()) {
+                if tx.currencyCode == "PEN" {
+                    tx.amount *= factor
+                    tx.currencyCode = "MXN"
+                } else if tx.preferredCurrencyCode == "PEN" {
+                    // Registro en USD: su tipo era soles por dólar y pasa a pesos por dólar.
+                    tx.exchangeRate *= factor
+                }
+                if tx.preferredCurrencyCode == "PEN" {
+                    tx.amountInPreferredCurrency *= factor
+                    tx.preferredCurrencyCode = "MXN"
+                }
+            }
+            for budget in try context.fetch(FetchDescriptor<Budget>()) where budget.currencyCode == "PEN" {
+                budget.limitAmount *= factor
+                budget.currencyCode = "MXN"
+            }
+            for payment in try context.fetch(FetchDescriptor<ScheduledPayment>()) where payment.currencyCode == "PEN" {
+                payment.amount *= factor
+                payment.currencyCode = "MXN"
+            }
+            for draft in try context.fetch(FetchDescriptor<InboxDraft>()) {
+                if let amount = draft.amount { draft.amount = amount * factor }
+                if draft.cachedCurrencyCode == "PEN" { draft.cachedCurrencyCode = "MXN" }
+            }
+            for entry in try context.fetch(FetchDescriptor<ExchangeRate>()) {
+                var rates = entry.decodedRates()
+                guard let pen = rates["PEN"] else { continue }
+                rates["MXN"] = (pen * factor * 100).rounded() / 100
+                entry.rates = try DevSeedExchangeRates.encodeScale8StringFaceBlob(rates)
+            }
+            try context.save()
+        } catch {
+            print("DevSeedService: ficha-mx-vida relabel error: \(error)")
+        }
     }
 
     // MARK: - Desync Fixtures (XCUI clasificación income/expense)
