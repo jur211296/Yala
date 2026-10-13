@@ -248,6 +248,11 @@ struct GroupsContainerView: View {
                     presentation: horizontalSizeClass == .regular ? .column : .pushed,
                     onCloseColumn: { viewModel.selectedGroup = nil })
                 .announcesShownInDetailColumn()
+                // En la columna de detalle SwiftUI REUTILIZA esta vista al cambiar de grupo, y el `@State` del
+                // detalle (su view model, la pestaña, `wasArchivedOnAppear`) solo se inicia la primera vez: el título
+                // pasaba al grupo nuevo y gastos, saldo y miembros seguían siendo del anterior (medido en el iPad el
+                // 2026-10-12). La identidad del grupo hace de cada grupo una vista nueva, como en Registros.
+                .id(group.persistentModelID)
             }
             .onChange(of: viewModel.selectedGroup) { _, newValue in
                 // Al volver del detalle (pop → nil) refrescamos la lista, igual que el

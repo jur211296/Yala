@@ -125,6 +125,39 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
+    /// Planificación: abrir otro presupuesto enseña SU gastado. En ancho el detalle se reutilizaba y el resumen se
+    /// quedaba con el gastado del primero, con el límite y las categorías ya del nuevo (medido el 2026-10-12 en el
+    /// iPad: «Fijos casa» con los S/ 1,168.00 de «Comidas fuera»). El gastado esperado es el que enseña la propia fila.
+    func test_switchingBudgets_showsTheNewBudgetsSpentAmount() {
+        let app = launch(deeplink: "budgets")
+        let budgetRows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'budget_row_'"))
+        XCTAssertTrue(budgetRows.firstMatch.waitForExistence(timeout: 15), "No hay presupuestos sembrados.")
+        let spent = app.descendants(matching: .any).matching(identifier: "budget_detail_spent").firstMatch
+
+        /// Abre la fila `index` y comprueba que el gastado del detalle es el que dice la fila.
+        func openAndExpectItsSpent(_ index: Int) {
+            if !expectsWideWindow, !budgetRows.element(boundBy: index).isHittable {
+                app.navigationBars.buttons.element(boundBy: 0).tap()
+            }
+            let row = budgetRows.element(boundBy: index)
+            XCTAssertTrue(row.waitForHittable(timeout: 10), "No se ve la fila \(index) de presupuestos.")
+            let rowLabel = row.label
+            row.tap()
+            XCTAssertTrue(spent.waitForExistence(timeout: 10), "No se abrió el detalle del presupuesto.")
+            let expectation = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in rowLabel.contains(spent.label) }, object: nil)
+            XCTAssertEqual(
+                XCTWaiter().wait(for: [expectation], timeout: 5), .completed,
+                "El gastado del detalle («\(spent.label)») no es el de la fila abierta («\(rowLabel)»).")
+        }
+
+        openAndExpectItsSpent(0)
+        let first = spent.label
+        openAndExpectItsSpent(2)
+        // Sin esto el caso no discrimina: con dos gastados iguales el bug también saldría verde.
+        XCTAssertNotEqual(spent.label, first, "Los dos presupuestos sembrados gastan lo mismo: el caso no discrimina.")
+    }
+
     // MARK: - Fase 2
 
     /// Grupos: en ancho, el grupo se abre en la columna de detalle con la lista y la navegación de la app a la
@@ -157,6 +190,66 @@ final class AdaptiveNavigationUITests: XCTestCase {
             app.buttons["group_detail_back"].tap()
             XCTAssertTrue(card.waitForHittable(timeout: 5), "El chevron no volvió a la lista.")
         }
+    }
+
+    /// Grupos: abrir otro grupo enseña el grupo nuevo entero, no solo su título. En ancho el detalle se queda en
+    /// la misma columna y SwiftUI reutilizaba la vista: el título cambiaba y gastos, saldo y miembros seguían siendo
+    /// del primero (ticket `ipad-group-detail-keeps-the-first-group-after-switching`, medido el 2026-10-12). En iPhone
+    /// el mismo recorrido pasa por el chevron. Seed `ficha-mx`: Oaxaca (4 miembros, «Te deben 4,842.50») y Depa Roma
+    /// Norte (3 miembros, «Debes 5,374.00»). Los montos se comparan por sus dígitos, que no dependen del formato.
+    func test_switchingGroups_showsTheNewGroupsExpensesBalanceAndMembers() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "ficha-mx", deeplink: "groups")
+        XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        func card(_ name: String) -> XCUIElement {
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == 'group_card' AND label CONTAINS %@", name)).firstMatch
+        }
+        func expenseRow(_ description: String) -> XCUIElement {
+            app.descendants(matching: .any).matching(identifier: "group_expense_row_\(description)").firstMatch
+        }
+        func digits(_ text: String) -> String { text.filter(\.isNumber) }
+        let members = app.buttons["group_members_button"]
+        let balance = app.descendants(matching: .any).matching(identifier: "group_header_balance").firstMatch
+
+        /// Abre `name` desde la lista: en ancho la lista está al lado; en compacto se vuelve con el chevron.
+        func open(_ name: String) {
+            if !expectsWideWindow, app.buttons["group_detail_back"].exists {
+                app.buttons["group_detail_back"].tap()
+            }
+            let target = card(name)
+            XCTAssertTrue(target.waitForHittable(timeout: 10), "No se ve la tarjeta de «\(name)» en la lista.")
+            target.tap()
+            XCTAssertTrue(app.navigationBars[name].waitForExistence(timeout: 10), "El título no pasó a «\(name)».")
+        }
+
+        /// Lo que se ve del grupo abierto: un gasto suyo y ninguno del otro, sus miembros y su saldo.
+        func expectShowing(_ name: String, expense: String, notExpense: String, memberCount: String, balanceDigits: String) {
+            XCTAssertTrue(
+                expenseRow(expense).waitForExistence(timeout: 10),
+                "Con «\(name)» abierto no aparece su gasto «\(expense)».")
+            XCTAssertFalse(expenseRow(notExpense).exists, "Con «\(name)» abierto sigue el gasto «\(notExpense)» del otro grupo.")
+            XCTAssertTrue(members.waitForExistence(timeout: 5), "No está el botón de miembros.")
+            XCTAssertEqual(digits(members.label), memberCount, "Los miembros no son los de «\(name)»: «\(members.label)».")
+            XCTAssertTrue(balance.waitForExistence(timeout: 5), "No está el saldo del grupo.")
+            XCTAssertTrue(
+                digits(balance.label).contains(balanceDigits),
+                "El saldo no es el de «\(name)»: «\(balance.label)».")
+        }
+
+        open("Viaje a Oaxaca")
+        expectShowing("Viaje a Oaxaca", expense: "Mezcalería", notExpense: "Garrafones de agua",
+                      memberCount: "4", balanceDigits: "484250")
+
+        open("Depa Roma Norte")
+        expectShowing("Depa Roma Norte", expense: "Garrafones de agua", notExpense: "Mezcalería",
+                      memberCount: "3", balanceDigits: "537400")
+
+        // Y de vuelta: el primero vuelve a ser el primero.
+        open("Viaje a Oaxaca")
+        expectShowing("Viaje a Oaxaca", expense: "Mezcalería", notExpense: "Garrafones de agua",
+                      memberCount: "4", balanceDigits: "484250")
     }
 
     /// Ajustes: en ancho, dos columnas dentro de su hoja (la lista y el ajuste abierto a la vez). En iPhone, la
