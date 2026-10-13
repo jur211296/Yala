@@ -1,6 +1,6 @@
 ---
 id: ipad-group-detail-keeps-the-first-group-after-switching
-status: qa
+status: done
 priority: high
 area: groups
 created: 2026-10-12
@@ -81,3 +81,7 @@ iPad Pro 13 (M5), iOS 27.0. En iPhone recorren el mismo camino con Atrás.
    enlazados: el segundo no enseña los del primero.
 
 Si todo cuadra, el ticket pasa a `done`.
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-10-12: AdaptiveNavigationUITests (test_switchingGroups_showsTheNewGroupsExpensesBalanceAndMembers y test_switchingBudgets_showsTheNewBudgetsSpentAmount) sale rojo sin el arreglo y verde con él en el iPad Pro 13 (M5) con iOS 27.0, con capturas antes y después (PR #473). El arreglo es la identidad de la vista, no un cálculo, y no depende del aparato.

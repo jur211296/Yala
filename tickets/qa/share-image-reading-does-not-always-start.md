@@ -45,8 +45,11 @@ Montaje: una foto de un recibo en Fotos. Yala con sesión iniciada, Pro y el con
 2. **En segundo plano.** Con Yala abierta en el Panel, ve al inicio. En Fotos → Compartir → Yala. Espera: lo mismo que
    el paso 1, sin ver el arranque.
 3. **Con la Bandeja abierta.** Abre la Bandeja (icono arriba a la izquierda del Panel). Ve al inicio y comparte la foto
-   como en el paso 2. Espera: Yala vuelve con la Bandeja abierta. Ciérrala con la X: la lectura arranca sola.
-4. Repite el paso 2 tres veces seguidas, guardando o cerrando lo leído entre una y otra. Las tres tienen que leerse.
+   como en el paso 2. Espera: la Bandeja se cierra sola y arranca la lectura (desde #468, decisión B de Jürgen del
+   12-oct; antes había que cerrarla con la X).
+4. **Con un «Nuevo registro» a medias.** En el Panel, abre «Nuevo registro» y escribe un importe. Comparte otra foto.
+   Espera: el formulario **no** se cierra; al cerrarlo tú, arranca la lectura.
+5. Repite el paso 2 tres veces seguidas, guardando o cerrando lo leído entre una y otra. Las tres tienen que leerse.
 
 Si alguno no arranca: anota el paso y la hora, y en Console.app filtra `subsystem: com.yala` con `category: SharedImage`
 (`SHARED-IMAGE CHECK`, `ENTRY AWAITS BOOTSTRAP`).
@@ -58,5 +61,5 @@ Con ella apagada, el caso del «?» de un widget seguía pasando: el mutante sob
 
 ## Queda para decidir
 
-`shared-photo-waits-silently-behind-an-open-panel-sheet`: en el paso 3 la lectura espera sin decir nada. Si eso explica
-el reporte, la opción B de ese ticket lo resuelve.
+~~`shared-photo-waits-silently-behind-an-open-panel-sheet`: en el paso 3 la lectura espera sin decir nada.~~ Decidido y
+hecho: Jürgen eligió la opción B el 2026-10-12 y entró en #468 (el ticket está en `done`).

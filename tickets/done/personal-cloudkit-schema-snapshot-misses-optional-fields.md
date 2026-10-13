@@ -1,10 +1,10 @@
 ---
 id: personal-cloudkit-schema-snapshot-misses-optional-fields
-status: blocked
+status: done
 priority: high
 area: "cloudkit, sync, schema"
 created: 2026-10-08
-updated: 2026-10-10
+updated: 2026-10-12
 source: análisis de impacto de multi-currency-accounts (2026-10-08)
 ---
 
@@ -113,3 +113,7 @@ Bloqueado por: token de gestión de CloudKit (la Mini no tiene; `cktool get-team
 - `multi-currency-accounts`: la opción recomendada añade un campo opcional a `CD_Account`, y este
   ticket dice por qué no basta con fiarse del snapshot
   (`docs/multi-currency-accounts-impact-2026-10.md`, secciones 2.12 y 4).
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-10-12: Jürgen desplegó el esquema el 2026-10-12 y los cuatro `.ckdb` se exportaron después (commit `docs(cloudkit): export real del esquema personal tras el deploy del 2026-10-12`). Con ellos, `PersonalCloudKitSchemaParityTests` sale en verde: 5 tests, incluido `snapshot_coversEveryFieldTheAppWrites` en los 4 ficheros. Cada campo que la app escribe existe en el esquema.

@@ -1,10 +1,10 @@
 ---
 id: nightly-ui-suite-hits-its-110-minute-cap-every-night
-status: qa
+status: done
 priority: high
 area: testing
 created: 2026-10-07
-updated: 2026-10-09
+updated: 2026-10-12
 source: hallazgo de advisory-ui-tests-fail-every-retry (run 37485294893)
 qa-status: needs-testing
 qa-date: 2026-10-09
@@ -106,3 +106,7 @@ Tres nocturnas seguidas tras el merge (`gh run list --workflow qa.yml --event sc
    (`Test Suite '…UITests' passed|failed`) como lista la tanda (28/28/29 hoy);
 2. cada paso de UI por debajo de 110 min;
 3. cada job de UI y el job `tests` con al menos 15 min de margen (≤135 y ≤45).
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-10-12: las nocturnas del 10, 11 y 12-oct (38059703509, 38149084065, 38287230957) cumplen los tres criterios: cada tanda trae su marca «ci-ui-tandas» y cierra tantas suites como lista (28/29/28, 28/29/29, 30/30/30); el paso de UI más largo dura 74 min (tope 110), el job de UI más largo 91 min (tope 135) y el job tests 38 min (tope 45).

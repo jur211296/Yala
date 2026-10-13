@@ -1,6 +1,6 @@
 ---
 id: privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion
-status: qa
+status: done
 priority: high
 area: "web, legal"
 created: 2026-10-10
@@ -67,3 +67,7 @@ y las dos frases de la app que contradecían la política, corregidas en los 16 
    para el modo privado y para los grupos antiguos.)
 6. En un iPhone sin Pro: Perfil → Exportar datos → Período. «Este año», «Año pasado», «Todo el tiempo» y
    «Personalizado» salen sin insignia Pro y se pueden elegir.
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-10-12: la web está desplegada y medida hoy con curl: /privacy y /en/privacy tienen 14 secciones y «Octubre 2026», nombran Supabase, y /terms tiene la fecha nueva. La exportación gratis de todos los períodos la fija ExportFreePeriodsUITests, y Lola aprobó el texto (PR #469). Las etiquetas de App Privacy siguen en su card (kgqv).

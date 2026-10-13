@@ -1,6 +1,6 @@
 ---
 id: private-gate-device-notice-has-no-forward-exit
-status: qa
+status: done
 priority: medium
 area: "modo-nube, onboarding"
 created: 2026-09-13
@@ -83,3 +83,7 @@ este aviso no tendría quien lo use (el único camino, inferido, es un alta de g
 Ya cubierto por XCUITest. En device no se puede provocar el error de lectura sin un build de desarrollo; si se quiere
 ver: build `Yala Dev`, lanzar con `-uitest -uitest-reset -uitest-private-gate-device-reading unreadable`, «Empezar» →
 «Es mi primera vez». Esperado: la pantalla nueva; «Reintentar» la repite; «Volver» vuelve a la elección.
+
+## Cierre
+
+Cerrado en el barrido de QA 2026-10-12: el XCUITest PrivateGateDeviceUnreadableUITests recorre la pantalla nueva y su control con datos legibles, y PrivateGateDeviceUnreadableTests fija la lógica con un mutante de fallo cerrado (PR #470). En un iPhone el error de lectura no se provoca sin un build de desarrollo, y el cambio no ofrece borrar nada.
