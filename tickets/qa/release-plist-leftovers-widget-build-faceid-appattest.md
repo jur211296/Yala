@@ -1,6 +1,7 @@
 ---
 id: release-plist-leftovers-widget-build-faceid-appattest
-status: backlog
+status: qa
+updated: 2026-10-12
 priority: medium
 area: "release"
 created: 2026-10-10
@@ -23,3 +24,22 @@ Ninguno bloquea el envío. El primero es el único que conviene antes del archiv
 ## Hecho cuando
 
 El archive de 2.1 sale con el mismo build en la app y el widget, sin el texto de Face ID y con App Attest declarado.
+
+## Estado (2026-10-12)
+
+- **1 y 2 hechos por #447**, medido en este árbol: `YalaWidgets/Info.plist:24` es `$(CURRENT_PROJECT_VERSION)`
+  y no queda `NSFaceIDUsageDescription` en `Yala/`.
+- **3 hecho** (card g8rc): `com.apple.developer.devicecheck.appattest-environment` declarado y **sigue al
+  bundle**, igual que el gateway. `production` en `Yala-Release.entitlements` y en el Debug del scheme `Yala`
+  (build setting `APP_ATTEST_ENVIRONMENT`, porque `Yala-Debug.entitlements` lo comparten tres configuraciones);
+  `development` en Debug-Dev y Release-Dev (`.dev`). Verificado con `codesign` sobre builds firmados de las
+  cuatro configuraciones; Share y Widgets no lo llevan (no usan `DCAppAttestService`).
+
+## Guion de QA (iPhone, Jürgen)
+
+1. En Xcode, scheme **Yala** (no Yala Dev), destino tu iPhone, ▶︎ Run.
+2. Abre el asistente de IA y haz una pregunta cualquiera.
+3. **Pasa** si responde. Antes de este cambio ese build daba 401 `AAGUID no corresponde al entorno
+   'production'` y la IA no contestaba nunca.
+4. Repite con el scheme **Yala Dev**: tiene que seguir respondiendo (staging, `development`).
+5. En el próximo archive para TestFlight (c59v): el export firma con `production`; nada que hacer aparte.
