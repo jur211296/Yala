@@ -190,9 +190,6 @@ struct ContentView: View {
     @State private var languageVersion: Int = 0
     @Environment(\.modelContext) private var modelContext
 
-    /// Minimum splash duration (2.5 seconds to enjoy the animation)
-    private let minimumSplashDuration: Double = 2.5
-
     var body: some View {
         shellObservers(shellPresentations(rootContent))
     }
@@ -255,7 +252,12 @@ struct ContentView: View {
                     .opacity(splashOpacity)
                     .ignoresSafeArea()
                     .task {
-                        try? await Task.sleep(for: .seconds(minimumSplashDuration))
+                        // 2,5 s solo en la primera impresión; después, lo que tarde la app (UX 2.2 · L1-1).
+                        let minimum = SplashDurationLogic.minimumSeconds(hasCompletedOnboarding: hasCompletedOnboarding)
+                        if minimum > 0 {
+                            // Cancelada = el splash ya se desmontó: no queda nada que ocultar.
+                            do { try await Task.sleep(for: .seconds(minimum)) } catch { return }
+                        }
                         // Wait until initial check determines what to show (avoids blank flash)
                         while !isInitialCheckDone {
                             try? await Task.sleep(for: .milliseconds(50))
@@ -629,22 +631,6 @@ struct ContentView: View {
             activeInviteError: $activeInviteError,
             activeGroupSyncError: $activeGroupSyncError
         ))
-        .onChange(of: showOnboarding) { oldValue, newValue in
-            // Replaces unreliable fullScreenCover onDismiss for post-onboarding flow.
-            // onChange(of:) fires synchronously on @State change — always reliable.
-            guard oldValue && !newValue && hasCompletedOnboarding else { return }
-            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
-                // El flag persistido se limpia en el DRAIN (presentación real),
-                // no aquí: el intent es transient (drop en background) y limpiarlo
-                // al emitir perdía la oferta sin re-emisión posible.
-                Task {
-                    // Wait for fullScreenCover dismiss animation (~0.35s, UX)
-                    try? await Task.sleep(for: .seconds(0.8))
-                    await waitForBootstrap()
-                    RouterEntryGate.shared.submit(.presentTrialOffer)
-                }
-            }
-        }
         .sheet(isPresented: $showSyncSettingsSheet) {
             ProfileView(initialDestination: .iCloudSync)
                 .environment(SessionState.shared)
@@ -1241,6 +1227,7 @@ struct ContentView: View {
             // matriz completa solo drena con el anchor libre). Limpiar aquí — y no
             // en los productores — permite re-emitir tras un drop transient.
             SessionState.shared.needsPostOnboardingTrial = false
+            SessionState.shared.trialOfferMomentReached = false
         case .presentWhatsNew(let features, let version):
             whatsNewData = (features: features, version: version)
             showWhatsNew = true
@@ -2566,10 +2553,12 @@ struct ContentView: View {
         // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
         if SessionState.shared.hasPrivateSession {
             if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
-                // Flag limpiado en el drain (presentación real) — ver onChange(showOnboarding).
+                // Armada: solo vuelve a pedirse si su momento ya llegó y se perdió (UX 2.2 · L1-12). Sin
+                // momento, espera al primer registro; y mientras espera, Novedades no sale, como antes. El
+                // `!isProUser` se queda: quien ya es Pro no espera ninguna oferta y sí ve Novedades.
                 Task {
                     await waitForBootstrap()
-                    RouterEntryGate.shared.submit(.presentTrialOffer)
+                    TrialOfferMoments.note(.launch)
                 }
             } else if let data = whatsNewDataIfPending() {
                 RouterEntryGate.shared.submit(.presentWhatsNew(features: data.features, version: data.version))

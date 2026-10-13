@@ -417,8 +417,9 @@ struct BalanceCalculatorSheet: View {
         .padding(DS.Spacing.md)
     }
 
-    private func resultRow(label: String, amount: Double) -> some View {
-        HStack {
+    private func resultRow(label: String, amount rawAmount: Double) -> some View {
+        let amount = BalanceCalculatorDisplayLogic.displayed(rawAmount)
+        return HStack {
             Text(label)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
@@ -475,5 +476,16 @@ struct BalanceCalculatorSheet: View {
             }
         }
         return result
+    }
+}
+
+/// Lo que enseña una fila de resultado de la calculadora.
+///
+/// La tarjeta muestra su saldo como `-consumo`, y con los campos vacíos eso es `-0.0`: el formateador pinta
+/// «S/ -0.00», un saldo negativo sin nada que deber (bug B1 de la pasada UI del lote 1 de la auditoría UX 2.2,
+/// medido en el simulador el 2026-10-13). Un cero se enseña sin signo.
+enum BalanceCalculatorDisplayLogic {
+    static func displayed(_ amount: Double) -> Double {
+        amount == 0 ? 0 : amount
     }
 }

@@ -417,6 +417,11 @@ final class UITestHooks {
     /// hook explícito es el único camino (escenario paywall + alert en cola).
     nonisolated static var showTrialOffer: Bool { hasArg("-uitest-trial-offer") }
 
+    /// `-uitest-trial-offer-armed` (solo con `-uitest-reset`): deja la oferta de prueba ARMADA y sin momento,
+    /// como al terminar un alta, SIN pedirla. Es lo que necesita `TrialOfferMomentUITests` para ver que el
+    /// arranque no la presenta y que sale tras el primer registro (UX 2.2 · L1-12).
+    nonisolated static var armTrialOffer: Bool { hasArg("-uitest-trial-offer-armed") }
+
     /// `-uitest-force-update`: fuerza el estado "hay update disponible" en AppUpdateService
     /// (sin red) para testear el UpdateAvailableBanner del Panel.
     nonisolated static var forceUpdateBanner: Bool { hasArg("-uitest-force-update") }

@@ -1330,6 +1330,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "sessionTimestamps")      // Default: [] (UserSegmentService sessions)
         defaults.removeObject(forKey: "secondaryCurrencies")    // Default: "" (no secondary currencies)
         defaults.removeObject(forKey: "needsPostOnboardingTrial") // One-shot del trial post-onboarding
+        defaults.removeObject(forKey: "trialOfferMomentReached")  // Su momento ya llegó (red del arranque, L1-12)
 
         // --- Cross-device wipe coordination ---
         // DO NOT clear lastKnownWipeTimestamp — it protects against reacting to our own wipe signal

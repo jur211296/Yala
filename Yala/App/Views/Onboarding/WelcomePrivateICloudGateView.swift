@@ -435,9 +435,11 @@ struct WelcomePrivateICloudGateView: View {
     private var noICloudContent: some View {
         switch unverifiedExit {
         case .proceedWatchingTheMirror:
+            // El título dice el hecho y no un fallo (UX 2.2 · L1-3): quien acaba de llegar no hizo nada
+            // mal. Solo aquí: la puerta que vuelve sí viene de un «no pudimos» y conserva su título.
             noticeContent(
                 icon: "icloud.slash",
-                title: L10n.Welcome.PrivateICloud.noAccountTitle,
+                title: L10n.Welcome.PrivateICloud.noAccountProceedTitle,
                 body: noICloudBody,
                 cta: unverifiedExitLabel,
                 identifier: "welcome_private_icloud_no_account",

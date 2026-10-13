@@ -32,6 +32,8 @@ struct SetupChecklistManagerTests {
 
         let manager = SetupChecklistManager.shared
         manager.resetAll()
+        // El efecto real de completar la lista arma la oferta de prueba y la pide al router (L1-12): aquí no.
+        manager.onAllStepsCompleted = {}
         // Ensure shouldShow works (requires isNewInstall flag)
         manager.markAsNewInstall()
         return manager
@@ -99,6 +101,7 @@ struct SetupChecklistManagerTests {
         }
         #expect(manager.isAllComplete == true)
         #expect(manager.completedCount == 7)
+        #expect(manager.wouldCompleteAll(by: .discoverFeatures) == false, "ya completa, no completa otra vez")
         #expect(manager.completedAllDate != nil)
         #expect(manager.currentStep == nil)
         #expect(manager.progress == 1.0)
@@ -113,6 +116,25 @@ struct SetupChecklistManagerTests {
     }
 
     // MARK: - Discover Features Locked
+
+    /// UX 2.2 · L1-12: completar la lista avisa UNA vez (la oferta de prueba), y `wouldCompleteAll` sabe cuándo
+    /// el paso que se toca es el último — es lo que evita abrir el paywall general encima de la oferta.
+    @MainActor @Test func completingTheList_notifiesOnce_andKnowsTheLastStep() {
+        let manager = freshManager()
+        var calls = 0
+        manager.onAllStepsCompleted = { calls += 1 }
+        defer { manager.onAllStepsCompleted = {} }
+        for step in SetupStepID.allCases where step != .discoverFeatures {
+            #expect(!manager.wouldCompleteAll(by: step))
+            manager.markCompleted(step)
+        }
+        #expect(calls == 0)
+        #expect(manager.wouldCompleteAll(by: .discoverFeatures))
+        #expect(!manager.wouldCompleteAll(by: .firstExpense), "ese paso ya está hecho: no es el que falta")
+        manager.markCompleted(.discoverFeatures)
+        manager.markCompleted(.discoverFeatures)
+        #expect(calls == 1)
+    }
 
     @MainActor @Test func discoverFeatures_lockedUntilOthersComplete() {
         let manager = freshManager()

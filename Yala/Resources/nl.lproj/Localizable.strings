@@ -1797,7 +1797,7 @@
 "onboarding.categoriesTitle" = "Categorieën om mee te beginnen";
 "onboarding.categoriesSubtitle" = "We hebben veelgebruikte categorieën klaargezet zodat je vanaf dag één je uitgaven kunt ordenen.";
 "onboarding.categoriesYes" = "Begin met deze categorieën";
-"onboarding.categoriesNo" = "Begin met een lege lijst";
+"onboarding.categoriesNo" = "Geen categorieën, ik maak ze zelf";
 "onboarding.categoriesRecommended" = "Aanbevolen";
 "onboarding.categoriesInfo" = "Elke categorie heeft uitgebreide subcategorieën. Je kunt ze bekijken en aanpassen via Profiel > Categorieën.";
 "onboarding.notificationsTitle" = "Op de hoogte blijven?";
@@ -1807,7 +1807,7 @@
 "onboarding.notificationsDeselectAll" = "Alles uitschakelen";
 "onboarding.recommended" = "Aanbevolen";
 "onboarding.languageTitle" = "Kies je taal";
-"onboarding.languageSubtitle" = "We hebben gemerkt dat je taal nog niet wordt ondersteund. Geen zorgen, kies een van deze opties!";
+"onboarding.languageSubtitle" = "Yala is nog niet beschikbaar in de taal van je toestel. Kies er een: je kunt het altijd wijzigen via Profiel > Personalisatie.";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "Hoe wil je Yala gebruiken?";
@@ -1826,7 +1826,7 @@
 "onboarding.usageMode.fullControl" = "Echt saldo";
 "onboarding.usageMode.fullControl.quote" = "\"Ik wil één getal dat alles meetelt: wat ik heb, wat ik schuldig ben en wat ze mij schuldig zijn\"";
 "onboarding.usageMode.fullControl.desc" = "Je telt alles mee in je saldo — rekeningen, kaarten en wat heen en weer gaat met andere mensen. Het getal dat je ziet is wat echt van jou is.";
-"onboarding.privacyTitle" = "Klaar om te starten";
+"onboarding.privacyTitle" = "Je privacy";
 "onboarding.privacySubtitle" = "Je kunt nu beginnen met Yala";
 "onboarding.privacyLocal" = "Je financiële gegevens worden in je account bewaard";
 "onboarding.privacyNoTracking" = "Geen tracking of advertenties";
@@ -1932,17 +1932,14 @@
 "onboarding.purpose.control" = "Mijn geld beheren";
 "onboarding.purpose.controlDesc" = "Uitgaven, inkomsten en hoeveel je hebt";
 // Accounts step (binary)
-"onboarding.accounts.title" = "Hoe wil je je geld in Yala organiseren?";
 "onboarding.accounts.single" = "Alles samen op één rekening";
 "onboarding.accounts.singleDesc" = "Eén hoofdrekening per valuta waar je al je geld bundelt";
-"onboarding.accounts.multiple" = "Elke rekening apart";
-"onboarding.accounts.multipleDesc" = "Sparen, betalen, krediet... zodat je per rekening weet hoeveel je hebt";
 // Account type step
-"onboarding.accountType.title" = "Laten we je eerste rekening maken";
-"onboarding.accountType.subtitle" = "Kies welke rekening je nu wilt aanmaken. Je kunt er later meer toevoegen via je profiel.";
+"onboarding.accountType.title" = "Waar staat je geld?";
+"onboarding.accountType.subtitle" = "Kies de rekening waarmee je begint. Later kun je er meer toevoegen via je profiel.";
 "onboarding.accountType.checkingHint" = "Je dagelijkse bankrekening";
 "onboarding.accountType.savingsHint" = "Waar je je spaargeld bewaart";
-"onboarding.accountType.creditHint" = "Je creditcard";
+"onboarding.accountType.creditHint" = "Wat je ermee koopt en nog aan de bank verschuldigd bent";
 "onboarding.accountType.cashHint" = "Bankbiljetten en munten die je bij je hebt";
 // Name hint
 "onboarding.nameHint" = "Het kan je naam, bijnaam of wat je maar wilt zijn";
@@ -1954,7 +1951,7 @@
 "onboarding.currencyName.subtitleSeparate" = "Geef hem een naam en kies de valuta die hij gebruikt.";
 // Balance step
 "onboarding.balance.title" = "Hoeveel heb je op deze rekening?";
-"onboarding.balance.subtitle" = "Een schatting volstaat. Je kunt het altijd later aanpassen.";
+"onboarding.balance.subtitle" = "Een schatting is prima. Weet je het niet? Vul 0 in en pas het later aan.";
 // Confirmation step
 "onboarding.confirm.title" = "Hier is je Yala-instelling";
 "onboarding.confirm.accountLabel" = "Rekening";
@@ -5285,7 +5282,7 @@
 
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "Werk bij om door te gaan";
-"appUpdate.force.message" = "Deze versie van Yala wordt niet meer ondersteund. Werk bij om de app te blijven gebruiken.";
+"appUpdate.force.message" = "Er is een nieuwe versie van Yala en die heb je nodig om verder te gaan. Bij het bijwerken verlies je niets van wat je hebt vastgelegd.";
 "appUpdate.force.updateButton" = "Nu bijwerken";
 
 /* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
@@ -5731,7 +5728,7 @@
 "welcome.privateICloud.noAccountTitle" = "We konden je iCloud niet controleren";
 
 /* Private branch iCloud gate: body when there is no iCloud account */
-"welcome.privateICloud.noAccountBody" = "Op deze telefoon staat iCloud uit, dus we weten niet of je eerder iets hebt bewaard. Je kunt doorgaan: voorlopig blijven je gegevens hier, en als je iCloud aanzet laten we het weten voordat er iets samenkomt.";
+"welcome.privateICloud.noAccountBody" = "Je kunt toch beginnen: voorlopig blijven je gegevens hier. Zet je iCloud later aan, dan laten we het weten voordat er iets samenkomt.";
 
 /* Private branch iCloud gate: continue button when there is no iCloud account */
 "welcome.privateICloud.noAccountCta" = "Zo doorgaan";
@@ -6601,3 +6598,18 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Je had al een account en je bent er nu in ingelogd.";
+
+/* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
+"welcome.privateICloud.noAccountProceedTitle" = "Op deze telefoon staat iCloud uit";
+
+/* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
+"welcome.mirrorRelaunch.privacyNote" = "Zo maakt Yala verbinding met je privé-iCloud en blijven je gegevens altijd privé: niemand anders kan ze lezen, wij ook niet.";
+
+/* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
+"onboarding.purpose.changeLaterHint" = "Je kunt dit altijd wijzigen via Profiel > Personalisatie.";
+
+/* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
+"onboarding.currencyName.titleExpenses" = "In welke valuta geef je uit?";
+
+/* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
+"onboarding.currencyName.subtitleExpenses" = "Je uitgaven worden in deze valuta genoteerd. Wil je, geef de rekening dan een andere naam.";

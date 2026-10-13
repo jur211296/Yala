@@ -32,6 +32,7 @@ extension XCUIApplication {
         onboarding: Bool = false,
         inboxAlert: Bool = false,
         trialOffer: Bool = false,
+        trialOfferArmed: Bool = false,
         forceUpdate: Bool = false,
         aiConsent: Bool = false,
         aiChatReady: Bool = false,
@@ -98,6 +99,7 @@ extension XCUIApplication {
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
         if trialOffer { args.append("-uitest-trial-offer") }
+        if trialOfferArmed { args.append("-uitest-trial-offer-armed") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
         if aiChatReady { args.append("-uitest-ai-chat-ready") }

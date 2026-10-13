@@ -17,19 +17,19 @@ import Foundation
 enum OnboardingStep: Int, CaseIterable {
     case name = 0
     case purpose = 1       // "¿Qué te gustaría hacer?" (binary)
-    case accounts = 2      // "¿Cómo organizas?" (binary) — skip if expensesOnly
-    case accountType = 3   // "¿Cuál es tu primera cuenta?" — skip if not fullControl
-    case currencyName = 4
-    case balance = 5       // skip if expensesOnly
-    case categories = 6
-    case confirmation = 7  // Resumen + privacidad (último paso)
+    /// «¿Dónde está tu dinero?»: «Todo junto en una sola cuenta» o un tipo de cuenta — skip if expensesOnly.
+    /// Hasta 2.2 eran dos pasos (`accounts` «¿Cómo organizas?» + este); se fusionaron (UX 2.2 · L1-9).
+    case accountType = 2
+    case currencyName = 3
+    case balance = 4       // skip if expensesOnly
+    case categories = 5
+    case confirmation = 6  // Resumen + privacidad (último paso)
 
     /// String estable para telemetría — desacoplado del rawValue Int.
     var trackingName: String {
         switch self {
         case .name:         return "name"
         case .purpose:      return "purpose"
-        case .accounts:     return "accounts"
         case .accountType:  return "accountType"
         case .currencyName: return "currencyName"
         case .balance:      return "balance"
@@ -54,23 +54,22 @@ enum OnboardingStepPlan {
         prefilledCurrencyCode: String?,
         prefilledCategoriesCount: Int,
         hasPrefill: Bool,
-        expensesOnly: Bool,
-        dayToDay: Bool
+        expensesOnly: Bool
     ) -> Set<OnboardingStep> {
         var skip: Set<OnboardingStep> = []
 
-        // Skips por modo de uso (elección única del usuario en `.purpose`).
+        // Skips por modo de uso (elección única del usuario en `.purpose`). `.dayToDay` ya no salta nada:
+        // «Todo junto» es una opción DENTRO de `.accountType` desde la fusión de L1-9, y saltarlo dejaría a
+        // quien la eligió sin forma de volver a ese paso para cambiarla.
         if expensesOnly {
-            skip.formUnion([.accounts, .accountType, .balance])
-        } else if dayToDay {
-            skip.insert(.accountType)
+            skip.formUnion([.accountType, .balance])
         }
 
         // Skips por datos ya presentes en iCloud — no volvemos a preguntarlos.
         if hasPrefill {
             if prefilledUserName != nil { skip.insert(.name) }
             if prefilledAccountsCount > 0 {
-                skip.formUnion([.accounts, .accountType, .balance])
+                skip.formUnion([.accountType, .balance])
             }
             if prefilledCurrencyCode != nil { skip.insert(.currencyName) }
             if prefilledCategoriesCount > 0 { skip.insert(.categories) }

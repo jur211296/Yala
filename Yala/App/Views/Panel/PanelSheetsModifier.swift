@@ -222,12 +222,14 @@ struct PanelSheetsModifier: ViewModifier {
                 isPresented: $showPracticeAlert
             ) {
                 Button(L10n.SetupChecklist.practiceKeep, role: .cancel) {
+                    TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
                     sheets.practiceCleanupItem = nil
                 }
                 Button(L10n.SetupChecklist.practiceDelete, role: .destructive) {
                     if let item = sheets.practiceCleanupItem {
                         viewModel.deletePracticeItem(item)
                     }
+                    TrialOfferMoments.notePracticeAnswered(sheets.practiceCleanupItem)
                     sheets.practiceCleanupItem = nil
                     viewModel.reloadAndRecalculate()
                 }

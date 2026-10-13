@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (884)
+## Index (885)
 
 | id | status | path |
 |---|---|---|
@@ -327,6 +327,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
 | first-expense-practice-alert-tears-down-the-success-screen | done | tickets/done/first-expense-practice-alert-tears-down-the-success-screen.md |
+| first-panel-says-available-zero-next-to-the-opening-balance | backlog | tickets/backlog/first-panel-says-available-zero-next-to-the-opening-balance.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |

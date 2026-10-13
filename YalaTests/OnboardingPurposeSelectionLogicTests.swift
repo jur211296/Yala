@@ -156,9 +156,11 @@ struct OnboardingPurposeSelectionLogicTests {
         // tiene que caer.
         let inicio = try #require(source.range(of: "private var purposeStep: some View {"),
                                   "`purposeStep` desapareció o cambió de firma")
-        let fin = try #require(source.range(of: "private var accountsStep: some View {",
+        // Lo siguiente en el fichero es la definición de `binaryCard` (desde UX 2.2 · L1-9 ya no hay
+        // `accountsStep` en medio: «¿Cómo organizas?» se fusionó en `accountTypeStep`).
+        let fin = try #require(source.range(of: "private func binaryCard(",
                                             range: inicio.upperBound..<source.endIndex),
-                               "`accountsStep` desapareció o cambió de firma")
+                               "`binaryCard` desapareció o cambió de firma")
         let cuerpo = source[inicio.upperBound..<fin.lowerBound]
         #expect(cuerpo.components(separatedBy: "binaryCard(").count - 1 == 2,
                 "El cuerpo de `purposeStep` construye un número de cards distinto de dos.")
@@ -172,8 +174,7 @@ struct OnboardingPurposeSelectionLogicTests {
         )
 
         // Las dos formas EXACTAS del bug de C5 que siguen siendo escribibles, prohibidas por separado.
-        // `wantsSeparateAccounts` (el otro selector binario del flujo, el paso `.accounts`) no
-        // colisiona con ninguna.
+        // `wantsSeparateAccounts` (lo usa el paso de nombre y divisa) no colisiona con ninguna.
         for forma in ["isSelected: !expensesOnlyMode",
                       "isSelected: expensesOnlyMode"] {
             #expect(veces(forma) == 0,

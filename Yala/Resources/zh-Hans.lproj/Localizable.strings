@@ -1797,7 +1797,7 @@
 "onboarding.categoriesTitle" = "起始类别";
 "onboarding.categoriesSubtitle" = "我们准备了常用类别,帮你从第一天开始就把支出整理好。";
 "onboarding.categoriesYes" = "使用这些类别开始";
-"onboarding.categoriesNo" = "从零开始";
+"onboarding.categoriesNo" = "不要预设分类，我自己建";
 "onboarding.categoriesRecommended" = "推荐";
 "onboarding.categoriesInfo" = "每个类别都包含更细的子类别。你可以在「个人资料 > 类别」中查看和自定义。";
 "onboarding.notificationsTitle" = "想保持联系吗?";
@@ -1807,7 +1807,7 @@
 "onboarding.notificationsDeselectAll" = "全部禁用";
 "onboarding.recommended" = "推荐";
 "onboarding.languageTitle" = "选择你的语言";
-"onboarding.languageSubtitle" = "我们注意到你的语言尚未支持。别担心,从这些选项中挑一个吧!";
+"onboarding.languageSubtitle" = "Yala 暂时还没有你设备所用的语言。先选一个吧，之后随时可以在“个人资料 > 个性化”中更改。";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "你想怎么使用 Yala?";
@@ -1826,7 +1826,7 @@
 "onboarding.usageMode.fullControl" = "真实余额";
 "onboarding.usageMode.fullControl.quote" = "「我想要一个数字涵盖所有:我有什么、欠什么、别人欠我什么」";
 "onboarding.usageMode.fullControl.desc" = "你把所有都计入余额 — 账户、卡片以及与他人之间的往来。你看到的数字是真正属于你的。";
-"onboarding.privacyTitle" = "全部就绪";
+"onboarding.privacyTitle" = "你的隐私";
 "onboarding.privacySubtitle" = "你已准备好开始使用 Yala";
 "onboarding.privacyLocal" = "你的财务数据保存在你的账户中";
 "onboarding.privacyNoTracking" = "无跟踪、无广告";
@@ -1932,17 +1932,14 @@
 "onboarding.purpose.control" = "管理我的钱";
 "onboarding.purpose.controlDesc" = "支出、收入,以及你有多少";
 // Accounts step (binary)
-"onboarding.accounts.title" = "你想怎样在 Yala 里整理你的钱?";
 "onboarding.accounts.single" = "全部合在一个账户里";
 "onboarding.accounts.singleDesc" = "每种货币一个主账户,把所有钱都包含进来";
-"onboarding.accounts.multiple" = "每个账户分开";
-"onboarding.accounts.multipleDesc" = "储蓄、借记、信用卡... 这样你知道每个有多少";
 // Account type step
-"onboarding.accountType.title" = "我们来创建你的第一个账户";
-"onboarding.accountType.subtitle" = "选择现在要创建的账户。之后可以在个人资料中添加更多。";
+"onboarding.accountType.title" = "你的钱放在哪里？";
+"onboarding.accountType.subtitle" = "选择你要先建立的账户。之后可以在个人资料中添加更多。";
 "onboarding.accountType.checkingHint" = "你日常使用的银行账户";
 "onboarding.accountType.savingsHint" = "你存放储蓄的地方";
-"onboarding.accountType.creditHint" = "你的信用卡";
+"onboarding.accountType.creditHint" = "用它买东西、还欠银行的钱";
 "onboarding.accountType.cashHint" = "你手上的纸币和硬币";
 // Name hint
 "onboarding.nameHint" = "可以是你的名字、昵称或任何你喜欢的";
@@ -1954,7 +1951,7 @@
 "onboarding.currencyName.subtitleSeparate" = "给它取名并选择使用的货币。";
 // Balance step
 "onboarding.balance.title" = "这个账户里你有多少?";
-"onboarding.balance.subtitle" = "大致估计就行。你随时可以调整。";
+"onboarding.balance.subtitle" = "大致估计就行。不知道？先填 0，之后再调整。";
 // Confirmation step
 "onboarding.confirm.title" = "这是你的 Yala 设置";
 "onboarding.confirm.accountLabel" = "账户";
@@ -5285,7 +5282,7 @@
 
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "请更新以继续";
-"appUpdate.force.message" = "当前 Yala 版本已不再受支持。请更新以继续使用。";
+"appUpdate.force.message" = "Yala 有新版本，需要更新才能继续使用。更新不会丢失你记录的任何内容。";
 "appUpdate.force.updateButton" = "立即更新";
 
 /* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
@@ -5731,7 +5728,7 @@
 "welcome.privateICloud.noAccountTitle" = "我们无法查看你的 iCloud";
 
 /* Private branch iCloud gate: body when there is no iCloud account */
-"welcome.privateICloud.noAccountBody" = "这台手机没有开启 iCloud，所以我们不知道你以前有没有保存过东西。你可以继续：现在你的数据只留在这里，等你开启 iCloud，我们会在合并之前先告诉你。";
+"welcome.privateICloud.noAccountBody" = "你仍然可以开始：现在你的数据只留在这里。以后开启 iCloud 时，我们会在合并之前先告诉你。";
 
 /* Private branch iCloud gate: continue button when there is no iCloud account */
 "welcome.privateICloud.noAccountCta" = "就这样继续";
@@ -6601,3 +6598,18 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "你之前已有账户，现已登录该账户。";
+
+/* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
+"welcome.privateICloud.noAccountProceedTitle" = "这台手机没有开启 iCloud";
+
+/* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
+"welcome.mirrorRelaunch.privacyNote" = "这样 Yala 才能连接你的私人 iCloud，让你的数据始终保持私密：其他人都读不到，我们也一样。";
+
+/* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
+"onboarding.purpose.changeLaterHint" = "之后随时可以在“个人资料 > 个性化”中更改。";
+
+/* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
+"onboarding.currencyName.titleExpenses" = "你平时用哪种货币花钱？";
+
+/* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
+"onboarding.currencyName.subtitleExpenses" = "你的支出会用这种货币记录。愿意的话，可以给账户改个名字。";

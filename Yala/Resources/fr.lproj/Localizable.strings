@@ -1798,7 +1798,7 @@
 "onboarding.categoriesTitle" = "Catégories pour commencer";
 "onboarding.categoriesSubtitle" = "Nous avons préparé des catégories courantes pour organiser vos dépenses dès le premier jour.";
 "onboarding.categoriesYes" = "Commencer avec ces catégories";
-"onboarding.categoriesNo" = "Commencer de zéro";
+"onboarding.categoriesNo" = "Sans catégories, je crée les miennes";
 "onboarding.categoriesRecommended" = "Recommandé";
 "onboarding.categoriesInfo" = "Chaque catégorie comprend des sous-catégories plus détaillées. Vous pouvez les consulter et les personnaliser dans Profil > Catégories.";
 "onboarding.notificationsTitle" = "On vous prévient ?";
@@ -1808,7 +1808,7 @@
 "onboarding.notificationsDeselectAll" = "Tout désactiver";
 "onboarding.recommended" = "Recommandée";
 "onboarding.languageTitle" = "Choisis ta langue";
-"onboarding.languageSubtitle" = "Nous avons détecté que ta langue n'est pas encore supportée. Pas de souci, choisis parmi ces options !";
+"onboarding.languageSubtitle" = "Yala n'est pas encore disponible dans la langue de ton appareil. Choisis-en une : tu pourras la changer quand tu veux dans Profil > Personnalisation.";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "Comment veux-tu utiliser Yala ?";
@@ -1827,7 +1827,7 @@
 "onboarding.usageMode.fullControl" = "Solde réel";
 "onboarding.usageMode.fullControl.quote" = "\"Je veux un seul chiffre qui compte tout : ce que j'ai, ce que je dois et ce qu'on me doit\"";
 "onboarding.usageMode.fullControl.desc" = "Tu inclus tout dans ton solde — comptes, cartes et ce qui va et vient avec d'autres personnes. Le chiffre que tu vois est ce qui est vraiment à toi.";
-"onboarding.privacyTitle" = "Tout est prêt";
+"onboarding.privacyTitle" = "Ta confidentialité";
 "onboarding.privacySubtitle" = "Tu peux commencer à utiliser Yala";
 "onboarding.privacyLocal" = "Vos données financières sont stockées dans votre compte";
 "onboarding.privacyNoTracking" = "Ni suivi, ni publicité";
@@ -1929,17 +1929,14 @@
 "onboarding.purpose.control" = "Gérer mon argent";
 "onboarding.purpose.controlDesc" = "Dépenses, revenus et combien tu as";
 // Accounts step (binary)
-"onboarding.accounts.title" = "Comment veux-tu organiser ton argent dans Yala ?";
 "onboarding.accounts.single" = "Tout ensemble sur un seul compte";
 "onboarding.accounts.singleDesc" = "Un compte principal par devise où tu inclus tout ton argent";
-"onboarding.accounts.multiple" = "Chaque compte séparément";
-"onboarding.accounts.multipleDesc" = "Épargne, débit, crédit... pour savoir combien tu as dans chacun";
 // Account type step
-"onboarding.accountType.title" = "On t'aide à créer ton premier compte";
-"onboarding.accountType.subtitle" = "Choisis quel compte tu veux créer maintenant. Tu pourras en ajouter d'autres dans ton profil.";
+"onboarding.accountType.title" = "Où est ton argent ?";
+"onboarding.accountType.subtitle" = "Choisis le compte avec lequel tu commences. Tu pourras en ajouter d'autres dans ton profil.";
 "onboarding.accountType.checkingHint" = "Ton compte bancaire du quotidien";
 "onboarding.accountType.savingsHint" = "Là où tu gardes tes économies";
-"onboarding.accountType.creditHint" = "Ta carte de crédit";
+"onboarding.accountType.creditHint" = "Ce que tu achètes avec et que tu dois encore à la banque";
 "onboarding.accountType.cashHint" = "Billets et pièces que tu as sur toi";
 // Name hint
 "onboarding.nameHint" = "Ça peut être ton prénom, surnom ou ce que tu préfères";
@@ -1949,7 +1946,7 @@
 "onboarding.currencyName.titleSeparate" = "Donne une identité à ton compte";
 "onboarding.currencyName.subtitleSeparate" = "Donne-lui un nom et choisis la devise qu'il utilise.";
 "onboarding.balance.title" = "Combien as-tu sur ce compte ?";
-"onboarding.balance.subtitle" = "Une approximation suffit. Tu pourras toujours ajuster plus tard.";
+"onboarding.balance.subtitle" = "Une estimation suffit. Tu ne sais pas ? Écris 0 et ajuste plus tard.";
 "onboarding.confirm.title" = "Voici ton Yala";
 "onboarding.confirm.accountLabel" = "Compte";
 "onboarding.confirm.currencyLabel" = "Devise";
@@ -5274,7 +5271,7 @@
 
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "Mettez à jour pour continuer";
-"appUpdate.force.message" = "Cette version de Yala n'est plus prise en charge. Mettez à jour pour continuer à utiliser l'application.";
+"appUpdate.force.message" = "Une nouvelle version de Yala est disponible et il te la faut pour continuer. En mettant à jour, tu ne perds rien de ce que tu as enregistré.";
 "appUpdate.force.updateButton" = "Mettre à jour maintenant";
 
 /* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
@@ -5720,7 +5717,7 @@
 "welcome.privateICloud.noAccountTitle" = "On n'a pas pu vérifier ton iCloud";
 
 /* Private branch iCloud gate: body when there is no iCloud account */
-"welcome.privateICloud.noAccountBody" = "iCloud n'est pas activé sur ce téléphone, donc on ne sait pas si tu avais déjà enregistré quelque chose. Tu peux continuer : pour l'instant tes données restent ici, et si tu actives iCloud on te préviendra avant de mélanger quoi que ce soit.";
+"welcome.privateICloud.noAccountBody" = "Tu peux commencer quand même : pour l'instant tes données restent ici. Si tu actives iCloud plus tard, on te préviendra avant de mélanger quoi que ce soit.";
 
 /* Private branch iCloud gate: continue button when there is no iCloud account */
 "welcome.privateICloud.noAccountCta" = "Continuer comme ça";
@@ -6590,3 +6587,18 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Tu avais déjà un compte : tu viens d'y accéder.";
+
+/* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
+"welcome.privateICloud.noAccountProceedTitle" = "iCloud n'est pas activé sur ce téléphone";
+
+/* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
+"welcome.mirrorRelaunch.privacyNote" = "C'est ainsi que Yala se connecte à ton iCloud privé et que tes données restent toujours privées : personne d'autre ne peut les lire, pas même nous.";
+
+/* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
+"onboarding.purpose.changeLaterHint" = "Tu pourras le changer quand tu veux dans Profil > Personnalisation.";
+
+/* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
+"onboarding.currencyName.titleExpenses" = "Dans quelle devise dépenses-tu ?";
+
+/* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
+"onboarding.currencyName.subtitleExpenses" = "Tes dépenses sont notées dans cette devise. Si tu veux, renomme le compte.";

@@ -1798,7 +1798,7 @@
 "onboarding.categoriesTitle" = "Categorie per iniziare";
 "onboarding.categoriesSubtitle" = "Abbiamo preparato categorie comuni per aiutarti a organizzare le tue spese fin dal primo giorno.";
 "onboarding.categoriesYes" = "Inizia con queste categorie";
-"onboarding.categoriesNo" = "Inizia da zero";
+"onboarding.categoriesNo" = "Senza categorie, le creo io";
 "onboarding.categoriesRecommended" = "Consigliato";
 "onboarding.categoriesInfo" = "Ogni categoria include sottocategorie più dettagliate. Puoi visualizzarle e personalizzarle in Profilo > Categorie.";
 "onboarding.notificationsTitle" = "Ti avvisiamo?";
@@ -1808,7 +1808,7 @@
 "onboarding.notificationsDeselectAll" = "Disattiva tutto";
 "onboarding.recommended" = "Consigliata";
 "onboarding.languageTitle" = "Scegli la tua lingua";
-"onboarding.languageSubtitle" = "Abbiamo rilevato che la tua lingua non è ancora supportata. Non preoccuparti, scegli tra queste opzioni!";
+"onboarding.languageSubtitle" = "Yala non è ancora disponibile nella lingua del tuo dispositivo. Scegline una: puoi cambiarla quando vuoi in Profilo > Personalizzazione.";
 
 // Expenses Only Mode - Onboarding
 "onboarding.expensesOnlyTitle" = "Come vuoi usare Yala?";
@@ -1827,7 +1827,7 @@
 "onboarding.usageMode.fullControl" = "Saldo reale";
 "onboarding.usageMode.fullControl.quote" = "\"Voglio un unico numero che conti tutto: quello che ho, quello che devo e quello che mi devono\"";
 "onboarding.usageMode.fullControl.desc" = "Includi tutto nel tuo saldo — conti, carte e quello che va e viene con altre persone. Il numero che vedi è quello che è davvero tuo.";
-"onboarding.privacyTitle" = "Tutto pronto";
+"onboarding.privacyTitle" = "La tua privacy";
 "onboarding.privacySubtitle" = "Puoi iniziare a usare Yala";
 "onboarding.privacyLocal" = "I tuoi dati finanziari sono salvati nel tuo account";
 "onboarding.privacyNoTracking" = "Nessun tracciamento né pubblicità";
@@ -1929,17 +1929,14 @@
 "onboarding.purpose.control" = "Gestire il mio denaro";
 "onboarding.purpose.controlDesc" = "Spese, entrate e quanto hai";
 // Accounts step (binary)
-"onboarding.accounts.title" = "Come vuoi organizzare il tuo denaro in Yala?";
 "onboarding.accounts.single" = "Tutto insieme in un solo conto";
 "onboarding.accounts.singleDesc" = "Un conto principale per valuta dove includi tutto il tuo denaro";
-"onboarding.accounts.multiple" = "Ogni conto separatamente";
-"onboarding.accounts.multipleDesc" = "Risparmio, debito, credito... così sai quanto hai in ciascuno";
 // Account type step
-"onboarding.accountType.title" = "Ti aiutiamo a creare il tuo primo conto";
-"onboarding.accountType.subtitle" = "Scegli quale conto vuoi creare ora. Potrai aggiungerne altri nel tuo profilo.";
+"onboarding.accountType.title" = "Dove sono i tuoi soldi?";
+"onboarding.accountType.subtitle" = "Scegli il conto con cui inizi. Potrai aggiungerne altri nel tuo profilo.";
 "onboarding.accountType.checkingHint" = "Il tuo conto bancario di tutti i giorni";
 "onboarding.accountType.savingsHint" = "Dove tieni i tuoi risparmi";
-"onboarding.accountType.creditHint" = "La tua carta di credito";
+"onboarding.accountType.creditHint" = "Quello che compri con la carta e devi ancora alla banca";
 "onboarding.accountType.cashHint" = "Banconote e monete che hai con te";
 // Name hint
 "onboarding.nameHint" = "Può essere il tuo nome, soprannome o come preferisci";
@@ -1949,7 +1946,7 @@
 "onboarding.currencyName.titleSeparate" = "Dai un'identità al tuo conto";
 "onboarding.currencyName.subtitleSeparate" = "Dagli un nome e scegli la valuta che usa.";
 "onboarding.balance.title" = "Quanto hai su questo conto?";
-"onboarding.balance.subtitle" = "Un'approssimazione va bene. Puoi sempre aggiustarlo dopo.";
+"onboarding.balance.subtitle" = "Una stima va bene. Non lo sai? Scrivi 0 e sistemalo dopo.";
 "onboarding.confirm.title" = "Ecco il tuo Yala";
 "onboarding.confirm.accountLabel" = "Conto";
 "onboarding.confirm.currencyLabel" = "Valuta";
@@ -5283,7 +5280,7 @@
 
 /* Force-update (min-version) blocking screen */
 "appUpdate.force.title" = "Aggiorna per continuare";
-"appUpdate.force.message" = "Questa versione di Yala non è più supportata. Aggiorna per continuare a usare l'app.";
+"appUpdate.force.message" = "C'è una nuova versione di Yala e ti serve per andare avanti. Aggiornando non perdi nulla di quello che hai registrato.";
 "appUpdate.force.updateButton" = "Aggiorna ora";
 
 /* Note in the Storage migrate card: the live cloud session is reused, provider named (%@ = Apple|Google) */
@@ -5729,7 +5726,7 @@
 "welcome.privateICloud.noAccountTitle" = "Non abbiamo potuto controllare il tuo iCloud";
 
 /* Private branch iCloud gate: body when there is no iCloud account */
-"welcome.privateICloud.noAccountBody" = "Su questo telefono iCloud è disattivato, quindi non sappiamo se avevi già salvato qualcosa. Puoi andare avanti: per ora i tuoi dati restano qui e, se attivi iCloud, te lo diciamo prima di mescolare niente.";
+"welcome.privateICloud.noAccountBody" = "Puoi iniziare lo stesso: per ora i tuoi dati restano qui. Se più avanti attivi iCloud, te lo diciamo prima di mescolare niente.";
 
 /* Private branch iCloud gate: continue button when there is no iCloud account */
 "welcome.privateICloud.noAccountCta" = "Vai avanti così";
@@ -6599,3 +6596,18 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Avevi già un account e hai effettuato l'accesso.";
+
+/* Private branch iCloud gate: title when the device has no iCloud account and the user can carry on (UX 2.2 L1-3) */
+"welcome.privateICloud.noAccountProceedTitle" = "Su questo telefono iCloud è disattivato";
+
+/* Welcome · relaunch terminal: why Yala has to reopen — to connect the private iCloud (UX 2.2 L1-4) */
+"welcome.mirrorRelaunch.privacyNote" = "Così Yala si collega al tuo iCloud privato e i tuoi dati restano sempre privati: nessun altro può leggerli, nemmeno noi.";
+
+/* Onboarding purpose step: the choice can be changed later in Personalization (UX 2.2 L1-5) */
+"onboarding.purpose.changeLaterHint" = "Puoi cambiarlo quando vuoi in Profilo > Personalizzazione.";
+
+/* Onboarding currency step, expenses-only mode: title (UX 2.2 L1-11) */
+"onboarding.currencyName.titleExpenses" = "In che valuta spendi?";
+
+/* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
+"onboarding.currencyName.subtitleExpenses" = "Le tue spese vengono annotate in questa valuta. Se vuoi, cambia nome al conto.";
