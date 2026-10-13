@@ -371,6 +371,7 @@ struct NewTransactionView: View {
                             registerButton
                                 .disabled(!canSaveBridged)
                                 .opacity(canSaveBridged ? 1.0 : 0.5)
+                                .overlay(alignment: .top) { savedToast }
                                 .padding(.horizontal, DS.Spacing.xl)
                                 .padding(.bottom, DS.Spacing.xxl)
                         }
@@ -563,18 +564,6 @@ struct NewTransactionView: View {
             }
             .sheet(isPresented: $viewModel.showSplitCalculator) {
                 splitCalculatorSheetContent
-            }
-            .overlay(alignment: .bottom) {
-                if showSavedToast {
-                    Text(savedToastMessage)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .background(Capsule().fill(Color.secondary.opacity(0.2)))
-                        .padding(.bottom, DS.Spacing.xxxl)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
             }
         }
 
@@ -854,26 +843,23 @@ struct NewTransactionView: View {
         return appPreferences.currencyIdentifier(for: viewModel.amountCurrencyCode)
     }
 
-    /// Exchange rate chip showing the converted amount and rate
-    /// Format: "≈ S/ 38.99 (TC: 3.8900)" or "≈ PEN 38.99 (TC: 3.8900)" based on user preference
+    /// Exchange rate chip showing the converted amount and rate: "≈ S/ 4,437.50 (TC: 3.55)" en español,
+    /// "≈ S/ 4,437.50 (Rate: 3.55)" en inglés. Mismo formato que la fila de tipo de cambio de
+    /// `TransactionDetailSheet`: el monto con la preferencia de símbolo/código y separador de miles, y el
+    /// rótulo del tipo de cambio traducido. Hasta 2.2 el «TC:» iba fijo en los 16 idiomas y el monto salía
+    /// sin separador («4437.50»), distinto del monto de encima («1,250.00»). Auditoría UX 2.2, lote 2, B1.
     private var exchangeRateChip: some View {
         let rate = viewModel.exchangeRate
-        let amount = viewModel.amount
-        let convertedAmount = amount * rate
+        let convertedAmount = viewModel.amount * rate
 
-        let currencyDisplay = appPreferences.currencyIdentifier(for: appPreferences.defaultCurrencyCode.rawValue)
+        let formattedAmount = appPreferences.currency(
+            convertedAmount,
+            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+            forceFullPrecision: true
+        )
+        let formattedRate = L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(rate))
 
-        // Format converted amount (no decimals if whole number, otherwise 2 decimals)
-        let formattedAmount: String
-        if convertedAmount.truncatingRemainder(dividingBy: 1) == 0 {
-            formattedAmount = String(format: "%.0f", convertedAmount)
-        } else {
-            formattedAmount = String(format: "%.2f", convertedAmount)
-        }
-
-        let formattedRate = ExchangeRateDisplayFormatter.string(rate)
-
-        return Text("≈ \(currencyDisplay) \(formattedAmount) (TC: \(formattedRate))")
+        return Text("≈ \(formattedAmount) (\(formattedRate))")
             .font(DS.Typography.labelSmall)
             .foregroundStyle(.thSecondaryText)
             .padding(.horizontal, DS.Spacing.md)
@@ -934,17 +920,23 @@ struct NewTransactionView: View {
             }
             .accessibilityIdentifier("new_transaction_favorite_action")
 
-            // Save as recurring
-            quickActionButton(
-                icon: "repeat",
-                label: L10n.Action.recurring
-            ) {
-                if viewModel.canSave {
-                    viewModel.showSaveAsRecurringSheet = true
-                } else {
-                    viewModel.showValidationErrors = true
-                    showToast(L10n.Validation.completeFieldsFirst)
+            // Save as recurring. No en transferencias: un pago planificado solo puede ser gasto o ingreso, y el
+            // editor recibía «transfer» con la cuenta vacía (la de una transferencia va en origen/destino), así
+            // que al guardar dejaba un pago planificado que no era ni una cosa ni la otra junto a la
+            // transferencia de hoy. Auditoría UX 2.2, lote 2, B7. Mismo criterio que «Calcular».
+            if !viewModel.isTransfer {
+                quickActionButton(
+                    icon: "repeat",
+                    label: L10n.Action.recurring
+                ) {
+                    if viewModel.canSave {
+                        viewModel.showSaveAsRecurringSheet = true
+                    } else {
+                        viewModel.showValidationErrors = true
+                        showToast(L10n.Validation.completeFieldsFirst)
+                    }
                 }
+                .accessibilityIdentifier("new_transaction_recurring_action")
             }
         }
     }
@@ -1380,6 +1372,31 @@ struct NewTransactionView: View {
                     viewModel.selectedAccount = account
                 }
             }
+        }
+    }
+
+    // MARK: - Saved Toast
+
+    /// Aviso breve («Guardado como favorito», «Completa monto, cuenta y categoría primero»). Va colgado
+    /// ENCIMA de «Guardar» y con fondo opaco: hasta 2.2 iba en la base de la pantalla con un fondo al 20 %
+    /// y caía justo sobre el botón, así que su texto y el de «Guardar» se pisaban y no se leía ninguno.
+    /// Auditoría UX 2.2, lote 2, B5.
+    @ViewBuilder
+    private var savedToast: some View {
+        if showSavedToast {
+            Text(savedToastMessage)
+                .font(DS.Typography.label)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.sm)
+                .background(.thickMaterial, in: Capsule())
+                .shadow(color: .black.opacity(0.25), radius: 8, y: 2)
+                // Marco de alto cero anclado abajo: el aviso crece HACIA ARRIBA desde el borde superior del
+                // botón. Un `alignmentGuide` dentro del `overlay` no se aplicaba (medido en el simulador).
+                .frame(height: 0, alignment: .bottom)
+                .offset(y: -DS.Spacing.sm)
+                .transition(.opacity)
         }
     }
 

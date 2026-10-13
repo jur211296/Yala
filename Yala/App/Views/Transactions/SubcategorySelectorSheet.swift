@@ -206,10 +206,14 @@ struct SubcategoryGridItem: View {
                     }
                 }
 
+                // Dos líneas y, si no caben, la letra encoge hasta un 80 % antes de cortar: con la letra fija,
+                // «Cuidado personal y belleza», «Salud y atención médica» o «Telefonía y comunicaciones»
+                // salían cortadas con «…» y no se sabía cuál se elegía. Auditoría UX 2.2, lote 2, B8.
                 Text(subcategory.name)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(isSelected ? Color(hex: effectiveColor) : .primary)
                     .lineLimit(2)
+                    .minimumScaleFactor(0.8)
                     .multilineTextAlignment(.center)
                     .frame(height: 28)
             }

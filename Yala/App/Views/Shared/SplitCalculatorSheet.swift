@@ -130,9 +130,13 @@ struct SplitCalculatorSheet: View {
                     )
 
                     // Split type picker
+                    // Etiqueta corta (`shortName`, hecha para un selector segmentado): con el nombre largo, cuatro
+                    // segmentos no caben y «Partes iguales» salía cortado («Partes igual…»). El nombre largo sigue en
+                    // la ayuda de debajo. Auditoría UX 2.2, lote 2, B4.
                     Picker(L10n.Split.title, selection: $fieldState.splitType) {
                         ForEach(SplitType.allCases) { type in
-                            Text(type.displayName).tag(type)
+                            Text(type.shortName).tag(type)
+                                .accessibilityLabel(type.displayName)
                         }
                     }
                     .pickerStyle(.segmented)

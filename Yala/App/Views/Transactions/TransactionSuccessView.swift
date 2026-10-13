@@ -376,7 +376,7 @@ struct TransactionSuccessView: View {
                 .frame(width: 20)
                 .accessibilityHidden(true)
 
-            Text(L10n.Account.selectAccount)
+            Text(L10n.Transaction.account)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
 
