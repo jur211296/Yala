@@ -37,9 +37,14 @@ El archive de 2.1 sale con el mismo build en la app y el widget, sin el texto de
 
 ## Guion de QA (iPhone, Jürgen)
 
-1. En Xcode, scheme **Yala** (no Yala Dev), destino tu iPhone, ▶︎ Run.
-2. Abre el asistente de IA y haz una pregunta cualquiera.
-3. **Pasa** si responde. Antes de este cambio ese build daba 401 `AAGUID no corresponde al entorno
-   'production'` y la IA no contestaba nunca.
-4. Repite con el scheme **Yala Dev**: tiene que seguir respondiendo (staging, `development`).
-5. En el próximo archive para TestFlight (c59v): el export firma con `production`; nada que hacer aparte.
+1. En Xcode, elige el scheme **Yala** (no Yala Dev), pon tu iPhone de destino y pulsa ▶︎ Run.
+2. En la consola de Xcode (abajo), escribe `attest` en el filtro.
+3. Abre el asistente de IA y haz una pregunta. Necesita Pro: si esa cuenta no lo tiene, crea un
+   grupo, que también pide sesión al gateway.
+4. **Pasa** si responde (o el grupo se crea) y en la consola **no** sale `AppAttestClient: refresh
+   suprimido`. Antes de este cambio ese build recibía 401 `AAGUID no corresponde al entorno
+   'production'`, y la IA no contestaba nunca.
+5. Repite con el scheme **Yala Dev**: tiene que seguir funcionando, contra staging y con `development`.
+   Ahí tienes además Perfil → Almacenamiento → panel de Modo Nube → «refresh attest».
+6. En el próximo archive para TestFlight (c59v), el export firma con `production`. No hay que hacer
+   nada aparte.
