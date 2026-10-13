@@ -1,10 +1,10 @@
 ---
 id: welcome-beacon-origin-contradicts-not-found-copy
-status: backlog
+status: done
 priority: low
 area: "onboarding, modo-nube, copy"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-10-12
 source: "review adversarial (lente de producto) de `beacon-routes-only-never-blocks`, 2026-09-10"
 ---
 
@@ -60,3 +60,7 @@ La frase del origen es literal tuya (2026-09-09), así que el cambio no se hace 
 - Por qué low: el texto confunde, pero los dos caminos tienen salida y no se pierde nada.
 
 Triage 2026-10-08: abierto · medium → low · Los cuatro textos implicados siguen como estaban, y cambiarlos es una decisión de copy de Jürgen
+
+## Resuelto (2026-10-12, encargo `pulido-textos-2-1`)
+
+Opción A de Jürgen (2026-10-12), en los 16 idiomas: origen en pasado («Con este Apple ID ya se creó una cuenta de Yala con %@», y su genérica), `notFoundBody` sin «Apple ID» («Aún no hay una cuenta de Yala en la nube para el acceso que usaste») y mismatch con el faro de sujeto («La cuenta de Yala de este Apple ID se creó con %@», y su genérica). El título del mismatch no se tocó.

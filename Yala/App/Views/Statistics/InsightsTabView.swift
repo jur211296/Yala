@@ -252,9 +252,14 @@ struct InsightsTabView: View {
 
     @ViewBuilder
     private func incomeExpenseChips(_ summary: PeriodSummary) -> some View {
-        HStack(spacing: DS.Spacing.md) {
+        // Con texto de accesibilidad entradas y salidas van en dos líneas (decisión A de Jürgen del
+        // 2026-10-12, `stats-hero-detail-row-truncates-at-accessibility-text`): en una sola, la cifra
+        // de salidas se quedaba en «……» y el chip de variación salía cortado contra el borde. Cada
+        // chip baja además bajo su cifra (`AmountWithChipStack`). A tamaño normal las dos piezas pintan
+        // el mismo `HStack` de siempre; es el molde del hero del Panel y de Registros.
+        AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.xs) {
             if !sessionState.isExpensesOnlyMode {
-                HStack(spacing: DS.Spacing.xs) {
+                AmountWithChipStack {
                     Image(systemName: "arrow.up.right")
                         .font(DS.Typography.labelSmall)
                         .foregroundStyle(Color.incomeGraph)
@@ -267,13 +272,14 @@ struct InsightsTabView: View {
                         isEstimate: summary.incomeAmountsAreApproximate
                     )
                     .accessibilityIdentifier("stats_kpi_income")
+                } chip: {
                     if appPreferences.showVariations {
                         VariationChip(variation: summary.incomeVariation, size: .small, isExpenseContext: false)
                     }
                 }
             }
 
-            HStack(spacing: DS.Spacing.xs) {
+            AmountWithChipStack {
                 Image(systemName: "arrow.down.right")
                     .font(DS.Typography.labelSmall)
                     .foregroundStyle(Color.expenseGraph)
@@ -286,6 +292,7 @@ struct InsightsTabView: View {
                     isEstimate: summary.expenseAmountsAreApproximate
                 )
                 .accessibilityIdentifier("stats_kpi_expense")
+            } chip: {
                 if appPreferences.showVariations {
                     VariationChip(variation: summary.expenseVariation, size: .small, isExpenseContext: true)
                 }

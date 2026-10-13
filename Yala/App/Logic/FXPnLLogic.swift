@@ -106,10 +106,24 @@ enum FXPnLLogic {
         /// Identidad para `.sheet(item:)`: cambia cuando cambia el conjunto de divisas mostrado.
         var id: String { rows.map(\.code).joined(separator: "-") }
 
-        /// Alguna divisa usó una tasa que no era la de hoy: el total las agrega TODAS, así que
-        /// basta una para que el total no pueda presentarse como exacto. Derivado de las filas —no
-        /// un campo aparte— para que no puedan contradecirse.
-        var isApproximate: Bool { rows.contains(where: \.isApproximate) }
+        /// El TOTAL se marca «≈» cuando las divisas con tasa dudosa **pesan** en él: el mismo
+        /// `ApproximateMarkThreshold` que el resto del Panel (decisión B de Jürgen del 2026-10-12,
+        /// `dos-criterios-de-aproximado-en-la-misma-pantalla`; antes bastaba una fila dudosa).
+        ///
+        /// Numerador: `Σ|pnl|` de las filas dudosas, la parte del número que ENTRÓ con una tasa
+        /// mala, en magnitudes. Denominador: `|totalPnL|`, el número que se MUESTRA, que es una
+        /// resta. Derivado de las filas —no un campo aparte— para que no puedan contradecirse.
+        var isApproximate: Bool {
+            let approximate = rows.filter(\.isApproximate).reduce(Decimal(0)) { $0 + abs($1.pnl) }
+            return ApproximateMarkThreshold.marks(
+                approximate: (approximate as NSDecimalNumber).doubleValue,
+                total: (totalPnL as NSDecimalNumber).doubleValue
+            )
+        }
+
+        /// Alguna fila lleva «≈». Es lo que decide la nota de la hoja que explica el glifo: una
+        /// fila marcada necesita la explicación aunque el total no llegue al umbral.
+        var hasApproximateRow: Bool { rows.contains(where: \.isApproximate) }
 
         /// La divisa que **explica el número**, y por tanto la que protagoniza la frase de la card.
         ///

@@ -24,9 +24,14 @@ struct LiveBalanceCalculator {
         let convertedTotal: Decimal
         let preferredCurrencyCode: String
 
-        /// `true` si alguna de las divisas nativas se convirtió con una tasa que no era la de hoy.
+        /// `true` si las divisas convertidas con una tasa que no era la de hoy **pesan** en el saldo:
+        /// `ApproximateMarkThreshold` sobre `Σ|convertido dudoso|` frente a `|saldo|`.
         /// Este saldo usa el TC ACTUAL, así que la vía es siempre el converter — no hay aquí monto
         /// guardado en el que apoyarse, a diferencia de los totales históricos.
+        ///
+        /// Hasta el 2026-10-12 era un OR por divisa (decisión del 2026-09-08). Jürgen eligió ese día
+        /// la opción B de `dos-criterios-de-aproximado-en-la-misma-pantalla`: el mismo umbral que
+        /// los números del período, para que el «≈» signifique una sola cosa en todo el Panel.
         let amountsAreApproximate: Bool
 
         /// Las cuentas que este desglose acabó sumando, ya resueltas (contables, filtro de
@@ -56,8 +61,9 @@ struct LiveBalanceCalculator {
         let value: Double
         let nativeBalances: [String: Decimal]
 
-        /// `true` si alguna divisa nativa se convirtió con una tasa que no era la de hoy. Sale del
-        /// MISMO `Breakdown` que `value`, así que número y marca no pueden divergir.
+        /// `true` si las divisas convertidas con una tasa que no era la de hoy pesan en el saldo
+        /// (`ApproximateMarkThreshold`). Sale del MISMO `Breakdown` que `value`, así que número y
+        /// marca no pueden divergir.
         let amountsAreApproximate: Bool
     }
 
@@ -132,7 +138,10 @@ struct LiveBalanceCalculator {
         }
 
         var convertedTotal: Decimal = 0
-        var amountsAreApproximate = false
+        // Numerador del umbral: la incertidumbre que ENTRÓ, en magnitudes (los errores de dos
+        // divisas no se cancelan). El denominador es el saldo que se MUESTRA, que es una resta
+        // (una tarjeta en dólares resta): `|convertedTotal|`, como pide `ApproximateMarkThreshold`.
+        var approximateMagnitude: Decimal = 0
         for (code, amount) in nativeBalances {
             if code == preferredCurrencyCode {
                 convertedTotal += amount
@@ -141,9 +150,15 @@ struct LiveBalanceCalculator {
                     amount, from: code, to: preferredCurrencyCode
                 )
                 convertedTotal += outcome.amount
-                amountsAreApproximate = amountsAreApproximate || !outcome.quality.isExact
+                if !outcome.quality.isExact {
+                    approximateMagnitude += abs(outcome.amount)
+                }
             }
         }
+        let amountsAreApproximate = ApproximateMarkThreshold.marks(
+            approximate: (approximateMagnitude as NSDecimalNumber).doubleValue,
+            total: (convertedTotal as NSDecimalNumber).doubleValue
+        )
 
         return Breakdown(
             nativeBalances: nativeBalances,

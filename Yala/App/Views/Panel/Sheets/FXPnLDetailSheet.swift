@@ -166,7 +166,7 @@ struct FXPnLDetailSheet: View {
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             noteRow(icon: "chart.line.uptrend.xyaxis", text: L10n.Panel.FXPnL.averageNote)
-            if summary.isApproximate {
+            if summary.hasApproximateRow {
                 noteRow(icon: "exclamationmark.triangle", text: L10n.Panel.FXPnL.estimatedRateNote)
             }
         }

@@ -104,7 +104,7 @@
 "widget.ui.ofLimit" = "z %@";
 "widget.ui.newRecord" = "Szybki wpis";
 "widget.ui.voiceRecord" = "Wpis głosowy";
-"widget.ui.scanReceipt" = "Wpis z obrazu";
+"widget.ui.scanReceipt" = "Zdjęcie lub plik";
 "widget.ui.upcomingPayments" = "Nadchodzące płatności";
 "widget.ui.budgets" = "Budżety";
 "widget.ui.latestRecords" = "Ostatnie wpisy";
@@ -139,8 +139,8 @@
 // MARK: - Control Widgets
 "widget.control.voiceExpense" = "Wpis głosowy";
 "widget.control.voiceExpense.desc" = "Podyktuj wpis do Yala";
-"widget.control.photoExpense" = "Wpis z obrazu";
-"widget.control.photoExpense.desc" = "Zapisz obrazem w Yala";
+"widget.control.photoExpense" = "Zdjęcie lub plik";
+"widget.control.photoExpense.desc" = "Zapisz ze zdjęcia lub pliku w Yala";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Inne";

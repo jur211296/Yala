@@ -740,7 +740,7 @@
 "panel.liveAnchorEducation.todayQuestion" = "今日の残高";
 "panel.liveAnchorEducation.whyQuestion" = "なぜこの金額？";
 "panel.liveAnchorEducation.breakdownToggle" = "通貨別に表示";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "本日 ≈ %@";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "本日 %@";
 "panel.liveAnchorEducation.coachTitle" = "残高は自然と動きます";
 "panel.liveAnchorEducation.coachMessage" = "他の通貨でお金をお持ちのとき、その価値は日々変わります。タップして詳しく見てみましょう。";
 "panel.liveAnchorEducation.dotA11yLabel" = "現在の為替レートでの本日の残高。タップして詳細を確認してください。";
@@ -2203,7 +2203,7 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "音声入力";
 "tipkit.pro.voiceInput.message" = "支出を口述で入力できます。話すだけでYalaが記録します。";
-"tipkit.pro.imageInput.title" = "画像入力";
+"tipkit.pro.imageInput.title" = "写真・ファイル入力";
 "tipkit.pro.imageInput.message" = "レシートや請求書の写真を添付すると、Yalaが1件以上の取引を抽出します。";
 "tipkit.pro.smartInsights.title" = "スマートインサイト";
 "tipkit.pro.smartInsights.message" = "これを有効にすると、YalaがAIで資産状況に関するインサイトを生成します。";
@@ -2264,10 +2264,10 @@
 "shortcut.voiceEntry.opening" = "音声入力を開いています...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "画像で記録";
-"shortcut.imageEntry.description" = "画像ピッカーを開いて写真から支出を記録します";
-"shortcut.imageEntry.shortTitle" = "画像で記録";
-"shortcut.imageEntry.opening" = "画像入力を開いています...";
+"shortcut.imageEntry.title" = "写真やファイルで記録";
+"shortcut.imageEntry.description" = "写真やPDFなどのファイルから支出を記録します";
+"shortcut.imageEntry.shortTitle" = "写真・ファイル";
+"shortcut.imageEntry.opening" = "写真・ファイル入力を開いています...";
 
 // MARK: - Apple Pay Intent
 
@@ -2314,10 +2314,10 @@
 "control.voiceEntry.intentTitle" = "音声入力を開く";
 "control.voiceEntry.intentDescription" = "Yalaを音声録音モードで開きます";
 
-"control.imageEntry.label" = "画像入力";
-"control.imageEntry.displayName" = "画像入力";
-"control.imageEntry.description" = "画像や写真で記録";
-"control.imageEntry.intentTitle" = "画像入力を開く";
+"control.imageEntry.label" = "写真・ファイル";
+"control.imageEntry.displayName" = "写真・ファイル";
+"control.imageEntry.description" = "写真やファイルで記録";
+"control.imageEntry.intentTitle" = "写真・ファイル入力を開く";
 "control.imageEntry.intentDescription" = "Yalaをカメラモードで開いて記録します";
 
 // MARK: - Notifications
@@ -2489,7 +2489,7 @@
 "featureGate.accounts" = "口座";
 "featureGate.budgets" = "予算";
 "featureGate.voiceInput" = "音声入力";
-"featureGate.imageInput" = "画像入力";
+"featureGate.imageInput" = "写真・ファイル入力";
 "featureGate.premiumIcons" = "プレミアムアイコン";
 "featureGate.proThemes" = "Proテーマ";
 "featureGate.smartInsightsAI" = "スマートインサイトAI";
@@ -2852,7 +2852,7 @@
 "siriShortcuts.all.title" = "その他のショートカット";
 "siriShortcuts.shortcut.quick" = "クイック記録";
 "siriShortcuts.shortcut.voice" = "音声入力";
-"siriShortcuts.shortcut.image" = "画像入力";
+"siriShortcuts.shortcut.image" = "写真やファイルで記録";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "オートメーション";
 "siriShortcuts.desc.quick" = "1タップで記録フォームを開きます。";
@@ -2862,7 +2862,7 @@
 "siriShortcuts.desc.automation" = "システムショートカットで自動記録を作成します。";
 "siriShortcuts.phrase.quick" = "Yalaに記録";
 "siriShortcuts.phrase.voice" = "Yalaに音声で記録";
-"siriShortcuts.phrase.image" = "Yalaに画像で記録";
+"siriShortcuts.phrase.image" = "Yalaに写真やファイルで記録";
 "siriShortcuts.phrase.applePay" = "Yalaに Apple Payを記録";
 "siriShortcuts.phrase.automation" = "Yalaにオートメーションから記録";
 "siriShortcuts.faq.title" = "よくある質問";
@@ -3499,7 +3499,7 @@
 "groups.reconnect.subtitle" = "シェアグループに招待されました";
 "groups.reconnect.fallbackGroupName" = "このグループ";
 "groups.reconnect.archived.title" = "%@はアーカイブされました";
-"groups.reconnect.archived.body" = "管理者がアーカイブしたため、変更はもう受け付けられません。";
+"groups.reconnect.archived.body" = "管理者がアーカイブしたため、新しいメンバーはもう参加できません。";
 "groups.reconnect.archived.cta" = "OK";
 "groups.reconnect.alreadyMember.title" = "あなたはすでに%@に参加しています";
 "groups.reconnect.alreadyMember.body" = "グループへご案内します。";
@@ -4651,7 +4651,7 @@
 "storage.adopt.body" = "このアカウントのデータはすでにクラウドにあります。この端末で有効化しましょう。";
 "storage.adopt.button" = "この端末で有効化";
 "storage.revert.title" = "iCloud に戻す";
-"storage.revert.body" = "プライベートモードに戻します。データはデバイスと iCloud に戻り、何も失われません。";
+"storage.revert.body" = "プライベートモードに戻します。データはデバイスと iCloud に保存され、何も失われません。";
 "storage.revert.button" = "iCloud に戻す";
 "storage.revert.ineligible" = "現在、この端末から iCloud に戻すことはできません。";
 "storage.sync.title" = "同期";
@@ -4673,7 +4673,7 @@
 "storage.confirm.migrate2Body" = "この端末でクラウドが有効になります。";
 "storage.confirm.migrate2Confirm" = "はい、クラウドを有効化";
 "storage.confirm.revertTitle" = "iCloud に戻しますか？";
-"storage.confirm.revertBody" = "データはデバイスと iCloud に戻ります。何も失われません。";
+"storage.confirm.revertBody" = "データはデバイスと iCloud に保存されます。何も失われません。";
 "storage.confirm.revertContinue" = "続ける";
 "storage.confirm.revert2Title" = "よろしいですか？";
 "storage.confirm.revert2Body" = "この端末でクラウドが無効になります。";
@@ -4778,7 +4778,7 @@
 "welcome.cloud.notFoundTitle" = "アカウントが見つかりませんでした";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "このApple IDにはまだYalaのクラウドアカウントがありません。";
+"welcome.cloud.notFoundBody" = "使用したサインイン方法には、まだYalaのクラウドアカウントがありません。";
 "welcome.cloud.notFoundCta" = "アカウントを作る";
 
 /* Title when foreign local data blocks sign-in */
@@ -4946,16 +4946,16 @@
 "welcome.cloud.providerMismatchTitle" = "このアカウントは別の方法を使っています";
 
 /* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "あなたのYalaアカウントは%@で作成されています。";
+"welcome.cloud.providerMismatchBody" = "このApple IDのYalaアカウントは%@で作成されています。";
 
 /* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "あなたのYalaアカウントは別の方法で作成されています。";
+"welcome.cloud.providerMismatchBodyGeneric" = "このApple IDのYalaアカウントは別の方法で作成されています。";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "このApple IDには、%@で作成したYalaアカウントがすでにあります。";
+"welcome.cloud.beaconOrigin" = "このApple IDでは、%@でYalaアカウントがすでに作成されています。";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "このApple IDにはYalaアカウントがすでにあります。";
+"welcome.cloud.beaconOriginGeneric" = "このApple IDでは、Yalaアカウントがすでに作成されています。";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "別のアカウントを作る";
@@ -6407,7 +6407,7 @@
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
-"image.entry.title" = "画像で記録";
+"image.entry.title" = "写真やファイルで記録";
 /* Image entry: what the user can bring and what Yala reads */
 "image.entry.subtitle" = "レシート、銀行のスクリーンショット、PDF。金額・店舗・日付を読み取ります。";
 /* Image entry source: take a photo */

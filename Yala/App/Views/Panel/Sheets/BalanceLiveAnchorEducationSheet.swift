@@ -10,16 +10,13 @@ import SwiftUI
 /// varias monedas. Se abre desde la pill "Hoy" y desde el overlay del dot.
 struct BalanceLiveAnchorEducationSheet: View {
     let liveAnchorValue: Double
-    /// `true` si alguna de las divisas de abajo se convirtió con una tasa que no era la de hoy.
-    /// Sale del mismo `LiveBalanceCalculator.Breakdown` que el propio `liveAnchorValue`.
+    /// `true` si las divisas de abajo convertidas con una tasa que no era la de hoy pesan en el
+    /// saldo. Sale del mismo `LiveBalanceCalculator.Breakdown` que el propio `liveAnchorValue`.
     ///
-    /// **Su criterio es un OR por DIVISA, no el umbral del 5 % del resto de los totales, y eso es
-    /// una decisión de Jürgen del 2026-09-08** (`approximate-mark-ors-over-whole-period`), escrita
-    /// con este motivo: la unidad de este saldo ya es la divisa, no la transacción, y una divisa
-    /// entera sin tasa sí es una ausencia que merece la marca. Consecuencia aceptada: 30 USD
-    /// olvidados con la tasa caducada marcan un saldo de 42.000 €. No lo «arregles» aplicando
-    /// `ApproximateMarkThreshold` aquí sin volver a preguntárselo — la review adversarial del
-    /// 2026-09-09 lo levantó como bug y lo zanjó esa decisión.
+    /// **Su criterio es el umbral del 5 % del resto de los totales** (`ApproximateMarkThreshold`),
+    /// decisión de Jürgen del 2026-10-12 (`dos-criterios-de-aproximado-en-la-misma-pantalla`,
+    /// opción B), que sustituye al OR por divisa del 2026-09-08. Consecuencia aceptada: 30 USD con
+    /// la tasa caducada ya no marcan un saldo de 42.000 €; su fila del desglose sí lleva «≈».
     let liveAnchorIsApproximate: Bool
     let historicalValue: Double?
     let nativeBalances: [String: Decimal]
@@ -167,6 +164,12 @@ struct BalanceLiveAnchorEducationSheet: View {
 
             Spacer()
 
+            // El «≈» de esta fila significa SOLO «tasa de otro día», como en el resto de la app: lo
+            // antepone el formateador con `isEstimate:`. El formato del copy
+            // (`breakdownRowConvertedFormat`, «%@ hoy») ya no trae glifo propio — lo llevó hasta el
+            // 2026-10-12 y con la tasa dudosa salía «≈ ≈», indistinguible de la buena (decisión A de
+            // Jürgen en `live-anchor-breakdown-doubles-the-approximate-glyph`). Pin en las 16
+            // locales: `LiveAnchorBreakdownGlyphTests`.
             if row.code != preferredCurrencyCode {
                 let convertedFormatted = appPreferences.currency(
                     row.convertedToday,
@@ -188,7 +191,7 @@ struct BalanceLiveAnchorEducationSheet: View {
         let native: Decimal
         let convertedToday: Double
         /// Calidad de ESTA conversión, no la del total. La hoja desglosa divisa a divisa, así que
-        /// heredar el OR del saldo marcaría como dudosa una divisa cuya tasa sí era la de hoy.
+        /// heredar la marca del saldo marcaría como dudosa una divisa cuya tasa sí era la de hoy.
         let convertedIsApproximate: Bool
         var nativeDouble: Double { (native as NSDecimalNumber).doubleValue }
     }

@@ -168,13 +168,20 @@ dos**:
   un mes con un tercio de aritmética dudosa; con mi parte grande (9.700 de 10.000, 300 dudosos sobre
   10.300) da 94 % y **marca el mes entero por 300** — en el límite, dos céntimos. Regla corta: **el
   numerador cuenta la incertidumbre que ENTRÓ, el denominador el número que SALE.**
-- **`LiveBalanceCalculator` marca con un OR por DIVISA y eso es deliberado** — decisión de Jürgen del
-  2026-09-08 (`approximate-mark-ors-over-whole-period`): su unidad ya es la divisa, no la
-  transacción, y una divisa entera sin tasa sí es una ausencia que merece la marca. Consecuencia
-  aceptada: 30 USD olvidados con la tasa caducada marcan un saldo de 42.000 €. Alimenta el saldo del
-  panorama, la hoja «¿Cuánto tienes hoy?» y el KPI de Balance de Distribución. **Una review
-  adversarial lo levantará como bug** —pasó el 2026-09-09, dos lentes a la vez—; está escrito en el
-  docblock de la hoja para que se zanje leyendo.
+- **El saldo vivo y el P&L cambiario también siguen el umbral, desde el 2026-10-12** (decisión B de
+  Jürgen, `dos-criterios-de-aproximado-en-la-misma-pantalla`; sustituye al OR por divisa del
+  2026-09-08). El «≈» significa una sola cosa en el Panel: la parte dudosa pesa en el número.
+  `LiveBalanceCalculator` usa `Σ|convertido de divisas dudosas|` / `|saldo mostrado|`, y
+  `FXPnLLogic.Summary.isApproximate`, `Σ|pnl de filas dudosas|` / `|P&L total|`. Consecuencia
+  aceptada: 30 USD con la tasa caducada ya no marcan un saldo de 42.000 €; su fila del desglose sí.
+  **Las filas por divisa siguen marcándose solas** (`convertedIsApproximate`, `CurrencyRow.isApproximate`),
+  y la nota del P&L que explica el glifo sale si alguna fila lo lleva (`hasApproximateRow`), no si
+  lo lleva el total. Pin: `ApproximateMarkPanelCoherenceTests`.
+- **El copy no trae «≈» propio.** El de «Ver por moneda» (`breakdownRowConvertedFormat`) lo traía y
+  con la tasa dudosa salía «≈ ≈» (quitado el 2026-10-12 en las 16 locales, `约` de zh-Hans incluido;
+  pin `LiveAnchorBreakdownGlyphTests`). Quedan dos con glifo fijo que hoy no colisionan:
+  `stats.insights.need.dailyFormat` y el `"≈ "` a mano de `TransactionDetailSheet`. Si les llega un
+  `isEstimate:`, quita antes el del copy.
 - `isEstimate` en los saldos de **Grupos** significa otra cosa —«hubo conversión», no «la tasa era
   mala»— y es una decisión de producto anterior. Es un superconjunto de la nueva, así que no miente;
   no la unifiques sin decisión del owner.

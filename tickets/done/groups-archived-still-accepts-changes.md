@@ -1,10 +1,10 @@
 ---
 id: groups-archived-still-accepts-changes
-status: backlog
+status: done
 priority: low
 area: groups
 created: 2026-09-06
-updated: 2026-10-08
+updated: 2026-10-12
 source: hallazgo al revisar el copy en groups-archived-group-rejects-join (2026-09-06)
 ---
 
@@ -102,3 +102,7 @@ y eso no lo decide quien implementa.
 - **Recomendación: B** — cierra el riesgo de reuso del copy sin quitarle a nadie la salida de liquidar. Con B, prioridad `low`.
 
 Triage 2026-10-08: abierto · medium → low · Sigue igual: ningún predicado del detalle ni de los servicios mira isArchived; necesita decisión de producto (pregunta añadida, recomendada B: ajustar el copy).
+
+## Resuelto (2026-10-12, encargo `pulido-textos-2-1`)
+
+Opción B de Jürgen (2026-10-12): el aviso dice solo lo verdadero, «Su admin lo archivó y ya no admite miembros nuevos», en los 16 idiomas. Archivar no cambia de semántica.

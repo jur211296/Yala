@@ -1,10 +1,10 @@
 ---
 id: revert-card-copy-says-datos-regresan-a-quien-nunca-estuvo
-status: backlog
+status: done
 priority: low
 area: "copy, l10n, modo-nube"
 created: 2026-09-10
-updated: 2026-10-08
+updated: 2026-10-12
 source: "review del alcance de `reverse-cutover-cerrado-para-cuentas-born-cloud` (2026-09-10), decisión D6"
 ---
 
@@ -91,3 +91,7 @@ El copy de «Volver a iCloud» para quien nació en la nube:
 Con A, `low`.
 
 Triage 2026-10-08: abierto · medium → low · storage.revert.body y storage.confirm.revertBody siguen diciendo «regresan/volverán» y revertCard no distingue born-cloud; falta que Jürgen elija A, B o C.
+
+## Resuelto (2026-10-12, encargo `pulido-textos-2-1`)
+
+Opción A de Jürgen (2026-10-12): `storage.revert.body` y `storage.confirm.revertBody` dicen «pasan a vivir en tu dispositivo y en tu iCloud» en los 16 idiomas, verdad para quien migró y para quien nació en la nube.

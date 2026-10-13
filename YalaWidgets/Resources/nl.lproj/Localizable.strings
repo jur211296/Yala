@@ -104,7 +104,7 @@
 "widget.ui.ofLimit" = "van %@";
 "widget.ui.newRecord" = "Snelle invoer";
 "widget.ui.voiceRecord" = "Spraakinvoer";
-"widget.ui.scanReceipt" = "Beeldinvoer";
+"widget.ui.scanReceipt" = "Foto of bestand";
 "widget.ui.upcomingPayments" = "Aankomende betalingen";
 "widget.ui.budgets" = "Budgetten";
 "widget.ui.latestRecords" = "Recente boekingen";
@@ -139,8 +139,8 @@
 // MARK: - Control Widgets
 "widget.control.voiceExpense" = "Spraakinvoer";
 "widget.control.voiceExpense.desc" = "Dicteer je boeking aan Yala";
-"widget.control.photoExpense" = "Beeldinvoer";
-"widget.control.photoExpense.desc" = "Boek met een afbeelding in Yala";
+"widget.control.photoExpense" = "Foto of bestand";
+"widget.control.photoExpense.desc" = "Boek met een foto of bestand in Yala";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "widget.ui.others" = "Overige";

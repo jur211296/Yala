@@ -1,10 +1,10 @@
 ---
 id: image-entry-name-says-image-but-takes-files
-status: backlog
+status: done
 priority: low
 area: image, copy, l10n
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-10-12
 source: Jürgen, sesión gpt-4-1-nano-shuts-down-on-october-23 (2026-10-07)
 ---
 
@@ -63,3 +63,7 @@ Las 11 claves siguen diciendo «imagen» (medido en `es.lproj`: «Registrar con 
 Recomendación: **A**, y conservar la frase de Siri vieja como sinónimo. Con A la prioridad es `low`: es un nombre, y la función ya acepta PDF.
 
 Triage 2026-10-08: abierto · medium → low · las 11 claves siguen diciendo «imagen» en `es.lproj` (p. ej. `image.entry.title` = «Registrar con imagen»); falta la decisión del nombre.
+
+## Resuelto (2026-10-12, encargo `pulido-textos-2-1`)
+
+Opción A de Jürgen (2026-10-12). Hoja, Siri y atajo: «Registrar con foto o archivo»; paywall y consejo, en sustantivo («Registro con foto o archivo»), porque el paywall lo mete en «%@ es una función exclusiva de Yala Pro»; control, widget y título corto: «Foto o archivo». Además de las 11 claves, `control.imageEntry.description` y las tres del widget (`widget.control.photoExpense`, `.desc`, `widget.ui.scanReceipt`), que son las que pinta de verdad el Centro de control. La frase de Siri nueva entra en `AppShortcutsProvider` (es/en) y las de «imagen» siguen como sinónimos. Pendiente: avisar a Lola para la ficha y las capturas.

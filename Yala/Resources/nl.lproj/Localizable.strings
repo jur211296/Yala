@@ -740,7 +740,7 @@
 "panel.liveAnchorEducation.todayQuestion" = "Je saldo vandaag";
 "panel.liveAnchorEducation.whyQuestion" = "Waarom dit bedrag?";
 "panel.liveAnchorEducation.breakdownToggle" = "Per valuta bekijken";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ vandaag";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "%@ vandaag";
 "panel.liveAnchorEducation.coachTitle" = "Je saldo beweegt vanzelf";
 "panel.liveAnchorEducation.coachMessage" = "Wanneer je geld in andere valuta's hebt, verandert de waarde dag voor dag. Tik om te zien wat er gebeurt.";
 "panel.liveAnchorEducation.dotA11yLabel" = "Saldo van vandaag tegen de huidige wisselkoers. Tik voor details.";
@@ -2203,7 +2203,7 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Spraakinvoer";
 "tipkit.pro.voiceInput.message" = "Je kunt nu je uitgaven dicteren. Spreek en Yala boekt ze voor je.";
-"tipkit.pro.imageInput.title" = "Afbeeldingsinvoer";
+"tipkit.pro.imageInput.title" = "Invoer met foto of bestand";
 "tipkit.pro.imageInput.message" = "Voeg een foto toe van een bon of factuur en Yala haalt er één of meer transacties uit.";
 "tipkit.pro.smartInsights.title" = "Slimme inzichten";
 "tipkit.pro.smartInsights.message" = "Zet dit aan en Yala genereert AI-gestuurde observaties over je financiën.";
@@ -2264,10 +2264,10 @@
 "shortcut.voiceEntry.opening" = "Spraakinvoer wordt geopend...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Boeken via afbeelding";
-"shortcut.imageEntry.description" = "Opent de afbeeldingskiezer om uitgaven uit foto's te boeken";
-"shortcut.imageEntry.shortTitle" = "Boeken via afbeelding";
-"shortcut.imageEntry.opening" = "Afbeeldingsinvoer wordt geopend...";
+"shortcut.imageEntry.title" = "Boeken met foto of bestand";
+"shortcut.imageEntry.description" = "Boek uitgaven vanaf een foto of een bestand, zoals een pdf";
+"shortcut.imageEntry.shortTitle" = "Foto of bestand";
+"shortcut.imageEntry.opening" = "Invoer met foto of bestand wordt geopend...";
 
 // MARK: - Apple Pay Intent
 
@@ -2314,10 +2314,10 @@
 "control.voiceEntry.intentTitle" = "Spraakinvoer openen";
 "control.voiceEntry.intentDescription" = "Opent Yala in opnamemodus";
 
-"control.imageEntry.label" = "Afbeeldingsinvoer";
-"control.imageEntry.displayName" = "Afbeeldingsinvoer";
-"control.imageEntry.description" = "Boeken met een afbeelding of foto";
-"control.imageEntry.intentTitle" = "Afbeeldingsinvoer openen";
+"control.imageEntry.label" = "Foto of bestand";
+"control.imageEntry.displayName" = "Foto of bestand";
+"control.imageEntry.description" = "Boek met een foto of bestand";
+"control.imageEntry.intentTitle" = "Invoer met foto of bestand openen";
 "control.imageEntry.intentDescription" = "Opent Yala in cameramodus om te boeken";
 
 // MARK: - Notifications
@@ -2489,7 +2489,7 @@
 "featureGate.accounts" = "Rekeningen";
 "featureGate.budgets" = "Budgetten";
 "featureGate.voiceInput" = "Spraakinvoer";
-"featureGate.imageInput" = "Afbeeldingsinvoer";
+"featureGate.imageInput" = "Foto- of bestandsinvoer";
 "featureGate.premiumIcons" = "Premium-iconen";
 "featureGate.proThemes" = "Pro-thema's";
 "featureGate.smartInsightsAI" = "Slimme AI-inzichten";
@@ -2852,7 +2852,7 @@
 "siriShortcuts.all.title" = "Andere shortcuts";
 "siriShortcuts.shortcut.quick" = "Snel boeken";
 "siriShortcuts.shortcut.voice" = "Spraakinvoer";
-"siriShortcuts.shortcut.image" = "Afbeeldingsinvoer";
+"siriShortcuts.shortcut.image" = "Vastleggen met foto of bestand";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "Automatisering";
 "siriShortcuts.desc.quick" = "Opent het boekformulier met één tik.";
@@ -2862,7 +2862,7 @@
 "siriShortcuts.desc.automation" = "Maak automatische boekingen via systeemshortcuts.";
 "siriShortcuts.phrase.quick" = "Boeken in Yala";
 "siriShortcuts.phrase.voice" = "Boeken met spraak in Yala";
-"siriShortcuts.phrase.image" = "Boeken met afbeelding in Yala";
+"siriShortcuts.phrase.image" = "Boeken met foto of bestand in Yala";
 "siriShortcuts.phrase.applePay" = "Apple Pay boeken in Yala";
 "siriShortcuts.phrase.automation" = "Boeken via automatisering in Yala";
 "siriShortcuts.faq.title" = "Veelgestelde vragen";
@@ -3499,7 +3499,7 @@
 "groups.reconnect.subtitle" = "Je bent uitgenodigd voor een gedeelde groep";
 "groups.reconnect.fallbackGroupName" = "deze groep";
 "groups.reconnect.archived.title" = "%@ is gearchiveerd";
-"groups.reconnect.archived.body" = "De beheerder heeft de groep gearchiveerd en accepteert geen wijzigingen meer.";
+"groups.reconnect.archived.body" = "De beheerder heeft de groep gearchiveerd en accepteert geen nieuwe leden meer.";
 "groups.reconnect.archived.cta" = "Begrepen";
 "groups.reconnect.alreadyMember.title" = "Je bent al lid van %@";
 "groups.reconnect.alreadyMember.body" = "We brengen je naar de groep.";
@@ -4651,7 +4651,7 @@
 "storage.adopt.body" = "Dit account heeft je gegevens al in de cloud. Laten we het inschakelen op dit apparaat.";
 "storage.adopt.button" = "Inschakelen op dit apparaat";
 "storage.revert.title" = "Terug naar iCloud";
-"storage.revert.body" = "Ga terug naar de privémodus. Je gegevens komen terug op je apparaat en je iCloud, zonder iets te verliezen.";
+"storage.revert.body" = "Ga terug naar de privémodus. Je gegevens staan dan op je apparaat en in je iCloud, zonder iets te verliezen.";
 "storage.revert.button" = "Terug naar iCloud";
 "storage.revert.ineligible" = "Je kunt nu niet terug naar iCloud vanaf dit apparaat.";
 "storage.sync.title" = "Synchronisatie";
@@ -4673,7 +4673,7 @@
 "storage.confirm.migrate2Body" = "De cloud wordt ingeschakeld voor dit apparaat.";
 "storage.confirm.migrate2Confirm" = "Ja, cloud inschakelen";
 "storage.confirm.revertTitle" = "Terug naar iCloud?";
-"storage.confirm.revertBody" = "Je gegevens keren terug naar je apparaat en je iCloud. Je verliest niets.";
+"storage.confirm.revertBody" = "Je gegevens komen op je apparaat en in je iCloud te staan. Je verliest niets.";
 "storage.confirm.revertContinue" = "Doorgaan";
 "storage.confirm.revert2Title" = "Weet je het zeker?";
 "storage.confirm.revert2Body" = "De cloud wordt uitgeschakeld voor dit apparaat.";
@@ -4778,7 +4778,7 @@
 "welcome.cloud.notFoundTitle" = "We konden geen account vinden";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "Deze Apple ID heeft nog geen Yala-cloudaccount.";
+"welcome.cloud.notFoundBody" = "Er is nog geen Yala-cloudaccount voor de inlog die je gebruikte.";
 "welcome.cloud.notFoundCta" = "Account aanmaken";
 
 /* Title when foreign local data blocks sign-in */
@@ -4946,16 +4946,16 @@
 "welcome.cloud.providerMismatchTitle" = "Dat account gebruikt een andere methode";
 
 /* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "Je Yala-account is gemaakt met %@.";
+"welcome.cloud.providerMismatchBody" = "Het Yala-account van deze Apple ID is gemaakt met %@.";
 
 /* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "Je Yala-account is met een andere inlogmethode gemaakt.";
+"welcome.cloud.providerMismatchBodyGeneric" = "Het Yala-account van deze Apple ID is met een andere inlogmethode gemaakt.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "Deze Apple ID heeft al een Yala-account, gemaakt met %@.";
+"welcome.cloud.beaconOrigin" = "Met deze Apple ID is al een Yala-account gemaakt met %@.";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "Deze Apple ID heeft al een Yala-account.";
+"welcome.cloud.beaconOriginGeneric" = "Met deze Apple ID is al een Yala-account gemaakt.";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "Nog een account aanmaken";
@@ -6407,7 +6407,7 @@
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
-"image.entry.title" = "Vastleggen met een afbeelding";
+"image.entry.title" = "Vastleggen met foto of bestand";
 /* Image entry: what the user can bring and what Yala reads */
 "image.entry.subtitle" = "Een bon, een bankscreenshot of een pdf. Ik haal er het bedrag, de winkel en de datum uit.";
 /* Image entry source: take a photo */

@@ -740,7 +740,7 @@
 "panel.liveAnchorEducation.todayQuestion" = "Your balance today";
 "panel.liveAnchorEducation.whyQuestion" = "Why this amount?";
 "panel.liveAnchorEducation.breakdownToggle" = "See by currency";
-"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "≈ %@ today";
+"panel.liveAnchorEducation.breakdownRowConvertedFormat" = "%@ today";
 "panel.liveAnchorEducation.coachTitle" = "Your balance moves on its own";
 "panel.liveAnchorEducation.coachMessage" = "When you have money in other currencies, its value changes day by day. Tap me to find out what's going on.";
 "panel.liveAnchorEducation.dotA11yLabel" = "Today's balance at the current exchange rate. Tap to see details.";
@@ -2203,7 +2203,7 @@
 // Pro Tour
 "tipkit.pro.voiceInput.title" = "Voice input";
 "tipkit.pro.voiceInput.message" = "Now you can dictate your expenses. Just speak and Yala records them for you.";
-"tipkit.pro.imageInput.title" = "Image input";
+"tipkit.pro.imageInput.title" = "Add with a photo or file";
 "tipkit.pro.imageInput.message" = "Attach a photo of any receipt or invoice and Yala extracts one or more transactions for you.";
 "tipkit.pro.smartInsights.title" = "Smart insights";
 "tipkit.pro.smartInsights.message" = "Turn this on so Yala generates AI-powered observations about your finances.";
@@ -2264,10 +2264,10 @@
 "shortcut.voiceEntry.opening" = "Opening voice entry...";
 
 // Image Entry Shortcut
-"shortcut.imageEntry.title" = "Record by image";
-"shortcut.imageEntry.description" = "Opens image picker to record expenses from photos";
-"shortcut.imageEntry.shortTitle" = "Record by image";
-"shortcut.imageEntry.opening" = "Opening image entry...";
+"shortcut.imageEntry.title" = "Record with photo or file";
+"shortcut.imageEntry.description" = "Record expenses from a photo or a file, such as a PDF";
+"shortcut.imageEntry.shortTitle" = "Photo or File";
+"shortcut.imageEntry.opening" = "Opening photo or file entry...";
 
 // MARK: - Apple Pay Intent
 
@@ -2314,10 +2314,10 @@
 "control.voiceEntry.intentTitle" = "Open voice entry";
 "control.voiceEntry.intentDescription" = "Opens Yala in voice recording mode";
 
-"control.imageEntry.label" = "Image Entry";
-"control.imageEntry.displayName" = "Image Entry";
-"control.imageEntry.description" = "Record with an image or photo";
-"control.imageEntry.intentTitle" = "Open image entry";
+"control.imageEntry.label" = "Photo or File";
+"control.imageEntry.displayName" = "Photo or File";
+"control.imageEntry.description" = "Record with a photo or file";
+"control.imageEntry.intentTitle" = "Open photo or file entry";
 "control.imageEntry.intentDescription" = "Opens Yala in camera mode to record";
 
 // MARK: - Notifications
@@ -2489,7 +2489,7 @@
 "featureGate.accounts" = "Accounts";
 "featureGate.budgets" = "Budgets";
 "featureGate.voiceInput" = "Voice input";
-"featureGate.imageInput" = "Image input";
+"featureGate.imageInput" = "Photo or file input";
 "featureGate.premiumIcons" = "Premium icons";
 "featureGate.proThemes" = "Pro Themes";
 "featureGate.smartInsightsAI" = "Smart Insights AI";
@@ -2899,7 +2899,7 @@
 "siriShortcuts.all.title" = "Other shortcuts";
 "siriShortcuts.shortcut.quick" = "Quick record";
 "siriShortcuts.shortcut.voice" = "Voice input";
-"siriShortcuts.shortcut.image" = "Image input";
+"siriShortcuts.shortcut.image" = "Add with a photo or file";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
 "siriShortcuts.shortcut.automation" = "Automation";
 "siriShortcuts.desc.quick" = "Opens the record form with a single tap.";
@@ -2909,7 +2909,7 @@
 "siriShortcuts.desc.automation" = "Create automatic records with system shortcuts.";
 "siriShortcuts.phrase.quick" = "Record in Yala";
 "siriShortcuts.phrase.voice" = "Record with voice in Yala";
-"siriShortcuts.phrase.image" = "Record with image in Yala";
+"siriShortcuts.phrase.image" = "Record with photo or file in Yala";
 "siriShortcuts.phrase.applePay" = "Record Apple Pay in Yala";
 "siriShortcuts.phrase.automation" = "Record from automation in Yala";
 "siriShortcuts.faq.title" = "FAQ";
@@ -3539,7 +3539,7 @@
 "groups.reconnect.subtitle" = "You've been invited to a shared group";
 "groups.reconnect.fallbackGroupName" = "this group";
 "groups.reconnect.archived.title" = "%@ was archived";
-"groups.reconnect.archived.body" = "The admin archived it and it no longer accepts changes.";
+"groups.reconnect.archived.body" = "The admin archived it and it no longer accepts new members.";
 "groups.reconnect.archived.cta" = "OK";
 "groups.reconnect.alreadyMember.title" = "You're already in %@";
 "groups.reconnect.alreadyMember.body" = "We'll take you there.";
@@ -4645,7 +4645,7 @@
 "storage.adopt.body" = "This account already has your data in the cloud. Let’s turn it on for this device.";
 "storage.adopt.button" = "Turn on for this device";
 "storage.revert.title" = "Go back to iCloud";
-"storage.revert.body" = "Return to private mode. Your data comes back to your device and your iCloud, without losing anything.";
+"storage.revert.body" = "Return to private mode. Your data will live on your device and in your iCloud, without losing anything.";
 "storage.revert.button" = "Go back to iCloud";
 "storage.revert.ineligible" = "You can’t go back to iCloud from this device right now.";
 "storage.sync.title" = "Sync";
@@ -4667,7 +4667,7 @@
 "storage.confirm.migrate2Body" = "The cloud will be turned on for this device.";
 "storage.confirm.migrate2Confirm" = "Yes, turn on the cloud";
 "storage.confirm.revertTitle" = "Go back to iCloud?";
-"storage.confirm.revertBody" = "Your data will return to your device and your iCloud. You won’t lose anything.";
+"storage.confirm.revertBody" = "Your data will live on your device and in your iCloud. You won’t lose anything.";
 "storage.confirm.revertContinue" = "Continue";
 "storage.confirm.revert2Title" = "Are you sure?";
 "storage.confirm.revert2Body" = "The cloud will be turned off for this device.";
@@ -4772,7 +4772,7 @@
 "welcome.cloud.notFoundTitle" = "We couldn't find an account";
 
 /* Body when Apple ID has no cloud account */
-"welcome.cloud.notFoundBody" = "This Apple ID doesn't have a Yala cloud account yet.";
+"welcome.cloud.notFoundBody" = "There's no Yala cloud account for the sign-in you used yet.";
 "welcome.cloud.notFoundCta" = "Create my account";
 
 /* Title when foreign local data blocks sign-in */
@@ -4940,16 +4940,16 @@
 "welcome.cloud.providerMismatchTitle" = "That account uses a different sign-in method";
 
 /* R9 provider mismatch body; %@ = Apple/Google */
-"welcome.cloud.providerMismatchBody" = "Your Yala account was created with %@.";
+"welcome.cloud.providerMismatchBody" = "The Yala account on this Apple ID was created with %@.";
 
 /* R9 provider mismatch body when known provider is unavailable */
-"welcome.cloud.providerMismatchBodyGeneric" = "Your Yala account was created with a different sign-in method.";
+"welcome.cloud.providerMismatchBodyGeneric" = "The Yala account on this Apple ID was created with a different sign-in method.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "This Apple ID already has a Yala account created with %@.";
+"welcome.cloud.beaconOrigin" = "A Yala account was already created with %@ on this Apple ID.";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "This Apple ID already has a Yala account.";
+"welcome.cloud.beaconOriginGeneric" = "A Yala account was already created on this Apple ID.";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "Create another account";
@@ -6401,7 +6401,7 @@
 
 /* Registro por imagen (propuesta C, 2026-10-04) */
 /* Image entry sheet title */
-"image.entry.title" = "Add with an image";
+"image.entry.title" = "Add with a photo or file";
 /* Image entry: what the user can bring and what Yala reads */
 "image.entry.subtitle" = "A receipt, a bank screenshot or a PDF. I’ll pick out the amount, the merchant and the date.";
 /* Image entry source: take a photo */
