@@ -212,7 +212,7 @@
 "welcome.restore.iCloudDisabledBody" = "You need iCloud enabled to restore your data. Turn it on in Settings and try again.";
 "welcome.restore.openSettings" = "Open Settings";
 "welcome.restore.startFreshConfirm.title" = "Start fresh?";
-"welcome.restore.startFreshConfirm.body" = "This will create a new account without your previous data. Continue?";
+"welcome.restore.startFreshConfirm.body" = "Nothing is deleted yet. Before starting, we check what’s saved and, if we find anything, ask you what to do with it.";
 "welcome.restore.startFreshConfirm.confirm" = "Yes, start fresh";
 "welcome.restore.startFreshConfirm.cancel" = "Cancel";
 "welcome.restore.progress.connecting" = "Connecting to iCloud…";

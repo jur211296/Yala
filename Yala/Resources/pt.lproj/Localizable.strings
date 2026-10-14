@@ -4079,10 +4079,6 @@
 "welcome.restore.foundTitle" = "Oi %@! Que bom te ver de novo.";
 "welcome.restore.foundTitleAnonymous" = "Que bom te ver de novo!";
 "welcome.restore.foundBody" = "Encontramos seus dados no iCloud:";
-"welcome.restore.foundAccounts" = "%d contas";
-"welcome.restore.foundTransactions" = "%d registros";
-"welcome.restore.foundBudgets" = "%d orçamentos";
-"welcome.restore.foundGroups" = "%d grupos compartilhados";
 "welcome.restore.continue" = "Continuar";
 "welcome.restore.notFoundTitle" = "Não encontramos seus dados";
 "welcome.restore.notFoundBody" = "Não há dados associados à sua conta iCloud. Quer começar do zero?";
@@ -4094,7 +4090,7 @@
 "welcome.restore.iCloudDisabledBody" = "Você precisa do iCloud ativado para recuperar seus dados. Ative em Ajustes e tente de novo.";
 "welcome.restore.openSettings" = "Abrir Ajustes";
 "welcome.restore.startFreshConfirm.title" = "Começar do zero?";
-"welcome.restore.startFreshConfirm.body" = "Isso criará uma conta nova sem seus dados anteriores. Continuar?";
+"welcome.restore.startFreshConfirm.body" = "Nada é apagado ainda. Antes de começar, verificamos o que está salvo e, se encontrarmos algo, perguntamos o que fazer com isso.";
 "welcome.restore.startFreshConfirm.confirm" = "Sim, começar do zero";
 "welcome.restore.startFreshConfirm.cancel" = "Cancelar";
 "welcome.restore.progress.connecting" = "Conectando ao iCloud…";
@@ -5737,7 +5733,6 @@
 "welcome.privateICloud.lateKeep" = "Deixar assim";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categorias";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "muitos dados salvos";

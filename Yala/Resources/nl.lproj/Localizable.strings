@@ -4111,10 +4111,6 @@
 "welcome.restore.foundTitle" = "Hoi %@! Fijn dat je terug bent.";
 "welcome.restore.foundTitleAnonymous" = "Fijn dat je terug bent!";
 "welcome.restore.foundBody" = "We hebben je gegevens in iCloud gevonden:";
-"welcome.restore.foundAccounts" = "%d rekeningen";
-"welcome.restore.foundTransactions" = "%d records";
-"welcome.restore.foundBudgets" = "%d budgetten";
-"welcome.restore.foundGroups" = "%d gedeelde groepen";
 "welcome.restore.continue" = "Doorgaan";
 "welcome.restore.notFoundTitle" = "Geen gegevens gevonden";
 "welcome.restore.notFoundBody" = "Er zijn geen gegevens gekoppeld aan je iCloud-account. Wil je opnieuw beginnen?";
@@ -4126,7 +4122,7 @@
 "welcome.restore.iCloudDisabledBody" = "Je hebt iCloud nodig om je gegevens terug te zetten. Schakel het in via Instellingen en probeer opnieuw.";
 "welcome.restore.openSettings" = "Instellingen openen";
 "welcome.restore.startFreshConfirm.title" = "Opnieuw beginnen?";
-"welcome.restore.startFreshConfirm.body" = "Hiermee maak je een nieuwe account zonder je vorige gegevens. Doorgaan?";
+"welcome.restore.startFreshConfirm.body" = "Er wordt nog niets verwijderd. Voordat je begint, controleren we wat er is opgeslagen en vragen we je, als we iets vinden, wat je ermee wilt doen.";
 "welcome.restore.startFreshConfirm.confirm" = "Ja, opnieuw beginnen";
 "welcome.restore.startFreshConfirm.cancel" = "Annuleren";
 "welcome.restore.progress.connecting" = "Verbinden met iCloud…";
@@ -5749,7 +5745,6 @@
 "welcome.privateICloud.lateKeep" = "Zo laten";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categorieën";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "veel bewaarde gegevens";

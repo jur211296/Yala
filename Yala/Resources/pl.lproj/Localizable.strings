@@ -4111,10 +4111,6 @@
 "welcome.restore.foundTitle" = "Cześć %@! Miło Cię znowu widzieć.";
 "welcome.restore.foundTitleAnonymous" = "Miło Cię znowu widzieć!";
 "welcome.restore.foundBody" = "Znaleźliśmy Twoje dane w iCloud:";
-"welcome.restore.foundAccounts" = "Konta: %d";
-"welcome.restore.foundTransactions" = "Wpisy: %d";
-"welcome.restore.foundBudgets" = "Budżety: %d";
-"welcome.restore.foundGroups" = "Grupy współdzielone: %d";
 "welcome.restore.continue" = "Kontynuuj";
 "welcome.restore.notFoundTitle" = "Nie znaleziono danych";
 "welcome.restore.notFoundBody" = "Brak danych powiązanych z Twoim kontem iCloud. Chcesz zacząć od nowa?";
@@ -4126,7 +4122,7 @@
 "welcome.restore.iCloudDisabledBody" = "Aby przywrócić dane, musisz mieć włączony iCloud. Włącz go w Ustawieniach i spróbuj ponownie.";
 "welcome.restore.openSettings" = "Otwórz Ustawienia";
 "welcome.restore.startFreshConfirm.title" = "Zacząć od nowa?";
-"welcome.restore.startFreshConfirm.body" = "Spowoduje to utworzenie nowego konta bez Twoich poprzednich danych. Kontynuować?";
+"welcome.restore.startFreshConfirm.body" = "Nic jeszcze nie zostanie usunięte. Zanim zaczniesz, sprawdzimy, co jest zapisane, a jeśli coś znajdziemy, zapytamy, co z tym zrobić.";
 "welcome.restore.startFreshConfirm.confirm" = "Tak, zacznij od nowa";
 "welcome.restore.startFreshConfirm.cancel" = "Anuluj";
 "welcome.restore.progress.connecting" = "Łączenie z iCloud…";
@@ -5749,7 +5745,6 @@
 "welcome.privateICloud.lateKeep" = "Zostaw tak";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d kategorii";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "dużo zapisanych danych";

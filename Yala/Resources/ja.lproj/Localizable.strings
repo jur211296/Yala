@@ -4111,10 +4111,6 @@
 "welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
 "welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
 "welcome.restore.foundBody" = "iCloudにデータが見つかりました：";
-"welcome.restore.foundAccounts" = "%d 件のアカウント";
-"welcome.restore.foundTransactions" = "%d 件の記録";
-"welcome.restore.foundBudgets" = "%d 件の予算";
-"welcome.restore.foundGroups" = "%d 件の共有グループ";
 "welcome.restore.continue" = "続ける";
 "welcome.restore.notFoundTitle" = "データが見つかりませんでした";
 "welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
@@ -4126,7 +4122,7 @@
 "welcome.restore.iCloudDisabledBody" = "データを復元するにはiCloudが必要です。設定で有効にしてからもう一度お試しください。";
 "welcome.restore.openSettings" = "設定を開く";
 "welcome.restore.startFreshConfirm.title" = "最初から始めますか？";
-"welcome.restore.startFreshConfirm.body" = "以前のデータなしで新しいアカウントが作成されます。続行しますか？";
+"welcome.restore.startFreshConfirm.body" = "まだ何も削除されません。始める前に保存されているデータを確認し、見つかった場合はどうするかをお聞きします。";
 "welcome.restore.startFreshConfirm.confirm" = "はい、最初から";
 "welcome.restore.startFreshConfirm.cancel" = "キャンセル";
 "welcome.restore.progress.connecting" = "iCloudに接続中…";
@@ -5749,7 +5745,6 @@
 "welcome.privateICloud.lateKeep" = "このままにする";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d件のカテゴリ";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "大量の保存データ";
