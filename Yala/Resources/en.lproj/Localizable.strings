@@ -306,6 +306,7 @@
 "transaction.origin" = "Origin";
 "transaction.destination" = "Destination";
 "transaction.exchangeRate" = "Exchange rate";
+"transaction.exchangeRateMissingForDay" = "No exchange rate for that day";
 "transaction.willReceive" = "Will receive";
 "transaction.createAnother" = "Add another";
 "transaction.recents" = "Recents";

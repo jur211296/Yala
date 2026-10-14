@@ -3299,6 +3299,7 @@
 "transaction.edit" = "Edit Transaction";
 "transaction.editTransaction" = "Edit Transaction";
 "transaction.exchangeRate" = "Exchange rate";
+"transaction.exchangeRateMissingForDay" = "No exchange rate for that day";
 "transaction.expense" = "Expenses";
 "transaction.income" = "Income";
 "transaction.new" = "New Transaction";

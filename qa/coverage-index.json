@@ -2049,9 +2049,9 @@
         "F-TX-01"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/RecordsDetailSheetUITests — 2026-10-09 (`exchange-rate-detail-shows-zero-for-low-denomination-currencies`): las tasas se escriben con `ExchangeRateDisplayFormatter` (4 cifras significativas bajo 1, separadores del idioma) en Ajustes de divisas, el widget de tipos de cambio y el detalle de la transaccion. Red en unit: ExchangeRateDisplayFormatterTests + ExchangeRateDisplayFormatterWiringTests (control rojo con el %.4f viejo). | 2026-10-10 (`shared-scheduled-expense-shows-twice-in-inbox`): se tocó un fichero compartido (plantilla del formulario de grupo / construcción de la plantilla en la Bandeja); nada de esta área cambia de comportamiento.",
+      "coverage": "xcuitest:YalaUITests/RecordsDetailSheetUITests — 2026-10-09 (`exchange-rate-detail-shows-zero-for-low-denomination-currencies`): las tasas se escriben con `ExchangeRateDisplayFormatter` (4 cifras significativas bajo 1, separadores del idioma) en Ajustes de divisas, el widget de tipos de cambio y el detalle de la transaccion. Red en unit: ExchangeRateDisplayFormatterTests + ExchangeRateDisplayFormatterWiringTests (control rojo con el %.4f viejo). | 2026-10-10 (`shared-scheduled-expense-shows-twice-in-inbox`): se tocó un fichero compartido (plantilla del formulario de grupo / construcción de la plantilla en la Bandeja); nada de esta área cambia de comportamiento. | 2026-10-14 (card kab4): la fila «Tipo de cambio» ya no pinta «≈ 0,00» cuando la conversión no se escribió (0 con nativo ≠ 0): reconvierte con la tasa EXACTA del día del registro (`CashFlowCalculator.reconverted`) o enseña «Sin tipo de cambio para ese día». Red en unit: TransactionDetailConversionDisplayTests (con tasa, arrastrada, estática, tasa que da 0 y dos controles).",
       "owner": "",
-      "lastVerified": "2026-10-13"
+      "lastVerified": "2026-10-14"
     },
     {
       "area": "scheduled-payment-notifications-robustness",

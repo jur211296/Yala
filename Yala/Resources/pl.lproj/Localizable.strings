@@ -306,6 +306,7 @@
 "transaction.origin" = "Źródło";
 "transaction.destination" = "Cel";
 "transaction.exchangeRate" = "Kurs wymiany";
+"transaction.exchangeRateMissingForDay" = "Brak kursu wymiany dla tego dnia";
 "transaction.willReceive" = "Otrzymasz";
 "transaction.createAnother" = "Dodaj kolejną";
 "transaction.recents" = "Ostatnie";

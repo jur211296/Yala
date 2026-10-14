@@ -306,6 +306,7 @@
 "transaction.origin" = "来源";
 "transaction.destination" = "目标";
 "transaction.exchangeRate" = "汇率";
+"transaction.exchangeRateMissingForDay" = "该日没有汇率";
 "transaction.willReceive" = "将收到";
 "transaction.createAnother" = "再添加一笔";
 "transaction.recents" = "最近";

@@ -3307,6 +3307,7 @@
 "transaction.edit" = "Editar transacción";
 "transaction.editTransaction" = "Editar registro";
 "transaction.exchangeRate" = "Tipo de cambio";
+"transaction.exchangeRateMissingForDay" = "Sin tipo de cambio para ese día";
 "transaction.expense" = "Gastos";
 "transaction.income" = "Ingresos";
 "transaction.new" = "Nueva transacción";
