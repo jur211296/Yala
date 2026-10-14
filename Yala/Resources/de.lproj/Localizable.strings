@@ -435,12 +435,6 @@
 "inbox.alert.title.subscriptions" = "Abonnements zu überprüfen!";
 "inbox.alert.title.automations" = "Neue automatische Einträge!";
 "inbox.alert.title.mixed" = "Neue Einträge in deinem Posteingang!";
-"inbox.alert.message.scheduled" = "%d geplante Zahlungen wurden hinzugefügt.";
-"inbox.alert.message.subscriptions" = "%d Abonnements wurden hinzugefügt.";
-"inbox.alert.message.mixed.scheduled" = "%d Zahlungen";
-"inbox.alert.message.mixed.subscriptions" = "%d Abonnements";
-"inbox.alert.message.mixed.automations" = "%d automatische Einträge";
-"inbox.alert.message.mixed.connector" = " und ";
 
 // MARK: - Settings
 
@@ -2011,22 +2005,23 @@
 "inbox.delete" = "Löschen";
 "inbox.noPending" = "Keine ausstehenden Entwürfe";
 "inbox.noPendingDescription" = "Neue Sprach- und Bildentwürfe werden hier angezeigt.";
-"inbox.bulkHint" = "Tippen Sie auf Auswählen für Massenaktionen";
+"inbox.bulkHint" = "Tippe auf ✓, um mehrere auszuwählen";
+"inbox.status.rejected" = "abgelehnt";
+"inbox.status.approved" = "genehmigt";
+"inbox.status.pending" = "ausstehend";
 "inbox.subtitleMultiplePending" = "%d Transaktionen warten, Schritt für Schritt.";
 "inbox.subtitleOnePending" = "Eine Transaktion wartet, prüfen Sie sie, wenn Sie können.";
 "inbox.subtitleAllDone" = "Posteingang leer, super gemacht.";
-"inbox.pendingBadge" = "%d ausstehend";
 "inbox.newTag" = "Neu";
 "inbox.noArchived" = "Keine archivierten Entwürfe";
 "inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";
-"inbox.selectedCount" = "%d ausgewählt";
-"inbox.editDraft" = "Edit draft";
-"inbox.cannotApprove" = "Cannot approve";
-"inbox.sourceVoice" = "Voice";
-"inbox.sourceEmail" = "Email";
-"inbox.sourceScreenshot" = "Screenshot";
-"inbox.sourceScreenshotList" = "List";
-"inbox.sourceReceipt" = "Receipt";
+"inbox.editDraft" = "{'de': 'Entwurf bearbeiten', 'fr': 'Modifier le brouillon', 'it': 'Modifica bozza', 'pt-BR': 'Editar rascunho', 'pt-PT': 'Editar rascunho'}";
+"inbox.cannotApprove" = "{'de': 'Kann nicht genehmigt werden', 'fr': 'Impossible d’approuver', 'it': 'Impossibile approvare', 'pt-BR': 'Não é possível aprovar', 'pt-PT': 'Não é possível aprovar'}";
+"inbox.sourceVoice" = "{'de': 'Sprache', 'fr': 'Voix', 'it': 'Voce', 'pt-BR': 'Voz', 'pt-PT': 'Voz'}";
+"inbox.sourceEmail" = "{'de': 'E-Mail', 'fr': 'E-mail', 'it': 'E-mail', 'pt-BR': 'E-mail', 'pt-PT': 'E-mail'}";
+"inbox.sourceScreenshot" = "{'de': 'Bildschirmfoto', 'fr': 'Capture d’écran', 'it': 'Schermata', 'pt-BR': 'Captura de tela', 'pt-PT': 'Captura de ecrã'}";
+"inbox.sourceScreenshotList" = "{'de': 'Liste', 'fr': 'Liste', 'it': 'Elenco', 'pt-BR': 'Lista', 'pt-PT': 'Lista'}";
+"inbox.sourceReceipt" = "{'de': 'Beleg', 'fr': 'Reçu', 'it': 'Ricevuta', 'pt-BR': 'Recibo', 'pt-PT': 'Recibo'}";
 "inbox.sourceScheduledPayment" = "Geplante Zahlung";
 "inbox.sourceSubscription" = "Abonnement";
 "inbox.sourceApplePay" = "Apple Pay";
@@ -2037,11 +2032,9 @@
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.errorArchivedAccount" = "Dieses Konto ist archiviert. Bearbeite den Entwurf und ändere das Konto, um zu genehmigen.";
 "inbox.errorFutureDate" = "Transaktionen mit zukünftigem Datum können nicht genehmigt werden";
-"inbox.duplicateWarningTitle" = "Possible duplicate";
-"inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
-"inbox.createAnyway" = "Create anyway";
-"inbox.deleteConfirmMessage" = "Delete %d draft(s)?";
-"inbox.approveableCount" = "%d von %d bereit zur Genehmigung";
+"inbox.duplicateWarningTitle" = "{'de': 'Mögliches Duplikat', 'fr': 'Doublon possible', 'it': 'Possibile duplicato', 'pt-BR': 'Possível duplicado', 'pt-PT': 'Possível duplicado'}";
+"inbox.duplicateWarningMessage" = "{'de': 'Es gibt schon eine ähnliche Transaktion. Trotzdem erstellen?', 'fr': 'Une transaction similaire existe déjà. La créer quand même ?', 'it': 'Esiste già una transazione simile. Crearla comunque?', 'pt-BR': 'Já existe uma transação parecida. Criar mesmo assim?', 'pt-PT': 'Já existe uma transação semelhante. Criar mesmo assim?'}";
+"inbox.createAnyway" = "{'de': 'Trotzdem erstellen', 'fr': 'Créer quand même', 'it': 'Crea comunque', 'pt-BR': 'Criar mesmo assim', 'pt-PT': 'Criar mesmo assim'}";
 "inbox.saveLater" = "Später genehmigen";
 "inbox.deleteTitle" = "Entwurf löschen";
 "inbox.deleteMessage" = "Diese Aktion kann nicht rückgängig gemacht werden.";
@@ -6607,3 +6600,12 @@
 "onboarding.accountName.allTogether" = "Mein Geld %@";
 "account.deleteConfirmTitle" = "„%@“ löschen?";
 "account.deleteConfirmMessageEmpty" = "Das Konto hat keine Datensätze. Das kann nicht rückgängig gemacht werden.";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "Sprache";
+"panel.photoShort" = "Foto";
+"inbox.draft.discardToArchived" = "Verwerfen (kommt zu Archiviert)";
+"inbox.draft.deleteForever" = "Endgültig löschen";
+"inbox.draft.movedToArchived" = "Zu Archiviert verschoben";
+"inbox.draft.undo" = "Rückgängig";
+"inbox.bulkSuccess.total" = "%@ insgesamt";

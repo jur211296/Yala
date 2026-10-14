@@ -55,25 +55,26 @@ struct PanelQuickActionsRow: View {
                     identifier: "panel_action_new",
                     action: onManualTap
                 )
-                // Sólo la acción principal lleva texto; las tres de entrada
-                // asistida van con icono. Medido en el simulador el 2026-09-02:
-                // con texto en todas, «Nuevo registro» + «Voz» + «Imagen» ya
-                // dejaban la cuarta píldora cortada contra el borde en un
-                // iPhone 17 Pro EN ESPAÑOL — y el alemán es más largo. Un texto
-                // recortado parece un fallo, no una invitación a deslizar.
+                // Voz y foto llevan su palabra DEBAJO del icono, dentro del mismo
+                // botón (UX 2.2 · L4-1, variante elegida por Jürgen el 2026-10-14).
+                // No al lado: medido en el simulador el 2026-09-02, con texto al
+                // lado en todas, «Nuevo registro» + «Voz» + «Imagen» ya dejaban la
+                // cuarta píldora cortada contra el borde en un iPhone 17 Pro EN
+                // ESPAÑOL —y el alemán es más largo—. Debajo, la palabra no ensancha
+                // el botón más que el icono con su margen.
                 pill(
                     text: nil,
+                    caption: L10n.Panel.voiceShort,
                     icon: "waveform",
                     isLocked: isVoiceLocked,
-                    accessibilityLabel: L10n.Panel.fabVoice,
                     identifier: "panel_action_voice",
                     action: onVoiceTap
                 )
                 pill(
                     text: nil,
+                    caption: L10n.Panel.photoShort,
                     icon: "photo",
                     isLocked: isImageLocked,
-                    accessibilityLabel: L10n.Panel.fabImage,
                     identifier: "panel_action_image",
                     action: onImageTap
                 )
@@ -106,6 +107,7 @@ struct PanelQuickActionsRow: View {
     @ViewBuilder
     private func pill(
         text: String?,
+        caption: String? = nil,
         icon: String,
         isPrimary: Bool = false,
         isLocked: Bool,
@@ -121,28 +123,35 @@ struct PanelQuickActionsRow: View {
             DS.Haptic.selection()
             action()
         } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                ZStack(alignment: .bottomTrailing) {
-                    Image(systemName: icon)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
-                    if isLocked {
-                        Image(systemName: "lock.fill")
-                            // A11Y-DT: candado decorativo sobre el icono, como en FABStackView
-                            .font(.system(size: 8))
-                            .foregroundStyle(DS.Semantic.disabledForeground)
-                            .offset(x: 6, y: 4)
+            Group {
+                if let caption {
+                    // Icono arriba y su palabra debajo. `minHeight` y no alto fijo: con
+                    // texto grande la palabra no cabe en 44 pt y el botón crece en vez
+                    // de cortarla.
+                    VStack(spacing: DS.Spacing.xxs) {
+                        pillIcon(icon, isPrimary: isPrimary, usaDorado: usaDorado, isLocked: isLocked)
+                        Text(caption)
+                            .font(DS.Typography.labelTiny)
+                            .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
+                            .lineLimit(1)
+                            .fixedSize()
                     }
-                }
-                if let text {
-                    Text(text)
-                        .font(DS.Typography.label)
-                        .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
-                        .lineLimit(1)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xxs)
+                } else {
+                    HStack(spacing: DS.Spacing.xs) {
+                        pillIcon(icon, isPrimary: isPrimary, usaDorado: usaDorado, isLocked: isLocked)
+                        if let text {
+                            Text(text)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
+                                .lineLimit(1)
+                        }
+                    }
+                    .padding(.horizontal, text == nil ? DS.Spacing.md : DS.Spacing.lg)
                 }
             }
-            .padding(.horizontal, text == nil ? DS.Spacing.md : DS.Spacing.lg)
-            .frame(height: Self.pillHeight)
+            .frame(minHeight: Self.pillHeight)
             .background {
                 if isPrimary {
                     Capsule().fill(theme.accent)
@@ -174,8 +183,25 @@ struct PanelQuickActionsRow: View {
             x: DS.Shadow.small.x,
             y: DS.Shadow.small.y
         )
-        .accessibilityLabel(accessibilityLabel ?? text ?? "")
+        // VoiceOver lee lo mismo que se ve: «Voz», «Foto» (el nombre accesible contiene la etiqueta visible).
+        .accessibilityLabel(accessibilityLabel ?? text ?? caption ?? "")
         .accessibilityIdentifier(identifier)
+    }
+
+    /// El icono de la píldora, con el candado encima si la acción es Pro y no lo tienes.
+    private func pillIcon(_ icon: String, isPrimary: Bool, usaDorado: Bool, isLocked: Bool) -> some View {
+        ZStack(alignment: .bottomTrailing) {
+            Image(systemName: icon)
+                .font(DS.Typography.label)
+                .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    // A11Y-DT: candado decorativo sobre el icono, como en FABStackView
+                    .font(.system(size: 8))
+                    .foregroundStyle(DS.Semantic.disabledForeground)
+                    .offset(x: 6, y: 4)
+            }
+        }
     }
 
     /// Blanco sobre la píldora principal, degradado `proBadge` en la de IA —el

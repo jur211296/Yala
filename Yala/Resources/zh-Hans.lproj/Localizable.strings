@@ -437,12 +437,6 @@
 "inbox.alert.title.subscriptions" = "有订阅需要查看!";
 "inbox.alert.title.automations" = "新的自动记录!";
 "inbox.alert.title.mixed" = "你的收件箱有新记录!";
-"inbox.alert.message.scheduled" = "%d 笔计划付款已添加到你的收件箱。";
-"inbox.alert.message.subscriptions" = "%d 个订阅已添加到你的收件箱。";
-"inbox.alert.message.mixed.scheduled" = "%d 笔付款";
-"inbox.alert.message.mixed.subscriptions" = "%d 个订阅";
-"inbox.alert.message.mixed.automations" = "%d 条自动记录";
-"inbox.alert.message.mixed.connector" = "和";
 
 // MARK: - Settings
 
@@ -2015,15 +2009,16 @@
 "inbox.delete" = "删除";
 "inbox.noPending" = "没有待处理草稿";
 "inbox.noPendingDescription" = "新的语音和图片草稿将显示在这里。";
-"inbox.bulkHint" = "点击「选择」进行批量操作";
+"inbox.bulkHint" = "点击 ✓ 可一次选择多个";
+"inbox.status.rejected" = "已拒绝";
+"inbox.status.approved" = "已批准";
+"inbox.status.pending" = "待处理";
 "inbox.subtitleMultiplePending" = "%d 笔交易等待中,一步一步来。";
 "inbox.subtitleOnePending" = "一笔交易等待中,有空时查看一下。";
 "inbox.subtitleAllDone" = "收件箱已清空,做得很棒。";
-"inbox.pendingBadge" = "%d 项待处理";
 "inbox.newTag" = "新";
 "inbox.noArchived" = "没有已归档草稿";
 "inbox.noArchivedDescription" = "已审批或已拒绝的草稿将显示在这里。";
-"inbox.selectedCount" = "已选 %d";
 "inbox.editDraft" = "编辑草稿";
 "inbox.cannotApprove" = "无法审批";
 "inbox.sourceVoice" = "语音";
@@ -2044,8 +2039,6 @@
 "inbox.duplicateWarningTitle" = "可能重复";
 "inbox.duplicateWarningMessage" = "已存在类似交易。仍要创建吗?";
 "inbox.createAnyway" = "仍然创建";
-"inbox.deleteConfirmMessage" = "你确定要删除 %d 个草稿吗?";
-"inbox.approveableCount" = "%d / %d 可审批";
 "inbox.saveLater" = "稍后审批";
 "inbox.deleteTitle" = "删除草稿";
 "inbox.deleteMessage" = "此操作无法撤销。";
@@ -6619,3 +6612,12 @@
 "onboarding.accountName.allTogether" = "我的钱 %@";
 "account.deleteConfirmTitle" = "删除「%@」?";
 "account.deleteConfirmMessageEmpty" = "此账户没有记录。此操作无法撤销。";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "语音";
+"panel.photoShort" = "照片";
+"inbox.draft.discardToArchived" = "丢弃（移到已归档）";
+"inbox.draft.deleteForever" = "永久删除";
+"inbox.draft.movedToArchived" = "已移到已归档";
+"inbox.draft.undo" = "撤销";
+"inbox.bulkSuccess.total" = "共 %@";

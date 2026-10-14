@@ -792,5 +792,185 @@
 			<string>%d kategorii</string>
 		</dict>
 	</dict>
+	<key>inbox.pendingBadge</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d oczekujący</string>
+			<key>few</key>
+			<string>%d oczekujące</string>
+			<key>many</key>
+			<string>%d oczekujących</string>
+			<key>other</key>
+			<string>%d oczekujących</string>
+		</dict>
+	</dict>
+	<key>inbox.selectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Wybrano: %d</string>
+			<key>few</key>
+			<string>Wybrano: %d</string>
+			<key>many</key>
+			<string>Wybrano: %d</string>
+			<key>other</key>
+			<string>Wybrano: %d</string>
+		</dict>
+	</dict>
+	<key>inbox.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Czy na pewno chcesz usunąć %d szkic?</string>
+			<key>few</key>
+			<string>Czy na pewno chcesz usunąć %d szkice?</string>
+			<key>many</key>
+			<string>Czy na pewno chcesz usunąć %d szkiców?</string>
+			<key>other</key>
+			<string>Czy na pewno chcesz usunąć %d szkiców?</string>
+		</dict>
+	</dict>
+	<key>inbox.approveableCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d z %2$d gotowy do zatwierdzenia</string>
+			<key>few</key>
+			<string>%1$d z %2$d gotowe do zatwierdzenia</string>
+			<key>many</key>
+			<string>%1$d z %2$d gotowych do zatwierdzenia</string>
+			<key>other</key>
+			<string>%1$d z %2$d gotowych do zatwierdzenia</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.scheduled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Do twojej skrzynki dodano %d zaplanowaną płatność.</string>
+			<key>few</key>
+			<string>Do twojej skrzynki dodano %d zaplanowane płatności.</string>
+			<key>many</key>
+			<string>Do twojej skrzynki dodano %d zaplanowanych płatności.</string>
+			<key>other</key>
+			<string>Do twojej skrzynki dodano %d zaplanowanych płatności.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.subscriptions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Do twojej skrzynki dodano %d subskrypcję.</string>
+			<key>few</key>
+			<string>Do twojej skrzynki dodano %d subskrypcje.</string>
+			<key>many</key>
+			<string>Do twojej skrzynki dodano %d subskrypcji.</string>
+			<key>other</key>
+			<string>Do twojej skrzynki dodano %d subskrypcji.</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.scheduled</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d płatność</string>
+			<key>few</key>
+			<string>%d płatności</string>
+			<key>many</key>
+			<string>%d płatności</string>
+			<key>other</key>
+			<string>%d płatności</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.subscriptions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d subskrypcja</string>
+			<key>few</key>
+			<string>%d subskrypcje</string>
+			<key>many</key>
+			<string>%d subskrypcji</string>
+			<key>other</key>
+			<string>%d subskrypcji</string>
+		</dict>
+	</dict>
+	<key>inbox.alert.message.mixed.automations</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d automatyczny wpis</string>
+			<key>few</key>
+			<string>%d automatyczne wpisy</string>
+			<key>many</key>
+			<string>%d automatycznych wpisów</string>
+			<key>other</key>
+			<string>%d automatycznych wpisów</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

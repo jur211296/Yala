@@ -1791,7 +1791,6 @@
 "import.templateGenerated" = "Plantilla generada";
 "import.title" = "Importar transacciones";
 "inbox.alert.message.mixed.automations" = "%d registros automáticos";
-"inbox.alert.message.mixed.connector" = " y ";
 "inbox.alert.message.mixed.scheduled" = "%d pagos";
 "inbox.alert.message.mixed.subscriptions" = "%d suscripciones";
 "inbox.alert.message.scheduled" = "Se añadieron %d pagos planificados a tu bandeja.";
@@ -1803,14 +1802,17 @@
 "inbox.approveAll" = "Aprobar todo";
 "inbox.approveNext" = "Aprobar siguiente";
 "inbox.approveSuccess" = "Transacción creada";
-"inbox.approveableCount" = "%d de %d listo(s) para aprobar";
+"inbox.approveableCount" = "%1$d de %2$d listos para aprobar";
 "inbox.archived" = "Archivados";
 "inbox.backToInbox" = "Volver a bandeja";
-"inbox.bulkHint" = "Toca Seleccionar para acciones masivas";
+"inbox.bulkHint" = "Tocá ✓ para elegir varios a la vez";
+"inbox.status.rejected" = "rechazado";
+"inbox.status.approved" = "aprobado";
+"inbox.status.pending" = "pendiente";
 "inbox.cannotApprove" = "No se puede aprobar";
 "inbox.createAnyway" = "Crear de todas formas";
 "inbox.delete" = "Eliminar";
-"inbox.deleteConfirmMessage" = "¿Estás seguro de eliminar %d borrador(es)?";
+"inbox.deleteConfirmMessage" = "¿Estás seguro de eliminar %d borradores?";
 "inbox.deleteMessage" = "Esta acción no se puede deshacer.";
 "inbox.deleteTitle" = "Eliminar borrador";
 "inbox.discardChanges" = "Descartar";
@@ -5894,3 +5896,12 @@
 "account.deleteConfirmTitle" = "¿Eliminar «%@»?";
 "account.deleteConfirmMessageEmpty" = "No tiene registros. No se puede deshacer.";
 "account.deleteConfirmMessage" = "Tiene %d registros. No se borran: quedan en Registros, sin cuenta. Si solo querés dejar de verla, archivala. No se puede deshacer.";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "Voz";
+"panel.photoShort" = "Foto";
+"inbox.draft.discardToArchived" = "Descartar (va a Archivados)";
+"inbox.draft.deleteForever" = "Eliminar para siempre";
+"inbox.draft.movedToArchived" = "Lo moviste a Archivados";
+"inbox.draft.undo" = "Deshacer";
+"inbox.bulkSuccess.total" = "%@ en total";

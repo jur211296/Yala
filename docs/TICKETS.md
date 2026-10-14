@@ -133,6 +133,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | done | tickets/done/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
+| balance-chart-voiceover-reads-base-to-monto | backlog | tickets/backlog/balance-chart-voiceover-reads-base-to-monto.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
@@ -592,6 +593,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
+| new-record-drafts-banner-says-abrir-inbox | backlog | tickets/backlog/new-record-drafts-banner-says-abrir-inbox.md |
 | new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | done | tickets/done/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
@@ -604,6 +606,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | onboarding-login-should-match-the-sep15-reference | qa | tickets/qa/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
+| one-off-scheduled-payment-row-says-monthly | backlog | tickets/backlog/one-off-scheduled-payment-row-says-monthly.md |
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
 | opening-balance-ticks-the-first-expense-step | backlog | tickets/backlog/opening-balance-ticks-the-first-expense-step.md |
@@ -764,6 +767,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | saving-a-mismatched-transaction-relabels-it-without-converting | done | tickets/done/saving-a-mismatched-transaction-relabels-it-without-converting.md |
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
+| scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payment-save-does-nothing-when-a-field-is-missing | backlog | tickets/backlog/scheduled-payment-save-does-nothing-when-a-field-is-missing.md |
 | scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | done | tickets/done/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |

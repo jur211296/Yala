@@ -437,12 +437,6 @@
 "inbox.alert.title.subscriptions" = "確認すべきサブスクリプション！";
 "inbox.alert.title.automations" = "新しい自動記録！";
 "inbox.alert.title.mixed" = "受信箱に新しい記録があります！";
-"inbox.alert.message.scheduled" = "%d件の予定支払いが受信箱に追加されました。";
-"inbox.alert.message.subscriptions" = "%d件のサブスクリプションが受信箱に追加されました。";
-"inbox.alert.message.mixed.scheduled" = "%d件の支払い";
-"inbox.alert.message.mixed.subscriptions" = "%d件のサブスクリプション";
-"inbox.alert.message.mixed.automations" = "%d件の自動記録";
-"inbox.alert.message.mixed.connector" = "と";
 
 // MARK: - Settings
 
@@ -2015,15 +2009,16 @@
 "inbox.delete" = "削除";
 "inbox.noPending" = "保留中のドラフトはありません";
 "inbox.noPendingDescription" = "新しい音声や画像のドラフトはここに表示されます。";
-"inbox.bulkHint" = "一括操作するには「選択」をタップ";
+"inbox.bulkHint" = "✓をタップすると複数選択できます";
+"inbox.status.rejected" = "却下済み";
+"inbox.status.approved" = "承認済み";
+"inbox.status.pending" = "保留中";
 "inbox.subtitleMultiplePending" = "%d件の取引が待機中、一歩ずつ進めましょう。";
 "inbox.subtitleOnePending" = "1件の取引が待機中、お時間のあるときに確認してください。";
 "inbox.subtitleAllDone" = "受信箱はゼロです、お疲れさまでした。";
-"inbox.pendingBadge" = "%d件保留中";
 "inbox.newTag" = "新規";
 "inbox.noArchived" = "アーカイブ済みのドラフトはありません";
 "inbox.noArchivedDescription" = "承認・却下したドラフトはここに表示されます。";
-"inbox.selectedCount" = "%d件選択中";
 "inbox.editDraft" = "ドラフトを編集";
 "inbox.cannotApprove" = "承認できません";
 "inbox.sourceVoice" = "音声";
@@ -2044,8 +2039,6 @@
 "inbox.duplicateWarningTitle" = "重複の可能性があります";
 "inbox.duplicateWarningMessage" = "似た取引がすでに存在します。それでも作成しますか？";
 "inbox.createAnyway" = "それでも作成";
-"inbox.deleteConfirmMessage" = "%d件のドラフトを削除してもよろしいですか？";
-"inbox.approveableCount" = "%d/%d件が承認可能";
 "inbox.saveLater" = "あとで承認";
 "inbox.deleteTitle" = "ドラフトを削除";
 "inbox.deleteMessage" = "この操作は取り消せません。";
@@ -6619,3 +6612,12 @@
 "onboarding.accountName.allTogether" = "マイマネー %@";
 "account.deleteConfirmTitle" = "「%@」を削除しますか？";
 "account.deleteConfirmMessageEmpty" = "この口座には記録がありません。この操作は取り消せません。";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "音声";
+"panel.photoShort" = "写真";
+"inbox.draft.discardToArchived" = "破棄（アーカイブ済みへ）";
+"inbox.draft.deleteForever" = "完全に削除";
+"inbox.draft.movedToArchived" = "アーカイブ済みに移動しました";
+"inbox.draft.undo" = "取り消す";
+"inbox.bulkSuccess.total" = "合計 %@";

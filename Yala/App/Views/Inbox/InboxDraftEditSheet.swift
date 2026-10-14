@@ -376,17 +376,43 @@ struct InboxDraftEditSheet: View {
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .accessibilityLabel(L10n.Action.delete)
-            } else {
-                // Pending drafts: reject button only
-                Button {
-                    rejectDraft()
+            } else if canDiscard || canDeleteForever {
+                // Pendiente: lo que destruye va en un menú «⋯» con texto, y arriba queda una sola X, la que cierra
+                // (UX 2.2 · L4-5, variante 2). Antes era una ⓧ roja sin texto que se leía como «cerrar» o «borrar».
+                Menu {
+                    if canDiscard {
+                        Button {
+                            rejectDraft()
+                        } label: {
+                            Label(L10n.Inbox.discardToArchived, systemImage: "archivebox")
+                        }
+                        .accessibilityIdentifier("draft_editor_discard")
+                    }
+                    if canDeleteForever {
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            Label(L10n.Inbox.deleteForever, systemImage: "trash")
+                        }
+                        .accessibilityIdentifier("draft_editor_delete_forever")
+                    }
                 } label: {
-                    Image(systemName: "xmark.circle")
-                        .foregroundStyle(DS.Semantic.errorForeground)
+                    Image(systemName: "ellipsis")
                 }
-                .accessibilityLabel(L10n.Inbox.reject)
+                .accessibilityLabel(L10n.Common.moreOptions)
+                .accessibilityIdentifier("draft_editor_more")
             }
         }
+    }
+
+    /// Lo que el servicio deja hacer con este borrador: el menú no ofrece lo que `DraftService` rechazaría sin decir
+    /// nada (un gasto de grupo solo se quita desde su grupo; la marca viva de una liquidación y el aviso de importe
+    /// cambiado no se borran). Mismas condiciones que `rejectDraft` y `deleteDraft`.
+    private var canDiscard: Bool { !draft.sourceType.blocksInboxDismissal }
+
+    private var canDeleteForever: Bool {
+        !draft.sourceType.blocksInboxDismissal && !draft.isLiveSettlementApprovalMark
+            && !draft.isSettlementAmountChangeNotice
     }
 
     private var accountSheet: some View {
@@ -1086,10 +1112,32 @@ struct InboxDraftEditSheet: View {
         do {
             try draftService.rejectDraft(draft)
             dismiss()
+            showDiscardedNotice()
         } catch {
             #if DEBUG
             print("InboxDraftEditSheet: Error rejecting draft: \(error)")
             #endif
+        }
+    }
+
+    /// «Lo moviste a Archivados · Deshacer» (UX 2.2 · L4-5). Sobrevive al cierre del editor: desde la voz, la persona
+    /// vuelve al Panel y el aviso le dice dónde quedó el gasto. «Deshacer» lo devuelve a pendientes.
+    private func showDiscardedNotice() {
+        let draft = draft
+        let draftService = draftService
+        let context = modelContext
+        DraftDiscardUndoNotice.show {
+            // Si en esos segundos se borró o cambió de estado por otro camino, no hay nada que deshacer.
+            guard !draft.isDeleted, draft.status == .rejected else { return }
+            draftService.setContext(context)
+            do {
+                // La Bandeja abierta lo vuelve a enseñar sola: su lista lee el estado de cada borrador.
+                try draftService.returnToPending(draft)
+            } catch {
+                #if DEBUG
+                print("InboxDraftEditSheet: Error undoing discard: \(error)")
+                #endif
+            }
         }
     }
 

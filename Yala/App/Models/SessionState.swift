@@ -22,7 +22,7 @@ struct PendingInboxNotification: Equatable {
     var isEmpty: Bool { total == 0 }
 
     /// Builds breakdown message for mixed type
-    /// Example: "2 pagos planificados y 3 registros automáticos"
+    /// Example: "2 pagos, 1 suscripción y 3 registros automáticos"
     var mixedMessageBreakdown: String {
         var parts: [String] = []
         if scheduledPayments > 0 {
@@ -34,7 +34,15 @@ struct PendingInboxNotification: Equatable {
         if automations > 0 {
             parts.append(L10n.Inbox.Alert.Message.Mixed.automations(automations))
         }
-        return parts.joined(separator: L10n.Inbox.Alert.Message.Mixed.connector)
+        return Self.joinedBreakdown(parts, locale: AppLocale.current)
+    }
+
+    /// Une las partes como las une el idioma («2 pagos, 1 suscripción y 1 registro automático»). Con un conector
+    /// fijo, tres tipos salían con dos «y» seguidas («2 pagos y 1 suscripciones y 1 registros automáticos»).
+    static func joinedBreakdown(_ parts: [String], locale: Locale) -> String {
+        let formatter = ListFormatter()
+        formatter.locale = locale
+        return formatter.string(from: parts) ?? parts.joined(separator: ", ")
     }
 
     /// Predominant type for message selection

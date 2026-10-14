@@ -82,4 +82,75 @@ final class InboxCrudUITests: XCTestCase {
             "El segundo draft pendiente desapareció inesperadamente."
         )
     }
+
+    /// Rechazar deslizando lo lleva a Archivados EN EL ACTO (auditoría UX 2.2 · lote 4 · B3). La retirada optimista lo
+    /// quitaba de la lista y nadie recargaba: Archivados decía «Sin borradores archivados» hasta cerrar y volver a abrir.
+    func test_rejectingDraftBySwipeShowsItInArchivedRightAway() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let rowA = app.buttons["inbox_draft_row_\(draftA)"]
+        XCTAssertTrue(rowA.waitForExistence(timeout: 5), "No apareció el draft a rechazar.")
+
+        // Deslizamiento CORTO: el largo dispara la primera acción (Eliminar), que es otro caso.
+        let start = rowA.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
+        let end = rowA.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: end)
+
+        let reject = app.buttons["inbox_swipe_reject"]
+        XCTAssertTrue(reject.waitForExistence(timeout: 5), "El deslizamiento no mostró Rechazar.")
+        reject.tap()
+        XCTAssertTrue(rowA.waitForNonExistence(timeout: 5), "El draft rechazado sigue en pendientes.")
+
+        let archived = app.buttons["inbox_filter_archived"]
+        XCTAssertTrue(archived.waitForExistence(timeout: 5), "No apareció el filtro Archivados.")
+        archived.tap()
+
+        XCTAssertTrue(
+            app.buttons["inbox_draft_row_\(draftA)"].waitForExistence(timeout: 5),
+            "El draft rechazado no salió en Archivados sin cerrar y volver a abrir la Bandeja."
+        )
+    }
+
+    /// Descartar desde el editor (auditoría UX 2.2 · lote 4 · L4-5, variante 2): la ⓧ roja sin texto pasó a un menú
+    /// «⋯» con «Descartar (va a Archivados)», y al descartar sale «Lo moviste a Archivados · Deshacer». «Deshacer» lo
+    /// devuelve a pendientes y la Bandeja lo enseña sin cerrar y volver a abrir.
+    func test_discardingFromEditorMenuOffersUndoThatBringsItBack() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let rowA = app.buttons["inbox_draft_row_\(draftA)"]
+        XCTAssertTrue(rowA.waitForExistence(timeout: 5), "No apareció el draft a descartar.")
+        rowA.tap()
+
+        let more = app.buttons["draft_editor_more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "El editor no tiene el menú «⋯».")
+        more.tap()
+
+        let discard = app.buttons["draft_editor_discard"]
+        XCTAssertTrue(discard.waitForExistence(timeout: 5), "El menú «⋯» no ofrece Descartar.")
+        XCTAssertTrue(
+            app.buttons["draft_editor_delete_forever"].exists, "El menú «⋯» no ofrece Eliminar para siempre."
+        )
+        discard.tap()
+
+        // El editor se cierra, el borrador sale de pendientes y el aviso dice a dónde fue.
+        let undo = app.buttons["draft_discard_undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "Tras descartar no salió el aviso con «Deshacer».")
+        XCTAssertTrue(rowA.waitForNonExistence(timeout: 5), "El draft descartado sigue en pendientes.")
+
+        undo.tap()
+
+        XCTAssertTrue(
+            app.buttons["inbox_draft_row_\(draftA)"].waitForExistence(timeout: 5),
+            "«Deshacer» no devolvió el draft a pendientes (o la Bandeja no recargó)."
+        )
+        XCTAssertTrue(undo.waitForNonExistence(timeout: 5), "El aviso no se fue tras tocar «Deshacer».")
+    }
 }
