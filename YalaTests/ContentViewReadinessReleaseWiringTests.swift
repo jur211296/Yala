@@ -98,6 +98,19 @@ struct ContentViewReadinessReleaseWiringTests {
         #expect(drain.contains("dismissWelcomeChainForSupersedingIntent(for: next.id) applyContentViewReadiness() }"))
     }
 
+    @Test func drain_blocksWithWhatItsHandlerRaised_beforeTheNextRevisionTick() throws {
+        // La otra mitad, medida el 2026-10-13 en el CI (iOS 26.5, ticket
+        // `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`): el manejador enciende la condición viva
+        // del aviso, `drainNext` ya subió la `revision`, y el `onChange(of: revision)` corría antes que el observador que
+        // bloquea — la oferta salía encima del aviso en 8 de ~60 arranques. El `defer` bloquea en esta misma vuelta. Va
+        // tras sacar el intent (sin intent no hay manejador) y por `update…`, que no libera en el acto: un
+        // `applyContentViewReadiness` aquí haría `markReady` dentro de la actualización otra vez.
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let drain = try Self.body(of: "private func drainContentViewIntents()", in: vista)
+        #expect(drain.contains("return } defer { updateContentViewReadiness() } switch intent {"))
+        #expect(Self.occurrences(of: "defer {", in: drain) == 1)
+    }
+
     @Test func observers_recomputeThroughTheDeferredRelease() throws {
         // Los 28 `onChange` de `ReadinessGateObservers` son justo los que corrían dentro de la actualización.
         let vista = try Self.code("Yala/App/ContentView.swift")

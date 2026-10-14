@@ -1229,6 +1229,15 @@ struct ContentView: View {
             }
             return
         }
+        // **Lo que el manejador encienda tapa la cola en ESTA vuelta, no en la del `onChange` que lo observa.** El aviso
+        // de vaciado remoto, el de bandeja o la oferta suben su condición viva aquí abajo, pero la matriz solo se
+        // entera por `ReadinessGateObservers`, y `drainNext` acaba de subir la `revision`: medido el 2026-10-13 en el CI
+        // (iOS 26.5), el `onChange(of: revision)` corría ANTES que el observador, con el router aún «listo», y drenaba
+        // la oferta encima del aviso — 8 de ~60 arranques. Una de las dos presentaciones del anchor se perdía: o el aviso
+        // no salía, o la oferta quedaba retenida para siempre tras contestarlo (ticket
+        // `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`). `updateContentViewReadiness` bloquea en
+        // el acto y libera una vuelta después, así que esto no añade ningún drenaje.
+        defer { updateContentViewReadiness() }
         switch intent {
         case .showInboxAlert(let notif):
             activeInboxNotification = notif
