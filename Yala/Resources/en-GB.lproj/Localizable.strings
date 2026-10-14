@@ -723,7 +723,7 @@
 "account.archive" = "Archive account";
 "account.archived" = "Archived";
 "account.balance" = "Balance";
-"account.changeInitialBalanceDesc" = "Enter the correct balance and we'll change the initial balance in your account. Use this if you haven't recorded in a long time.";
+"account.changeInitialBalanceDesc" = "Enter how much the account started with and we'll recalculate today's balance from your records. Use this if the starting balance was wrong.";
 "account.changeInitialBalanceName" = "Change initial balance";
 "account.configure" = "Configure Account";
 "account.creditCard.paymentDay" = "Payment day";
@@ -748,7 +748,7 @@
 "account.newBalance" = "New balance";
 "account.positive" = "Positive";
 "account.secondaryCurrency.accept" = "Add";
-"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency.";
+"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency & Exchange.";
 "account.secondaryCurrency.reject" = "No, thanks";
 "account.secondaryCurrency.title" = "Secondary Currency";
 "account.selectAccount" = "Select account";
@@ -3117,7 +3117,7 @@
 "subcategory.supportStaff" = "Support staff";
 "subcategory.taxes" = "Taxes";
 "subcategory.tech" = "Tech & accessories";
-"subcategory.transferDescription" = "There are %d transactions in \"%@\". Choose what to do with them before deleting.";
+"subcategory.transferDescription" = "There are %1$d transactions in \"%2$@\". Choose what to do with them before deleting.";
 "subcategory.transferHeader" = "This subcategory has transactions";
 "subcategory.transferTitle" = "Transfer Transactions";
 "subcategory.transferToSpecific" = "Transfer to another subcategory";
@@ -5882,3 +5882,6 @@
 "onboarding.calc.creditCard.owed" = "You owe";
 "onboarding.calc.creditCard.formula" = "Limit **%1$@**  −  Available **%2$@**";
 "onboarding.accountName.allTogether" = "My money %@";
+"account.deleteConfirmTitle" = "Delete ‘%@’?";
+"account.deleteConfirmMessageEmpty" = "It has no records. This can't be undone.";
+"account.deleteConfirmMessage" = "It has %d records. They aren't deleted: they stay in Records, with no account. If you just want to stop seeing the account, archive it. This can't be undone.";

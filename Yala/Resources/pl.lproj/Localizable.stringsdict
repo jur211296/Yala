@@ -602,5 +602,85 @@
 			<string>%d zmiany czeka na połączenie</string>
 		</dict>
 	</dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>To konto ma %d wpis. Nie zostanie usunięty: zostanie we Wpisach, bez konta. Jeśli chcesz tylko przestać je widzieć, zarchiwizuj je. Tej operacji nie można cofnąć.</string>
+			<key>few</key>
+			<string>To konto ma %d wpisy. Nie zostaną usunięte: zostaną we Wpisach, bez konta. Jeśli chcesz tylko przestać je widzieć, zarchiwizuj je. Tej operacji nie można cofnąć.</string>
+			<key>many</key>
+			<string>To konto ma %d wpisów. Nie zostaną usunięte: zostaną we Wpisach, bez konta. Jeśli chcesz tylko przestać je widzieć, zarchiwizuj je. Tej operacji nie można cofnąć.</string>
+			<key>other</key>
+			<string>To konto ma %d wpisu. Nie zostaną usunięte: zostaną we Wpisach, bez konta. Jeśli chcesz tylko przestać je widzieć, zarchiwizuj je. Tej operacji nie można cofnąć.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ta kategoria ma podkategorię z %d transakcją. Aby ją usunąć, najpierw usuń lub przenieś tę transakcję z jej podkategorii.</string>
+			<key>few</key>
+			<string>Ta kategoria ma podkategorie z %d transakcjami. Aby ją usunąć, najpierw usuń lub przenieś transakcje z każdej podkategorii.</string>
+			<key>many</key>
+			<string>Ta kategoria ma podkategorie z %d transakcjami. Aby ją usunąć, najpierw usuń lub przenieś transakcje z każdej podkategorii.</string>
+			<key>other</key>
+			<string>Ta kategoria ma podkategorie z %d transakcji. Aby ją usunąć, najpierw usuń lub przenieś transakcje z każdej podkategorii.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d transakcja zostanie trwale usunięta. Tej operacji nie można cofnąć.</string>
+			<key>few</key>
+			<string>%d transakcje zostaną trwale usunięte. Tej operacji nie można cofnąć.</string>
+			<key>many</key>
+			<string>%d transakcji zostanie trwale usuniętych. Tej operacji nie można cofnąć.</string>
+			<key>other</key>
+			<string>%d transakcji zostanie trwale usuniętych. Tej operacji nie można cofnąć.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>W „%2$@” jest %1$d transakcja. Wybierz, co z nią zrobić przed usunięciem.</string>
+			<key>few</key>
+			<string>W „%2$@” są %1$d transakcje. Wybierz, co z nimi zrobić przed usunięciem.</string>
+			<key>many</key>
+			<string>W „%2$@” jest %1$d transakcji. Wybierz, co z nimi zrobić przed usunięciem.</string>
+			<key>other</key>
+			<string>W „%2$@” jest %1$d transakcji. Wybierz, co z nimi zrobić przed usunięciem.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

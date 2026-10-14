@@ -64,7 +64,10 @@ struct CurrencySelectorView: View {
         }
         .refreshable {}
         .yalaScreenBackground(.subtle)
-        .navigationTitle(L10n.Settings.preferredCurrency)
+        // «Moneda», no «Divisa preferida»: aquí se elige la de una cuenta o un grupo, nunca la de la app
+        // (esa la elige `CurrencyPickerSheet`). Con el título viejo, cambiar la moneda de una cuenta
+        // parecía cambiar la de toda la app (auditoría UX 2.2, lote 7, B5).
+        .navigationTitle(L10n.Account.currency)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {

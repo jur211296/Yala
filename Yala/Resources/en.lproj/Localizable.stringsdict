@@ -482,5 +482,69 @@
 			<string>%d changes waiting for a connection</string>
 		</dict>
 	</dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>It has %d record. It isn't deleted: it stays in Records, with no account. If you just want to stop seeing the account, archive it. This can't be undone.</string>
+			<key>other</key>
+			<string>It has %d records. They aren't deleted: they stay in Records, with no account. If you just want to stop seeing the account, archive it. This can't be undone.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>This category has a subcategory with %d transaction. To delete it, first delete or transfer that transaction from its subcategory.</string>
+			<key>other</key>
+			<string>This category has subcategories with %d transactions. To delete it, first delete or transfer the transactions from each subcategory.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d transaction will be permanently deleted. This action cannot be undone.</string>
+			<key>other</key>
+			<string>%d transactions will be permanently deleted. This action cannot be undone.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>There is %1$d transaction in "%2$@". Choose what to do with it before deleting.</string>
+			<key>other</key>
+			<string>There are %1$d transactions in "%2$@". Choose what to do with them before deleting.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

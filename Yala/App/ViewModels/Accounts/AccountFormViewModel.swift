@@ -374,8 +374,12 @@ final class AccountFormViewModel {
             let existingInitial = existingInitialBalance
             isPositive = existingInitial >= 0
             balanceText = String(format: "%.2f", abs(existingInitial))
+        } else {
+            // .byEntry: el campo queda vacío (hay que escribir el saldo nuevo), pero el signo arranca en el
+            // del saldo de hoy. Con «Positivo» fijo, quien debe S/ 1,200 en su tarjeta y escribe «1200»
+            // obtenía +1,200 y un ajuste de +2,400 (auditoría UX 2.2, lote 7, B6).
+            isPositive = currentBalance >= 0
         }
-        // .byEntry: balanceText stays empty — user must explicitly enter target
 
         hasInitializedBalance = true
     }
@@ -388,9 +392,9 @@ final class AccountFormViewModel {
             isPositive = existingInitial >= 0
             balanceText = String(format: "%.2f", abs(existingInitial))
         } else {
-            // .byEntry: clear to require explicit user input
+            // .byEntry: clear to require explicit user input; el signo, el del saldo de hoy (B6).
             balanceText = ""
-            isPositive = true
+            isPositive = currentBalance >= 0
         }
     }
 

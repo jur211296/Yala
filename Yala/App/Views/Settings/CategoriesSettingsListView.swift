@@ -66,6 +66,19 @@ struct CategoriesSettingsListView: View {
             }
         }
         .alert(
+            L10n.Category.deleteConfirmTitle,
+            isPresented: $viewModel.showDeleteConfirmation
+        ) {
+            Button(L10n.Category.delete, role: .destructive) {
+                viewModel.confirmCategoryDeletion()
+            }
+            Button(L10n.Action.cancel, role: .cancel) {
+                viewModel.categoryPendingDeletion = nil
+            }
+        } message: {
+            Text(L10n.Category.deleteConfirmMessage)
+        }
+        .alert(
             L10n.Category.cannotDeleteTitle,
             isPresented: $viewModel.showCannotDeleteAlert
         ) {
@@ -116,6 +129,7 @@ struct CategoriesSettingsListView: View {
                         .font(DS.Typography.subheadline)
                         .foregroundStyle(.primary)
                 }
+                .accessibilityIdentifier("categories_edit_button")
             }
             .padding(.horizontal, DS.Chip.paddingV)
 
@@ -131,6 +145,7 @@ struct CategoriesSettingsListView: View {
                                     .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
+                            .accessibilityIdentifier("categories_delete_\(category.name)")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }
@@ -183,6 +198,7 @@ struct CategoriesSettingsListView: View {
                                     .foregroundStyle(DS.Semantic.errorForeground)
                             }
                             .accessibilityLabel(L10n.Accessibility.deleteCategory)
+                            .accessibilityIdentifier("categories_delete_\(category.name)")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
                         }

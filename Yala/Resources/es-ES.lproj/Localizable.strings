@@ -650,7 +650,7 @@
 "account.archive" = "Archivar cuenta";
 "account.archived" = "Archivada";
 "account.balance" = "Balance";
-"account.changeInitialBalanceDesc" = "Escribe el saldo correcto y cambiaremos el saldo inicial en tu cuenta. Usa esto si no has registrado durante mucho tiempo.";
+"account.changeInitialBalanceDesc" = "Escribe con cuánto empezó la cuenta y recalculamos su saldo de hoy con tus registros. Úsalo si el saldo de partida estaba mal.";
 "account.changeInitialBalanceName" = "Cambiar saldo inicial";
 "account.configure" = "Configurar cuenta";
 "account.creditCard.paymentDay" = "Día de pago";
@@ -675,7 +675,7 @@
 "account.newBalance" = "Nuevo saldo";
 "account.positive" = "Positivo";
 "account.secondaryCurrency.accept" = "Agregar";
-"account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Quieres ver el tipo de cambio %@ → %@? Puedes cambiarlo en Perfil > Divisa.";
+"account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Quieres ver el tipo de cambio %@ → %@? Puedes cambiarlo en Perfil > Divisa y cambio.";
 "account.secondaryCurrency.reject" = "No, gracias";
 "account.secondaryCurrency.title" = "Divisa secundaria";
 "account.selectAccount" = "Seleccionar cuenta";
@@ -685,8 +685,8 @@
 "account.sign.inFavor" = "A favor";
 "account.type" = "Tipo";
 "account.type.cash" = "Efectivo";
-"account.type.creditCard" = "Tarjeta de Crédito";
-"account.type.current" = "Cuenta Corriente";
+"account.type.creditCard" = "Tarjeta de crédito";
+"account.type.current" = "Cuenta corriente";
 "account.type.general" = "General";
 "account.type.investment" = "Inversión";
 "account.type.loan" = "Préstamo";
@@ -1681,7 +1681,7 @@
 "import.templateDescription" = "Usa nuestra plantilla oficial para asegurar que el formato sea correcto.";
 "import.templateGenerated" = "Plantilla generada";
 "import.templateGeneratedMessage" = "La plantilla se generó correctamente. Ahora puedes editarla y volver a esta pantalla para importarla.";
-"import.title" = "Importar Transacciones";
+"import.title" = "Importar transacciones";
 "inbox.alert.message.mixed.automations" = "%d registros automáticos";
 "inbox.alert.message.mixed.connector" = " y ";
 "inbox.alert.message.mixed.scheduled" = "%d pagos";
@@ -2653,7 +2653,7 @@
 "settings.colorfulIconsDisabledByTheme" = "Desactivado automáticamente por el tema actual.";
 "settings.contact" = "Contacta con nosotros";
 "settings.currency" = "Moneda";
-"settings.currencyAndExchange" = "Divisa y Cambio";
+"settings.currencyAndExchange" = "Divisa y cambio";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencyDescription" = "Elige tu moneda principal y consulta los tipos de cambio actualizados.";
 "settings.currencyFormat" = "Formato de moneda";
@@ -3094,7 +3094,7 @@
 "subcategory.supportStaff" = "Personal de apoyo";
 "subcategory.taxes" = "Impuestos";
 "subcategory.tech" = "Tecnología y accesorios";
-"subcategory.transferDescription" = "Hay %d transacciones en \"%@\". Elige qué hacer con ellas antes de eliminar.";
+"subcategory.transferDescription" = "Hay %1$d transacciones en \"%2$@\". Elige qué hacer con ellas antes de eliminar.";
 "subcategory.transferHeader" = "Esta subcategoría tiene transacciones";
 "subcategory.transferTitle" = "Transferir transacciones";
 "subcategory.transferToSpecific" = "Transferir a otra subcategoría";
@@ -5898,3 +5898,6 @@
 "onboarding.calc.creditCard.owed" = "Debes";
 "onboarding.calc.creditCard.formula" = "Línea **%1$@**  −  Disponible **%2$@**";
 "onboarding.accountName.allTogether" = "Mi dinero %@";
+"account.deleteConfirmTitle" = "¿Eliminar «%@»?";
+"account.deleteConfirmMessageEmpty" = "No tiene registros. No se puede deshacer.";
+"account.deleteConfirmMessage" = "Tiene %d registros. No se borran: quedan en Registros, sin cuenta. Si solo quieres dejar de verla, archívala. No se puede deshacer.";

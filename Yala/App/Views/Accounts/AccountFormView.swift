@@ -19,6 +19,8 @@ struct AccountFormView: View {
 
     @State private var viewModel: AccountFormViewModel
     @State private var showBalanceCalculator: Bool = false
+    /// «Eliminar cuenta» pregunta antes de borrar (ticket `deleting-an-account-asks-nothing`).
+    @State private var showDeleteConfirmation: Bool = false
     @State private var calcFieldState = BalanceCalculatorFieldState()
     @FocusState private var focusedField: Field?
     /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
@@ -263,6 +265,12 @@ struct AccountFormView: View {
                 Text(L10n.Account.CurrencyChange.ratesUnavailableMessage)
             }
         )
+        .modifier(AccountDeleteConfirmation(
+            isPresented: $showDeleteConfirmation,
+            accountName: viewModel.accountToEdit?.name ?? viewModel.name,
+            recordCount: viewModel.accountTransactions.count,
+            onConfirm: handleDeleteTapped
+        ))
         .overlay {
             if viewModel.isConvertingCurrency {
                 currencyConversionOverlay
@@ -755,7 +763,7 @@ struct AccountFormView: View {
                     SubsectionDivider()
 
                     Button(role: .destructive) {
-                        handleDeleteTapped()
+                        showDeleteConfirmation = true
                     } label: {
                         HStack {
                             Spacer()
@@ -763,6 +771,7 @@ struct AccountFormView: View {
                             Spacer()
                         }
                     }
+                    .accessibilityIdentifier("account_delete_button")
                     .padding()
                 }
             }
@@ -884,5 +893,37 @@ struct AccountFormView: View {
             viewModel.deleteErrorMessage = error.localizedDescription
             viewModel.isShowingDeleteError = true
         }
+    }
+}
+
+// MARK: - Confirmación de borrado
+
+/// La alerta de «Eliminar cuenta»: dice cuántos registros tiene la cuenta y qué les pasa.
+///
+/// Va en un modificador propio y no en la cadena del `body`, que ya lleva siete alertas: el compilador del CI
+/// (Xcode 26.6) se rinde antes con cadenas largas (`swiftui-ds.md`). Los botones van con texto fijo: el
+/// builder de `actions` de un `.alert` no admite etiquetas que dependan del estado.
+///
+/// Lo que dice es lo que pasa, medido: `Account.transactions` es `.nullify`, así que los registros se quedan
+/// sin cuenta, y `RecordsViewModel` los sigue listando (`guard let account = tx.account else { return true }`).
+struct AccountDeleteConfirmation: ViewModifier {
+    @Binding var isPresented: Bool
+    let accountName: String
+    let recordCount: Int
+    let onConfirm: () -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(L10n.Account.deleteConfirmTitle(accountName), isPresented: $isPresented) {
+            Button(L10n.Action.delete, role: .destructive) { onConfirm() }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(Self.message(recordCount: recordCount))
+        }
+    }
+
+    static func message(recordCount: Int) -> String {
+        recordCount > 0
+            ? L10n.Account.deleteConfirmMessage(recordCount)
+            : L10n.Account.deleteConfirmMessageEmpty
     }
 }

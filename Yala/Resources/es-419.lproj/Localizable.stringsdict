@@ -482,5 +482,69 @@
 			<string>%d cambios esperando conexión</string>
 		</dict>
 	</dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tiene %d registro. No se borra: queda en Registros, sin cuenta. Si solo quieres dejar de verla, archívala. No se puede deshacer.</string>
+			<key>other</key>
+			<string>Tiene %d registros. No se borran: quedan en Registros, sin cuenta. Si solo quieres dejar de verla, archívala. No se puede deshacer.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Esta categoría tiene una subcategoría con %d transacción. Para eliminarla, primero elimina o transfiere esa transacción desde su subcategoría.</string>
+			<key>other</key>
+			<string>Esta categoría tiene subcategorías con %d transacciones. Para eliminarla, primero elimina o transfiere las transacciones desde cada subcategoría.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Se eliminará permanentemente %d transacción. Esta acción no se puede deshacer.</string>
+			<key>other</key>
+			<string>Se eliminarán permanentemente %d transacciones. Esta acción no se puede deshacer.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Hay %1$d transacción en "%2$@". Elige qué hacer con ella antes de eliminar.</string>
+			<key>other</key>
+			<string>Hay %1$d transacciones en "%2$@". Elige qué hacer con ellas antes de eliminar.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
