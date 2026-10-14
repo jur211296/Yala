@@ -50,9 +50,9 @@
         "F-ACC-05"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/AccountsCrudUITests | 2026-10-03 (archived-accounts-still-count-in-the-panel-total): archivar una cuenta enciende «Excluir de las estadísticas» y lo avisa bajo el toggle; re-incluirla a mano retira el aviso sin desarchivar, y desarchivar en la misma edición deshace solo la auto-exclusión. XCUI: test_archivingAccount_turnsOnExcludeAndShowsNotice; unit: AccountFormViewModelTests (archiving_*/unarchiving_*). | 2026-09-09: el selector de divisa del formulario de cuenta ya no es un NavigationLink liso — se bloquea (con el motivo a la vista) cuando el histórico lo manda otra entidad, y pide confirmación cuando hay que reexpresarlo. Red en unit: AccountFormCurrencyGateTests. Área fx-conversion-persistence.",
+      "coverage": "xcuitest:YalaUITests/AccountsCrudUITests | 2026-10-03 (archived-accounts-still-count-in-the-panel-total): archivar una cuenta enciende «Excluir de las estadísticas» y lo avisa bajo el toggle; re-incluirla a mano retira el aviso sin desarchivar, y desarchivar en la misma edición deshace solo la auto-exclusión. XCUI: test_archivingAccount_turnsOnExcludeAndShowsNotice; unit: AccountFormViewModelTests (archiving_*/unarchiving_*). | 2026-09-09: el selector de divisa del formulario de cuenta ya no es un NavigationLink liso — se bloquea (con el motivo a la vista) cuando el histórico lo manda otra entidad, y pide confirmación cuando hay que reexpresarlo. Red en unit: AccountFormCurrencyGateTests. Área fx-conversion-persistence. | 2026-10-14 (auditoría UX 2.2 lote 7): «Eliminar cuenta» pregunta y dice cuántos registros tiene y que se quedan en Registros sin cuenta (ticket deleting-an-account-asks-nothing). XCUI: test_deleteAccount_asksFirst_cancelKeepsIt_confirmDeletesIt; unit: AccountAdjustmentSignTests (el signo del ajuste arranca en el del saldo de hoy).",
       "owner": "",
-      "lastVerified": "2026-10-03"
+      "lastVerified": "2026-10-14"
     },
     {
       "area": "advanced-filters-exclude-include",
@@ -273,9 +273,9 @@
         "F-CAT-02"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/CategoriesCrudUITests + 2026-08-05: el centinela del seed (`seedCategoriesExecuted`) pasa a estar namespaceado por STORE en `CategorySeedSentinel`. Bajo `-uitest` los datos viven en `YalaModel-UITest` y `UserDefaults.standard` es el MISMO almacén que el del arranque manual, así que con una key única una corrida de XCUITest dejaba el centinela puesto y la app abierta A MANO —store personal vacío— hacía early-return y se quedaba SIN categorías. unit:YalaTests/UITestSeamPersistenceIsolationTests (comportamiento + source-scan que prohíbe el literal suelto bajo Yala/)",
+      "coverage": "xcuitest:YalaUITests/CategoriesCrudUITests + 2026-08-05: el centinela del seed (`seedCategoriesExecuted`) pasa a estar namespaceado por STORE en `CategorySeedSentinel`. Bajo `-uitest` los datos viven en `YalaModel-UITest` y `UserDefaults.standard` es el MISMO almacén que el del arranque manual, así que con una key única una corrida de XCUITest dejaba el centinela puesto y la app abierta A MANO —store personal vacío— hacía early-return y se quedaba SIN categorías. unit:YalaTests/UITestSeamPersistenceIsolationTests (comportamiento + source-scan que prohíbe el literal suelto bajo Yala/) | 2026-10-14 (auditoría UX 2.2 lote 7): el «−» de Editar pregunta antes de borrar; los diálogos de borrar y descartar pasan a alerta (se ve Cancelar / Seguir editando). XCUI: test_minusOnACategory_asksBeforeDeleting.",
       "owner": "",
-      "lastVerified": "2026-09-29"
+      "lastVerified": "2026-10-14"
     },
     {
       "area": "chat-assistant",
@@ -604,7 +604,7 @@
       "classification": "deterministic",
       "coverage": "xcuitest:YalaUITests/CurrencyPickerUITests | 2026-09-09: el selector de divisa del formulario de cuenta ya no es un NavigationLink liso — se bloquea (con el motivo a la vista) cuando el histórico lo manda otra entidad, y pide confirmación cuando hay que reexpresarlo. Red en unit: AccountFormCurrencyGateTests. Área fx-conversion-persistence. | 2026-10-10 (`shared-scheduled-expense-shows-twice-in-inbox`): se tocó un fichero compartido (plantilla del formulario de grupo / construcción de la plantilla en la Bandeja); nada de esta área cambia de comportamiento.",
       "owner": "",
-      "lastVerified": "2026-10-10"
+      "lastVerified": "2026-10-14"
     },
     {
       "area": "date-period-intervals",
@@ -1421,7 +1421,7 @@
       "classification": "manual",
       "coverage": "manual",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-10-14"
     },
     {
       "area": "inbox-convert-to-group",

@@ -1383,7 +1383,6 @@
 "category.deleteConfirmTitle" = "Kategorie löschen?";
 "category.deleteConfirmMessage" = "Die Kategorie und alle Unterkategorien werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
 "category.cannotDeleteTitle" = "Löschen nicht möglich";
-"category.cannotDeleteMessage" = "Diese Kategorie hat Unterkategorien mit %d Transaktionen. Um sie zu löschen, lösche oder übertrage zuerst die Transaktionen aus jeder Unterkategorie.";
 "subcategory.newTitle" = "Neue Unterkategorie";
 "subcategory.editTitle" = "Unterkategorie bearbeiten";
 "subcategory.delete" = "Unterkategorie löschen";
@@ -1393,7 +1392,6 @@
 "subcategory.cannotDeleteMessage" = "Diese Unterkategorie hat %d zugeordnete Transaktionen. Übertrage die Transaktionen in eine andere Unterkategorie, bevor du sie löschst.";
 "subcategory.transferTitle" = "Transaktionen übertragen";
 "subcategory.transferHeader" = "Diese Unterkategorie hat Transaktionen";
-"subcategory.transferDescription" = "Es gibt %d Transaktionen in \"%@\". Wähle, was mit ihnen vor dem Löschen geschehen soll.";
 "subcategory.transferToSpecific" = "In andere Unterkategorie übertragen";
 "subcategory.transferToSpecificDesc" = "Wähle eine Ziel-Unterkategorie zum Verschieben der Transaktionen";
 "subcategory.transferToUnassigned" = "Nach Nicht zugewiesen verschieben";
@@ -1406,7 +1404,6 @@
 "subcategory.details" = "Unterkategorie-Details";
 "subcategory.namePlaceholder" = "Name der Unterkategorie";
 "subcategory.unassigned" = "Nicht zugewiesen";
-"subcategory.deleteTransactionsConfirmMessage" = "%d Transaktionen werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
 
 "account.deleteBalanceError" = "Du kannst dieses Konto nicht löschen, da es einen Saldo ungleich null hat. Passe den Saldo auf 0 an, bevor du es löschst.";
 "account.type.general" = "Allgemein";
@@ -1459,7 +1456,7 @@
 "account.adjustByEntry" = "Per Eintrag anpassen";
 "account.adjustByEntryDesc" = "Gib den korrekten Saldo ein und wir erstellen einen Korrektureintrag. Verwende dies, wenn du vergessen hast, einige Ausgaben zu erfassen.";
 "account.changeInitialBalanceName" = "Anfangssaldo ändern";
-"account.changeInitialBalanceDesc" = "Gib den korrekten Saldo ein und wir ändern den Anfangssaldo deines Kontos. Verwende dies, wenn du längere Zeit keine Einträge gemacht hast.";
+"account.changeInitialBalanceDesc" = "Gib ein, mit wie viel das Konto angefangen hat, und wir berechnen den heutigen Saldo aus deinen Einträgen neu. Verwende dies, wenn der Anfangssaldo falsch war.";
 "account.creditCard.sectionTitle" = "Kreditkarte";
 "account.creditCard.paymentReminder" = "Am Zahlungstag erinnern";
 "account.creditCard.paymentDay" = "Zahlungstag";
@@ -2967,7 +2964,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Sekundäre Währung";
-"account.secondaryCurrency.message" = "Du hast ein Konto in %@ hinzugefügt. Möchtest du den Wechselkurs %@ → %@ sehen? Du kannst es unter Profil > Währung ändern.";
+"account.secondaryCurrency.message" = "Du hast ein Konto in %@ hinzugefügt. Möchtest du den Wechselkurs %@ → %@ sehen? Du kannst es unter Profil > Währung und Wechselkurs ändern.";
 "account.secondaryCurrency.accept" = "Hinzufügen";
 "account.secondaryCurrency.reject" = "Nein, danke";
 
@@ -6613,3 +6610,5 @@
 "onboarding.calc.creditCard.owed" = "Du schuldest";
 "onboarding.calc.creditCard.formula" = "Rahmen **%1$@**  −  Verfügbar **%2$@**";
 "onboarding.accountName.allTogether" = "Mein Geld %@";
+"account.deleteConfirmTitle" = "„%@“ löschen?";
+"account.deleteConfirmMessageEmpty" = "Das Konto hat keine Datensätze. Das kann nicht rückgängig gemacht werden.";

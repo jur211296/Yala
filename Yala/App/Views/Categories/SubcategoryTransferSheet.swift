@@ -52,11 +52,8 @@ struct SubcategoryTransferSheet: View {
             .sheet(isPresented: $showingPicker) {
                 destinationPickerSheet
             }
-            .confirmationDialog(
-                L10n.Subcategory.deleteTransactionsConfirmTitle,
-                isPresented: $showingDeleteConfirmation,
-                titleVisibility: .visible
-            ) {
+            // Alerta y no `confirmationDialog`: el diálogo no pintaba «Cancelar» (lote 7, B3).
+            .alert(L10n.Subcategory.deleteTransactionsConfirmTitle, isPresented: $showingDeleteConfirmation) {
                 Button(L10n.Subcategory.deleteTransactionsConfirm, role: .destructive) {
                     deleteAllTransactions()
                 }

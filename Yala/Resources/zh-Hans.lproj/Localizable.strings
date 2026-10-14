@@ -1381,7 +1381,6 @@
 "category.deleteConfirmTitle" = "删除类别?";
 "category.deleteConfirmMessage" = "该类别及其全部子类别都将被删除。此操作无法撤销。";
 "category.cannotDeleteTitle" = "无法删除";
-"category.cannotDeleteMessage" = "此类别的子类别中有 %d 笔交易。要删除它,请先从每个子类别中删除或转移这些交易。";
 "subcategory.newTitle" = "新子类别";
 "subcategory.editTitle" = "编辑子类别";
 "subcategory.delete" = "删除子类别";
@@ -1391,7 +1390,6 @@
 "subcategory.cannotDeleteMessage" = "此子类别有 %d 笔交易。删除前请将这些交易转移到其他子类别。";
 "subcategory.transferTitle" = "转移交易";
 "subcategory.transferHeader" = "此子类别有交易";
-"subcategory.transferDescription" = "「%@」中有 %d 笔交易。删除前请决定如何处理它们。";
 "subcategory.transferToSpecific" = "转移到其他子类别";
 "subcategory.transferToSpecificDesc" = "选择目标子类别以移动这些交易";
 "subcategory.transferToUnassigned" = "移到「未分配」";
@@ -1404,7 +1402,6 @@
 "subcategory.details" = "子类别详情";
 "subcategory.namePlaceholder" = "子类别名称";
 "subcategory.unassigned" = "未分配";
-"subcategory.deleteTransactionsConfirmMessage" = "%d 笔交易将被永久删除。此操作无法撤销。";
 
 "account.deleteBalanceError" = "无法删除此账户,因为它的余额不为零。请将余额调为 0 后再删除。";
 "account.type.general" = "通用";
@@ -1458,7 +1455,7 @@
 "account.adjustByEntry" = "通过条目调整";
 "account.adjustByEntryDesc" = "输入正确的余额,我们会创建一笔修正条目。如果你忘记记录了一些支出,请用此方式。";
 "account.changeInitialBalanceName" = "更改初始余额";
-"account.changeInitialBalanceDesc" = "输入正确的余额,我们会更改账户中的初始余额。如果你很久没记录了,请用此方式。";
+"account.changeInitialBalanceDesc" = "输入账户最初的金额,我们会根据你的记录重新计算今天的余额。如果起始余额有误,请用此方式。";
 "account.creditCard.sectionTitle" = "信用卡";
 "account.creditCard.paymentReminder" = "在还款日提醒";
 "account.creditCard.paymentDay" = "还款日";
@@ -2971,7 +2968,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "次要货币";
-"account.secondaryCurrency.message" = "你添加了一个 %@ 账户。想看 %@ → %@ 汇率吗?可以在「个人资料 > 货币」中更改。";
+"account.secondaryCurrency.message" = "你添加了一个 %@ 账户。想看 %@ → %@ 汇率吗?可以在「个人资料 > 货币与汇率」中更改。";
 "account.secondaryCurrency.accept" = "添加";
 "account.secondaryCurrency.reject" = "不用,谢谢";
 
@@ -6625,3 +6622,5 @@
 "onboarding.calc.creditCard.owed" = "你欠";
 "onboarding.calc.creditCard.formula" = "额度 **%1$@**  −  可用 **%2$@**";
 "onboarding.accountName.allTogether" = "我的钱 %@";
+"account.deleteConfirmTitle" = "删除「%@」?";
+"account.deleteConfirmMessageEmpty" = "此账户没有记录。此操作无法撤销。";

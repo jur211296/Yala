@@ -3431,6 +3431,16 @@ enum L10n {
         static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
+        /// «¿Eliminar «Tarjeta BCP»?» — la confirmación de borrar una cuenta (auditoría UX 2.2, lote 7, B1).
+        static func deleteConfirmTitle(_ name: String) -> String {
+            String(format: ls("account.deleteConfirmTitle", comment: ""), name)
+        }
+        /// Cuántos registros tiene y a dónde van: no se borran, quedan en Registros sin cuenta (plural).
+        /// `localizedStringWithFormat` y no `String(format:)`: con 2202 registros, «2,202».
+        static func deleteConfirmMessage(_ count: Int) -> String {
+            String.localizedStringWithFormat(ls("account.deleteConfirmMessage", comment: ""), count)
+        }
+        static var deleteConfirmMessageEmpty: String { ls("account.deleteConfirmMessageEmpty", comment: "") }
         static var deleteBalanceError: String {
             ls("account.deleteBalanceError", comment: "")
         }

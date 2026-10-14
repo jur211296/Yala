@@ -1381,7 +1381,6 @@
 "category.deleteConfirmTitle" = "Delete Category?";
 "category.deleteConfirmMessage" = "The category and all its subcategories will be deleted. This action cannot be undone.";
 "category.cannotDeleteTitle" = "Cannot Delete";
-"category.cannotDeleteMessage" = "This category has subcategories with %d transactions. To delete it, first delete or transfer the transactions from each subcategory.";
 "subcategory.newTitle" = "New Subcategory";
 "subcategory.editTitle" = "Edit Subcategory";
 "subcategory.delete" = "Delete Subcategory";
@@ -1391,7 +1390,6 @@
 "subcategory.cannotDeleteMessage" = "This subcategory has %d transactions. Transfer the transactions to another subcategory before deleting.";
 "subcategory.transferTitle" = "Transfer Transactions";
 "subcategory.transferHeader" = "This subcategory has transactions";
-"subcategory.transferDescription" = "There are %d transactions in \"%@\". Choose what to do with them before deleting.";
 "subcategory.transferToSpecific" = "Transfer to another subcategory";
 "subcategory.transferToSpecificDesc" = "Select a destination subcategory to move the transactions";
 "subcategory.transferToUnassigned" = "Move to Unassigned";
@@ -1404,7 +1402,6 @@
 "subcategory.details" = "Subcategory details";
 "subcategory.namePlaceholder" = "Subcategory name";
 "subcategory.unassigned" = "Unassigned";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transactions will be permanently deleted. This action cannot be undone.";
 
 "account.deleteBalanceError" = "You cannot delete this account because it has a non-zero balance. Adjust the balance to 0 before deleting it.";
 "account.type.general" = "General";
@@ -1458,7 +1455,7 @@
 "account.adjustByEntry" = "Adjust by entry";
 "account.adjustByEntryDesc" = "Enter the correct balance and we'll create a correction entry. Use this if you forgot to record some expenses.";
 "account.changeInitialBalanceName" = "Change initial balance";
-"account.changeInitialBalanceDesc" = "Enter the correct balance and we'll change the initial balance in your account. Use this if you haven't recorded in a long time.";
+"account.changeInitialBalanceDesc" = "Enter how much the account started with and we'll recalculate today's balance from your records. Use this if the starting balance was wrong.";
 "account.creditCard.sectionTitle" = "Credit card";
 "account.creditCard.paymentReminder" = "Remind on payment date";
 "account.creditCard.paymentDay" = "Payment day";
@@ -3018,7 +3015,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Secondary Currency";
-"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency.";
+"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency & Exchange.";
 "account.secondaryCurrency.accept" = "Add";
 "account.secondaryCurrency.reject" = "No, thanks";
 
@@ -6619,3 +6616,5 @@
 "onboarding.calc.creditCard.owed" = "You owe";
 "onboarding.calc.creditCard.formula" = "Limit **%1$@**  −  Available **%2$@**";
 "onboarding.accountName.allTogether" = "My money %@";
+"account.deleteConfirmTitle" = "Delete “%@”?";
+"account.deleteConfirmMessageEmpty" = "It has no records. This can't be undone.";

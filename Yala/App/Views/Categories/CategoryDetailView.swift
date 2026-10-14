@@ -68,7 +68,8 @@ struct CategoryDetailView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .yalaScreenBackground(.subtle)
-        .navigationTitle(L10n.Category.editTitle)
+        // Una categoría recién creada no se «edita» todavía (auditoría UX 2.2, lote 7, B4).
+        .navigationTitle(viewModel.isNewCategory ? L10n.Category.new : L10n.Category.editTitle)
         .swipeBack()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -93,26 +94,21 @@ struct CategoryDetailView: View {
         } message: {
             Text(L10n.Category.requiresSubcategory)
         }
-        .confirmationDialog(
-            L10n.Alert.discardChanges,
-            isPresented: $showDiscardDialog,
-            titleVisibility: .visible
-        ) {
-            Button(L10n.Alert.discardChanges, role: .destructive) {
+        // Alertas y no `confirmationDialog`: en iOS 26 el diálogo sale como popover y no pinta el botón
+        // de cancelar, así que «Seguir editando» y «Cancelar» no se veían; y el de descartar decía
+        // «Descartar» tres veces (auditoría UX 2.2, lote 7, B3). Textos del molde de la Bandeja.
+        .alert(L10n.Inbox.discardChangesTitle, isPresented: $showDiscardDialog) {
+            Button(L10n.Inbox.discardChanges, role: .destructive) {
                 if viewModel.isNewCategory {
                     viewModel.discardNewCategory()
                 }
                 dismiss()
             }
-            Button(L10n.Alert.keepEditing, role: .cancel) {}
+            Button(L10n.Inbox.keepEditing, role: .cancel) {}
         } message: {
-            Text(L10n.Alert.discardChanges)
+            Text(L10n.Inbox.discardChangesMessage)
         }
-        .confirmationDialog(
-            L10n.Category.deleteConfirmTitle,
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert(L10n.Category.deleteConfirmTitle, isPresented: $showDeleteConfirmation) {
             Button(L10n.Category.delete, role: .destructive) {
                 if viewModel.deleteCategory() {
                     dismiss()
@@ -130,11 +126,7 @@ struct CategoryDetailView: View {
         } message: {
             Text(L10n.Category.cannotDeleteMessage(transactionCount))
         }
-        .confirmationDialog(
-            L10n.Subcategory.deleteConfirmTitle,
-            isPresented: $showSubcategoryDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert(L10n.Subcategory.deleteConfirmTitle, isPresented: $showSubcategoryDeleteConfirmation) {
             Button(L10n.Subcategory.delete, role: .destructive) {
                 if let subcategory = subcategoryToDelete {
                     _ = viewModel.deleteSubcategory(subcategory)

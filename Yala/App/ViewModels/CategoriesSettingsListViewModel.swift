@@ -31,6 +31,10 @@ final class CategoriesSettingsListViewModel {
     var showCannotDeleteAlert = false
     var categoryToDeleteName = ""
     var transactionCountForAlert = 0
+    /// La categoría sin registros que espera el «sí» del usuario. Hasta el lote 7 de la auditoría UX 2.2 (B2)
+    /// el «−» de Editar la borraba al primer toque, sin preguntar, junto con todas sus subcategorías.
+    var categoryPendingDeletion: Category?
+    var showDeleteConfirmation = false
 
     // MARK: - Computed Properties
 
@@ -108,7 +112,7 @@ final class CategoriesSettingsListViewModel {
     // MARK: - Category Deletion
 
     func handleCategoryDelete(_ category: Category) {
-        guard let context = modelContext else { return }
+        guard modelContext != nil else { return }
 
         // Las categorías sistema no se borran (esta ruta usa context.delete directo,
         // sin pasar por EntityDeletionService). Defensa: el botón "−" tampoco se
@@ -119,6 +123,23 @@ final class CategoriesSettingsListViewModel {
         if count > 0 {
             categoryToDeleteName = category.name
             transactionCountForAlert = count
+            showCannotDeleteAlert = true
+            return
+        }
+
+        categoryPendingDeletion = category
+        showDeleteConfirmation = true
+    }
+
+    /// El usuario dijo que sí en la confirmación: borra la categoría pendiente y sus subcategorías.
+    func confirmCategoryDeletion() {
+        defer { categoryPendingDeletion = nil }
+        guard let context = modelContext, let category = categoryPendingDeletion else { return }
+        guard !category.isSystem else { return }
+        // Se vuelve a contar: entre la pregunta y el «sí» pudo llegar un registro por sync.
+        guard countTransactionsInCategory(category) == 0 else {
+            categoryToDeleteName = category.name
+            transactionCountForAlert = countTransactionsInCategory(category)
             showCannotDeleteAlert = true
             return
         }

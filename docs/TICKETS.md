@@ -258,7 +258,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
 | declining-ai-consent-keeps-a-dropped-or-shared-photo-pending | backlog | tickets/backlog/declining-ai-consent-keeps-a-dropped-or-shared-photo-pending.md |
-| deleting-an-account-asks-nothing | backlog | tickets/backlog/deleting-an-account-asks-nothing.md |
+| deleting-an-account-asks-nothing | done | tickets/done/deleting-an-account-asks-nothing.md |
 | detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | done | tickets/done/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | done | tickets/done/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |

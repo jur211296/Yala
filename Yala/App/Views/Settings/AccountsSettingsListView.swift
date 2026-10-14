@@ -237,9 +237,13 @@ struct AccountsSettingsListView: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
 
+                // Una línea, como el nombre y la moneda: la lista tiene alto fijo por fila (80) y, al
+                // reordenar, el asa estrecha la fila y «Cuenta corriente» partía en dos, empujando la
+                // moneda fuera de la celda (auditoría UX 2.2, lote 7, B8).
                 Text(accountTypeText(for: account))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
 
                 Text(currencyInfoData.name.capitalized)
                     .font(DS.Typography.subheadline)

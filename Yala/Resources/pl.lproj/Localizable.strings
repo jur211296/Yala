@@ -1381,7 +1381,6 @@
 "category.deleteConfirmTitle" = "Usunąć kategorię?";
 "category.deleteConfirmMessage" = "Kategoria i wszystkie jej podkategorie zostaną usunięte. Tej operacji nie można cofnąć.";
 "category.cannotDeleteTitle" = "Nie można usunąć";
-"category.cannotDeleteMessage" = "Ta kategoria ma podkategorie z %d transakcjami. Aby ją usunąć, najpierw usuń lub przenieś transakcje z każdej podkategorii.";
 "subcategory.newTitle" = "Nowa podkategoria";
 "subcategory.editTitle" = "Edytuj podkategorię";
 "subcategory.delete" = "Usuń podkategorię";
@@ -1391,7 +1390,6 @@
 "subcategory.cannotDeleteMessage" = "Ta podkategoria ma %d transakcji. Przenieś transakcje do innej podkategorii przed usunięciem.";
 "subcategory.transferTitle" = "Przenieś transakcje";
 "subcategory.transferHeader" = "Ta podkategoria ma transakcje";
-"subcategory.transferDescription" = "W „%@” jest %d transakcji. Wybierz, co z nimi zrobić przed usunięciem.";
 "subcategory.transferToSpecific" = "Przenieś do innej podkategorii";
 "subcategory.transferToSpecificDesc" = "Wybierz docelową podkategorię, aby przenieść transakcje";
 "subcategory.transferToUnassigned" = "Przenieś do Nieprzypisane";
@@ -1404,7 +1402,6 @@
 "subcategory.details" = "Szczegóły podkategorii";
 "subcategory.namePlaceholder" = "Nazwa podkategorii";
 "subcategory.unassigned" = "Nieprzypisane";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transakcji zostanie trwale usuniętych. Tej operacji nie można cofnąć.";
 
 "account.deleteBalanceError" = "Nie możesz usunąć tego konta, ponieważ ma niezerowe saldo. Wyzeruj saldo przed usunięciem.";
 "account.type.general" = "Ogólne";
@@ -1458,7 +1455,7 @@
 "account.adjustByEntry" = "Dostosuj wpisem";
 "account.adjustByEntryDesc" = "Wprowadź poprawne saldo, a my utworzymy wpis korekcyjny. Użyj tego, jeśli zapomniałeś zapisać kilku wydatków.";
 "account.changeInitialBalanceName" = "Zmień saldo początkowe";
-"account.changeInitialBalanceDesc" = "Wprowadź poprawne saldo, a my zmienimy saldo początkowe konta. Użyj tego, jeśli długo nie zapisywałeś.";
+"account.changeInitialBalanceDesc" = "Wpisz, od jakiej kwoty zaczęło się konto, a przeliczymy dzisiejsze saldo na podstawie Twoich wpisów. Użyj tego, jeśli saldo początkowe było błędne.";
 "account.creditCard.sectionTitle" = "Karta kredytowa";
 "account.creditCard.paymentReminder" = "Przypomnij w dniu płatności";
 "account.creditCard.paymentDay" = "Dzień płatności";
@@ -2971,7 +2968,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Waluta dodatkowa";
-"account.secondaryCurrency.message" = "Dodałeś konto w %@. Chcesz widzieć kurs %@ → %@? Możesz to zmienić w Profil > Waluta.";
+"account.secondaryCurrency.message" = "Dodałeś konto w %@. Chcesz widzieć kurs %@ → %@? Możesz to zmienić w Profil > Waluta i wymiana.";
 "account.secondaryCurrency.accept" = "Dodaj";
 "account.secondaryCurrency.reject" = "Nie, dziękuję";
 
@@ -6625,3 +6622,5 @@
 "onboarding.calc.creditCard.owed" = "Jesteś winien";
 "onboarding.calc.creditCard.formula" = "Limit **%1$@**  −  Dostępne **%2$@**";
 "onboarding.accountName.allTogether" = "Moje pieniądze %@";
+"account.deleteConfirmTitle" = "Usunąć „%@”?";
+"account.deleteConfirmMessageEmpty" = "To konto nie ma wpisów. Tej operacji nie można cofnąć.";

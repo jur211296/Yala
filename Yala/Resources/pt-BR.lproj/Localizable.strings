@@ -357,7 +357,7 @@
 
 // MARK: - Import
 
-"import.title" = "Importar Transacoes";
+"import.title" = "Importar transações";
 "import.selectFile" = "Selecionar arquivo";
 "import.importing" = "Importando...";
 "import.downloadTemplate" = "Baixar modelo";
@@ -628,7 +628,7 @@
 "tag.new" = "Nova etiqueta";
 "tag.edit" = "Editar etiqueta";
 "tag.delete" = "Eliminar etiqueta";
-"settings.currencyAndExchange" = "Moeda e Cambio";
+"settings.currencyAndExchange" = "Moeda e câmbio";
 "common.updatingRecords" = "Atualizando registros...";
 "common.recalculatingConversions" = "Recalculando conversoes historicas";
 "export.customizeFile" = "Personalize seu arquivo";
@@ -1383,7 +1383,6 @@
 "category.deleteConfirmTitle" = "Eliminar categoria?";
 "category.deleteConfirmMessage" = "A categoria e todas as suas subcategorias serao eliminadas. Esta acao nao pode ser desfeita.";
 "category.cannotDeleteTitle" = "Nao e possivel eliminar";
-"category.cannotDeleteMessage" = "Esta categoria tem subcategorias com %d transacoes. Para elimina-la, primeiro elimine ou transfira as transacoes de cada subcategoria.";
 "subcategory.newTitle" = "Nova subcategoria";
 "subcategory.editTitle" = "Editar subcategoria";
 "subcategory.delete" = "Eliminar subcategoria";
@@ -1393,7 +1392,6 @@
 "subcategory.cannotDeleteMessage" = "Esta subcategoria tem %d transacoes associadas. Transfira as transacoes para outra subcategoria antes de eliminar.";
 "subcategory.transferTitle" = "Transferir transacoes";
 "subcategory.transferHeader" = "Esta subcategoria tem transacoes";
-"subcategory.transferDescription" = "Ha %d transacoes em \"%@\". Escolha o que fazer com elas antes de eliminar.";
 "subcategory.transferToSpecific" = "Transferir para outra subcategoria";
 "subcategory.transferToSpecificDesc" = "Selecione uma subcategoria de destino para mover as transacoes";
 "subcategory.transferToUnassigned" = "Mover para Nao atribuido";
@@ -1406,14 +1404,13 @@
 "subcategory.details" = "Detalhes da subcategoria";
 "subcategory.namePlaceholder" = "Nome da subcategoria";
 "subcategory.unassigned" = "Nao atribuido";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transacoes serao eliminadas permanentemente. Esta acao nao pode ser desfeita.";
 
 "account.deleteBalanceError" = "Voce nao pode eliminar esta conta porque ela tem saldo diferente de zero. Ajuste o saldo para 0 antes de elimina-la.";
 "account.type.general" = "Geral";
 "account.type.cash" = "Dinheiro";
-"account.type.current" = "Conta Corrente";
+"account.type.current" = "Conta corrente";
 "account.type.savings" = "Poupanca";
-"account.type.creditCard" = "Cartao de Credito";
+"account.type.creditCard" = "Cartão de crédito";
 "account.type.investment" = "Investimento";
 "account.type.loan" = "Emprestimo";
 "account.type.other" = "Outro";
@@ -1459,7 +1456,7 @@
 "account.adjustByEntry" = "Ajustar por registro";
 "account.adjustByEntryDesc" = "Escreva o saldo correto e criaremos um registro de correcao. Use isso se voce esqueceu de registrar algumas despesas.";
 "account.changeInitialBalanceName" = "Alterar saldo inicial";
-"account.changeInitialBalanceDesc" = "Escreva o saldo correto e alteraremos o saldo inicial da sua conta. Use isso se voce nao registrou durante muito tempo.";
+"account.changeInitialBalanceDesc" = "Escreva com quanto a conta começou e recalculamos o saldo de hoje com seus registros. Use isso se o saldo inicial estava errado.";
 "account.creditCard.sectionTitle" = "Cartao de credito";
 "account.creditCard.paymentReminder" = "Avisar na data de pagamento";
 "account.creditCard.paymentDay" = "Dia de pagamento";
@@ -2967,7 +2964,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Moeda secundária";
-"account.secondaryCurrency.message" = "Você adicionou uma conta em %@. Quer ver a taxa de câmbio %@ → %@? Pode alterar em Perfil > Moeda.";
+"account.secondaryCurrency.message" = "Você adicionou uma conta em %@. Quer ver a taxa de câmbio %@ → %@? Pode alterar em Perfil > Moeda e câmbio.";
 "account.secondaryCurrency.accept" = "Adicionar";
 "account.secondaryCurrency.reject" = "Não, obrigado";
 
@@ -6613,3 +6610,5 @@
 "onboarding.calc.creditCard.owed" = "Você deve";
 "onboarding.calc.creditCard.formula" = "Limite **%1$@**  −  Disponível **%2$@**";
 "onboarding.accountName.allTogether" = "Meu dinheiro %@";
+"account.deleteConfirmTitle" = "Eliminar “%@”?";
+"account.deleteConfirmMessageEmpty" = "Esta conta não tem registros. Não é possível desfazer.";
