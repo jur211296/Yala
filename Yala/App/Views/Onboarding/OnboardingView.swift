@@ -35,6 +35,10 @@ struct OnboardingView: View {
     @State private var currentStep: Step = .name
     @State private var navigatingForward: Bool = true
 
+    // Resumen (UX 2.2 · L1UI-7): entrada por partes y confeti de marca.
+    @State private var confirmationShown: Bool = false
+    @State private var showConfirmationConfetti: Bool = false
+
     // Purpose & accounts (binary decisions)
     @State private var selectedUsageMode: UsageMode = .fullControl
     @State private var selectedMindset: String = "patrimonial"
@@ -325,13 +329,42 @@ struct OnboardingView: View {
     // MARK: - Progress Indicator
 
     private var progressIndicator: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            ForEach(0..<effectiveTotalSteps, id: \.self) { step in
-                Capsule()
-                    .fill(progressCapsuleColor(active: step <= effectiveStepIndex))
-                    .frame(width: step == effectiveStepIndex ? 24 : 8, height: 8)
-                    .dsAnimation(.spring(response: 0.3), value: effectiveStepIndex, reduceMotion: reduceMotion)
+        VStack(spacing: DS.Spacing.xs) {
+            HStack(spacing: DS.Spacing.sm) {
+                ForEach(0..<effectiveTotalSteps, id: \.self) { step in
+                    Capsule()
+                        .fill(progressCapsuleColor(active: step <= effectiveStepIndex))
+                        .frame(width: step == effectiveStepIndex ? 24 : 8, height: 8)
+                        .dsAnimation(.spring(response: 0.3), value: effectiveStepIndex, reduceMotion: reduceMotion)
+                }
             }
+
+            // «Paso N de M» en una pastilla de cristal (UX 2.2 · L1UI-6): los puntos solos no decían cuánto falta.
+            // Cifras de ancho fijo y transición numérica, para que la línea no baile al avanzar.
+            Text(progressStepText)
+                .font(DS.Typography.caption)
+                .fontWeight(.medium)
+                .monospacedDigit()
+                .foregroundStyle(primaryTextStyle.opacity(0.9))
+                .contentTransition(.numericText(value: Double(effectiveStepIndex)))
+                .dsAnimation(.snappy, value: effectiveStepIndex, reduceMotion: reduceMotion)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
+                .glassEffect(.regular, in: Capsule())
+                .accessibilityIdentifier("onboarding_progress_step")
+        }
+    }
+
+    /// «Paso **N** de M» con el total REAL de pasos: con «solo gastos» o con datos de iCloud son menos de siete.
+    private var progressStepText: AttributedString {
+        let markdown = String(format: L10n.Onboarding.progressStepFormat, effectiveStepIndex + 1, effectiveTotalSteps)
+        do {
+            return try AttributedString(markdown: markdown)
+        } catch {
+            #if DEBUG
+            print("OnboardingView: Error: \(error)")
+            #endif
+            return AttributedString(markdown.replacing("**", with: ""))
         }
     }
 
@@ -535,10 +568,11 @@ struct OnboardingView: View {
 
     // MARK: - Reusable Binary Card
 
-    /// Card de selección estilo capabilityCard del AI Onboarding: icono con halo
-    /// gradient, sin checkmark/circle, selección visualizada con stroke 2pt
-    /// `styleAccentColor`. Background `cardFill` bifurcado — fijo en `.heroFlow`
-    /// (el token del tema rompía con tema Claro), token en `.themedPanel`.
+    /// Card de selección del onboarding. Sin elegir, el cristal de siempre (`cardFill`, fijo en `.heroFlow` porque el
+    /// token del tema rompía con tema Claro; token en `.themedPanel`). Elegida, se RELLENA de índigo profundo con texto
+    /// blanco, el icono en una pastilla blanca y un check blanco que entra con un escalado (UX 2.2 · L1UI-1, variante 2
+    /// de Jürgen): un contorno de 2 pt no se veía con cinco opciones. `emphasis` es la tarjeta que tiene que verse antes
+    /// de elegir nada —«¿No sabes tu saldo?»—, rellena de rosa profundo (L1UI-2). Sin degradados ni brillos.
     /// No usa `.selectableCard` porque ese modifier pone `.thCard` sin bifurcar.
     private func binaryCard(
         isSelected: Bool,
@@ -547,46 +581,96 @@ struct OnboardingView: View {
         title: String,
         description: String,
         accessibilityId: String,
+        emphasis: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        let style = binaryCardStyle(isSelected: isSelected, emphasis: emphasis, iconColor: iconColor)
+        return Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
                 ZStack {
                     RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                        .fill(iconColor.opacity(0.18))
+                        .fill(style.iconChip)
                         .frame(width: 44, height: 44)
                     Image(systemName: icon)
                         .font(.system(size: 20, weight: .semibold)) // A11Y-DT: card icon
-                        .foregroundStyle(iconColor)
+                        .foregroundStyle(style.iconTint)
                 }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(title)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(primaryTextStyle)
+                        .foregroundStyle(style.title)
 
                     Text(description)
                         .font(DS.Typography.subheadline)
-                        .foregroundStyle(secondaryTextStyle)
+                        .fontWeight(emphasis ? .semibold : .regular)
+                        .foregroundStyle(style.description)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 0)
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .bold)) // A11Y-DT: check de selección
+                        .foregroundStyle(style.checkGlyph)
+                        .frame(width: 26, height: 26)
+                        .background(Circle().fill(Color.white))
+                        .transition(reduceMotion ? .opacity : .scale.combined(with: .opacity))
+                        .accessibilityHidden(true)
+                } else if emphasis {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 15, weight: .bold)) // A11Y-DT: chevron de la tarjeta destacada
+                        .foregroundStyle(Color.white)
+                        .accessibilityHidden(true)
+                }
             }
             .padding(DS.Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardFill)
+            .background(style.fill)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                    .stroke(
-                        isSelected ? styleAccentColor : cardStroke,
-                        lineWidth: isSelected ? 2 : 1
-                    )
+                    .stroke(style.stroke, lineWidth: 1)
+            )
+            .animation(
+                reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.3, dampingFraction: 0.7),
+                value: isSelected
             )
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(accessibilityId)
+    }
+
+    /// Colores de la tarjeta según su estado. Un relleno sólido sustituye al cristal; sin elegir, la de siempre.
+    private struct BinaryCardStyle {
+        let fill: Color
+        let stroke: Color
+        let iconChip: Color
+        let iconTint: Color
+        let title: Color
+        let description: Color
+        let checkGlyph: Color
+    }
+
+    private func binaryCardStyle(isSelected: Bool, emphasis: Bool, iconColor: Color) -> BinaryCardStyle {
+        if emphasis {
+            return BinaryCardStyle(
+                fill: .emphasisPinkFill, stroke: .clear, iconChip: .white, iconTint: .emphasisPinkFill,
+                title: .white, description: .white, checkGlyph: .emphasisPinkFill
+            )
+        }
+        if isSelected {
+            return BinaryCardStyle(
+                fill: .selectedIndigoFill, stroke: .clear, iconChip: .white, iconTint: iconColor,
+                title: .white, description: .white.opacity(0.85), checkGlyph: .selectedIndigoFill
+            )
+        }
+        return BinaryCardStyle(
+            fill: cardFill, stroke: cardStroke, iconChip: iconColor.opacity(0.18), iconTint: iconColor,
+            title: primaryTextStyle, description: secondaryTextStyle, checkGlyph: .selectedIndigoFill
+        )
     }
 
     // MARK: - Step 3: ¿Dónde está tu dinero? (una sola cuenta o un tipo)
@@ -682,14 +766,14 @@ struct OnboardingView: View {
 
     /// Suggested account name based on type and currency
     private var suggestedAccountName: String {
-        let currency = accountCurrency.shortPluralName.capitalized
-        if wantsSeparateAccounts {
-            // "Cuenta Corriente Soles", "Ahorros Dólares", etc.
-            return "\(selectedAccountType.localizedName) \(currency)"
-        } else {
-            // "Gastos Soles", "Gastos Dólares", etc.
-            return "\(L10n.CashFlow.expense) \(currency)"
-        }
+        // «Ahorros Soles» por separado, «Mi dinero Soles» todo junto, «Gastos Soles» solo gastos (UX 2.2 · L1UI-8).
+        OnboardingAccountNameLogic.suggestedName(
+            mode: selectedUsageMode,
+            accountTypeName: selectedAccountType.localizedName,
+            currencyName: accountCurrency.shortPluralName.capitalized,
+            allTogetherFormat: L10n.Onboarding.accountNameAllTogetherFormat,
+            expensesWord: L10n.CashFlow.expense
+        )
     }
 
     /// «Solo gastos» tiene su propio copy (UX 2.2 · L1-11): el de una sola cuenta dice «donde llevas el
@@ -846,9 +930,12 @@ struct OnboardingView: View {
                             // Icono de cálculo (UX 2.2 · L1-7): el de «recargar» no decía que aquí se calcula.
                             icon: "plus.forwardslash.minus",
                             iconColor: .hotPink,
-                            title: L10n.Onboarding.accountBalanceLearnMore,
-                            description: L10n.Onboarding.balanceGuideHint,
-                            accessibilityId: "onboarding_balance_guided"
+                            // UX 2.2 · L1UI-2: copy de invitación en rosa sólido. Los usuarios se atascaban en el saldo
+                            // y no veían la ayuda.
+                            title: L10n.Onboarding.balanceGuidedTitle,
+                            description: L10n.Onboarding.balanceGuidedSubtitle,
+                            accessibilityId: "onboarding_balance_guided",
+                            emphasis: true
                         ) {
                             balanceMode = .guided
                             // Si ya tenemos monto, mostramos el preview con
@@ -1037,7 +1124,8 @@ struct OnboardingView: View {
                         Text(accountCurrency.symbol)
                             .font(DS.Typography.body)
                             .foregroundStyle(secondaryTextStyle)
-                        TextField("0", text: $initialBalanceText)
+                        // «Ej. 1500» y no un «0», que parecía un valor ya puesto (UX 2.2 · L1UI-5).
+                        TextField(L10n.Onboarding.balancePlaceholder, text: $initialBalanceText)
                             .font(DS.Typography.largeTitle)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
@@ -1046,6 +1134,26 @@ struct OnboardingView: View {
                     }
                 }
                 .padding()
+
+                // Qué falta para seguir, dentro del campo y no bajo «Siguiente» (UX 2.2 · L1UI-5). Se va al escribir.
+                if initialBalanceText.isEmpty {
+                    HStack(spacing: DS.Spacing.xs) {
+                        Image(systemName: "info.circle")
+                            .accessibilityHidden(true)
+                        Text(L10n.Onboarding.balanceRequiredHint)
+                    }
+                    .font(DS.Typography.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(primaryTextStyle)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(Capsule().fill(primaryTextStyle.opacity(0.14)))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal)
+                    .padding(.bottom, DS.Spacing.md)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("onboarding_balance_required_hint")
+                }
             }
         }
     }
@@ -1097,20 +1205,50 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, DS.Spacing.xl)
+                .modifier(confirmationEntrance(0))
 
                 // Lista compacta con dividers internos (UNA card grande con
                 // rows separadas por Rectangle bifurcado por background).
                 confirmItemsCard
                     .padding(.horizontal, DS.Spacing.xl)
+                    .modifier(confirmationEntrance(1))
 
                 // Privacy → grid 2x2 cards individuales con copys cortos.
                 privacyGrid
                     .padding(.horizontal, DS.Spacing.xl)
+                    .modifier(confirmationEntrance(2))
 
                 Spacer(minLength: DS.Spacing.lg)
             }
         }
         .scrollBounceBehavior(.basedOnSize)
+        .overlay {
+            // Cierra con confeti rosa e índigo (UX 2.2 · L1UI-7). `ConfettiView` no pinta nada con «Reducir movimiento».
+            if showConfirmationConfetti {
+                ConfettiView(colors: [.hotPink, .emphasisPinkFill, .electricIndigo, .pinkOnIndigo])
+                    .ignoresSafeArea()
+            }
+        }
+        .task {
+            confirmationShown = true
+            guard !reduceMotion else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+                showConfirmationConfetti = true
+            } catch {
+                // Cancelada: el resumen se desmontó antes del confeti.
+            }
+        }
+        .onDisappear {
+            confirmationShown = false
+            showConfirmationConfetti = false
+        }
+    }
+
+    /// El resumen entra por partes —título, lista, privacidad— con 80 ms entre ellas y una subida de 16 pt con muelle
+    /// (UX 2.2 · L1UI-7). Con «Reducir movimiento», solo el fundido.
+    private func confirmationEntrance(_ index: Int) -> ConfirmationEntrance {
+        ConfirmationEntrance(shown: confirmationShown, index: index, reduceMotion: reduceMotion)
     }
 
     /// Items resumen en lista compacta tipo Apple Settings: rows separadas
@@ -1973,4 +2111,23 @@ enum SeedCategoryPreview {
 
 #Preview {
     OnboardingView {}
+}
+
+/// Entrada por partes del resumen del onboarding (UX 2.2 · L1UI-7).
+private struct ConfirmationEntrance: ViewModifier {
+    let shown: Bool
+    let index: Int
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown || reduceMotion ? 0 : 16)
+            .animation(animation, value: shown)
+    }
+
+    private var animation: Animation {
+        if reduceMotion { return .easeOut(duration: 0.25) }
+        return .spring(response: 0.45, dampingFraction: 0.85).delay(0.08 * Double(index))
+    }
 }

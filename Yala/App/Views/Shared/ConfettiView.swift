@@ -19,7 +19,12 @@ struct ConfettiView: View {
     // MARK: - Configuration
 
     private let particleCount: Int = 50
-    private let colors: [Color] = [.yellow, .orange, .pink, .purple, .blue, .green, .mint, .cyan]
+    private let colors: [Color]
+
+    /// Los colores de siempre por defecto. El resumen del onboarding pasa los de marca (UX 2.2 · L1UI-7).
+    init(colors: [Color] = [.yellow, .orange, .pink, .purple, .blue, .green, .mint, .cyan]) {
+        self.colors = colors
+    }
 
     // MARK: - Body
 

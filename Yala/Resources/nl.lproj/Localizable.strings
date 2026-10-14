@@ -1905,7 +1905,7 @@
 "onboarding.calc.availableCredit" = "Beschikbaar";
 "onboarding.calc.currentSpending" = "Huidige uitgaven →";
 "onboarding.calc.yourBalance" = "Je saldo →";
-"onboarding.calc.creditCard.tip" = "Je saldo weerspiegelt wat je hebt uitgegeven en nog niet hebt betaald.";
+"onboarding.calc.creditCard.tip" = "In Yala staat je kaart negatief: dat is wat je nog moet betalen. Zodra je hem betaalt, staat hij weer op 0.";
 // Simple account explanations
 "onboarding.calc.cashExplanation" = "Kijk in je portemonnee en overal waar je cash bewaart. Tel het op — een ruwe schatting is prima.";
 "onboarding.calc.checkingExplanation" = "Bekijk het beschikbare saldo in je bank-app of bij de geldautomaat. Vul het getal in dat je vandaag ziet.";
@@ -6613,3 +6613,15 @@
 
 /* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
 "onboarding.currencyName.subtitleExpenses" = "Je uitgaven worden in deze valuta genoteerd. Wil je, geef de rekening dan een andere naam.";
+
+/* UX 2.2 · L1UI (auditoría del onboarding, lote 1) */
+"onboarding.balanceGuided.title" = "Weet je je saldo niet?";
+"onboarding.balanceGuided.subtitle" = "Tik hier en we helpen je het uit te rekenen";
+"onboarding.balance.placeholder" = "Bijv. 1500";
+"onboarding.balance.requiredHint" = "Vul je saldo in (of 0) om verder te gaan";
+"onboarding.progress.step" = "Stap **%1$lld** van %2$lld";
+"onboarding.calc.result.balance" = "Je saldo";
+"onboarding.calc.result.available" = "Je beschikbaar";
+"onboarding.calc.creditCard.owed" = "Je bent schuldig";
+"onboarding.calc.creditCard.formula" = "Limiet **%1$@**  −  Beschikbaar **%2$@**";
+"onboarding.accountName.allTogether" = "Mijn geld %@";

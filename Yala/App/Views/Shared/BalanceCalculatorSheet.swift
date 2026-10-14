@@ -57,6 +57,10 @@ struct BalanceCalculatorSheet: View {
 
     @FocusState private var focusedField: CalcField?
 
+    @ScaledMetric(relativeTo: .largeTitle) private var resultFigureSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .subheadline) private var signBadgeSize: CGFloat = 24 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .subheadline) private var signGlyphSize: CGFloat = 12 // A11Y-DT: @ScaledMetric
+
     private enum CalcField: Hashable {
         case bankAccounts, savings, cash, creditCardSpending
         case othersOweMe, iOwe
@@ -88,29 +92,27 @@ struct BalanceCalculatorSheet: View {
         Double(text.replacing(",", with: ".")) ?? 0
     }
 
-    private var generalTotal: Double {
-        let bank = parseAmount(fieldState.bankAccountsText)
-        let savings = parseAmount(fieldState.savingsText)
-        let cash = parseAmount(fieldState.cashText)
-        let creditSpending = parseAmount(fieldState.creditCardSpendingText)
-        let othersOweMe = parseAmount(fieldState.othersOweMeText)
-        let iOwe = parseAmount(fieldState.iOweText)
+    /// Los términos de la cuenta, con su signo (UX 2.2 · L1UI-3). El total y la cuenta que se enseña debajo salen de
+    /// esta MISMA lista: si fueran dos cálculos, la cuenta podría decir una cosa y el total otra.
+    private var generalTerms: [BalanceCalculatorTerm] {
+        BalanceCalculatorTermsLogic.terms(mindset: mindset, amounts: [
+            .bankAccounts: parseAmount(fieldState.bankAccountsText),
+            .savings: parseAmount(fieldState.savingsText),
+            .cash: parseAmount(fieldState.cashText),
+            .creditCardSpending: parseAmount(fieldState.creditCardSpendingText),
+            .othersOweMe: parseAmount(fieldState.othersOweMeText),
+            .iOwe: parseAmount(fieldState.iOweText)
+        ])
+    }
 
-        if mindset == "patrimonial" {
-            return bank + savings + cash - creditSpending + othersOweMe - iOwe
-        } else {
-            return bank + savings + cash
-        }
+    private var generalTotal: Double {
+        BalanceCalculatorTermsLogic.total(generalTerms)
     }
 
     private var creditCardSpending: Double {
         let line = parseAmount(fieldState.creditLineText)
         let available = parseAmount(fieldState.availableCreditText)
         return max(line - available, 0)
-    }
-
-    private var creditCardBalance: Double {
-        -creditCardSpending
     }
 
     private var directSpendingAmount: Double {
@@ -139,6 +141,11 @@ struct BalanceCalculatorSheet: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.lg)
                 .dismissKeyboardOnTap()
+            }
+            .safeAreaInset(edge: .bottom) {
+                if variant == .general {
+                    generalBottomBar
+                }
             }
             .scrollContentBackground(.hidden)
             .yalaScreenBackground(.subtle)
@@ -186,16 +193,16 @@ struct BalanceCalculatorSheet: View {
 
             // Input fields
             VStack(spacing: DS.Spacing.none) {
-                calcRow(label: L10n.Onboarding.calcBankAccounts, hint: L10n.Onboarding.calcBankAccountsHint, text: $fieldState.bankAccountsText, field: .bankAccounts)
+                calcRow(label: L10n.Onboarding.calcBankAccounts, hint: L10n.Onboarding.calcBankAccountsHint, text: $fieldState.bankAccountsText, field: .bankAccounts, sign: .plus)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcSavings, hint: L10n.Onboarding.calcSavingsHint, text: $fieldState.savingsText, field: .savings)
+                calcRow(label: L10n.Onboarding.calcSavings, hint: L10n.Onboarding.calcSavingsHint, text: $fieldState.savingsText, field: .savings, sign: .plus)
                 SubsectionDivider()
-                calcRow(label: L10n.Onboarding.calcCash, hint: L10n.Onboarding.calcCashHint, text: $fieldState.cashText, field: .cash)
+                calcRow(label: L10n.Onboarding.calcCash, hint: L10n.Onboarding.calcCashHint, text: $fieldState.cashText, field: .cash, sign: .plus)
 
                 if mindset == "patrimonial" {
                     SubsectionDivider()
                     VStack(spacing: DS.Spacing.none) {
-                        calcRow(label: L10n.Onboarding.calcCreditCardSpending, hint: L10n.Onboarding.calcCreditCardSpendingHint, text: $fieldState.creditCardSpendingText, field: .creditCardSpending)
+                        calcRow(label: L10n.Onboarding.calcCreditCardSpending, hint: L10n.Onboarding.calcCreditCardSpendingHint, text: $fieldState.creditCardSpendingText, field: .creditCardSpending, sign: .minus)
                         Text(L10n.Onboarding.calcOptional)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
@@ -222,10 +229,10 @@ struct BalanceCalculatorSheet: View {
 
                     SubsectionDivider()
 
-                    calcRow(label: L10n.Onboarding.calcOthersOweMe, text: $fieldState.othersOweMeText, field: .othersOweMe)
+                    calcRow(label: L10n.Onboarding.calcOthersOweMe, text: $fieldState.othersOweMeText, field: .othersOweMe, sign: .plus)
                     SubsectionDivider()
                     VStack(spacing: DS.Spacing.none) {
-                        calcRow(label: L10n.Onboarding.calcIOwe, text: $fieldState.iOweText, field: .iOwe)
+                        calcRow(label: L10n.Onboarding.calcIOwe, text: $fieldState.iOweText, field: .iOwe, sign: .minus)
                         Text(L10n.Onboarding.calcOptional)
                             .font(DS.Typography.caption)
                             .foregroundStyle(.tertiary)
@@ -238,10 +245,11 @@ struct BalanceCalculatorSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
             }
 
-            // Result
-            resultRow(
-                label: mindset == "patrimonial" ? L10n.Onboarding.calcBalance : L10n.Onboarding.calcAvailable,
-                amount: generalTotal
+            // Resultado (UX 2.2 · L1UI-3): ficha índigo con el total y, debajo, la cuenta que lo da.
+            resultCard(
+                label: mindset == "patrimonial" ? L10n.Onboarding.calcResultBalance : L10n.Onboarding.calcResultAvailable,
+                amount: generalTotal,
+                formula: generalFormula
             )
 
             // Tips
@@ -251,14 +259,26 @@ struct BalanceCalculatorSheet: View {
             } else {
                 tipView(text: L10n.Onboarding.calcTipCashFlow)
             }
+        }
+    }
 
-            // Use balance button
+    /// «Usar este saldo» fijo abajo (UX 2.2 · L1UI-3): con los seis campos quedaba bajo el pliegue. Fondo sólido del
+    /// sheet con una línea fina encima, sin fundido.
+    private var generalBottomBar: some View {
+        VStack(spacing: DS.Spacing.xs) {
             useBalanceButton(amount: generalTotal, isPositive: generalTotal >= 0)
-
-            // Closing note
             Text(L10n.Onboarding.calcAdjustLater)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.top, DS.Spacing.sm)
+        .frame(maxWidth: .infinity)
+        .background(theme.background)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(height: 1)
         }
     }
 
@@ -279,7 +299,8 @@ struct BalanceCalculatorSheet: View {
                 .background(.thCard)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
 
-                resultRow(label: L10n.Onboarding.calcYourBalance, amount: -directSpendingAmount)
+                // Una sola cifra, «Debes», también aquí (UX 2.2 · L1UI-4): es la misma tarjeta.
+                resultCard(label: L10n.Onboarding.calcCreditCardOwed, amount: directSpendingAmount, formula: nil)
 
                 useBalanceButton(amount: directSpendingAmount, isPositive: false)
             } else {
@@ -292,10 +313,9 @@ struct BalanceCalculatorSheet: View {
                 .background(.thCard)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
 
-                VStack(spacing: DS.Spacing.sm) {
-                    resultRow(label: L10n.Onboarding.calcCurrentSpending, amount: creditCardSpending)
-                    resultRow(label: L10n.Onboarding.calcYourBalance, amount: creditCardBalance)
-                }
+                // Una sola cifra, «Debes», y la cuenta debajo (UX 2.2 · L1UI-4). Antes eran dos, y la del saldo salía
+                // en rojo: quien no lleva tarjetas en una app creía que algo había salido mal.
+                resultCard(label: L10n.Onboarding.calcCreditCardOwed, amount: creditCardSpending, formula: creditCardFormula)
 
                 tipView(text: L10n.Onboarding.calcCreditCardTip)
 
@@ -378,9 +398,18 @@ struct BalanceCalculatorSheet: View {
 
     // MARK: - Reusable Components
 
-    private func calcRow(label: String, hint: String? = nil, text: Binding<String>, field: CalcField) -> some View {
+    private func calcRow(
+        label: String,
+        hint: String? = nil,
+        text: Binding<String>,
+        field: CalcField,
+        sign: BalanceCalculatorSign? = nil
+    ) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
             HStack {
+                if let sign {
+                    signBadge(sign)
+                }
                 Text(label)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.primary)
@@ -395,6 +424,7 @@ struct BalanceCalculatorSheet: View {
                         .foregroundStyle(.secondary)
                     TextField("0", text: text)
                         .font(DS.Typography.headline)
+                        .monospacedDigit()
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                         .frame(minWidth: 80)
@@ -412,25 +442,93 @@ struct BalanceCalculatorSheet: View {
                 Text(hint)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
+                    .padding(.leading, sign == nil ? 0 : signBadgeSize + DS.Spacing.sm)
             }
         }
         .padding(DS.Spacing.md)
     }
 
-    private func resultRow(label: String, amount rawAmount: Double) -> some View {
+    /// Signo en un círculo sólido delante de cada campo (UX 2.2 · L1UI-3): índigo suma, rojo resta.
+    private func signBadge(_ sign: BalanceCalculatorSign) -> some View {
+        Image(systemName: sign == .plus ? "plus" : "minus")
+            .font(.system(size: signGlyphSize, weight: .heavy)) // A11Y-DT: @ScaledMetric
+            .foregroundStyle(Color.white)
+            .frame(width: signBadgeSize, height: signBadgeSize)
+            .background(Circle().fill(sign == .plus ? Color.electricIndigo : Color.subtractSign))
+            .accessibilityHidden(true)
+    }
+
+    /// El resultado en una ficha índigo sólida (UX 2.2 · L1UI-3/4): el rótulo, la cifra grande en blanco y, si la
+    /// hay, la cuenta que la da. Sin rojo: un saldo negativo o una deuda de tarjeta no son un error.
+    private func resultCard(label: String, amount rawAmount: Double, formula: AttributedString?) -> some View {
         let amount = BalanceCalculatorDisplayLogic.displayed(rawAmount)
-        return HStack {
+        let figure = "\(currencySymbol) \(appPreferences.number(amount, forceFullPrecision: true))"
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(label)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-            Spacer()
-            Text("\(currencySymbol) \(appPreferences.number(amount, forceFullPrecision: true))")
-                .font(DS.Typography.title2)
-                .foregroundStyle(amount >= 0 ? Color.electricIndigo : DS.Semantic.errorForeground)
+                .font(DS.Typography.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.white.opacity(0.85))
+            Text(figure)
+                .font(.system(size: resultFigureSize, weight: .bold)) // A11Y-DT: @ScaledMetric
+                .monospacedDigit()
+                .foregroundStyle(Color.white)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .contentTransition(.numericText(value: amount))
+            if let formula {
+                Rectangle()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(height: 1)
+                Text(formula)
+                    .font(DS.Typography.subheadline)
+                    .monospacedDigit()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        .padding(DS.Spacing.md)
-        .background(Color.electricIndigo.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.selectedIndigoFill)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("balance_calculator_result")
+    }
+
+    /// La cuenta de «Todo junto» en vivo: «1,200 + 800 + 150 − 450 + 100 − 0». Lo que resta, en rosa claro.
+    private var generalFormula: AttributedString {
+        var result = AttributedString()
+        for (index, term) in generalTerms.enumerated() {
+            let color: Color = term.sign == .minus ? .pinkOnIndigo : Color.white.opacity(0.8)
+            if index > 0 {
+                var op = AttributedString(term.sign == .minus ? "  −  " : "  +  ")
+                op.foregroundColor = color
+                result += op
+            }
+            var number = AttributedString(appPreferences.number(term.amount))
+            number.foregroundColor = color
+            result += number
+        }
+        return result
+    }
+
+    /// «Línea 5,000 − Disponible 3,200», con las cifras resaltadas (UX 2.2 · L1UI-4).
+    private var creditCardFormula: AttributedString {
+        let line = appPreferences.number(parseAmount(fieldState.creditLineText))
+        let available = appPreferences.number(parseAmount(fieldState.availableCreditText))
+        let markdown = String(format: L10n.Onboarding.calcCreditCardFormulaFormat, line, available)
+        var result: AttributedString
+        do {
+            result = try AttributedString(markdown: markdown)
+        } catch {
+            #if DEBUG
+            print("BalanceCalculatorSheet: Error: \(error)")
+            #endif
+            result = AttributedString(markdown.replacing("**", with: ""))
+        }
+        result.foregroundColor = Color.white.opacity(0.75)
+        for run in result.runs where run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true {
+            result[run.range].foregroundColor = Color.white
+        }
+        return result
     }
 
     private func tipView(text: String) -> some View {
@@ -487,5 +585,48 @@ struct BalanceCalculatorSheet: View {
 enum BalanceCalculatorDisplayLogic {
     static func displayed(_ amount: Double) -> Double {
         amount == 0 ? 0 : amount
+    }
+}
+
+/// Si un campo de la calculadora suma o resta.
+nonisolated enum BalanceCalculatorSign: Equatable {
+    case plus, minus
+}
+
+/// Un término de la cuenta de «Todo junto»: qué campo, su signo y lo escrito (siempre positivo).
+nonisolated struct BalanceCalculatorTerm: Equatable {
+    let field: BalanceCalculatorTermsLogic.Field
+    let sign: BalanceCalculatorSign
+    let amount: Double
+}
+
+/// Qué suma y qué resta la calculadora «Todo junto» (UX 2.2 · L1UI-3). Antes daba «Tu saldo → S/ 1.800» sin un solo
+/// signo; ahora cada campo lleva el suyo y el total se calcula con la misma lista que se enseña debajo.
+nonisolated enum BalanceCalculatorTermsLogic {
+    enum Field: CaseIterable, Equatable {
+        case bankAccounts, savings, cash, creditCardSpending, othersOweMe, iOwe
+    }
+
+    /// Lo que debes (consumo en tarjetas, lo que debes a otros) resta; lo demás suma.
+    static func sign(of field: Field) -> BalanceCalculatorSign {
+        switch field {
+        case .creditCardSpending, .iOwe: return .minus
+        case .bankAccounts, .savings, .cash, .othersOweMe: return .plus
+        }
+    }
+
+    /// Los campos que cuentan, en el orden de la pantalla. El disponible (`cashFlow`) solo cuenta lo que tienes.
+    static func fields(mindset: String) -> [Field] {
+        mindset == "patrimonial" ? Field.allCases : [.bankAccounts, .savings, .cash]
+    }
+
+    static func terms(mindset: String, amounts: [Field: Double]) -> [BalanceCalculatorTerm] {
+        fields(mindset: mindset).map { field in
+            BalanceCalculatorTerm(field: field, sign: sign(of: field), amount: amounts[field] ?? 0)
+        }
+    }
+
+    static func total(_ terms: [BalanceCalculatorTerm]) -> Double {
+        terms.reduce(0) { $0 + ($1.sign == .plus ? $1.amount : -$1.amount) }
     }
 }

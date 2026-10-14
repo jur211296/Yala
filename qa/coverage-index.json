@@ -1787,6 +1787,7 @@
         "Yala/App/Views/Shared/BalanceCalculatorSheet.swift",
         "Yala/App/Views/Accounts/AccountFormView.swift",
         "Yala/App/Logic/OnboardingPrefillResolver.swift",
+        "Yala/App/Logic/OnboardingAccountNameLogic.swift",
         "Yala/App/Logic/FullModeActivationLogic.swift"
       ],
       "scenarioIDs": [
