@@ -89,6 +89,8 @@
 - [Maqueta de estados del Welcome](reference_maqueta_de_estados_del_welcome.md) — `-mock6`; el cover de la nube se cae sobre la app: lánzalo desde el Welcome.
 - [Maqueta de variantes por XCUITest](reference_maqueta_de_variantes_por_xcuitest.md) — `-mockv N` + PNG al Mac; `launchForUITest` pisa args: `extraArguments:`.
 - [Forzar preferencias en el simulador](reference_forzar_preferencias_en_el_simulador.md) — matar cfprefsd del runtime y plistlib; plutil rompe claves con puntos.
+- [axe no toca una ventana propia](feedback_axe_no_toca_una_ventana_propia.md) — un aviso en UIWindow aparte: veredicto por XCUITest y dedo.
+- [Auto-merge en 2.2 no espera al CI](feedback_auto_merge_en_2_2_no_espera_al_ci.md) — 2.2 no exige checks: fusiona al instante.
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
