@@ -6101,6 +6101,14 @@ enum L10n {
         static var balanceManualOption: String { ls("onboarding.balanceManualOption", comment: "") }
         static var balanceManualHint: String { ls("onboarding.balanceManualHint", comment: "") }
         static var balanceGuidedIncompleteHint: String { ls("onboarding.balanceGuidedIncompleteHint", comment: "") }
+        // UX 2.2 · L1UI (pasada UI del lote 1)
+        static var balanceGuidedTitle: String { ls("onboarding.balanceGuided.title", comment: "") }
+        static var balanceGuidedSubtitle: String { ls("onboarding.balanceGuided.subtitle", comment: "") }
+        static var balancePlaceholder: String { ls("onboarding.balance.placeholder", comment: "") }
+        static var balanceRequiredHint: String { ls("onboarding.balance.requiredHint", comment: "") }
+        /// «Paso **N** de M», con el número en markdown para pintarlo en negrita.
+        static var progressStepFormat: String { ls("onboarding.progress.step", comment: "") }
+        static var accountNameAllTogetherFormat: String { ls("onboarding.accountName.allTogether", comment: "") }
         static var privacyLocalShort: String { ls("onboarding.privacyLocalShort", comment: "") }
         static var privacyNoTrackingShort: String { ls("onboarding.privacyNoTrackingShort", comment: "") }
         static var privacyIcloudShort: String { ls("onboarding.privacyIcloudShort", comment: "") }
@@ -6148,6 +6156,11 @@ enum L10n {
         static var calcCurrentSpending: String { ls("onboarding.calc.currentSpending", comment: "") }
         static var calcYourBalance: String { ls("onboarding.calc.yourBalance", comment: "") }
         static var calcCreditCardTip: String { ls("onboarding.calc.creditCard.tip", comment: "") }
+        static var calcResultBalance: String { ls("onboarding.calc.result.balance", comment: "") }
+        static var calcResultAvailable: String { ls("onboarding.calc.result.available", comment: "") }
+        static var calcCreditCardOwed: String { ls("onboarding.calc.creditCard.owed", comment: "") }
+        /// «Línea **%1$@** − Disponible **%2$@**», cifras en markdown.
+        static var calcCreditCardFormulaFormat: String { ls("onboarding.calc.creditCard.formula", comment: "") }
         // Simple account explanations (cash/checking/savings)
         // Shared expenses (patrimonial only)
         static var calcSharedExpenses: String { ls("onboarding.calc.sharedExpenses", comment: "") }

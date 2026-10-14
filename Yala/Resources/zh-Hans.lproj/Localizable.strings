@@ -1905,7 +1905,7 @@
 "onboarding.calc.availableCredit" = "可用";
 "onboarding.calc.currentSpending" = "当前支出 →";
 "onboarding.calc.yourBalance" = "你的余额 →";
-"onboarding.calc.creditCard.tip" = "你的余额反映已花费但尚未还的部分。";
+"onboarding.calc.creditCard.tip" = "在 Yala 里，你的卡显示为负数：这是你还欠的钱。还清后会回到 0。";
 // Simple account explanations
 "onboarding.calc.cashExplanation" = "看看钱包以及任何存放现金的地方。全部相加 — 粗略估计就行。";
 "onboarding.calc.checkingExplanation" = "在你的网银 App 或 ATM 查看可用余额。填入今天看到的数字。";
@@ -6613,3 +6613,15 @@
 
 /* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
 "onboarding.currencyName.subtitleExpenses" = "你的支出会用这种货币记录。愿意的话，可以给账户改个名字。";
+
+/* UX 2.2 · L1UI (auditoría del onboarding, lote 1) */
+"onboarding.balanceGuided.title" = "不知道你的余额？";
+"onboarding.balanceGuided.subtitle" = "点这里，我们帮你算出来";
+"onboarding.balance.placeholder" = "例如 1500";
+"onboarding.balance.requiredHint" = "输入你的余额（或 0）即可继续";
+"onboarding.progress.step" = "第 **%1$lld** 步，共 %2$lld 步";
+"onboarding.calc.result.balance" = "你的余额";
+"onboarding.calc.result.available" = "你的可用";
+"onboarding.calc.creditCard.owed" = "你欠";
+"onboarding.calc.creditCard.formula" = "额度 **%1$@**  −  可用 **%2$@**";
+"onboarding.accountName.allTogether" = "我的钱 %@";

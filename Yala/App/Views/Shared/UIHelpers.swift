@@ -246,6 +246,22 @@ extension Color {
     /// usándose `priorityNeed`: el requisito de contraste es del TEXTO.
     static let incomeAmount = Color(hex: "0F7A80")
 
+    // MARK: - Rellenos sólidos del onboarding (UX 2.2 · L1UI, variante 2 elegida por Jürgen el 2026-10-13)
+
+    /// Índigo profundo: la tarjeta ELEGIDA del onboarding y las fichas de resultado de la calculadora del saldo.
+    /// Texto blanco encima con contraste AA (#3D36B3). `electricIndigo` con blanco no llega a 4,5.
+    static let selectedIndigoFill = Color(hex: "3D36B3")
+
+    /// Rosa profundo: la tarjeta «¿No sabes tu saldo?». `hotPink` (#FF0080) con texto blanco da 3,8:1;
+    /// este tono da 5,2:1 sin dejar de ser el rosa de marca.
+    static let emphasisPinkFill = Color(hex: "D6006B")
+
+    /// Rosa claro para texto sobre los rellenos índigo (lo que resta en la cuenta de la calculadora).
+    static let pinkOnIndigo = Color(hex: "FF99CC")
+
+    /// Rojo del círculo de «resta» de la calculadora. Es un glifo sobre relleno, no texto.
+    static let subtractSign = Color(hex: "E5484D")
+
     // MARK: - Need Colors (Distinct from brand colors)
 
     /// Essential Need: Warm amber for basic necessities

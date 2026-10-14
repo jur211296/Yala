@@ -1901,7 +1901,7 @@
 "onboarding.calc.availableCredit" = "Verfügbar";
 "onboarding.calc.currentSpending" = "Aktuelle Ausgaben →";
 "onboarding.calc.yourBalance" = "Dein Saldo →";
-"onboarding.calc.creditCard.tip" = "Dein Saldo zeigt, was du ausgegeben und noch nicht bezahlt hast.";
+"onboarding.calc.creditCard.tip" = "In Yala erscheint deine Karte im Minus: Das ist, was du noch schuldest. Sobald du sie bezahlst, steht sie wieder auf 0.";
 // Simple account explanations
 "onboarding.calc.cashExplanation" = "Schau in dein Portemonnaie und überall, wo du Bargeld aufbewahrst. Zähle alles zusammen — eine Schätzung reicht.";
 "onboarding.calc.checkingExplanation" = "Schau den verfügbaren Saldo in deiner Banking-App oder am Geldautomaten nach. Gib die Zahl ein, die du heute siehst.";
@@ -6601,3 +6601,15 @@
 
 /* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
 "onboarding.currencyName.subtitleExpenses" = "Deine Ausgaben werden in dieser Währung notiert. Wenn du willst, gib dem Konto einen anderen Namen.";
+
+/* UX 2.2 · L1UI (auditoría del onboarding, lote 1) */
+"onboarding.balanceGuided.title" = "Du kennst deinen Saldo nicht?";
+"onboarding.balanceGuided.subtitle" = "Tippe hier, wir helfen dir beim Berechnen";
+"onboarding.balance.placeholder" = "z. B. 1500";
+"onboarding.balance.requiredHint" = "Gib deinen Saldo ein (oder 0), um weiterzumachen";
+"onboarding.progress.step" = "Schritt **%1$lld** von %2$lld";
+"onboarding.calc.result.balance" = "Dein Saldo";
+"onboarding.calc.result.available" = "Dein Verfügbares";
+"onboarding.calc.creditCard.owed" = "Du schuldest";
+"onboarding.calc.creditCard.formula" = "Rahmen **%1$@**  −  Verfügbar **%2$@**";
+"onboarding.accountName.allTogether" = "Mein Geld %@";

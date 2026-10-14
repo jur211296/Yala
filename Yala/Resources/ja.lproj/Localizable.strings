@@ -1905,7 +1905,7 @@
 "onboarding.calc.availableCredit" = "利用可能";
 "onboarding.calc.currentSpending" = "現在の支出 →";
 "onboarding.calc.yourBalance" = "残高 →";
-"onboarding.calc.creditCard.tip" = "残高は、まだ支払っていない支出を反映します。";
+"onboarding.calc.creditCard.tip" = "Yalaではカードはマイナスで表示されます。まだ支払っていない金額です。支払うと0に戻ります。";
 // Simple account explanations
 "onboarding.calc.cashExplanation" = "財布や現金を保管している場所を確認し、合計してください。おおよそで大丈夫です。";
 "onboarding.calc.checkingExplanation" = "銀行アプリやATMで利用可能残高を確認し、今日表示されている数字を入力してください。";
@@ -6613,3 +6613,15 @@
 
 /* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
 "onboarding.currencyName.subtitleExpenses" = "支出はこの通貨で記録されます。口座名は自由に変えられます。";
+
+/* UX 2.2 · L1UI (auditoría del onboarding, lote 1) */
+"onboarding.balanceGuided.title" = "残高がわかりませんか？";
+"onboarding.balanceGuided.subtitle" = "ここをタップして一緒に計算しましょう";
+"onboarding.balance.placeholder" = "例: 1500";
+"onboarding.balance.requiredHint" = "残高（または0）を入力すると次へ進めます";
+"onboarding.progress.step" = "ステップ **%1$lld**/%2$lld";
+"onboarding.calc.result.balance" = "残高";
+"onboarding.calc.result.available" = "利用可能額";
+"onboarding.calc.creditCard.owed" = "未払い額";
+"onboarding.calc.creditCard.formula" = "枠 **%1$@**  −  利用可能 **%2$@**";
+"onboarding.accountName.allTogether" = "マイマネー %@";

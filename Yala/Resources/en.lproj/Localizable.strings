@@ -1905,7 +1905,7 @@
 "onboarding.calc.availableCredit" = "Available";
 "onboarding.calc.currentSpending" = "Current spending →";
 "onboarding.calc.yourBalance" = "Your balance →";
-"onboarding.calc.creditCard.tip" = "Your balance reflects what you've spent and haven't paid yet.";
+"onboarding.calc.creditCard.tip" = "In Yala your card shows as negative: it's what you still owe. Once you pay it, it goes back to 0.";
 // Simple account explanations
 "onboarding.calc.cashExplanation" = "Check your wallet and anywhere you keep cash. Add it all up — a rough estimate is fine.";
 "onboarding.calc.checkingExplanation" = "Check the available balance in your banking app or ATM. Enter the number you see today.";
@@ -6607,3 +6607,15 @@
 
 /* Onboarding currency step, expenses-only mode: subtitle (UX 2.2 L1-11) */
 "onboarding.currencyName.subtitleExpenses" = "Your expenses are recorded in this currency. You can rename the account if you like.";
+
+/* UX 2.2 · L1UI (auditoría del onboarding, lote 1) */
+"onboarding.balanceGuided.title" = "Don't know your balance?";
+"onboarding.balanceGuided.subtitle" = "Tap here and we'll help you work it out";
+"onboarding.balance.placeholder" = "e.g. 1500";
+"onboarding.balance.requiredHint" = "Enter your balance (or 0) to continue";
+"onboarding.progress.step" = "Step **%1$lld** of %2$lld";
+"onboarding.calc.result.balance" = "Your balance";
+"onboarding.calc.result.available" = "Your available";
+"onboarding.calc.creditCard.owed" = "You owe";
+"onboarding.calc.creditCard.formula" = "Limit **%1$@**  −  Available **%2$@**";
+"onboarding.accountName.allTogether" = "My money %@";
