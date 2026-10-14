@@ -253,7 +253,6 @@
 
 "search.noResults" = "Aucun resultat";
 "search.tryAnotherTerm" = "Essayez un autre terme de recherche";
-"search.resultsCount" = "%d résultats";
 "search.filter.all" = "Tout";
 "search.filter.note" = "Note";
 "search.filter.category" = "Catégorie";
@@ -2220,7 +2219,7 @@
 "faq.multiCurrency.q" = "Puis-je utiliser plusieurs devises ?";
 "faq.multiCurrency.a" = "Oui. Yala supporte 7 devises (PEN, USD, EUR, MXN, COP, BRL, GBP). Configurez votre devise principale et ajoutez des devises secondaires dans Réglages > Devise.";
 "faq.changeCategory.q" = "Comment changer la catégorie d'une dépense ?";
-"faq.changeCategory.a" = "Ouvrez la dépense et appuyez sur la catégorie pour la changer. Pour en modifier plusieurs, utilisez l'édition groupée : maintenez un enregistrement et sélectionnez ceux à modifier.";
+"faq.changeCategory.a" = "Ouvrez l’enregistrement, appuyez sur « Modifier » et changez la catégorie. Plus rapide : maintenez l’enregistrement dans la liste et choisissez « Changer de catégorie ». Pour en modifier plusieurs à la fois, appuyez sur ··· dans Enregistrements, choisissez « Sélectionner », cochez ceux que vous voulez et appuyez sur le crayon.";
 "faq.importData.q" = "Puis-je importer mes données ?";
 "faq.importData.a" = "Oui. Allez dans Réglages > Importer et envoyez un fichier CSV ou Excel. Yala détecte les colonnes automatiquement et vous permet d'assigner des comptes par devise.";
 "faq.exportData.q" = "Comment exporter mes données ?";
@@ -6611,3 +6610,6 @@
 "inbox.draft.movedToArchived" = "Déplacé dans Archivés";
 "inbox.draft.undo" = "Annuler";
 "inbox.bulkSuccess.total" = "%@ au total";
+"bulkEdit.cannotEditGroupRecords" = "Certains enregistrements sélectionnés viennent d’un groupe : cela se modifie depuis le groupe. Retirez-les de la sélection ou modifiez-les un par un.";
+"records.groupRecordsOnlyTitle" = "Ces enregistrements viennent d’un groupe";
+"records.groupRecordsDeleteFromGroup" = "Ils se suppriment depuis le groupe, pour que les comptes de chacun restent justes.";

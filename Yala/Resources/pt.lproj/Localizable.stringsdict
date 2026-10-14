@@ -780,5 +780,53 @@
 			<string>%d registros automáticos</string>
 		</dict>
 	</dict>
+	<key>records.selectedCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d selecionado</string>
+			<key>other</key>
+			<string>%d selecionados</string>
+		</dict>
+	</dict>
+	<key>records.groupRecordsKept</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d vem de um grupo e não é excluído aqui: exclua no grupo.</string>
+			<key>other</key>
+			<string>%d vêm de um grupo e não são excluídos aqui: exclua no grupo.</string>
+		</dict>
+	</dict>
+	<key>search.resultsCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d resultado</string>
+			<key>other</key>
+			<string>%d resultados</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

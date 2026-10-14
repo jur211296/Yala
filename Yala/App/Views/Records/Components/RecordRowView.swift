@@ -124,11 +124,22 @@ struct RecordRowView: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
-        let note = record.note ?? ""
-        let amount = appPreferences.currency(abs(record.amount), currencyCode: currencyCode)
-        let category = record.subcategory?.name ?? record.category?.name ?? ""
-        let account = record.account?.name ?? ""
-        return "\(note), \(amount), \(category), \(account)"
+        let kind: TransactionType = switch TransactionDetailSheetLogic.kind(
+            isTransfer: record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer,
+            categoryIsIncome: record.category?.isIncome,
+            amount: record.amount
+        ) {
+        case .expense: .expense
+        case .income: .income
+        case .transfer: .transfer
+        }
+        return TransactionDetailSheetLogic.rowAccessibilityLabel(
+            note: record.note,
+            kind: kind.displayName,
+            amount: appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode),
+            category: record.subcategory?.name ?? record.category?.name,
+            account: record.account?.name
+        )
     }
 
     // MARK: - Selection Circle

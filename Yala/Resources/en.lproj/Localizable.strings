@@ -255,7 +255,6 @@
 
 "search.noResults" = "We didn't find any results";
 "search.tryAnotherTerm" = "Try a different search term";
-"search.resultsCount" = "%d results";
 "search.filter.all" = "All";
 "search.filter.note" = "Note";
 "search.filter.category" = "Category";
@@ -2222,7 +2221,7 @@
 "faq.multiCurrency.q" = "Can I use multiple currencies?";
 "faq.multiCurrency.a" = "Yes. Yala supports 7 currencies (PEN, USD, EUR, MXN, COP, BRL, GBP). Set your main currency and add secondary currencies in Settings > Currency.";
 "faq.changeCategory.q" = "How do I change an expense's category?";
-"faq.changeCategory.a" = "Open the expense and tap the category to change it. To change multiple at once, use bulk edit: long-press a record and select the ones you want to modify.";
+"faq.changeCategory.a" = "Open the record, tap “Edit” and change the category. Faster: touch and hold the record in the list and choose “Change category”. To change several at once, tap ··· in Records, choose “Select”, mark the ones you want and tap the pencil.";
 "faq.importData.q" = "Can I import my data?";
 "faq.importData.a" = "Yes. Go to Settings > Import and upload a CSV or Excel file. Yala detects the columns automatically and lets you assign accounts by currency.";
 "faq.exportData.q" = "How do I export my data?";
@@ -6616,3 +6615,6 @@
 "inbox.draft.movedToArchived" = "Moved to Archived";
 "inbox.draft.undo" = "Undo";
 "inbox.bulkSuccess.total" = "%@ in total";
+"bulkEdit.cannotEditGroupRecords" = "Some of the selected records come from a group, and that is changed from the group. Remove them from the selection or edit them one by one.";
+"records.groupRecordsOnlyTitle" = "These records come from a group";
+"records.groupRecordsDeleteFromGroup" = "They’re deleted from the group, so everyone’s balances keep adding up.";

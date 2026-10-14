@@ -21,6 +21,23 @@ extension RecordContextActionLogic.Shape {
     }
 }
 
+extension RecordBulkActionLogic.DeleteDialog {
+    var titleText: String {
+        switch title {
+        case .deleteCount(let count): L10n.Records.deleteConfirmTitle(count)
+        case .onlyGroupRecords: L10n.Records.groupRecordsOnlyTitle
+        }
+    }
+
+    var messageText: String {
+        switch message {
+        case .cannotUndo: L10n.Common.cannotUndo
+        case .cannotUndoKeepingGroupRecords(let count): "\(L10n.Records.groupRecordsKept(count)) \(L10n.Common.cannotUndo)"
+        case .deleteFromGroup: L10n.Records.groupRecordsDeleteFromGroup
+        }
+    }
+}
+
 /// Las acciones del menú. En modo selección no hay menú: ahí el toque selecciona.
 struct RecordRowContextMenu: ViewModifier {
     let record: TransactionItem

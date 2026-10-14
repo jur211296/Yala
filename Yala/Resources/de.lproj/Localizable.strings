@@ -253,7 +253,6 @@
 
 "search.noResults" = "Keine Ergebnisse";
 "search.tryAnotherTerm" = "Versuche einen anderen Suchbegriff";
-"search.resultsCount" = "%d Ergebnisse";
 "search.filter.all" = "Alle";
 "search.filter.note" = "Notiz";
 "search.filter.category" = "Kategorie";
@@ -2218,7 +2217,7 @@
 "faq.multiCurrency.q" = "Kann ich mehrere Währungen nutzen?";
 "faq.multiCurrency.a" = "Ja. Yala unterstützt 7 Währungen (PEN, USD, EUR, MXN, COP, BRL, GBP). Lege deine Hauptwährung fest und füge Nebenwährungen unter Einstellungen > Währung hinzu.";
 "faq.changeCategory.q" = "Wie ändere ich die Kategorie einer Ausgabe?";
-"faq.changeCategory.a" = "Öffne die Ausgabe und tippe auf die Kategorie. Um mehrere gleichzeitig zu ändern, nutze die Massenbearbeitung: halte einen Eintrag gedrückt und wähle die zu ändernden aus.";
+"faq.changeCategory.a" = "Öffne den Eintrag, tippe auf „Bearbeiten“ und ändere die Kategorie. Schneller: Halte den Eintrag in der Liste gedrückt und wähle „Kategorie ändern“. Um mehrere gleichzeitig zu ändern, tippe in Einträge auf ···, wähle „Auswählen“, markiere die gewünschten und tippe auf den Stift.";
 "faq.importData.q" = "Kann ich meine Daten importieren?";
 "faq.importData.a" = "Ja. Gehe zu Einstellungen > Importieren und lade eine CSV- oder Excel-Datei hoch. Yala erkennt die Spalten automatisch und lässt dich Konten nach Währung zuordnen.";
 "faq.exportData.q" = "Wie exportiere ich meine Daten?";
@@ -6610,3 +6609,6 @@
 "inbox.draft.movedToArchived" = "Zu Archiviert verschoben";
 "inbox.draft.undo" = "Rückgängig";
 "inbox.bulkSuccess.total" = "%@ insgesamt";
+"bulkEdit.cannotEditGroupRecords" = "Einige ausgewählte Einträge stammen aus einer Gruppe – das änderst du in der Gruppe. Entferne sie aus der Auswahl oder bearbeite sie einzeln.";
+"records.groupRecordsOnlyTitle" = "Diese Einträge stammen aus einer Gruppe";
+"records.groupRecordsDeleteFromGroup" = "Sie werden in der Gruppe gelöscht, damit die Salden aller stimmen.";

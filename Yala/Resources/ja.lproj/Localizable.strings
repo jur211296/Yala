@@ -255,7 +255,6 @@
 
 "search.noResults" = "結果が見つかりませんでした";
 "search.tryAnotherTerm" = "別の検索語を試してください";
-"search.resultsCount" = "%d件の結果";
 "search.filter.all" = "すべて";
 "search.filter.note" = "メモ";
 "search.filter.category" = "カテゴリー";
@@ -2222,7 +2221,7 @@
 "faq.multiCurrency.q" = "複数通貨は使える？";
 "faq.multiCurrency.a" = "はい。Yalaは7通貨(PEN、USD、EUR、MXN、COP、BRL、GBP)に対応。設定 > 通貨でメイン通貨を設定し、副通貨を追加できます。";
 "faq.changeCategory.q" = "支出のカテゴリーはどう変更する？";
-"faq.changeCategory.a" = "支出を開いてカテゴリーをタップで変更できます。複数まとめて変更するには一括編集を使用: 記録を長押しして対象を選択してください。";
+"faq.changeCategory.a" = "記録を開いて「編集」をタップし、カテゴリーを変更します。もっと早く：一覧で記録を長押しして「カテゴリーを変更」を選びます。複数をまとめて変更するには、記録で ··· をタップし、「選択」を選んで対象にチェックを付け、鉛筆をタップします。";
 "faq.importData.q" = "データをインポートできる？";
 "faq.importData.a" = "はい。設定 > インポートからCSVまたはExcelファイルをアップロード。Yalaが列を自動検出し、通貨ごとに口座を割り当てられます。";
 "faq.exportData.q" = "データはどうエクスポートする？";
@@ -6622,3 +6621,6 @@
 "inbox.draft.movedToArchived" = "アーカイブ済みに移動しました";
 "inbox.draft.undo" = "取り消す";
 "inbox.bulkSuccess.total" = "合計 %@";
+"bulkEdit.cannotEditGroupRecords" = "選択した記録の一部はグループのものです。これはグループ側で変更します。選択から外すか、1件ずつ編集してください。";
+"records.groupRecordsOnlyTitle" = "これらの記録はグループのものです";
+"records.groupRecordsDeleteFromGroup" = "グループ側で削除します。全員の残高が合うようにするためです。";

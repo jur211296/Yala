@@ -1657,6 +1657,16 @@ enum L10n {
         static func deleteConfirmTitle(_ count: Int) -> String {
             String(format: ls("records.deleteConfirmTitle", comment: ""), count)
         }
+        /// Barra del modo selección: «1 seleccionado», «3 seleccionados». Plural en el `.stringsdict`.
+        static func selectedCount(_ count: Int) -> String {
+            String(format: ls("records.selectedCount", comment: "Modo selección: cuántos registros hay elegidos"), count)
+        }
+        /// Borrado en lote: los elegidos que vienen de un grupo se quedan. Plural en el `.stringsdict`.
+        static func groupRecordsKept(_ count: Int) -> String {
+            String(format: ls("records.groupRecordsKept", comment: "Borrado en lote: cuántos de los elegidos vienen de un grupo y no se borran"), count)
+        }
+        static var groupRecordsOnlyTitle: String { ls("records.groupRecordsOnlyTitle", comment: "Borrado en lote: todo lo elegido viene de un grupo") }
+        static var groupRecordsDeleteFromGroup: String { ls("records.groupRecordsDeleteFromGroup", comment: "Borrado en lote: por qué lo de un grupo se borra desde el grupo") }
 
         enum Duplicates {
             static var menuTitle: String { ls("records.duplicates.menuTitle", comment: "") }
@@ -3107,6 +3117,7 @@ enum L10n {
     enum Search {
         static var noResults: String { ls("search.noResults", comment: "") }
         static var tryAnotherTerm: String { ls("search.tryAnotherTerm", comment: "") }
+        /// Plural en el `.stringsdict` («1 resultado»).
         static func resultsCount(_ count: Int) -> String { String(format: ls("search.resultsCount", comment: ""), count) }
 
         enum Filter {
@@ -6268,6 +6279,9 @@ enum L10n {
     enum BulkEdit {
         static var currencyWarning: String {
             ls("bulkEdit.currencyWarning", comment: "")
+        }
+        static var cannotEditGroupRecords: String {
+            ls("bulkEdit.cannotEditGroupRecords", comment: "Editar varios: la selección lleva registros de un grupo")
         }
         static func editCount(_ count: Int) -> String {
             String(format: ls("bulkEdit.editCount", comment: ""), count)

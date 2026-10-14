@@ -1477,7 +1477,7 @@
 "export.title" = "Export";
 "faq.cancelSub.a" = "You can manage or cancel your subscription anytime from Settings > Subscription > Manage in App Store. Your Pro access continues until the end of the paid period.";
 "faq.cancelSub.q" = "How do I cancel my subscription?";
-"faq.changeCategory.a" = "Open the expense and tap the category to change it. To change multiple at once, use bulk edit: long-press a record and select the ones you want to modify.";
+"faq.changeCategory.a" = "Open the record, tap “Edit” and change the category. Faster: touch and hold the record in the list and choose “Change category”. To change several at once, tap ··· in Records, choose “Select”, mark the ones you want and tap the pencil.";
 "faq.changeCategory.q" = "How do I change an expense's category?";
 "faq.deleteData.a" = "Yes. In Settings > Wipe Data you can delete all your information. This action cannot be undone, so we recommend exporting a backup first.";
 "faq.deleteData.q" = "Can I delete all my data?";
@@ -5897,3 +5897,8 @@
 "inbox.draft.movedToArchived" = "Moved to Archived";
 "inbox.draft.undo" = "Undo";
 "inbox.bulkSuccess.total" = "%@ in total";
+"bulkEdit.cannotEditGroupRecords" = "Some of the selected records come from a group, and that is changed from the group. Remove them from the selection or edit them one by one.";
+"records.groupRecordsOnlyTitle" = "These records come from a group";
+"records.groupRecordsDeleteFromGroup" = "They’re deleted from the group, so everyone’s balances keep adding up.";
+"records.selectedCount" = "%d selected";
+"records.groupRecordsKept" = "%d come from a group and aren’t deleted here: delete them from the group.";

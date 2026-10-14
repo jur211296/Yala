@@ -1423,7 +1423,7 @@
 "export.title" = "Exportar";
 "faq.cancelSub.a" = "Puedes administrar o cancelar tu suscripción en cualquier momento desde Ajustes > Suscripción > Administrar en App Store. Tu acceso Pro continúa hasta el final del periodo pagado.";
 "faq.cancelSub.q" = "¿Cómo cancelo mi suscripción?";
-"faq.changeCategory.a" = "Abre el gasto y toca la categoría para cambiarla. Si quieres cambiar varios a la vez, usa la edición masiva: mantén presionado un registro y selecciona los que quieras modificar.";
+"faq.changeCategory.a" = "Abre el registro, toca «Editar» y cambia la categoría. Más rápido: mantén pulsado el registro en la lista y elige «Cambiar categoría». Para cambiar varios a la vez, toca ··· en Registros, elige «Seleccionar», marca los que quieras y toca el lápiz.";
 "faq.changeCategory.q" = "¿Cómo cambio la categoría de un gasto?";
 "faq.deleteData.a" = "Sí. En Ajustes > Vaciar datos puedes eliminar toda tu información. Esta acción no se puede deshacer, así que te recomendamos exportar un respaldo antes.";
 "faq.deleteData.q" = "¿Puedo borrar todos mis datos?";
@@ -5913,3 +5913,8 @@
 "inbox.draft.movedToArchived" = "Lo has movido a Archivados";
 "inbox.draft.undo" = "Deshacer";
 "inbox.bulkSuccess.total" = "%@ en total";
+"bulkEdit.cannotEditGroupRecords" = "Algunos registros elegidos vienen de un grupo, y eso se cambia desde el grupo. Quítalos de la selección o edítalos uno a uno.";
+"records.groupRecordsOnlyTitle" = "Estos registros vienen de un grupo";
+"records.groupRecordsDeleteFromGroup" = "Se borran desde el grupo, para que las cuentas de todos sigan cuadrando.";
+"records.selectedCount" = "%d seleccionados";
+"records.groupRecordsKept" = "%d vienen de un grupo y no se borran aquí: se borran desde el grupo.";
