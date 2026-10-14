@@ -49,6 +49,14 @@ struct TrendChartView: View {
     @State private var pulseAnimate = false
     @State private var showEducationSheet = false
 
+    /// La hoja «Tu saldo hoy» explica la diferencia por tipo de cambio; sin saldo en otra moneda no
+    /// hay ninguna y ni la píldora ni el punto la abren.
+    private var explainsCurrencyDifference: Bool {
+        LiveAnchorEducationLogic.explainsCurrencyDifference(
+            liveAnchorBreakdown, preferredCurrencyCode: currencyCode
+        )
+    }
+
     var body: some View {
         // Disable animations completely to prevent interpolation between data states
         // This fixes the visual glitch when switching between Balance/Income/Expense
@@ -266,7 +274,7 @@ struct TrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(gridOpacity))
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
-                        Text(formatK(doubleValue))
+                        Text(YalaFormatter.axisK(doubleValue, domain: yDomain))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                             .opacity(labelOpacity)
@@ -349,7 +357,7 @@ struct TrendChartView: View {
                 let absoluteX = xPos + frame.origin.x
                 let absoluteY = frame.origin.y + DS.Spacing.md
 
-                TodayHintGlassPill { showEducationSheet = true }
+                TodayHintGlassPill(action: explainsCurrencyDifference ? { showEducationSheet = true } : nil)
                     .position(x: absoluteX, y: absoluteY)
             }
         }
@@ -401,10 +409,16 @@ struct TrendChartView: View {
                 .position(x: absoluteX, y: absoluteY)
                 .onTapGesture { showEducationSheet = true }
                 .accessibilityElement()
-                .accessibilityLabel(L10n.Panel.LiveAnchorEducation.dotA11yLabel)
-                .accessibilityAddTraits(.isButton)
+                // Sin hoja que abrir, VoiceOver no puede prometer «Toca para ver el detalle».
+                .accessibilityLabel(
+                    explainsCurrencyDifference
+                        ? L10n.Panel.LiveAnchorEducation.dotA11yLabel
+                        : L10n.Widget.today
+                )
+                .accessibilityAddTraits(explainsCurrencyDifference ? .isButton : [])
                 .coachMarkAnchor("todayFXHint")
-                .allowsHitTesting(true)
+                // Sin otra moneda no hay hoja que abrir (B1, lote 3): el punto se dibuja, no se toca.
+                .allowsHitTesting(explainsCurrencyDifference)
             }
         }
     }

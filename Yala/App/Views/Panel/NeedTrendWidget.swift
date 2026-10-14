@@ -591,7 +591,7 @@ struct NeedTrendChartView: View {
                     .foregroundStyle(.thSecondaryText.opacity(0.1))
                 if let amount = value.as(Double.self) {
                     AxisValueLabel {
-                        Text(formatAxisAmount(amount))
+                        Text(YalaFormatter.axisK(amount, domain: yDomain))
                             .font(DS.Typography.captionSmall)
                             .foregroundStyle(.thSecondaryText)
                     }

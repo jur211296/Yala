@@ -12,26 +12,43 @@ import SwiftUI
 /// gesto funcione dentro de annotations de `Chart`, donde `Button` no
 /// propaga eventos y los efectos visuales por elemento individual son
 /// inestables.
+///
+/// Sin `action` es solo la etiqueta «Hoy» del marcador: sin «ⓘ» y sin toque. Pasa cuando no hay
+/// diferencia por tipo de cambio que explicar (`LiveAnchorEducationLogic`): la hoja diría «tienes
+/// dinero en otras monedas» a quien no tiene.
 struct TodayHintGlassPill: View {
-    let action: () -> Void
+    var action: (() -> Void)? = nil
 
     var body: some View {
+        if let action {
+            label(showsInfo: true)
+                .glassEffect(.regular.interactive(), in: Capsule())
+                .contentShape(Capsule())
+                .onTapGesture(perform: action)
+                .accessibilityElement()
+                .accessibilityLabel(L10n.Widget.today)
+                .accessibilityHint(L10n.Panel.LiveAnchorEducation.dotA11yLabel)
+                .accessibilityAddTraits(.isButton)
+        } else {
+            label(showsInfo: false)
+                .glassEffect(.regular, in: Capsule())
+                .accessibilityElement()
+                .accessibilityLabel(L10n.Widget.today)
+        }
+    }
+
+    private func label(showsInfo: Bool) -> some View {
         HStack(spacing: DS.Spacing.xxs) {
             Text(L10n.Widget.today)
                 .font(DS.Typography.labelTiny)
-            Image(systemName: "info.circle")
-                .font(DS.Typography.captionSmall)
-                .fontWeight(.semibold)
+            if showsInfo {
+                Image(systemName: "info.circle")
+                    .font(DS.Typography.captionSmall)
+                    .fontWeight(.semibold)
+            }
         }
         .foregroundStyle(.thPrimaryText)
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)
-        .glassEffect(.regular.interactive(), in: Capsule())
-        .contentShape(Capsule())
-        .onTapGesture(perform: action)
-        .accessibilityElement()
-        .accessibilityLabel(L10n.Widget.today)
-        .accessibilityHint(L10n.Panel.LiveAnchorEducation.dotA11yLabel)
-        .accessibilityAddTraits(.isButton)
     }
 }

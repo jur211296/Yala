@@ -348,6 +348,41 @@ struct YalaFormatter {
         return "\(sign)\(formattedNumber)"
     }
 
+    /// Etiqueta del eje Y con los decimales que pide el rango del eje.
+    ///
+    /// `axisK(_:)` redondea a miles enteros, y en un eje estrecho todas las marcas salen iguales:
+    /// el saldo de una cuenta nueva de S/ 1.800 pintaba «2K 2K 2K», y un eje de 0 a 1.800 pintaba
+    /// 1.500 como «2K» (auditoría UX 2.2, lote 3, B3). Aquí los decimales salen del paso entre
+    /// marcas, y los ceros de sobra se quitan: «1.75K 1.8K 1.85K», «1K 1.5K 2K», «94K 96K 98K».
+    ///
+    /// El paso se estima como un quinto del rango: el eje pide unas tres marcas y Swift Charts
+    /// puede poner hasta cinco. Un paso real mayor solo deja decimales que se recortan.
+    static func axisK(_ value: Double, domain: ClosedRange<Double>) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        let step = (domain.upperBound - domain.lowerBound) / 5
+        if absValue >= 1000 {
+            return sign + trimmedDecimal(absValue / 1000, decimals: axisDecimals(forStep: step / 1000)) + "K"
+        }
+        return sign + trimmedDecimal(absValue, decimals: axisDecimals(forStep: step))
+    }
+
+    /// 0 decimales si el paso es de al menos una unidad, 1 si es de una décima, 2 si es menor.
+    private static func axisDecimals(forStep step: Double) -> Int {
+        guard step.isFinite, step > 0 else { return 0 }
+        if step >= 1 { return 0 }
+        if step >= 0.1 { return 1 }
+        return 2
+    }
+
+    private static func trimmedDecimal(_ value: Double, decimals: Int) -> String {
+        var text = String(format: "%.\(decimals)f", value)
+        guard decimals > 0 else { return text }
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return text
+    }
+
     /// Compact axis label: 1500 → "2K", -40000 → "-40K", 500 → "500"
     static func axisK(_ value: Double) -> String {
         let absValue = abs(value)

@@ -2302,7 +2302,7 @@
 "panel.widgetInfo.budgets.chip3" = "Interactiva";
 "panel.widgetInfo.budgets.howA" = "Toca un presupuesto para filtrar el resto del Panel por las transacciones de su categoría o etiqueta. Vuelve a tocarlo para quitar el filtro.";
 "panel.widgetInfo.budgets.howQ" = "¿Cómo interactúo?";
-"panel.widgetInfo.budgets.regularWhatA" = "Tus presupuestos favoritos con el progreso del período: cuánto llevas gastado, cuánto queda del límite y el estado (al día, ajustado o excedido). La estrella del header abre la pantalla donde eliges cuáles marcar como favoritos.";
+"panel.widgetInfo.budgets.regularWhatA" = "Tus presupuestos favoritos con el progreso del período: cuánto llevás gastado, cuánto queda del límite y el estado (al día, ajustado o excedido). La estrella de arriba abre la pantalla donde elegís cuáles marcar como favoritos.";
 "panel.widgetInfo.budgets.regularWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.budgets.smallWhatA" = "Tus dos presupuestos favoritos con lo gastado en el período y el porcentaje sobre el límite.";
 "panel.widgetInfo.budgets.smallWhatQ" = "¿Qué estás viendo?";
@@ -2431,7 +2431,7 @@
 "panel.widgetInfo.topSubcategories.title" = "Subcategorías principales";
 "panel.widgetInfo.trend.chip1" = "Interactiva";
 "panel.widgetInfo.trend.chip2" = "Por período";
-"panel.widgetInfo.trend.largeHowA" = "Mantén el dedo sobre la gráfica para ver el valor en cada punto. Cambia entre balance, ingresos y gastos con los botones del header.";
+"panel.widgetInfo.trend.largeHowA" = "Mantené el dedo sobre la gráfica para ver el valor en cada punto. Cambiá entre saldo, ingresos y gastos con los botones de arriba.";
 "panel.widgetInfo.trend.largeHowQ" = "¿Cómo interactúo con la gráfica?";
 "panel.widgetInfo.trend.largeWhatA" = "La evolución día a día de tu balance, tus ingresos o tus gastos del periodo.";
 "panel.widgetInfo.trend.largeWhatQ" = "¿Qué estás viendo?";
