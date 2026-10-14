@@ -2,6 +2,70 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Deze rekening heeft %d boeking. Die wordt niet verwijderd: hij blijft in Boekingen, zonder rekening. Wil je de rekening alleen niet meer zien, archiveer haar dan. Dit kan niet ongedaan worden gemaakt.</string>
+			<key>other</key>
+			<string>Deze rekening heeft %d boekingen. Ze worden niet verwijderd: ze blijven in Boekingen, zonder rekening. Wil je de rekening alleen niet meer zien, archiveer haar dan. Dit kan niet ongedaan worden gemaakt.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Deze categorie heeft een subcategorie met %d transactie. Verwijder of verplaats eerst die transactie uit de subcategorie om deze categorie te kunnen verwijderen.</string>
+			<key>other</key>
+			<string>Deze categorie heeft subcategorieën met %d transacties. Verwijder of verplaats eerst de transacties uit elke subcategorie om deze categorie te kunnen verwijderen.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d transactie wordt permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
+			<key>other</key>
+			<string>%d transacties worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Er staat %1$d transactie in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
+			<key>other</key>
+			<string>Er staan %1$d transacties in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
+		</dict>
+	</dict>
 	<key>panel.panorama.collapsedSummary</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -480,70 +544,6 @@
 			<string>%d wijziging wacht op verbinding</string>
 			<key>other</key>
 			<string>%d wijzigingen wachten op verbinding</string>
-		</dict>
-	</dict>
-	<key>account.deleteConfirmMessage</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Deze rekening heeft %d boeking. Die wordt niet verwijderd: hij blijft in Boekingen, zonder rekening. Wil je de rekening alleen niet meer zien, archiveer haar dan. Dit kan niet ongedaan worden gemaakt.</string>
-			<key>other</key>
-			<string>Deze rekening heeft %d boekingen. Ze worden niet verwijderd: ze blijven in Boekingen, zonder rekening. Wil je de rekening alleen niet meer zien, archiveer haar dan. Dit kan niet ongedaan worden gemaakt.</string>
-		</dict>
-	</dict>
-	<key>category.cannotDeleteMessage</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Deze categorie heeft een subcategorie met %d transactie. Verwijder of verplaats eerst die transactie uit de subcategorie om deze categorie te kunnen verwijderen.</string>
-			<key>other</key>
-			<string>Deze categorie heeft subcategorieën met %d transacties. Verwijder of verplaats eerst de transacties uit elke subcategorie om deze categorie te kunnen verwijderen.</string>
-		</dict>
-	</dict>
-	<key>subcategory.deleteTransactionsConfirmMessage</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d transactie wordt permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
-			<key>other</key>
-			<string>%d transacties worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
-		</dict>
-	</dict>
-	<key>subcategory.transferDescription</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Er staat %1$d transactie in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
-			<key>other</key>
-			<string>Er staan %1$d transacties in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
 		</dict>
 	</dict>
 </dict>

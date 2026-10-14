@@ -2,6 +2,70 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Questo conto ha %d registrazione. Non viene eliminata: resta in Registri, senza conto. Se vuoi solo non vederlo più, archivialo. L'operazione non si può annullare.</string>
+			<key>other</key>
+			<string>Questo conto ha %d registrazioni. Non vengono eliminate: restano in Registri, senza conto. Se vuoi solo non vederlo più, archivialo. L'operazione non si può annullare.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Questa categoria ha una sottocategoria con %d transazione. Per eliminarla, elimina o trasferisci prima quella transazione dalla sua sottocategoria.</string>
+			<key>other</key>
+			<string>Questa categoria ha sottocategorie con %d transazioni. Per eliminarla, elimina o trasferisci prima le transazioni da ogni sottocategoria.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d transazione verrà eliminata permanentemente. Questa azione non può essere annullata.</string>
+			<key>other</key>
+			<string>%d transazioni verranno eliminate permanentemente. Questa azione non puo essere annullata.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>C'è %1$d transazione in "%2$@". Scegli cosa farne prima di eliminare.</string>
+			<key>other</key>
+			<string>Ci sono %1$d transazioni in "%2$@". Scegli cosa farne prima di eliminare.</string>
+		</dict>
+	</dict>
 	<key>panel.panorama.collapsedSummary</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -480,70 +544,6 @@
 			<string>%d modifica in attesa di connessione</string>
 			<key>other</key>
 			<string>%d modifiche in attesa di connessione</string>
-		</dict>
-	</dict>
-	<key>account.deleteConfirmMessage</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Questo conto ha %d registrazione. Non viene eliminata: resta in Registri, senza conto. Se vuoi solo non vederlo più, archivialo. L'operazione non si può annullare.</string>
-			<key>other</key>
-			<string>Questo conto ha %d registrazioni. Non vengono eliminate: restano in Registri, senza conto. Se vuoi solo non vederlo più, archivialo. L'operazione non si può annullare.</string>
-		</dict>
-	</dict>
-	<key>category.cannotDeleteMessage</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Questa categoria ha una sottocategoria con %d transazione. Per eliminarla, elimina o trasferisci prima quella transazione dalla sua sottocategoria.</string>
-			<key>other</key>
-			<string>Questa categoria ha sottocategorie con %d transazioni. Per eliminarla, elimina o trasferisci prima le transazioni da ogni sottocategoria.</string>
-		</dict>
-	</dict>
-	<key>subcategory.deleteTransactionsConfirmMessage</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>%d transazione verrà eliminata permanentemente. Questa azione non può essere annullata.</string>
-			<key>other</key>
-			<string>%d transazioni verranno eliminate permanentemente. Questa azione non puo essere annullata.</string>
-		</dict>
-	</dict>
-	<key>subcategory.transferDescription</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%1$#@count@</string>
-		<key>count</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>C'è %1$d transazione in "%2$@". Scegli cosa farne prima di eliminare.</string>
-			<key>other</key>
-			<string>Ci sono %1$d transazioni in "%2$@". Scegli cosa farne prima di eliminare.</string>
 		</dict>
 	</dict>
 </dict>
