@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (874)
+## Index (876)
 
 | id | status | path |
 |---|---|---|
@@ -294,6 +294,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | dos-criterios-de-aproximado-en-la-misma-pantalla | done | tickets/done/dos-criterios-de-aproximado-en-la-misma-pantalla.md |
 | drain-duplicates-the-unit-clock-when-its-row-cannot-be-read | done | tickets/done/drain-duplicates-the-unit-clock-when-its-row-cannot-be-read.md |
 | drained-intent-that-presents-nothing-may-strand-the-next | backlog | tickets/backlog/drained-intent-that-presents-nothing-may-strand-the-next.md |
+| drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks | done | tickets/done/drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks.md |
 | dry-run-del-avisador-envia-igual | backlog | tickets/backlog/dry-run-del-avisador-envia-igual.md |
 | duplicate-exchange-rate-rows-pick-an-arbitrary-rate | backlog | tickets/backlog/duplicate-exchange-rate-rows-pick-an-arbitrary-rate.md |
 | edgecases-extreme-minimum-flaky-under-load | done | tickets/done/edgecases-extreme-minimum-flaky-under-load.md |
@@ -566,6 +567,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration | backlog | tickets/backlog/local-wipes-other-than-sign-out-do-not-look-at-an-in-flight-migration.md |
 | lost-cloud-signup-then-private-leaves-migrate-blocked | backlog | tickets/backlog/lost-cloud-signup-then-private-leaves-migrate-blocked.md |
 | m1-prose-outlives-its-code-in-comments | backlog | tickets/backlog/m1-prose-outlives-its-code-in-comments.md |
+| maintab-drain-publishes-its-sheet-after-contentview-may-drain | backlog | tickets/backlog/maintab-drain-publishes-its-sheet-after-contentview-may-drain.md |
 | markerless-adopt-stays-blocked-while-another-device-writes-to-the-account | done | tickets/done/markerless-adopt-stays-blocked-while-another-device-writes-to-the-account.md |
 | markerless-adopt-without-full-coverage-never-relays-the-marker | backlog | tickets/backlog/markerless-adopt-without-full-coverage-never-relays-the-marker.md |
 | merchant-memory-suggests-across-natures-in-three-more-places | backlog | tickets/backlog/merchant-memory-suggests-across-natures-in-three-more-places.md |
