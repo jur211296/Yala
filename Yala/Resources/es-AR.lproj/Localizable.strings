@@ -122,7 +122,7 @@
 "tutorials.inboxApproval.step0.desc" = "Si sos usuario Yala Pro, cuando hagas un registro por voz o imagen, automáticamente te llevará al borrador. Lo mismo si usaste el atajo de Registro Apple Pay.";
 "tutorials.inboxApproval.step2.desc" = "También podés hacer registros de voz o imagen con múltiples transacciones. Te dirá cuántos borradores se crearon y te guiará a la bandeja para revisarlos.";
 "faq.howToRecord.a" = "Toca el botón + en la pantalla principal. Podés escribir el monto manualmente, dictar por voz o escanear un recibo con la cámara. Yala completa los detalles por ti.";
-"faq.changeCategory.a" = "Abre el gasto y toca la categoría para cambiarla. Si querés cambiar varios a la vez, usa la edición masiva: mantén presionado un registro y selecciona los que quieras modificar.";
+"faq.changeCategory.a" = "Abrí el registro, tocá «Editar» y cambiá la categoría. Más rápido: mantené presionado el registro en la lista y elegí «Cambiar categoría». Para cambiar varios a la vez, tocá ··· en Registros, elegí «Seleccionar», marcá los que quieras y tocá el lápiz.";
 "faq.exportData.a" = "Ve a Ajustes > Exportar y elige formato CSV o Excel. Podés descargar todos tus registros para analizarlos en una hoja de cálculo o guardarlos como respaldo.";
 "faq.deleteData.a" = "Sí. En Ajustes > Vaciar datos podés eliminar toda tu información. Esta acción no se puede deshacer, así que te recomendamos exportar un respaldo antes.";
 "faq.whatIsPro.a" = "Yala Pro desbloquea funciones premium como entrada por voz, escaneo de recibos con cámara, temas exclusivos y más. Podés ver todos los beneficios en Ajustes > Suscripción.";
@@ -5906,3 +5906,8 @@
 "inbox.draft.movedToArchived" = "Lo moviste a Archivados";
 "inbox.draft.undo" = "Deshacer";
 "inbox.bulkSuccess.total" = "%@ en total";
+"bulkEdit.cannotEditGroupRecords" = "Algunos registros elegidos vienen de un grupo, y eso se cambia desde el grupo. Sacalos de la selección o editalos uno por uno.";
+"records.groupRecordsOnlyTitle" = "Estos registros vienen de un grupo";
+"records.groupRecordsDeleteFromGroup" = "Se borran desde el grupo, para que las cuentas de todos sigan cuadrando.";
+"records.selectedCount" = "%d seleccionados";
+"records.groupRecordsKept" = "%d vienen de un grupo y no se borran aquí: se borran desde el grupo.";

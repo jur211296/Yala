@@ -41,6 +41,20 @@ enum TransactionDetailSheetLogic {
         return isIncome ? .income : .expense
     }
 
+    /// Lo que VoiceOver lee de una fila de Registros: las partes que existen, separadas por comas. Sin nota no empieza
+    /// por una coma suelta, y el tipo («Gasto», «Ingreso») va antes del importe, que llega ya formateado en la divisa
+    /// del propio registro (auditoría UX 2.2, lote 8: leía «S/ 2,000» de una cuenta en dólares y nunca decía si era
+    /// gasto o ingreso).
+    ///
+    /// Un ajuste de saldo (saldo inicial, corrección) no es gasto ni ingreso: va sin tipo y con el importe con su signo.
+    /// Leerlo como «Gasto» decía eso de un saldo inicial de +5.000 (medido al recapturar el lote 8).
+    static func rowAccessibilityLabel(note: String?, kind: String?, amount: String, category: String?, account: String?) -> String {
+        [note, kind, amount, category, account]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+    }
+
     /// En un par de transferencia, la TX con monto negativo es el lado origen.
     static func transferOwnAccountIsOrigin(amount: Double) -> Bool {
         amount < 0

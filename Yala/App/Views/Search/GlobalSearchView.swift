@@ -73,7 +73,6 @@ struct GlobalSearchView: View {
 struct SearchContentView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
-    @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.tagCatalog) private var tagCatalog
@@ -82,6 +81,10 @@ struct SearchContentView: View {
 
     @State private var selectedFilter: SearchFilter = .all
     @State private var editingTransaction: TransactionItem?
+    /// «Ver todos» despliega aquí mismo todo lo que contó el encabezado. Antes llevaba a Estadísticas › Registros con
+    /// el texto como filtro de nota, que solo mira la nota: «Restaurantes» contaba 204 resultados (por categoría) y
+    /// allí no salía ninguno; además dejaba el período de toda la app en «Todo» (auditoría UX 2.2, lote 8).
+    @State private var showsAllResults = false
 
     // MARK: - Filtered Results
 
@@ -131,7 +134,7 @@ struct SearchContentView: View {
     }
 
     private var filteredResults: [TransactionItem] {
-        Array(matchingTransactions.prefix(20))
+        SearchResultsLogic.visible(matchingTransactions, showsAll: showsAllResults)
     }
 
     // Total count for "Ver todo" (without limit)
@@ -161,6 +164,8 @@ struct SearchContentView: View {
             // Always show results (all or filtered)
             searchResultsView
         }
+        .onChange(of: searchText) { showsAllResults = false }
+        .onChange(of: selectedFilter) { showsAllResults = false }
         .sheet(item: $editingTransaction) { transaction in
             NewTransactionView(transactionToEdit: transaction)
                 .presentationDetents([.large])
@@ -223,20 +228,20 @@ struct SearchContentView: View {
 
                         Spacer()
 
-                        Button {
-                            // Navigate to Statistics > Records with search filter applied
-                            sessionState.searchText = searchText
-                            sessionState.selectedPeriod = .allTime
-                            navigation.navigateToDetail(.records)
-                            // Clear local state - SessionState is now the source of truth
-                            searchText = ""
-                        } label: {
-                            HStack(spacing: DS.Spacing.xs) {
-                                Text(L10n.Action.viewAll)
-                                Image(systemName: "arrow.right")
+                        if SearchResultsLogic.offersShowAll(total: totalMatchingCount, showsAll: showsAllResults) {
+                            Button {
+                                dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
+                                    showsAllResults = true
+                                }
+                            } label: {
+                                HStack(spacing: DS.Spacing.xs) {
+                                    Text(L10n.Action.viewAll)
+                                    Image(systemName: "chevron.down")
+                                }
+                                .font(DS.Typography.label)
+                                .foregroundStyle(theme.accent)
                             }
-                            .font(DS.Typography.label)
-                            .foregroundStyle(theme.accent)
+                            .accessibilityIdentifier("search_view_all")
                         }
                     }
                     .padding(.horizontal, DS.Spacing.xl)
@@ -426,4 +431,21 @@ struct SearchResultRow: View {
                 Tag.self,
             ], inMemory: true)
         .previewAppPreferences()
+}
+
+// MARK: - Search Results Logic
+
+/// Cuántos resultados enseña Buscar. Sin «Ver todos», los 20 más recientes; con él, todos los que cuenta el
+/// encabezado, para que la cifra y la lista digan lo mismo.
+enum SearchResultsLogic {
+    static let previewLimit = 20
+
+    static func visible<T>(_ matches: [T], showsAll: Bool) -> [T] {
+        showsAll ? matches : Array(matches.prefix(previewLimit))
+    }
+
+    /// «Ver todos» solo cuando hay más de los que se ven.
+    static func offersShowAll(total: Int, showsAll: Bool) -> Bool {
+        !showsAll && total > previewLimit
+    }
 }

@@ -342,6 +342,7 @@ struct RecordsStandaloneView: View {
                 // Delete button
                 Button(role: .destructive) {
                     DS.Haptic.warning()
+                    recordsViewModel.prepareBulkDelete(context: modelContext)
                     showDeleteConfirmation = true
                 } label: {
                     Image(systemName: "trash")
@@ -355,7 +356,7 @@ struct RecordsStandaloneView: View {
                 Spacer()
 
                 // Selection count
-                Text("\(recordsViewModel.selectedRecordIDs.count) \(L10n.Common.selected)")
+                Text(L10n.Records.selectedCount(recordsViewModel.selectedRecordIDs.count))
                     .font(DS.Typography.headline)
                     .contentTransition(.numericText())
 
@@ -544,17 +545,22 @@ private struct RecordsStandaloneSheets: ViewModifier {
                 }
             }
             .confirmationDialog(
-                L10n.Records.deleteConfirmTitle(recordsViewModel.selectedRecordIDs.count),
+                recordsViewModel.bulkDeleteDialog.titleText,
                 isPresented: $showDeleteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button(L10n.Action.delete, role: .destructive) {
-                    recordsViewModel.deleteSelected(context: modelContext)
-                    reloadAndRecalculate()
+                // Solo con algo que borrar: si todo lo elegido viene de un grupo, el aviso explica dónde se borra.
+                if recordsViewModel.bulkDeleteDialog.offersDelete {
+                    Button(L10n.Action.delete, role: .destructive) {
+                        recordsViewModel.deleteSelected(context: modelContext)
+                        reloadAndRecalculate()
+                    }
+                    Button(L10n.Action.cancel, role: .cancel) {}
+                } else {
+                    Button(L10n.Common.understood, role: .cancel) {}
                 }
-                Button(L10n.Action.cancel, role: .cancel) {}
             } message: {
-                Text(L10n.Common.cannotUndo)
+                Text(recordsViewModel.bulkDeleteDialog.messageText)
             }
             .sheet(isPresented: $showBulkEditSheet) {
                 BulkEditSheet(

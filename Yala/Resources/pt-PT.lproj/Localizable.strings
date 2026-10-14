@@ -1406,7 +1406,7 @@
 "export.summaryDescription" = "Revise os filtros e colunas selecionados antes de gerar o arquivo.";
 "export.title" = "Exportar";
 "faq.cancelSub.q" = "Como cancelo minha assinatura?";
-"faq.changeCategory.a" = "Abra o gasto e toque na categoria para mudar. Para alterar vários de uma vez, use a edição em massa: mantenha pressionado um registro e selecione os que deseja modificar.";
+"faq.changeCategory.a" = "Abre o registro, toca em «Editar» e muda a categoria. Mais rápido: mantém o registro premido na lista e escolhe «Alterar categoria». Para alterar vários de uma vez, toca em ··· em Registros, escolhe «Selecionar», marca os que quiseres e toca no lápis.";
 "faq.changeCategory.q" = "Como mudo a categoria de um gasto?";
 "faq.deleteData.a" = "Sim. Em Ajustes > Limpar dados você pode apagar toda sua informação. Essa ação não pode ser desfeita, então recomendamos exportar um backup antes.";
 "faq.deleteData.q" = "Posso apagar todos os meus dados?";
@@ -5902,3 +5902,8 @@
 "inbox.draft.movedToArchived" = "Movido para Arquivados";
 "inbox.draft.undo" = "Desfazer";
 "inbox.bulkSuccess.total" = "%@ no total";
+"bulkEdit.cannotEditGroupRecords" = "Alguns registros selecionados vêm de um grupo, e isso altera-se no grupo. Tira-os da seleção ou edita-os um a um.";
+"records.groupRecordsOnlyTitle" = "Estes registros vêm de um grupo";
+"records.groupRecordsDeleteFromGroup" = "Eliminam-se no grupo, para que as contas de todos continuem certas.";
+"records.selectedCount" = "%d selecionados";
+"records.groupRecordsKept" = "%d vêm de um grupo e não são eliminados aqui: elimina-os no grupo.";

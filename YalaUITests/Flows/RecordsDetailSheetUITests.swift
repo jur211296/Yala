@@ -81,4 +81,38 @@ final class RecordsDetailSheetUITests: XCTestCase {
             "El botón Editar no abrió el editor (new_transaction_save ausente)."
         )
     }
+
+    /// Auditoría UX 2.2 · lote 8. Tras «Duplicar» el formulario es un registro NUEVO sin guardar, y su «Eliminar»
+    /// borraba el ORIGINAL que se acababa de duplicar (medido en el simulador: 2295 → 2294 registros, el original
+    /// fuera). Ahora Duplicar y Eliminar desaparecen en cuanto se duplica, y el registro de partida sigue en la lista.
+    func test_duplicateFromEditor_hidesDeleteAndKeepsTheOriginal() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openRecordsList(app)
+        app.buttons.matching(identifier: "record_row").element(boundBy: 0).tap()
+
+        let editButton = app.buttons["transaction_detail_edit"]
+        XCTAssertTrue(editButton.waitForExistence(timeout: 5), "No se montó el sheet de detalle.")
+        editButton.tap()
+
+        let duplicate = app.buttons["new_transaction_duplicate_action"]
+        let delete = app.buttons["new_transaction_delete_action"]
+        XCTAssertTrue(duplicate.waitForExistence(timeout: 5), "El editor de un registro guardado no ofreció Duplicar.")
+        XCTAssertTrue(delete.exists, "El editor de un registro guardado no ofreció Eliminar.")
+
+        duplicate.tap()
+
+        XCTAssertTrue(delete.waitForNonExistence(timeout: 5),
+                      "Tras Duplicar, Eliminar sigue ahí: borraría el original, no la copia sin guardar.")
+        XCTAssertFalse(duplicate.exists, "Tras Duplicar, Duplicar sigue ahí.")
+
+        // Cerrar sin guardar la copia: el editor se va (con una hoja arriba, el fondo sigue en el árbol, así que se mira
+        // que el editor desaparezca, no que exista la lista).
+        let close = app.buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X del editor (new_transaction_close).")
+        close.tap()
+        XCTAssertTrue(app.buttons["new_transaction_save"].waitForNonExistence(timeout: 5), "El editor no se cerró.")
+    }
 }

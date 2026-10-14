@@ -255,7 +255,6 @@
 
 "search.noResults" = "没有找到任何结果";
 "search.tryAnotherTerm" = "试试其他搜索词";
-"search.resultsCount" = "%d 条结果";
 "search.filter.all" = "全部";
 "search.filter.note" = "备注";
 "search.filter.category" = "类别";
@@ -2222,7 +2221,7 @@
 "faq.multiCurrency.q" = "我可以使用多种货币吗?";
 "faq.multiCurrency.a" = "可以。Yala 支持 7 种货币 (PEN、USD、EUR、MXN、COP、BRL、GBP)。在「设置 > 货币」中设置主货币并添加次要货币。";
 "faq.changeCategory.q" = "我怎么更改一笔支出的类别?";
-"faq.changeCategory.a" = "打开支出并点击类别更改。要一次更改多个,使用批量编辑:长按一条记录然后选择要修改的。";
+"faq.changeCategory.a" = "打开记录，点击“编辑”并更改类别。更快的方法：在列表中长按该记录，选择“更改类别”。要一次更改多条，在记录中点击 ···，选择“选择”，勾选要改的记录，然后点击铅笔。";
 "faq.importData.q" = "我可以导入数据吗?";
 "faq.importData.a" = "可以。前往「设置 > 导入」上传 CSV 或 Excel 文件。Yala 会自动检测列并允许你按货币分配账户。";
 "faq.exportData.q" = "我怎么导出数据?";
@@ -6622,3 +6621,6 @@
 "inbox.draft.movedToArchived" = "已移到已归档";
 "inbox.draft.undo" = "撤销";
 "inbox.bulkSuccess.total" = "共 %@";
+"bulkEdit.cannotEditGroupRecords" = "所选记录中有些来自群组，这些需要在群组中修改。请将它们移出选择，或逐条编辑。";
+"records.groupRecordsOnlyTitle" = "这些记录来自群组";
+"records.groupRecordsDeleteFromGroup" = "请在群组中删除，这样每个人的账目才能对得上。";

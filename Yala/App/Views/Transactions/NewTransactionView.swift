@@ -87,6 +87,12 @@ struct NewTransactionView: View {
 
     // MARK: - A0-Bridge V2.0 Read-Only Mode (P1-3)
 
+    /// Se está editando el registro guardado. Tras «Duplicar» ya no: el formulario es un registro nuevo con sus datos,
+    /// aunque `transactionToEdit` siga apuntando al original (es un `let`).
+    private var isEditingSavedRecord: Bool {
+        transactionToEdit != nil && !isDuplicating
+    }
+
     /// True si la TX en edición viene del bridge de grupos (no editable manualmente).
     ///
     /// **Exige que el puntero RESUELVA, no solo que exista.** Mirar solo `!= nil` es lo que convertía
@@ -385,7 +391,7 @@ struct NewTransactionView: View {
             .dismissKeyboardOnTap()
             .yalaScreenBackground(.subtle)
             .navigationTitle(
-                (transactionToEdit != nil && !isDuplicating)
+                isEditingSavedRecord
                     ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
             )
             .navigationBarTitleDisplayMode(.inline)
@@ -743,7 +749,7 @@ struct NewTransactionView: View {
                         }
                     }
 
-                    if transactionToEdit?.scheduledPaymentID != nil {
+                    if isEditingSavedRecord, transactionToEdit?.scheduledPaymentID != nil {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(.purple)
@@ -874,8 +880,10 @@ struct NewTransactionView: View {
 
     private var quickActionsBar: some View {
         HStack(spacing: DS.Spacing.xl) {
-            // Duplicate (only in edit mode)
-            if transactionToEdit != nil {
+            // Duplicar y Eliminar solo mientras se edita el registro guardado. Tras «Duplicar» el formulario ya es un
+            // registro NUEVO sin guardar, pero `transactionToEdit` sigue apuntando al original: Eliminar borraba el
+            // original que se acababa de duplicar (auditoría UX 2.2, lote 8).
+            if isEditingSavedRecord {
                 quickActionButton(
                     icon: "doc.on.doc",
                     label: L10n.Action.duplicate
@@ -888,7 +896,7 @@ struct NewTransactionView: View {
             }
 
             // Delete (only in edit mode)
-            if transactionToEdit != nil {
+            if isEditingSavedRecord {
                 quickActionButton(
                     icon: "trash",
                     label: L10n.Action.delete
@@ -1675,7 +1683,14 @@ struct NewTransactionView: View {
     }
 
     private func duplicateTransaction() {
-        guard transactionToEdit != nil else { return }
+        guard isEditingSavedRecord else { return }
+
+        // Ya es un registro nuevo: en el acto, no tras la animación, o un toque rápido en Eliminar o en Guardar durante
+        // esos 150 ms seguiría apuntando al original (Guardar lo reescribía en vez de crear la copia).
+        isDuplicating = true
+        viewModel.editingTransaction = nil
+        viewModel.editingTransferPair = nil
+        viewModel.transactionDate = Date.now
 
         // Animate form out
         dsWithAnimation(reduceMotion) {
@@ -1685,14 +1700,6 @@ struct NewTransactionView: View {
         // After animation out, update state and animate back in
         Task {
             try? await Task.sleep(for: .milliseconds(150))
-            // Keep all current form data but clear the editing reference
-            // This turns the form into "create new" mode with prefilled data
-            viewModel.editingTransaction = nil
-            viewModel.editingTransferPair = nil
-            viewModel.transactionDate = Date.now
-
-            // Mark as duplicating to update title
-            isDuplicating = true
 
             // Animate form back in
             dsWithAnimation(reduceMotion) {
@@ -1707,7 +1714,7 @@ struct NewTransactionView: View {
     }
 
     private func deleteTransaction() {
-        guard let transaction = transactionToEdit else { return }
+        guard isEditingSavedRecord, let transaction = transactionToEdit else { return }
         DS.Haptic.warning()
 
         do {

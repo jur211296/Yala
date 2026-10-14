@@ -255,7 +255,6 @@
 
 "search.noResults" = "We hebben niets gevonden";
 "search.tryAnotherTerm" = "Probeer een andere zoekterm";
-"search.resultsCount" = "%d resultaten";
 "search.filter.all" = "Alle";
 "search.filter.note" = "Notitie";
 "search.filter.category" = "Categorie";
@@ -2222,7 +2221,7 @@
 "faq.multiCurrency.q" = "Kan ik meerdere valuta's gebruiken?";
 "faq.multiCurrency.a" = "Ja. Yala ondersteunt 7 valuta's (PEN, USD, EUR, MXN, COP, BRL, GBP). Stel je hoofdvaluta in en voeg secundaire valuta's toe via Instellingen > Valuta.";
 "faq.changeCategory.q" = "Hoe wijzig ik de categorie van een uitgave?";
-"faq.changeCategory.a" = "Open de uitgave en tik op de categorie om die te wijzigen. Voor meerdere tegelijk gebruik je bulk-bewerken: houd een boeking ingedrukt en selecteer de boekingen die je wilt aanpassen.";
+"faq.changeCategory.a" = "Open de boeking, tik op ‘Bewerken’ en wijzig de categorie. Sneller: houd de boeking in de lijst ingedrukt en kies ‘Categorie wijzigen’. Om er meerdere tegelijk te wijzigen, tik je in Boekingen op ···, kies je ‘Selecteren’, vink je de gewenste aan en tik je op het potlood.";
 "faq.importData.q" = "Kan ik mijn gegevens importeren?";
 "faq.importData.a" = "Ja. Ga naar Instellingen > Importeren en upload een CSV- of Excel-bestand. Yala detecteert automatisch de kolommen en laat je rekeningen per valuta toewijzen.";
 "faq.exportData.q" = "Hoe exporteer ik mijn gegevens?";
@@ -6622,3 +6621,6 @@
 "inbox.draft.movedToArchived" = "Verplaatst naar Gearchiveerd";
 "inbox.draft.undo" = "Ongedaan maken";
 "inbox.bulkSuccess.total" = "%@ in totaal";
+"bulkEdit.cannotEditGroupRecords" = "Sommige geselecteerde boekingen komen uit een groep, en dat pas je in de groep aan. Haal ze uit de selectie of bewerk ze één voor één.";
+"records.groupRecordsOnlyTitle" = "Deze boekingen komen uit een groep";
+"records.groupRecordsDeleteFromGroup" = "Je verwijdert ze in de groep, zodat ieders saldo blijft kloppen.";

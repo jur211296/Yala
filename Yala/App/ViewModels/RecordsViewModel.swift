@@ -477,6 +477,14 @@ final class RecordsViewModel: Filterable {
 
         for id in ids {
             guard let record = context.model(for: id) as? TransactionItem else { continue }
+            // Lo que viene de un grupo se borra desde el grupo (`RecordBulkActionLogic`). El guard va aquí, dentro del
+            // único borrado de Registros, para que ningún camino —selección, menú, ⌫— pueda saltárselo.
+            guard RecordBulkActionLogic.allows(.delete, .init(record: record)) else {
+                #if DEBUG
+                print("RecordsViewModel: registro de grupo fuera del borrado en lote")
+                #endif
+                continue
+            }
             recordsToDelete.append(record)
             if record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer, let pairID = record.transferPairID {
                 transferPairIDs.insert(pairID)
@@ -649,6 +657,17 @@ final class RecordsViewModel: Filterable {
             bulkUpdateError = L10n.BulkEdit.cannotEditTransferAccount
             return
         }
+        guard !blocksGroupRecords(.account, in: transactions) else { return }
+        // Y aunque el caso A deje cambiar la cuenta, no a una de OTRA divisa: el editor tampoco lo ofrece
+        // (`currencyFilter`), porque el puente de grupos exige la divisa del gasto y, si no casa, borra el registro y
+        // lo devuelve como borrador al siguiente re-puente (`GroupTransactionBridge`, `.currencyChanged`).
+        let destination = normalizeCurrencyCode(account.currencyCode)
+        if transactions.contains(where: {
+            ($0.splitExpenseID != nil || $0.splitSettlementID != nil) && normalizeCurrencyCode($0.currencyCode) != destination
+        }) {
+            bulkUpdateError = L10n.BulkEdit.cannotEditGroupRecords
+            return
+        }
         for transaction in transactions {
             transaction.account = account
             transaction.currencyCode = account.currencyCode
@@ -677,6 +696,7 @@ final class RecordsViewModel: Filterable {
             bulkUpdateError = L10n.BulkEdit.cannotEditTransferSubcategory
             return
         }
+        guard !blocksGroupRecords(.subcategory, in: transactions) else { return }
         for transaction in transactions {
             transaction.subcategory = subcategory
             transaction.category = subcategory.safeCategory
@@ -697,6 +717,7 @@ final class RecordsViewModel: Filterable {
     /// CSV-first read (resolvedTagIDs) — fixes lazy nil → tag loss bug.
     func bulkAddTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        guard !blocksGroupRecords(.tags, in: transactions) else { return }
         let toAddIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
 
@@ -733,6 +754,7 @@ final class RecordsViewModel: Filterable {
     /// CSV-first read (resolvedTagIDs).
     func bulkRemoveTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        guard !blocksGroupRecords(.tags, in: transactions) else { return }
         let toRemoveIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
 
@@ -775,6 +797,7 @@ final class RecordsViewModel: Filterable {
     /// schema noise en CloudKit.
     func bulkUpdateNote(_ note: String, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
+        guard !blocksGroupRecords(.note, in: transactions) else { return }
         let finalNote = note.isEmpty ? nil : note
         var processedPairIDs: Set<String> = []
         for transaction in transactions {
@@ -814,6 +837,7 @@ final class RecordsViewModel: Filterable {
                 return
             }
         }
+        guard !blocksGroupRecords(.amount, in: transactions) else { return }
         var processedPairIDs: Set<String> = []
         for transaction in transactions {
             // Preserve sign: expenses are negative, income positive
@@ -886,6 +910,31 @@ final class RecordsViewModel: Filterable {
         if hasIncome && !hasExpense { return .income }
         if hasExpense && !hasIncome { return .expense }
         return nil  // Mixed or only transfers
+    }
+
+    /// Si algún registro viene de un grupo y en esta operación manda el grupo, avisa y no se toca ninguno: el mismo
+    /// molde que el bloqueo de las transferencias (todo o nada, nunca a medias).
+    private func blocksGroupRecords(_ operation: RecordBulkActionLogic.Operation, in transactions: [TransactionItem]) -> Bool {
+        guard transactions.contains(where: { !RecordBulkActionLogic.allows(operation, .init(record: $0)) }) else {
+            return false
+        }
+        bulkUpdateError = L10n.BulkEdit.cannotEditGroupRecords
+        return true
+    }
+
+    /// Lo que dice la confirmación del borrado en lote. Se mide al tocar la papelera (`prepareBulkDelete`), no en cada
+    /// repintado del diálogo: con «Seleccionar todo» serían miles de búsquedas por pasada.
+    var bulkDeleteDialog = RecordBulkActionLogic.deleteDialog(deletable: 0, groupRecords: 0)
+
+    func prepareBulkDelete(context: ModelContext) {
+        bulkDeleteDialog = selectionDeleteDialog(context: context)
+    }
+
+    /// La confirmación del borrado en lote: cuántos de los elegidos se borran y cuántos se quedan por venir de un grupo.
+    func selectionDeleteDialog(context: ModelContext) -> RecordBulkActionLogic.DeleteDialog {
+        let selected = getSelectedTransactions(context: context)
+        let groupRecords = selected.filter { !RecordBulkActionLogic.allows(.delete, .init(record: $0)) }.count
+        return RecordBulkActionLogic.deleteDialog(deletable: selected.count - groupRecords, groupRecords: groupRecords)
     }
 
     /// Helper to fetch selected transactions from context

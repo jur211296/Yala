@@ -1,10 +1,10 @@
 ---
 id: faq-says-long-press-starts-bulk-edit
-status: backlog
+status: done
 priority: low
 area: "copy, records, help"
 created: 2026-09-30
-updated: 2026-10-08
+updated: 2026-10-14
 source: "hallazgo de la fase 3 iPad (ipad-keyboard-shortcuts-pointer-context-menus-and-drop), 2026-09-30"
 ---
 
@@ -31,3 +31,10 @@ No se tocó en la fase 3 porque es copy de ayuda, fuera de su alcance.
 - La selección múltiple sigue entrando solo por `RecordsOverflowMenu` → `enterSelectionMode()`; no hay `onLongPressGesture` en `Yala/App/Views/Records/`.
 
 Triage 2026-10-08: abierto · low → low · el texto de ayuda sigue describiendo un gesto que no existe; molesta, no toca datos.
+
+## Hecho (2026-10-14, auditoría UX 2.2 · lote 8, B7)
+
+Nueva respuesta en los 16 idiomas (es-AR con voseo): abrir el registro y «Editar», o mantenerlo pulsado y «Cambiar
+categoría»; varios a la vez, con ··· › «Seleccionar», marcarlos y el lápiz. También desaparece «toca la categoría»
+(en el detalle no hace nada). Visto en el simulador: `~/Claude/entregas/Yala--auditoria-ux-2-2-lote-8-registros/capturas/B7-despues-faq.png`.
+Test: `RecordsAuditLote8StringsTests.faq_describesTheRealGestures`. PR #499.

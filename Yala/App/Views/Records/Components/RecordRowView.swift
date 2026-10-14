@@ -124,11 +124,27 @@ struct RecordRowView: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
-        let note = record.note ?? ""
-        let amount = appPreferences.currency(abs(record.amount), currencyCode: currencyCode)
-        let category = record.subcategory?.name ?? record.category?.name ?? ""
-        let account = record.account?.name ?? ""
-        return "\(note), \(amount), \(category), \(account)"
+        let isTransfer = record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
+        // Un ajuste de saldo no es gasto ni ingreso: sin tipo y con el signo en el importe.
+        let isBalanceAdjustment = record.balanceAdjustmentType != nil && !isTransfer
+        let kind: TransactionType = switch TransactionDetailSheetLogic.kind(
+            isTransfer: isTransfer,
+            categoryIsIncome: record.category?.isIncome,
+            amount: record.amount
+        ) {
+        case .expense: .expense
+        case .income: .income
+        case .transfer: .transfer
+        }
+        return TransactionDetailSheetLogic.rowAccessibilityLabel(
+            note: record.note,
+            kind: isBalanceAdjustment ? nil : kind.displayName,
+            amount: isBalanceAdjustment
+                ? appPreferences.currency(record.amount, currencyCode: record.currencyCode)
+                : appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode),
+            category: record.subcategory?.name ?? record.category?.name,
+            account: record.account?.name
+        )
     }
 
     // MARK: - Selection Circle

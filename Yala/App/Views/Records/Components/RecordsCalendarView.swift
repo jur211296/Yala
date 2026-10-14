@@ -53,6 +53,10 @@ struct RecordsCalendarView: View {
 
     private var calendar: Calendar {
         var c = Calendar.current
+        // Las iniciales de los días en el idioma de Yala, no en el del iPhone (con el idioma cambiado dentro de la
+        // app salían en el del sistema). El locale va ANTES que `firstWeekday`: fijarlo después devuelve el primer día
+        // al del locale cuando la preferencia coincidía con el de la región (medido en la review del lote 8).
+        c.locale = AppLocale.current
         c.firstWeekday = appPreferences.firstWeekday.rawValue
         return c
     }
@@ -349,22 +353,26 @@ struct RecordsCalendarView: View {
 
     // MARK: - Formatting
 
-    private static let monthFormatter = makeMonthFormatter(template: "MMMM")
-    private static let monthYearFormatter = makeMonthFormatter(template: "MMMMyyyy")
+    /// Por llamada y no `static let`: el idioma se cambia en caliente dentro de la app y un formatter guardado se
+    /// quedaba con el anterior.
+    private static var monthFormatter: DateFormatter { makeMonthFormatter(template: "MMMM") }
+    private static var monthYearFormatter: DateFormatter { makeMonthFormatter(template: "MMMMyyyy") }
 
     private static func makeMonthFormatter(template: String) -> DateFormatter {
         let formatter = DateFormatter()
-        formatter.locale = .current
+        formatter.locale = AppLocale.current
         formatter.setLocalizedDateFormatFromTemplate(template)
         return formatter
     }
 
+    /// Mayúscula solo en la primera letra: `capitalized` la ponía en cada palabra y el mes salía «Octubre De 2026».
     private func monthName(_ date: Date, withYear: Bool) -> String {
-        (withYear ? Self.monthYearFormatter : Self.monthFormatter).string(from: date).capitalized
+        (withYear ? Self.monthYearFormatter : Self.monthFormatter).string(from: date)
+            .capitalizingFirstLetter(locale: AppLocale.current)
     }
 
     private func a11yLabel(date: Date, expense: Double?) -> String {
-        let dateStr = date.formatted(.dateTime.day().month(.wide))
+        let dateStr = date.formatted(.dateTime.day().month(.wide).locale(AppLocale.current))
         if let expense {
             return "\(dateStr), \(appPreferences.currency(expense, currencyCode: currencyCode))"
         }
