@@ -3283,6 +3283,7 @@
 "transaction.edit" = "Editar transacao";
 "transaction.editTransaction" = "Editar registro";
 "transaction.exchangeRate" = "Taxa de cambio";
+"transaction.exchangeRateMissingForDay" = "Sem taxa de câmbio para esse dia";
 "transaction.expense" = "Despesas";
 "transaction.income" = "Receitas";
 "transaction.new" = "Nova transacao";

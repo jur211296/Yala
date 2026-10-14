@@ -304,6 +304,7 @@
 "transaction.origin" = "Origine";
 "transaction.destination" = "Destinazione";
 "transaction.exchangeRate" = "Tasso di cambio";
+"transaction.exchangeRateMissingForDay" = "Nessun tasso di cambio per quel giorno";
 "transaction.willReceive" = "Ricevera";
 "transaction.createAnother" = "Registra un altro";
 "transaction.recents" = "Recenti";

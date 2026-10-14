@@ -54,6 +54,7 @@ struct TransactionDetailSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.tagCatalog) private var tagCatalog
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.usesLargeSheets) private var usesLargeSheets
 
@@ -509,7 +510,9 @@ struct TransactionDetailSheet: View {
     }
 
     /// Monto convertido a la moneda preferida con la tasa snapshot persistida
-    /// (sin recalcular — formato del exchangeRateChip del form).
+    /// (sin recalcular — formato del exchangeRateChip del form). Si la conversión no se escribió
+    /// (0 con nativo ≠ 0), se reconvierte con la tasa de ese día o, sin ella, la fila lo dice con
+    /// texto: nunca pinta 0 como importe (`TransactionDetailSheetLogic.conversionDisplay`).
     private var conversionRow: some View {
         AdaptiveRowStack(spacing: DS.Spacing.md) {
             Image(systemName: "arrow.triangle.2.circlepath")
@@ -523,15 +526,24 @@ struct TransactionDetailSheet: View {
                 .foregroundStyle(.secondary)
         } trailing: {
             VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
-                Text(
-                    "≈ \(appPreferences.currency(transaction.amountInPreferredCurrency, currencyCode: transaction.preferredCurrencyCode, forceFullPrecision: true))"
-                )
-                .font(DS.Typography.label)
-                .foregroundStyle(.primary)
+                switch TransactionDetailSheetLogic.conversionDisplay(for: transaction, converter: currencyConverter) {
+                case .amount(let value, let rate):
+                    Text(
+                        "≈ \(appPreferences.currency(value, currencyCode: transaction.preferredCurrencyCode, forceFullPrecision: true))"
+                    )
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.primary)
 
-                Text(L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(transaction.exchangeRate)))
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.secondary)
+                    Text(L10n.Transaction.exchangeRateShort(ExchangeRateDisplayFormatter.string(rate)))
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                case .missingRateForDay:
+                    Text(L10n.Transaction.exchangeRateMissingForDay)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(.horizontal, DS.Spacing.lg)

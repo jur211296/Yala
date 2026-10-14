@@ -306,6 +306,7 @@
 "transaction.origin" = "Vanaf";
 "transaction.destination" = "Naar";
 "transaction.exchangeRate" = "Wisselkoers";
+"transaction.exchangeRateMissingForDay" = "Geen wisselkoers voor die dag";
 "transaction.willReceive" = "Te ontvangen";
 "transaction.createAnother" = "Nog een toevoegen";
 "transaction.recents" = "Recent";

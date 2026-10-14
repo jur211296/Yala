@@ -3368,6 +3368,11 @@ enum L10n {
         static var exchangeRate: String {
             ls("transaction.exchangeRate", comment: "")
         }
+        /// Fila «Tipo de cambio» del detalle cuando la conversión no se escribió y no hay tasa de la fecha
+        /// del registro: sustituye al importe, que nunca se pinta como 0.
+        static var exchangeRateMissingForDay: String {
+            ls("transaction.exchangeRateMissingForDay", comment: "")
+        }
         static var willReceive: String { ls("transaction.willReceive", comment: "") }
         static var createAnother: String {
             ls("transaction.createAnother", comment: "")

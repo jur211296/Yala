@@ -306,6 +306,7 @@
 "transaction.origin" = "出金元";
 "transaction.destination" = "入金先";
 "transaction.exchangeRate" = "為替レート";
+"transaction.exchangeRateMissingForDay" = "この日の為替レートはありません";
 "transaction.willReceive" = "受取金額";
 "transaction.createAnother" = "もう1件追加";
 "transaction.recents" = "最近の項目";
