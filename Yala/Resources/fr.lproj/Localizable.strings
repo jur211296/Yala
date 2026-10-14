@@ -435,12 +435,6 @@
 "inbox.alert.title.subscriptions" = "Abonnements à vérifier !";
 "inbox.alert.title.automations" = "Nouveaux enregistrements automatiques !";
 "inbox.alert.title.mixed" = "Nouveaux enregistrements dans ta boîte !";
-"inbox.alert.message.scheduled" = "%d paiements planifiés ont été ajoutés à ta boîte.";
-"inbox.alert.message.subscriptions" = "%d abonnements ont été ajoutés à ta boîte.";
-"inbox.alert.message.mixed.scheduled" = "%d paiements";
-"inbox.alert.message.mixed.subscriptions" = "%d abonnements";
-"inbox.alert.message.mixed.automations" = "%d enregistrements automatiques";
-"inbox.alert.message.mixed.connector" = " et ";
 
 // MARK: - Settings
 
@@ -2016,22 +2010,23 @@
 "inbox.delete" = "Supprimer";
 "inbox.noPending" = "Aucun brouillon en attente";
 "inbox.noPendingDescription" = "Les nouveaux brouillons vocaux et d'images apparaîtront ici.";
-"inbox.bulkHint" = "Appuyez sur Sélectionner pour les actions groupées";
+"inbox.bulkHint" = "Touche ✓ pour en choisir plusieurs";
+"inbox.status.rejected" = "refusé";
+"inbox.status.approved" = "approuvé";
+"inbox.status.pending" = "en attente";
 "inbox.subtitleMultiplePending" = "%d transactions en attente, pas à pas.";
 "inbox.subtitleOnePending" = "Une transaction en attente, vérifiez quand vous pouvez.";
 "inbox.subtitleAllDone" = "Boîte vide, beau travail.";
-"inbox.pendingBadge" = "%d en attente";
 "inbox.newTag" = "Nouveau";
 "inbox.noArchived" = "Aucun brouillon archivé";
 "inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
-"inbox.selectedCount" = "%d sélectionnés";
-"inbox.editDraft" = "Edit draft";
-"inbox.cannotApprove" = "Cannot approve";
-"inbox.sourceVoice" = "Voice";
-"inbox.sourceEmail" = "Email";
-"inbox.sourceScreenshot" = "Screenshot";
-"inbox.sourceScreenshotList" = "List";
-"inbox.sourceReceipt" = "Receipt";
+"inbox.editDraft" = "{'de': 'Entwurf bearbeiten', 'fr': 'Modifier le brouillon', 'it': 'Modifica bozza', 'pt-BR': 'Editar rascunho', 'pt-PT': 'Editar rascunho'}";
+"inbox.cannotApprove" = "{'de': 'Kann nicht genehmigt werden', 'fr': 'Impossible d’approuver', 'it': 'Impossibile approvare', 'pt-BR': 'Não é possível aprovar', 'pt-PT': 'Não é possível aprovar'}";
+"inbox.sourceVoice" = "{'de': 'Sprache', 'fr': 'Voix', 'it': 'Voce', 'pt-BR': 'Voz', 'pt-PT': 'Voz'}";
+"inbox.sourceEmail" = "{'de': 'E-Mail', 'fr': 'E-mail', 'it': 'E-mail', 'pt-BR': 'E-mail', 'pt-PT': 'E-mail'}";
+"inbox.sourceScreenshot" = "{'de': 'Bildschirmfoto', 'fr': 'Capture d’écran', 'it': 'Schermata', 'pt-BR': 'Captura de tela', 'pt-PT': 'Captura de ecrã'}";
+"inbox.sourceScreenshotList" = "{'de': 'Liste', 'fr': 'Liste', 'it': 'Elenco', 'pt-BR': 'Lista', 'pt-PT': 'Lista'}";
+"inbox.sourceReceipt" = "{'de': 'Beleg', 'fr': 'Reçu', 'it': 'Ricevuta', 'pt-BR': 'Recibo', 'pt-PT': 'Recibo'}";
 "inbox.sourceScheduledPayment" = "Paiement planifié";
 "inbox.sourceSubscription" = "Abonnement";
 "inbox.sourceApplePay" = "Apple Pay";
@@ -2042,11 +2037,9 @@
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.errorArchivedAccount" = "Ce compte est archivé. Modifiez le brouillon et changez le compte pour approuver.";
 "inbox.errorFutureDate" = "Les transactions avec une date future ne peuvent pas être approuvées";
-"inbox.duplicateWarningTitle" = "Possible duplicate";
-"inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
-"inbox.createAnyway" = "Create anyway";
-"inbox.deleteConfirmMessage" = "Delete %d draft(s)?";
-"inbox.approveableCount" = "%d sur %d prêt(s) à approuver";
+"inbox.duplicateWarningTitle" = "{'de': 'Mögliches Duplikat', 'fr': 'Doublon possible', 'it': 'Possibile duplicato', 'pt-BR': 'Possível duplicado', 'pt-PT': 'Possível duplicado'}";
+"inbox.duplicateWarningMessage" = "{'de': 'Es gibt schon eine ähnliche Transaktion. Trotzdem erstellen?', 'fr': 'Une transaction similaire existe déjà. La créer quand même ?', 'it': 'Esiste già una transazione simile. Crearla comunque?', 'pt-BR': 'Já existe uma transação parecida. Criar mesmo assim?', 'pt-PT': 'Já existe uma transação semelhante. Criar mesmo assim?'}";
+"inbox.createAnyway" = "{'de': 'Trotzdem erstellen', 'fr': 'Créer quand même', 'it': 'Crea comunque', 'pt-BR': 'Criar mesmo assim', 'pt-PT': 'Criar mesmo assim'}";
 "inbox.saveLater" = "Approuver plus tard";
 "inbox.deleteTitle" = "Supprimer le brouillon";
 "inbox.deleteMessage" = "Cette action ne peut pas être annulée.";

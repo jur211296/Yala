@@ -68,7 +68,7 @@ struct InboxDraftRowView: View {
 
     /// La etiqueta de siempre y, en el aviso de importe cambiado, su segunda línea: sin ella VoiceOver no dice qué cambió.
     private var accessibilityText: String {
-        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, draft.status.rawValue)
+        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status))
         guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
         return "\(base), \(detail)"
     }

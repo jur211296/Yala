@@ -437,12 +437,6 @@
 "inbox.alert.title.subscriptions" = "Abonnementen om te bekijken!";
 "inbox.alert.title.automations" = "Nieuwe automatische boekingen!";
 "inbox.alert.title.mixed" = "Nieuwe boekingen in je inbox!";
-"inbox.alert.message.scheduled" = "%d geplande betalingen zijn aan je inbox toegevoegd.";
-"inbox.alert.message.subscriptions" = "%d abonnementen zijn aan je inbox toegevoegd.";
-"inbox.alert.message.mixed.scheduled" = "%d betalingen";
-"inbox.alert.message.mixed.subscriptions" = "%d abonnementen";
-"inbox.alert.message.mixed.automations" = "%d automatische boekingen";
-"inbox.alert.message.mixed.connector" = " en ";
 
 // MARK: - Settings
 
@@ -2018,15 +2012,16 @@
 "inbox.delete" = "Verwijderen";
 "inbox.noPending" = "Geen openstaande concepten";
 "inbox.noPendingDescription" = "Nieuwe spraak- en afbeeldingsconcepten verschijnen hier.";
-"inbox.bulkHint" = "Tik op Selecteren voor bulk-acties";
+"inbox.bulkHint" = "Tik op ✓ om er meerdere te kiezen";
+"inbox.status.rejected" = "afgewezen";
+"inbox.status.approved" = "goedgekeurd";
+"inbox.status.pending" = "in afwachting";
 "inbox.subtitleMultiplePending" = "%d transacties wachten, stap voor stap.";
 "inbox.subtitleOnePending" = "Eén transactie wacht, bekijk wanneer je kunt.";
 "inbox.subtitleAllDone" = "Inbox leeg, goed gedaan.";
-"inbox.pendingBadge" = "%d in afwachting";
 "inbox.newTag" = "Nieuw";
 "inbox.noArchived" = "Geen gearchiveerde concepten";
 "inbox.noArchivedDescription" = "Goedgekeurde of geweigerde concepten verschijnen hier.";
-"inbox.selectedCount" = "%d geselecteerd";
 "inbox.editDraft" = "Concept bewerken";
 "inbox.cannotApprove" = "Kan niet goedkeuren";
 "inbox.sourceVoice" = "Spraak";
@@ -2047,8 +2042,6 @@
 "inbox.duplicateWarningTitle" = "Mogelijk duplicaat";
 "inbox.duplicateWarningMessage" = "Er bestaat al een vergelijkbare transactie. Toch aanmaken?";
 "inbox.createAnyway" = "Toch aanmaken";
-"inbox.deleteConfirmMessage" = "Weet je zeker dat je %d concept(en) wilt verwijderen?";
-"inbox.approveableCount" = "%d van %d klaar om goed te keuren";
 "inbox.saveLater" = "Later goedkeuren";
 "inbox.deleteTitle" = "Concept verwijderen";
 "inbox.deleteMessage" = "Deze actie kan niet ongedaan worden gemaakt.";

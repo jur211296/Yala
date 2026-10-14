@@ -437,12 +437,6 @@
 "inbox.alert.title.subscriptions" = "Subscriptions to review!";
 "inbox.alert.title.automations" = "New automatic records!";
 "inbox.alert.title.mixed" = "New records in your inbox!";
-"inbox.alert.message.scheduled" = "%d scheduled payments were added to your inbox.";
-"inbox.alert.message.subscriptions" = "%d subscriptions were added to your inbox.";
-"inbox.alert.message.mixed.scheduled" = "%d payments";
-"inbox.alert.message.mixed.subscriptions" = "%d subscriptions";
-"inbox.alert.message.mixed.automations" = "%d automatic records";
-"inbox.alert.message.mixed.connector" = " and ";
 
 // MARK: - Settings
 
@@ -2018,15 +2012,16 @@
 "inbox.delete" = "Delete";
 "inbox.noPending" = "No pending drafts";
 "inbox.noPendingDescription" = "New voice and image drafts will appear here.";
-"inbox.bulkHint" = "Tap Select for bulk actions";
+"inbox.bulkHint" = "Tap ✓ to pick several at once";
+"inbox.status.rejected" = "rejected";
+"inbox.status.approved" = "approved";
+"inbox.status.pending" = "pending";
 "inbox.subtitleMultiplePending" = "%d transactions waiting, step by step.";
 "inbox.subtitleOnePending" = "One transaction waiting, review when you can.";
 "inbox.subtitleAllDone" = "Inbox at zero, great job.";
-"inbox.pendingBadge" = "%d pending";
 "inbox.newTag" = "New";
 "inbox.noArchived" = "No archived drafts";
 "inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";
-"inbox.selectedCount" = "%d selected";
 "inbox.editDraft" = "Edit draft";
 "inbox.cannotApprove" = "Cannot approve";
 "inbox.sourceVoice" = "Voice";
@@ -2047,8 +2042,6 @@
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.duplicateWarningMessage" = "A similar transaction already exists. Create anyway?";
 "inbox.createAnyway" = "Create anyway";
-"inbox.deleteConfirmMessage" = "Are you sure you want to delete %d draft(s)?";
-"inbox.approveableCount" = "%d of %d ready to approve";
 "inbox.saveLater" = "Approve later";
 "inbox.deleteTitle" = "Delete draft";
 "inbox.deleteMessage" = "This action cannot be undone.";

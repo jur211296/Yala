@@ -291,7 +291,8 @@ struct InboxView: View {
                     }
                     if !filteredDrafts.isEmpty {
                         ToolbarItem(placement: .topBarTrailing) {
-                            YalaToolbarButton(systemName: "checkmark.circle", label: L10n.Inbox.approveAll) {
+                            // Este botón no aprueba nada: entra en modo selección. VoiceOver decía «Aprobar todo».
+                            YalaToolbarButton(systemName: "checkmark.circle", label: L10n.Common.select) {
                                 dsWithAnimation(reduceMotion) {
                                     isSelectionMode = true
                                 }
@@ -674,6 +675,7 @@ struct InboxView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("inbox_filter_\(filter.rawValue)")
     }
 
     private func countForFilter(_ filter: InboxFilter) -> Int {
@@ -749,6 +751,7 @@ struct InboxView: View {
                         Label(L10n.Inbox.reject, systemImage: "xmark.circle")
                     }
                     .tint(DS.Semantic.warningForeground)
+                    .accessibilityIdentifier("inbox_swipe_reject")
                 } else if draft.status == .rejected && !draft.isSettlementAmountChangeNotice {
                     // Archived (rejected only): Delete
                     Button {
@@ -841,8 +844,10 @@ struct InboxView: View {
                 #if DEBUG
                 print("InboxView: Error persisting draft removal: \(error)")
                 #endif
-                viewModel.loadData()
             }
+            // Recargar SIEMPRE, también si guardó bien: la retirada optimista lo quitó de `allDrafts`, y sin recargar
+            // un borrador recién rechazado no salía en Archivados hasta cerrar y volver a abrir la Bandeja.
+            viewModel.loadData()
         }
     }
 

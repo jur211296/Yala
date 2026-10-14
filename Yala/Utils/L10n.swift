@@ -6391,6 +6391,14 @@ enum L10n {
         static var bulkHint: String {
             ls("inbox.bulkHint", comment: "")
         }
+        /// Estado del borrador como lo lee VoiceOver en la fila («pendiente», «aprobado», «rechazado»).
+        static func status(_ status: DraftStatus) -> String {
+            switch status {
+            case .pending: ls("inbox.status.pending", comment: "")
+            case .approved: ls("inbox.status.approved", comment: "")
+            case .rejected: ls("inbox.status.rejected", comment: "")
+            }
+        }
         static var newTag: String {
             ls("inbox.newTag", comment: "")
         }
@@ -6578,9 +6586,6 @@ enum L10n {
                     }
                     static func automations(_ count: Int) -> String {
                         String(format: ls("inbox.alert.message.mixed.automations", comment: ""), count)
-                    }
-                    static var connector: String {
-                        ls("inbox.alert.message.mixed.connector", comment: "")
                     }
                 }
             }

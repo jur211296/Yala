@@ -437,12 +437,6 @@
 "inbox.alert.title.subscriptions" = "¡Suscripciones por revisar!";
 "inbox.alert.title.automations" = "¡Nuevos registros automáticos!";
 "inbox.alert.title.mixed" = "¡Nuevos registros en tu bandeja!";
-"inbox.alert.message.scheduled" = "Se añadieron %d pagos planificados a tu bandeja.";
-"inbox.alert.message.subscriptions" = "Se añadieron %d suscripciones a tu bandeja.";
-"inbox.alert.message.mixed.scheduled" = "%d pagos";
-"inbox.alert.message.mixed.subscriptions" = "%d suscripciones";
-"inbox.alert.message.mixed.automations" = "%d registros automáticos";
-"inbox.alert.message.mixed.connector" = " y ";
 
 // MARK: - Settings
 
@@ -2016,15 +2010,16 @@
 "inbox.delete" = "Eliminar";
 "inbox.noPending" = "Sin borradores pendientes";
 "inbox.noPendingDescription" = "Los nuevos borradores de voz e imagen aparecerán aquí.";
-"inbox.bulkHint" = "Toca Seleccionar para acciones masivas";
+"inbox.bulkHint" = "Toca ✓ para elegir varios a la vez";
+"inbox.status.rejected" = "rechazado";
+"inbox.status.approved" = "aprobado";
+"inbox.status.pending" = "pendiente";
 "inbox.subtitleMultiplePending" = "%d transacciones esperando, paso a paso.";
 "inbox.subtitleOnePending" = "Una transacción esperando, revisa cuando puedas.";
 "inbox.subtitleAllDone" = "Bandeja en cero, gran trabajo.";
-"inbox.pendingBadge" = "%d pendientes";
 "inbox.newTag" = "Nueva";
 "inbox.noArchived" = "Sin borradores archivados";
 "inbox.noArchivedDescription" = "Los borradores aprobados o rechazados aparecerán aquí.";
-"inbox.selectedCount" = "%d seleccionados";
 "inbox.editDraft" = "Editar borrador";
 "inbox.cannotApprove" = "No se puede aprobar";
 "inbox.sourceVoice" = "Voz";
@@ -2045,8 +2040,6 @@
 "inbox.duplicateWarningTitle" = "Posible duplicado";
 "inbox.duplicateWarningMessage" = "Ya existe una transacción similar. ¿Crear de todas formas?";
 "inbox.createAnyway" = "Crear de todas formas";
-"inbox.deleteConfirmMessage" = "¿Estás seguro de eliminar %d borrador(es)?";
-"inbox.approveableCount" = "%d de %d listo(s) para aprobar";
 "inbox.saveLater" = "Aprobar luego";
 "inbox.deleteTitle" = "Eliminar borrador";
 "inbox.deleteMessage" = "Esta acción no se puede deshacer.";

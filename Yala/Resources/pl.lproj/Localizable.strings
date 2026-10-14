@@ -437,12 +437,6 @@
 "inbox.alert.title.subscriptions" = "Subskrypcje do przeglądu!";
 "inbox.alert.title.automations" = "Nowe automatyczne wpisy!";
 "inbox.alert.title.mixed" = "Nowe wpisy w twojej skrzynce!";
-"inbox.alert.message.scheduled" = "Do twojej skrzynki dodano %d zaplanowanych płatności.";
-"inbox.alert.message.subscriptions" = "Do twojej skrzynki dodano %d subskrypcji.";
-"inbox.alert.message.mixed.scheduled" = "%d płatności";
-"inbox.alert.message.mixed.subscriptions" = "%d subskrypcji";
-"inbox.alert.message.mixed.automations" = "%d automatycznych wpisów";
-"inbox.alert.message.mixed.connector" = " i ";
 
 // MARK: - Settings
 
@@ -2018,15 +2012,16 @@
 "inbox.delete" = "Usuń";
 "inbox.noPending" = "Brak oczekujących szkiców";
 "inbox.noPendingDescription" = "Nowe szkice głosowe i z obrazów pojawią się tutaj.";
-"inbox.bulkHint" = "Stuknij Wybierz dla działań zbiorczych";
+"inbox.bulkHint" = "Stuknij ✓, aby wybrać kilka naraz";
+"inbox.status.rejected" = "odrzucony";
+"inbox.status.approved" = "zatwierdzony";
+"inbox.status.pending" = "oczekujący";
 "inbox.subtitleMultiplePending" = "%d transakcji czeka, krok po kroku.";
 "inbox.subtitleOnePending" = "Jedna transakcja czeka, sprawdź gdy będziesz mógł.";
 "inbox.subtitleAllDone" = "Skrzynka pusta, świetna robota.";
-"inbox.pendingBadge" = "%d oczekujących";
 "inbox.newTag" = "Nowy";
 "inbox.noArchived" = "Brak zarchiwizowanych szkiców";
 "inbox.noArchivedDescription" = "Zatwierdzone lub odrzucone szkice pojawią się tutaj.";
-"inbox.selectedCount" = "Wybrano: %d";
 "inbox.editDraft" = "Edytuj szkic";
 "inbox.cannotApprove" = "Nie można zatwierdzić";
 "inbox.sourceVoice" = "Głos";
@@ -2047,8 +2042,6 @@
 "inbox.duplicateWarningTitle" = "Możliwy duplikat";
 "inbox.duplicateWarningMessage" = "Podobna transakcja już istnieje. Utworzyć mimo to?";
 "inbox.createAnyway" = "Utwórz mimo to";
-"inbox.deleteConfirmMessage" = "Czy na pewno chcesz usunąć %d szkic(ów)?";
-"inbox.approveableCount" = "%d z %d gotowych do zatwierdzenia";
 "inbox.saveLater" = "Zatwierdź później";
 "inbox.deleteTitle" = "Usuń szkic";
 "inbox.deleteMessage" = "Tej operacji nie można cofnąć.";

@@ -435,12 +435,6 @@
 "inbox.alert.title.subscriptions" = "Abbonamenti da verificare!";
 "inbox.alert.title.automations" = "Nuove registrazioni automatiche!";
 "inbox.alert.title.mixed" = "Nuove registrazioni nella tua casella!";
-"inbox.alert.message.scheduled" = "%d pagamenti pianificati sono stati aggiunti alla tua casella.";
-"inbox.alert.message.subscriptions" = "%d abbonamenti sono stati aggiunti alla tua casella.";
-"inbox.alert.message.mixed.scheduled" = "%d pagamenti";
-"inbox.alert.message.mixed.subscriptions" = "%d abbonamenti";
-"inbox.alert.message.mixed.automations" = "%d registrazioni automatiche";
-"inbox.alert.message.mixed.connector" = " e ";
 
 // MARK: - Settings
 
@@ -2016,22 +2010,23 @@
 "inbox.delete" = "Elimina";
 "inbox.noPending" = "Nessuna bozza in sospeso";
 "inbox.noPendingDescription" = "Le nuove bozze vocali e di immagini appariranno qui.";
-"inbox.bulkHint" = "Tocca Seleziona per azioni di massa";
+"inbox.bulkHint" = "Tocca ✓ per sceglierne più di uno";
+"inbox.status.rejected" = "rifiutato";
+"inbox.status.approved" = "approvato";
+"inbox.status.pending" = "in attesa";
 "inbox.subtitleMultiplePending" = "%d transazioni in attesa, passo dopo passo.";
 "inbox.subtitleOnePending" = "Una transazione in attesa, controlla quando puoi.";
 "inbox.subtitleAllDone" = "Casella vuota, ottimo lavoro.";
-"inbox.pendingBadge" = "%d in attesa";
 "inbox.newTag" = "Nuova";
 "inbox.noArchived" = "Nessuna bozza archiviata";
 "inbox.noArchivedDescription" = "Le bozze approvate o rifiutate appariranno qui.";
-"inbox.selectedCount" = "%d selezionati";
-"inbox.editDraft" = "Edit draft";
-"inbox.cannotApprove" = "Cannot approve";
-"inbox.sourceVoice" = "Voice";
-"inbox.sourceEmail" = "Email";
-"inbox.sourceScreenshot" = "Screenshot";
-"inbox.sourceScreenshotList" = "List";
-"inbox.sourceReceipt" = "Receipt";
+"inbox.editDraft" = "{'de': 'Entwurf bearbeiten', 'fr': 'Modifier le brouillon', 'it': 'Modifica bozza', 'pt-BR': 'Editar rascunho', 'pt-PT': 'Editar rascunho'}";
+"inbox.cannotApprove" = "{'de': 'Kann nicht genehmigt werden', 'fr': 'Impossible d’approuver', 'it': 'Impossibile approvare', 'pt-BR': 'Não é possível aprovar', 'pt-PT': 'Não é possível aprovar'}";
+"inbox.sourceVoice" = "{'de': 'Sprache', 'fr': 'Voix', 'it': 'Voce', 'pt-BR': 'Voz', 'pt-PT': 'Voz'}";
+"inbox.sourceEmail" = "{'de': 'E-Mail', 'fr': 'E-mail', 'it': 'E-mail', 'pt-BR': 'E-mail', 'pt-PT': 'E-mail'}";
+"inbox.sourceScreenshot" = "{'de': 'Bildschirmfoto', 'fr': 'Capture d’écran', 'it': 'Schermata', 'pt-BR': 'Captura de tela', 'pt-PT': 'Captura de ecrã'}";
+"inbox.sourceScreenshotList" = "{'de': 'Liste', 'fr': 'Liste', 'it': 'Elenco', 'pt-BR': 'Lista', 'pt-PT': 'Lista'}";
+"inbox.sourceReceipt" = "{'de': 'Beleg', 'fr': 'Reçu', 'it': 'Ricevuta', 'pt-BR': 'Recibo', 'pt-PT': 'Recibo'}";
 "inbox.sourceScheduledPayment" = "Pagamento pianificato";
 "inbox.sourceSubscription" = "Abbonamento";
 "inbox.sourceApplePay" = "Apple Pay";
@@ -2042,11 +2037,9 @@
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.errorArchivedAccount" = "Questo conto è archiviato. Modifica la bozza e cambia il conto per approvare.";
 "inbox.errorFutureDate" = "Le transazioni con data futura non possono essere approvate";
-"inbox.duplicateWarningTitle" = "Possible duplicate";
-"inbox.duplicateWarningMessage" = "Similar transaction exists. Create anyway?";
-"inbox.createAnyway" = "Create anyway";
-"inbox.deleteConfirmMessage" = "Delete %d draft(s)?";
-"inbox.approveableCount" = "%d di %d pronto/i per approvare";
+"inbox.duplicateWarningTitle" = "{'de': 'Mögliches Duplikat', 'fr': 'Doublon possible', 'it': 'Possibile duplicato', 'pt-BR': 'Possível duplicado', 'pt-PT': 'Possível duplicado'}";
+"inbox.duplicateWarningMessage" = "{'de': 'Es gibt schon eine ähnliche Transaktion. Trotzdem erstellen?', 'fr': 'Une transaction similaire existe déjà. La créer quand même ?', 'it': 'Esiste già una transazione simile. Crearla comunque?', 'pt-BR': 'Já existe uma transação parecida. Criar mesmo assim?', 'pt-PT': 'Já existe uma transação semelhante. Criar mesmo assim?'}";
+"inbox.createAnyway" = "{'de': 'Trotzdem erstellen', 'fr': 'Créer quand même', 'it': 'Crea comunque', 'pt-BR': 'Criar mesmo assim', 'pt-PT': 'Criar mesmo assim'}";
 "inbox.saveLater" = "Approva dopo";
 "inbox.deleteTitle" = "Elimina bozza";
 "inbox.deleteMessage" = "Questa azione non può essere annullata.";
