@@ -73,6 +73,27 @@ struct PanelSheetState {
     var setupTrialExampleImages: [UIImage]? = nil
     var practiceCleanupItem: PracticeCleanupItem? = nil
 
+    /// Apaga las prácticas de voz e imagen de «Primeros pasos» que no llegaron a abrir su hoja, y devuelve las
+    /// funciones Pro que hay que volver a cerrar.
+    ///
+    /// La práctica abre la función ANTES del aviso de IA, y quien la cierra es el `onDismiss` de la hoja de voz o de
+    /// imagen. Si la persona cancela el aviso, esa hoja no se abre nunca: Voz (o Imagen) se quedaba abierta sin Pro
+    /// hasta cerrar la app, sin candado en el Panel, y el siguiente toque al botón contaba como práctica (medido el
+    /// 2026-10-14 en el simulador).
+    mutating func endSetupTrialsThatNeverOpened() -> [ProFeature] {
+        var features: [ProFeature] = []
+        if isVoiceSetupTrial {
+            isVoiceSetupTrial = false
+            features.append(.voiceInput)
+        }
+        if isImageSetupTrial {
+            isImageSetupTrial = false
+            setupTrialExampleImages = nil
+            features.append(.imageInput)
+        }
+        return features
+    }
+
     /// True si algún sheet/alert PROPIO del panel ocupa el presentation slot.
     /// Usado por el guard de drain de `.panel` (RouterConsumerGateLogic): con
     /// uno visible, drenar otro intent que setee un sheet lo descartaría.

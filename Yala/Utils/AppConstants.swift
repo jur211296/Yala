@@ -26,8 +26,9 @@ enum AppConstants {
 
     /// Returns locale prefix for web URLs (empty for es, "en/" for English, etc.)
     private static var localePath: String {
-        guard let lang = Bundle.main.preferredLocalizations.first else { return "" }
-        switch lang {
+        guard let localization = Bundle.main.preferredLocalizations.first else { return "" }
+        // El idioma BASE: «es-419» o «pt-BR» caían al `default` y abrían la página en inglés.
+        switch LanguageManager.baseLanguageCode(of: localization) {
         case "es": return ""
         case "en": return "en/"
         case "de": return "de/"

@@ -142,6 +142,9 @@ struct CoachMarkOverlay: View {
     let scrollProxy: ScrollViewProxy?
     @Binding var currentIndex: Int
     @Binding var isPresented: Bool
+    /// Lo que hace «Omitir guía». `nil` = lo mismo que terminarla (`onComplete`), que es lo justo cuando la guía es
+    /// una sola pantalla. Una guía de varias fases (el tour Pro) pasa aquí cómo darla por vista ENTERA.
+    let onSkip: (() -> Void)?
     let onComplete: () -> Void
 
     @Environment(\.yalaTheme) private var theme
@@ -370,7 +373,7 @@ struct CoachMarkOverlay: View {
             HStack {
                 // Skip button
                 Button {
-                    dismissAndComplete()
+                    dismissAndComplete(skipped: true)
                 } label: {
                     Text(L10n.TipKit.skip)
                         .font(DS.Typography.labelSmall)
@@ -439,7 +442,7 @@ struct CoachMarkOverlay: View {
         }
     }
 
-    private func dismissAndComplete() {
+    private func dismissAndComplete(skipped: Bool = false) {
         isTransitioning = true
         dsWithAnimation(reduceMotion, .easeIn(duration: DS.Animation.fast)) {
             showTooltip = false
@@ -448,7 +451,7 @@ struct CoachMarkOverlay: View {
         Task {
             try? await Task.sleep(for: .seconds(DS.Animation.fast + 0.05))
             isPresented = false
-            onComplete()
+            if skipped, let onSkip { onSkip() } else { onComplete() }
         }
     }
 }
@@ -464,6 +467,7 @@ extension View {
         isPresented: Binding<Bool>,
         currentIndex: Binding<Int>,
         scrollProxy: ScrollViewProxy? = nil,
+        onSkip: (() -> Void)? = nil,
         onComplete: @escaping () -> Void
     ) -> some View {
         self.overlayPreferenceValue(CoachMarkAnchorKey.self) { anchors in
@@ -476,6 +480,7 @@ extension View {
                         scrollProxy: scrollProxy,
                         currentIndex: currentIndex,
                         isPresented: isPresented,
+                        onSkip: onSkip,
                         onComplete: onComplete
                     )
                 }

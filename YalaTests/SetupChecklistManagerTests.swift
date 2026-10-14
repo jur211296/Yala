@@ -228,6 +228,61 @@ struct SetupChecklistManagerTests {
         manager.pendingPracticeCleanup = nil
     }
 
+    // MARK: - Lo que apuntó la persona (auditoría UX 2.2 · lote 5 · B1)
+
+    /// El «Saldo inicial» del onboarding y los ajustes de saldo no son registros que la persona apuntó; un registro
+    /// normal (`nil`) y una transferencia sí, como hasta ahora.
+    @MainActor @Test(arguments: [
+        (type: String?.none, counts: true),
+        (type: "transfer", counts: true),
+        (type: "initial_balance", counts: false),
+        (type: "adjustment", counts: false),
+    ])
+    func countsAsUserRecord(_ c: (type: String?, counts: Bool)) {
+        #expect(SetupChecklistManager.countsAsUserRecord(balanceAdjustmentType: c.type) == c.counts)
+    }
+
+    /// El bug medido el 2026-10-14: tras un onboarding con saldo, el store tiene UNA fila (`initial_balance`), y
+    /// «Registra tu primer gasto» salía hecho en el primer Panel. El recuento del store y el del Panel coinciden y
+    /// la dejan fuera, con los registros normales (`nil`, que en SQL no casan con un `!=` a secas) dentro.
+    @MainActor @Test func userRecordsDescriptor_leavesOutTheOpeningBalanceAndAdjustments() throws {
+        let context = try makeTestContext()
+        let types: [String?] = [
+            InitialBalanceService.typeInitialBalance, InitialBalanceService.typeAdjustment, nil, nil, "transfer",
+        ]
+        for type in types {
+            let item = TransactionItem(date: .now, amount: 10, currencyCode: "PEN")
+            item.balanceAdjustmentType = type
+            context.insert(item)
+        }
+        try context.save()
+
+        #expect(try context.fetchCount(SetupChecklistManager.userRecordsDescriptor()) == 3)
+        let all = try context.fetch(FetchDescriptor<TransactionItem>())
+        #expect(all.count(where: { SetupChecklistManager.countsAsUserRecord(balanceAdjustmentType: $0.balanceAdjustmentType) }) == 3)
+    }
+
+    /// Con solo el «Saldo inicial» en el store, el primer Panel ya no da el paso por hecho.
+    @MainActor @Test func autoDetect_onlyTheOpeningBalance_leavesFirstExpensePending() throws {
+        let manager = freshManager()
+        let context = try makeTestContext()
+        let opening = TransactionItem(date: .now, amount: 1500, currencyCode: "PEN", note: "Saldo inicial")
+        opening.balanceAdjustmentType = InitialBalanceService.typeInitialBalance
+        context.insert(opening)
+        try context.save()
+
+        let records = try context.fetch(FetchDescriptor<TransactionItem>())
+        manager.autoDetect(
+            transactionCount: records.count(where: {
+                SetupChecklistManager.countsAsUserRecord(balanceAdjustmentType: $0.balanceAdjustmentType)
+            }),
+            budgetCount: 0,
+            scheduledCount: 0
+        )
+
+        #expect(manager.stepCompleted[.firstExpense] != true)
+    }
+
     // MARK: - Collapse / Re-expand
 
     @MainActor @Test func toggleCollapsed_togglesState() {
