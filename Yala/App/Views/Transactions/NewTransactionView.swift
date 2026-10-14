@@ -1430,9 +1430,10 @@ struct NewTransactionView: View {
             if SetupChecklistManager.shared.stepCompleted[.firstExpense] != true {
                 // «¿Era de prueba?» solo si este es el ÚNICO registro: la marca del paso puede
                 // seguir sin poner con historial (ver `markFirstCreation`). Mismo criterio que
-                // `autoDetect` desde el Panel: todos los `TransactionItem`.
+                // `autoDetect` desde el Panel: lo que apuntó la persona, sin el «Saldo inicial» ni los
+                // ajustes (`SetupChecklistManager.countsAsUserRecord`).
                 do {
-                    let total = try modelContext.fetchCount(FetchDescriptor<TransactionItem>())
+                    let total = try modelContext.fetchCount(SetupChecklistManager.userRecordsDescriptor())
                     SetupChecklistManager.shared.markFirstCreation(
                         .firstExpense,
                         totalOfKind: total,

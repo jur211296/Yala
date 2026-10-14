@@ -142,7 +142,7 @@
 "welcome.restore.iCloudDisabledBody" = "Precisas do iCloud ativo para recuperar os teus dados. Ativa-o nos Ajustes e tenta novamente.";
 "welcome.restore.openSettings" = "Abrir Ajustes";
 "welcome.restore.startFreshConfirm.title" = "Começar do zero?";
-"welcome.restore.startFreshConfirm.body" = "Isto vai criar uma conta nova sem os teus dados anteriores. Continuar?";
+"welcome.restore.startFreshConfirm.body" = "Ainda não se apaga nada. Antes de começar, verificamos o que está guardado e, se encontrarmos algo, perguntamos-te o que fazer com isso.";
 "welcome.restore.startFreshConfirm.confirm" = "Sim, começar do zero";
 "welcome.restore.startFreshConfirm.cancel" = "Cancelar";
 "welcome.restore.progress.connecting" = "A ligar ao iCloud…";
@@ -634,7 +634,7 @@
 "account.archive" = "Arquivar conta";
 "account.archived" = "Arquivada";
 "account.balance" = "Saldo";
-"account.changeInitialBalanceDesc" = "Escreva o saldo correto e alteraremos o saldo inicial da sua conta. Use isso se voce nao registrou durante muito tempo.";
+"account.changeInitialBalanceDesc" = "Escreva com quanto a conta começou e recalculamos o saldo de hoje com os seus registos. Use isto se o saldo inicial estava errado.";
 "account.changeInitialBalanceName" = "Alterar saldo inicial";
 "account.configure" = "Configurar conta";
 "account.creditCard.paymentDay" = "Dia de pagamento";
@@ -659,7 +659,7 @@
 "account.newBalance" = "Novo saldo";
 "account.positive" = "Positivo";
 "account.secondaryCurrency.accept" = "Adicionar";
-"account.secondaryCurrency.message" = "Você adicionou uma conta em %@. Quer ver a taxa de câmbio %@ → %@? Pode alterar em Perfil > Moeda.";
+"account.secondaryCurrency.message" = "Você adicionou uma conta em %@. Quer ver a taxa de câmbio %@ → %@? Pode alterar em Perfil > Moeda e câmbio.";
 "account.secondaryCurrency.reject" = "Não, obrigado";
 "account.secondaryCurrency.title" = "Moeda secundária";
 "account.selectAccount" = "Selecionar conta";
@@ -669,8 +669,8 @@
 "account.sign.inFavor" = "A teu favor";
 "account.type" = "Tipo";
 "account.type.cash" = "Dinheiro";
-"account.type.creditCard" = "Cartao de Credito";
-"account.type.current" = "Conta Corrente";
+"account.type.creditCard" = "Cartão de crédito";
+"account.type.current" = "Conta corrente";
 "account.type.general" = "Geral";
 "account.type.investment" = "Investimento";
 "account.type.loan" = "Emprestimo";
@@ -1684,7 +1684,7 @@
 "import.templateDescription" = "Use nosso modelo oficial para garantir o formato correto.";
 "import.templateGenerated" = "Modelo gerado";
 "import.templateGeneratedMessage" = "O modelo foi gerado com sucesso. Agora você pode editá-lo e voltar a esta tela para importá-lo.";
-"import.title" = "Importar Transacoes";
+"import.title" = "Importar transações";
 "inbox.alert.message.mixed.automations" = "%d registros automáticos";
 "inbox.alert.message.mixed.scheduled" = "%d pagamentos";
 "inbox.alert.message.mixed.subscriptions" = "%d assinaturas";
@@ -2658,7 +2658,7 @@
 "settings.colorfulIconsDisabledByTheme" = "Desativado automaticamente pelo tema atual.";
 "settings.contact" = "Entre em contato";
 "settings.currency" = "Moeda";
-"settings.currencyAndExchange" = "Moeda e Cambio";
+"settings.currencyAndExchange" = "Moeda e câmbio";
 "settings.currencyCode" = "Código (PEN, USD)";
 "settings.currencyDescription" = "Escolha sua moeda principal e consulte as taxas de cambio atualizadas.";
 "settings.currencyFormat" = "Formato de moeda";
@@ -3099,7 +3099,7 @@
 "subcategory.supportStaff" = "Funcionários domésticos";
 "subcategory.taxes" = "Impostos";
 "subcategory.tech" = "Tecnologia & acessórios";
-"subcategory.transferDescription" = "Ha %d transacoes em \"%@\". Escolha o que fazer com elas antes de eliminar.";
+"subcategory.transferDescription" = "Há %1$d transações em \"%2$@\". Escolha o que fazer com elas antes de eliminar.";
 "subcategory.transferHeader" = "Esta subcategoria tem transacoes";
 "subcategory.transferTitle" = "Transferir transacoes";
 "subcategory.transferToSpecific" = "Transferir para outra subcategoria";
@@ -5889,3 +5889,6 @@
 "onboarding.calc.creditCard.owed" = "Deves";
 "onboarding.calc.creditCard.formula" = "Limite **%1$@**  −  Disponível **%2$@**";
 "onboarding.accountName.allTogether" = "O meu dinheiro %@";
+"account.deleteConfirmTitle" = "Eliminar “%@”?";
+"account.deleteConfirmMessageEmpty" = "Esta conta não tem registos. Não é possível desfazer.";
+"account.deleteConfirmMessage" = "Esta conta tem %d registos. Não são apagados: ficam em Registros, sem conta. Se só quer deixar de a ver, arquive-a. Não é possível desfazer.";

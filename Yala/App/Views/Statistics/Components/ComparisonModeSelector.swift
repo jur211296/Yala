@@ -23,8 +23,11 @@ struct ComparisonModeSelector: View {
             }
         }
         .popoverTip(comparisonTip)
-        .onAppear {
-            ComparisonTip.hasVisitedStatistics = true
+        // El globo se arma cuando el selector SE VE entero, no al montarse: en Estadísticas › Resumen el selector
+        // se monta por debajo del borde, y el globo salía cortado en la esquina, encima de la barra de pestañas, y
+        // se iba al primer desplazamiento sin poder leerse (medido el 2026-10-14, iPhone 17 Pro).
+        .onScrollVisibilityChange(threshold: 1.0) { isVisible in
+            if isVisible { ComparisonTip.hasVisitedStatistics = true }
         }
     }
 

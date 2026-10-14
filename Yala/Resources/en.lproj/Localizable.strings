@@ -1375,7 +1375,6 @@
 "category.deleteConfirmTitle" = "Delete Category?";
 "category.deleteConfirmMessage" = "The category and all its subcategories will be deleted. This action cannot be undone.";
 "category.cannotDeleteTitle" = "Cannot Delete";
-"category.cannotDeleteMessage" = "This category has subcategories with %d transactions. To delete it, first delete or transfer the transactions from each subcategory.";
 "subcategory.newTitle" = "New Subcategory";
 "subcategory.editTitle" = "Edit Subcategory";
 "subcategory.delete" = "Delete Subcategory";
@@ -1385,7 +1384,6 @@
 "subcategory.cannotDeleteMessage" = "This subcategory has %d transactions. Transfer the transactions to another subcategory before deleting.";
 "subcategory.transferTitle" = "Transfer Transactions";
 "subcategory.transferHeader" = "This subcategory has transactions";
-"subcategory.transferDescription" = "There are %d transactions in \"%@\". Choose what to do with them before deleting.";
 "subcategory.transferToSpecific" = "Transfer to another subcategory";
 "subcategory.transferToSpecificDesc" = "Select a destination subcategory to move the transactions";
 "subcategory.transferToUnassigned" = "Move to Unassigned";
@@ -1398,7 +1396,6 @@
 "subcategory.details" = "Subcategory details";
 "subcategory.namePlaceholder" = "Subcategory name";
 "subcategory.unassigned" = "Unassigned";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transactions will be permanently deleted. This action cannot be undone.";
 
 "account.deleteBalanceError" = "You cannot delete this account because it has a non-zero balance. Adjust the balance to 0 before deleting it.";
 "account.type.general" = "General";
@@ -1452,7 +1449,7 @@
 "account.adjustByEntry" = "Adjust by entry";
 "account.adjustByEntryDesc" = "Enter the correct balance and we'll create a correction entry. Use this if you forgot to record some expenses.";
 "account.changeInitialBalanceName" = "Change initial balance";
-"account.changeInitialBalanceDesc" = "Enter the correct balance and we'll change the initial balance in your account. Use this if you haven't recorded in a long time.";
+"account.changeInitialBalanceDesc" = "Enter how much the account started with and we'll recalculate today's balance from your records. Use this if the starting balance was wrong.";
 "account.creditCard.sectionTitle" = "Credit card";
 "account.creditCard.paymentReminder" = "Remind on payment date";
 "account.creditCard.paymentDay" = "Payment day";
@@ -3011,7 +3008,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Secondary Currency";
-"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency.";
+"account.secondaryCurrency.message" = "You added an account in %@. Want to see the %@ → %@ exchange rate? You can change it in Profile > Currency & Exchange.";
 "account.secondaryCurrency.accept" = "Add";
 "account.secondaryCurrency.reject" = "No, thanks";
 
@@ -4076,10 +4073,6 @@
 "welcome.restore.foundTitle" = "Hi %@! Welcome back.";
 "welcome.restore.foundTitleAnonymous" = "Welcome back!";
 "welcome.restore.foundBody" = "We found your data in iCloud:";
-"welcome.restore.foundAccounts" = "%d accounts";
-"welcome.restore.foundTransactions" = "%d records";
-"welcome.restore.foundBudgets" = "%d budgets";
-"welcome.restore.foundGroups" = "%d shared groups";
 "welcome.restore.continue" = "Continue";
 "welcome.restore.notFoundTitle" = "No data found";
 "welcome.restore.notFoundBody" = "There's no data linked to your iCloud account. Want to start fresh?";
@@ -4091,7 +4084,7 @@
 "welcome.restore.iCloudDisabledBody" = "You need iCloud enabled to restore your data. Turn it on in Settings and try again.";
 "welcome.restore.openSettings" = "Open Settings";
 "welcome.restore.startFreshConfirm.title" = "Start fresh?";
-"welcome.restore.startFreshConfirm.body" = "This will create a new account without your previous data. Continue?";
+"welcome.restore.startFreshConfirm.body" = "Nothing is deleted yet. Before starting, we check what’s saved and, if we find anything, ask you what to do with it.";
 "welcome.restore.startFreshConfirm.confirm" = "Yes, start fresh";
 "welcome.restore.startFreshConfirm.cancel" = "Cancel";
 "welcome.restore.progress.connecting" = "Connecting to iCloud…";
@@ -5736,7 +5729,6 @@
 "welcome.privateICloud.lateKeep" = "Leave it that way";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categories";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "a lot of saved data";
@@ -6612,3 +6604,5 @@
 "onboarding.calc.creditCard.owed" = "You owe";
 "onboarding.calc.creditCard.formula" = "Limit **%1$@**  −  Available **%2$@**";
 "onboarding.accountName.allTogether" = "My money %@";
+"account.deleteConfirmTitle" = "Delete “%@”?";
+"account.deleteConfirmMessageEmpty" = "It has no records. This can't be undone.";

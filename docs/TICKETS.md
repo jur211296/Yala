@@ -152,6 +152,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
+| cash-flow-plan-asks-the-starting-balance-the-account-already-has | backlog | tickets/backlog/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
 | cashflow-line-context-menu-deletes-without-asking | backlog | tickets/backlog/cashflow-line-context-menu-deletes-without-asking.md |
 | cashflow-scheduled-line-ignores-payment-currency | qa | tickets/qa/cashflow-scheduled-line-ignores-payment-currency.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
@@ -258,7 +259,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debt-tracking | backlog | tickets/backlog/debt-tracking.md |
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
 | declining-ai-consent-keeps-a-dropped-or-shared-photo-pending | backlog | tickets/backlog/declining-ai-consent-keeps-a-dropped-or-shared-photo-pending.md |
-| deleting-an-account-asks-nothing | backlog | tickets/backlog/deleting-an-account-asks-nothing.md |
+| deleting-an-account-asks-nothing | done | tickets/done/deleting-an-account-asks-nothing.md |
 | detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | done | tickets/done/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | done | tickets/done/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
@@ -593,6 +594,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
 | neutral-mount-wiring-scan-is-red-on-2-1 | done | tickets/done/neutral-mount-wiring-scan-is-red-on-2-1.md |
 | new-record-drafts-banner-says-abrir-inbox | backlog | tickets/backlog/new-record-drafts-banner-says-abrir-inbox.md |
+| new-record-with-one-account-keeps-save-off-without-saying-why | backlog | tickets/backlog/new-record-with-one-account-keeps-save-off-without-saying-why.md |
 | new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max | done | tickets/done/new-transaction-account-picker-uitests-fail-on-the-ios-27-lane-pro-max.md |
 | nightly-ui-suite-hits-its-110-minute-cap-every-night | done | tickets/done/nightly-ui-suite-hits-its-110-minute-cap-every-night.md |
 | no-hay-seed-con-miembro-rechazado | backlog | tickets/backlog/no-hay-seed-con-miembro-rechazado.md |
@@ -767,6 +769,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-due-draft-cannot-be-reached-in-uitest | backlog | tickets/backlog/scheduled-due-draft-cannot-be-reached-in-uitest.md |
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
+| scheduled-payment-save-does-nothing-when-a-field-is-missing | backlog | tickets/backlog/scheduled-payment-save-does-nothing-when-a-field-is-missing.md |
 | scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | done | tickets/done/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
 | scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
 | secondary-currency-prompt-uitest-red-on-iphone-se | backlog | tickets/backlog/secondary-currency-prompt-uitest-red-on-iphone-se.md |
@@ -826,8 +829,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | staging-test-user-c-does-not-exist | discarded | tickets/discarded/staging-test-user-c-does-not-exist.md |
 | stall-canaries-have-no-test-for-which-clock-they-publish | backlog | tickets/backlog/stall-canaries-have-no-test-for-which-clock-they-publish.md |
 | stall-clock-charges-a-closed-app-gap-to-a-one-off-cause | backlog | tickets/backlog/stall-clock-charges-a-closed-app-gap-to-a-one-off-cause.md |
-| start-fresh-dialog-promises-what-the-gate-undoes | backlog | tickets/backlog/start-fresh-dialog-promises-what-the-gate-undoes.md |
+| start-fresh-dialog-promises-what-the-gate-undoes | qa | tickets/qa/start-fresh-dialog-promises-what-the-gate-undoes.md |
 | statistics-calculators-count-an-unwritten-conversion-as-zero | done | tickets/done/statistics-calculators-count-an-unwritten-conversion-as-zero.md |
+| statistics-summary-guide-banner-stays-pinned-over-the-cards | backlog | tickets/backlog/statistics-summary-guide-banner-stays-pinned-over-the-cards.md |
 | stats-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/stats-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-hero-detail-row-truncates-at-accessibility-text | done | tickets/done/stats-hero-detail-row-truncates-at-accessibility-text.md |

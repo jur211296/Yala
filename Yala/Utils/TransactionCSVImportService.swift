@@ -289,10 +289,7 @@ enum TransactionCSVImportService {
         // 4. Validar encabezado
         let headerLine = lines.removeFirst()
         let delimiter = detectDelimiter(from: headerLine)
-        let headerColumns =
-            headerLine
-            .split(separator: delimiter)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+        let headerColumns = headerFields(headerLine, delimiter: delimiter)
 
         // Encabezados esperados:
         // - sin nota ni etiquetas: date,amount,currency,category,subcategory
@@ -366,11 +363,10 @@ enum TransactionCSVImportService {
                 continue
             }
 
-            let rawColumns = trimmedLine.split(
-                separator: delimiter, omittingEmptySubsequences: false)
-            var columns = rawColumns.map {
-                String($0).trimmingCharacters(in: .whitespacesAndNewlines)
-            }
+            var columns = splitCSVFields(trimmedLine, delimiter: delimiter)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            // Una fila de solo comillas vacías (`"","",…`) es tan vacía como `,,,`.
+            if columns.allSatisfy(\.isEmpty) { continue }
 
             // Eliminar columnas vacías del final (trailing semicolons)
             // pero solo si tenemos más columnas de las esperadas
@@ -942,6 +938,69 @@ enum TransactionCSVImportService {
 
     // MARK: - CSV Line Parsing (RFC 4180 compliant)
 
+    /// Los nombres de columna del encabezado, sin comillas, sin espacios y en minúsculas.
+    ///
+    /// Las columnas vacías se descartan, como hacía el `split` de antes: un encabezado exportado
+    /// con `;` de sobra al final (`date;amount;…;note;;`) tiene que seguir valiendo.
+    static func headerFields(_ headerLine: String, delimiter: Character) -> [String] {
+        splitCSVFields(headerLine, delimiter: delimiter)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Parte una fila en sus campos respetando las comillas (RFC 4180).
+    ///
+    /// Existe porque la plantilla que la propia app genera pone cada campo entre comillas, y el
+    /// `split` por delimitador las dejaba pegadas: el encabezado `"date","amount",…` no casaba con
+    /// el esperado y el archivo oficial no se podía importar (lote 7 de la auditoría UX 2.2, B9).
+    /// - Un campo entre comillas puede llevar el delimitador y saltos de línea dentro; `""` es una
+    ///   comilla literal.
+    /// - Una comilla **en medio** de un campo sin comillas se queda tal cual (`Pepe's "bar"`), igual
+    ///   que antes: solo abre un campo entrecomillado si es lo primero del campo.
+    /// - Siempre devuelve tantos campos como delimitadores fuera de comillas haya, más uno; los
+    ///   vacíos se conservan, como el `split(omittingEmptySubsequences: false)` al que sustituye.
+    static func splitCSVFields(_ line: String, delimiter: Character) -> [String] {
+        var fields: [String] = []
+        var current = ""
+        var insideQuotes = false
+        var fieldStartedQuoted = false
+        let chars = Array(line)
+        var index = 0
+
+        while index < chars.count {
+            let char = chars[index]
+            if insideQuotes {
+                if char == "\"" {
+                    if index + 1 < chars.count, chars[index + 1] == "\"" {
+                        current.append("\"")
+                        index += 2
+                        continue
+                    }
+                    insideQuotes = false
+                } else {
+                    current.append(char)
+                }
+            } else if char == delimiter {
+                fields.append(current)
+                current = ""
+                fieldStartedQuoted = false
+            } else if char == "\"",
+                !fieldStartedQuoted,
+                current.allSatisfy({ $0 == " " || $0 == "\t" })
+            {
+                // Comilla de apertura: lo que hubiera antes era solo espacio de relleno.
+                current = ""
+                insideQuotes = true
+                fieldStartedQuoted = true
+            } else {
+                current.append(char)
+            }
+            index += 1
+        }
+        fields.append(current)
+        return fields
+    }
+
     /// Splits CSV content into logical rows, correctly handling quoted fields with embedded newlines.
     /// RFC 4180: Fields containing line breaks must be enclosed in double-quotes.
     private static func splitCSVIntoRows(_ content: String) -> [String] {
@@ -1030,8 +1089,8 @@ enum TransactionCSVImportService {
                 continue
             }
 
-            let columns = trimmedLine.split(separator: delimiter, omittingEmptySubsequences: false)
-                .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            let columns = splitCSVFields(trimmedLine, delimiter: delimiter)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
 
             // Columna de moneda es índice 2 (date, amount, currency, ...)
             if columns.count > 2 {
@@ -1204,9 +1263,7 @@ enum TransactionCSVImportService {
         // 5. Validar encabezado
         let headerLine = lines.removeFirst()
         let delimiter = detectDelimiter(from: headerLine)
-        let headerColumns = headerLine
-            .split(separator: delimiter)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+        let headerColumns = headerFields(headerLine, delimiter: delimiter)
 
         let expectedBase = ["date", "amount", "currency", "category", "subcategory"]
         let expectedWithNote = expectedBase + ["note"]
@@ -1249,8 +1306,10 @@ enum TransactionCSVImportService {
                 .trimmingCharacters(in: .whitespaces)
             if contentWithoutDelimiters.isEmpty { continue }
 
-            let rawColumns = trimmedLine.split(separator: delimiter, omittingEmptySubsequences: false)
-            var columns = rawColumns.map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            var columns = splitCSVFields(trimmedLine, delimiter: delimiter)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            // Una fila de solo comillas vacías (`"","",…`) es tan vacía como `,,,`.
+            if columns.allSatisfy(\.isEmpty) { continue }
 
             // Eliminar columnas vacías del final (trailing semicolons)
             // pero solo si tenemos más columnas de las esperadas

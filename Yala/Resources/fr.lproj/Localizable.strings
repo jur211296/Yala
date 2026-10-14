@@ -357,7 +357,7 @@
 
 // MARK: - Import
 
-"import.title" = "Importer des Transactions";
+"import.title" = "Importer des transactions";
 "import.selectFile" = "Sélectionner un fichier";
 "import.importing" = "Importation...";
 "import.downloadTemplate" = "Télécharger le modèle";
@@ -622,7 +622,7 @@
 "tag.new" = "Nouvelle etiquette";
 "tag.edit" = "Modifier l'etiquette";
 "tag.delete" = "Supprimer l'etiquette";
-"settings.currencyAndExchange" = "Devise et Change";
+"settings.currencyAndExchange" = "Devise et change";
 "common.updatingRecords" = "Mise a jour des enregistrements...";
 "common.recalculatingConversions" = "Recalcul des conversions historiques";
 "export.customizeFile" = "Personnalisez votre fichier";
@@ -1377,7 +1377,6 @@
 "category.deleteConfirmTitle" = "Supprimer la categorie?";
 "category.deleteConfirmMessage" = "La categorie et toutes ses sous-categories seront supprimees. Cette action ne peut pas etre annulee.";
 "category.cannotDeleteTitle" = "Suppression impossible";
-"category.cannotDeleteMessage" = "Cette categorie a des sous-categories avec %d transactions. Pour la supprimer, supprimez ou transferez d'abord les transactions de chaque sous-categorie.";
 "subcategory.newTitle" = "Nouvelle sous-categorie";
 "subcategory.editTitle" = "Modifier la sous-categorie";
 "subcategory.delete" = "Supprimer la sous-categorie";
@@ -1387,7 +1386,6 @@
 "subcategory.cannotDeleteMessage" = "Cette sous-categorie a %d transactions associees. Transferez les transactions vers une autre sous-categorie avant de supprimer.";
 "subcategory.transferTitle" = "Transferer les transactions";
 "subcategory.transferHeader" = "Cette sous-categorie a des transactions";
-"subcategory.transferDescription" = "Il y a %d transactions dans \"%@\". Choisissez quoi en faire avant de supprimer.";
 "subcategory.transferToSpecific" = "Transferer vers une autre sous-categorie";
 "subcategory.transferToSpecificDesc" = "Selectionnez une sous-categorie de destination pour deplacer les transactions";
 "subcategory.transferToUnassigned" = "Deplacer vers Non attribue";
@@ -1400,14 +1398,13 @@
 "subcategory.details" = "Details de la sous-categorie";
 "subcategory.namePlaceholder" = "Nom de la sous-categorie";
 "subcategory.unassigned" = "Non attribue";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transactions seront supprimees definitivement. Cette action ne peut pas etre annulee.";
 
 "account.deleteBalanceError" = "Vous ne pouvez pas supprimer ce compte car il a un solde non nul. Ajustez le solde a 0 avant de le supprimer.";
 "account.type.general" = "General";
 "account.type.cash" = "Especes";
-"account.type.current" = "Compte Courant";
+"account.type.current" = "Compte courant";
 "account.type.savings" = "Epargne";
-"account.type.creditCard" = "Carte de Credit";
+"account.type.creditCard" = "Carte de crédit";
 "account.type.investment" = "Investissement";
 "account.type.loan" = "Pret";
 "account.type.other" = "Autre";
@@ -1453,7 +1450,7 @@
 "account.adjustByEntry" = "Ajuster par ecriture";
 "account.adjustByEntryDesc" = "Entrez le solde correct et nous creons une ecriture de correction. Utilisez ceci si vous avez oublie d'enregistrer certaines depenses.";
 "account.changeInitialBalanceName" = "Modifier le solde initial";
-"account.changeInitialBalanceDesc" = "Entrez le solde correct et nous modifierons le solde initial de votre compte. Utilisez ceci si vous n'avez pas enregistre pendant longtemps.";
+"account.changeInitialBalanceDesc" = "Indiquez avec combien le compte a commencé et nous recalculerons son solde d'aujourd'hui à partir de vos enregistrements. Utilisez ceci si le solde de départ était faux.";
 "account.creditCard.sectionTitle" = "Carte de credit";
 "account.creditCard.paymentReminder" = "Rappeler a la date de paiement";
 "account.creditCard.paymentDay" = "Jour de paiement";
@@ -2961,7 +2958,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Devise secondaire";
-"account.secondaryCurrency.message" = "Tu as ajouté un compte en %@. Veux-tu voir le taux de change %@ → %@ ? Tu peux le modifier dans Profil > Devise.";
+"account.secondaryCurrency.message" = "Tu as ajouté un compte en %@. Veux-tu voir le taux de change %@ → %@ ? Tu peux le modifier dans Profil > Devise et change.";
 "account.secondaryCurrency.accept" = "Ajouter";
 "account.secondaryCurrency.reject" = "Non, merci";
 
@@ -4073,10 +4070,6 @@
 "welcome.restore.foundTitle" = "Bonjour %@ ! Content de vous revoir.";
 "welcome.restore.foundTitleAnonymous" = "Content de vous revoir !";
 "welcome.restore.foundBody" = "Nous avons trouvé vos données dans iCloud :";
-"welcome.restore.foundAccounts" = "%d comptes";
-"welcome.restore.foundTransactions" = "%d enregistrements";
-"welcome.restore.foundBudgets" = "%d budgets";
-"welcome.restore.foundGroups" = "%d groupes partagés";
 "welcome.restore.continue" = "Continuer";
 "welcome.restore.notFoundTitle" = "Aucune donnée trouvée";
 "welcome.restore.notFoundBody" = "Aucune donnée n'est associée à votre compte iCloud. Voulez-vous repartir de zéro ?";
@@ -4088,7 +4081,7 @@
 "welcome.restore.iCloudDisabledBody" = "Vous devez activer iCloud pour récupérer vos données. Activez-le dans les Réglages et réessayez.";
 "welcome.restore.openSettings" = "Ouvrir les Réglages";
 "welcome.restore.startFreshConfirm.title" = "Repartir de zéro ?";
-"welcome.restore.startFreshConfirm.body" = "Cela créera un nouveau compte sans vos données précédentes. Continuer ?";
+"welcome.restore.startFreshConfirm.body" = "Rien n’est encore supprimé. Avant de commencer, nous vérifions ce qui est enregistré et, si nous trouvons quelque chose, nous vous demandons quoi en faire.";
 "welcome.restore.startFreshConfirm.confirm" = "Oui, repartir de zéro";
 "welcome.restore.startFreshConfirm.cancel" = "Annuler";
 "welcome.restore.progress.connecting" = "Connexion à iCloud…";
@@ -5731,7 +5724,6 @@
 "welcome.privateICloud.lateKeep" = "Laisser comme ça";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d catégories";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "beaucoup de données enregistrées";
@@ -6607,3 +6599,5 @@
 "onboarding.calc.creditCard.owed" = "Tu dois";
 "onboarding.calc.creditCard.formula" = "Limite **%1$@**  −  Disponible **%2$@**";
 "onboarding.accountName.allTogether" = "Mon argent %@";
+"account.deleteConfirmTitle" = "Supprimer « %@ » ?";
+"account.deleteConfirmMessageEmpty" = "Ce compte n'a aucun enregistrement. Cette action est irréversible.";

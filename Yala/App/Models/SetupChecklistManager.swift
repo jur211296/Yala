@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import SwiftData
 
 @MainActor
 @Observable
@@ -186,6 +187,30 @@ final class SetupChecklistManager {
     /// Lo recién guardado es lo único de su tipo: no había nada antes.
     nonisolated static func isOnlyOneOfItsKind(totalOfKind: Int, justSaved: Int) -> Bool {
         totalOfKind <= justSaved
+    }
+
+    /// Si un `TransactionItem` cuenta como algo que la persona APUNTÓ, para el paso «Registra tu primer gasto».
+    ///
+    /// El «Saldo inicial» que crea el onboarding y los ajustes de saldo son `TransactionItem` también, pero no los
+    /// apuntó nadie: los escribe la app. Contados, el paso salía hecho al terminar el onboarding de toda persona que
+    /// escribía un saldo distinto de cero, y por eso el «¿era de prueba?» del primer gasto no salía nunca (medido el
+    /// 2026-10-14 en el simulador: `setup.step.2.completed` en el primer Panel, con una sola fila `initial_balance`).
+    /// Las transferencias sí cuentan, como hasta ahora.
+    static func countsAsUserRecord(balanceAdjustmentType: String?) -> Bool {
+        balanceAdjustmentType != InitialBalanceService.typeInitialBalance
+            && balanceAdjustmentType != InitialBalanceService.typeAdjustment
+    }
+
+    /// Los `TransactionItem` que cuentan para «Registra tu primer gasto», para contarlos en el store: el mismo criterio
+    /// que `countsAsUserRecord`. El `nil` va explícito porque en SQL `NULL != 'x'` no es verdadero, y los registros
+    /// normales son justo los `nil`.
+    static func userRecordsDescriptor() -> FetchDescriptor<TransactionItem> {
+        let initialBalance = InitialBalanceService.typeInitialBalance
+        let adjustment = InitialBalanceService.typeAdjustment
+        return FetchDescriptor<TransactionItem>(predicate: #Predicate<TransactionItem> { item in
+            item.balanceAdjustmentType == nil
+                || (item.balanceAdjustmentType != initialBalance && item.balanceAdjustmentType != adjustment)
+        })
     }
 
     /// Mark this as a new install (called during onboarding completion in v1.2+).

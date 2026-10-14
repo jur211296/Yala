@@ -191,7 +191,8 @@ struct LateICloudMirrorNoticeView: View {
                 title: L10n.Welcome.PrivateICloud.wipeFailedTitle,
                 body: L10n.Welcome.PrivateICloud.wipeFailedBody,
                 identifier: "late_icloud_failed",
-                primary: L10n.Welcome.Restore.retry,
+                // `wipeRetry` y no `Restore.retry` («Reintentar búsqueda»): lo que se reintenta es el BORRADO.
+                primary: L10n.Welcome.PrivateICloud.wipeRetry,
                 primaryAction: { phase = .wiping },
                 destructive: L10n.Welcome.PrivateICloud.wipeFailedBack,
                 // Rendirse deja el testigo puesto a propósito: el corpus sigue en iCloud y la persona no

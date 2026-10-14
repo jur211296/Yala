@@ -2,6 +2,70 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>account.deleteConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>It has %d record. It isn't deleted: it stays in Records, with no account. If you just want to stop seeing the account, archive it. This can't be undone.</string>
+			<key>other</key>
+			<string>It has %d records. They aren't deleted: they stay in Records, with no account. If you just want to stop seeing the account, archive it. This can't be undone.</string>
+		</dict>
+	</dict>
+	<key>category.cannotDeleteMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>This category has a subcategory with %d transaction. To delete it, first delete or transfer that transaction from its subcategory.</string>
+			<key>other</key>
+			<string>This category has subcategories with %d transactions. To delete it, first delete or transfer the transactions from each subcategory.</string>
+		</dict>
+	</dict>
+	<key>subcategory.deleteTransactionsConfirmMessage</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d transaction will be permanently deleted. This action cannot be undone.</string>
+			<key>other</key>
+			<string>%d transactions will be permanently deleted. This action cannot be undone.</string>
+		</dict>
+	</dict>
+	<key>subcategory.transferDescription</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>There is %1$d transaction in "%2$@". Choose what to do with it before deleting.</string>
+			<key>other</key>
+			<string>There are %1$d transactions in "%2$@". Choose what to do with them before deleting.</string>
+		</dict>
+	</dict>
 	<key>panel.panorama.collapsedSummary</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -480,6 +544,96 @@
 			<string>%d change waiting for a connection</string>
 			<key>other</key>
 			<string>%d changes waiting for a connection</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d accounts</string>
+			<key>one</key>
+			<string>%d account</string>
+			<key>other</key>
+			<string>%d accounts</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundTransactions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d records</string>
+			<key>one</key>
+			<string>%d record</string>
+			<key>other</key>
+			<string>%d records</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundBudgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d budgets</string>
+			<key>one</key>
+			<string>%d budget</string>
+			<key>other</key>
+			<string>%d budgets</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundGroups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d shared groups</string>
+			<key>one</key>
+			<string>%d shared group</string>
+			<key>other</key>
+			<string>%d shared groups</string>
+		</dict>
+	</dict>
+	<key>welcome.privateICloud.foundCategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d categories</string>
+			<key>one</key>
+			<string>%d category</string>
+			<key>other</key>
+			<string>%d categories</string>
 		</dict>
 	</dict>
 	<key>inbox.pendingBadge</key>

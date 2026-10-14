@@ -1,10 +1,10 @@
 ---
 id: start-fresh-dialog-promises-what-the-gate-undoes
-status: backlog
+status: qa
 priority: low
 area: "welcome, icloud, restore, copy"
 created: 2026-09-20
-updated: 2026-10-08
+updated: 2026-10-14
 source: "review adversarial (lentes de concurrencia y de tests/copy) de `restore-says-no-data-when-the-icloud-import-never-settled`, 2026-09-20"
 ---
 
@@ -35,10 +35,10 @@ pantalla que vuelve a preguntarme, esta vez con las cifras de lo que hay en iClo
 
 ## Criterios de aceptación
 
-- [ ] El diálogo dice lo que va a pasar de verdad al confirmar (lo siguiente es una comprobación,
+- [x] El diálogo dice lo que va a pasar de verdad al confirmar (lo siguiente es una comprobación,
       no un alta), y no afirma un borrado que todavía no ocurre.
-- [ ] La frase aguanta los cinco estados que lo presentan, o cada uno lleva la suya.
-- [ ] Copy revisado contra `docs/planning/BRAND-VOICE.md` §7 y propagado a los 16 locales.
+- [x] La frase aguanta los cinco estados que lo presentan, o cada uno lleva la suya.
+- [x] Copy revisado contra `docs/planning/BRAND-VOICE.md` §7 y propagado a los 16 locales.
 
 ## Relación con otros tickets
 
@@ -54,3 +54,18 @@ pantalla que vuelve a preguntarme, esta vez con las cifras de lo que hay en iClo
 - Por qué baja a low: es un texto falso que va justo antes de una pantalla que vuelve a preguntar. No se borra ni se pierde nada sin una segunda confirmación.
 
 Triage 2026-10-08: abierto · medium → low · El copy sigue diciendo «Esto creará una cuenta nueva sin tus datos previos» y confirmar sigue abriendo la puerta privada de iCloud; ningún commit lo tocó desde el 2026-09-20
+
+## Arreglado en la auditoría UX 2.2 · lote 6 (2026-10-14)
+
+- Copy nuevo, el mismo para los cinco estados: «Todavía no se borra nada. Antes de empezar, revisamos lo que haya
+  guardado y, si encontramos algo, te preguntamos qué hacer con ello.» En los 16 idiomas (es-AR con «con eso»).
+  Es cierto en los cinco: confirmar abre la puerta que revisa iCloud y el teléfono, y solo pregunta si encuentra algo.
+- Test: `YalaTests/WelcomeLote6FixesTests#startFreshDialogTellsWhatHappensNext` (ninguno de los 16 conserva la frase
+  vieja; mutante verificado en rojo).
+- Capturas: `B5-despues-dialogo` en `~/Claude/entregas/Yala--auditoria-ux-2-2-lote-6-datos-previos-nube/capturas/`.
+- **Queda fuera, con card propia (L6-11):** el diálogo sale como globo sin «Cancelar» visible en iOS 26.
+
+### QA
+
+1. Instalación limpia sin iCloud → «Ya tengo una cuenta» → «Restaurar desde iCloud» → reabrir → «Empezar desde cero».
+2. Debe leerse el texto nuevo; confirmar lleva a la puerta de iCloud, no al onboarding directo.

@@ -359,7 +359,7 @@
 
 // MARK: - Import
 
-"import.title" = "Importar Transacciones";
+"import.title" = "Importar transacciones";
 "import.selectFile" = "Seleccionar archivo";
 "import.importing" = "Importando...";
 "import.downloadTemplate" = "Descargar plantilla";
@@ -624,7 +624,7 @@
 "tag.new" = "Nueva etiqueta";
 "tag.edit" = "Editar etiqueta";
 "tag.delete" = "Eliminar etiqueta";
-"settings.currencyAndExchange" = "Divisa y Cambio";
+"settings.currencyAndExchange" = "Divisa y cambio";
 "common.updatingRecords" = "Actualizando registros...";
 "common.recalculatingConversions" = "Recalculando conversiones históricas";
 "export.customizeFile" = "Personaliza tu archivo";
@@ -1375,7 +1375,6 @@
 "category.deleteConfirmTitle" = "¿Eliminar categoría?";
 "category.deleteConfirmMessage" = "Se eliminarán la categoría y todas sus subcategorías. Esta acción no se puede deshacer.";
 "category.cannotDeleteTitle" = "No se puede eliminar";
-"category.cannotDeleteMessage" = "Esta categoría tiene subcategorías con %d transacciones. Para eliminarla, primero elimina o transfiere las transacciones desde cada subcategoría.";
 "subcategory.newTitle" = "Nueva subcategoría";
 "subcategory.editTitle" = "Editar subcategoría";
 "subcategory.delete" = "Eliminar subcategoría";
@@ -1385,7 +1384,6 @@
 "subcategory.cannotDeleteMessage" = "Esta subcategoría tiene %d transacciones asociadas. Transfiere las transacciones a otra subcategoría antes de eliminarla.";
 "subcategory.transferTitle" = "Transferir transacciones";
 "subcategory.transferHeader" = "Esta subcategoría tiene transacciones";
-"subcategory.transferDescription" = "Hay %d transacciones en \"%@\". Elige qué hacer con ellas antes de eliminar.";
 "subcategory.transferToSpecific" = "Transferir a otra subcategoría";
 "subcategory.transferToSpecificDesc" = "Selecciona una subcategoría destino para mover las transacciones";
 "subcategory.transferToUnassigned" = "Mover a Sin asignar";
@@ -1398,14 +1396,13 @@
 "subcategory.details" = "Detalles de la subcategoría";
 "subcategory.namePlaceholder" = "Nombre de la subcategoría";
 "subcategory.unassigned" = "Sin asignar";
-"subcategory.deleteTransactionsConfirmMessage" = "Se eliminarán permanentemente %d transacciones. Esta acción no se puede deshacer.";
 
 "account.deleteBalanceError" = "No puedes eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla.";
 "account.type.general" = "General";
 "account.type.cash" = "Efectivo";
-"account.type.current" = "Cuenta Corriente";
+"account.type.current" = "Cuenta corriente";
 "account.type.savings" = "Ahorros";
-"account.type.creditCard" = "Tarjeta de Crédito";
+"account.type.creditCard" = "Tarjeta de crédito";
 "account.type.investment" = "Inversión";
 "account.type.loan" = "Préstamo";
 "account.type.other" = "Otro";
@@ -1452,7 +1449,7 @@
 "account.adjustByEntry" = "Ajustar por registro";
 "account.adjustByEntryDesc" = "Escribe el saldo correcto y crearemos un registro de corrección. Úsalo si se te olvidó registrar algunos gastos.";
 "account.changeInitialBalanceName" = "Cambiar saldo inicial";
-"account.changeInitialBalanceDesc" = "Escribe el saldo correcto y cambiaremos el saldo inicial en tu cuenta. Usa esto si no has registrado durante mucho tiempo.";
+"account.changeInitialBalanceDesc" = "Escribe con cuánto empezó la cuenta y recalculamos su saldo de hoy con tus registros. Úsalo si el saldo de partida estaba mal.";
 "account.creditCard.sectionTitle" = "Tarjeta de crédito";
 "account.creditCard.paymentReminder" = "Avisar en fecha de pago";
 "account.creditCard.paymentDay" = "Día de pago";
@@ -2962,7 +2959,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Divisa secundaria";
-"account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Quieres ver el tipo de cambio %@ → %@? Puedes cambiarlo en Perfil > Divisa.";
+"account.secondaryCurrency.message" = "Agregaste una cuenta en %@. ¿Quieres ver el tipo de cambio %@ → %@? Puedes cambiarlo en Perfil > Divisa y cambio.";
 "account.secondaryCurrency.accept" = "Agregar";
 "account.secondaryCurrency.reject" = "No, gracias";
 
@@ -4062,10 +4059,6 @@
 "welcome.restore.foundTitle" = "¡Hola %@! Qué bueno verte de vuelta.";
 "welcome.restore.foundTitleAnonymous" = "¡Qué bueno verte de vuelta!";
 "welcome.restore.foundBody" = "Encontramos tus datos en iCloud:";
-"welcome.restore.foundAccounts" = "%d cuentas";
-"welcome.restore.foundTransactions" = "%d registros";
-"welcome.restore.foundBudgets" = "%d presupuestos";
-"welcome.restore.foundGroups" = "%d grupos compartidos";
 "welcome.restore.continue" = "Continuar";
 "welcome.restore.notFoundTitle" = "No encontramos tus datos";
 "welcome.restore.notFoundBody" = "No hay datos asociados a tu cuenta de iCloud. ¿Quieres empezar desde cero?";
@@ -4077,7 +4070,7 @@
 "welcome.restore.iCloudDisabledBody" = "Necesitas tener iCloud activado para recuperar tus datos. Actívalo en Ajustes y vuelve a intentar.";
 "welcome.restore.openSettings" = "Abrir Ajustes";
 "welcome.restore.startFreshConfirm.title" = "¿Empezar desde cero?";
-"welcome.restore.startFreshConfirm.body" = "Esto creará una cuenta nueva sin tus datos previos. ¿Continuar?";
+"welcome.restore.startFreshConfirm.body" = "Todavía no se borra nada. Antes de empezar, revisamos lo que haya guardado y, si encontramos algo, te preguntamos qué hacer con ello.";
 "welcome.restore.startFreshConfirm.confirm" = "Sí, empezar desde cero";
 "welcome.restore.startFreshConfirm.cancel" = "Cancelar";
 "welcome.restore.progress.connecting" = "Conectando con iCloud…";
@@ -5756,7 +5749,6 @@
 "welcome.privateICloud.lateKeep" = "Déjalo así";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categorías";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "muchos datos guardados";
@@ -6632,3 +6624,5 @@
 "onboarding.calc.creditCard.owed" = "Debes";
 "onboarding.calc.creditCard.formula" = "Línea **%1$@**  −  Disponible **%2$@**";
 "onboarding.accountName.allTogether" = "Mi dinero %@";
+"account.deleteConfirmTitle" = "¿Eliminar «%@»?";
+"account.deleteConfirmMessageEmpty" = "No tiene registros. No se puede deshacer.";

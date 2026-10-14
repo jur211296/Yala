@@ -1377,7 +1377,6 @@
 "category.deleteConfirmTitle" = "Kategorie löschen?";
 "category.deleteConfirmMessage" = "Die Kategorie und alle Unterkategorien werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
 "category.cannotDeleteTitle" = "Löschen nicht möglich";
-"category.cannotDeleteMessage" = "Diese Kategorie hat Unterkategorien mit %d Transaktionen. Um sie zu löschen, lösche oder übertrage zuerst die Transaktionen aus jeder Unterkategorie.";
 "subcategory.newTitle" = "Neue Unterkategorie";
 "subcategory.editTitle" = "Unterkategorie bearbeiten";
 "subcategory.delete" = "Unterkategorie löschen";
@@ -1387,7 +1386,6 @@
 "subcategory.cannotDeleteMessage" = "Diese Unterkategorie hat %d zugeordnete Transaktionen. Übertrage die Transaktionen in eine andere Unterkategorie, bevor du sie löschst.";
 "subcategory.transferTitle" = "Transaktionen übertragen";
 "subcategory.transferHeader" = "Diese Unterkategorie hat Transaktionen";
-"subcategory.transferDescription" = "Es gibt %d Transaktionen in \"%@\". Wähle, was mit ihnen vor dem Löschen geschehen soll.";
 "subcategory.transferToSpecific" = "In andere Unterkategorie übertragen";
 "subcategory.transferToSpecificDesc" = "Wähle eine Ziel-Unterkategorie zum Verschieben der Transaktionen";
 "subcategory.transferToUnassigned" = "Nach Nicht zugewiesen verschieben";
@@ -1400,7 +1398,6 @@
 "subcategory.details" = "Unterkategorie-Details";
 "subcategory.namePlaceholder" = "Name der Unterkategorie";
 "subcategory.unassigned" = "Nicht zugewiesen";
-"subcategory.deleteTransactionsConfirmMessage" = "%d Transaktionen werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
 
 "account.deleteBalanceError" = "Du kannst dieses Konto nicht löschen, da es einen Saldo ungleich null hat. Passe den Saldo auf 0 an, bevor du es löschst.";
 "account.type.general" = "Allgemein";
@@ -1453,7 +1450,7 @@
 "account.adjustByEntry" = "Per Eintrag anpassen";
 "account.adjustByEntryDesc" = "Gib den korrekten Saldo ein und wir erstellen einen Korrektureintrag. Verwende dies, wenn du vergessen hast, einige Ausgaben zu erfassen.";
 "account.changeInitialBalanceName" = "Anfangssaldo ändern";
-"account.changeInitialBalanceDesc" = "Gib den korrekten Saldo ein und wir ändern den Anfangssaldo deines Kontos. Verwende dies, wenn du längere Zeit keine Einträge gemacht hast.";
+"account.changeInitialBalanceDesc" = "Gib ein, mit wie viel das Konto angefangen hat, und wir berechnen den heutigen Saldo aus deinen Einträgen neu. Verwende dies, wenn der Anfangssaldo falsch war.";
 "account.creditCard.sectionTitle" = "Kreditkarte";
 "account.creditCard.paymentReminder" = "Am Zahlungstag erinnern";
 "account.creditCard.paymentDay" = "Zahlungstag";
@@ -2960,7 +2957,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Sekundäre Währung";
-"account.secondaryCurrency.message" = "Du hast ein Konto in %@ hinzugefügt. Möchtest du den Wechselkurs %@ → %@ sehen? Du kannst es unter Profil > Währung ändern.";
+"account.secondaryCurrency.message" = "Du hast ein Konto in %@ hinzugefügt. Möchtest du den Wechselkurs %@ → %@ sehen? Du kannst es unter Profil > Währung und Wechselkurs ändern.";
 "account.secondaryCurrency.accept" = "Hinzufügen";
 "account.secondaryCurrency.reject" = "Nein, danke";
 
@@ -4072,10 +4069,6 @@
 "welcome.restore.foundTitle" = "Hallo %@! Schön, Sie wiederzusehen.";
 "welcome.restore.foundTitleAnonymous" = "Schön, Sie wiederzusehen!";
 "welcome.restore.foundBody" = "Wir haben Ihre Daten in iCloud gefunden:";
-"welcome.restore.foundAccounts" = "%d Konten";
-"welcome.restore.foundTransactions" = "%d Einträge";
-"welcome.restore.foundBudgets" = "%d Budgets";
-"welcome.restore.foundGroups" = "%d geteilte Gruppen";
 "welcome.restore.continue" = "Fortfahren";
 "welcome.restore.notFoundTitle" = "Keine Daten gefunden";
 "welcome.restore.notFoundBody" = "Es sind keine Daten mit Ihrem iCloud-Konto verknüpft. Möchten Sie neu starten?";
@@ -4087,7 +4080,7 @@
 "welcome.restore.iCloudDisabledBody" = "Sie benötigen iCloud, um Ihre Daten wiederherzustellen. Aktivieren Sie es in den Einstellungen und versuchen Sie es erneut.";
 "welcome.restore.openSettings" = "Einstellungen öffnen";
 "welcome.restore.startFreshConfirm.title" = "Neu starten?";
-"welcome.restore.startFreshConfirm.body" = "Dadurch wird ein neues Konto ohne Ihre vorherigen Daten erstellt. Fortfahren?";
+"welcome.restore.startFreshConfirm.body" = "Noch wird nichts gelöscht. Vorher prüfen wir, was gespeichert ist, und fragen Sie, falls wir etwas finden, was damit geschehen soll.";
 "welcome.restore.startFreshConfirm.confirm" = "Ja, neu starten";
 "welcome.restore.startFreshConfirm.cancel" = "Abbrechen";
 "welcome.restore.progress.connecting" = "Verbindung mit iCloud…";
@@ -5730,7 +5723,6 @@
 "welcome.privateICloud.lateKeep" = "So lassen";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d Kategorien";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "viele gespeicherte Daten";
@@ -6606,3 +6598,5 @@
 "onboarding.calc.creditCard.owed" = "Du schuldest";
 "onboarding.calc.creditCard.formula" = "Rahmen **%1$@**  −  Verfügbar **%2$@**";
 "onboarding.accountName.allTogether" = "Mein Geld %@";
+"account.deleteConfirmTitle" = "„%@“ löschen?";
+"account.deleteConfirmMessageEmpty" = "Das Konto hat keine Datensätze. Das kann nicht rückgängig gemacht werden.";

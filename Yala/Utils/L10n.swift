@@ -57,6 +57,17 @@ enum LanguageManager {
     /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
     static var supportedLanguages: [SupportedLocale] { SupportedLocale.selectableCases }
 
+    /// El idioma base («es», «pt», «en») de una localización de Yala.
+    ///
+    /// `Bundle.main.preferredLocalizations.first` es la VARIANTE con que Yala pinta («es-419» en un teléfono es-PE,
+    /// «es-AR», «es-ES», «pt-BR», «pt-PT», «en-GB»). Comparada con una lista de idiomas base, una variante se lee como
+    /// «idioma sin soporte» y cae al inglés: las imágenes de ejemplo de «Prueba el registro con foto» salían en inglés
+    /// en cualquier teléfono en español o portugués (medido el 2026-10-14 en un simulador es-PE), y el enlace de
+    /// privacidad llevaba a la página en inglés.
+    static func baseLanguageCode(of localization: String) -> String {
+        Locale(identifier: localization).language.languageCode?.identifier ?? localization
+    }
+
     /// Whether the device's preferred language is one of our supported locales.
     static var deviceLanguageIsSupported: Bool {
         let preferred = Locale.preferredLanguages.first ?? "en"
@@ -3420,6 +3431,16 @@ enum L10n {
         static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
+        /// «¿Eliminar «Tarjeta BCP»?» — la confirmación de borrar una cuenta (auditoría UX 2.2, lote 7, B1).
+        static func deleteConfirmTitle(_ name: String) -> String {
+            String(format: ls("account.deleteConfirmTitle", comment: ""), name)
+        }
+        /// Cuántos registros tiene y a dónde van: no se borran, quedan en Registros sin cuenta (plural).
+        /// `localizedStringWithFormat` y no `String(format:)`: con 2202 registros, «2,202».
+        static func deleteConfirmMessage(_ count: Int) -> String {
+            String.localizedStringWithFormat(ls("account.deleteConfirmMessage", comment: ""), count)
+        }
+        static var deleteConfirmMessageEmpty: String { ls("account.deleteConfirmMessageEmpty", comment: "") }
         static var deleteBalanceError: String {
             ls("account.deleteBalanceError", comment: "")
         }
@@ -5489,7 +5510,7 @@ enum L10n {
             /// ésta sí es nueva. Va con las otras cifras y no en `Welcome.Restore` porque su única
             /// consumidora es esta pantalla.
             static func foundCategories(_ count: Int) -> String {
-                String(format: ls("welcome.privateICloud.foundCategories", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.privateICloud.foundCategories", comment: ""), count)
             }
             /// La sonda agotó su tope antes de llegar a ningún tipo contable: hay datos, pero no sabemos
             /// cuántos. Un aviso que pide confirmar un borrado irreversible no puede salir en blanco.
@@ -5859,16 +5880,16 @@ enum L10n {
             static var foundTitleAnonymous: String { ls("welcome.restore.foundTitleAnonymous", comment: "") }
             static var foundBody: String { ls("welcome.restore.foundBody", comment: "") }
             static func foundAccounts(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundAccounts", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundAccounts", comment: ""), count)
             }
             static func foundTransactions(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundTransactions", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundTransactions", comment: ""), count)
             }
             static func foundBudgets(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundBudgets", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundBudgets", comment: ""), count)
             }
             static func foundGroups(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundGroups", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundGroups", comment: ""), count)
             }
             static var continueAction: String { ls("welcome.restore.continue", comment: "") }
             static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }

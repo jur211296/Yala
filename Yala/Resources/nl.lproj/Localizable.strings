@@ -1375,7 +1375,6 @@
 "category.deleteConfirmTitle" = "Categorie verwijderen?";
 "category.deleteConfirmMessage" = "De categorie en alle subcategorieën worden verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
 "category.cannotDeleteTitle" = "Niet te verwijderen";
-"category.cannotDeleteMessage" = "Deze categorie heeft subcategorieën met %d transacties. Verwijder of verplaats eerst de transacties uit elke subcategorie om deze categorie te kunnen verwijderen.";
 "subcategory.newTitle" = "Nieuwe subcategorie";
 "subcategory.editTitle" = "Subcategorie bewerken";
 "subcategory.delete" = "Subcategorie verwijderen";
@@ -1385,7 +1384,6 @@
 "subcategory.cannotDeleteMessage" = "Deze subcategorie heeft %d transacties. Verplaats de transacties naar een andere subcategorie voordat je verwijdert.";
 "subcategory.transferTitle" = "Transacties verplaatsen";
 "subcategory.transferHeader" = "Deze subcategorie heeft transacties";
-"subcategory.transferDescription" = "Er staan %d transacties in \"%@\". Kies wat je ermee wilt doen voordat je verwijdert.";
 "subcategory.transferToSpecific" = "Verplaatsen naar een andere subcategorie";
 "subcategory.transferToSpecificDesc" = "Kies een doelsubcategorie om de transacties te verplaatsen";
 "subcategory.transferToUnassigned" = "Verplaatsen naar Niet-toegewezen";
@@ -1398,7 +1396,6 @@
 "subcategory.details" = "Details van subcategorie";
 "subcategory.namePlaceholder" = "Naam van subcategorie";
 "subcategory.unassigned" = "Niet-toegewezen";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transacties worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
 
 "account.deleteBalanceError" = "Je kunt deze rekening niet verwijderen omdat het saldo niet nul is. Pas het saldo aan naar 0 voordat je hem verwijdert.";
 "account.type.general" = "Algemeen";
@@ -1452,7 +1449,7 @@
 "account.adjustByEntry" = "Aanpassen via boeking";
 "account.adjustByEntryDesc" = "Vul het juiste saldo in en we maken een correctieboeking aan. Handig als je een paar uitgaven vergeten bent te boeken.";
 "account.changeInitialBalanceName" = "Beginsaldo wijzigen";
-"account.changeInitialBalanceDesc" = "Vul het juiste saldo in en we passen het beginsaldo van je rekening aan. Handig als je lange tijd niets hebt geboekt.";
+"account.changeInitialBalanceDesc" = "Vul in met hoeveel de rekening begon en we berekenen het saldo van vandaag opnieuw uit je boekingen. Handig als het beginsaldo niet klopte.";
 "account.creditCard.sectionTitle" = "Creditcard";
 "account.creditCard.paymentReminder" = "Herinneren op betaaldatum";
 "account.creditCard.paymentDay" = "Betaaldag";
@@ -2964,7 +2961,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Secundaire valuta";
-"account.secondaryCurrency.message" = "Je hebt een rekening in %@ toegevoegd. Wil je de wisselkoers %@ → %@ zien? Je kunt dit aanpassen via Profiel > Valuta.";
+"account.secondaryCurrency.message" = "Je hebt een rekening in %@ toegevoegd. Wil je de wisselkoers %@ → %@ zien? Je kunt dit aanpassen via Profiel > Valuta & wisselkoers.";
 "account.secondaryCurrency.accept" = "Toevoegen";
 "account.secondaryCurrency.reject" = "Nee, bedankt";
 
@@ -4104,10 +4101,6 @@
 "welcome.restore.foundTitle" = "Hoi %@! Fijn dat je terug bent.";
 "welcome.restore.foundTitleAnonymous" = "Fijn dat je terug bent!";
 "welcome.restore.foundBody" = "We hebben je gegevens in iCloud gevonden:";
-"welcome.restore.foundAccounts" = "%d rekeningen";
-"welcome.restore.foundTransactions" = "%d records";
-"welcome.restore.foundBudgets" = "%d budgetten";
-"welcome.restore.foundGroups" = "%d gedeelde groepen";
 "welcome.restore.continue" = "Doorgaan";
 "welcome.restore.notFoundTitle" = "Geen gegevens gevonden";
 "welcome.restore.notFoundBody" = "Er zijn geen gegevens gekoppeld aan je iCloud-account. Wil je opnieuw beginnen?";
@@ -4119,7 +4112,7 @@
 "welcome.restore.iCloudDisabledBody" = "Je hebt iCloud nodig om je gegevens terug te zetten. Schakel het in via Instellingen en probeer opnieuw.";
 "welcome.restore.openSettings" = "Instellingen openen";
 "welcome.restore.startFreshConfirm.title" = "Opnieuw beginnen?";
-"welcome.restore.startFreshConfirm.body" = "Hiermee maak je een nieuwe account zonder je vorige gegevens. Doorgaan?";
+"welcome.restore.startFreshConfirm.body" = "Er wordt nog niets verwijderd. Voordat je begint, controleren we wat er is opgeslagen en vragen we je, als we iets vinden, wat je ermee wilt doen.";
 "welcome.restore.startFreshConfirm.confirm" = "Ja, opnieuw beginnen";
 "welcome.restore.startFreshConfirm.cancel" = "Annuleren";
 "welcome.restore.progress.connecting" = "Verbinden met iCloud…";
@@ -5742,7 +5735,6 @@
 "welcome.privateICloud.lateKeep" = "Zo laten";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categorieën";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "veel bewaarde gegevens";
@@ -6618,3 +6610,5 @@
 "onboarding.calc.creditCard.owed" = "Je bent schuldig";
 "onboarding.calc.creditCard.formula" = "Limiet **%1$@**  −  Beschikbaar **%2$@**";
 "onboarding.accountName.allTogether" = "Mijn geld %@";
+"account.deleteConfirmTitle" = "‘%@’ verwijderen?";
+"account.deleteConfirmMessageEmpty" = "Deze rekening heeft geen boekingen. Dit kan niet ongedaan worden gemaakt.";

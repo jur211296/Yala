@@ -27,6 +27,7 @@
 - [Auditoría UI: el glass se queda, se jerarquiza](feedback_auditoria_ui_glass_se_queda_jerarquiza.md) — rellenos sólidos, sin degradados ni brillos; instruir; adaptar; solo el lote.
 
 ## Cómo mido y cómo entrego
+- [axe no ve las hojas](feedback_axe_no_ve_las_hojas.md) — árbol de debajo; filas de List con el tap de MCP.
 - [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
 - [El marco de celda no es el bloque](feedback_el_marco_de_celda_no_es_el_bloque.md) — mide bordes de List en píxeles; los marcos XCUI mienten.
@@ -85,7 +86,9 @@
 - [El paso de ANTES también lee](feedback_el_paso_de_antes_tambien_lee.md) — cerré seis inventarios y el backfill que los ali…
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrer…
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites…
+- [Maqueta de estados del Welcome](reference_maqueta_de_estados_del_welcome.md) — `-mock6`; el cover de la nube se cae sobre la app: lánzalo desde el Welcome.
 - [Maqueta de variantes por XCUITest](reference_maqueta_de_variantes_por_xcuitest.md) — `-mockv N` + PNG al Mac; `launchForUITest` pisa args: `extraArguments:`.
+- [Forzar preferencias en el simulador](reference_forzar_preferencias_en_el_simulador.md) — matar cfprefsd del runtime y plistlib; plutil rompe claves con puntos.
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
@@ -240,6 +243,7 @@
 - [Decisiones que esperan a Jürgen](project_decisiones_que_esperan_a_jurgen.md) — 19 contestadas el 6-sep; «¿queda alguna?» s…
 - [Trabajo anterior](project_indice_trabajo_anterior.md) — PR #62 a #282: qué cerró cada uno y qué dejó abierto.
 
+- [Lote 6 espera elección de variantes](project_lote6_espera_eleccion_de_variantes.md) — PR #495; sesión viva hasta que Jürgen elija L6-4/5/6.
 - [Foto compartida: espera la decisión B](project_foto_compartida_espera_decision.md) — frío arreglado (#441); si vuelve, ¿había una hoja abierta?
 
 ## Entorno y herramientas

@@ -357,7 +357,7 @@
 
 // MARK: - Import
 
-"import.title" = "Importa Transazioni";
+"import.title" = "Importa transazioni";
 "import.selectFile" = "Seleziona file";
 "import.importing" = "Importazione...";
 "import.downloadTemplate" = "Scarica modello";
@@ -622,7 +622,7 @@
 "tag.new" = "Nuova etichetta";
 "tag.edit" = "Modifica etichetta";
 "tag.delete" = "Elimina etichetta";
-"settings.currencyAndExchange" = "Valuta e Cambio";
+"settings.currencyAndExchange" = "Valuta e cambio";
 "common.updatingRecords" = "Aggiornamento registrazioni...";
 "common.recalculatingConversions" = "Ricalcolo conversioni storiche";
 "export.customizeFile" = "Personalizza il tuo file";
@@ -1377,7 +1377,6 @@
 "category.deleteConfirmTitle" = "Eliminare la categoria?";
 "category.deleteConfirmMessage" = "La categoria e tutte le sue sottocategorie verranno eliminate. Questa azione non puo essere annullata.";
 "category.cannotDeleteTitle" = "Impossibile eliminare";
-"category.cannotDeleteMessage" = "Questa categoria ha sottocategorie con %d transazioni. Per eliminarla, elimina o trasferisci prima le transazioni da ogni sottocategoria.";
 "subcategory.newTitle" = "Nuova sottocategoria";
 "subcategory.editTitle" = "Modifica sottocategoria";
 "subcategory.delete" = "Elimina sottocategoria";
@@ -1387,7 +1386,6 @@
 "subcategory.cannotDeleteMessage" = "Questa sottocategoria ha %d transazioni associate. Trasferisci le transazioni a un'altra sottocategoria prima di eliminarla.";
 "subcategory.transferTitle" = "Trasferisci transazioni";
 "subcategory.transferHeader" = "Questa sottocategoria ha transazioni";
-"subcategory.transferDescription" = "Ci sono %d transazioni in \"%@\". Scegli cosa farne prima di eliminare.";
 "subcategory.transferToSpecific" = "Trasferisci a un'altra sottocategoria";
 "subcategory.transferToSpecificDesc" = "Seleziona una sottocategoria di destinazione per spostare le transazioni";
 "subcategory.transferToUnassigned" = "Sposta in Non assegnato";
@@ -1400,14 +1398,13 @@
 "subcategory.details" = "Dettagli della sottocategoria";
 "subcategory.namePlaceholder" = "Nome della sottocategoria";
 "subcategory.unassigned" = "Non assegnato";
-"subcategory.deleteTransactionsConfirmMessage" = "%d transazioni verranno eliminate permanentemente. Questa azione non puo essere annullata.";
 
 "account.deleteBalanceError" = "Non puoi eliminare questo conto perche ha un saldo diverso da zero. Regola il saldo a 0 prima di eliminarlo.";
 "account.type.general" = "Generale";
 "account.type.cash" = "Contanti";
-"account.type.current" = "Conto Corrente";
+"account.type.current" = "Conto corrente";
 "account.type.savings" = "Risparmio";
-"account.type.creditCard" = "Carta di Credito";
+"account.type.creditCard" = "Carta di credito";
 "account.type.investment" = "Investimento";
 "account.type.loan" = "Prestito";
 "account.type.other" = "Altro";
@@ -1453,7 +1450,7 @@
 "account.adjustByEntry" = "Rettifica per registrazione";
 "account.adjustByEntryDesc" = "Inserisci il saldo corretto e creeremo una registrazione di correzione. Usalo se hai dimenticato di registrare alcune spese.";
 "account.changeInitialBalanceName" = "Modifica saldo iniziale";
-"account.changeInitialBalanceDesc" = "Inserisci il saldo corretto e modificheremo il saldo iniziale del tuo conto. Usalo se non hai registrato per molto tempo.";
+"account.changeInitialBalanceDesc" = "Inserisci con quanto è partito il conto e ricalcoleremo il saldo di oggi dalle tue registrazioni. Usalo se il saldo iniziale era sbagliato.";
 "account.creditCard.sectionTitle" = "Carta di credito";
 "account.creditCard.paymentReminder" = "Avvisa alla data di pagamento";
 "account.creditCard.paymentDay" = "Giorno di pagamento";
@@ -2962,7 +2959,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "Valuta secondaria";
-"account.secondaryCurrency.message" = "Hai aggiunto un conto in %@. Vuoi vedere il tasso di cambio %@ → %@? Puoi modificarlo in Profilo > Valuta.";
+"account.secondaryCurrency.message" = "Hai aggiunto un conto in %@. Vuoi vedere il tasso di cambio %@ → %@? Puoi modificarlo in Profilo > Valuta e cambio.";
 "account.secondaryCurrency.accept" = "Aggiungi";
 "account.secondaryCurrency.reject" = "No, grazie";
 
@@ -4102,10 +4099,6 @@
 "welcome.restore.foundTitle" = "Ciao %@! Bentornato.";
 "welcome.restore.foundTitleAnonymous" = "Bentornato!";
 "welcome.restore.foundBody" = "Abbiamo trovato i tuoi dati su iCloud:";
-"welcome.restore.foundAccounts" = "%d account";
-"welcome.restore.foundTransactions" = "%d registrazioni";
-"welcome.restore.foundBudgets" = "%d budget";
-"welcome.restore.foundGroups" = "%d gruppi condivisi";
 "welcome.restore.continue" = "Continua";
 "welcome.restore.notFoundTitle" = "Nessun dato trovato";
 "welcome.restore.notFoundBody" = "Non ci sono dati collegati al tuo account iCloud. Vuoi ricominciare da zero?";
@@ -4117,7 +4110,7 @@
 "welcome.restore.iCloudDisabledBody" = "Devi avere iCloud attivato per recuperare i tuoi dati. Attivalo nelle Impostazioni e riprova.";
 "welcome.restore.openSettings" = "Apri Impostazioni";
 "welcome.restore.startFreshConfirm.title" = "Ricominciare da zero?";
-"welcome.restore.startFreshConfirm.body" = "Verrà creato un nuovo account senza i tuoi dati precedenti. Continuare?";
+"welcome.restore.startFreshConfirm.body" = "Non viene ancora eliminato nulla. Prima di iniziare controlliamo cosa è salvato e, se troviamo qualcosa, ti chiediamo cosa farne.";
 "welcome.restore.startFreshConfirm.confirm" = "Sì, ricomincia";
 "welcome.restore.startFreshConfirm.cancel" = "Annulla";
 "welcome.restore.progress.connecting" = "Connessione a iCloud…";
@@ -5740,7 +5733,6 @@
 "welcome.privateICloud.lateKeep" = "Lascia così";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categorie";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "molti dati salvati";
@@ -6616,3 +6608,5 @@
 "onboarding.calc.creditCard.owed" = "Devi";
 "onboarding.calc.creditCard.formula" = "Linea **%1$@**  −  Disponibile **%2$@**";
 "onboarding.accountName.allTogether" = "I miei soldi %@";
+"account.deleteConfirmTitle" = "Eliminare «%@»?";
+"account.deleteConfirmMessageEmpty" = "Questo conto non ha registrazioni. L'operazione non si può annullare.";

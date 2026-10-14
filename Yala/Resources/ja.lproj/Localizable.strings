@@ -1375,7 +1375,6 @@
 "category.deleteConfirmTitle" = "カテゴリーを削除しますか？";
 "category.deleteConfirmMessage" = "カテゴリーとそのすべてのサブカテゴリーが削除されます。この操作は取り消せません。";
 "category.cannotDeleteTitle" = "削除できません";
-"category.cannotDeleteMessage" = "このカテゴリーには%d件の取引を持つサブカテゴリーが含まれています。削除するには、まず各サブカテゴリーから取引を削除または移動してください。";
 "subcategory.newTitle" = "新規サブカテゴリー";
 "subcategory.editTitle" = "サブカテゴリーを編集";
 "subcategory.delete" = "サブカテゴリーを削除";
@@ -1385,7 +1384,6 @@
 "subcategory.cannotDeleteMessage" = "このサブカテゴリーには%d件の取引があります。削除する前に取引を別のサブカテゴリーに移動してください。";
 "subcategory.transferTitle" = "取引を移動";
 "subcategory.transferHeader" = "このサブカテゴリーには取引があります";
-"subcategory.transferDescription" = "「%@」に%d件の取引があります。削除前にどう処理するか選んでください。";
 "subcategory.transferToSpecific" = "別のサブカテゴリーへ移動";
 "subcategory.transferToSpecificDesc" = "取引を移動する移動先のサブカテゴリーを選択してください";
 "subcategory.transferToUnassigned" = "未割り当てへ移動";
@@ -1398,7 +1396,6 @@
 "subcategory.details" = "サブカテゴリーの詳細";
 "subcategory.namePlaceholder" = "サブカテゴリー名";
 "subcategory.unassigned" = "未割り当て";
-"subcategory.deleteTransactionsConfirmMessage" = "%d件の取引が完全に削除されます。この操作は取り消せません。";
 
 "account.deleteBalanceError" = "残高が0でないため、この口座は削除できません。削除する前に残高を0に調整してください。";
 "account.type.general" = "一般";
@@ -1452,7 +1449,7 @@
 "account.adjustByEntry" = "記録で調整";
 "account.adjustByEntryDesc" = "正しい残高を入力すると、修正用の記録が作成されます。記録忘れの支出があった場合に使ってください。";
 "account.changeInitialBalanceName" = "初期残高を変更";
-"account.changeInitialBalanceDesc" = "正しい残高を入力すると、口座の初期残高が変更されます。長期間記録していない場合に使ってください。";
+"account.changeInitialBalanceDesc" = "口座の開始時の金額を入力すると、記録から今日の残高を再計算します。開始残高が間違っていた場合に使ってください。";
 "account.creditCard.sectionTitle" = "クレジットカード";
 "account.creditCard.paymentReminder" = "支払日に通知";
 "account.creditCard.paymentDay" = "支払日";
@@ -2964,7 +2961,7 @@
 
 // Secondary Currency Suggestion
 "account.secondaryCurrency.title" = "副通貨";
-"account.secondaryCurrency.message" = "%@の口座を追加しました。%@ → %@の為替レートを表示しますか？プロフィール > 通貨で変更できます。";
+"account.secondaryCurrency.message" = "%@の口座を追加しました。%@ → %@の為替レートを表示しますか？プロフィール > 通貨と為替で変更できます。";
 "account.secondaryCurrency.accept" = "追加";
 "account.secondaryCurrency.reject" = "結構です";
 
@@ -4104,10 +4101,6 @@
 "welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
 "welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
 "welcome.restore.foundBody" = "iCloudにデータが見つかりました：";
-"welcome.restore.foundAccounts" = "%d 件のアカウント";
-"welcome.restore.foundTransactions" = "%d 件の記録";
-"welcome.restore.foundBudgets" = "%d 件の予算";
-"welcome.restore.foundGroups" = "%d 件の共有グループ";
 "welcome.restore.continue" = "続ける";
 "welcome.restore.notFoundTitle" = "データが見つかりませんでした";
 "welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
@@ -4119,7 +4112,7 @@
 "welcome.restore.iCloudDisabledBody" = "データを復元するにはiCloudが必要です。設定で有効にしてからもう一度お試しください。";
 "welcome.restore.openSettings" = "設定を開く";
 "welcome.restore.startFreshConfirm.title" = "最初から始めますか？";
-"welcome.restore.startFreshConfirm.body" = "以前のデータなしで新しいアカウントが作成されます。続行しますか？";
+"welcome.restore.startFreshConfirm.body" = "まだ何も削除されません。始める前に保存されているデータを確認し、見つかった場合はどうするかをお聞きします。";
 "welcome.restore.startFreshConfirm.confirm" = "はい、最初から";
 "welcome.restore.startFreshConfirm.cancel" = "キャンセル";
 "welcome.restore.progress.connecting" = "iCloudに接続中…";
@@ -5742,7 +5735,6 @@
 "welcome.privateICloud.lateKeep" = "このままにする";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d件のカテゴリ";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "大量の保存データ";
@@ -6618,3 +6610,5 @@
 "onboarding.calc.creditCard.owed" = "未払い額";
 "onboarding.calc.creditCard.formula" = "枠 **%1$@**  −  利用可能 **%2$@**";
 "onboarding.accountName.allTogether" = "マイマネー %@";
+"account.deleteConfirmTitle" = "「%@」を削除しますか？";
+"account.deleteConfirmMessageEmpty" = "この口座には記録がありません。この操作は取り消せません。";

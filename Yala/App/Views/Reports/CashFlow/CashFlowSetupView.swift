@@ -80,7 +80,18 @@ struct CashFlowSetupView: View {
                             )
                             .coachMarkAnchor("cfSetupLine")
                         }
-                        if !expenseLines.isEmpty {
+                        // Sin ingresos, el paso «Tus ingresos y gastos» de la guía se ancla a los gastos. Sin ancla,
+                        // la guía se quedaba invisible a medio camino con el scroll bloqueado (`scrollDisabled(showTour)`):
+                        // «Crear mi plan» quedaba fuera de la pantalla y la guía volvía a empezar en cada visita
+                        // (medido el 2026-10-14 con un plan de un solo pago planificado).
+                        if !expenseLines.isEmpty, incomeLines.isEmpty {
+                            lineSection(
+                                title: L10n.CashFlowPlan.expenseSection,
+                                lines: expenseLines,
+                                isIncome: false
+                            )
+                            .coachMarkAnchor("cfSetupLine")
+                        } else if !expenseLines.isEmpty {
                             lineSection(
                                 title: L10n.CashFlowPlan.expenseSection,
                                 lines: expenseLines,

@@ -134,23 +134,16 @@ struct SubcategoryDetailView: View {
                 SubcategoryNeedSelectorView(selectedNeed: $selectedNeed)
             }
         }
-        .confirmationDialog(
-            L10n.Alert.unsavedChanges,
-            isPresented: $showDiscardDialog,
-            titleVisibility: .visible
-        ) {
-            Button(L10n.Alert.discardChanges, role: .destructive) {
+        // Alertas y no `confirmationDialog` (auditoría UX 2.2, lote 7, B3): ver `CategoryDetailView`.
+        .alert(L10n.Inbox.discardChangesTitle, isPresented: $showDiscardDialog) {
+            Button(L10n.Inbox.discardChanges, role: .destructive) {
                 dismiss()
             }
-            Button(L10n.Action.cancel, role: .cancel) {}
+            Button(L10n.Inbox.keepEditing, role: .cancel) {}
         } message: {
-            Text(L10n.Alert.discardChanges)
+            Text(L10n.Inbox.discardChangesMessage)
         }
-        .confirmationDialog(
-            L10n.Subcategory.deleteConfirmTitle,
-            isPresented: $showDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
+        .alert(L10n.Subcategory.deleteConfirmTitle, isPresented: $showDeleteConfirmation) {
             Button(L10n.Subcategory.delete, role: .destructive) {
                 deleteSubcategory()
             }
