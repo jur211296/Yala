@@ -736,7 +736,7 @@ struct CashFlowWidget: View {
                             .foregroundStyle(.thSecondaryText.opacity(0.1))
                         AxisValueLabel {
                             if let doubleValue = value.as(Double.self) {
-                                Text(formatK(doubleValue))
+                                Text(YalaFormatter.axisK(doubleValue, domain: dataYDomain))
                                     .font(DS.Typography.captionSmall)
                                     .foregroundStyle(.thSecondaryText)
                             }

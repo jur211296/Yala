@@ -61,17 +61,13 @@ struct PanelPanoramaSection: View {
         .accessibilityIdentifier("panel_panorama_header")
     }
 
-    /// Conteo de cuentas del saldo total, coherente con `viewModel.panelTotalBalance`:
-    /// excluye las cuentas sistema de grupos cuando `includeGroupsInPanelTotal` está OFF.
+    /// Conteo de cuentas del saldo total: las que `viewModel.panelTotalBalance` acaba de sumar
+    /// (filtro de cuentas y toggle de grupos incluidos), no las activas.
     private var totalAccountsCount: Int {
-        PanelTotalAccountsLogic.accountsForTotal(
-            PanelTotalAccountsLogic.countableAccounts(viewModel.accounts),
-            includeGroups: appPreferences.includeGroupsInPanelTotal,
-            hasSelectedAccount: PanelTotalAccountsLogic.hasAccountFilter(
-                selectedAccountIDs: viewModel.selectedAccountIDs,
-                isExcludeMode: viewModel.isExcludeMode
-            )
-        ).count
+        PanelTotalAccountsLogic.summedAccountsCount(
+            viewModel.accounts,
+            summedAccountIDs: viewModel.panelTotalAccountIDs
+        )
     }
 
     private var accountsSummary: String? {

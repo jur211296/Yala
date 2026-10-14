@@ -3629,7 +3629,7 @@
 "panel.widgetInfo.trend.largeHowQ" = "¿Cómo interactúo con la gráfica?";
 
 /* Panel Polish #2 — Trend L: respuesta a '¿Cómo interactúo con la gráfica?' */
-"panel.widgetInfo.trend.largeHowA" = "Mantén el dedo sobre la gráfica para ver el valor en cada punto. Cambia entre balance, ingresos y gastos con los botones del header.";
+"panel.widgetInfo.trend.largeHowA" = "Mantén el dedo sobre la gráfica para ver el valor en cada punto. Cambia entre saldo, ingresos y gastos con los botones de arriba.";
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
 "panel.widgetInfo.cashFlow.chip4" = "Interactiva";
@@ -3920,7 +3920,7 @@
 "panel.widgetInfo.budgets.regularWhatQ" = "¿Qué estás viendo?";
 
 /* Panel Polish #2 — Budgets M/L: respuesta (compartida) */
-"panel.widgetInfo.budgets.regularWhatA" = "Tus presupuestos favoritos con el progreso del período: cuánto llevas gastado, cuánto queda del límite y el estado (al día, ajustado o excedido). La estrella del header abre la pantalla donde eliges cuáles marcar como favoritos.";
+"panel.widgetInfo.budgets.regularWhatA" = "Tus presupuestos favoritos con el progreso del período: cuánto llevas gastado, cuánto queda del límite y el estado (al día, ajustado o excedido). La estrella de arriba abre la pantalla donde eliges cuáles marcar como favoritos.";
 
 /* Panel Polish #2 — Budgets: pregunta '¿Cómo interactúo?' (compartida S/M/L) */
 "panel.widgetInfo.budgets.howQ" = "¿Cómo interactúo?";

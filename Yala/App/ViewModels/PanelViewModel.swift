@@ -537,6 +537,11 @@ final class PanelViewModel {
     /// converter.
     var panelTotalBalanceIsApproximate: Bool = false
 
+    /// Las cuentas que ha sumado `panelTotalBalance`. Salen del MISMO `Breakdown`, así que el «en N
+    /// cuentas» del panorama cuenta lo que se suma: con el Panel filtrado a una cuenta decía «en 3
+    /// cuentas» junto al saldo de una (auditoría UX 2.2, lote 3, B2).
+    var panelTotalAccountIDs: Set<PersistentIdentifier> = []
+
     /// Ganancia/pérdida cambiaria del saldo que el Panel está enseñando, o `nil` si el usuario no
     /// tiene dinero en divisa extranjera. Sale del MISMO `Breakdown` que `panelTotalBalance`, así
     /// que la card explica exactamente el número de arriba y no otro parecido.
@@ -1379,6 +1384,9 @@ final class PanelViewModel {
         if self.panelTotalBalance != newBalance { self.panelTotalBalance = newBalance }
         if self.panelTotalBalanceIsApproximate != newBreakdown.amountsAreApproximate {
             self.panelTotalBalanceIsApproximate = newBreakdown.amountsAreApproximate
+        }
+        if self.panelTotalAccountIDs != newBreakdown.eligibleAccountIDs {
+            self.panelTotalAccountIDs = newBreakdown.eligibleAccountIDs
         }
         // Recorre las MISMAS cuentas que acaba de sumar el saldo (`eligibleAccountIDs` viaja en
         // el breakdown), así que la card explica el número de arriba y no otro parecido.

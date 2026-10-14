@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftData
 import Testing
 
 @testable import Yala
@@ -91,5 +92,49 @@ struct PanelTotalAccountsLogicTests {
                                type: "system", isArchived: true, isSystemAccount: true)
         let names = PanelTotalAccountsLogic.countableAccounts([live, archived]).map(\.name)
         #expect(names == ["Grupos PEN"])
+    }
+
+    // MARK: - summedAccountsCount (auditoría UX 2.2, lote 3, B2)
+
+    /// «Tienes S/ 1.800 en 3 cuentas» junto al saldo de UNA cuenta filtrada: el conteo tiene que
+    /// salir de las cuentas que sumó el saldo, no de las activas.
+    private func summedCount(
+        _ accounts: [Account], selected: Set<PersistentIdentifier> = [], excludeMode: Bool = false
+    ) -> Int {
+        let breakdown = LiveBalanceCalculator.liveBalanceBreakdown(
+            accounts: accounts,
+            transactions: [],
+            preferredCurrencyCode: "PEN",
+            selectedAccountIDs: selected,
+            isExcludeMode: excludeMode,
+            converter: MockCurrencyConverter()
+        )
+        return PanelTotalAccountsLogic.summedAccountsCount(
+            accounts, summedAccountIDs: breakdown.eligibleAccountIDs
+        )
+    }
+
+    @Test func summed_sinFiltro_cuentaTodas() {
+        let accts = ["A", "B", "C"].map { makeAccount($0, excluded: false, archived: false) }
+        #expect(summedCount(accts) == 3)
+    }
+
+    @Test func summed_filtroDeUnaCuenta_cuentaUna() {
+        let accts = ["A", "B", "C"].map { makeAccount($0, excluded: false, archived: false) }
+        #expect(summedCount(accts, selected: [accts[0].persistentModelID]) == 1)
+    }
+
+    @Test func summed_modoExcluir_cuentaElResto() {
+        let accts = ["A", "B", "C"].map { makeAccount($0, excluded: false, archived: false) }
+        #expect(summedCount(accts, selected: [accts[0].persistentModelID], excludeMode: true) == 2)
+    }
+
+    /// La elegida está excluida de las estadísticas: el saldo vuelve al total (fallback heredado) y
+    /// el conteo lo acompaña.
+    @Test func summed_seleccionSoloExcluida_sigueElFallbackDelSaldo() {
+        let a = makeAccount("A", excluded: false, archived: false)
+        let b = makeAccount("B", excluded: false, archived: false)
+        let fuera = makeAccount("Fuera", excluded: true, archived: false)
+        #expect(summedCount([a, b, fuera], selected: [fuera.persistentModelID]) == 2)
     }
 }

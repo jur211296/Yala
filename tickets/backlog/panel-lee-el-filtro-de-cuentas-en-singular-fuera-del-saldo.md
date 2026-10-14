@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: panel
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-10-13
 source: review adversarial de panel-colapsa-la-seleccion-de-cuentas-a-la-primera
 ---
 
@@ -82,3 +82,14 @@ Sobre el (2), cuando hay más de una cuenta filtrada o se está en modo excluir:
 Con A, la prioridad es `medium`. El (1) es técnico, y lo natural es que el conteo salga del mismo `Breakdown` que el saldo.
 
 Triage 2026-10-08: abierto · medium → medium · el conteo de `PanelPanoramaSection.totalAccountsCount` ignora el filtro, y `PanelSheetsModifier.swift:93` precarga `selectedAccountIDs.first`, también en modo excluir.
+
+## (1) arreglado en 2.2 (2026-10-13, auditoría UX 2.2, lote 3, B2)
+
+Se eligió la primera vía del «Qué hay que decidir»: el conteo sale del mismo `Breakdown` que el saldo.
+`PanelViewModel.panelTotalAccountIDs` guarda `Breakdown.eligibleAccountIDs` junto a `panelTotalBalance`, y el panorama
+cuenta con `PanelTotalAccountsLogic.summedAccountsCount` (las contables que el saldo sumó). Filtro de una cuenta, modo
+excluir y el fallback de una selección solo con excluidas tienen unit en `PanelTotalAccountsLogicTests`. Medido en el
+simulador: filtrada a «Ahorros USD», «Tienes ≈ S/ 119.333 en 1 cuenta» (antes «en 3 cuentas»). Card:
+`tablero-bug-lote-3-b2-filtrado-a-una-cuenta-tus-0kbp`.
+
+**Queda abierto el (2)** (prefill del formulario) y su pregunta A/B/C de arriba.
