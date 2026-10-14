@@ -95,6 +95,7 @@ struct InboxBulkActionsSheet: View {
     // Bulk approve success
     @State private var showBulkSuccessView = false
     @State private var bulkApprovedCount = 0
+    @State private var bulkApprovedSummary = InboxBulkApproveSummaryLogic.Summary(total: nil, currencyCode: nil, accountName: nil)
 
     private var approveableCount: Int {
         selectedDrafts.count(where: { $0.isReadyToApprove })
@@ -106,6 +107,7 @@ struct InboxBulkActionsSheet: View {
                 if showBulkSuccessView {
                     InboxBulkApproveSuccessView(
                         approvedCount: bulkApprovedCount,
+                        summary: bulkApprovedSummary,
                         onViewRecords: {
                             onNavigateToRecords?()
                             finishEditing()
@@ -327,6 +329,11 @@ struct InboxBulkActionsSheet: View {
             // Show bulk success view
             if !transactions.isEmpty {
                 bulkApprovedCount = transactions.count
+                bulkApprovedSummary = InboxBulkApproveSummaryLogic.summary(
+                    of: transactions.map {
+                        .init(amount: $0.amount, currencyCode: $0.currencyCode, accountName: $0.account?.name)
+                    }
+                )
                 dsWithAnimation(reduceMotion) {
                     showBulkSuccessView = true
                 }

@@ -6612,3 +6612,12 @@
 "onboarding.accountName.allTogether" = "Moje pieniądze %@";
 "account.deleteConfirmTitle" = "Usunąć „%@”?";
 "account.deleteConfirmMessageEmpty" = "To konto nie ma wpisów. Tej operacji nie można cofnąć.";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "Głos";
+"panel.photoShort" = "Zdjęcie";
+"inbox.draft.discardToArchived" = "Odrzuć (trafia do Zarchiwizowanych)";
+"inbox.draft.deleteForever" = "Usuń na zawsze";
+"inbox.draft.movedToArchived" = "Przeniesiono do Zarchiwizowanych";
+"inbox.draft.undo" = "Cofnij";
+"inbox.bulkSuccess.total" = "Łącznie %@";

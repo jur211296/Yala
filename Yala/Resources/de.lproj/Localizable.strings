@@ -6600,3 +6600,12 @@
 "onboarding.accountName.allTogether" = "Mein Geld %@";
 "account.deleteConfirmTitle" = "„%@“ löschen?";
 "account.deleteConfirmMessageEmpty" = "Das Konto hat keine Datensätze. Das kann nicht rückgängig gemacht werden.";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "Sprache";
+"panel.photoShort" = "Foto";
+"inbox.draft.discardToArchived" = "Verwerfen (kommt zu Archiviert)";
+"inbox.draft.deleteForever" = "Endgültig löschen";
+"inbox.draft.movedToArchived" = "Zu Archiviert verschoben";
+"inbox.draft.undo" = "Rückgängig";
+"inbox.bulkSuccess.total" = "%@ insgesamt";

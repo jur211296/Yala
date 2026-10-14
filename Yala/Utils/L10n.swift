@@ -887,6 +887,11 @@ enum L10n {
         /// un literal es cómo acaban cambiando juntas sin querer.
         static var aiPill: String { ls("panel.aiPill", comment: "Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale)") }
 
+        /// Palabra bajo el icono de voz y de foto en la fila de acciones del Panel (UX 2.2 · L4-1). Corta a
+        /// propósito: va debajo del icono, dentro del mismo botón, y no puede ensanchar la fila.
+        static var voiceShort: String { ls("panel.voiceShort", comment: "Panel quick actions — one short word under the voice icon") }
+        static var photoShort: String { ls("panel.photoShort", comment: "Panel quick actions — one short word under the photo icon") }
+
         static var fabVoice: String {
             ls("panel.fabVoice", comment: "")
         }
@@ -6531,6 +6536,16 @@ enum L10n {
         }
         static var reject: String {
             ls("inbox.reject", comment: "")
+        }
+        /// Menú «⋯» del editor del borrador (UX 2.2 · L4-5).
+        static var discardToArchived: String { ls("inbox.draft.discardToArchived", comment: "Draft editor menu — moves the draft to Archived") }
+        static var deleteForever: String { ls("inbox.draft.deleteForever", comment: "Draft editor menu — deletes the draft for good") }
+        /// Aviso tras descartar desde el editor, con su botón para deshacerlo.
+        static var movedToArchived: String { ls("inbox.draft.movedToArchived", comment: "Toast after discarding a draft") }
+        static var undoDiscard: String { ls("inbox.draft.undo", comment: "Toast button — undo the discard") }
+        /// Bajo «N transacciones creadas»: «S/ 60.50 en total» (UX 2.2 · L4-13).
+        static func bulkSuccessTotal(_ amount: String) -> String {
+            String(format: ls("inbox.bulkSuccess.total", comment: "Bulk approve success — total saved, e.g. «S/ 60.50 en total»"), amount)
         }
         static var approveAll: String {
             ls("inbox.approveAll", comment: "")

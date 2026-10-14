@@ -6612,3 +6612,12 @@
 "onboarding.accountName.allTogether" = "マイマネー %@";
 "account.deleteConfirmTitle" = "「%@」を削除しますか？";
 "account.deleteConfirmMessageEmpty" = "この口座には記録がありません。この操作は取り消せません。";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "音声";
+"panel.photoShort" = "写真";
+"inbox.draft.discardToArchived" = "破棄（アーカイブ済みへ）";
+"inbox.draft.deleteForever" = "完全に削除";
+"inbox.draft.movedToArchived" = "アーカイブ済みに移動しました";
+"inbox.draft.undo" = "取り消す";
+"inbox.bulkSuccess.total" = "合計 %@";

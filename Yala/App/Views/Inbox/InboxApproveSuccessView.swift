@@ -22,9 +22,33 @@ struct InboxApproveSuccessData {
     let isExpense: Bool
 }
 
-struct InboxApproveSuccessView: View {
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
+/// El check de las pantallas de éxito de la Bandeja (aprobar uno y aprobar varios). Tono suave, como los indicadores
+/// del Panel: el verde de éxito al 15 % de fondo y el ✓ en verde. Sin halo, degradado ni sombra: la regla de Jürgen.
+struct InboxApproveSuccessCheck: View {
+    var isVisible: Bool = true
+    var isCheckVisible: Bool = true
 
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(DS.Semantic.successBackground)
+                .frame(width: 100, height: 100)
+                .scaleEffect(isVisible ? 1.0 : 0.3)
+                .opacity(isVisible ? 1.0 : 0.0)
+
+            Image(systemName: "checkmark")
+                .font(.system(size: iconSize, weight: .semibold))
+                .foregroundStyle(DS.Semantic.successForeground)
+                .scaleEffect(isCheckVisible ? 1.0 : 0.0)
+                .opacity(isCheckVisible ? 1.0 : 0.0)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+struct InboxApproveSuccessView: View {
     let data: InboxApproveSuccessData
     let hasNextDraft: Bool
     let onEdit: () -> Void
@@ -45,17 +69,6 @@ struct InboxApproveSuccessView: View {
     var body: some View {
         ZStack {
             theme.background.ignoresSafeArea()
-
-            // Subtle background glow
-            RadialGradient(
-                colors: [typeColor.opacity(0.06), .clear],
-                center: .center,
-                startRadius: 0,
-                endRadius: 200
-            )
-            .frame(height: 300)
-            .blur(radius: 40)
-            .offset(y: -60)
 
             VStack(spacing: DS.Spacing.none) {
                 // Edit button at top right
@@ -84,54 +97,9 @@ struct InboxApproveSuccessView: View {
                                     .foregroundStyle(.secondary)
                                     .opacity(showHero ? 1.0 : 0.0)
 
-                                // Layered circle
-                                ZStack {
-                                    // Radiant glow
-                                    RadialGradient(
-                                        colors: [typeColor.opacity(0.25), .clear],
-                                        center: .center,
-                                        startRadius: 20,
-                                        endRadius: 90
-                                    )
-                                    .frame(width: 180, height: 180)
-                                    .blur(radius: 12)
-                                    .opacity(showHero ? 1.0 : 0.0)
-
-                                    // Main gradient circle
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [typeColor, typeColor.opacity(0.7)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .frame(width: 100, height: 100)
-                                        .shadow(color: typeColor.opacity(0.4), radius: 20, y: 8)
-                                        .scaleEffect(showHero ? 1.0 : 0.3)
-                                        .opacity(showHero ? 1.0 : 0.0)
-
-                                    // Glass overlay
-                                    Circle()
-                                        .fill(Color.white.opacity(0.1))
-                                        .frame(width: 100, height: 100)
-                                        .mask(
-                                            LinearGradient(
-                                                colors: [.white, .clear],
-                                                startPoint: .top,
-                                                endPoint: .center
-                                            )
-                                        )
-                                        .opacity(showHero ? 1.0 : 0.0)
-
-                                    // White checkmark
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: heroIconSize, weight: .semibold))
-                                        .foregroundStyle(.white)
-                                        .scaleEffect(showCheckmark ? 1.0 : 0.0)
-                                        .opacity(showCheckmark ? 1.0 : 0.0)
-                                        .accessibilityHidden(true)
-                                }
+                                // Check verde SUAVE, el mismo al aprobar uno y varios (UX 2.2 · L4-13, variante 2): sin
+                                // halo, degradado ni sombra. La aparición animada se queda.
+                                InboxApproveSuccessCheck(isVisible: showHero, isCheckVisible: showCheckmark)
 
                                 // Promoted amount
                                 AmountText(

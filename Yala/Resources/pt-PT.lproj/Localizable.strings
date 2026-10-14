@@ -5892,3 +5892,12 @@
 "account.deleteConfirmTitle" = "Eliminar “%@”?";
 "account.deleteConfirmMessageEmpty" = "Esta conta não tem registos. Não é possível desfazer.";
 "account.deleteConfirmMessage" = "Esta conta tem %d registos. Não são apagados: ficam em Registros, sem conta. Se só quer deixar de a ver, arquive-a. Não é possível desfazer.";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "Voz";
+"panel.photoShort" = "Foto";
+"inbox.draft.discardToArchived" = "Descartar (vai para Arquivados)";
+"inbox.draft.deleteForever" = "Eliminar para sempre";
+"inbox.draft.movedToArchived" = "Movido para Arquivados";
+"inbox.draft.undo" = "Desfazer";
+"inbox.bulkSuccess.total" = "%@ no total";

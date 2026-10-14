@@ -6600,3 +6600,12 @@
 "onboarding.accountName.allTogether" = "Meu dinheiro %@";
 "account.deleteConfirmTitle" = "Eliminar “%@”?";
 "account.deleteConfirmMessageEmpty" = "Esta conta não tem registros. Não é possível desfazer.";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "Voz";
+"panel.photoShort" = "Foto";
+"inbox.draft.discardToArchived" = "Descartar (vai para Arquivados)";
+"inbox.draft.deleteForever" = "Excluir para sempre";
+"inbox.draft.movedToArchived" = "Movido para Arquivados";
+"inbox.draft.undo" = "Desfazer";
+"inbox.bulkSuccess.total" = "%@ no total";

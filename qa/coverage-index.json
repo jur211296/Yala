@@ -1472,7 +1472,8 @@
         "Yala/App/Views/Panel/PanelSheetsModifier.swift",
         "Yala/App/Views/Panel/PanelShell.swift",
         "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
-        "Yala/App/Views/Voice/VoiceRecordingView.swift"
+        "Yala/App/Views/Voice/VoiceRecordingView.swift",
+        "Yala/App/Views/Inbox/DraftDiscardUndoNotice.swift"
       ],
       "scenarioIDs": [
         "F-INB-01",
@@ -1481,7 +1482,7 @@
         "F-INB-04"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/InboxCrudUITests + unit:YalaTests/InboxRowPruneCoordinatorTests (poda de fila antes de borrar — regresión determinista del crash 2.0.5/iOS27, roja al revertir la poda en cualquier OS) | 2026-10-08 (`inbox-dismiss-x-does-not-delete-the-draft-for-good`): descartar (x, swipe, lote, papelera) el borrador de un pago programado salta la ocurrencia que retiene en los tres orígenes y archiva sus gemelos de otro dispositivo; volver a pendientes deshace el salto; aprobar una ocurrencia ya dejada atrás no avanza dos veces. unit:YalaTests/InboxDismissScheduledDraftTests,YalaTests/ScheduledDraftOccurrenceLogicTests,YalaTests/CloudSync/InboxDismissScheduledDraftCloudTests (dos dispositivos por el wire de la nube) — rojo en 2.1. Device-QA de dos iPhone en tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md. | 2026-10-10 (`shared-scheduled-expense-shows-twice-in-inbox`): aprobar un gasto compartido planificado desde la Bandeja dejaba OTRO borrador del mismo gasto pidiendo la categoría: la plantilla del formulario de grupo no llevaba la del pago. `GroupExpensePrefillTemplate.subcategory` (sin default) la lleva desde el pago (`GroupScheduledExpenseTemplateLogic`) y desde el borrador convertido, y `applyTemplate` la elige; `processDuePayments` barre los «elige categoría» que ya existen. unit:YalaTests/GroupScheduledExpenseSingleDraftTests (rojo en 2.1),YalaTests/DraftToGroupExpenseTemplateLogicTests. Device-QA en tickets/qa/shared-scheduled-expense-shows-twice-in-inbox.md. | 2026-10-14 (auditoría UX 2.2 · lote 4): rechazar deslizando deja el borrador en Archivados sin cerrar la Bandeja (`test_rejectingDraftBySwipeShowsItInArchivedRightAway`, rojo al quitar la recarga); plurales de la Bandeja en `.stringsdict`, VoiceOver lee el estado traducido y la pista nombra el ✓ (`unit:YalaTests/InboxPluralsTests`).",
+      "coverage": "xcuitest:YalaUITests/InboxCrudUITests + unit:YalaTests/InboxRowPruneCoordinatorTests | 2026-10-14 (auditoría UX 2.2, lote 4, L4-5 v2): la ⓧ roja del editor pasa a un menú «⋯» (Descartar / Eliminar para siempre, solo lo que el borrador permite) y descartar enseña «Lo moviste a Archivados · Deshacer» en una ventana propia (DraftDiscardUndoNotice); test_discardingFromEditorMenuOffersUndoThatBringsItBack. La herramienta `axe` no llega a tocar esa ventana; XCUITest sí. | (poda de fila antes de borrar — regresión determinista del crash 2.0.5/iOS27, roja al revertir la poda en cualquier OS) | 2026-10-08 (`inbox-dismiss-x-does-not-delete-the-draft-for-good`): descartar (x, swipe, lote, papelera) el borrador de un pago programado salta la ocurrencia que retiene en los tres orígenes y archiva sus gemelos de otro dispositivo; volver a pendientes deshace el salto; aprobar una ocurrencia ya dejada atrás no avanza dos veces. unit:YalaTests/InboxDismissScheduledDraftTests,YalaTests/ScheduledDraftOccurrenceLogicTests,YalaTests/CloudSync/InboxDismissScheduledDraftCloudTests (dos dispositivos por el wire de la nube) — rojo en 2.1. Device-QA de dos iPhone en tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md. | 2026-10-10 (`shared-scheduled-expense-shows-twice-in-inbox`): aprobar un gasto compartido planificado desde la Bandeja dejaba OTRO borrador del mismo gasto pidiendo la categoría: la plantilla del formulario de grupo no llevaba la del pago. `GroupExpensePrefillTemplate.subcategory` (sin default) la lleva desde el pago (`GroupScheduledExpenseTemplateLogic`) y desde el borrador convertido, y `applyTemplate` la elige; `processDuePayments` barre los «elige categoría» que ya existen. unit:YalaTests/GroupScheduledExpenseSingleDraftTests (rojo en 2.1),YalaTests/DraftToGroupExpenseTemplateLogicTests. Device-QA en tickets/qa/shared-scheduled-expense-shows-twice-in-inbox.md. | 2026-10-14 (auditoría UX 2.2 · lote 4): rechazar deslizando deja el borrador en Archivados sin cerrar la Bandeja (`test_rejectingDraftBySwipeShowsItInArchivedRightAway`, rojo al quitar la recarga); plurales de la Bandeja en `.stringsdict`, VoiceOver lee el estado traducido y la pista nombra el ✓ (`unit:YalaTests/InboxPluralsTests`).",
       "owner": "",
       "lastVerified": "2026-10-14"
     },
@@ -1546,7 +1547,8 @@
         "Yala/App/Views/Inbox/InboxApproveSuccessView.swift",
         "Yala/App/Views/Inbox/InboxBulkApproveSuccessView.swift",
         "Yala/App/Views/Inbox/InboxDraftRowView.swift",
-        "Yala/App/Logic/InboxHeroSubtitleLogic.swift"
+        "Yala/App/Logic/InboxHeroSubtitleLogic.swift",
+        "Yala/App/Logic/InboxBulkApproveSummaryLogic.swift"
       ],
       "scenarioIDs": [
         "F-INB-02",
@@ -1554,9 +1556,9 @@
         "F-INB-04"
       ],
       "classification": "agentic",
-      "coverage": "device-qa",
+      "coverage": "device-qa + unit:YalaTests/InboxBulkApproveSummaryLogicTests | 2026-10-14 (auditoría UX 2.2, lote 4, L4-13 v2): las dos pantallas usan el mismo check verde SUAVE (InboxApproveSuccessCheck, sin halo, degradado ni sombra); al aprobar varios, «S/ 60.50 en total · Cuenta Principal» bajo el número, cada parte solo si es la misma para todos (divisa y sentido para el total, cuenta para la cuenta). Capturas antes/después en el PR #493.",
       "owner": "",
-      "lastVerified": "2026-06-01"
+      "lastVerified": "2026-10-14"
     },
     {
       "area": "income-expense-classification-parity",

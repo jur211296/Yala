@@ -114,4 +114,43 @@ final class InboxCrudUITests: XCTestCase {
             "El draft rechazado no salió en Archivados sin cerrar y volver a abrir la Bandeja."
         )
     }
+
+    /// Descartar desde el editor (auditoría UX 2.2 · lote 4 · L4-5, variante 2): la ⓧ roja sin texto pasó a un menú
+    /// «⋯» con «Descartar (va a Archivados)», y al descartar sale «Lo moviste a Archivados · Deshacer». «Deshacer» lo
+    /// devuelve a pendientes y la Bandeja lo enseña sin cerrar y volver a abrir.
+    func test_discardingFromEditorMenuOffersUndoThatBringsItBack() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let rowA = app.buttons["inbox_draft_row_\(draftA)"]
+        XCTAssertTrue(rowA.waitForExistence(timeout: 5), "No apareció el draft a descartar.")
+        rowA.tap()
+
+        let more = app.buttons["draft_editor_more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "El editor no tiene el menú «⋯».")
+        more.tap()
+
+        let discard = app.buttons["draft_editor_discard"]
+        XCTAssertTrue(discard.waitForExistence(timeout: 5), "El menú «⋯» no ofrece Descartar.")
+        XCTAssertTrue(
+            app.buttons["draft_editor_delete_forever"].exists, "El menú «⋯» no ofrece Eliminar para siempre."
+        )
+        discard.tap()
+
+        // El editor se cierra, el borrador sale de pendientes y el aviso dice a dónde fue.
+        let undo = app.buttons["draft_discard_undo"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5), "Tras descartar no salió el aviso con «Deshacer».")
+        XCTAssertTrue(rowA.waitForNonExistence(timeout: 5), "El draft descartado sigue en pendientes.")
+
+        undo.tap()
+
+        XCTAssertTrue(
+            app.buttons["inbox_draft_row_\(draftA)"].waitForExistence(timeout: 5),
+            "«Deshacer» no devolvió el draft a pendientes (o la Bandeja no recargó)."
+        )
+        XCTAssertTrue(undo.waitForNonExistence(timeout: 5), "El aviso no se fue tras tocar «Deshacer».")
+    }
 }

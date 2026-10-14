@@ -6610,3 +6610,12 @@
 "onboarding.accountName.allTogether" = "I miei soldi %@";
 "account.deleteConfirmTitle" = "Eliminare «%@»?";
 "account.deleteConfirmMessageEmpty" = "Questo conto non ha registrazioni. L'operazione non si può annullare.";
+
+// Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
+"panel.voiceShort" = "Voce";
+"panel.photoShort" = "Foto";
+"inbox.draft.discardToArchived" = "Scarta (va in Archiviati)";
+"inbox.draft.deleteForever" = "Elimina definitivamente";
+"inbox.draft.movedToArchived" = "Spostato in Archiviati";
+"inbox.draft.undo" = "Annulla";
+"inbox.bulkSuccess.total" = "%@ in totale";
