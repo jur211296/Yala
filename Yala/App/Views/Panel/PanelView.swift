@@ -147,7 +147,7 @@ struct PanelView: View {
 
     private func loadExampleImages() -> [UIImage]? {
         let supportedLangs: Set<String> = ["de", "en", "es", "fr", "it", "pt"]
-        let lang = Bundle.main.preferredLocalizations.first ?? "en"
+        let lang = LanguageManager.baseLanguageCode(of: Bundle.main.preferredLocalizations.first ?? "en")
         let suffix = supportedLangs.contains(lang) ? lang : "en"
         let images = [
             "ExampleImages/example-receipt-\(suffix)",
@@ -306,6 +306,9 @@ struct PanelView: View {
             steps: ProTourSteps.panelSteps,
             isPresented: $showProFabTour,
             currentIndex: $proFabTourIndex,
+            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
+            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
+            onSkip: { ProTourManager.shared.skipTour() },
             onComplete: {
                 ProTourManager.shared.advancePhase()
             }
@@ -652,7 +655,10 @@ struct PanelView: View {
                     // Setup checklist: auto-detect completed steps & manage collapse state
                     let mgr = SetupChecklistManager.shared
                     mgr.autoDetect(
-                        transactionCount: viewModel.transactions.count,
+                        // Sin el «Saldo inicial» ni los ajustes: no los apuntó la persona (`countsAsUserRecord`).
+                        transactionCount: viewModel.transactions.count(where: {
+                            SetupChecklistManager.countsAsUserRecord(balanceAdjustmentType: $0.balanceAdjustmentType)
+                        }),
                         budgetCount: viewModel.budgets.count,
                         scheduledCount: viewModel.scheduledPayments.count
                     )

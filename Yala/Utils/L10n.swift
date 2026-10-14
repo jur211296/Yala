@@ -57,6 +57,17 @@ enum LanguageManager {
     /// Supported locales as the typed enum. Use `.code/.nativeName/.flag` properties.
     static var supportedLanguages: [SupportedLocale] { SupportedLocale.selectableCases }
 
+    /// El idioma base («es», «pt», «en») de una localización de Yala.
+    ///
+    /// `Bundle.main.preferredLocalizations.first` es la VARIANTE con que Yala pinta («es-419» en un teléfono es-PE,
+    /// «es-AR», «es-ES», «pt-BR», «pt-PT», «en-GB»). Comparada con una lista de idiomas base, una variante se lee como
+    /// «idioma sin soporte» y cae al inglés: las imágenes de ejemplo de «Prueba el registro con foto» salían en inglés
+    /// en cualquier teléfono en español o portugués (medido el 2026-10-14 en un simulador es-PE), y el enlace de
+    /// privacidad llevaba a la página en inglés.
+    static func baseLanguageCode(of localization: String) -> String {
+        Locale(identifier: localization).language.languageCode?.identifier ?? localization
+    }
+
     /// Whether the device's preferred language is one of our supported locales.
     static var deviceLanguageIsSupported: Bool {
         let preferred = Locale.preferredLanguages.first ?? "en"

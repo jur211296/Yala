@@ -16,30 +16,39 @@ struct NotificationPrimerSheet: View {
     @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 48 // A11Y-DT: primer icon
     @State private var isRequesting = false
 
+    /// El texto va en un scroll que solo se mueve si hace falta, y los botones fuera de él: la hoja es de media
+    /// altura y, sin esto, el tercer beneficio salía cortado («…al límite de un…») en un iPhone 17 Pro en español
+    /// a tamaño normal (medido el 2026-10-14). Molde: `.claude/rules/swiftui-ds.md`, pantallas con `Spacer`s.
     var body: some View {
-        VStack(spacing: DS.Spacing.xxl) {
-            Spacer()
+        VStack(spacing: DS.Spacing.md) {
+            GeometryReader { proxy in
+                ScrollView {
+                    VStack(spacing: DS.Spacing.xxl) {
+                        // Icon
+                        Image(systemName: "bell.badge.fill")
+                            .font(.system(size: iconSize))
+                            .foregroundStyle(.tint)
+                            .accessibilityHidden(true)
 
-            // Icon
-            Image(systemName: "bell.badge.fill")
-                .font(.system(size: iconSize))
-                .foregroundStyle(.tint)
-                .accessibilityHidden(true)
+                        // Title
+                        Text(L10n.NotificationPrimer.title)
+                            .font(DS.Typography.title)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
 
-            // Title
-            Text(L10n.NotificationPrimer.title)
-                .font(DS.Typography.title)
-                .multilineTextAlignment(.center)
-
-            // Benefits
-            VStack(alignment: .leading, spacing: DS.Spacing.md) {
-                benefitRow(icon: "chart.bar.fill", text: L10n.NotificationPrimer.benefit1)
-                benefitRow(icon: "calendar.badge.clock", text: L10n.NotificationPrimer.benefit2)
-                benefitRow(icon: "bell.fill", text: L10n.NotificationPrimer.benefit3)
+                        // Benefits
+                        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                            benefitRow(icon: "chart.bar.fill", text: L10n.NotificationPrimer.benefit1)
+                            benefitRow(icon: "calendar.badge.clock", text: L10n.NotificationPrimer.benefit2)
+                            benefitRow(icon: "bell.fill", text: L10n.NotificationPrimer.benefit3)
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                    }
+                    .padding(.top, DS.Spacing.xl)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .padding(.horizontal, DS.Spacing.lg)
-
-            Spacer()
 
             // CTA
             VStack(spacing: DS.Spacing.md) {
@@ -83,6 +92,7 @@ struct NotificationPrimerSheet: View {
             Text(text)
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

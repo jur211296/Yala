@@ -147,6 +147,9 @@ struct InsightsTabView: View {
             steps: ProTourSteps.insightsSteps,
             isPresented: $showProInsightsTour,
             currentIndex: $proInsightsTourIndex,
+            // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
+            // volvía a salir en el Panel o en Estadísticas (auditoría UX 2.2 · lote 5 · B7).
+            onSkip: { ProTourManager.shared.skipTour() },
             onComplete: {
                 ProTourManager.shared.advancePhase()
             }

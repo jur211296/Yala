@@ -209,9 +209,13 @@ struct PanelSheetsModifier: ViewModifier {
             }
             .onChange(of: sheets.showAIConsentAlert) { _, showing in
                 // Sin aceptar (Cancelar o la política de privacidad), el fallo de un soltar no espera a la próxima vez
-                // que se abra el registro por imagen: ahí ya no explicaría nada.
+                // que se abra el registro por imagen: ahí ya no explicaría nada. Y la práctica de «Primeros pasos» que
+                // esperaba a este aviso se apaga: su hoja no se va a abrir (`endSetupTrialsThatNeverOpened`).
                 if !showing, !UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted) {
                     navigation.pendingImageEntryFailure = nil
+                    for feature in sheets.endSetupTrialsThatNeverOpened() {
+                        FeatureGateService.shared.disableSetupTrial(for: feature)
+                    }
                 }
             }
             .onChange(of: sheets.practiceCleanupItem?.id) { _, newValue in
