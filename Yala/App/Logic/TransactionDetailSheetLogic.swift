@@ -45,7 +45,10 @@ enum TransactionDetailSheetLogic {
     /// por una coma suelta, y el tipo («Gasto», «Ingreso») va antes del importe, que llega ya formateado en la divisa
     /// del propio registro (auditoría UX 2.2, lote 8: leía «S/ 2,000» de una cuenta en dólares y nunca decía si era
     /// gasto o ingreso).
-    static func rowAccessibilityLabel(note: String?, kind: String, amount: String, category: String?, account: String?) -> String {
+    ///
+    /// Un ajuste de saldo (saldo inicial, corrección) no es gasto ni ingreso: va sin tipo y con el importe con su signo.
+    /// Leerlo como «Gasto» decía eso de un saldo inicial de +5.000 (medido al recapturar el lote 8).
+    static func rowAccessibilityLabel(note: String?, kind: String?, amount: String, category: String?, account: String?) -> String {
         [note, kind, amount, category, account]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }

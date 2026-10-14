@@ -124,8 +124,11 @@ struct RecordRowView: View {
     // MARK: - Accessibility
 
     private var accessibilityDescription: String {
+        let isTransfer = record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
+        // Un ajuste de saldo no es gasto ni ingreso: sin tipo y con el signo en el importe.
+        let isBalanceAdjustment = record.balanceAdjustmentType != nil && !isTransfer
         let kind: TransactionType = switch TransactionDetailSheetLogic.kind(
-            isTransfer: record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer,
+            isTransfer: isTransfer,
             categoryIsIncome: record.category?.isIncome,
             amount: record.amount
         ) {
@@ -135,8 +138,10 @@ struct RecordRowView: View {
         }
         return TransactionDetailSheetLogic.rowAccessibilityLabel(
             note: record.note,
-            kind: kind.displayName,
-            amount: appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode),
+            kind: isBalanceAdjustment ? nil : kind.displayName,
+            amount: isBalanceAdjustment
+                ? appPreferences.currency(record.amount, currencyCode: record.currencyCode)
+                : appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode),
             category: record.subcategory?.name ?? record.category?.name,
             account: record.account?.name
         )

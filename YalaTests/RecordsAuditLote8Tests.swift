@@ -67,6 +67,13 @@ struct RecordRowAccessibilityLabelTests {
         #expect(label == "Ingreso, $ 2,000.00, Ahorros USD")
     }
 
+    /// Un ajuste de saldo va sin tipo: no es un gasto ni un ingreso.
+    @Test func balanceAdjustment_hasNoKind() {
+        let label = TransactionDetailSheetLogic.rowAccessibilityLabel(
+            note: "Saldo inicial", kind: nil, amount: "S/ 5,000.00", category: "Ajustes de saldo", account: "Cuenta Principal")
+        #expect(label == "Saldo inicial, S/ 5,000.00, Ajustes de saldo, Cuenta Principal")
+    }
+
     @Test func fullRow_inOrder() {
         let label = TransactionDetailSheetLogic.rowAccessibilityLabel(
             note: "Uber", kind: "Gasto", amount: "S/ 26.00", category: "Taxis y apps", account: "Cuenta Principal")
@@ -105,7 +112,9 @@ struct RecordsAuditLote8WiringTests {
     /// VoiceOver lee el importe en la moneda del registro, no en la preferida.
     @Test func rowAccessibility_usesTheRecordCurrency() throws {
         let code = Self.codeOnly(try Self.source("Yala/App/Views/Records/Components/RecordRowView.swift"))
-        #expect(code.contains("amount: appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode)"))
+        #expect(code.contains(": appPreferences.currency(abs(record.amount), currencyCode: record.currencyCode)"))
+        #expect(code.contains("? appPreferences.currency(record.amount, currencyCode: record.currencyCode)"))
+        #expect(code.contains("kind: isBalanceAdjustment ? nil : kind.displayName"))
     }
 
     /// El mes del calendario no vuelve a `capitalized` (mayúscula en cada palabra).
