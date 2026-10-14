@@ -142,7 +142,7 @@
 "welcome.restore.iCloudDisabledBody" = "Precisas do iCloud ativo para recuperar os teus dados. Ativa-o nos Ajustes e tenta novamente.";
 "welcome.restore.openSettings" = "Abrir Ajustes";
 "welcome.restore.startFreshConfirm.title" = "Começar do zero?";
-"welcome.restore.startFreshConfirm.body" = "Isto vai criar uma conta nova sem os teus dados anteriores. Continuar?";
+"welcome.restore.startFreshConfirm.body" = "Ainda não se apaga nada. Antes de começar, verificamos o que está guardado e, se encontrarmos algo, perguntamos-te o que fazer com isso.";
 "welcome.restore.startFreshConfirm.confirm" = "Sim, começar do zero";
 "welcome.restore.startFreshConfirm.cancel" = "Cancelar";
 "welcome.restore.progress.connecting" = "A ligar ao iCloud…";

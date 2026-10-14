@@ -682,5 +682,115 @@
 			<string>%d zmiany czeka na połączenie</string>
 		</dict>
 	</dict>
+	<key>welcome.restore.foundAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d kont</string>
+			<key>one</key>
+			<string>%d konto</string>
+			<key>few</key>
+			<string>%d konta</string>
+			<key>many</key>
+			<string>%d kont</string>
+			<key>other</key>
+			<string>%d konta</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundTransactions</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d wpisów</string>
+			<key>one</key>
+			<string>%d wpis</string>
+			<key>few</key>
+			<string>%d wpisy</string>
+			<key>many</key>
+			<string>%d wpisów</string>
+			<key>other</key>
+			<string>%d wpisu</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundBudgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d budżetów</string>
+			<key>one</key>
+			<string>%d budżet</string>
+			<key>few</key>
+			<string>%d budżety</string>
+			<key>many</key>
+			<string>%d budżetów</string>
+			<key>other</key>
+			<string>%d budżetu</string>
+		</dict>
+	</dict>
+	<key>welcome.restore.foundGroups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d grup współdzielonych</string>
+			<key>one</key>
+			<string>%d grupa współdzielona</string>
+			<key>few</key>
+			<string>%d grupy współdzielone</string>
+			<key>many</key>
+			<string>%d grup współdzielonych</string>
+			<key>other</key>
+			<string>%d grupy współdzielonej</string>
+		</dict>
+	</dict>
+	<key>welcome.privateICloud.foundCategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%d kategorii</string>
+			<key>one</key>
+			<string>%d kategoria</string>
+			<key>few</key>
+			<string>%d kategorie</string>
+			<key>many</key>
+			<string>%d kategorii</string>
+			<key>other</key>
+			<string>%d kategorii</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

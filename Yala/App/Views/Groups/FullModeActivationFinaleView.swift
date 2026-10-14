@@ -176,7 +176,8 @@ struct FullModeActivationFinaleView: View {
         Button(action: action) {
             Text(title)
                 .font(DS.Typography.label)
-                .foregroundStyle(.secondary)
+                // `.secondary` dentro de un `Button` deriva del tinte: índigo sobre el fondo oscuro, ilegible.
+                .foregroundStyle(Color(uiColor: .secondaryLabel))
                 .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
                 .contentShape(Rectangle())
         }

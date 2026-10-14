@@ -390,7 +390,8 @@ struct WelcomeRestoreView: View {
                 } label: {
                     Text(L10n.Welcome.Restore.startFresh)
                         .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
+                        // `.secondary` dentro de un `Button` deriva del tinte: índigo sobre el fondo oscuro, 1,9:1.
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
                 }
             }
             .padding(.horizontal, DS.Spacing.lg)
@@ -618,7 +619,8 @@ struct WelcomeRestoreView: View {
     /// salida, nunca al revés.
     private var cloudPausedView: some View {
         emptyStateView(
-            icon: "cloud.slash",
+            // `cloud.slash` no existe en SF Symbols: se pintaba un hueco (auditoría UX 2.2, lote 6).
+            icon: "pause.circle",
             tint: .orange,
             title: L10n.Welcome.Restore.cloudPausedTitle,
             body: L10n.Welcome.Restore.cloudPausedBody,
@@ -794,7 +796,7 @@ struct WelcomeRestoreView: View {
                     Button(action: secondaryAction) {
                         Text(secondaryTitle)
                             .font(DS.Typography.label)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
                     }
                 }
             }

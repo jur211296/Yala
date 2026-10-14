@@ -4080,10 +4080,6 @@
 "welcome.restore.foundTitle" = "Hi %@! Welcome back.";
 "welcome.restore.foundTitleAnonymous" = "Welcome back!";
 "welcome.restore.foundBody" = "We found your data in iCloud:";
-"welcome.restore.foundAccounts" = "%d accounts";
-"welcome.restore.foundTransactions" = "%d records";
-"welcome.restore.foundBudgets" = "%d budgets";
-"welcome.restore.foundGroups" = "%d shared groups";
 "welcome.restore.continue" = "Continue";
 "welcome.restore.notFoundTitle" = "No data found";
 "welcome.restore.notFoundBody" = "There's no data linked to your iCloud account. Want to start fresh?";
@@ -4095,7 +4091,7 @@
 "welcome.restore.iCloudDisabledBody" = "You need iCloud enabled to restore your data. Turn it on in Settings and try again.";
 "welcome.restore.openSettings" = "Open Settings";
 "welcome.restore.startFreshConfirm.title" = "Start fresh?";
-"welcome.restore.startFreshConfirm.body" = "This will create a new account without your previous data. Continue?";
+"welcome.restore.startFreshConfirm.body" = "Nothing is deleted yet. Before starting, we check what’s saved and, if we find anything, ask you what to do with it.";
 "welcome.restore.startFreshConfirm.confirm" = "Yes, start fresh";
 "welcome.restore.startFreshConfirm.cancel" = "Cancel";
 "welcome.restore.progress.connecting" = "Connecting to iCloud…";
@@ -5740,7 +5736,6 @@
 "welcome.privateICloud.lateKeep" = "Leave it that way";
 
 /* Private branch iCloud gate: counts line fragment for user categories */
-"welcome.privateICloud.foundCategories" = "%d categories";
 
 /* Private branch iCloud gate: counts line when the scan hit its cap before reaching countable types */
 "welcome.privateICloud.foundUnknownAmount" = "a lot of saved data";

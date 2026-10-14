@@ -5510,7 +5510,7 @@ enum L10n {
             /// ésta sí es nueva. Va con las otras cifras y no en `Welcome.Restore` porque su única
             /// consumidora es esta pantalla.
             static func foundCategories(_ count: Int) -> String {
-                String(format: ls("welcome.privateICloud.foundCategories", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.privateICloud.foundCategories", comment: ""), count)
             }
             /// La sonda agotó su tope antes de llegar a ningún tipo contable: hay datos, pero no sabemos
             /// cuántos. Un aviso que pide confirmar un borrado irreversible no puede salir en blanco.
@@ -5880,16 +5880,16 @@ enum L10n {
             static var foundTitleAnonymous: String { ls("welcome.restore.foundTitleAnonymous", comment: "") }
             static var foundBody: String { ls("welcome.restore.foundBody", comment: "") }
             static func foundAccounts(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundAccounts", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundAccounts", comment: ""), count)
             }
             static func foundTransactions(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundTransactions", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundTransactions", comment: ""), count)
             }
             static func foundBudgets(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundBudgets", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundBudgets", comment: ""), count)
             }
             static func foundGroups(_ count: Int) -> String {
-                String(format: ls("welcome.restore.foundGroups", comment: ""), count)
+                String.localizedStringWithFormat(ls("welcome.restore.foundGroups", comment: ""), count)
             }
             static var continueAction: String { ls("welcome.restore.continue", comment: "") }
             static var notFoundTitle: String { ls("welcome.restore.notFoundTitle", comment: "") }
