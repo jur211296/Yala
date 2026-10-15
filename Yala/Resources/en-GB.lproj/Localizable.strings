@@ -1141,7 +1141,7 @@
 "chat.noVoiceDetected" = "I didn't detect any audio. Try again.";
 "chat.preparingAI" = "Preparing the AI…";
 "chat.questionTooLong" = "Your question is too long. Try to be more concise.";
-"chat.questionsRemaining" = "You have %d questions left today";
+"chat.questionsRemaining" = "Questions left today: %d";
 "chat.resetContext" = "Reset conversation context";
 "chat.retry" = "Retry";
 "chat.send" = "Send";

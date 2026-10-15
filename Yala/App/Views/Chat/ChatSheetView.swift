@@ -98,11 +98,16 @@ struct ChatSheetView: View {
                 errorBanner(error)
             }
 
+            // Con el tope alcanzado, el aviso dice por qué no se puede enviar y cuándo vuelve: «quedan 0» no lo decía,
+            // y «Has usado tus preguntas de hoy» solo salía si se intentaba enviar, cosa que la caja ya no deja.
             if viewModel.showQuestionCounter {
-                Text(L10n.Chat.questionsRemaining(viewModel.questionsRemaining))
+                Text(viewModel.canAskMore
+                     ? L10n.Chat.questionsRemaining(viewModel.questionsRemaining)
+                     : L10n.Chat.dailyLimitReached)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
                     .padding(.top, DS.Spacing.xs)
+                    .accessibilityIdentifier("chat_question_counter")
             }
 
             chatInputBar

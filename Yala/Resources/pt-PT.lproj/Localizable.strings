@@ -193,7 +193,7 @@
 "yalaAI.onboarding.close" = "Fechar";
 "yalaAI.onboarding.previewLabel" = "Pré-visualização";
 "yalaAI.onboarding.progressLabel" = "Passo %1$d de %2$d";
-"yalaAI.onboarding.step1.title" = "Apresento-te o Yala AI";
+"yalaAI.onboarding.step1.title" = "Apresento-te o Yala IA";
 "yalaAI.onboarding.step1.subtitle" = "A tua mão direita financeira.";
 "yalaAI.onboarding.step1.demoScenario1User" = "Gastei 12 € no almoço.";
 "yalaAI.onboarding.step1.demoScenario1Bot" = "Pronto! Registei o teu almoço de 12 €.";
@@ -202,9 +202,9 @@
 "yalaAI.onboarding.step1.demoScenario3User" = "Algum conselho?";
 "yalaAI.onboarding.step1.demoScenario3Bot" = "💡 As tuas entregas subiram 20% vs o mês passado. Voltando ao teu ritmo normal, poupas 25 € por mês — quase 300 € por ano.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Almoço";
-"yalaAI.onboarding.step1.a11yLabel" = "Exemplo de conversa com o Yala AI a registar um gasto";
+"yalaAI.onboarding.step1.a11yLabel" = "Exemplo de conversa com o Yala IA a registar um gasto";
 "yalaAI.onboarding.step2.title" = "Eis o que podes fazer";
-"yalaAI.onboarding.step2.subtitle" = "Três formas de tirar partido do Yala AI.";
+"yalaAI.onboarding.step2.subtitle" = "Três formas de tirar partido do Yala IA.";
 "yalaAI.onboarding.step2.card1.badge" = "Novo";
 "yalaAI.onboarding.step2.card1.title" = "Regista gastos num instante";
 "yalaAI.onboarding.step2.card1.body" = "Por texto ou voz, sem formulários. Basta dizê-lo.";
@@ -1063,7 +1063,7 @@
 "chat.noVoiceDetected" = "Não detetei áudio. Tenta novamente.";
 "chat.preparingAI" = "A preparar a IA…";
 "chat.questionTooLong" = "Sua pergunta é muito longa. Tente ser mais conciso.";
-"chat.questionsRemaining" = "Você tem %d perguntas restantes hoje";
+"chat.questionsRemaining" = "Perguntas restantes hoje: %d";
 "chat.resetContext" = "Reiniciar contexto da conversa";
 "chat.retry" = "Tentar novamente";
 "chat.send" = "Enviar";

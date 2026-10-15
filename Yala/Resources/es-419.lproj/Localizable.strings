@@ -3343,7 +3343,7 @@
 "chat.errorGeneric" = "Algo salió mal. Intenta de nuevo.";
 "chat.errorNoData" = "No encontré datos para esa consulta. ¿Puedes ser más específico?";
 "chat.dailyLimitReached" = "Has usado tus preguntas de hoy. ¡Vuelve mañana!";
-"chat.questionsRemaining" = "Te quedan %d preguntas hoy";
+"chat.questionsRemaining" = "Preguntas que te quedan hoy: %d";
 "chat.loading" = "Consultando...";
 "chat.questionTooLong" = "Tu pregunta es muy larga. Intenta ser más conciso.";
 "chat.contextHint" = "Puedo recordar tu última pregunta para darte seguimiento";
@@ -4116,7 +4116,7 @@
 "yalaAI.onboarding.close" = "Cerrar";
 "yalaAI.onboarding.previewLabel" = "Vista previa";
 "yalaAI.onboarding.progressLabel" = "Paso %1$d de %2$d";
-"yalaAI.onboarding.step1.title" = "Te presento a Yala AI";
+"yalaAI.onboarding.step1.title" = "Te presento a Yala IA";
 "yalaAI.onboarding.step1.subtitle" = "Tu mano derecha financiera.";
 "yalaAI.onboarding.step1.demoScenario1User" = "Gasté $12 en almuerzo.";
 "yalaAI.onboarding.step1.demoScenario1Bot" = "¡Listo! Registré tu almuerzo de $12.";
@@ -4125,9 +4125,9 @@
 "yalaAI.onboarding.step1.demoScenario3User" = "¿Algún consejo?";
 "yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Tus delivery subieron 20% vs el mes pasado. Volviendo a tu ritmo normal ahorras $80 al mes — son casi $1.000 al año.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Almuerzo";
-"yalaAI.onboarding.step1.a11yLabel" = "Ejemplo de chat con Yala AI registrando un gasto";
+"yalaAI.onboarding.step1.a11yLabel" = "Ejemplo de chat con Yala IA registrando un gasto";
 "yalaAI.onboarding.step2.title" = "Esto es lo que puedes hacer";
-"yalaAI.onboarding.step2.subtitle" = "Tres formas de aprovechar a Yala AI.";
+"yalaAI.onboarding.step2.subtitle" = "Tres formas de aprovechar a Yala IA.";
 "yalaAI.onboarding.step2.card1.badge" = "Nuevo";
 "yalaAI.onboarding.step2.card1.title" = "Registra gastos al instante";
 "yalaAI.onboarding.step2.card1.body" = "Por texto o voz, sin formularios. Solo dilo.";
