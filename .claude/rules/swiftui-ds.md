@@ -207,6 +207,16 @@ paths:
     la lista después de retirarla.
 - **Un `navigationDestination` de la columna de lista presenta en la de detalle** (medido con presupuestos): sus filas
   no se tocaron. En compacta, empuja como siempre.
+- **Y lo que eso presenta no puede empujar nada por su cuenta si la columna de detalle no lleva su `NavigationStack`**
+  (medido el 2026-10-14, iPhone e iPad, lote 9): el botón de gráficas del detalle de un presupuesto
+  (`navigationDestination(isPresented:)`) no hacía nada, ni con `NavigationLink(value:)` y el destino registrado en
+  la lista (desde la columna de detalle no se ve). Lo que funciona: `NavigationStack { vacío }` en `detail:` y el
+  destino registrado en la propia vista abierta (`PlanningView`, `BudgetDetailView`). Es la misma familia que el «+»
+  de Categorías en Ajustes. **Dos cosas que siguen igual y no se arreglan así**: cambiar de chip con algo abierto deja
+  la columna con el triángulo amarillo (el destino vivía en la lista que se desmonta; `.id` de la pila no lo cambia,
+  ticket `ipad-planning-chip-switch-leaves-a-detail-without-destination`), y en ancho
+  `app.navigationBars.buttons.element(boundBy: 0)` es el botón de la barra lateral, no el «Atrás»: en XCUITest,
+  `buttons["BackButton"]`.
 - **Lo que se abre en la columna de detalle lleva `.id(<identidad de lo abierto>)`** (medido el 2026-10-12 en el iPad
   Pro 13). Al abrir otro elemento, SwiftUI REUTILIZA la vista del detalle —con `navigationDestination(item:)` y también
   con `NavigationLink(value:)`—, así que su `@State` iniciado en el `init`, en `onAppear` o en una `.task` se queda con
