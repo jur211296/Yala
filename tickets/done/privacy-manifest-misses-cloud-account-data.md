@@ -1,6 +1,6 @@
 ---
 id: privacy-manifest-misses-cloud-account-data
-status: backlog
+status: done
 priority: high
 area: "privacy, release"
 created: 2026-10-10
@@ -37,3 +37,20 @@ Que digan lo mismo es lo que pide `docs/DECISIONS.md:1115`.
 
 El manifiesto declara lo mismo que las etiquetas de App Store Connect para 2.1, y el archive no da avisos de
 motivos de API.
+
+## Cierre (2026-10-15)
+
+Resuelto en el repo por PR #446 (commit `9b7915b35`, merge `4eed5365a`). Medido sobre `origin/2.1` `a7bc39ee0`:
+
+- `Yala/Resources/PrivacyInfo.xcprivacy` declara nombre, email, ID de usuario, otro contenido, uso del producto y
+  diagnósticos; el ID de dispositivo pasa a vinculado (App Functionality + Analytics). `plutil -lint`: OK.
+- Motivos de API: `UserDefaults` con `CA92.1` y `1C8F.1`; `FileTimestamp` con `C617.1`.
+- `YalaWidgets/PrivacyInfo.xcprivacy` existe con `1C8F.1`. La carpeta es un grupo sincronizado y la única
+  excepción de membresía del widget es `Info.plist`, así que el manifiesto entra en el target.
+
+**Fuera del repo, sigue en Jürgen** (card `tablero-el-manifiesto-de-privacidad-no-declara-l-kgqv`, que no se
+mueve): etiquetas de App Privacy en App Store Connect, la decisión de fotos/audio vinculados y el Privacy
+Report del Organizer. El «Hecho cuando» completo depende de eso; lo que tocaba al código está hecho.
+
+Encontrado al cerrar: `YalaShare` no tiene manifiesto propio. No usa `UserDefaults(suiteName:)` (grep vacío),
+así que no le hace falta motivo de API.

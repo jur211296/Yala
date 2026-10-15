@@ -492,7 +492,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
-| in-app-privacy-copy-says-data-never-leaves-the-device | backlog | tickets/backlog/in-app-privacy-copy-says-data-never-leaves-the-device.md |
+| in-app-privacy-copy-says-data-never-leaves-the-device | done | tickets/done/in-app-privacy-copy-says-data-never-leaves-the-device.md |
 | inbox-alert-scheduled-count-has-no-singular | backlog | tickets/backlog/inbox-alert-scheduled-count-has-no-singular.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
@@ -645,7 +645,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | done | tickets/done/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
-| privacy-manifest-misses-cloud-account-data | backlog | tickets/backlog/privacy-manifest-misses-cloud-account-data.md |
+| privacy-manifest-misses-cloud-account-data | done | tickets/done/privacy-manifest-misses-cloud-account-data.md |
 | privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion | done | tickets/done/privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion.md |
 | private-exit-export-wait-cached-zero-misses-outside-writes | backlog | tickets/backlog/private-exit-export-wait-cached-zero-misses-outside-writes.md |
 | private-exit-loses-unmaterialized-inbound-captures | done | tickets/done/private-exit-loses-unmaterialized-inbound-captures.md |

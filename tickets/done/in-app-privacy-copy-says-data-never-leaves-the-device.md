@@ -1,6 +1,6 @@
 ---
 id: in-app-privacy-copy-says-data-never-leaves-the-device
-status: backlog
+status: done
 priority: high
 area: "l10n, privacy"
 created: 2026-10-10
@@ -22,3 +22,19 @@ privado» / «Tu cuenta en la nube», sin «sesión».
 
 Ningún texto de la app dice que los datos no salen del dispositivo sin distinguir la cuenta en la nube, en
 los 16 idiomas, antes del envío de 2.1.
+
+## Cierre (2026-10-15)
+
+Resuelto por el commit `587d6aa19` («la app deja de decir que los datos nunca salen del dispositivo»).
+Medido sobre `origin/2.1` `a7bc39ee0`:
+
+- Las cuatro claves cambiaron en las 16 `.lproj` (comparado contra `587d6aa19^`, 16/16 en cada una). En
+  `es`: `profile.privacyTitle` y `common.dataPrivacy` = «Dónde viven tus datos»; `profile.privacyDesc`
+  distingue iCloud privado, cuenta en la nube, Grupos e IA; `onboarding.privacyIcloud` = «Accedes a tus datos
+  con tu cuenta».
+- `rg -i "nunca salen|never leave|únicamente en tu dispositivo|only on your device|sin servidores|no servers"`
+  sobre `Yala`, `YalaWidgets` y `YalaShare` (`.strings`, `.swift`, `.xcstrings`, sin tests): 0 resultados.
+- Red viva: `YalaTests/PrivacyCopyForbiddenPhrasesTests.swift` falla si vuelve una frase de 2.0 en
+  cualquier idioma.
+
+La card «Textos de la app dicen que los datos nunca salen del dispositivo» ya estaba en done.
