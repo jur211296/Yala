@@ -245,7 +245,7 @@ struct ScheduledPaymentsWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "planning"))
+        .widgetURL(WidgetURLHelper.url(for: "planning/scheduled-payments"))
     }
 }
 

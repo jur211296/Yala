@@ -2768,14 +2768,14 @@
 "tutorials.panelFiltering.step2.desc" = "Nas diferentes vistas da aplicação verás que podes ir filtrando a teu gosto com os gráficos.";
 "tutorials.panelFiltering.step3.desc" = "Os filtros propagam-se a todas as vistas por igual, assim podes ver todo o tipo de métricas para o que quer que queiras filtrar.";
 "tutorials.panelFiltering.step4.desc" = "Em algumas vistas também contarás com uma secção de filtros na parte superior para que filtres a teu gosto ou remova todos com um único botão.";
-"tutorials.inboxApproval.step0.desc" = "Se és utilizador Yala Pro, quando fizeres um registo por voz ou imagem, automaticamente levar-te-á ao rascunho. O mesmo se usaste o atalho de Registo Apple Pay.";
+"tutorials.inboxApproval.step0.desc" = "Se és utilizador Yala Pro, quando fizeres um registo por voz ou imagem, automaticamente levar-te-á ao rascunho. O mesmo se usaste o atalho «Registrar pagamento Apple Pay».";
 "tutorials.inboxApproval.step1.desc" = "Simplesmente preenche os campos obrigatórios e aprova. Criar-se-á a transação com normalidade.";
 "tutorials.inboxApproval.step2.desc" = "Também podes fazer registos de voz ou imagem com múltiplas transações. Dir-te-á quantos rascunhos foram criados e guiar-te-á à caixa para os rever.";
 "tutorials.inboxApproval.step3.desc" = "Na tua caixa poderás aprovar transações, selecionar Aprovar depois para as ver depois ou rejeitá-las diretamente.";
 "tutorials.applePay.step0.desc" = "Abre a app Atalhos e vai à secção de Automatizações.";
 "tutorials.applePay.step1.desc" = "Toca em Nova automatização, seleciona a opção de Wallet, escolhe os cartões que queiras usar e seleciona Executar imediatamente.";
-"tutorials.applePay.step2.desc" = "Seleciona Criar novo atalho e procura Yala ao fundo do todo. No Yala seleciona o atalho Registo Apple Pay.";
-"tutorials.applePay.step3.desc" = "Em Montante seleciona Entrada do atalho e depois Quantidade. Faz o mesmo para Comerciante e Nome respetivamente. Desativa o botão de \"Mostrar ao executar\".";
+"tutorials.applePay.step2.desc" = "Seleciona Criar novo atalho e procura Yala ao fundo do todo. No Yala seleciona o atalho «Registrar pagamento Apple Pay».";
+"tutorials.applePay.step3.desc" = "Em Valor seleciona Entrada do atalho e depois Quantidade. Faz o mesmo para Comerciante e Nome respetivamente. Desativa o botão de \"Mostrar ao executar\".";
 
 "tutorials.applePay.completion.title" = "Apple Pay conectado!";
 "tutorials.applePay.completion.desc" = "Com isto já terás registos automáticos cada vez que uses Apple Pay com os cartões selecionados. Cada pagamento criará um rascunho na tua caixa de entrada.";
@@ -2826,17 +2826,14 @@
 "siriShortcuts.shortcut.voice" = "Entrada por voz";
 "siriShortcuts.shortcut.image" = "Registrar com foto ou arquivo";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "Automatização";
 "siriShortcuts.desc.quick" = "Abre o formulário de registo com um toque.";
 "siriShortcuts.desc.voice" = "Dita o valor e a descrição com a tua voz.";
 "siriShortcuts.desc.image" = "Digitaliza um recibo ou talão com a câmara.";
 "siriShortcuts.desc.applePay" = "Regista um pagamento feito com Apple Pay.";
-"siriShortcuts.desc.automation" = "Cria registos automáticos com atalhos do sistema.";
 "siriShortcuts.phrase.quick" = "Regista no Yala";
 "siriShortcuts.phrase.voice" = "Regista com voz no Yala";
 "siriShortcuts.phrase.image" = "Registre com foto ou arquivo no Yala";
 "siriShortcuts.phrase.applePay" = "Regista Apple Pay no Yala";
-"siriShortcuts.phrase.automation" = "Regista a partir de automatização no Yala";
 "siriShortcuts.faq.title" = "Perguntas frequentes";
 "siriShortcuts.faq.activateQ" = "Como ativo o Siri?";
 "siriShortcuts.faq.activateA" = "É automático. Basta dizer a frase ao Siri e o Yala processará o teu pedido.";

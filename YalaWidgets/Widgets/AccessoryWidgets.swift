@@ -401,7 +401,7 @@ struct AccessoryNextPaymentWidget: Widget {
             AccessoryNextPaymentWidgetView(entry: entry)
                 // El enlace va DENTRO del modificador: en solo grupos la invitación lo sustituye por el suyo, y dos
                 // `widgetURL` en la misma jerarquía no tienen comportamiento definido.
-                .widgetURL(WidgetURLHelper.url(for: "planning"))
+                .widgetURL(WidgetURLHelper.url(for: "planning/scheduled-payments"))
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(.clear, for: .widget)
         }

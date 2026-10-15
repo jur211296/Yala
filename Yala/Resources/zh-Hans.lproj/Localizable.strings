@@ -2786,13 +2786,13 @@
 "tutorials.panelFiltering.step2.desc" = "在应用的不同视图中,你都可以通过图表按你的喜好筛选。";
 "tutorials.panelFiltering.step3.desc" = "筛选会等同地传递到所有视图,因此你可以为任意筛选目标看到各种指标。";
 "tutorials.panelFiltering.step4.desc" = "在某些视图中,顶部还会有一个筛选版块,让你按喜好筛选或一键清除全部。";
-"tutorials.inboxApproval.step0.desc" = "如果你是 Yala Pro 用户,用语音或图片记录时会自动跳转到草稿。使用 Apple Pay 记录快捷指令时也是。";
+"tutorials.inboxApproval.step0.desc" = "如果你是 Yala Pro 用户,用语音或图片记录时会自动跳转到草稿。使用「记录 Apple Pay 付款」快捷指令时也是。";
 "tutorials.inboxApproval.step1.desc" = "只需填写必填字段并审批。交易将正常创建。";
 "tutorials.inboxApproval.step2.desc" = "你也可以用语音或图片记录多笔交易。它会告诉你创建了多少草稿,并引导你到收件箱查看。";
 "tutorials.inboxApproval.step3.desc" = "在收件箱中你可以审批交易、选择「稍后审批」延后查看,或直接拒绝。";
 "tutorials.applePay.step0.desc" = "打开「快捷指令」应用,前往「自动化」版块。";
 "tutorials.applePay.step1.desc" = "点击「新建自动化」,选择 Wallet 选项,选择要使用的卡片,然后选择「立即运行」。";
-"tutorials.applePay.step2.desc" = "选择「创建新快捷指令」,在最底部搜索 Yala。在 Yala 中选择「Apple Pay 记录」快捷指令。";
+"tutorials.applePay.step2.desc" = "选择「创建新快捷指令」,在最底部搜索 Yala。在 Yala 中选择「记录 Apple Pay 付款」快捷指令。";
 "tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家和名称分别同样处理。关闭「运行时显示」开关。";
 
 "tutorials.applePay.completion.title" = "Apple Pay 已连接!";
@@ -2830,17 +2830,14 @@
 "siriShortcuts.shortcut.voice" = "语音输入";
 "siriShortcuts.shortcut.image" = "用照片或文件记账";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "自动化";
 "siriShortcuts.desc.quick" = "一键打开记录表单。";
 "siriShortcuts.desc.voice" = "用语音口述金额和描述。";
 "siriShortcuts.desc.image" = "用相机扫描收据或票据。";
 "siriShortcuts.desc.applePay" = "记录一笔 Apple Pay 付款。";
-"siriShortcuts.desc.automation" = "用系统快捷指令创建自动记录。";
 "siriShortcuts.phrase.quick" = "在 Yala 中记录";
 "siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
 "siriShortcuts.phrase.image" = "用照片或文件在 Yala 中记录";
 "siriShortcuts.phrase.applePay" = "在 Yala 记录 Apple Pay";
-"siriShortcuts.phrase.automation" = "在 Yala 记录自动化";
 "siriShortcuts.faq.title" = "常见问题";
 "siriShortcuts.faq.activateQ" = "我怎么激活 Siri?";
 "siriShortcuts.faq.activateA" = "自动激活。只需对 Siri 说出对应短语,Yala 就会处理你的请求。";

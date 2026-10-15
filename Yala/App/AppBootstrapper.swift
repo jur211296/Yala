@@ -2193,6 +2193,14 @@ final class AppBootstrapper {
     /// consentimiento también salen en el Panel. Con una hoja abierta en otra pestaña, la pestaña cambia por debajo sin
     /// cerrarla y el Panel espera a que se cierre para presentar.
     private func executeAction(_ action: PanelAction) {
+        // En una sesión solo grupos no hay Panel: el `.navigate(.panel)` se descarta y la hoja esperaba a un Panel que
+        // nunca se monta, así que el toque del widget, del Centro de Control o del atajo de Siri abría Yala en Grupos
+        // sin hacer nada (auditoría UX 2.2, lote 15). Se ofrece activar Yala completo, como el toque de cualquier
+        // widget de datos en esa sesión (decisión de Jürgen del 2026-09-09).
+        if sessionState.isGroupsFocusedShell {
+            RouterEntryGate.shared.submit(.presentFullModeActivation)
+            return
+        }
         RouterEntryGate.shared.submit(.navigate(.panel))
         switch action {
         case .newTransaction:
@@ -2494,7 +2502,13 @@ final class AppBootstrapper {
             }
 
         case "planning":
-            setOrDeferDeepLink(.planning)
+            // `planning/scheduled-payments` lo usan los widgets de pagos («Próximos pagos» y «Próximo pago»): sin la
+            // sub-pestaña, Planificación abría la última vista, de fábrica Presupuestos (auditoría UX 2.2, lote 15).
+            if url.pathComponents.contains("scheduled-payments") {
+                setOrDeferDeepLink(.scheduledPayments)
+            } else {
+                setOrDeferDeepLink(.planning)
+            }
 
         case "budgets":
             setOrDeferDeepLink(.budgets)

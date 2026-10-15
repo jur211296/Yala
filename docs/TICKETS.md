@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (908)
+## Index (909)
 
 | id | status | path |
 |---|---|---|
@@ -324,6 +324,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | export-errors-are-hardcoded-in-spanish | backlog | tickets/backlog/export-errors-are-hardcoded-in-spanish.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
+| external-entry-panel-link-loses-the-typed-amount-intermittently | backlog | tickets/backlog/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | faq-says-long-press-starts-bulk-edit | done | tickets/done/faq-says-long-press-starts-bulk-edit.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |

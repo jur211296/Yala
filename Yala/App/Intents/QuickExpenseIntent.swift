@@ -224,36 +224,19 @@ struct SiriNaturalEntryIntent: AppIntent {
             return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
         }
 
-        // Step 4: Parse with LLM (con offline fallback). Las subcategorías salen de la caché.
-        var parsedTransactions: [ParsedTransaction] = []
-        var isOfflineFallback = false
-        do {
-            parsedTransactions = try await TranscriptionParserService.shared.parseMultiple(
-                text: finalText,
+        // Step 4: Parse with LLM (con offline fallback). Las subcategorías salen de la caché. Sin el consentimiento de
+        // IA el texto no sale del teléfono: solo la lectura local del monto (auditoría UX 2.2, lote 15).
+        let aiConsentAccepted = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted)
+        let (parsedTransactions, isOfflineFallback) = await Self.parseTransactions(
+            finalText,
+            consentAccepted: aiConsentAccepted
+        ) { text in
+            try await TranscriptionParserService.shared.parseMultiple(
+                text: text,
                 expenseSubcategories: cachedContext?.expenseSubcategories ?? [],
                 incomeSubcategories: cachedContext?.incomeSubcategories ?? [],
                 currency: cachedContext?.parserCurrency ?? .unknown
             )
-        } catch {
-            #if DEBUG
-            print("SiriNaturalEntryIntent: LLM parsing failed: \(error)")
-            #endif
-            // Offline fallback: AmountParser para extracción básica del monto.
-            isOfflineFallback = true
-            if let parsed = AmountParser.parse(finalText) {
-                parsedTransactions = [ParsedTransaction(
-                    amount: parsed.amount,
-                    date: nil,
-                    note: finalText,
-                    isExpense: true,
-                    subcategoryHint: nil,
-                    tagHints: [],
-                    currencyHint: nil,
-                    confidence: ParsedTransaction.TransactionConfidence(
-                        amount: parsed.confidence, date: 0.0, merchant: 0.0, subcategory: 0.0, tags: 0.0
-                    )
-                )]
-            }
         }
 
         // Pre-flight quality gate: descarta transactions sin amount. Si TODAS fallan → error.
@@ -277,7 +260,8 @@ struct SiriNaturalEntryIntent: AppIntent {
         // Step 6: Notificación local (la app refresca la Bandeja al abrir).
         let firstParsed = validParsed.first
         let firstNote = (firstParsed?.note).flatMap { $0.isEmpty ? nil : $0 } ?? finalText
-        let notifBody = isOfflineFallback
+        // «(sin conexión)» solo es verdad si se intentó leer en el servidor y falló; sin consentimiento no se intentó.
+        let notifBody = isOfflineFallback && aiConsentAccepted
             ? String(localized: "shortcut.siriNatural.notification.bodyOffline")
             : String(localized: "shortcut.siriNatural.notification.body \(firstNote)")
         await NotificationService.shared.sendNotification(
@@ -313,6 +297,42 @@ struct SiriNaturalEntryIntent: AppIntent {
             isDraft: true
         )
         return .result(dialog: IntentDialog(stringLiteral: dialogText), view: snippet)
+    }
+
+    /// Lee el texto dictado. Con el consentimiento de IA lo manda a `remote` (el LLM, a través del servidor) y, si
+    /// falla, cae a la lectura local del monto. **Sin el consentimiento, `remote` no se llama**: el texto no sale del
+    /// teléfono y queda la lectura local, como sin conexión. Hasta el lote 15 de la auditoría UX 2.2 el atajo mandaba
+    /// el texto a OpenAI aunque la persona no hubiera aceptado el aviso de «Procesamiento de voz e imágenes»: la voz y
+    /// la foto de la app lo piden siempre (`AppBootstrapper.executeAction`) y este atajo no lo miraba.
+    @MainActor
+    static func parseTransactions(
+        _ text: String,
+        consentAccepted: Bool,
+        remote: (String) async throws -> [ParsedTransaction]
+    ) async -> (transactions: [ParsedTransaction], isOfflineFallback: Bool) {
+        if consentAccepted {
+            do {
+                return (try await remote(text), false)
+            } catch {
+                #if DEBUG
+                print("SiriNaturalEntryIntent: LLM parsing failed: \(error)")
+                #endif
+            }
+        }
+        // Lectura local: AmountParser para extracción básica del monto.
+        guard let parsed = AmountParser.parse(text) else { return ([], true) }
+        return ([ParsedTransaction(
+            amount: parsed.amount,
+            date: nil,
+            note: text,
+            isExpense: true,
+            subcategoryHint: nil,
+            tagHints: [],
+            currencyHint: nil,
+            confidence: ParsedTransaction.TransactionConfidence(
+                amount: parsed.confidence, date: 0.0, merchant: 0.0, subcategory: 0.0, tags: 0.0
+            )
+        )], true)
     }
 }
 

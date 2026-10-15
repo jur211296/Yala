@@ -2864,7 +2864,6 @@
 "shortcut.voiceEntry.title" = "Registrar por voz";
 "siriShortcuts.all.title" = "Outros atalhos";
 "siriShortcuts.desc.applePay" = "Regista um pagamento feito com Apple Pay.";
-"siriShortcuts.desc.automation" = "Cria registos automáticos com atalhos do sistema.";
 "siriShortcuts.desc.image" = "Digitaliza um recibo ou talão com a câmara.";
 "siriShortcuts.desc.quick" = "Abre o formulário de registo com um toque.";
 "siriShortcuts.desc.voice" = "Dita o valor e a descrição com a tua voz.";
@@ -2876,12 +2875,10 @@
 "siriShortcuts.faq.offlineQ" = "Funciona sem internet?";
 "siriShortcuts.faq.title" = "Perguntas frequentes";
 "siriShortcuts.phrase.applePay" = "Regista Apple Pay no Yala";
-"siriShortcuts.phrase.automation" = "Regista a partir de automatização no Yala";
 "siriShortcuts.phrase.image" = "Regista com foto ou ficheiro no Yala";
 "siriShortcuts.phrase.quick" = "Regista no Yala";
 "siriShortcuts.phrase.voice" = "Regista com voz no Yala";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "Automatização";
 "siriShortcuts.shortcut.image" = "Registar com foto ou ficheiro";
 "siriShortcuts.shortcut.quick" = "Registo rápido";
 "siriShortcuts.shortcut.voice" = "Entrada por voz";
@@ -3312,9 +3309,9 @@
 "tutorials.applePay.step0.title" = "Abre Atalhos";
 "tutorials.applePay.step1.desc" = "Toca em Nova automatização, seleciona a opção de Wallet, escolhe os cartões que queiras usar e seleciona Executar imediatamente.";
 "tutorials.applePay.step1.title" = "Cria a automatização";
-"tutorials.applePay.step2.desc" = "Seleciona Criar novo atalho e procura Yala ao fundo do todo. No Yala seleciona o atalho Registo Apple Pay.";
+"tutorials.applePay.step2.desc" = "Seleciona Criar novo atalho e procura Yala ao fundo do todo. No Yala seleciona o atalho «Registrar pagamento Apple Pay».";
 "tutorials.applePay.step2.title" = "Seleciona o atalho do Yala";
-"tutorials.applePay.step3.desc" = "Em Montante seleciona Entrada do atalho e depois Quantidade. Faz o mesmo para Comerciante e Nome respetivamente. Desativa o botão de \"Mostrar ao executar\".";
+"tutorials.applePay.step3.desc" = "Em Valor seleciona Entrada do atalho e depois Quantidade. Faz o mesmo para Comerciante e Nome respetivamente. Desativa o botão de \"Mostrar ao executar\".";
 "tutorials.applePay.step3.title" = "Configura os parâmetros";
 "tutorials.applePay.title" = "Registar com Apple Pay";
 "tutorials.category.advanced" = "Avançado";
@@ -3430,7 +3427,7 @@
 "tutorials.inboxApproval.completion.title" = "Caixa dominada!";
 "tutorials.inboxApproval.intro.desc" = "Revise e aprove gastos automáticos do Apple Pay, voz ou câmera.";
 "tutorials.inboxApproval.intro.title" = "A tua caixa inteligente";
-"tutorials.inboxApproval.step0.desc" = "Se és utilizador Yala Pro, quando fizeres um registo por voz ou imagem, automaticamente levar-te-á ao rascunho. O mesmo se usaste o atalho de Registo Apple Pay.";
+"tutorials.inboxApproval.step0.desc" = "Se és utilizador Yala Pro, quando fizeres um registo por voz ou imagem, automaticamente levar-te-á ao rascunho. O mesmo se usaste o atalho «Registrar pagamento Apple Pay».";
 "tutorials.inboxApproval.step0.title" = "Registre por voz ou imagem";
 "tutorials.inboxApproval.step1.desc" = "Simplesmente preenche os campos obrigatórios e aprova. Criar-se-á a transação com normalidade.";
 "tutorials.inboxApproval.step1.title" = "Preenche e aprova";

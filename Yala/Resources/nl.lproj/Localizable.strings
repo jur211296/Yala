@@ -2786,13 +2786,13 @@
 "tutorials.panelFiltering.step2.desc" = "In de verschillende weergaven van de app zie je dat je naar wens kunt filteren met de grafieken.";
 "tutorials.panelFiltering.step3.desc" = "Filters worden gelijkmatig op alle weergaven toegepast, zodat je allerlei statistieken ziet voor wat je ook wilt filteren.";
 "tutorials.panelFiltering.step4.desc" = "In sommige weergaven heb je ook een filtersectie bovenaan zodat je naar wens kunt filteren of alles met één knop kunt verwijderen.";
-"tutorials.inboxApproval.step0.desc" = "Als je Yala Pro gebruikt, brengt een spraak- of afbeeldingsboeking je automatisch naar het concept. Hetzelfde geldt voor de Apple Pay-shortcut.";
+"tutorials.inboxApproval.step0.desc" = "Als je Yala Pro gebruikt, brengt een spraak- of afbeeldingsboeking je automatisch naar het concept. Hetzelfde geldt voor de opdracht ‘Apple Pay-betaling boeken’.";
 "tutorials.inboxApproval.step1.desc" = "Vul gewoon de verplichte velden in en keur goed. De transactie wordt normaal aangemaakt.";
 "tutorials.inboxApproval.step2.desc" = "Je kunt ook spraak- of afbeeldingsboekingen met meerdere transacties maken. De app vertelt je hoeveel concepten er zijn gemaakt en leidt je naar de inbox om ze te bekijken.";
 "tutorials.inboxApproval.step3.desc" = "In je inbox kun je transacties goedkeuren, kiezen voor 'Later goedkeuren' om ze later te bekijken of ze direct weigeren.";
 "tutorials.applePay.step0.desc" = "Open de Opdrachten-app en ga naar de sectie Automatiseringen.";
 "tutorials.applePay.step1.desc" = "Tik op Nieuwe automatisering, kies de optie Wallet, selecteer de kaarten die je wilt gebruiken en kies Direct uitvoeren.";
-"tutorials.applePay.step2.desc" = "Kies Maak nieuwe opdracht en zoek helemaal onderaan naar Yala. Selecteer in Yala de Apple Pay-shortcut.";
+"tutorials.applePay.step2.desc" = "Kies Maak nieuwe opdracht en zoek helemaal onderaan naar Yala. Selecteer in Yala de opdracht ‘Apple Pay-betaling boeken’.";
 "tutorials.applePay.step3.desc" = "Voor Bedrag kies je Opdrachtinvoer en daarna Bedrag. Doe hetzelfde voor Verkoper en Naam. Zet de schakelaar \"Toon bij uitvoeren\" uit.";
 
 "tutorials.applePay.completion.title" = "Apple Pay verbonden!";
@@ -2830,17 +2830,14 @@
 "siriShortcuts.shortcut.voice" = "Spraakinvoer";
 "siriShortcuts.shortcut.image" = "Vastleggen met foto of bestand";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "Automatisering";
 "siriShortcuts.desc.quick" = "Opent het boekformulier met één tik.";
 "siriShortcuts.desc.voice" = "Dicteer het bedrag en de omschrijving met je stem.";
 "siriShortcuts.desc.image" = "Scan een bonnetje of ticket met je camera.";
 "siriShortcuts.desc.applePay" = "Boek een betaling die met Apple Pay is gedaan.";
-"siriShortcuts.desc.automation" = "Maak automatische boekingen via systeemshortcuts.";
 "siriShortcuts.phrase.quick" = "Boeken in Yala";
 "siriShortcuts.phrase.voice" = "Boeken met spraak in Yala";
 "siriShortcuts.phrase.image" = "Boeken met foto of bestand in Yala";
 "siriShortcuts.phrase.applePay" = "Apple Pay boeken in Yala";
-"siriShortcuts.phrase.automation" = "Boeken via automatisering in Yala";
 "siriShortcuts.faq.title" = "Veelgestelde vragen";
 "siriShortcuts.faq.activateQ" = "Hoe activeer ik Siri?";
 "siriShortcuts.faq.activateA" = "Het is automatisch. Zeg de zin gewoon tegen Siri en Yala verwerkt je verzoek.";
