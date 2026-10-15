@@ -3340,7 +3340,7 @@
 "chat.errorGeneric" = "Quelque chose s'est mal passé. Réessaie.";
 "chat.errorNoData" = "Aucune donnée trouvée pour cette requête. Peux-tu être plus précis ?";
 "chat.dailyLimitReached" = "Tu as utilisé tes questions pour aujourd'hui. Reviens demain !";
-"chat.questionsRemaining" = "Il te reste %d questions aujourd'hui";
+"chat.questionsRemaining" = "Questions restantes aujourd'hui : %d";
 "chat.loading" = "Consultation...";
 "chat.questionTooLong" = "Ta question est trop longue. Essaie d'être plus concis.";
 "chat.contextHint" = "Je peux me souvenir de ta dernière question pour le suivi";
@@ -4127,7 +4127,7 @@
 "yalaAI.onboarding.close" = "Fermer";
 "yalaAI.onboarding.previewLabel" = "Aperçu";
 "yalaAI.onboarding.progressLabel" = "Étape %1$d sur %2$d";
-"yalaAI.onboarding.step1.title" = "Voici Yala AI";
+"yalaAI.onboarding.step1.title" = "Voici Yala IA";
 "yalaAI.onboarding.step1.subtitle" = "Votre bras droit financier.";
 "yalaAI.onboarding.step1.demoScenario1User" = "12 € dépensés au déjeuner.";
 "yalaAI.onboarding.step1.demoScenario1Bot" = "C'est noté ! J'ai enregistré votre déjeuner de 12 €.";
@@ -4136,9 +4136,9 @@
 "yalaAI.onboarding.step1.demoScenario3User" = "Un conseil ?";
 "yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Vos livraisons ont augmenté de 20 % par rapport au mois dernier. En revenant à votre rythme habituel, vous économisez 60 € par mois — près de 720 € par an.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Déjeuner";
-"yalaAI.onboarding.step1.a11yLabel" = "Exemple de chat avec Yala AI enregistrant une dépense";
+"yalaAI.onboarding.step1.a11yLabel" = "Exemple de chat avec Yala IA enregistrant une dépense";
 "yalaAI.onboarding.step2.title" = "Voici ce que vous pouvez faire";
-"yalaAI.onboarding.step2.subtitle" = "Trois façons de profiter de Yala AI.";
+"yalaAI.onboarding.step2.subtitle" = "Trois façons de profiter de Yala IA.";
 "yalaAI.onboarding.step2.card1.badge" = "Nouveau";
 "yalaAI.onboarding.step2.card1.title" = "Enregistrez vos dépenses à l'instant";
 "yalaAI.onboarding.step2.card1.body" = "Par texte ou par voix, sans formulaires. Dites-le, c'est tout.";

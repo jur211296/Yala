@@ -3350,7 +3350,7 @@
 "chat.errorGeneric" = "Er ging iets mis. Probeer opnieuw.";
 "chat.errorNoData" = "Geen gegevens gevonden voor die vraag. Kun je specifieker zijn?";
 "chat.dailyLimitReached" = "Je hebt je vragen voor vandaag opgebruikt. Kom morgen terug!";
-"chat.questionsRemaining" = "Je hebt vandaag nog %d vragen over";
+"chat.questionsRemaining" = "Resterende vragen vandaag: %d";
 "chat.loading" = "Aan het denken...";
 "chat.questionTooLong" = "Je vraag is te lang. Probeer beknopter te zijn.";
 "chat.contextHint" = "Ik kan je laatste vraag onthouden voor vervolgvragen";

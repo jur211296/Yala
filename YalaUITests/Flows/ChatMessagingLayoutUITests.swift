@@ -24,14 +24,23 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
-    private func openChat(conversation: Bool = false, drafts: Bool = false) -> XCUIApplication {
+    private func openChat(conversation: Bool = false, drafts: Bool = false, questionsToday: Int? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        // El contador de preguntas del día vive en UserDefaults (`chatQuestionsToday` + `chatLastQuestionDate`); como
+        // argumento de lanzamiento entra por el dominio de argumentos, que manda sobre lo guardado.
+        var counter: [String] = []
+        if let questionsToday {
+            let day = DateFormatter()
+            day.locale = Locale(identifier: "en_US_POSIX")
+            day.dateFormat = "yyyy-MM-dd"
+            counter = ["-chatQuestionsToday", "\(questionsToday)", "-chatLastQuestionDate", day.string(from: Date())]
+        }
         app.launchForUITest(
             pro: true,
             deeplink: "records",
             aiChatReady: true,
             chatConversation: conversation,
-            extraArguments: ["-uitest-chat-suggestions"] + (drafts ? ["-uitest-chat-draft"] : [])
+            extraArguments: ["-uitest-chat-suggestions"] + (drafts ? ["-uitest-chat-draft"] : []) + counter
         )
         XCTAssertTrue(app.waitForUITestReady(timeout: 90), "uitest_ready ausente — bootstrap/seed no completó.")
         let chatEntry = app.buttons["fab_chat"]
@@ -144,5 +153,34 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         app.chooseFirstSelectorRow(chip: "chat_draft_detail_account", rowPrefix: "account_selector_row_", timeout: 10)
 
         XCTAssertTrue(accountRow.waitForExistence(timeout: 10), "Tras elegir cuenta se vuelve a la hoja de detalles.")
+    }
+
+    /// La hoja de detalles escribe la divisa como la tarjeta del chat: con el formato «Símbolo» (el de fábrica),
+    /// «S/» y no «PEN». Antes pintaba siempre el código (lote 14 de la auditoría UX 2.2).
+    func test_draftDetails_currencyFollowsTheSymbolPreference() {
+        let app = openChat(drafts: true)
+
+        let details = app.buttons.matching(identifier: "chat_draft_details").firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 10), "Falta «Detalles» en la card.")
+        details.tap()
+
+        let currency = app.staticTexts["chat_draft_detail_currency"]
+        XCTAssertTrue(currency.waitForExistence(timeout: 10), "No se abrió la hoja de detalles.")
+        XCTAssertEqual(currency.label, "S/", "Con el formato «Símbolo», la hoja debe decir «S/», como la tarjeta.")
+    }
+
+    /// Con una pregunta por delante, el contador no rompe el plural; con el tope alcanzado, dice por qué no se puede
+    /// enviar en vez de «Te quedan 0 preguntas hoy» (lote 14 de la auditoría UX 2.2).
+    func test_questionCounter_readsWellWithOneLeft_andExplainsTheLimit() {
+        let oneLeft = openChat(conversation: true, questionsToday: 74)
+        let counter = oneLeft.staticTexts["chat_question_counter"]
+        XCTAssertTrue(counter.waitForExistence(timeout: 10), "Con 74 de 75 preguntas debe verse el contador.")
+        XCTAssertEqual(counter.label, "Preguntas que te quedan hoy: 1")
+        oneLeft.terminate()
+
+        let none = openChat(conversation: true, questionsToday: 75)
+        let limit = none.staticTexts["chat_question_counter"]
+        XCTAssertTrue(limit.waitForExistence(timeout: 10), "Con el tope alcanzado debe verse el aviso.")
+        XCTAssertEqual(limit.label, "Has usado tus preguntas de hoy. ¡Vuelve mañana!")
     }
 }

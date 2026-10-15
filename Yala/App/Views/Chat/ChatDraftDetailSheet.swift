@@ -24,6 +24,7 @@ struct ChatDraftDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var activeField: ChatDraftField?
     @State private var selectedDetent: PresentationDetent = .medium
@@ -113,9 +114,11 @@ struct ChatDraftDetailSheet: View {
             .font(DS.Typography.title)
             .focused($focusedField, equals: .amount)
             .accessibilityIdentifier("chat_draft_detail_amount")
-            Text(draft.currencyCode)
+            // Símbolo o código según la preferencia del usuario, como la tarjeta del chat y la Bandeja.
+            Text(appPreferences.currencyIdentifier(for: draft.currencyCode))
                 .font(DS.Typography.labelSmall)
                 .foregroundStyle(.secondary)
+                .accessibilityIdentifier("chat_draft_detail_currency")
         }
     }
 

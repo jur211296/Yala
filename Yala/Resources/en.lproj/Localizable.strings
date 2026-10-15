@@ -3390,7 +3390,7 @@
 "chat.errorGeneric" = "Something went wrong. Try again.";
 "chat.errorNoData" = "No data found for that query. Can you be more specific?";
 "chat.dailyLimitReached" = "You've used your questions for today. Come back tomorrow!";
-"chat.questionsRemaining" = "You have %d questions left today";
+"chat.questionsRemaining" = "Questions left today: %d";
 "chat.loading" = "Thinking...";
 "chat.questionTooLong" = "Your question is too long. Try to be more concise.";
 "chat.contextHint" = "I can remember your last question for follow-ups";

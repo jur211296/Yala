@@ -3339,7 +3339,7 @@
 "chat.errorGeneric" = "Algo deu errado. Tente novamente.";
 "chat.errorNoData" = "Nenhum dado encontrado para essa consulta. Pode ser mais específico?";
 "chat.dailyLimitReached" = "Você usou suas perguntas de hoje. Volte amanhã!";
-"chat.questionsRemaining" = "Você tem %d perguntas restantes hoje";
+"chat.questionsRemaining" = "Perguntas restantes hoje: %d";
 "chat.loading" = "Consultando...";
 "chat.questionTooLong" = "Sua pergunta é muito longa. Tente ser mais conciso.";
 "chat.contextHint" = "Posso lembrar da sua última pergunta para dar seguimento";
@@ -4126,7 +4126,7 @@
 "yalaAI.onboarding.close" = "Fechar";
 "yalaAI.onboarding.previewLabel" = "Pré-visualização";
 "yalaAI.onboarding.progressLabel" = "Passo %1$d de %2$d";
-"yalaAI.onboarding.step1.title" = "Te apresento o Yala AI";
+"yalaAI.onboarding.step1.title" = "Te apresento o Yala IA";
 "yalaAI.onboarding.step1.subtitle" = "Sua mão direita financeira.";
 "yalaAI.onboarding.step1.demoScenario1User" = "Gastei R$12 no almoço.";
 "yalaAI.onboarding.step1.demoScenario1Bot" = "Pronto! Registrei seu almoço de R$12.";
@@ -4135,9 +4135,9 @@
 "yalaAI.onboarding.step1.demoScenario3User" = "Algum conselho?";
 "yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Seu delivery subiu 20% vs o mês passado. Voltando ao seu ritmo normal, você economiza R$200 por mês — quase R$2.400 por ano.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Almoço";
-"yalaAI.onboarding.step1.a11yLabel" = "Exemplo de chat com o Yala AI registrando um gasto";
+"yalaAI.onboarding.step1.a11yLabel" = "Exemplo de chat com o Yala IA registrando um gasto";
 "yalaAI.onboarding.step2.title" = "Aqui está o que você pode fazer";
-"yalaAI.onboarding.step2.subtitle" = "Três formas de aproveitar o Yala AI.";
+"yalaAI.onboarding.step2.subtitle" = "Três formas de aproveitar o Yala IA.";
 "yalaAI.onboarding.step2.card1.badge" = "Novo";
 "yalaAI.onboarding.step2.card1.title" = "Registre gastos na hora";
 "yalaAI.onboarding.step2.card1.body" = "Por texto ou voz, sem formulários. É só falar.";
