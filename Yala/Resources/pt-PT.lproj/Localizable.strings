@@ -746,7 +746,7 @@
 "budgets.alerts.addThreshold" = "Adicionar";
 "budgets.alerts.custom" = "Personalizar";
 "budgets.alerts.enable" = "Notificar ao atingir limite";
-"budgets.alerts.globalDisabledHint" = "Ative os alertas de orcamento em Perfil > Notificacoes para recebe-los";
+"budgets.alerts.globalDisabledHint" = "Ative os alertas de orçamento em Perfil > Notificações para recebê-los";
 "budgets.alerts.message.100" = "Limite atingido em \"%1$@\" — %2$@ de %3$@";
 "budgets.alerts.message.50" = "Na metade de \"%1$@\" — %2$@ de %3$@ usados";
 "budgets.alerts.message.75" = "75%% de \"%1$@\" usado — %2$@ de %3$@";
@@ -760,9 +760,9 @@
 "budgets.charts.noData" = "Sem dados para este período";
 "budgets.charts.title" = "Gráficos";
 "budgets.days.remaining" = "%@ dias restantes";
-"budgets.delete" = "Eliminar orcamento";
-"budgets.delete.confirm.message" = "Esta acao nao pode ser desfeita.";
-"budgets.delete.confirm.title" = "Eliminar orcamento?";
+"budgets.delete" = "Eliminar orçamento";
+"budgets.delete.confirm.message" = "Esta ação não pode ser desfeita.";
+"budgets.delete.confirm.title" = "Eliminar orçamento?";
 "budgets.detail.accounts" = "Contas";
 "budgets.detail.alerts" = "Alertas";
 "budgets.detail.allAccounts" = "Todas as contas";
@@ -776,23 +776,23 @@
 "budgets.detail.status" = "Status";
 "budgets.detail.subcategories" = "Subcategorias";
 "budgets.detail.tags" = "Tags";
-"budgets.edit" = "Editar orcamento";
+"budgets.edit" = "Editar orçamento";
 "budgets.editor.amount.placeholder" = "Valor";
-"budgets.editor.basic.info" = "Informacao basica";
+"budgets.editor.basic.info" = "Informação básica";
 "budgets.editor.date.range" = "Intervalo de datas";
 "budgets.editor.end.date" = "Data final";
 "budgets.editor.filters" = "Filtros";
-"budgets.editor.name.placeholder" = "Nome do orcamento";
-"budgets.editor.period.type" = "Periodo";
+"budgets.editor.name.placeholder" = "Nome do orçamento";
+"budgets.editor.period.type" = "Período";
 "budgets.editor.start.date" = "Data inicial";
-"budgets.empty.message" = "Crie orcamentos para controlar seus gastos.";
-"budgets.empty.title" = "Sem orcamentos";
+"budgets.empty.message" = "Crie orçamentos para controlar seus gastos.";
+"budgets.empty.title" = "Sem orçamentos";
 "budgets.exceeded.encouragement" = "Passaste do orçamento — o próximo período será melhor!";
 "budgets.favorites.previewEmpty" = "Selecione favoritos para ver a pré-visualização";
 "budgets.favorites.previewTitle" = "Assim ficará o seu widget";
 "budgets.includeSharedExpenses" = "Incluir gastos compartilhados";
 "budgets.includeSharedExpensesHint" = "Quando desativado, apenas seus gastos pessoais contam";
-"budgets.new" = "Novo orcamento";
+"budgets.new" = "Novo orçamento";
 "budgets.period.all" = "Todos";
 "budgets.period.confirm" = "Concluido";
 "budgets.period.current.month" = "Este mes";
@@ -804,7 +804,7 @@
 "budgets.period.selector.title.monthly" = "Escolha um mes";
 "budgets.period.selector.title.weekly" = "Escolha uma semana";
 "budgets.period.selector.title.yearly" = "Escolha um ano";
-"budgets.period.unique" = "Unico";
+"budgets.period.unique" = "Único";
 "budgets.period.week.of" = "Semana de %@";
 "budgets.period.weekly" = "Semanal";
 "budgets.period.yearly" = "Anual";
@@ -812,8 +812,8 @@
 "budgets.status.active" = "Ativos";
 "budgets.status.exceeded" = "Excedidos";
 "budgets.status.inactive" = "Inativos";
-"budgets.title" = "Orcamentos";
-"budgets.widget.noFavorites.message" = "Marque orcamentos como favoritos em Configuracoes > Orcamentos para ve-los aqui.";
+"budgets.title" = "Orçamentos";
+"budgets.widget.noFavorites.message" = "Marque orçamentos como favoritos em Configurações > Orçamentos para vê-los aqui.";
 "budgets.widget.noFavorites.title" = "Sem favoritos";
 "budgets.widget.selectFavorites" = "Selecionar favoritos";
 "bulkEdit.availableTags" = "Disponíveis para adicionar";
@@ -1883,7 +1883,7 @@
 "notifications.addNew" = "Nova notificação";
 "notifications.allDays" = "Todos os dias";
 "notifications.budgetAlerts.hint" = "Receba avisos ao se aproximar dos limites";
-"notifications.budgetAlerts.title" = "Alertas de orcamento";
+"notifications.budgetAlerts.title" = "Alertas de orçamento";
 "notifications.dailyReport.hint" = "Às %@ você receberá um resumo de %@ do dia";
 "notifications.dailyReport.name" = "Resumo do dia";
 "notifications.data.balance" = "saldo";
@@ -2431,7 +2431,7 @@
 "planning.budgetCharts.spendingHint" = "Seu gasto acumulado dia a dia.";
 "planning.budgetCharts.spendingTitle" = "Gasto do período";
 "planning.budgetCharts.spentOf" = "Gastos %@ de %@";
-"planning.budgets" = "Orcamentos";
+"planning.budgets" = "Orçamentos";
 "planning.comingSoon" = "Em breve";
 "planning.goals" = "Metas";
 "planning.scheduled.totalLabel" = "Total do mês";
@@ -2645,9 +2645,9 @@
 "settings.averageLine.totalDescription" = "Uma linha horizontal com a média geral.";
 "settings.averageLineDescription" = "Mostra uma linha de média nos gráficos de barras.";
 "settings.budgets" = "Orçamentos";
-"settings.budgetsFavorites" = "Orcamentos favoritos";
-"settings.budgetsFavoritesEmptyHint" = "Crie orcamentos na aba Planejamento.";
-"settings.budgetsFavoritesInfo" = "Os orcamentos favoritos aparecem no widget de Orcamentos (3 em medio, 5 em grande).";
+"settings.budgetsFavorites" = "Orçamentos favoritos";
+"settings.budgetsFavoritesEmptyHint" = "Crie orçamentos na aba Planejamento.";
+"settings.budgetsFavoritesInfo" = "Os orçamentos favoritos aparecem no widget de Orçamentos (3 em médio, 5 em grande).";
 "settings.budgetsFavoritesReorder" = "Ordenar favoritos";
 "settings.cancel" = "Cancelar";
 "settings.categories" = "Categorias";
@@ -5907,3 +5907,12 @@
 "records.groupRecordsDeleteFromGroup" = "Eliminam-se no grupo, para que as contas de todos continuem certas.";
 "records.selectedCount" = "%d selecionados";
 "records.groupRecordsKept" = "%d vêm de um grupo e não são eliminados aqui: elimina-os no grupo.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Ativo";
+"budgets.state.inactive" = "Inativo";
+"budgets.empty.weekly.title" = "Ainda não tem orçamentos semanais";
+"budgets.empty.monthly.title" = "Ainda não tem orçamentos mensais";
+"budgets.empty.yearly.title" = "Ainda não tem orçamentos anuais";
+"budgets.empty.unique.title" = "Ainda não tem orçamentos únicos";
+"budgets.charts.limitAccessibility" = "Limite: %@";

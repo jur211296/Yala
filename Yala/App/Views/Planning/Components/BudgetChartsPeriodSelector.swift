@@ -18,7 +18,9 @@ struct BudgetChartsPeriodSelector: View {
     @Binding var selectedWeek: Date
     @Binding var selectedMonth: Date
     @Binding var selectedYear: Int
-    var transactions: [TransactionItem]
+    /// El movimiento más antiguo guardado: la rueda empieza en su período. Antes se sacaba de los movimientos cargados,
+    /// que solo llegaban a un año atrás, y no se podía elegir un período más viejo.
+    var oldestRecordDate: Date?
 
     @State private var periods: [PeriodOption] = []
     @State private var selectedIndex: Int = 0
@@ -267,7 +269,7 @@ struct BudgetChartsPeriodSelector: View {
         var generatedPeriods: [PeriodOption] = []
 
         let today = Date.now
-        let oldestTransactionDate = transactions.map { $0.date }.min() ?? today
+        let oldestTransactionDate = min(oldestRecordDate ?? today, today)
         let oneYearFromNow = calendar.date(byAdding: .year, value: 1, to: today) ?? today
 
         switch periodType {

@@ -195,6 +195,7 @@ struct BudgetChartsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
         }
         .scrollViewGlassEdges()
+        .accessibilityIdentifier("budget_charts")
         .yalaScreenBackground(.panel)
         .navigationTitle(L10n.BudgetDetail.chartsTitle)
         .navigationBarTitleDisplayMode(.inline)
@@ -203,7 +204,21 @@ struct BudgetChartsView: View {
             localSelectedWeek = viewModel.selectedWeek
             localSelectedMonth = viewModel.selectedMonth
             localSelectedYear = viewModel.selectedYear
+            // El historial mira seis períodos atrás: sin esto, los de hace más de un año salían a 0.
+            if let historyStart = viewModel.historyStart(for: budget) {
+                viewModel.ensureTransactionsLoaded(from: historyStart)
+            }
         }
+        // La navegación propia de esta pantalla puede ir más atrás de lo cargado.
+        .onChange(of: localDateInterval.start) { _, start in
+            viewModel.ensureTransactionsLoaded(from: start)
+        }
+        // El historial cuenta desde el período de la lista, que en ventana ancha se cambia con esto abierto.
+        .onChange(of: viewModel.historyStart(for: budget)) { _, start in
+            if let start { viewModel.ensureTransactionsLoaded(from: start) }
+        }
+        // Lo pedido para estas gráficas no se queda cargado para siempre: la próxima recarga vuelve a lo justo.
+        .onDisappear { viewModel.releaseRequestedTransactions() }
         .sheet(isPresented: $showLocalPeriodSelector) {
             if let pType = periodType {
                 BudgetChartsPeriodSelector(
@@ -211,7 +226,7 @@ struct BudgetChartsView: View {
                     selectedWeek: $localSelectedWeek,
                     selectedMonth: $localSelectedMonth,
                     selectedYear: $localSelectedYear,
-                    transactions: viewModel.allTransactions
+                    oldestRecordDate: viewModel.oldestTransactionDate
                 )
                 .yalaSheetDetents([.medium])
                 .presentationDragIndicator(.visible)
@@ -276,7 +291,7 @@ struct BudgetChartsView: View {
     private var complianceChartContent: some View {
         let data = viewModel.getHistoricalSpending(
             budget: budget,
-            periods: 6,
+            periods: BudgetsViewModel.historyPeriodCount,
             defaultCurrencyCode: appPreferences.defaultCurrencyCode.rawValue
         )
 
@@ -313,7 +328,7 @@ struct BudgetChartsView: View {
                         RuleMark(y: .value("Limit", first.limit))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                             .foregroundStyle(.secondary)
-                            .accessibilityLabel("Budget limit: \(appPreferences.currency(first.limit, currencyCode: budget.currencyCode))")
+                            .accessibilityLabel(L10n.Budgets.chartLimitAccessibility(appPreferences.currency(first.limit, currencyCode: budget.currencyCode)))
                     }
                 }
                 .chartXAxis {

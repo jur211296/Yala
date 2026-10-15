@@ -13,7 +13,9 @@ struct BudgetPeriodSelectorSheet: View {
     @Environment(\.yalaTheme) private var theme
     @ScaledMetric(relativeTo: .largeTitle) private var scaledIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @Bindable var viewModel: BudgetsViewModel
-    var transactions: [TransactionItem]
+    /// El movimiento más antiguo guardado: la rueda empieza en su período. Antes se sacaba de los movimientos cargados,
+    /// que solo llegaban a un año atrás, y no se podía elegir un período más viejo.
+    var oldestRecordDate: Date?
     var onPeriodChange: () -> Void
 
     @State private var periods: [PeriodOption] = []
@@ -289,7 +291,7 @@ struct BudgetPeriodSelectorSheet: View {
 
         // Calculate date range based on transactions
         let today = Date.now
-        let oldestTransactionDate = transactions.map { $0.date }.min() ?? today
+        let oldestTransactionDate = min(oldestRecordDate ?? today, today)
         let oneYearFromNow = calendar.date(byAdding: .year, value: 1, to: today) ?? today
 
         switch viewModel.selectedPeriodType {

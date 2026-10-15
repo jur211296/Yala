@@ -50,6 +50,20 @@ final class BudgetsViewModel {
     private(set) var allTransactions: [TransactionItem] = []
     private(set) var accounts: [Account] = []
 
+    /// Desde qué fecha están cargados `allTransactions` (`loadData`). Todo período que se enseñe tiene que empezar
+    /// después: antes solo se cargaba el último año y un período más viejo salía con el gasto a 0 o a medias.
+    private(set) var transactionsLoadedFrom: Date = .distantFuture
+
+    /// Lo más atrás que una pantalla pidió ver además del período elegido (las gráficas, con su historial y su
+    /// navegación propia). Solo ensancha la ventana.
+    private var requestedTransactionsFloor: Date?
+
+    /// Fecha del movimiento más antiguo guardado: hasta ahí llegan los selectores de período.
+    private(set) var oldestTransactionDate: Date?
+
+    /// Períodos del historial de las gráficas (`BudgetChartsView`).
+    static let historyPeriodCount = 6
+
     // MARK: - Filter State
 
     /// Selected period type for filtering budgets
@@ -216,13 +230,9 @@ final class BudgetsViewModel {
             allBudgets = []
         }
 
-        // Load transactions (filtered by earliest budget date to avoid loading all history)
-        let earliestDate = allBudgets.compactMap { budget -> Date? in
-            // Desde el inicio del DÍA: el único cuenta días enteros (`BudgetPeriodInterval.unique`) y su
-            // fecha guardada puede llevar hora; desde la hora se perderían los gastos de esa mañana.
-            if let start = budget.startDate { return Calendar.current.startOfDay(for: start) }
-            return Calendar.current.date(byAdding: .year, value: -1, to: Date.now)
-        }.min() ?? Calendar.current.date(byAdding: .year, value: -1, to: Date.now) ?? Date.now
+        // Load transactions: no todo el historial, sino desde lo que hace falta para lo que se enseña (el período
+        // elegido de cada tipo, los únicos y lo que pidieron las gráficas), con el último año como mínimo.
+        let earliestDate = requiredTransactionsStart()
         let capturedDate = earliestDate
         let transactionDescriptor = FetchDescriptor<TransactionItem>(
             predicate: #Predicate { $0.date >= capturedDate },
@@ -231,11 +241,29 @@ final class BudgetsViewModel {
         do {
             let fetched = try context.fetch(transactionDescriptor)
             if fetched != allTransactions { allTransactions = fetched }
+            transactionsLoadedFrom = earliestDate
         } catch {
             #if DEBUG
             print("BudgetsViewModel: Error loading transactions: \(error)")
             #endif
             allTransactions = []
+            // Sin cargar nada: la próxima petición vuelve a intentarlo.
+            transactionsLoadedFrom = .distantFuture
+        }
+
+        // El más antiguo, para los selectores de período (un solo registro).
+        var oldestDescriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\TransactionItem.date)])
+        oldestDescriptor.fetchLimit = 1
+        do {
+            // Con tope de 20 años: un registro con el año mal (un CSV) no puede hacer que la rueda semanal fabrique miles
+            // de semanas en el hilo principal.
+            let floor = Calendar.current.date(byAdding: .year, value: -20, to: Date.now) ?? .distantPast
+            oldestTransactionDate = try context.fetch(oldestDescriptor).first.map { max($0.date, floor) }
+        } catch {
+            #if DEBUG
+            print("BudgetsViewModel: Error loading oldest transaction date: \(error)")
+            #endif
+            oldestTransactionDate = nil
         }
 
         // Load accounts
@@ -249,6 +277,88 @@ final class BudgetsViewModel {
             #endif
             accounts = []
         }
+    }
+
+    /// Desde dónde hay que tener cargados los movimientos con el estado de ahora.
+    func requiredTransactionsStart(now: Date = Date.now) -> Date {
+        let calendar = userConfiguredCalendar()
+        var recurringTypes = Set<BudgetPeriodType>()
+        var uniqueStarts: [Date] = []
+        for budget in allBudgets {
+            guard let type = BudgetPeriodType(rawValue: budget.periodType) else { continue }
+            if type == .unique {
+                if let start = budget.startDate { uniqueStarts.append(start) }
+            } else {
+                recurringTypes.insert(type)
+            }
+        }
+        return Self.transactionWindowStart(
+            recurringTypes: recurringTypes,
+            uniqueStarts: uniqueStarts,
+            selectedWeek: selectedWeek,
+            selectedMonth: selectedMonth,
+            selectedYear: selectedYear,
+            requestedFloor: requestedTransactionsFloor,
+            now: now,
+            calendar: calendar
+        )
+    }
+
+    /// Inicio de la ventana de movimientos que necesita la lista: el último año como mínimo, el período elegido de
+    /// cada tipo recurrente que exista, el inicio de cada único (desde el inicio del DÍA: cuenta días enteros y su
+    /// fecha guardada puede llevar hora) y lo que haya pedido otra pantalla.
+    static func transactionWindowStart(
+        recurringTypes: Set<BudgetPeriodType>,
+        uniqueStarts: [Date],
+        selectedWeek: Date,
+        selectedMonth: Date,
+        selectedYear: Int,
+        requestedFloor: Date?,
+        now: Date,
+        calendar: Calendar
+    ) -> Date {
+        var candidates: [Date] = [calendar.date(byAdding: .year, value: -1, to: now) ?? now]
+        candidates += uniqueStarts.map { calendar.startOfDay(for: $0) }
+        for type in recurringTypes {
+            if let interval = historyInterval(
+                periodType: type,
+                offset: 0,
+                selectedWeek: selectedWeek,
+                selectedMonth: selectedMonth,
+                selectedYear: selectedYear,
+                calendar: calendar
+            ) {
+                candidates.append(interval.start)
+            }
+        }
+        if let requestedFloor { candidates.append(requestedFloor) }
+        return candidates.min() ?? now
+    }
+
+    /// Asegura que estén cargados los movimientos desde `date` (las gráficas, que navegan por su cuenta y enseñan
+    /// el historial). Recarga en el acto solo si la ventana no llega.
+    func ensureTransactionsLoaded(from date: Date) {
+        requestedTransactionsFloor = min(requestedTransactionsFloor ?? date, date)
+        guard requiredTransactionsStart() < transactionsLoadedFrom else { return }
+        loadData()
+    }
+
+    /// Suelta lo que pidieron las gráficas al cerrarse. No recarga: la próxima recarga ya carga lo justo.
+    func releaseRequestedTransactions() {
+        requestedTransactionsFloor = nil
+    }
+
+    /// Inicio del historial de las gráficas de un presupuesto recurrente, contado desde el período elegido.
+    func historyStart(for budget: Budget) -> Date? {
+        guard let type = BudgetPeriodType(rawValue: budget.periodType), type != .unique else { return nil }
+        return Self.historyInterval(
+            periodType: type,
+            offset: 1 - Self.historyPeriodCount,
+            selectedWeek: selectedWeek,
+            selectedMonth: selectedMonth,
+            selectedYear: selectedYear,
+            calendar: userConfiguredCalendar()
+        )?.start
     }
 
     /// Check if there are inactive budgets for current period type
@@ -805,7 +915,9 @@ final class BudgetsViewModel {
     /// Compute-only debounced (150ms). Use when a filter/UI input changed
     /// but the underlying DB hasn't mutated.
     func recalculateData(hideInactive: Bool, defaultCurrencyCode: String) {
-        scheduleRecalculation(reload: false, hideInactive: hideInactive, currency: defaultCurrencyCode)
+        // Un período más viejo que lo cargado necesita recargar: si no, su gasto sale a 0 o a medias.
+        let needsWiderWindow = requiredTransactionsStart() < transactionsLoadedFrom
+        scheduleRecalculation(reload: needsWiderWindow, hideInactive: hideInactive, currency: defaultCurrencyCode)
     }
 
     /// Reload + compute debounced (150ms). Use when DB mutations could have

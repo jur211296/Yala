@@ -24,6 +24,12 @@ quedó arreglado en el lote 8 (`String.capitalizingFirstLetter(locale:)`, PR #49
 
 No se tocó por el alcance estricto del lote 8.
 
+**Medido en el lote 9 (2026-10-14), en Presupuestos:** `BudgetsViewModel`, `BudgetChartsView` y los dos selectores
+usan la plantilla FIJA `"MMMM yyyy"`, no `setLocalizedDateFormatFromTemplate`, así que en español sale «Noviembre 2025»
+(sin «de»), no «Noviembre De 2025»: ahí el `capitalized` no se ve. Lo que sí les falta es el idioma de Yala: el
+`DateFormatter` no lleva `locale`, así que con el idioma cambiado dentro de la app los meses siguen en el del iPhone.
+No se arregló en el lote 9 porque no se midió con otro idioma; la lista de ficheros de arriba sigue valiendo.
+
 ## Qué hacer
 
 Cambiar `.capitalized` por `.capitalizingFirstLetter(locale: AppLocale.current)` en esos sitios, y que sus

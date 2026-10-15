@@ -125,6 +125,38 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
+    /// Planificación: el botón de gráficas del detalle abre las gráficas, y se vuelve al detalle y a la lista.
+    /// Hasta el lote 9 de la auditoría UX 2.2 no hacía nada, ni en iPhone ni en iPad: el detalle lo presenta la
+    /// columna de lista del split y su `navigationDestination(isPresented:)` no tenía pila donde empujar.
+    func test_budgetDetailOpensItsCharts_andBackReturnsToTheList() {
+        let app = launch(deeplink: "budgets")
+        let budgetRows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'budget_row_'"))
+        XCTAssertTrue(budgetRows.firstMatch.waitForExistence(timeout: 15), "No hay presupuestos sembrados.")
+        budgetRows.element(boundBy: 0).tap()
+
+        let detail = app.scrollViews["budget_detail"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 10), "No se abrió el detalle del presupuesto.")
+        let chartsButton = app.buttons["budget_detail_charts_button"]
+        XCTAssertTrue(chartsButton.waitForHittable(timeout: 5), "El detalle no enseña el botón de gráficas.")
+        chartsButton.tap()
+
+        let charts = app.scrollViews["budget_charts"]
+        XCTAssertTrue(charts.waitForExistence(timeout: 10), "El botón de gráficas no abrió las gráficas.")
+        XCTAssertFalse(detail.isHittable, "Las gráficas se empujan sobre el detalle.")
+
+        // El «Atrás» del sistema de las gráficas, no el primer botón de cualquier barra: en ancho ese es el de la barra
+        // lateral.
+        app.navigationBars.buttons["BackButton"].firstMatch.tap()
+        XCTAssertTrue(detail.waitForHittable(timeout: 5), "Atrás desde las gráficas no volvió al detalle.")
+
+        if expectsWideWindow {
+            XCTAssertTrue(budgetRows.element(boundBy: 0).isHittable, "La lista de presupuestos dejó de verse.")
+        } else {
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            XCTAssertTrue(budgetRows.firstMatch.waitForHittable(timeout: 5), "Atrás desde el detalle no volvió a la lista.")
+        }
+    }
+
     /// Planificación: abrir otro presupuesto enseña SU gastado. En ancho el detalle se reutilizaba y el resumen se
     /// quedaba con el gastado del primero, con el límite y las categorías ya del nuevo (medido el 2026-10-12 en el
     /// iPad: «Fijos casa» con los S/ 1,168.00 de «Comidas fuera»). El gastado esperado es el que enseña la propia fila.

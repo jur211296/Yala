@@ -137,10 +137,10 @@ extension YalaEmptyState {
     }
 
     /// Empty state for no budgets
-    static func noBudgets(action: (() -> Void)? = nil) -> YalaEmptyState {
+    static func noBudgets(title: String? = nil, action: (() -> Void)? = nil) -> YalaEmptyState {
         YalaEmptyState(
             icon: "chart.pie",
-            title: NSLocalizedString("budgets.empty.title", comment: ""),
+            title: title ?? NSLocalizedString("budgets.empty.title", comment: ""),
             message: NSLocalizedString("budgets.empty.message", comment: ""),
             actionTitle: action != nil ? NSLocalizedString("budgets.new", comment: "") : nil,
             action: action

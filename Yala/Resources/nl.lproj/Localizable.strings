@@ -6624,3 +6624,12 @@
 "bulkEdit.cannotEditGroupRecords" = "Sommige geselecteerde boekingen komen uit een groep, en dat pas je in de groep aan. Haal ze uit de selectie of bewerk ze één voor één.";
 "records.groupRecordsOnlyTitle" = "Deze boekingen komen uit een groep";
 "records.groupRecordsDeleteFromGroup" = "Je verwijdert ze in de groep, zodat ieders saldo blijft kloppen.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Actief";
+"budgets.state.inactive" = "Inactief";
+"budgets.empty.weekly.title" = "Je hebt nog geen weekbudgetten";
+"budgets.empty.monthly.title" = "Je hebt nog geen maandbudgetten";
+"budgets.empty.yearly.title" = "Je hebt nog geen jaarbudgetten";
+"budgets.empty.unique.title" = "Je hebt nog geen eenmalige budgetten";
+"budgets.charts.limitAccessibility" = "Limiet: %@";

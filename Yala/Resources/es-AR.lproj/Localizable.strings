@@ -5911,3 +5911,12 @@
 "records.groupRecordsDeleteFromGroup" = "Se borran desde el grupo, para que las cuentas de todos sigan cuadrando.";
 "records.selectedCount" = "%d seleccionados";
 "records.groupRecordsKept" = "%d vienen de un grupo y no se borran aquí: se borran desde el grupo.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Activo";
+"budgets.state.inactive" = "Inactivo";
+"budgets.empty.weekly.title" = "Aún no tenés presupuestos semanales";
+"budgets.empty.monthly.title" = "Aún no tenés presupuestos mensuales";
+"budgets.empty.yearly.title" = "Aún no tenés presupuestos anuales";
+"budgets.empty.unique.title" = "Aún no tenés presupuestos únicos";
+"budgets.charts.limitAccessibility" = "Límite: %@";

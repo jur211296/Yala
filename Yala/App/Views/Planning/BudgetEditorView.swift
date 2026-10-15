@@ -306,7 +306,7 @@ struct BudgetEditorView: View {
 
     private var activeToggle: some View {
         Toggle(isOn: $isActive) {
-            Text(NSLocalizedString("common.active", comment: ""))
+            Text(L10n.Budgets.state(isActive: true))
                 .font(DS.Typography.body)
         }
 

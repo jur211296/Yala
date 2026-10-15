@@ -100,7 +100,7 @@ struct BudgetsListView: View {
         .sheet(isPresented: $showPeriodSelector) {
             BudgetPeriodSelectorSheet(
                 viewModel: viewModel,
-                transactions: viewModel.allTransactions,
+                oldestRecordDate: viewModel.oldestTransactionDate,
                 onPeriodChange: { refreshData() }
             )
             .yalaSheetDetents([.medium])
@@ -176,9 +176,12 @@ struct BudgetsListView: View {
 
     // MARK: - Empty State
 
+    /// Sin ningún presupuesto, el vacío de siempre; con presupuestos de otro tipo, el del tipo elegido.
     private var emptyState: some View {
-        YalaEmptyState.noBudgets()
-            .padding(.top, DS.Spacing.xxxl * 2)
+        YalaEmptyState.noBudgets(
+            title: viewModel.allBudgets.isEmpty ? nil : L10n.Budgets.emptyTitle(for: viewModel.selectedPeriodType)
+        )
+        .padding(.top, DS.Spacing.xxxl * 2)
     }
 
     // MARK: - Budgets List
