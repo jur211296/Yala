@@ -39,3 +39,7 @@ selectores que solo pintan el mes sin año: ahí `capitalized` no se nota, pero 
 ## Hecho cuando
 
 Ninguna pantalla enseña «De» con mayúscula en un mes con año, en español y en portugués.
+
+## Lote 10 (2026-10-14)
+
+Las dos piezas de Pagos (`ScheduledPaymentsViewModel.monthYearLabel` y `ScheduledPaymentPeriodSelectorSheet`) usaban `dateFormat = "MMMM yyyy"`, así que salía «Octubre 2026» sin «De» pero en el idioma del sistema. Pasan a `ScheduledPaymentDateText.monthYear` (plantilla del idioma de la app y mayúscula solo en la primera letra): «Octubre de 2026». Quedan el Panel y Presupuestos.
