@@ -2503,7 +2503,7 @@
 "scheduled.associate.success" = "Despesa vinculada";
 "scheduled.associate.title" = "Vincular despesa";
 "scheduled.calendar.day.empty" = "Sem pagamentos neste dia";
-"scheduled.calendar.month.empty" = "Sem pagamentos neste mes";
+"scheduled.calendar.month.empty" = "Sem pagamentos neste mês";
 "scheduled.calendar.show.all" = "Ver tudo";
 "scheduled.category.recurring" = "Recorrente";
 "scheduled.category.subscription" = "Assinatura";
@@ -5916,3 +5916,14 @@
 "budgets.empty.yearly.title" = "Ainda não tem orçamentos anuais";
 "budgets.empty.unique.title" = "Ainda não tem orçamentos únicos";
 "budgets.charts.limitAccessibility" = "Limite: %@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "Ativo";
+"scheduled.editor.save.missing" = "Para guardar, preencha: %@";
+"scheduled.frequency.every.days" = "A cada %d dias";
+"scheduled.frequency.every.weeks" = "A cada %d semanas";
+"scheduled.frequency.every.months" = "A cada %d meses";
+"scheduled.frequency.every.years" = "A cada %d anos";
+"notifications.scheduledPayment.dueTomorrow" = "%1$@ vence amanhã — %2$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "%1$@ de %2$@ chega amanhã 📅";
+"scheduled.filter.empty" = "Nenhum pagamento com este filtro";

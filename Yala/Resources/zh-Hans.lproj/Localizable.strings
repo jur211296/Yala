@@ -6633,3 +6633,10 @@
 "budgets.empty.yearly.title" = "你还没有年度预算";
 "budgets.empty.unique.title" = "你还没有一次性预算";
 "budgets.charts.limitAccessibility" = "上限：%@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "已启用";
+"scheduled.editor.save.missing" = "保存前请填写：%@";
+"notifications.scheduledPayment.dueTomorrow" = "「%1$@」明天到期付款 %2$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "明天会从「%2$@」收到 %1$@ 📅";
+"scheduled.filter.empty" = "没有符合此筛选的付款";

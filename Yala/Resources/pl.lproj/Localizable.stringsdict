@@ -1032,5 +1032,85 @@
 			<string>Wyników: %d</string>
 		</dict>
 	</dict>
+	<key>scheduled.frequency.every.days</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Codziennie</string>
+			<key>few</key>
+			<string>Co %d dni</string>
+			<key>many</key>
+			<string>Co %d dni</string>
+			<key>other</key>
+			<string>Co %d dnia</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.weeks</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Co tydzień</string>
+			<key>few</key>
+			<string>Co %d tygodnie</string>
+			<key>many</key>
+			<string>Co %d tygodni</string>
+			<key>other</key>
+			<string>Co %d tygodnia</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.months</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Co miesiąc</string>
+			<key>few</key>
+			<string>Co %d miesiące</string>
+			<key>many</key>
+			<string>Co %d miesięcy</string>
+			<key>other</key>
+			<string>Co %d miesiąca</string>
+		</dict>
+	</dict>
+	<key>scheduled.frequency.every.years</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Co rok</string>
+			<key>few</key>
+			<string>Co %d lata</string>
+			<key>many</key>
+			<string>Co %d lat</string>
+			<key>other</key>
+			<string>Co %d roku</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

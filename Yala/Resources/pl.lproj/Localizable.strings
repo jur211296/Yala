@@ -6633,3 +6633,10 @@
 "budgets.empty.yearly.title" = "Nie masz jeszcze budżetów rocznych";
 "budgets.empty.unique.title" = "Nie masz jeszcze budżetów jednorazowych";
 "budgets.charts.limitAccessibility" = "Limit: %@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "Aktywna";
+"scheduled.editor.save.missing" = "Aby zapisać, uzupełnij: %@";
+"notifications.scheduledPayment.dueTomorrow" = "%1$@ ma termin jutro — %2$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "%1$@ od %2$@ wpłynie jutro 📅";
+"scheduled.filter.empty" = "Brak płatności z tym filtrem";

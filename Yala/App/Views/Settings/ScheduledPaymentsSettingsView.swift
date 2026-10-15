@@ -188,15 +188,13 @@ struct ScheduledPaymentsSettingsView: View {
         return Self.amountFormatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(amount)"
     }
 
+    /// «Mensual» o «Cada 2 meses», como la lista y el detalle (decía «2 Meses»).
     private func recurrenceDescription(_ payment: ScheduledPayment) -> String {
-        let type = RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly
-        let interval = payment.recurrenceInterval
-
-        if interval == 1 {
-            return type.localizedName
-        } else {
-            return "\(interval) \(type.localizedNamePlural)"
-        }
+        ScheduledPaymentDetailLogic.frequencyText(
+            isRecurring: payment.isRecurring,
+            recurrenceType: payment.recurrenceType,
+            interval: payment.recurrenceInterval
+        )
     }
 }
 

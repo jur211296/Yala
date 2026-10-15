@@ -63,6 +63,42 @@ enum ScheduledPaymentDateCalculator {
         return applyPostFilters(dates: dates, params: params, calendar: calendar)
     }
 
+    /// La primera fecha del calendario del pago en `start` o después, o `nil` si no hay ninguna en `monthsAhead` meses
+    /// (por ejemplo, una fecha de fin anterior).
+    ///
+    /// El editor guardaba como primer vencimiento la «Fecha de inicio» tal cual: un pago «cada mes, día 1, desde hoy»
+    /// creado el 14 vencía el 14, y el arranque dejaba ese mismo día un borrador en la Bandeja por un pago que tocaba el
+    /// 1 del mes siguiente (lote 5 de la auditoría UX 2.2; lote 10, B10). `start` hace de límite inferior en lugar de
+    /// `createdAt`.
+    static func firstOccurrence(
+        onOrAfter start: Date,
+        params: PaymentParams,
+        monthsAhead: Int = 72,
+        calendar: Calendar = .current
+    ) -> Date? {
+        let startDay = calendar.startOfDay(for: start)
+        let bounded = PaymentParams(
+            isRecurring: params.isRecurring,
+            recurrenceType: params.recurrenceType,
+            recurrenceInterval: params.recurrenceInterval,
+            nextDueDate: params.nextDueDate,
+            createdAt: startDay,
+            endDate: params.endDate,
+            dayOfMonth: params.dayOfMonth,
+            selectedWeekdays: params.selectedWeekdays,
+            yearlyMonth: params.yearlyMonth,
+            yearlyDay: params.yearlyDay
+        )
+        guard let firstMonth = calendar.dateInterval(of: .month, for: startDay)?.start else { return nil }
+        for offset in 0...monthsAhead {
+            guard let month = calendar.date(byAdding: .month, value: offset, to: firstMonth) else { break }
+            if let first = paymentDatesInMonth(params: bounded, month: month, calendar: calendar).sorted().first {
+                return first
+            }
+        }
+        return nil
+    }
+
     static func parseWeekdays(_ raw: String?) -> Set<Int> {
         guard let string = raw, !string.isEmpty else { return [] }
         return Set(string.split(separator: ",").compactMap { Int($0) })

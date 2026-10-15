@@ -6631,3 +6631,10 @@
 "budgets.empty.yearly.title" = "Nessun budget annuale per ora";
 "budgets.empty.unique.title" = "Nessun budget una tantum per ora";
 "budgets.charts.limitAccessibility" = "Limite: %@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "Attivo";
+"scheduled.editor.save.missing" = "Per salvare, completa: %@";
+"notifications.scheduledPayment.dueTomorrow" = "%1$@ scade domani — %2$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "%1$@ da %2$@ arriva domani 📅";
+"scheduled.filter.empty" = "Nessun pagamento con questo filtro";

@@ -6633,3 +6633,10 @@
 "budgets.empty.yearly.title" = "年ごとの予算はまだありません";
 "budgets.empty.unique.title" = "1回限りの予算はまだありません";
 "budgets.charts.limitAccessibility" = "上限：%@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "アクティブ";
+"scheduled.editor.save.missing" = "保存するには次を入力してください: %@";
+"notifications.scheduledPayment.dueTomorrow" = "%2$@の支払いは明日: %1$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "%2$@からの%1$@が明日入金 📅";
+"scheduled.filter.empty" = "このフィルターに合う支払いはありません";

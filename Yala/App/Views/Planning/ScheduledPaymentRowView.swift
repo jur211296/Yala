@@ -46,7 +46,7 @@ struct ScheduledPaymentRowView: View {
             }
             .contentShape(Rectangle())
             .panelCard(small: true)
-            .opacity(summary.isPaidForMonth || summary.isSkippedForMonth ? 0.6 : 1.0)
+            .opacity(summary.isPaidForMonth || summary.isSkippedForMonth || !summary.payment.isActive ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("scheduled_payment_row")
@@ -68,8 +68,20 @@ struct ScheduledPaymentRowView: View {
 
     private var dueInfo: some View {
         HStack(spacing: DS.Spacing.xs) {
+            // Pago pausado y sin pagar este mes: no cuenta en lo pendiente, y la fila lo dice en vez de «En 6 días».
+            // `isActive == false` también marca un pago ya completado (una sola vez aprobada): ese sale «Pagado».
+            if !summary.payment.isActive && !summary.isPaidForMonth && !summary.isSkippedForMonth {
+                Image(systemName: "pause.circle")
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+
+                Text(NSLocalizedString("scheduled.inactive", comment: ""))
+                    .font(DS.Typography.labelTiny)
+                    .foregroundStyle(.secondary)
+            }
             // Skipped badge
-            if summary.isSkippedForMonth {
+            else if summary.isSkippedForMonth {
                 Image(systemName: "arrow.uturn.forward.circle")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
@@ -133,17 +145,17 @@ struct ScheduledPaymentRowView: View {
         }
     }
 
+    /// «Una sola vez», «Mensual» o «Cada 2 meses». Antes pintaba el tipo sin mirar `isRecurring` ni el intervalo.
     private var recurrenceBadge: some View {
-        let recurrenceText: String
-        if let recurrence = RecurrenceType(rawValue: summary.payment.recurrenceType) {
-            recurrenceText = recurrence.localizedName
-        } else {
-            recurrenceText = summary.payment.recurrenceType
-        }
-
-        return Text(recurrenceText)
+        Text(ScheduledPaymentDetailLogic.frequencyText(
+            isRecurring: summary.payment.isRecurring,
+            recurrenceType: summary.payment.recurrenceType,
+            interval: summary.payment.recurrenceInterval
+        ))
             .font(DS.Typography.captionSmall)
             .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
     }
 
     // MARK: - Computed Properties

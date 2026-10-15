@@ -6633,3 +6633,10 @@
 "budgets.empty.yearly.title" = "Je hebt nog geen jaarbudgetten";
 "budgets.empty.unique.title" = "Je hebt nog geen eenmalige budgetten";
 "budgets.charts.limitAccessibility" = "Limiet: %@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "Actief";
+"scheduled.editor.save.missing" = "Vul nog in om op te slaan: %@";
+"notifications.scheduledPayment.dueTomorrow" = "%1$@ vervalt morgen voor %2$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "%1$@ van %2$@ komt morgen binnen 📅";
+"scheduled.filter.empty" = "Geen betalingen met dit filter";

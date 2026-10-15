@@ -214,8 +214,7 @@ struct ScheduledPaymentEditorView: View {
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
-            YalaSaveButton(action: savePayment, isDisabled: !canSave)
-                .accessibilityHint(!canSave ? L10n.Accessibility.createAccountFirst : "")
+            YalaSaveButton(action: savePayment, isDisabled: !canSave, disabledHint: saveMissingHint)
         }
     }
 
@@ -385,7 +384,7 @@ struct ScheduledPaymentEditorView: View {
                             .foregroundStyle(.secondary)
                             .frame(width: 24)
                             .accessibilityHidden(true)
-                        Text(NSLocalizedString("common.active", comment: ""))
+                        Text(L10n.Scheduled.Editor.active)
                     }
                 }
 
@@ -1369,6 +1368,24 @@ struct ScheduledPaymentEditorView: View {
             return selectedGroup != nil && splitConfigured && !splitParticipantIDs.isEmpty
         }
         return selectedAccount != nil && selectedSubcategory != nil
+    }
+
+    /// VoiceOver del ✓ apagado: lo que falta de verdad. Decía «Crea al menos una cuenta y una categoría» aunque las
+    /// hubiera y faltara elegirlas, o faltara el nombre.
+    private var saveMissingHint: String {
+        guard !canSave else { return "" }
+        var missing: [String] = []
+        if name.isEmpty { missing.append(NSLocalizedString("scheduled.editor.name.placeholder", comment: "")) }
+        if amount.isEmpty || AmountInputHelper.parseDecimal(amount) <= 0 { missing.append(L10n.Common.amount) }
+        if isGroupExpense {
+            if selectedGroup == nil { missing.append(L10n.Scheduled.GroupExpense.groupRow) }
+            if !splitConfigured || splitParticipantIDs.isEmpty { missing.append(L10n.Scheduled.GroupExpense.divisionRow) }
+        } else {
+            if selectedAccount == nil { missing.append(L10n.Scheduled.Editor.account) }
+            if selectedSubcategory == nil { missing.append(L10n.Scheduled.Editor.subcategory) }
+        }
+        guard !missing.isEmpty else { return "" }
+        return L10n.Scheduled.Editor.saveMissing(missing.formatted(.list(type: .and).locale(AppLocale.current)))
     }
 
     // MARK: - Data Management

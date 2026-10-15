@@ -13,12 +13,6 @@ import SwiftUI
 @Observable
 final class ScheduledPaymentsViewModel {
 
-    private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
-
     // MARK: - Dependencies
 
     private var modelContext: ModelContext?
@@ -117,7 +111,7 @@ final class ScheduledPaymentsViewModel {
                   calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
             return L10n.Period.nextMonth
         } else {
-            return Self.monthYearFormatter.string(from: selectedMonth).capitalized
+            return ScheduledPaymentDateText.monthYear(selectedMonth)
         }
     }
 
@@ -152,7 +146,11 @@ final class ScheduledPaymentsViewModel {
         var paid: Double = 0
         var pending: Double = 0
         for summary in allSummaries {
+            // Misma regla que el total del mes (`calculateMonthlyTotal`): lo pagado cuenta siempre, aunque el pago ya no
+            // esté activo (una sola vez aprobada, última fecha antes del fin); lo pendiente, solo si está activo. Un pago
+            // pausado salía en «Pendiente» y no en el total, y las cifras dejaban de sumar.
             guard !summary.isSkippedForMonth,
+                  summary.isPaidForMonth || summary.payment.isActive,
                   summary.payment.transactionType != "income" else { continue }
             let amount = summary.displayAmount
             let sourceCurrency = summary.displayCurrencyCode
@@ -532,8 +530,9 @@ final class ScheduledPaymentsViewModel {
         guard let context = modelContext else { return [] }
         let calendar = Calendar.current
         let referenceDay = calendar.startOfDay(for: referenceDate)
-        guard let windowStart = calendar.date(byAdding: .day, value: -15, to: referenceDay),
-              let windowEnd = calendar.date(byAdding: .day, value: 16, to: referenceDay) else { return [] }
+        let window = ScheduledPaymentDetailLogic.linkWindowDays
+        guard let windowStart = calendar.date(byAdding: .day, value: -window, to: referenceDay),
+              let windowEnd = calendar.date(byAdding: .day, value: window + 1, to: referenceDay) else { return [] }
 
         do {
             var descriptor = FetchDescriptor<TransactionItem>(
@@ -546,11 +545,15 @@ final class ScheduledPaymentsViewModel {
             descriptor.fetchLimit = 100 // Perf: candidate picker — window-bounded + unlinked
             var transactions = try context.fetch(descriptor)
 
-            // Filter by transaction type (income matches income, expense matches expense)
+            // Mismo tipo (gasto con gasto, ingreso con ingreso) y nunca una transferencia ni un ajuste de saldo: la lista
+            // ofrecía «Transferencia a Ahorros» y hasta la entrada de una transferencia como gasto a vincular.
             let isPaymentIncome = payment.transactionType == "income"
             transactions = transactions.filter { tx in
-                let isTxIncome = tx.category?.isIncome ?? false
-                return isTxIncome == isPaymentIncome
+                ScheduledPaymentDetailLogic.isLinkCandidate(
+                    adjustmentType: tx.balanceAdjustmentType,
+                    categoryIsIncome: tx.category?.isIncome,
+                    paymentIsIncome: isPaymentIncome
+                )
             }
 
             // Sort: note match > subcategory > currency > account > amount proximity > recency
@@ -580,9 +583,9 @@ final class ScheduledPaymentsViewModel {
                     if tx1AccountMatch != tx2AccountMatch { return tx1AccountMatch }
                 }
 
-                // 5. Amount proximity
-                let diff1 = abs(tx1.amount - payment.amount)
-                let diff2 = abs(tx2.amount - payment.amount)
+                // 5. Amount proximity (magnitudes: el gasto se guarda en negativo)
+                let diff1 = ScheduledPaymentDetailLogic.amountDistance(transactionAmount: tx1.amount, paymentAmount: payment.amount)
+                let diff2 = ScheduledPaymentDetailLogic.amountDistance(transactionAmount: tx2.amount, paymentAmount: payment.amount)
                 if diff1 != diff2 { return diff1 < diff2 }
 
                 // 6. Most recent first
@@ -739,8 +742,9 @@ final class ScheduledPaymentsViewModel {
         let converter = CurrencyConverter.shared
         let targetCurrency = preferredCurrencyCode
 
-        // Only count expenses (exclude income payments)
-        let expensePayments = subscriptions.filter { $0.isActive && $0.transactionType != "income" }
+        // Only count expenses (exclude income payments). Un pago inactivo cuenta solo lo que ya se pagó: antes se descartaba
+        // entero y un pago de una sola vez aprobado este mes desaparecía del total.
+        let expensePayments = subscriptions.filter { $0.transactionType != "income" }
 
         let paidAmounts = cachedPaidAmounts
 
@@ -757,7 +761,7 @@ final class ScheduledPaymentsViewModel {
                     let info = remainingInfos.removeFirst()
                     amount = info.amount
                     currency = info.currencyCode
-                } else if !isSkipped {
+                } else if !isSkipped && payment.isActive {
                     amount = payment.amount
                     currency = payment.currencyCode
                 } else {
