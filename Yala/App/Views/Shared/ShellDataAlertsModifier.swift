@@ -29,6 +29,8 @@ struct ShellDataAlertsModifier: ViewModifier {
     @Environment(\.modelContext) private var modelContext
 
     @Binding var showRemoteWipeAlert: Bool
+    /// El otro aviso de la misma cola: los datos faltan porque iCloud no está disponible en este dispositivo.
+    @Binding var showICloudUnavailableAlert: Bool
     @Binding var showICloudRestartAlert: Bool
     @Binding var showFreshStartWipeAlert: Bool
     /// El wipe de cualquiera de los DOS caminos de «empiezo de cero» lanzó. Se presenta en vez de
@@ -86,6 +88,19 @@ struct ShellDataAlertsModifier: ViewModifier {
                 }
             } message: {
                 Text(L10n.iCloud.remoteWipeMessage)
+            }
+            // **El mismo aviso cuando las filas faltan porque iCloud no está disponible** (iCloud Drive apagado, sin
+            // sesión de iCloud; ticket `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`). iOS vació la copia
+            // local, nadie borró nada, y los datos vuelven solos al volver iCloud: por eso no hay «Empezar de cero»,
+            // que mezclaría después los datos reales con los del onboarding. Un solo botón, con el texto LITERAL (el
+            // `actions` de un `.alert` no admite un label que dependa del estado, `swiftui-ds.md`), y la misma salida
+            // que «Seguir esperando»: apaga la condición viva y la persona se queda donde estaba.
+            .alert(L10n.iCloud.unavailableNoticeTitle, isPresented: $showICloudUnavailableAlert) {
+                Button(L10n.Common.understood, role: .cancel) {
+                    onRemoteWipeDismiss()
+                }
+            } message: {
+                Text(L10n.iCloud.unavailableNoticeMessage)
             }
             .alert(L10n.iCloud.mismatchTitle, isPresented: $showICloudRestartAlert) {
                 Button(L10n.iCloud.mismatchAction) {}

@@ -6636,3 +6636,9 @@
 "account.removal.countBudgets" = "予算";
 "account.removal.budgetsMovedNote" = "この口座を対象にしていた予算は「%@」を対象にします。";
 "account.removal.budgetsOnlyNote" = "この口座だけを対象にしていた予算があります。口座がなくなると、すべての口座が対象になります。";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "このデバイスではiCloudを利用できません";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "YalaはデータをあなたのiCloudに保存していますが、今は読み込めません。iCloudが再び利用できるようになると、そこにあるデータがまた表示されます。設定のiCloudで確認できます。";

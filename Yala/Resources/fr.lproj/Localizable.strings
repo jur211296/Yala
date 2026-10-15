@@ -6625,3 +6625,9 @@
 "account.removal.countBudgets" = "Budgets";
 "account.removal.budgetsMovedNote" = "Les budgets qui suivaient ce compte suivront « %@ ».";
 "account.removal.budgetsOnlyNote" = "Certains budgets ne suivaient que ce compte : sans lui, ils suivront tous tes comptes.";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud n'est pas disponible sur cet appareil";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala garde tes données dans ton iCloud et ne peut pas les lire pour le moment. Quand iCloud sera de nouveau disponible, ce qui s'y trouve réapparaîtra. Tu peux vérifier dans Réglages, rubrique iCloud.";

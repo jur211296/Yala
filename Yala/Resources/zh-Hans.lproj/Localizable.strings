@@ -6636,3 +6636,9 @@
 "account.removal.countBudgets" = "预算";
 "account.removal.budgetsMovedNote" = "原本跟踪此账户的预算将改为跟踪“%@”。";
 "account.removal.budgetsOnlyNote" = "有些预算只跟踪此账户：删除后，它们将跟踪你的所有账户。";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "此设备上的 iCloud 不可用";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala 将你的数据保存在你的 iCloud 中,目前无法读取。iCloud 恢复可用后,其中的内容会重新显示。你可以在「设置」中的 iCloud 里查看。";

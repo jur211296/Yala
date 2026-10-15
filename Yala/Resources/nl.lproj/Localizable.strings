@@ -6636,3 +6636,9 @@
 "account.removal.countBudgets" = "Budgetten";
 "account.removal.budgetsMovedNote" = "Budgetten die deze rekening volgden, volgen voortaan „%@”.";
 "account.removal.budgetsOnlyNote" = "Sommige budgetten volgden alleen deze rekening: zonder haar volgen ze al je rekeningen.";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud is niet beschikbaar op dit apparaat";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala bewaart je gegevens in je iCloud en kan ze nu niet lezen. Zodra iCloud weer beschikbaar is, verschijnt wat daar staat weer. Je kunt dit controleren in Instellingen, bij iCloud.";

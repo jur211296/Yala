@@ -45,9 +45,14 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
     /// primero, el paywall esperando detrás del blocker. Lo que se afirma con él son las dos mitades de
     /// la matriz — que nada se monta ENCIMA del aviso, y que lo retenido presenta cuando el aviso se
     /// contesta—, y las dos se pierden si alguien devuelve la matriz al `@State` del alert.
+    ///
+    /// **Con `fakeICloud: true` desde el 2026-10-15** (ticket `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`):
+    /// el simulador no tiene token de iCloud, que es lo mismo que ve un iPhone con iCloud Drive apagado, y ahí el
+    /// drenaje elige el aviso de «iCloud no está disponible». El de borrado solo sale con iCloud disponible.
     private func launchWithNotice() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchForUITest(seed: nil, trialOffer: true, extraArguments: ["-uitest-remote-wipe-notice"])
+        app.launchForUITest(seed: nil, trialOffer: true, fakeICloud: true,
+                            extraArguments: ["-uitest-remote-wipe-notice"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
         return app
     }
@@ -110,7 +115,7 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
     ///    el 2026-10-07: la red suelta a los ~9,4 s del drenaje; sin el desarme, el paywall no sale nunca.
     func test_noticeThatNeverMounts_netExhausts_andReleasesTheRouter() {
         let app = XCUIApplication()
-        app.launchForUITest(seed: nil, trialOffer: true, remoteWipeNoticeNeverMounts: true,
+        app.launchForUITest(seed: nil, trialOffer: true, fakeICloud: true, remoteWipeNoticeNeverMounts: true,
                             extraArguments: ["-uitest-remote-wipe-notice"])
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
 
@@ -182,5 +187,41 @@ final class RemoteWipeNoticeRoutingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_hero_cta"].waitForExistence(timeout: 30), """
             «Empezar de cero» no aterrizó en el Hero del Welcome.
             """)
+    }
+
+    /// **Sin iCloud en el teléfono, el aviso NO dice que los datos se borraron ni ofrece empezar de cero** (ticket
+    /// `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`). El simulador no tiene token de iCloud: es exactamente
+    /// lo que ve un iPhone con iCloud Drive apagado, donde iOS vacía la copia local y las filas caen sin que nadie las
+    /// borrara. Medido el 15-oct en el iPhone de QA: salía «Tus datos fueron eliminados de iCloud» con «Empezar de
+    /// cero», que mezclaba después los datos reales con los del onboarding.
+    ///
+    /// El aviso se distingue por su número de botones (uno, «Entendido», contra los dos del de borrado) y no por su
+    /// texto, por lo mismo que los demás casos: el copy viaja en 16 idiomas. Y se afirma la misma salida que «Seguir
+    /// esperando»: la persona se queda donde estaba y el router vuelve a drenar.
+    func test_withoutICloud_noticeSaysICloudIsUnavailable_andOffersNoWipe() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, trialOffer: true, extraArguments: ["-uitest-remote-wipe-notice"])
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let alert = notice(in: app)
+        XCTAssertTrue(alert.waitForExistence(timeout: 30), "Sin iCloud no se presentó ningún aviso.")
+        XCTAssertEqual(alert.buttons.count, 1, """
+            Sin iCloud el aviso trae más de un botón: es el de «tus datos fueron eliminados de iCloud», con su \
+            «Empezar de cero», sobre unos datos que siguen en iCloud.
+            """)
+        XCTAssertFalse(app.buttons["trial_offer_dismiss"].exists,
+                       "La oferta de prueba se montó encima del aviso: la condición viva no retiene la cola.")
+
+        alert.buttons.element(boundBy: 0).tap()   // «Entendido»
+
+        XCTAssertFalse(alert.waitForExistence(timeout: 3), "El aviso no se cerró al pulsar «Entendido».")
+        XCTAssertFalse(app.buttons["welcome_hero_cta"].exists, "«Entendido» mandó a la persona al Welcome.")
+        XCTAssertTrue(app.buttons["trial_offer_dismiss"].waitForExistence(timeout: 45), """
+            El intent retenido no presentó al contestar el aviso: la condición viva (`remoteWipeNoticePending`) se \
+            quedó puesta y el router sigue retenido.
+            """)
+        app.buttons["trial_offer_dismiss"].tap()
+        XCTAssertTrue(app.buttons["panel_inbox_button"].waitForExistence(timeout: 10),
+                      "El Panel no quedó accesible tras cerrar el aviso y el paywall.")
     }
 }
