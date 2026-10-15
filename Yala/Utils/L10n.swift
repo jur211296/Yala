@@ -5434,6 +5434,8 @@ enum L10n {
             // Sesión 2: tercera card — sign-in con Google.
             static var googleTitle: String { ls("welcome.existing.googleTitle", comment: "") }
             static var googleBody: String { ls("welcome.existing.googleBody", comment: "") }
+            /// vb1f (opción A): nota bajo el botón del método con que se creó la cuenta de este Apple ID, según el faro.
+            static var usedOnThisDeviceNote: String { ls("welcome.existing.usedOnThisDeviceNote", comment: "") }
         }
 
         /// Piezas compartidas de las pantallas de entrada del Welcome (`WelcomeForm.swift`).

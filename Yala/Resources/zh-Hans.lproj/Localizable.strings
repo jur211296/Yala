@@ -4935,6 +4935,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "云端的 Yala 账户（如果你是用 Google 账号创建的）。";
+"welcome.existing.usedOnThisDeviceNote" = "你在这台 iPhone 上用过的方式";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "请使用创建云端账户时的同一个 Google 账号。";

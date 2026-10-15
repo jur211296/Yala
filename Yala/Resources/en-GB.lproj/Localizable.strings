@@ -4188,6 +4188,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Your Yala cloud account, if you created it with your Google account.";
+"welcome.existing.usedOnThisDeviceNote" = "The one you used on this iPhone";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Use the same Google account you used to create your cloud account.";

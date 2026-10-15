@@ -4193,6 +4193,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "A tua conta Yala na nuvem, se a criaste com a tua conta Google.";
+"welcome.existing.usedOnThisDeviceNote" = "A que usaste neste iPhone";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Usa a mesma conta Google com que criaste a tua conta na nuvem.";
