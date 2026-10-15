@@ -24,6 +24,7 @@ struct GroupOpeningBalanceFormView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var debtorMemberID: String
     @State private var creditorMemberID: String
@@ -115,6 +116,7 @@ struct GroupOpeningBalanceFormView: View {
             }
             .sheet(isPresented: $showDebtorPicker) {
                 MemberPickerView(
+                    title: L10n.Groups.OpeningBalance.debtorLabel,
                     members: members.filter { $0.id.uuidString != creditorMemberID },
                     groupColorHex: group.colorHex,
                     selectedMemberID: $debtorMemberID
@@ -123,6 +125,7 @@ struct GroupOpeningBalanceFormView: View {
             }
             .sheet(isPresented: $showCreditorPicker) {
                 MemberPickerView(
+                    title: L10n.Groups.OpeningBalance.creditorLabel,
                     members: members.filter { $0.id.uuidString != debtorMemberID },
                     groupColorHex: group.colorHex,
                     selectedMemberID: $creditorMemberID
@@ -173,7 +176,8 @@ struct GroupOpeningBalanceFormView: View {
             Button {
                 showCurrencyPicker = true
             } label: {
-                Text(selectedCurrency.rawValue)
+                // Lote 13: respeta la preferencia «S/» / «PEN», como el formulario de gasto.
+                Text(appPreferences.currencyDisplayFormat.label(for: selectedCurrency.rawValue))
                     .font(DS.Typography.label)
                     .foregroundStyle(theme.accent)
                     .padding(.horizontal, DS.Spacing.md)
@@ -222,7 +226,7 @@ struct GroupOpeningBalanceFormView: View {
             onSave()
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showError = true
         }
     }

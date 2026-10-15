@@ -276,7 +276,7 @@ struct SplitCalculatorSheet: View {
                         }
                     }
 
-                Text(L10n.Split.sharesParts)
+                Text(L10n.Split.sharesUnit(Int(fieldState.totalSharesText) ?? 0))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }

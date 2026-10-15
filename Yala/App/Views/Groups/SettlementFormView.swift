@@ -16,6 +16,7 @@ struct SettlementFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
     @Environment(SessionState.self) private var sessionState
+    @Environment(AppPreferences.self) private var appPreferences
 
     // MARK: - Input
 
@@ -180,9 +181,9 @@ struct SettlementFormView: View {
     private var currencySegmentedControl: some View {
         if let suggested = suggestedAmount {
             Picker("", selection: $useSuggestedAmount) {
-                Text("\(debt.currencyCode) \(AmountInputHelper.formatWithGrouping(debt.amount))")
+                Text("\(appPreferences.currencyDisplayFormat.label(for: debt.currencyCode)) \(AmountInputHelper.formatWithGrouping(debt.amount))")
                     .tag(false)
-                Text("≈ \(group.currencyCode) \(AmountInputHelper.formatWithGrouping(suggested))")
+                Text("≈ \(appPreferences.currencyDisplayFormat.label(for: group.currencyCode)) \(AmountInputHelper.formatWithGrouping(suggested))")
                     .tag(true)
             }
             .pickerStyle(.segmented)
@@ -202,7 +203,9 @@ struct SettlementFormView: View {
 
     @ViewBuilder
     private var accountSection: some View {
-        if sessionState.hasPrivateSession && bridgeEnabled {
+        if sessionState.hasPrivateSession && bridgeEnabled
+            && SettlementFormAccountLogic.asksForAccount(
+                currentUserMemberID: currentUserMemberID, payerMemberID: debt.fromMemberID) {
             SectionBox(title: L10n.Groups.Settlement.fromAccount) {
                 Button {
                     showAccountSelector = true
@@ -282,7 +285,8 @@ struct SettlementFormView: View {
     private var amountSection: some View {
         VStack(spacing: DS.Spacing.xs) {
             HStack(spacing: DS.Spacing.sm) {
-                Text(effectiveCurrency)
+                // Lote 13: respeta la preferencia «S/» / «PEN», como el formulario de gasto.
+                Text(appPreferences.currencyDisplayFormat.label(for: effectiveCurrency))
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thAccent)
 
@@ -382,7 +386,7 @@ struct SettlementFormView: View {
             #if DEBUG
             print("SettlementFormView: Error saving: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
             isSaving = false
         }

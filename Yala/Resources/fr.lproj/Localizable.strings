@@ -3011,6 +3011,7 @@
 "split.sharesYouPay" = "Tu paies";
 "split.sharesOf" = "de";
 "split.sharesParts" = "parts";
+"split.sharesPart" = "part";
 
 // MARK: - Groups
 "groups.title" = "Groupes";
@@ -3974,8 +3975,8 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Cette dépense a des règlements postérieurs. Supprimez ou régularisez les règlements avant de la supprimer.";
 "groups.bridge.editFromGroup" = "Cette transaction se synchronise avec un groupe. Modifiez-la depuis la dépense partagée.";
-"groups.bridge.assignFromInbox" = "Attribuez une sous-catégorie depuis votre Inbox pour la finaliser.";
-"groups.bridge.editSettlementInGroup" = "Cette transaction provient d'un règlement. Modifiez le règlement dans le groupe.";
+"groups.bridge.assignFromInbox" = "Attribuez une sous-catégorie depuis la Boîte de réception pour la finaliser.";
+"groups.bridge.editSettlementInGroup" = "Cette transaction provient d'un règlement. Modifiez-la dans le groupe.";
 "groups.bridge.editPartialBanner" = "Cette dépense vient du groupe. Vous pouvez modifier le compte, la catégorie et les étiquettes. Le montant et la date sont synchronisés avec le groupe.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ a enregistré cette dépense dans %2$@. Choisissez un compte pour la suivre dans vos enregistrements.";
 "groups.bridge.draftReasonCurrencyChanged" = "La devise de la dépense dans %@ a changé. Choisissez un compte pour enregistrer votre part.";
@@ -3983,11 +3984,11 @@
 "inbox.groupExpenseAccountDraft.title" = "Assigner un compte";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Compte d'origine";
 "groups.bridge.activateTitle" = "Activer les transactions automatiques";
-"groups.bridge.activateBody" = "À partir de maintenant, les dépenses partagées seront reflétées dans votre compte de groupes. Vous avez %d dépenses antérieures dans ce groupe. Que faisons-nous avec elles ?";
+"groups.bridge.activateBody" = "Désormais, les dépenses partagées apparaîtront dans vos comptes personnels. Dépenses précédentes dans vos groupes : %d. Que faisons-nous avec elles ?";
 "groups.bridge.activateOptionFromNow" = "Commencer maintenant";
 "groups.bridge.activateOptionFromNowHint" = "Seules les nouvelles dépenses seront reflétées.";
 "groups.bridge.activateOptionImportAll" = "Importer tout l'historique";
-"groups.bridge.activateOptionImportAllHint" = "Des transactions seront créées pour les %d dépenses antérieures et leurs règlements.";
+"groups.bridge.activateOptionImportAllHint" = "Les dépenses précédentes apparaîtront aussi dans vos comptes (%d au total).";
 "groups.bridge.activateImportRegenerationNote" = "Les transactions générées existantes seront régénérées selon les règles actuelles.";
 "groups.bridge.deactivateTitle" = "Désactiver les transactions automatiques";
 "groups.bridge.deactivateBody" = "Vous avez %d transactions générées par ce groupe. Si vous les supprimez, votre solde de groupes sera ajusté.";

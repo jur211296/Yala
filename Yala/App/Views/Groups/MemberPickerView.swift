@@ -2,7 +2,8 @@
 //  MemberPickerView.swift
 //  Yala
 //
-//  Selector de un miembro (single select) — p. ej. "Pagado por".
+//  Selector de un miembro (single select). El título lo pone quien lo abre: hoy solo lo usa
+//  Saldos iniciales, y con el «Pagado por» fijo de antes sus dos selectores decían algo falso.
 //
 
 import SwiftUI
@@ -11,6 +12,8 @@ struct MemberPickerView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    /// Qué se elige (p. ej. «Quién debe»). Sin valor por defecto a propósito.
+    let title: String
     let members: [SplitMember]
     let groupColorHex: String
 
@@ -45,7 +48,7 @@ struct MemberPickerView: View {
                 .padding(.top, DS.Spacing.sm)
             }
             .yalaScreenBackground(.subtle)
-            .navigationTitle(L10n.Groups.Expense.paidByTitle)
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

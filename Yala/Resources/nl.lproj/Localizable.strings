@@ -3014,6 +3014,7 @@
 "split.sharesYouPay" = "Je betaalt";
 "split.sharesOf" = "van";
 "split.sharesParts" = "aandelen";
+"split.sharesPart" = "aandeel";
 
 // MARK: - Groups
 "groups.title" = "Groepen";
@@ -3985,7 +3986,7 @@
 "groups.bridge.deleteExpenseBlocked" = "Deze uitgave heeft latere afrekeningen. Verwijder of regel eerst de afrekeningen voordat je het verwijdert.";
 "groups.bridge.editFromGroup" = "Deze transactie synchroniseert met een groep. Bewerk deze vanuit de gedeelde uitgave.";
 "groups.bridge.assignFromInbox" = "Wijs een subcategorie toe vanuit je Inbox om deze af te ronden.";
-"groups.bridge.editSettlementInGroup" = "Deze transactie komt uit een afrekening. Bewerk het settlement in de groep.";
+"groups.bridge.editSettlementInGroup" = "Deze transactie komt uit een afrekening. Bewerk haar in de groep.";
 "groups.bridge.editPartialBanner" = "Deze uitgave komt uit de groep. Je kunt rekening, categorie en tags bewerken. Bedrag en datum synchroniseren met de groep.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ heeft deze uitgave geregistreerd in %2$@. Kies een rekening om het in je administratie bij te houden.";
 "groups.bridge.draftReasonCurrencyChanged" = "De valuta van de uitgave in %@ is gewijzigd. Kies een rekening om je deel te registreren.";
@@ -3993,11 +3994,11 @@
 "inbox.groupExpenseAccountDraft.title" = "Rekening toewijzen";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Bronrekening";
 "groups.bridge.activateTitle" = "Automatische transacties inschakelen";
-"groups.bridge.activateBody" = "Vanaf nu worden gedeelde uitgaven weerspiegeld in je groepsrekening. Je hebt %d eerdere uitgaven in deze groep. Wat doen we ermee?";
+"groups.bridge.activateBody" = "Vanaf nu verschijnen gedeelde uitgaven in je persoonlijke rekeningen. Eerdere uitgaven in je groepen: %d. Wat doen we ermee?";
 "groups.bridge.activateOptionFromNow" = "Vanaf nu beginnen";
 "groups.bridge.activateOptionFromNowHint" = "Alleen nieuwe uitgaven worden weerspiegeld.";
 "groups.bridge.activateOptionImportAll" = "Volledige geschiedenis importeren";
-"groups.bridge.activateOptionImportAllHint" = "Er worden transacties aangemaakt voor de %d eerdere uitgaven en hun afrekeningen.";
+"groups.bridge.activateOptionImportAllHint" = "Ook eerdere uitgaven verschijnen in je rekeningen (%d in totaal).";
 "groups.bridge.activateImportRegenerationNote" = "Bestaande gegenereerde transacties worden opnieuw gegenereerd volgens de huidige regels.";
 "groups.bridge.deactivateTitle" = "Automatische transacties uitschakelen";
 "groups.bridge.deactivateBody" = "Je hebt %d transacties gegenereerd door deze groep. Als je ze verwijdert, wordt je groepssaldo aangepast.";

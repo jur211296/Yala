@@ -3010,6 +3010,7 @@
 "split.sharesYouPay" = "Du zahlst";
 "split.sharesOf" = "von";
 "split.sharesParts" = "Anteilen";
+"split.sharesPart" = "Anteil";
 
 // MARK: - Groups
 "groups.title" = "Gruppen";
@@ -3973,8 +3974,8 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Diese Ausgabe hat spätere Abrechnungen. Löschen oder bereinigen Sie zuerst die Abrechnungen, bevor Sie sie entfernen.";
 "groups.bridge.editFromGroup" = "Diese Transaktion synchronisiert mit einer Gruppe. Bearbeiten Sie sie in der geteilten Ausgabe.";
-"groups.bridge.assignFromInbox" = "Weisen Sie eine Unterkategorie aus dem Inbox zu, um sie abzuschließen.";
-"groups.bridge.editSettlementInGroup" = "Diese Transaktion stammt aus einer Abrechnung. Bearbeiten Sie das Settlement in der Gruppe.";
+"groups.bridge.assignFromInbox" = "Weisen Sie im Posteingang eine Unterkategorie zu, um sie abzuschließen.";
+"groups.bridge.editSettlementInGroup" = "Diese Transaktion stammt aus einer Abrechnung. Bearbeiten Sie sie in der Gruppe.";
 "groups.bridge.editPartialBanner" = "Diese Ausgabe stammt aus der Gruppe. Sie können Konto, Kategorie und Tags bearbeiten. Betrag und Datum werden mit der Gruppe synchronisiert.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ hat diese Ausgabe in %2$@ erfasst. Wählen Sie ein Konto, um sie in Ihren Aufzeichnungen zu führen.";
 "groups.bridge.draftReasonCurrencyChanged" = "Die Währung der Ausgabe in %@ wurde geändert. Wählen Sie ein Konto, um Ihren Anteil zu erfassen.";
@@ -3982,11 +3983,11 @@
 "inbox.groupExpenseAccountDraft.title" = "Konto zuweisen";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Quellkonto";
 "groups.bridge.activateTitle" = "Automatische Transaktionen aktivieren";
-"groups.bridge.activateBody" = "Ab jetzt werden geteilte Ausgaben in Ihrem Gruppenkonto reflektiert. Sie haben %d frühere Ausgaben in dieser Gruppe. Was tun wir mit ihnen?";
+"groups.bridge.activateBody" = "Ab jetzt erscheinen geteilte Ausgaben in Ihren persönlichen Konten. Frühere Ausgaben in Ihren Gruppen: %d. Was tun wir mit ihnen?";
 "groups.bridge.activateOptionFromNow" = "Ab jetzt starten";
 "groups.bridge.activateOptionFromNowHint" = "Nur neue Ausgaben werden reflektiert.";
 "groups.bridge.activateOptionImportAll" = "Gesamten Verlauf importieren";
-"groups.bridge.activateOptionImportAllHint" = "Es werden Transaktionen für die %d früheren Ausgaben und ihre Abrechnungen erstellt.";
+"groups.bridge.activateOptionImportAllHint" = "Auch frühere Ausgaben erscheinen in Ihren Konten (%d insgesamt).";
 "groups.bridge.activateImportRegenerationNote" = "Vorhandene generierte Transaktionen werden gemäß den aktuellen Regeln neu erstellt.";
 "groups.bridge.deactivateTitle" = "Automatische Transaktionen deaktivieren";
 "groups.bridge.deactivateBody" = "Sie haben %d von dieser Gruppe generierte Transaktionen. Wenn Sie sie löschen, wird Ihr Gruppensaldo angepasst.";

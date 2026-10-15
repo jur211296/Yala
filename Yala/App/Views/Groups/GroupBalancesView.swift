@@ -73,7 +73,8 @@ struct GroupBalancesView: View {
                     }
                     settlementToDelete = nil
                 }
-                Button(L10n.Common.cancel, role: .cancel) { settlementToDelete = nil }
+                // Lote 13: con `role: .cancel` este diálogo (sale como popover) no pintaba la salida.
+                Button(L10n.Common.cancel) { settlementToDelete = nil }
             } message: {
                 Text(L10n.Groups.Settlement.deleteMessage)
             }

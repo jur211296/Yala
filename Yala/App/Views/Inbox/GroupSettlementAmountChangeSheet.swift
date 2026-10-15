@@ -155,7 +155,7 @@ struct GroupSettlementAmountChangeSheet: View {
             #if DEBUG
             print("GroupSettlementAmountChangeSheet: adjust failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
         }
     }
@@ -171,7 +171,7 @@ struct GroupSettlementAmountChangeSheet: View {
             #if DEBUG
             print("GroupSettlementAmountChangeSheet: keep failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
         }
     }

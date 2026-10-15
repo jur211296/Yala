@@ -3014,6 +3014,7 @@
 "split.sharesYouPay" = "你付";
 "split.sharesOf" = "/";
 "split.sharesParts" = "份";
+"split.sharesPart" = "份";
 
 // MARK: - Groups
 "groups.title" = "群组";
@@ -3984,8 +3985,8 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "此支出有后续结算。请先删除或调整结算后再移除。";
 "groups.bridge.editFromGroup" = "此交易与一个群组同步。请从共享支出处编辑。";
-"groups.bridge.assignFromInbox" = "从 Inbox 分配子分类以完成它。";
-"groups.bridge.editSettlementInGroup" = "此交易来自结算。请在群组中编辑 settlement。";
+"groups.bridge.assignFromInbox" = "请在收件箱中分配子分类以完成它。";
+"groups.bridge.editSettlementInGroup" = "此交易来自结算。请在群组中编辑。";
 "groups.bridge.editPartialBanner" = "这笔支出来自群组。你可以编辑账户、分类和标签。金额和日期与群组同步。";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@在%2$@中记录了这笔支出。选择一个账户将其纳入你的记录。";
 "groups.bridge.draftReasonCurrencyChanged" = "%@中支出的货币已更改。选择一个账户来记录你的份额。";
@@ -3993,11 +3994,11 @@
 "inbox.groupExpenseAccountDraft.title" = "分配账户";
 "inbox.groupExpenseAccountDraft.assignAccount" = "来源账户";
 "groups.bridge.activateTitle" = "启用自动交易";
-"groups.bridge.activateBody" = "从现在起,共享支出将反映在你的群组账户中。此群组中你有 %d 笔之前的支出。我们要怎么处理它们?";
+"groups.bridge.activateBody" = "从现在起，共享支出将显示在你的个人账户中。你的群组中之前的支出：%d 笔。要怎么处理它们？";
 "groups.bridge.activateOptionFromNow" = "从现在开始";
 "groups.bridge.activateOptionFromNowHint" = "只有新支出会被反映。";
 "groups.bridge.activateOptionImportAll" = "导入所有历史记录";
-"groups.bridge.activateOptionImportAllHint" = "将为 %d 笔之前的支出及其结算创建交易。";
+"groups.bridge.activateOptionImportAllHint" = "之前的支出也会显示在你的账户中（共 %d 笔）。";
 "groups.bridge.activateImportRegenerationNote" = "现有生成的交易将根据当前规则重新生成。";
 "groups.bridge.deactivateTitle" = "禁用自动交易";
 "groups.bridge.deactivateBody" = "此群组生成了 %d 笔交易。如果你删除它们,你的群组余额将被调整。";

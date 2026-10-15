@@ -52,7 +52,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
             ) {
                 SelectionChip(
                     icon: "creditcard",
-                    text: selectedAccount?.name ?? L10n.Inbox.GroupSettlementDraft.assignAccount,
+                    text: selectedAccount?.name ?? accountLabel,
                     isSelected: selectedAccount != nil,
                     color: selectedAccount.map { Color(hex: $0.colorHex) }
                 ) {
@@ -71,7 +71,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
                     selectedAccount: $selectedAccount,
-                    title: L10n.Inbox.GroupSettlementDraft.assignAccount,
+                    title: accountLabel,
                     currencyFilter: resolvedCurrency.isEmpty ? nil : resolvedCurrency
                 )
             }
@@ -86,6 +86,14 @@ struct GroupSettlementDraftFinalizationSheet: View {
     }
 
     // MARK: - Derived
+
+    /// El borrador de quien PAGA lleva el importe en negativo (`bridgeSettlement`, Caso C): ahí el dinero
+    /// sale de la cuenta, y «Cuenta de destino» le decía lo contrario.
+    private var accountLabel: String {
+        GroupSettlementDraftAccountLabelLogic.isOutgoing(amount: draft.amount)
+            ? L10n.Inbox.GroupExpenseAccountDraft.assignAccount
+            : L10n.Inbox.GroupSettlementDraft.assignAccount
+    }
 
     /// Chip de categoría read-only: subcat sistema "Liquidación enviada/recibida" (siempre
     /// poblada por el bridge). Defensivo a `nil` durante hidratación lazy de CloudKit.
@@ -127,7 +135,7 @@ struct GroupSettlementDraftFinalizationSheet: View {
             #if DEBUG
             print("GroupSettlementDraftFinalizationSheet: approve failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
         }
     }

@@ -270,6 +270,9 @@ struct GroupExpenseFormView: View {
                     }
                 }
                 .accessibilityIdentifier("group_expense_delete_confirm")
+                // Lote 13: borrar afecta a todo el grupo; sin esta salida el diálogo solo se cerraba tocando fuera.
+                // Sin `role: .cancel`: con él, el diálogo (sale como popover en iOS 26) no la pinta.
+                Button(L10n.Common.cancel) {}
             }
             .onAppear {
                 viewModel.setContext(modelContext)
