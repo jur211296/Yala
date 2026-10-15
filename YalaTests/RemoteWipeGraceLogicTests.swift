@@ -122,6 +122,102 @@ struct RemoteWipeGraceLogicTests {
                                           isShowingFullModeActivation: false) == .cancelGrace)
     }
 
+    // MARK: - Qué aviso, y cuándo (ticket `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`)
+
+    private static let now = Date(timeIntervalSince1970: 1_760_000_000)
+
+    private static func decide(token: Bool = true, notAuthenticated: Bool = false, firstImportDone: Bool = true,
+                               importing: Bool = false, lastImport: TimeInterval? = nil,
+                               sinceDrop: TimeInterval = 5) -> RemoteWipeGraceLogic.NoticeDecision {
+        RemoteWipeGraceLogic.noticeDecision(
+            iCloudTokenPresent: token, mirrorReportedNotAuthenticated: notAuthenticated,
+            firstImportCompleted: firstImportDone, isImporting: importing,
+            lastImportActivityAt: lastImport.map { now.addingTimeInterval(-$0) },
+            droppedAt: now.addingTimeInterval(-sinceDrop), now: now)
+    }
+
+    /// El caso de la card: iCloud Drive apagado, sin cambiar de cuenta. El token de iCloud desaparece, iOS vacía la
+    /// copia local y las filas caen. El aviso de borrado mentía y su «Empezar de cero» mezclaba después los datos.
+    @Test("iCloud Drive apagado (sin token): el aviso es «iCloud no está disponible», no el de borrado")
+    func driveOff_isTheUnavailableNotice() {
+        #expect(Self.decide(token: false) == .present(.iCloudUnavailable), """
+            con iCloud Drive apagado Yala vuelve a decir «tus datos fueron eliminados de iCloud» y a ofrecer empezar \
+            de cero, con los datos intactos en iCloud.
+            """)
+    }
+
+    @Test("CloudKit dice que no hay cuenta (`notAuthenticated`): el mismo aviso, aunque el token siga")
+    func notAuthenticated_isTheUnavailableNotice() {
+        #expect(Self.decide(notAuthenticated: true) == .present(.iCloudUnavailable))
+    }
+
+    /// Sin cuenta no hay importación que esperar: un `.syncing(.importing)` o una actividad de hace un segundo no
+    /// pueden retener el aviso que explica por qué no están los datos.
+    @Test("sin iCloud, la importación no retiene: el aviso de iCloud va primero")
+    func noICloud_winsOverAnImport() {
+        #expect(Self.decide(token: false, importing: true, lastImport: 1) == .present(.iCloudUnavailable))
+        #expect(Self.decide(notAuthenticated: true, importing: true) == .present(.iCloudUnavailable))
+    }
+
+    /// La segunda cara medida: con Drive encendido otra vez, el espejo vacía y reimporta, y el aviso salió con la
+    /// importación a medias (las 34 filas volvieron tres segundos después).
+    @Test("importación en curso: se espera, no se avisa")
+    func importing_waits() {
+        #expect(Self.decide(importing: true) == .waitForImport, """
+            el aviso de borrado sale con la importación de iCloud a medias, sobre unas filas que están volviendo.
+            """)
+    }
+
+    /// El hueco medido en el arranque con Drive recién encendido: las filas cayeron ~3 s antes de que empezara la
+    /// importación. Con el primer import de este proceso pendiente, no se sabe aún qué hay en iCloud.
+    @Test("primer import de este arranque sin terminar: se espera, aunque no haya importación en curso")
+    func firstImportPending_waits() {
+        #expect(Self.decide(firstImportDone: false) == .waitForImport, """
+            el aviso de borrado sale antes de que el espejo haya terminado su primera importación, en el hueco entre \
+            que iOS vacía la copia local y la importación empieza.
+            """)
+        #expect(Self.decide(token: false, firstImportDone: false) == .present(.iCloudUnavailable),
+                "sin iCloud no hay primer import que esperar: el aviso de iCloud no puede quedarse retenido")
+    }
+
+    /// **El techo, con sus dos vecinos** (review del 15-oct). `hasCompletedFirstImport` no se enciende con un import
+    /// que falla —la zona borrada desde Ajustes › iCloud, que es un vaciado de verdad— ni con un iCloud sin nada que
+    /// importar. Sin techo, ese vaciado se quedaba sin aviso para siempre. Una caída con fecha futura no retiene.
+    @Test("el primer import pendiente retiene 60 s desde la caída, ni uno más")
+    func firstImportPending_hasACeiling() {
+        #expect(RemoteWipeGraceLogic.firstImportCeilingSeconds == 60)
+        #expect(Self.decide(firstImportDone: false, sinceDrop: 59.999) == .waitForImport)
+        #expect(Self.decide(firstImportDone: false, sinceDrop: 60) == .present(.dataRemoved), """
+            un vaciado de verdad cuyo primer import no termina nunca (con error, o sin nada que importar) se queda \
+            sin aviso para siempre: en el arranque siguiente no hay caída que lo vuelva a pedir.
+            """)
+        #expect(Self.decide(firstImportDone: false, sinceDrop: -30) == .present(.dataRemoved))
+        // Lo que SÍ no tiene techo es una importación en curso: la acaba su propio evento.
+        #expect(Self.decide(firstImportDone: false, importing: true, sinceDrop: 3600) == .waitForImport)
+    }
+
+    /// El plazo, con sus dos vecinos: 4,999 s retiene y 5 s ya no.
+    @Test("actividad de importación reciente retiene; a los 5 s exactos, ya no")
+    func recentImportActivity_holdsUntilTheQuietWindow() {
+        #expect(RemoteWipeGraceLogic.importQuietSeconds == 5)
+        #expect(Self.decide(lastImport: 0) == .waitForImport)
+        #expect(Self.decide(lastImport: 4.999) == .waitForImport)
+        #expect(Self.decide(lastImport: 5) == .present(.dataRemoved))
+        #expect(Self.decide(lastImport: 3600) == .present(.dataRemoved))
+    }
+
+    @Test("una actividad con fecha futura (reloj atrasado) no retiene")
+    func futureImportActivity_doesNotHold() {
+        #expect(Self.decide(lastImport: -60) == .present(.dataRemoved))
+    }
+
+    /// El vaciado remoto de verdad sigue avisando, y con su botón: es lo que el arreglo no puede llevarse por delante.
+    @Test("con iCloud disponible y la importación asentada, sigue el aviso de borrado")
+    func iCloudAvailable_andSettled_isTheRemovedNotice() {
+        #expect(Self.decide() == .present(.dataRemoved), "el vaciado remoto real se quedó sin aviso")
+        #expect(Self.decide(lastImport: nil) == .present(.dataRemoved))
+    }
+
     @Test("pedir el asentamiento avanza el contador que observa `ContentView`")
     @MainActor
     func requestingTheSettleIsObservable() {
@@ -198,11 +294,56 @@ struct RemoteWipeGraceLogicTests {
             la caída absorbida ya no cancela la gracia: una que ya corría —por un hueco de CloudKit de antes del \
             borrado— seguiría y pediría el aviso sobre datos que la persona acaba de borrar.
             """)
+        // **Desde el 2026-10-15 la gracia vive en `startRemoteWipeGrace()`**, porque el drenaje la re-arma cuando
+        // encuentra una importación en marcha. Por eso se fija la rama por IGUALDAD y se cuentan los llamadores.
         let arranque = try Self.between("case .startGrace:", and: "case .cancelGrace:", in: onChange)
-        #expect(arranque.contains("wipeGraceTask = Task {")
-                && arranque.contains("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)"), """
-            la gracia ya no nace SOLO en la rama `.startGrace`: otra reacción la arrancaría.
+        #expect(arranque.trimmingCharacters(in: .whitespaces) == "remoteWipeDropAt = .now startRemoteWipeGrace()", """
+            la rama `.startGrace` ya no es solo arrancar la gracia. Leído: \(arranque)
             """)
+        let gracia = try Self.body(of: "private func startRemoteWipeGrace()", in: vista)
+        #expect(gracia.hasPrefix("wipeGraceTask?.cancel() wipeGraceTask = Task {")
+                && gracia.contains("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)"), """
+            la gracia ya no cancela la anterior y pide el aviso desde su tarea. Leído: \(gracia.prefix(300))
+            """)
+        #expect(Self.count("startRemoteWipeGrace()", in: vista) == 3, """
+            la gracia se arranca desde un número inesperado de sitios. Son tres apariciones: su definición, la rama \
+            `.startGrace` de la caída y el re-armado del drenaje con una importación en marcha. Un tercer llamador \
+            arrancaría la gracia sin una caída detrás.
+            """)
+    }
+
+    /// **Lo que conecta las señales con la decisión, fijado por IGUALDAD** (review del 15-oct). La función pura se
+    /// prueba arriba; sin esto, pasar `isImporting: false`, `firstImportCompleted: true` o cambiar el `while` por un
+    /// `if` dejaba la reimportación sin red y los tests en verde.
+    @Test("MUTACIÓN: la decisión lee las señales vivas de `iCloudSyncService`, y la espera re-mide y no sale antes")
+    func theDecisionReadsTheLiveSignalsAndTheWaitRemeasures() throws {
+        let vista = try Self.code("Yala/App/ContentView.swift")
+        let decision = try Self.body(of: "private func currentRemoteWipeNoticeDecision()", in: vista)
+        #expect(decision == "let sync = iCloudSyncService.shared "
+                + "return RemoteWipeGraceLogic.noticeDecision( "
+                + "iCloudTokenPresent: sync.isAccountAvailable, "
+                + "mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated, "
+                + "firstImportCompleted: sync.hasCompletedFirstImport, "
+                + "isImporting: sync.status.isImporting, "
+                + "lastImportActivityAt: sync.lastImportActivityAt, "
+                + "droppedAt: remoteWipeDropAt, now: .now)", """
+            la decisión del aviso ya no lee las señales vivas tal cual. Leído: \(decision)
+            """)
+        let espera = try Self.body(of: "private func waitWhileAnImportCouldStillBringTheRowsBack()", in: vista)
+        #expect(espera == "while true { remeasurePersonalData() "
+                + "if hasPersonalData { throw CancellationError() } "
+                + "guard currentRemoteWipeNoticeDecision() == .waitForImport else { return } "
+                + "try await Task.sleep(for: .seconds(1)) }", """
+            la espera de la importación cambió de forma. Tiene que re-medir las filas en cada vuelta —un import de \
+            CloudKit no recalcula `hasPersonalData` solo— y salir SOLO cuando la decisión deja de ser esperar.
+            Leído: \(espera)
+            """)
+        let remedir = try Self.body(of: "private func remeasurePersonalData()", in: vista)
+        #expect(remedir == "let measured = checkHasPersonalData() "
+                + "if measured != hasPersonalData { hasPersonalData = measured }", "Leído: \(remedir)")
+        // La caída apunta su hora y el re-armado no: el techo se cuenta desde la caída.
+        #expect(Self.count("remoteWipeDropAt = .now", in: vista) == 1,
+                "la hora de la caída se apunta fuera de `.startGrace`: el re-armado del drenaje estrenaría el techo")
     }
 
     /// **Por IGUALDAD, no por `contains`**: una sentencia antepuesta —un `hasPersonalData = …` delante de

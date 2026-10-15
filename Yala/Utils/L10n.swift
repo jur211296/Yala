@@ -7545,6 +7545,10 @@ enum L10n {
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
+        /// El aviso que sale en lugar del de borrado cuando faltan los datos y iCloud no está disponible en este
+        /// iPhone (iCloud Drive apagado, sin sesión de iCloud). No ofrece borrar nada.
+        static var unavailableNoticeTitle: String { ls("icloud.unavailableNotice.title", comment: "") }
+        static var unavailableNoticeMessage: String { ls("icloud.unavailableNotice.message", comment: "") }
         static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
         static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
         static var forceSyncOfflineNote: String { ls("icloud.forceSync.offlineNote", comment: "") }
