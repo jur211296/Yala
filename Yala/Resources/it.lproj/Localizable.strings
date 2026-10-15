@@ -2768,13 +2768,13 @@
 "tutorials.panelFiltering.step2.desc" = "Nelle diverse viste dell'applicazione vedrai che puoi filtrare a tuo piacimento con i grafici.";
 "tutorials.panelFiltering.step3.desc" = "I filtri si propagano a tutte le viste allo stesso modo, così puoi vedere tutti i tipi di metriche per qualsiasi cosa tu voglia filtrare.";
 "tutorials.panelFiltering.step4.desc" = "In alcune viste avrai anche una sezione di filtri nella parte superiore per filtrare a tuo piacimento o rimuoverli tutti con un solo pulsante.";
-"tutorials.inboxApproval.step0.desc" = "Se sei utente Yala Pro, quando fai una registrazione tramite voce o immagine, ti porterà automaticamente alla bozza. Lo stesso se hai usato il comando rapido Registrazione Apple Pay.";
+"tutorials.inboxApproval.step0.desc" = "Se sei utente Yala Pro, quando fai una registrazione tramite voce o immagine, ti porterà automaticamente alla bozza. Lo stesso se hai usato il comando rapido «Registra pagamento Apple Pay».";
 "tutorials.inboxApproval.step1.desc" = "Completa semplicemente i campi obbligatori e approva. Verrà creata la transazione normalmente.";
 "tutorials.inboxApproval.step2.desc" = "Puoi anche fare registrazioni tramite voce o immagine con transazioni multiple. Ti dirà quante bozze sono state create e ti guiderà alla casella per esaminarle.";
 "tutorials.inboxApproval.step3.desc" = "Nella tua casella potrai approvare transazioni, selezionare Approva dopo per vederle più tardi o rifiutarle direttamente.";
 "tutorials.applePay.step0.desc" = "Apri l'app Comandi Rapidi e vai alla sezione Automazioni.";
 "tutorials.applePay.step1.desc" = "Tocca Nuova automazione, seleziona l'opzione Wallet, scegli le carte che vuoi usare e seleziona Esegui immediatamente.";
-"tutorials.applePay.step2.desc" = "Seleziona Crea nuovo comando rapido e cerca Yala in fondo. In Yala seleziona il comando rapido Registrazione Apple Pay.";
+"tutorials.applePay.step2.desc" = "Seleziona Crea nuovo comando rapido e cerca Yala in fondo. In Yala seleziona il comando rapido «Registra pagamento Apple Pay».";
 "tutorials.applePay.step3.desc" = "In Importo seleziona Input del comando rapido e poi Quantità. Fai lo stesso per Esercente e Nome rispettivamente. Disattiva il toggle \"Mostra durante l'esecuzione\".";
 
 "tutorials.applePay.completion.title" = "Apple Pay connesso!";
@@ -2828,17 +2828,14 @@
 "siriShortcuts.shortcut.voice" = "Inserimento vocale";
 "siriShortcuts.shortcut.image" = "Registra con foto o file";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "Automazione";
 "siriShortcuts.desc.quick" = "Apre il modulo di registrazione con un tap.";
 "siriShortcuts.desc.voice" = "Detta l'importo e la descrizione con la tua voce.";
 "siriShortcuts.desc.image" = "Scansiona uno scontrino o ricevuta con la fotocamera.";
 "siriShortcuts.desc.applePay" = "Registra un pagamento effettuato con Apple Pay.";
-"siriShortcuts.desc.automation" = "Crea registri automatici con le scorciatoie di sistema.";
 "siriShortcuts.phrase.quick" = "Registra in Yala";
 "siriShortcuts.phrase.voice" = "Registra con voce in Yala";
 "siriShortcuts.phrase.image" = "Registra con foto o file in Yala";
 "siriShortcuts.phrase.applePay" = "Registra Apple Pay in Yala";
-"siriShortcuts.phrase.automation" = "Registra da automazione in Yala";
 "siriShortcuts.faq.title" = "Domande frequenti";
 "siriShortcuts.faq.activateQ" = "Come attivo Siri?";
 "siriShortcuts.faq.activateA" = "È automatico. Basta dire la frase a Siri e Yala elaborerà la tua richiesta.";

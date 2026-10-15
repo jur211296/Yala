@@ -63,3 +63,14 @@ Try: 'Note 50 dollars on coffee'…». En cambio, cuando sí crea el borrador, m
 - La causa sigue sin medir.
 
 Triage 2026-10-08: abierto · medium → medium · Las 4 respuestas de error de QuickExpenseIntent siguen con la clave literal en .result(dialog:), y el éxito con String(localized:); el único commit posterior en Intents (33878deb5) no las tocó.
+
+## Medido en el simulador (lote 15 de la auditoría UX 2.2, 2026-10-15)
+
+iPhone 17 Pro, iOS 27.0, sistema en `es-PE` (`defaults read -g AppleLanguages` = `es-PE`), Yala Dev. Al tocar «Anotar
+con Siri» en Atajos › Yala Dev, **la pregunta también sale en inglés**: «What do you want to record?», con «Text»,
+«Cancel» y «Done». En la misma pantalla, los títulos de las cinco acciones de Yala salen en español («Anotar con
+Siri», «Registrar por voz»…). O sea: no son solo las cuatro respuestas de error, y la pregunta usa la misma
+`LocalizedStringResource` que el título. El proceso que corre el intent resuelve el idioma de Yala como inglés aunque
+Atajos lo pinte en español. Captura: `~/Claude/entregas/Yala--auditoria-ux-2-2-lote-15-desde-fuera/capturas/15.6-01-anotar-con-siri-pregunta.png`.
+Causa sin aislar; dos sospechas que se pueden medir: `CFBundleDevelopmentRegion = en` sin `CFBundleLocalizations` en el
+`Info.plist`, y `es-PE` sin casar con `es-419` en ese proceso.

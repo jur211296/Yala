@@ -2786,13 +2786,13 @@
 "tutorials.panelFiltering.step2.desc" = "アプリの各ビューで、グラフを使って好みにフィルターできることが分かります。";
 "tutorials.panelFiltering.step3.desc" = "フィルターはすべてのビューに伝播するので、フィルターしたい対象のあらゆる指標を確認できます。";
 "tutorials.panelFiltering.step4.desc" = "一部のビューでは上部にフィルターセクションがあり、好みにフィルターしたり、1ボタンですべて削除できます。";
-"tutorials.inboxApproval.step0.desc" = "Yala Proユーザーが音声や画像で記録すると、自動的にドラフト画面が表示されます。Apple Pay記録ショートカットを使った場合も同様です。";
+"tutorials.inboxApproval.step0.desc" = "Yala Proユーザーが音声や画像で記録すると、自動的にドラフト画面が表示されます。「Apple Payの支払いを記録」ショートカットを使った場合も同様です。";
 "tutorials.inboxApproval.step1.desc" = "必須項目を入力して承認するだけ。通常通り取引が作成されます。";
 "tutorials.inboxApproval.step2.desc" = "音声や画像で複数の取引をまとめて記録することもできます。作成されたドラフトの数を案内し、受信箱で確認できます。";
 "tutorials.inboxApproval.step3.desc" = "受信箱では取引を承認、あとで承認、または直接却下できます。";
 "tutorials.applePay.step0.desc" = "ショートカットアプリを開いてオートメーションセクションへ移動します。";
 "tutorials.applePay.step1.desc" = "新規オートメーションをタップ、Walletオプションを選び、使うカードを選択して「すぐに実行」を選びます。";
-"tutorials.applePay.step2.desc" = "新規ショートカットを作成を選び、一番下までスクロールしてYalaを検索。Yala内のApple Pay記録ショートカットを選択します。";
+"tutorials.applePay.step2.desc" = "新規ショートカットを作成を選び、一番下までスクロールしてYalaを検索。Yala内の「Apple Payの支払いを記録」ショートカットを選択します。";
 "tutorials.applePay.step3.desc" = "金額にショートカット入力 → 金額を選択。店舗と名前にも同様に設定。「実行時に表示」トグルをオフにします。";
 
 "tutorials.applePay.completion.title" = "Apple Payが連携されました！";
@@ -2830,17 +2830,14 @@
 "siriShortcuts.shortcut.voice" = "音声入力";
 "siriShortcuts.shortcut.image" = "写真やファイルで記録";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "オートメーション";
 "siriShortcuts.desc.quick" = "1タップで記録フォームを開きます。";
 "siriShortcuts.desc.voice" = "金額と説明を音声で口述します。";
 "siriShortcuts.desc.image" = "カメラでレシートや伝票を読み取ります。";
 "siriShortcuts.desc.applePay" = "Apple Payで行った支払いを記録します。";
-"siriShortcuts.desc.automation" = "システムショートカットで自動記録を作成します。";
 "siriShortcuts.phrase.quick" = "Yalaに記録";
 "siriShortcuts.phrase.voice" = "Yalaに音声で記録";
 "siriShortcuts.phrase.image" = "Yalaに写真やファイルで記録";
 "siriShortcuts.phrase.applePay" = "Yalaに Apple Payを記録";
-"siriShortcuts.phrase.automation" = "Yalaにオートメーションから記録";
 "siriShortcuts.faq.title" = "よくある質問";
 "siriShortcuts.faq.activateQ" = "Siriはどう有効化する？";
 "siriShortcuts.faq.activateA" = "自動です。フレーズをSiriに話しかければ、Yalaがリクエストを処理します。";

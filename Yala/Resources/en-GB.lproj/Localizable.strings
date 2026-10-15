@@ -2884,7 +2884,6 @@
 "shortcut.voiceEntry.title" = "Record by voice";
 "siriShortcuts.all.title" = "Other shortcuts";
 "siriShortcuts.desc.applePay" = "Log a payment made with Apple Pay.";
-"siriShortcuts.desc.automation" = "Create automatic records with system shortcuts.";
 "siriShortcuts.desc.image" = "Scan a receipt or ticket with your camera.";
 "siriShortcuts.desc.quick" = "Opens the record form with a single tap.";
 "siriShortcuts.desc.voice" = "Dictate the amount and description with your voice.";
@@ -2896,19 +2895,17 @@
 "siriShortcuts.faq.offlineQ" = "Does it work offline?";
 "siriShortcuts.faq.title" = "FAQ";
 "siriShortcuts.phrase.applePay" = "Record Apple Pay in Yala";
-"siriShortcuts.phrase.automation" = "Record from automation in Yala";
 "siriShortcuts.phrase.image" = "Record with photo or file in Yala";
 "siriShortcuts.phrase.quick" = "Record in Yala";
 "siriShortcuts.phrase.voice" = "Record with voice in Yala";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "Automation";
 "siriShortcuts.shortcut.image" = "Add with a photo or file";
 "siriShortcuts.shortcut.quick" = "Quick record";
 "siriShortcuts.shortcut.voice" = "Voice input";
 "siriShortcuts.siri.alt1" = "You can also say: \"Log an expense in Yala\"";
-"siriShortcuts.siri.alt2" = "Or: \"Save an expense in Yala\"";
+"siriShortcuts.siri.alt2" = "Or: \"Record with Siri in Yala\"";
 "siriShortcuts.siri.description" = "Dictate your expense and a draft will be created in your inbox.";
-"siriShortcuts.siri.phrase" = "Create a record in Yala";
+"siriShortcuts.siri.phrase" = "Note an expense in Yala";
 "siriShortcuts.siri.proNote" = "Requires Yala Pro";
 "siriShortcuts.siri.title" = "Record with Siri";
 "siriShortcuts.subtitle" = "Use your voice or quick shortcuts to record expenses instantly.";
@@ -3328,7 +3325,7 @@
 "tutorials.applePay.step0.title" = "Open Shortcuts";
 "tutorials.applePay.step1.desc" = "Tap New automation, select the Wallet option, choose the cards you want to use, and select Run Immediately.";
 "tutorials.applePay.step1.title" = "Create the automation";
-"tutorials.applePay.step2.desc" = "Select Create new shortcut and search for Yala at the very bottom. In Yala select the Apple Pay Record shortcut.";
+"tutorials.applePay.step2.desc" = "Select Create new shortcut and search for Yala at the very bottom. In Yala select the “Record Apple Pay payment” shortcut.";
 "tutorials.applePay.step2.title" = "Select the Yala shortcut";
 "tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. Turn off the \"Show When Run\" toggle.";
 "tutorials.applePay.step3.title" = "Configure the parameters";
@@ -3426,7 +3423,7 @@
 "tutorials.inboxApproval.completion.title" = "Inbox mastered!";
 "tutorials.inboxApproval.intro.desc" = "Review and approve automatic expenses from Apple Pay, voice, or camera.";
 "tutorials.inboxApproval.intro.title" = "Your smart inbox";
-"tutorials.inboxApproval.step0.desc" = "If you're a Yala Pro user, when you make a record by voice or image, it will automatically take you to the draft. The same if you used the Apple Pay Record shortcut.";
+"tutorials.inboxApproval.step0.desc" = "If you're a Yala Pro user, when you make a record by voice or image, it will automatically take you to the draft. The same if you used the “Record Apple Pay payment” shortcut.";
 "tutorials.inboxApproval.step0.title" = "Record by voice or image";
 "tutorials.inboxApproval.step1.desc" = "Simply fill in the required fields and approve. The transaction will be created normally.";
 "tutorials.inboxApproval.step1.title" = "Complete and approve";

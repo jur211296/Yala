@@ -204,17 +204,9 @@ struct SiriShortcutsView: View {
                     description: String(localized: "siriShortcuts.desc.applePay"),
                     phrase: String(localized: "siriShortcuts.phrase.applePay")
                 )
-
-                Divider().padding(.horizontal, DS.Spacing.lg)
-
-                shortcutRow(
-                    icon: "gearshape.fill",
-                    // A11Y-DM: gris neutro decorativo de la fila de automatización (sistema, adapta a Dark Mode)
-                    iconColor: .gray,
-                    name: String(localized: "siriShortcuts.shortcut.automation"),
-                    description: String(localized: "siriShortcuts.desc.automation"),
-                    phrase: String(localized: "siriShortcuts.phrase.automation")
-                )
+                // Hasta el lote 15 de la auditoría UX 2.2 había una fila «Automatización» con la frase «Registra desde
+                // automatización en Yala»: esa acción no existe en `AppShortcutsProvider`. La automatización real es la
+                // de Apple Pay, que ya tiene su fila.
             }
             .background(.thCard)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))

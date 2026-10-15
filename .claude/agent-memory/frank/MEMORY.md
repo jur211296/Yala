@@ -92,6 +92,7 @@
 - [Forzar preferencias en el simulador](reference_forzar_preferencias_en_el_simulador.md) — matar cfprefsd del runtime y plistlib; plutil rompe claves con puntos.
 - [axe no toca una ventana propia](feedback_axe_no_toca_una_ventana_propia.md) — un aviso en UIWindow aparte: veredicto por XCUITest y dedo.
 - [Auto-merge en 2.2 no espera al CI](feedback_auto_merge_en_2_2_no_espera_al_ci.md) — 2.2 no exige checks: fusiona al instante.
+- [Entradas de fuera en el simulador](reference_entradas_de_fuera_en_el_simulador.md) — widget = URL; Siri se ejecuta en Atajos; push sin permiso no va.
 - [Yala IA en el simulador](reference_yala_ia_en_el_simulador.md) — sin servidor: args -uitest-chat-* y -chatQuestionsToday N; privacy grant mata la app.
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.

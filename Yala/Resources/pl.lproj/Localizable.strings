@@ -2786,13 +2786,13 @@
 "tutorials.panelFiltering.step2.desc" = "W różnych widokach aplikacji zobaczysz, że możesz filtrować po swojemu poprzez wykresy.";
 "tutorials.panelFiltering.step3.desc" = "Filtry propagują się do wszystkich widoków, więc widzisz wszelkie wskaźniki dla tego, co chcesz filtrować.";
 "tutorials.panelFiltering.step4.desc" = "W niektórych widokach masz też sekcję filtrów u góry, dzięki czemu filtrujesz po swojemu lub czyścisz wszystko jednym przyciskiem.";
-"tutorials.inboxApproval.step0.desc" = "Jeśli jesteś użytkownikiem Yala Pro, podczas zapisu głosem lub obrazem zostaniesz automatycznie przeniesiony do szkicu. Tak samo, jeśli używałeś skrótu Zapis Apple Pay.";
+"tutorials.inboxApproval.step0.desc" = "Jeśli jesteś użytkownikiem Yala Pro, podczas zapisu głosem lub obrazem zostaniesz automatycznie przeniesiony do szkicu. Tak samo, jeśli używałeś skrótu „Zapisz płatność Apple Pay”.";
 "tutorials.inboxApproval.step1.desc" = "Wypełnij wymagane pola i zatwierdź. Transakcja zostanie utworzona normalnie.";
 "tutorials.inboxApproval.step2.desc" = "Możesz też tworzyć wpisy głosowe lub z obrazów z wieloma transakcjami. Powiemy, ile szkiców powstało, i poprowadzimy do skrzynki, by je przejrzeć.";
 "tutorials.inboxApproval.step3.desc" = "W skrzynce możesz zatwierdzać transakcje, wybrać Zatwierdź później lub odrzucać je bezpośrednio.";
 "tutorials.applePay.step0.desc" = "Otwórz aplikację Skróty i przejdź do sekcji Automatyzacje.";
 "tutorials.applePay.step1.desc" = "Stuknij Nowa automatyzacja, wybierz opcję Wallet, wybierz karty, których chcesz używać, i wybierz Uruchom natychmiast.";
-"tutorials.applePay.step2.desc" = "Wybierz Utwórz nowy skrót i wyszukaj Yala na samym dole. W Yala wybierz skrót Zapis Apple Pay.";
+"tutorials.applePay.step2.desc" = "Wybierz Utwórz nowy skrót i wyszukaj Yala na samym dole. W Yala wybierz skrót „Zapisz płatność Apple Pay”.";
 "tutorials.applePay.step3.desc" = "Dla pola Kwota wybierz Wejście skrótu, a następnie Kwota. Zrób to samo dla Sprzedawca i Nazwa. Wyłącz przełącznik „Pokaż przy uruchomieniu”.";
 
 "tutorials.applePay.completion.title" = "Apple Pay połączone!";
@@ -2830,17 +2830,14 @@
 "siriShortcuts.shortcut.voice" = "Wprowadzanie głosowe";
 "siriShortcuts.shortcut.image" = "Dodaj ze zdjęcia lub pliku";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "Automatyzacja";
 "siriShortcuts.desc.quick" = "Otwiera formularz zapisu jednym dotknięciem.";
 "siriShortcuts.desc.voice" = "Podyktuj kwotę i opis głosem.";
 "siriShortcuts.desc.image" = "Skanuj paragon lub bilet aparatem.";
 "siriShortcuts.desc.applePay" = "Zapisz płatność wykonaną przez Apple Pay.";
-"siriShortcuts.desc.automation" = "Twórz automatyczne wpisy poprzez skróty systemowe.";
 "siriShortcuts.phrase.quick" = "Zapisz w Yala";
 "siriShortcuts.phrase.voice" = "Zapisz głosem w Yala";
 "siriShortcuts.phrase.image" = "Zapisz ze zdjęcia lub pliku w Yala";
 "siriShortcuts.phrase.applePay" = "Zapisz Apple Pay w Yala";
-"siriShortcuts.phrase.automation" = "Zapisz z automatyzacji w Yala";
 "siriShortcuts.faq.title" = "FAQ";
 "siriShortcuts.faq.activateQ" = "Jak aktywować Siri?";
 "siriShortcuts.faq.activateA" = "Robi się automatycznie. Wystarczy powiedzieć frazę do Siri, a Yala przetworzy żądanie.";

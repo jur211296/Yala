@@ -2767,13 +2767,13 @@
 "tutorials.panelFiltering.step2.desc" = "Dans les différentes vues de l'application tu verras que tu peux filtrer comme tu veux avec les graphiques.";
 "tutorials.panelFiltering.step3.desc" = "Les filtres se propagent à toutes les vues de la même façon, ainsi tu peux voir toutes sortes de métriques pour ce que tu veux filtrer.";
 "tutorials.panelFiltering.step4.desc" = "Dans certaines vues tu auras aussi une section de filtres en haut pour filtrer comme tu veux ou tout retirer avec un seul bouton.";
-"tutorials.inboxApproval.step0.desc" = "Si tu es utilisateur Yala Pro, quand tu fais un enregistrement par voix ou image, il te mènera automatiquement au brouillon. Pareil si tu as utilisé le raccourci Enregistrement Apple Pay.";
+"tutorials.inboxApproval.step0.desc" = "Si tu es utilisateur Yala Pro, quand tu fais un enregistrement par voix ou image, il te mènera automatiquement au brouillon. Pareil si tu as utilisé le raccourci « Enregistrer un paiement Apple Pay ».";
 "tutorials.inboxApproval.step1.desc" = "Complète simplement les champs obligatoires et approuve. La transaction se créera normalement.";
 "tutorials.inboxApproval.step2.desc" = "Tu peux aussi faire des enregistrements vocaux ou par image avec plusieurs transactions. Il te dira combien de brouillons ont été créés et te guidera vers la boîte pour les réviser.";
 "tutorials.inboxApproval.step3.desc" = "Dans ta boîte tu pourras approuver des transactions, sélectionner Approuver plus tard pour les voir après ou les rejeter directement.";
 "tutorials.applePay.step0.desc" = "Ouvre l'app Raccourcis et va dans la section Automatisations.";
 "tutorials.applePay.step1.desc" = "Touche Nouvelle automatisation, sélectionne l'option Wallet, choisis les cartes que tu veux utiliser et sélectionne Exécuter immédiatement.";
-"tutorials.applePay.step2.desc" = "Sélectionne Créer nouveau raccourci et cherche Yala tout en bas. Dans Yala sélectionne le raccourci Enregistrement Apple Pay.";
+"tutorials.applePay.step2.desc" = "Sélectionne Créer nouveau raccourci et cherche Yala tout en bas. Dans Yala sélectionne le raccourci « Enregistrer un paiement Apple Pay ».";
 "tutorials.applePay.step3.desc" = "Dans Montant sélectionne Entrée du raccourci puis Quantité. Fais la même chose pour Commerçant et Nom respectivement. Désactive le toggle « Afficher à l'exécution ».";
 
 "tutorials.applePay.completion.title" = "Apple Pay connecté !";
@@ -2827,17 +2827,14 @@
 "siriShortcuts.shortcut.voice" = "Entrée vocale";
 "siriShortcuts.shortcut.image" = "Ajouter avec une photo ou un fichier";
 "siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.shortcut.automation" = "Automatisation";
 "siriShortcuts.desc.quick" = "Ouvre le formulaire d'enregistrement en un tap.";
 "siriShortcuts.desc.voice" = "Dicte le montant et la description avec ta voix.";
 "siriShortcuts.desc.image" = "Scanne un reçu ou ticket avec l'appareil photo.";
 "siriShortcuts.desc.applePay" = "Enregistre un paiement effectué avec Apple Pay.";
-"siriShortcuts.desc.automation" = "Crée des enregistrements automatiques avec les raccourcis système.";
 "siriShortcuts.phrase.quick" = "Enregistre dans Yala";
 "siriShortcuts.phrase.voice" = "Enregistre avec la voix dans Yala";
 "siriShortcuts.phrase.image" = "Enregistre avec photo ou fichier dans Yala";
 "siriShortcuts.phrase.applePay" = "Enregistre Apple Pay dans Yala";
-"siriShortcuts.phrase.automation" = "Enregistre depuis l'automatisation dans Yala";
 "siriShortcuts.faq.title" = "Questions fréquentes";
 "siriShortcuts.faq.activateQ" = "Comment activer Siri ?";
 "siriShortcuts.faq.activateA" = "C'est automatique. Dis simplement la phrase à Siri et Yala traitera ta demande.";

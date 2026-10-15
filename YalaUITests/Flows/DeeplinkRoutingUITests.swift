@@ -55,4 +55,18 @@ final class DeeplinkRoutingUITests: XCTestCase {
             "El deeplink a Estadísticas no dejó ese tab seleccionado al arranque."
         )
     }
+
+    /// Lote 15 de la auditoría UX 2.2: los widgets «Próximos pagos» y «Próximo pago» abren Pagos planificados. Con
+    /// `yala://planning` a secas, Planificación abría la última sub-pestaña, de fábrica Presupuestos.
+    func test_paymentsWidgetURL_opensScheduledPayments_notBudgets() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, deeplinkURL: "yaladev://planning/scheduled-payments")
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        let paymentsFab = app.descendants(matching: .any)["scheduled_payments_create_fab"]
+        XCTAssertTrue(paymentsFab.waitForExistence(timeout: 15),
+                      "El enlace del widget de pagos no abrió Pagos planificados.")
+        XCTAssertFalse(app.descendants(matching: .any)["budgets_create_fab"].exists,
+                       "El enlace del widget de pagos dejó Presupuestos delante.")
+    }
 }
