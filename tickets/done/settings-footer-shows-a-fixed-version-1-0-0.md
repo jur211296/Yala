@@ -1,10 +1,10 @@
 ---
 id: settings-footer-shows-a-fixed-version-1-0-0
-status: backlog
+status: done
 area: settings
 priority: low
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-15
 source: docs/ux/mapa-de-flujos-2.2.md (auditoría UX 2.2, fase 1)
 ---
 
@@ -21,3 +21,7 @@ Con la app en 2.1, quien manda una captura a soporte ve 1.0.0.
 ## Hecho cuando
 
 El pie lee `CFBundleShortVersionString` y `CFBundleVersion` del bundle, en los 16 idiomas con su formato.
+
+## Cerrado (2026-10-15)
+
+Arreglado en el PR #509 (lote 16 de la auditoría UX 2.2): el pie lee `CFBundleShortVersionString` y `CFBundleVersion` (`AppVersionInfo.footer`), «Versión %1$@ (Build %2$@)» en los 16 idiomas. Tests: `SettingsLote16CopyTests` y `SettingsLote16UITests/test_versionFooter_isNotTheOldFixedText`.
