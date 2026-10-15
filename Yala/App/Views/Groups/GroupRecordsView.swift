@@ -144,6 +144,9 @@ struct GroupRecordsView: View {
                         expenseToDelete = nil
                     }
                 }
+                // Lote 13: sin esta salida el diálogo solo se cerraba tocando fuera. Sin `role: .cancel`: con él,
+                // el diálogo (sale como popover en iOS 26) no la pinta (.claude/rules/swiftui-ds.md).
+                Button(L10n.Common.cancel) { expenseToDelete = nil }
             }
         }
     }

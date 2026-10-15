@@ -285,13 +285,27 @@ struct GroupSplitMemberList: View {
             HStack(spacing: DS.Spacing.xs) {
                 splitField(id: id, keyPath: \.sharesCounts, keyboard: .numberPad,
                            filter: { AmountInputHelper.filterIntegerInput($0) })
-                Text(L10n.Split.sharesParts)
+                Text(L10n.Split.sharesUnit(sharesShown(for: id)))
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
             }
         case .equal:
             EmptyView()
         }
+    }
+
+    /// Las partes que se VEN junto a la etiqueta: lo escrito o, si el campo está vacío, el placeholder.
+    /// Sin esto la etiqueta decía «1 partes» en el caso por defecto.
+    private func sharesShown(for id: String) -> Int {
+        if let typed = Int(viewModel.sharesCounts[id] ?? "") { return typed }
+        let placeholder = GroupSplitPlaceholderLogic.placeholder(
+            forMemberID: id,
+            orderedMemberIDs: viewModel.activeSheetMembers.map { $0.id.uuidString },
+            currentInputs: viewModel.sharesCounts,
+            splitType: viewModel.splitType,
+            total: viewModel.amount
+        )
+        return Int(placeholder) ?? 0
     }
 
     // MARK: - Split Field (ZStack + dynamic placeholder + filtering + participation sync)

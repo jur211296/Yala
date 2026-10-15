@@ -136,7 +136,7 @@ struct BridgeActivationSheet: View {
                 onConfirm()
                 dismiss()
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = GroupsUserFacingErrorLogic.message(for: error)
             }
         }
     }

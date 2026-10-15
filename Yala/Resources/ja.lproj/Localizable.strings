@@ -3014,6 +3014,7 @@
 "split.sharesYouPay" = "あなたの負担";
 "split.sharesOf" = "/";
 "split.sharesParts" = "口";
+"split.sharesPart" = "口";
 
 // MARK: - Groups
 "groups.title" = "グループ";
@@ -3984,8 +3985,8 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "この支出には後の精算があります。削除する前に精算を削除または整理してください。";
 "groups.bridge.editFromGroup" = "この取引はグループと同期しています。共有支出から編集してください。";
-"groups.bridge.assignFromInbox" = "Inboxからサブカテゴリを割り当てて完了させてください。";
-"groups.bridge.editSettlementInGroup" = "この取引は精算から来ています。グループ内でsettlementを編集してください。";
+"groups.bridge.assignFromInbox" = "受信箱でサブカテゴリを割り当てて完了させてください。";
+"groups.bridge.editSettlementInGroup" = "この取引は精算から来ています。グループ内で編集してください。";
 "groups.bridge.editPartialBanner" = "この支出はグループからのものです。アカウント、カテゴリー、タグを編集できます。金額と日付はグループと同期します。";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@さんが%2$@でこの支出を記録しました。記録に追加するアカウントを選択してください。";
 "groups.bridge.draftReasonCurrencyChanged" = "%@の支出の通貨が変更されました。あなたの分を記録するアカウントを選択してください。";
@@ -3993,11 +3994,11 @@
 "inbox.groupExpenseAccountDraft.title" = "アカウントを割り当て";
 "inbox.groupExpenseAccountDraft.assignAccount" = "支払元アカウント";
 "groups.bridge.activateTitle" = "自動取引を有効にする";
-"groups.bridge.activateBody" = "今後、共有支出はあなたのグループ口座に反映されます。このグループには%d件の過去の支出があります。それらをどうしますか?";
+"groups.bridge.activateBody" = "今後、共有支出はあなたの個人口座に反映されます。グループ内の過去の支出：%d件。それらをどうしますか？";
 "groups.bridge.activateOptionFromNow" = "今から始める";
 "groups.bridge.activateOptionFromNowHint" = "新しい支出のみが反映されます。";
 "groups.bridge.activateOptionImportAll" = "全履歴をインポート";
-"groups.bridge.activateOptionImportAllHint" = "%d件の過去の支出とその精算の取引が作成されます。";
+"groups.bridge.activateOptionImportAllHint" = "過去の支出も口座に反映されます（合計%d件）。";
 "groups.bridge.activateImportRegenerationNote" = "既存の生成された取引は現在のルールに従って再生成されます。";
 "groups.bridge.deactivateTitle" = "自動取引を無効にする";
 "groups.bridge.deactivateBody" = "このグループによって生成された%d件の取引があります。削除すると、グループの残高が調整されます。";

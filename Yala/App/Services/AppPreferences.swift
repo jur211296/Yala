@@ -46,6 +46,14 @@ import SwiftUI
 enum CurrencyDisplayFormat: String, CaseIterable, Sendable {
     case code
     case symbol
+
+    /// La etiqueta de una moneda con esta preferencia: «S/» con `.symbol`, «PEN» con `.code`.
+    func label(for code: String) -> String {
+        switch self {
+        case .symbol: return CurrencyCode.symbol(for: code)
+        case .code: return code
+        }
+    }
 }
 
 // MARK: - AppPreferences

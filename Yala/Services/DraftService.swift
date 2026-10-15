@@ -1204,7 +1204,7 @@ enum DraftServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noContext:
-            return "DraftService: No ModelContext available"
+            return L10n.Common.saveError
         case .missingAccount:
             return L10n.Inbox.errorNoAccount
         case .missingAmount:
@@ -1213,14 +1213,14 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.errorNoSubcategory
         case .futureDateNotAllowed:
             return L10n.Inbox.errorFutureDate
-        case .saveFailed(let error):
-            return "DraftService: Save failed - \(error.localizedDescription)"
+        case .saveFailed:
+            return L10n.Common.saveError
         case .cannotDeleteGroupDraft, .cannotRejectGroupDraft:
             return L10n.Inbox.groupDraftCannotDelete
         case .groupExpenseTargetMissing:
             return L10n.Inbox.errorGroupExpenseGone
         case .groupScheduledExpenseRequiresForm:
-            return "DraftService: group scheduled expense must be approved via the group form"
+            return L10n.Common.saveError
         case .groupSettlementAlreadyRegistered:
             return L10n.Inbox.GroupSettlementDraft.alreadyRegistered
         case .settlementAmountChangeTransactionGone:

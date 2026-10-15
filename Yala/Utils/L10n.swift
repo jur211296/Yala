@@ -1822,6 +1822,11 @@ enum L10n {
         static var sharesYouPay: String { ls("split.sharesYouPay", comment: "") }
         static var sharesOf: String { ls("split.sharesOf", comment: "") }
         static var sharesParts: String { ls("split.sharesParts", comment: "") }
+        /// «1 parte» / «2 partes»: la etiqueta que va detrás de un número de partes.
+        static func sharesUnit(_ count: Int) -> String {
+            count == 1 ? sharesPart : sharesParts
+        }
+        static var sharesPart: String { ls("split.sharesPart", comment: "") }
         // Chip detail labels (renderiza "Tu: X · Resto: Y" debajo del monto en GroupExpenseFormView)
         static var totalLabel: String { ls("split.totalLabel", comment: "") }
         static var youLabel: String { ls("split.you", comment: "") }

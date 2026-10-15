@@ -207,8 +207,8 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Este gasto tiene liquidaciones asociadas posteriores. Primero elimina o regulariza las liquidaciones para poder borrar el gasto.";
 "groups.bridge.editFromGroup" = "Esta transacción se sincroniza con un grupo. Editala desde el gasto compartido.";
-"groups.bridge.assignFromInbox" = "Asigná subcategoría desde el Inbox para finalizarla.";
-"groups.bridge.editSettlementInGroup" = "Esta transacción proviene de una liquidación. Editá el settlement en el grupo.";
+"groups.bridge.assignFromInbox" = "Asigná una subcategoría desde la Bandeja de Entrada para finalizarla.";
+"groups.bridge.editSettlementInGroup" = "Esta transacción proviene de una liquidación. Editala en el grupo.";
 "groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Podés editar la cuenta, la categoría y las etiquetas. El monto y la fecha se sincronizan con el grupo.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registró este gasto en %2$@. Elegí cuenta para llevarlo a tus registros.";
 "groups.bridge.draftReasonCurrencyChanged" = "La moneda del gasto en %@ cambió. Elegí cuenta para registrar tu parte.";
@@ -216,11 +216,11 @@
 "inbox.groupExpenseAccountDraft.title" = "Asignar cuenta";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Cuenta de origen";
 "groups.bridge.activateTitle" = "Activar transacciones automáticas";
-"groups.bridge.activateBody" = "A partir de ahora, los gastos compartidos se reflejarán en tu cuenta de grupos. Tienes %d gastos previos en este grupo. ¿Qué hacemos con ellos?";
+"groups.bridge.activateBody" = "A partir de ahora, los gastos compartidos se reflejarán en tus cuentas personales. Gastos anteriores en tus grupos: %d. ¿Qué hacemos con ellos?";
 "groups.bridge.activateOptionFromNow" = "Empezar desde ahora";
 "groups.bridge.activateOptionFromNowHint" = "Solo los gastos nuevos se reflejarán.";
 "groups.bridge.activateOptionImportAll" = "Importar todo el historial";
-"groups.bridge.activateOptionImportAllHint" = "Se crearán transacciones para los %d gastos previos y sus liquidaciones.";
+"groups.bridge.activateOptionImportAllHint" = "Los gastos anteriores también se reflejarán en tus cuentas (%d en total).";
 "groups.bridge.activateImportRegenerationNote" = "Las transacciones existentes se regenerarán según las reglas actuales.";
 "groups.bridge.deactivateTitle" = "Desactivar transacciones automáticas";
 "groups.bridge.deactivateBody" = "Tienes %d transacciones generadas por este grupo. Si las eliminás, tu saldo de grupos se ajustará.";
@@ -2931,6 +2931,7 @@
 "split.rest" = "Resto";
 "split.sharesOf" = "de";
 "split.sharesParts" = "partes";
+"split.sharesPart" = "parte";
 "split.sharesSuffix %d %d" = "(%d/%d partes)";
 "split.sharesYouPay" = "Pagas";
 "split.tipEqual" = "Divide el total entre el número de personas. Cada uno paga lo mismo.";

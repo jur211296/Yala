@@ -50,14 +50,14 @@
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Este gasto tem liquidações posteriores. Exclua ou regularize as liquidações antes de removê-lo.";
 "groups.bridge.editFromGroup" = "Esta transação sincroniza com um grupo. Edite no gasto compartilhado.";
-"groups.bridge.assignFromInbox" = "Atribua subcategoria pelo Inbox para finalizá-la.";
-"groups.bridge.editSettlementInGroup" = "Esta transação vem de uma liquidação. Edite o settlement no grupo.";
+"groups.bridge.assignFromInbox" = "Atribua uma subcategoria pela Caixa de Entrada para finalizá-la.";
+"groups.bridge.editSettlementInGroup" = "Esta transação vem de uma liquidação. Edite-a no grupo.";
 "groups.bridge.activateTitle" = "Ativar transações automáticas";
-"groups.bridge.activateBody" = "A partir de agora, os gastos compartilhados serão refletidos na sua conta de grupos. Você tem %d gastos anteriores neste grupo. O que fazemos com eles?";
+"groups.bridge.activateBody" = "A partir de agora, as despesas partilhadas aparecerão nas suas contas pessoais. Despesas anteriores nos seus grupos: %d. O que fazemos com elas?";
 "groups.bridge.activateOptionFromNow" = "Começar a partir de agora";
 "groups.bridge.activateOptionFromNowHint" = "Apenas os gastos novos serão refletidos.";
 "groups.bridge.activateOptionImportAll" = "Importar todo o histórico";
-"groups.bridge.activateOptionImportAllHint" = "Serão criadas transações para os %d gastos anteriores e suas liquidações.";
+"groups.bridge.activateOptionImportAllHint" = "As despesas anteriores também aparecerão nas suas contas (%d no total).";
 "groups.bridge.activateImportRegenerationNote" = "As transações existentes serão regeneradas com as regras atuais.";
 "groups.bridge.deactivateTitle" = "Desativar transações automáticas";
 "groups.bridge.deactivateBody" = "Você tem %d transações geradas por este grupo. Se você excluí-las, seu saldo de grupos será ajustado.";
@@ -2903,6 +2903,7 @@
 "split.rest" = "Resto";
 "split.sharesOf" = "de";
 "split.sharesParts" = "partes";
+"split.sharesPart" = "parte";
 "split.sharesSuffix %d %d" = "(%d/%d partes)";
 "split.sharesYouPay" = "Você paga";
 "split.tipEqual" = "Divida o total igualmente entre o número de pessoas.";

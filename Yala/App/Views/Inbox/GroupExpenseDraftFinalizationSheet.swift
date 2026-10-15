@@ -114,7 +114,7 @@ struct GroupExpenseDraftFinalizationSheet: View {
             #if DEBUG
             print("GroupExpenseDraftFinalizationSheet: approve failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
         }
     }

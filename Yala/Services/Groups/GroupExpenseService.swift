@@ -820,22 +820,25 @@ enum GroupExpenseServiceError: LocalizedError {
     case movedToBackend
     case saveFailed(Error)
 
+    /// Lo que ve la persona. Los casos de programación (contexto, importes, repartos) y el fallo al
+    /// guardar dicen el genérico localizado: hasta el lote 13 eran textos de desarrollo en inglés y
+    /// varias pantallas los enseñaban tal cual. El detalle técnico queda en los `print` de DEBUG.
     var errorDescription: String? {
         switch self {
         case .noContext:
-            return "GroupExpenseService: No ModelContext available"
+            return L10n.Groups.Errors.actionFailed
         case .invalidAmount:
-            return "GroupExpenseService: Amount must be greater than zero"
+            return L10n.Groups.Errors.actionFailed
         case .noShares:
-            return "GroupExpenseService: At least one share is required"
+            return L10n.Groups.Errors.actionFailed
         case .sharesSumMismatch:
-            return "GroupExpenseService: Sum of shares does not match the expense amount"
+            return L10n.Groups.Errors.actionFailed
         case .noPayer:
-            return "GroupExpenseService: Payer member ID is required"
+            return L10n.Groups.Errors.actionFailed
         case .selfSettlement:
-            return "GroupExpenseService: Cannot settle with yourself"
+            return L10n.Groups.Errors.actionFailed
         case .inactiveMember:
-            return "GroupExpenseService: Inactive members cannot create or edit shared expenses"
+            return L10n.Groups.Errors.actionFailed
         case .pendingApproval:
             return L10n.Groups.Errors.pendingApproval
         case .expenseHasAssociatedSettlements:
@@ -846,8 +849,8 @@ enum GroupExpenseServiceError: LocalizedError {
             return L10n.Groups.OpeningBalance.errorSameMember
         case .movedToBackend:
             return L10n.Groups.Errors.movedToBackend
-        case .saveFailed(let error):
-            return "GroupExpenseService: Save failed - \(error.localizedDescription)"
+        case .saveFailed:
+            return L10n.Groups.Errors.actionFailed
         }
     }
 }
