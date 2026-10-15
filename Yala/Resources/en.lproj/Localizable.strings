@@ -557,9 +557,9 @@
 "budgets.period.all" = "All";
 
 // Budget Status
-"budgets.status.exceeded" = "Exceeded";
-"budgets.status.active" = "Active";
-"budgets.status.inactive" = "Inactive";
+"budgets.status.exceeded" = "Over budget";
+"budgets.status.active" = "Active budgets";
+"budgets.status.inactive" = "Inactive budgets";
 "budget.noInactive" = "No inactive budgets";
 
 // Budget Details
