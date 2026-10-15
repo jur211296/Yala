@@ -4808,6 +4808,7 @@
 
 /* G4 sign-in body */
 "groups.signin.body" = "Um der Gruppe beizutreten, brauchst du ein Yala-Konto. Melde dich mit Apple oder Google an und mach mit deiner Einladung weiter.";
+"groups.signin.bodyNoInvite" = "Deine Gruppen werden in deinem Yala-Konto gespeichert, damit alle dieselben Ausgaben sehen, immer aktuell. Melde dich mit Apple oder Google an, um weiterzumachen.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Das wird dein Yala-Konto sein: Wenn du eines Tages deine persönlichen Daten in die Cloud bringst, nutzt du genau dieses.";

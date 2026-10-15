@@ -74,11 +74,11 @@ struct GroupCardView: View {
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 
-                        if pendingCount > 0 {
+                        if visiblePendingCount > 0 {
                             Text("·")
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.secondary)
-                            Text(L10n.Groups.Member.pendingCount(pendingCount))
+                            Text(L10n.Groups.Member.pendingCount(visiblePendingCount))
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(DS.Semantic.warningForeground)
                         }
@@ -297,9 +297,14 @@ struct GroupCardView: View {
         }
     }
 
+    /// Sin la propia solicitud de quien espera aprobación (`GroupCardDisplayLogic.visiblePendingCount`).
+    private var visiblePendingCount: Int {
+        GroupCardDisplayLogic.visiblePendingCount(pendingCount, displayMode: displayMode)
+    }
+
     private var accessibilityText: String {
         var parts = [group.name, L10n.Groups.Member.activeCount(memberCount)]
-        if pendingCount > 0 { parts.append(L10n.Groups.Member.pendingCount(pendingCount)) }
+        if visiblePendingCount > 0 { parts.append(L10n.Groups.Member.pendingCount(visiblePendingCount)) }
         switch displayMode {
         case .pendingApproval:
             parts.append(L10n.Groups.Card.pendingApprovalChip)

@@ -59,6 +59,10 @@ struct GroupsSignInView: View {
     /// **El origen existe por la asociación** (ticket `fresh-start-keeps-a-groups-session-that-migrate-promotes`): en un
     /// teléfono que empezó desde cero, una sesión que ya estaba abierta puede ser de la persona anterior, y
     /// `GroupsAccountAssociation.associate` no la apunta como cuenta de grupos de nadie.
+    /// ¿Hay una invitación detrás? Decide el texto: «sigue con tu invitación» solo a quien la tiene. Lo pasa quien
+    /// presenta la hoja (con la zona pendiente vacía o `nil` no la hay: crear un grupo, la pestaña sin sesión). Sin
+    /// valor por defecto, para que cada llamada se pronuncie.
+    let isForInvitation: Bool
     var onAuthenticated: (CloudIdentityRoutingLogic.Destination, SessionOrigin) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -88,7 +92,7 @@ struct GroupsSignInView: View {
                             .font(DS.Typography.title2)
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
-                        Text(L10n.Groups.SignIn.body)
+                        Text(isForInvitation ? L10n.Groups.SignIn.body : L10n.Groups.SignIn.bodyNoInvite)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)

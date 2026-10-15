@@ -133,4 +133,26 @@ final class GroupsEmptyStateUITests: XCTestCase {
             "Sin consent no debe ofrecerse el empty state estándar: el tap no podría crear el grupo."
         )
     }
+
+    /// **Aceptar desde «Un último paso» cambia la pestaña en el acto** (auditoría UX 2.2, lote 12, 2026-10-15). El
+    /// estado vacío lee el consent de `UserDefaults`, que no repinta nada: la hoja se cerraba, la pestaña seguía en «Un
+    /// último paso» y solo relanzar la app la ponía al día. Ahora `GroupsConsentState` avisa y la pestaña se re-decide.
+    func test_acceptingConsentFromTheEmptyState_turnsTheTabIntoTheStandardEmptyState() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, groupInvite: true, cloudSession: true)
+
+        let consentCTA = app.descendants(matching: .any)["groups_empty_state_consent"].firstMatch
+        XCTAssertTrue(consentCTA.waitForExistence(timeout: 30), "Falta el estado «Un último paso».")
+        app.buttons["groups_empty_state_consent"].firstMatch.tap()
+
+        let accept = app.buttons["groups_consent_accept"]
+        XCTAssertTrue(accept.waitForExistence(timeout: 15), "No se abrió el consentimiento de Grupos.")
+        accept.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["groups_empty_state"].firstMatch.waitForExistence(timeout: 10),
+            "Tras aceptar, la pestaña debe ofrecer crear un grupo sin relanzar la app."
+        )
+        XCTAssertFalse(consentCTA.exists, "«Un último paso» sigue en pantalla tras aceptar.")
+    }
 }

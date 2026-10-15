@@ -81,6 +81,12 @@ enum GroupsConsentState {
     nonisolated static let legacyAcceptedAtKey = "groupsConsentAcceptedAt"
     nonisolated static let legacyTextVersionKey = "groupsConsentTextVersion"
 
+    /// Se emite cada vez que el consent cambia en disco (`write`, `clear`). La pestaña Grupos decide su estado vacío
+    /// leyendo `isAccepted`, que es `UserDefaults` y no repinta ninguna vista: sin este aviso, aceptar desde «Un último
+    /// paso» dejaba la pestaña en «Un último paso» hasta relanzar la app (medido en el simulador el 2026-10-15,
+    /// auditoría UX 2.2, lote 12). Molde: `GroupsAttestStreakStore.didChangeNotification`.
+    nonisolated static let didChangeNotification = Notification.Name("GroupsConsentState.didChange")
+
     /// `UserDefaults` de lectura/escritura. `nonisolated(unsafe)` para inyección en tests (molde
     /// `PendingJoinStore`).
     nonisolated(unsafe) static var defaults: UserDefaults = .standard
@@ -135,7 +141,9 @@ enum GroupsConsentState {
             #if DEBUG
             print("GroupsConsentState: Error guardando snapshot: \(error)")
             #endif
+            return
         }
+        NotificationCenter.default.post(name: didChangeNotification, object: nil)
     }
 
     /// Limpia el consent de este DEVICE. Idempotente.
@@ -154,6 +162,7 @@ enum GroupsConsentState {
         defaults.removeObject(forKey: snapshotKey)
         defaults.removeObject(forKey: legacyAcceptedAtKey)
         defaults.removeObject(forKey: legacyTextVersionKey)
+        NotificationCenter.default.post(name: didChangeNotification, object: nil)
     }
 
     /// ¿Hay algún rastro local de consent? Lo usa el gate del boot-cleanup del wipe de sign-out, que tiene

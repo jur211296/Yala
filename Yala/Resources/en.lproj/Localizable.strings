@@ -4814,6 +4814,7 @@
 
 /* G4 sign-in body */
 "groups.signin.body" = "To join the group you need a Yala account. Sign in with Apple or Google and continue with your invitation.";
+"groups.signin.bodyNoInvite" = "Your groups are saved in your Yala account, so everyone sees the same expenses, up to date. Sign in with Apple or Google to continue.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "This will be your Yala account: if you ever move your personal data to the cloud, you'll use this same one.";

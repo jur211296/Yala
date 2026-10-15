@@ -330,7 +330,8 @@ struct GroupFormView: View {
             print("GroupFormView: Error saving group: \(error)")
             #endif
             DS.Haptic.warning()
-            saveErrorMessage = error.localizedDescription
+            // `GroupsRPCError` no es `LocalizedError`: sin clasificar salía «Error de Yala.GroupsRPCError 2».
+            saveErrorMessage = GroupActionErrorLogic.message(for: error)
             showSaveError = true
         }
     }

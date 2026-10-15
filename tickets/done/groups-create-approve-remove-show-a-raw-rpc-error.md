@@ -1,10 +1,10 @@
 ---
 id: groups-create-approve-remove-show-a-raw-rpc-error
-status: backlog
+status: done
 priority: medium
 area: "groups, copy"
 created: 2026-09-17
-updated: 2026-10-08
+updated: 2026-10-15
 source: "inventario de consumidores de `groups-actions-read-an-offline-token-refresh-as-a-session-expiry` (2026-09-17); ya anotado como residual en `groups-leave-rpc-error-10`"
 ---
 
@@ -48,3 +48,14 @@ necesita a Jürgen y `BRAND-VOICE.md`.
 - **Decisión de copy (Jürgen).** A) Reutilizar los textos que ya usa `GroupLeaveErrorLogic` (sin conexión / el servidor falló / vuelve a entrar) con un clasificador por acción. B) Copy nuevo por acción. **Recomendada: A**, que no pide copy nuevo salvo para los `yala_*` propios de cada RPC.
 
 Triage 2026-10-08: abierto · low → medium · tres acciones de Grupos enseñan «Error de Yala.GroupsRPCError 1» en el uso normal sin conexión; mismo nivel que ai-insights-error-card-shows-raw-english-errors.
+
+## Cerrado (2026-10-15, auditoría UX 2.2 · lote 12)
+
+Opción A del triage: sin copy nuevo. `GroupActionErrorLogic` (molde `GroupLeaveErrorLogic`) clasifica el error de crear
+grupo, aprobar, rechazar, expulsar y cambiar de rol: sesión caducada → `groups.errors.sessionExpired`; canal apagado →
+`welcome.groups.channelOffBody`; 401 del attest con la racha terminal → `groups.errors.attestUnavailable`; la cuenta
+pendiente de aprobación → `groups.errors.pendingApproval`; el resto (red, 5xx, rechazos) → `groups.errors.actionFailed`.
+Medido en el simulador: crear con la sesión fingida pasó de «(Error de Yala.GroupsRPCError 2)» a «Tu sesión caducó…».
+Tests: `GroupActionErrorLogicTests`, `GroupsLot12WiringTests`. **Fuera de este cierre**: las demás pantallas de Grupos que
+siguen pintando `localizedDescription` (ajustes del grupo, saldos iniciales, puente, liquidar, exportar, hojas de la
+Bandeja), que son de los lotes 13 y 19 — tienen card propia.
