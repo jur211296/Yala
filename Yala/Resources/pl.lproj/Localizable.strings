@@ -468,7 +468,6 @@
 "settings.voiceInputEnabled" = "Wprowadzanie głosowe";
 "settings.voiceLanguage" = "Język głosu";
 "settings.appLanguage" = "Język aplikacji";
-"settings.appLanguageRestart" = "Uruchom ponownie aplikację, aby zastosować zmianę.";
 "settings.imageInputEnabled" = "Wprowadzanie obrazem";
 "settings.resetData" = "Resetuj dane";
 "settings.version" = "Wersja";
@@ -674,7 +673,7 @@
 "export.column.tags.description" = "Powiązane etykiety, oddzielone „;”.";
 "export.column.note.description" = "Dowolna notatka do transakcji.";
 "common.next" = "Dalej";
-"settings.versionInfo" = "Wersja 1.0.0 (Build 1)";
+"settings.versionInfo" = "Wersja %1$@ (Build %2$@)";
 "tab.panel" = "Start";
 "tab.statistics" = "Statystyki";
 "tab.planning" = "Planowanie";
@@ -6626,3 +6625,19 @@
 "notifications.scheduledPayment.dueTomorrow" = "%1$@ ma termin jutro — %2$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "%1$@ od %2$@ wpłynie jutro 📅";
 "scheduled.filter.empty" = "Brak płatności z tym filtrem";
+"settings.appLanguageAppliesNow" = "Zmiana działa od razu.";
+"support.noMailTitle" = "Nie znaleźliśmy aplikacji pocztowej";
+"support.noMailMessage" = "Napisz do nas na %@. Skopiuj wiadomość i wklej ją do swojej poczty; nie została usunięta.";
+"support.copyMessage" = "Kopiuj wiadomość";
+"profile.icon.person" = "Osoba";
+"profile.icon.smiley" = "Uśmiech";
+"profile.icon.star" = "Gwiazda";
+"profile.icon.heart" = "Serce";
+"profile.icon.bolt" = "Błyskawica";
+"profile.icon.crown" = "Korona";
+"profile.icon.leaf" = "Liść";
+"profile.icon.flame" = "Płomień";
+"profile.icon.moon" = "Księżyc";
+"profile.icon.sun" = "Słońce";
+"profile.icon.cloud" = "Chmura";
+"profile.icon.drop" = "Kropla";

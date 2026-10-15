@@ -776,7 +776,7 @@ lo acotado, con **capturas antes/después** (`capturas/antes-*.png`, `capturas/d
    a cambiar. No rehagas lo que una card ya va a rediseñar: déjalo anotado en la tabla.
 6. **Capturas:** se sacan en `capturas/` del worktree y, antes del gate, se copian a
    `~/Claude/worktrees/_capturas/<fecha>-<slug>/`, porque el worktree se retira al cerrar.
-7. **Simulador:** uno solo, `nice -n 10 xcodebuild -jobs 2`, load < 8, nada de simulador de 9:00 a 11:00 (Lima), y
+7. **Simulador:** uno solo, `nice -n 10 xcodebuild -jobs 2`, load < 8, y
    `xcrun simctl shutdown all` al terminar.
 8. **Si el lote no cabe en una sesión,** se parte por la mitad de su tabla y la segunda mitad abre card nueva.
 9. **Al cerrar,** cada flujo del lote tiene veredicto. La card del lote pasa a `qa` si hay device-QA de iPhone, o a

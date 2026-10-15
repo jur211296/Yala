@@ -37,6 +37,8 @@ struct SupportFormSheet: View {
 
     @State private var selectedType: SupportType = .error
     @State private var message: String = ""
+    /// iOS no pudo abrir `mailto:` (no hay app de correo configurada): se avisa y el formulario NO se cierra.
+    @State private var showNoMailAlert = false
 
     private let maxCharacters = 500
 
@@ -95,6 +97,7 @@ struct SupportFormSheet: View {
                                 text: $message,
                                 axis: .vertical
                             )
+                            .accessibilityIdentifier("support_message_field")
                             .lineLimit(5...10)
                             .font(DS.Typography.body)
                             .padding(DS.Spacing.md)
@@ -116,11 +119,18 @@ struct SupportFormSheet: View {
 
                         // Send button
                         YalaPrimaryButton(L10n.Support.send) {
-                            if let url = supportMailURL(type: selectedType, message: message) {
-                                openURL(url)
-                                dismiss()
+                            guard let url = supportMailURL(type: selectedType, message: message) else { return }
+                            // Antes se cerraba sin mirar si iOS había abierto el correo: sin app de correo no pasaba
+                            // nada y lo escrito se perdía (auditoría UX 2.2, lote 16). Solo se cierra si se abrió.
+                            openURL(url) { accepted in
+                                if accepted {
+                                    dismiss()
+                                } else {
+                                    showNoMailAlert = true
+                                }
                             }
                         }
+                        .accessibilityIdentifier("support_send_button")
                         .disabled(!canSend)
                         .opacity(canSend ? 1 : 0.5)
                     }
@@ -131,6 +141,14 @@ struct SupportFormSheet: View {
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(L10n.Support.title)
             .navigationBarTitleDisplayMode(.inline)
+            .alert(L10n.Support.noMailTitle, isPresented: $showNoMailAlert) {
+                Button(L10n.Support.copyMessage) {
+                    UIPasteboard.general.string = supportMailBody(type: selectedType, message: message)
+                }
+                Button(L10n.Common.ok, role: .cancel) {}
+            } message: {
+                Text(L10n.Support.noMailMessage(AppConstants.supportEmail))
+            }
             .yalaScreenBackground(.subtle)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -145,6 +163,19 @@ struct SupportFormSheet: View {
     // MARK: - Mail URL
 
     private func supportMailURL(type: SupportType, message: String) -> URL? {
+        let subject = "Yala (\(type.filterCode)) - \(L10n.Support.title): \(type.label)"
+        guard var components = URLComponents(string: "mailto:\(AppConstants.supportEmail)") else {
+            return nil
+        }
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: supportMailBody(type: type, message: message)),
+        ]
+        return components.url
+    }
+
+    /// El cuerpo del correo: lo escrito más los datos que soporte necesita. Es también lo que se copia sin app de correo.
+    private func supportMailBody(type: SupportType, message: String) -> String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
         let systemVersion = UIDevice.current.systemVersion
@@ -152,8 +183,7 @@ struct SupportFormSheet: View {
         let themeName = themeManager.userChoice.label
         let locale = Locale.preferredLanguages.first ?? "?"
 
-        let subject = "Yala (\(type.filterCode)) - \(L10n.Support.title): \(type.label)"
-        let body = """
+        return """
         \(message)
 
         ---
@@ -163,15 +193,6 @@ struct SupportFormSheet: View {
         Theme: \(themeName)
         Locale: \(locale)
         """
-
-        guard var components = URLComponents(string: "mailto:\(AppConstants.supportEmail)") else {
-            return nil
-        }
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: subject),
-            URLQueryItem(name: "body", value: body),
-        ]
-        return components.url
     }
 }
 

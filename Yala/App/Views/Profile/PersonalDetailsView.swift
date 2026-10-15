@@ -20,6 +20,8 @@ struct PersonalDetailsView: View {
     @State private var editedAlias: String = ""
     @State private var aliasValidationMessage: String = ""
     @State private var isAliasValid: Bool = true
+    /// Hasta que `onAppear` carga lo guardado, los campos están vacíos: guardar antes borraría el nombre.
+    @State private var didLoadValues = false
 
     private let maxNameLength = 30
 
@@ -69,6 +71,12 @@ struct PersonalDetailsView: View {
             }
             .onAppear {
                 loadCurrentValues()
+            }
+            // Cerrar la hoja deslizando hacia abajo NO pasa por el botón de atrás: sin esto, el nombre o el avatar
+            // que se acababan de cambiar se perdían sin aviso (auditoría UX 2.2, lote 16). `persistChanges` es
+            // idempotente, así que el atrás (que también guarda) no escribe dos cosas distintas.
+            .onDisappear {
+                persistChanges()
             }
             .onChange(of: selectedPhotoItem) { _, newItem in
                 Task {
@@ -203,6 +211,7 @@ struct PersonalDetailsView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         TextField(L10n.Profile.yourName, text: $editedName)
+                            .accessibilityIdentifier("personal_details_name_field")
                             .multilineTextAlignment(.trailing)
                             .foregroundStyle(.primary)
                     }
@@ -243,6 +252,7 @@ struct PersonalDetailsView: View {
     // MARK: - Helpers
 
     private func loadCurrentValues() {
+        didLoadValues = true
         editedName = appPreferences.userName
         editedAlias = appPreferences.userAlias
         selectedIcon = appPreferences.userProfileIcon
@@ -292,6 +302,13 @@ struct PersonalDetailsView: View {
     }
 
     private func saveAndDismiss() {
+        persistChanges()
+        dismiss()
+    }
+
+    /// Guarda nombre, alias y avatar. Lo llaman el botón de atrás y el cierre deslizando (`onDisappear`).
+    private func persistChanges() {
+        guard didLoadValues else { return }
         let trimmedName = editedName.trimmingCharacters(in: .whitespacesAndNewlines)
         appPreferences.userName = trimmedName.isEmpty ? L10n.Profile.defaultName : trimmedName
 
@@ -315,9 +332,6 @@ struct PersonalDetailsView: View {
             ProfileImageStorage.shared.delete()
             appPreferences.userProfileIcon = ""
         }
-
-        // Dismiss the sheet
-        dismiss()
     }
 }
 
@@ -330,20 +344,23 @@ struct IconPickerSheet: View {
     var onSelect: () -> Void
 
     /// Available icons for profile avatar
-    private let availableIcons: [(name: String, symbol: String)] = [
-        ("Persona", "person.fill"),
-        ("Cara feliz", "face.smiling.fill"),
-        ("Estrella", "star.fill"),
-        ("Corazón", "heart.fill"),
-        ("Rayo", "bolt.fill"),
-        ("Corona", "crown.fill"),
-        ("Hoja", "leaf.fill"),
-        ("Llama", "flame.fill"),
-        ("Luna", "moon.fill"),
-        ("Sol", "sun.max.fill"),
-        ("Nube", "cloud.fill"),
-        ("Gota", "drop.fill"),
-    ]
+    /// Nombres localizados: antes eran literales en español y así salían en los 16 idiomas.
+    private var availableIcons: [(name: String, symbol: String)] {
+        [
+            (L10n.Profile.iconPerson, "person.fill"),
+            (L10n.Profile.iconSmiley, "face.smiling.fill"),
+            (L10n.Profile.iconStar, "star.fill"),
+            (L10n.Profile.iconHeart, "heart.fill"),
+            (L10n.Profile.iconBolt, "bolt.fill"),
+            (L10n.Profile.iconCrown, "crown.fill"),
+            (L10n.Profile.iconLeaf, "leaf.fill"),
+            (L10n.Profile.iconFlame, "flame.fill"),
+            (L10n.Profile.iconMoon, "moon.fill"),
+            (L10n.Profile.iconSun, "sun.max.fill"),
+            (L10n.Profile.iconCloud, "cloud.fill"),
+            (L10n.Profile.iconDrop, "drop.fill"),
+        ]
+    }
 
     private let columns = [
         GridItem(.adaptive(minimum: 70, maximum: 80), spacing: DS.Spacing.md)

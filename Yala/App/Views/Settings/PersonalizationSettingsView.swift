@@ -113,7 +113,7 @@ struct PersonalizationSettingsView: View {
                     }
                     .accessibilityIdentifier("personalization_row_app_language")
                 } footer: {
-                    Text(L10n.Settings.appLanguageRestart)
+                    Text(L10n.Settings.appLanguageAppliesNow)
                 }
             }
 
