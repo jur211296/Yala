@@ -557,9 +557,9 @@
 "budgets.period.all" = "Wszystkie";
 
 // Budget Status
-"budgets.status.exceeded" = "Przekroczony";
-"budgets.status.active" = "Aktywny";
-"budgets.status.inactive" = "Nieaktywny";
+"budgets.status.exceeded" = "Przekroczone budżety";
+"budgets.status.active" = "Aktywne budżety";
+"budgets.status.inactive" = "Nieaktywne budżety";
 "budget.noInactive" = "Brak nieaktywnych budżetów";
 
 // Budget Details

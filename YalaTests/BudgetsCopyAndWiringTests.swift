@@ -34,6 +34,31 @@ struct BudgetsCopyTests {
         #expect(L10n.Budgets.state(isActive: true) != L10n.Budgets.state(isActive: false))
     }
 
+    /// El test de arriba solo ve el idioma del simulador. En inglés, alemán, neerlandés y polaco el rótulo de la
+    /// sección y el estado de un presupuesto se escribían igual («Active»); éste lee los 16 `.strings` del fuente.
+    @Test("En ningún idioma el estado de un presupuesto coincide con el rótulo de su sección")
+    func stateIsNotTheSectionHeaderInAnyLocale() throws {
+        let resources = URL(fileURLWithPath: "\(#filePath)")
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "Yala/Resources")
+        let locales = try FileManager.default.contentsOfDirectory(atPath: resources.path)
+            .filter { $0.hasSuffix(".lproj") }
+        #expect(locales.count == 16, "Se esperaban 16 idiomas: \(locales.sorted())")
+        for locale in locales {
+            let url = resources.appending(path: "\(locale)/Localizable.strings")
+            guard let strings = NSDictionary(contentsOf: url) as? [String: String] else {
+                Issue.record("No se pudo leer \(locale)/Localizable.strings")
+                continue
+            }
+            for key in ["active", "inactive"] {
+                let state = strings["budgets.state.\(key)"]
+                let header = strings["budgets.status.\(key)"]
+                #expect(state != nil && header != nil, "\(locale): falta budgets.state/status.\(key)")
+                #expect(state != header, "\(locale): «\(state ?? "")» es a la vez estado y rótulo de sección")
+            }
+        }
+    }
+
     @Test("La línea del límite de las gráficas lleva el importe en el texto de VoiceOver")
     func chartLimitAccessibilityCarriesTheAmount() {
         let label = L10n.Budgets.chartLimitAccessibility("S/ 600.00")

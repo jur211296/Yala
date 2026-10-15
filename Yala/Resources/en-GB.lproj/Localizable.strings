@@ -892,9 +892,9 @@
 "budgets.period.weekly" = "Weekly";
 "budgets.period.yearly" = "Yearly";
 "budgets.spent.percent" = "%@ spent";
-"budgets.status.active" = "Active";
-"budgets.status.exceeded" = "Exceeded";
-"budgets.status.inactive" = "Inactive";
+"budgets.status.active" = "Active budgets";
+"budgets.status.exceeded" = "Over budget";
+"budgets.status.inactive" = "Inactive budgets";
 "budgets.title" = "Budgets";
 "bulkEdit.availableTags" = "Available to add";
 "bulkEdit.commonTags" = "In all selected";
