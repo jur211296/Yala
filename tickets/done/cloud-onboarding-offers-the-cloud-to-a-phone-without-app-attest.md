@@ -1,6 +1,6 @@
 ---
 id: cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest
-status: qa
+status: done
 priority: low
 area: "modo-nube, attest, onboarding"
 created: 2026-09-15
@@ -115,3 +115,7 @@ tiene el mismo montaje.
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el único paso del guion.
+
+## QA guiado · 2026-10-15
+
+Cerrado en el QA guiado 2026-10-15 (C2 paso 1): tras reinstalar, «Es mi primera vez» ofrece las dos opciones, la nube y el iCloud privado.

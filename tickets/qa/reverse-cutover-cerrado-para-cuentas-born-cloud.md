@@ -311,3 +311,7 @@ valioso de esta corrida.
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el guion entero del ticket (bloque E).
+
+## QA guiado · 2026-10-15 · falta un paso
+
+En el iPhone de QA pasaron los pasos 1, 2, 3 y 5: la cuenta nacida en la nube volvió a iCloud en ~1 min, y lo borrado (QA 1, QA 2, la cuenta Efectivo QA) siguió borrado. **Falta el paso 4**: comprobar en CloudKit Console que la base privada tiene los registros. Hallazgos en sus cards: `ofst` (movimientos sin cuenta al eliminar una cuenta), `jbjj` (falsa alarma al reabrir) y `4nt6` (la vuelta suma datos viejos del iCloud del teléfono).

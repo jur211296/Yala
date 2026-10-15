@@ -370,3 +370,7 @@ está en `Localizable.strings` (solo quedan comentarios huérfanos). El verbo de
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1 y 2. El 3 y el 4 quedan cubiertos por `CloudIdentityRoutingLogicTests`.
+
+## QA guiado · 2026-10-15 · falta un paso
+
+Pasó el paso 4 adaptado: el faro de iCloud lleva a «Esa cuenta usa otro método», y «Registrarse con Google» con una cuenta nueva crea la cuenta y lleva al onboarding (canario `cloudConsentAccepted bornCloud`). **Falta el paso 3**: Google con una cuenta solo de grupos → puerta de Grupos. Mejora decidida por Jürgen para este flujo (A + C): card `tablero-entrar-con-google-cuando-este-iphone-ya-vb1f`.

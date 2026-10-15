@@ -1,6 +1,6 @@
 ---
 id: onboarding-login-should-match-the-sep15-reference
-status: qa
+status: done
 priority: medium
 area: "ux, onboarding, welcome"
 created: 2026-09-17
@@ -61,3 +61,7 @@ Premisa medida: Yala SÍ tiene Google (re-entrada y alta). Las decisiones, en el
    titular «Entra a tu cuenta» y el botón de Apple dentro de una tarjeta. No inicies sesión.
 6. En Ajustes de iOS › Accesibilidad › Pantalla y tamaño del texto › Texto más grande, sube al máximo y
    repite el paso 2: el titular no debe quedar debajo de la píldora y la pantalla debe hacer scroll.
+
+## QA guiado · 2026-10-15
+
+Cerrado en el QA guiado 2026-10-15: en el iPhone de QA (Yala Dev desde `ae14594ac`) la entrada coincide con la referencia del 15-sep; el paso de accesibilidad se da por bueno por criterio de Jürgen.
