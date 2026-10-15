@@ -1138,7 +1138,9 @@ struct CategoriesTabView: View {
             } else if let aiHero = insightsViewModel.aiInsights?.heroText {
                 proAIInsightCard(aiHero: aiHero)
             } else if let error = insightsViewModel.aiError {
-                AIInsightCardComponents.errorCard(error)
+                AIInsightCardComponents.errorCard(error) {
+                    Task { await insightsViewModel.triggerAIGeneration() }
+                }
             }
         } else {
             proPreAIInsightCard

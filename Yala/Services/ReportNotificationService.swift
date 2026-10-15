@@ -155,6 +155,16 @@ final class ReportNotificationService {
         }
     }
 
+    /// El texto que mandaría ahora un informe con esta configuración, con los datos de verdad. Lo usa «Probar» del
+    /// editor, que mandaba un importe de ejemplo en dólares («En la semana gastaste $350.00») a quien lleva sus cuentas
+    /// en soles y gastó otra cosa (auditoría UX 2.2 · lote 11 · B7). Misma coacción de Solo Gastos que el envío.
+    func previewBody(config: ReportConfig, type: NotificationType, context: ModelContext) -> String {
+        var effectiveConfig = config
+        effectiveConfig.dataType = Self.effectiveDataType(config.dataType, expensesOnly: isExpensesOnly())
+        let data = calculateReportData(config: effectiveConfig, type: type, context: context)
+        return Self.formatReportBody(effectiveConfig, reportType: type, data: data)
+    }
+
     // MARK: - Timing Check
 
     /// Determines if the report should be sent now based on configuration
@@ -222,12 +232,16 @@ final class ReportNotificationService {
         let currencyCode = CurrencyDefaults.currentPreferred
 
         // Balance del reporte: TC actual sobre saldo nativo (LiveBalanceCalculator)
-        // en vez de suma de snapshots históricos.
-        let balance = LiveBalanceCalculator.liveBalance(
-            accounts: accounts,
-            transactions: transactions,
-            preferredCurrencyCode: currencyCode
-        )
+        // en vez de suma de snapshots históricos. Sobre TODO el histórico: con los movimientos del período,
+        // «Así cierra tu saldo hoy» decía lo que entró menos lo que salió hoy, no el saldo de las cuentas
+        // (auditoría UX 2.2 · lote 11 · B12).
+        let balance = config.dataType == .balance
+            ? LiveBalanceCalculator.liveBalance(
+                accounts: accounts,
+                transactions: fetchAllTransactions(context: context),
+                preferredCurrencyCode: currencyCode
+            )
+            : 0
 
         // Netea los gastos de grupo bridgeados a "mi parte". El fetch por rango
         // (`transactions`) trae AMBAS hermanas del bridge (comparten fecha).
@@ -435,6 +449,17 @@ final class ReportNotificationService {
         } catch {
             #if DEBUG
             print("ReportNotificationService: Error fetching transactions: \(error)")
+            #endif
+            return []
+        }
+    }
+
+    private func fetchAllTransactions(context: ModelContext) -> [TransactionItem] {
+        do {
+            return try context.fetch(FetchDescriptor<TransactionItem>())
+        } catch {
+            #if DEBUG
+            print("ReportNotificationService: Error fetching all transactions: \(error)")
             #endif
             return []
         }

@@ -2380,18 +2380,6 @@
 
 // Test
 "notifications.testNotification" = "テストリマインダー";
-"notifications.testReport.balance.daily" = "今日の終了時の残高: $1,250.00 💰";
-"notifications.testReport.balance.weekly" = "今週の終了時の残高: $1,250.00 💰";
-"notifications.testReport.balance.monthly" = "今月の終了時の残高: $1,250.00 💰";
-"notifications.testReport.expenses.daily" = "今日$85.00使いました 📊";
-"notifications.testReport.expenses.weekly" = "今週$350.00使いました 📊";
-"notifications.testReport.expenses.monthly" = "今月$1,200.00使いました 📊";
-"notifications.testReport.income.daily" = "今日$500.00受け取りました 🎉";
-"notifications.testReport.income.weekly" = "今週$2,500.00受け取りました 🎉";
-"notifications.testReport.income.monthly" = "今月$8,500.00受け取りました 🎉";
-"notifications.testReport.topCategory.daily" = "今日のトップ支出: 食事 ($45.00) 👀";
-"notifications.testReport.topCategory.weekly" = "今週のトップ支出: 食事 ($180.00) 👀";
-"notifications.testReport.topCategory.monthly" = "今月のトップ支出: 食事 ($650.00) 👀";
 "notifications.testReport.scheduledPayment" = "3日後に支払いがあります: 「Netflix」 USD 14.99";
 
 // Section headers
@@ -2953,7 +2941,6 @@
 "insights.focus.cautious.desc" = "早めの警告とリスクのある予算";
 "insights.toneLabel" = "トーン";
 "insights.focusLabel" = "フォーカス";
-"insights.aiTeaser" = "AIインサイト";
 "insights.aiTeaserPlaceholder1" = "支出パターンを分析中...";
 "insights.aiTeaserPlaceholder2" = "節約のチャンスを特定中...";
 "insights.generateAI" = "スマートインサイトを生成";

@@ -270,7 +270,16 @@ struct TrendsTabView: View {
         let prev = strippedComparisonLabel(summary.previousPeriodLabel)
 
         guard let variation = summary.balanceVariation else {
-            // Sin período previo comparable (`.allTime`, primer mes, etc.).
+            // «Todo el tiempo» no tiene con qué compararse y tampoco es «tu primer período»: lleva la línea del Resumen,
+            // el recuento de movimientos (auditoría UX 2.2 · lote 11 · B1).
+            if trendsViewModel.detailPeriod == .allTime {
+                switch RecordsMotivationalLogic.subtitle(forCount: summary.transactionCount) {
+                case .one: return L10n.Stats.Insights.motivationalOne
+                case .many(let n): return L10n.Stats.Insights.motivationalMany(n)
+                case nil: return nil
+                }
+            }
+            // Sin período previo comparable (primer mes, etc.).
             return L10n.Stats.Trends.heroOnset
         }
 
@@ -428,7 +437,8 @@ struct TrendsTabView: View {
                             )
 
                             if appPreferences.showVariations
-                                && trendsViewModel.detailPeriod != .allTime,
+                                && trendsViewModel.detailPeriod != .allTime
+                                && !kpiIsLiveBalance,
                                let prevTotal = previousPeriodTotal {
                                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
                                     Text(L10n.Common.vs)
@@ -555,7 +565,7 @@ struct TrendsTabView: View {
                                 font: DS.Typography.headline
                             )
 
-                            if let prevTotal = previousPeriodTotal {
+                            if !kpiIsLiveBalance, let prevTotal = previousPeriodTotal {
                                 HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
                                     Text(L10n.Common.vs)
                                         .font(DS.Typography.caption)
@@ -1367,6 +1377,16 @@ struct TrendsTabView: View {
         }
     }
 
+    /// La cifra es el saldo de hoy a la tasa de hoy (`liveAnchor`), no un punto de la curva. Entonces no lleva al lado el
+    /// «vs S/ …» del período anterior, que es un punto de la curva valorado a las tasas de su día: puestos juntos,
+    /// «S/ 75,945.25 vs S/ 75,774.00 · +6.1 %» no cuadraba. Igual que el Panel, que enseña la cifra y la variación de la
+    /// curva sin el importe anterior (lote 11 · B5).
+    private var kpiIsLiveBalance: Bool {
+        trendsViewModel.selectedMetric == .balance
+            && trendsViewModel.focusedDate == nil
+            && trendsViewModel.trendLiveAnchor != nil
+    }
+
     private var currentKPIValue: Double {
         // When scrubbing the chart, show the hovered point value (use RAW points)
         if let focusedDate = trendsViewModel.focusedDate,
@@ -1380,8 +1400,11 @@ struct TrendsTabView: View {
         // Otherwise, show metric-specific KPI
         switch trendsViewModel.selectedMetric {
         case .balance:
-            // Balance: show the last RAW chart point value (actual end balance, not smoothed)
-            return trendsViewModel.rawTrendPoints.last?.value ?? 0
+            // El saldo de hoy a la tasa de hoy (`liveAnchor`) cuando el período llega a hoy, como el Panel
+            // (`TrendDataProcessor.Result.finalBalance`); si no, el último punto de la curva. Con solo el último punto,
+            // Tendencias decía S/ 80,429.50 mientras el Panel, Distribución y «Tus finanzas» decían S/ 75,945.25: la
+            // cuenta en dólares salía a la tasa de cada día y no a la de hoy (auditoría UX 2.2 · lote 11 · B5).
+            return trendsViewModel.trendLiveAnchor?.value ?? trendsViewModel.rawTrendPoints.last?.value ?? 0
         case .income:
             // Income: show TOTAL income for the period
             return trendsViewModel.totalIncome

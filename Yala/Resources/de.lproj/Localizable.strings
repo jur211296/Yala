@@ -2413,18 +2413,6 @@
 "notifications.report.empty.income" = "Keine Einnahmen diesmal — alles in Ordnung ✨";
 "notifications.report.empty.topCategory" = "Keine Ausgaben! Dein Geldbeutel hat sich ausgeruht 😊";
 
-"notifications.testReport.balance.daily" = "Dein Saldo heute: $1.250,00";
-"notifications.testReport.balance.weekly" = "Dein Saldo diese Woche: $1.250,00";
-"notifications.testReport.balance.monthly" = "Dein Saldo diesen Monat: $1.250,00";
-"notifications.testReport.expenses.daily" = "Du hast heute $85,00 ausgegeben";
-"notifications.testReport.expenses.weekly" = "Du hast diese Woche $350,00 ausgegeben";
-"notifications.testReport.expenses.monthly" = "Du hast diesen Monat $1.200,00 ausgegeben";
-"notifications.testReport.income.daily" = "Du hast heute $500,00 erhalten";
-"notifications.testReport.income.weekly" = "Du hast diese Woche $2.500,00 erhalten";
-"notifications.testReport.income.monthly" = "Du hast diesen Monat $8.500,00 erhalten";
-"notifications.testReport.topCategory.daily" = "Deine größte Ausgabe heute: Essen ($45,00)";
-"notifications.testReport.topCategory.weekly" = "Deine größte Ausgabe diese Woche: Essen ($180,00)";
-"notifications.testReport.topCategory.monthly" = "Deine größte Ausgabe diesen Monat: Essen ($650,00)";
 "notifications.testReport.scheduledPayment" = "Du hast eine Zahlung in 3 Tagen: \"Netflix\" für USD 14,99";
 
 // MARK: - iCloud
@@ -2949,7 +2937,6 @@
 "insights.focus.cautious.desc" = "Frühwarnungen und gefährdete Budgets";
 "insights.toneLabel" = "Ton";
 "insights.focusLabel" = "Fokus";
-"insights.aiTeaser" = "KI-Insights";
 "insights.aiTeaserPlaceholder1" = "Analyse deiner Ausgabenmuster...";
 "insights.aiTeaserPlaceholder2" = "Sparmöglichkeiten werden erkannt...";
 "insights.generateAI" = "Intelligente Beobachtungen generieren";

@@ -133,6 +133,12 @@ struct InsightsTabView: View {
         }
         .measuresShortContainer($isShortContainer)
         .scrollViewGlassEdges()
+        // Aquí y no en la tarjeta bloqueada de Observaciones: colgada de ella, «Actualizar a Pro» del resumen no abría
+        // nada en Detalle (el modo con que se abre la pestaña) y la hoja salía sola al pasar a Observaciones
+        // (auditoría UX 2.2 · lote 11 · B9).
+        .sheet(isPresented: $showUpgradeSheet) {
+            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
+        }
         .sheet(isPresented: $showCustomPeriodPicker) {
             CustomPeriodPickerSheet(
                 minDate: transactionDateRange.start,
@@ -319,7 +325,9 @@ struct InsightsTabView: View {
                     isProOnly: true
                 ))
             } else if let error = viewModel.aiError {
-                AIInsightCardComponents.errorCard(error)
+                AIInsightCardComponents.errorCard(error) {
+                    Task { await viewModel.triggerAIGeneration() }
+                }
             }
         } else {
             generateAIButton
@@ -520,7 +528,7 @@ struct InsightsTabView: View {
                     icon: "folder.fill",
                     label: L10n.Insights.topCategory,
                     value: top.category.name,
-                    secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage))%"
+                    secondary: "\(appPreferences.currency(top.amount, currencyCode: defaultCurrencyCode)) · \(Int(top.percentage.rounded()))%"
                 )
             }
             if let topSub = stats.topSubcategory {
@@ -839,18 +847,19 @@ struct InsightsTabView: View {
                     currencyCode: defaultCurrencyCode,
                     font: DS.Typography.subheadline, secondaryFont: DS.Typography.captionSmall
                 )
-                Text("\(Int(percent))%")
+                // Redondeado, no truncado: 21,95 % salía «21 %» y las tres necesidades sumaban 98 %; Distribución
+                // redondea y daba otra cifra para lo mismo (auditoría UX 2.2 · lote 11 · B4).
+                Text("\(Int(percent.rounded()))%")
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)
             }
         }
     }
 
-    /// Periodo activo en días (mínimo 1) — para promedio diario por bucket.
+    /// Periodo activo en días (mínimo 1) — para promedio diario por bucket. Los mismos días que el «Promedio diario»
+    /// de arriba: en «Todo el tiempo», desde el primer registro y no desde hace diez años (lote 11 · B3).
     private var periodDays: Int {
-        let interval = trendsViewModel.detailPeriod.dateInterval(customRange: trendsViewModel.customDateRange)
-        let days = Int((interval.duration / 86_400).rounded())
-        return max(1, days)
+        max(1, viewModel.insightData?.periodSummary.dayCount ?? 1)
     }
 
     /// Tip motivacional contextual: reusa la regla `ruleOptionalHigh` ya
@@ -881,7 +890,8 @@ struct InsightsTabView: View {
     private var aiInsightsTeaser: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack {
-                Label(L10n.Insights.aiTeaser, systemImage: "sparkles")
+                // El mismo nombre que ve quien es Pro («Resumen inteligente»), no «Insights con IA» (lote 11 · B8).
+                Label(L10n.Stats.Insights.aiCardTitle, systemImage: "sparkles")
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
                 Spacer()
@@ -950,9 +960,6 @@ struct InsightsTabView: View {
             .opacity(0.7)
         }
         .buttonStyle(.plain)
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .smartInsightsAI, context: .proFeature)
-        }
     }
 
     // MARK: - Content Mode Pill (standalone, full-width iOS 26 Liquid Glass)

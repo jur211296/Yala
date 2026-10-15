@@ -2415,18 +2415,6 @@
 "notifications.report.empty.income" = "Pas de revenus cette fois — tout va bien ✨";
 "notifications.report.empty.topCategory" = "Pas de dépenses ! Ton portefeuille s'est reposé 😊";
 
-"notifications.testReport.balance.daily" = "Ton solde aujourd'hui : 1 250,00 $";
-"notifications.testReport.balance.weekly" = "Ton solde cette semaine : 1 250,00 $";
-"notifications.testReport.balance.monthly" = "Ton solde ce mois-ci : 1 250,00 $";
-"notifications.testReport.expenses.daily" = "Tu as dépensé 85,00 $ aujourd'hui";
-"notifications.testReport.expenses.weekly" = "Tu as dépensé 350,00 $ cette semaine";
-"notifications.testReport.expenses.monthly" = "Tu as dépensé 1 200,00 $ ce mois-ci";
-"notifications.testReport.income.daily" = "Tu as reçu 500,00 $ aujourd'hui";
-"notifications.testReport.income.weekly" = "Tu as reçu 2 500,00 $ cette semaine";
-"notifications.testReport.income.monthly" = "Tu as reçu 8 500,00 $ ce mois-ci";
-"notifications.testReport.topCategory.daily" = "Ta plus grosse dépense aujourd'hui : Alimentation (45,00 $)";
-"notifications.testReport.topCategory.weekly" = "Ta plus grosse dépense de la semaine : Alimentation (180,00 $)";
-"notifications.testReport.topCategory.monthly" = "Ta plus grosse dépense du mois : Alimentation (650,00 $)";
 "notifications.testReport.scheduledPayment" = "Tu as un paiement dans 3 jours : \"Netflix\" pour 14,99 USD";
 
 // MARK: - iCloud
@@ -2950,7 +2938,6 @@
 "insights.focus.cautious.desc" = "Alertes précoces et budgets à risque";
 "insights.toneLabel" = "Ton";
 "insights.focusLabel" = "Approche";
-"insights.aiTeaser" = "Insights IA";
 "insights.aiTeaserPlaceholder1" = "Analyse de vos habitudes de dépenses...";
 "insights.aiTeaserPlaceholder2" = "Identification des opportunités d'économies...";
 "insights.generateAI" = "Générer des observations intelligentes";

@@ -1490,7 +1490,6 @@ enum L10n {
         static var focusLabel: String { ls("insights.focusLabel", comment: "") }
 
         // AI teaser
-        static var aiTeaser: String { ls("insights.aiTeaser", comment: "") }
         static var aiTeaserPlaceholder1: String { ls("insights.aiTeaserPlaceholder1", comment: "") }
         static var aiTeaserPlaceholder2: String { ls("insights.aiTeaserPlaceholder2", comment: "") }
 
@@ -7411,19 +7410,6 @@ enum L10n {
         // Test notification
         static var testNotification: String { ls("notifications.testNotification", comment: "") }
 
-        // Test report samples (by period)
-        static var testBalanceDaily: String { ls("notifications.testReport.balance.daily", comment: "") }
-        static var testBalanceWeekly: String { ls("notifications.testReport.balance.weekly", comment: "") }
-        static var testBalanceMonthly: String { ls("notifications.testReport.balance.monthly", comment: "") }
-        static var testExpensesDaily: String { ls("notifications.testReport.expenses.daily", comment: "") }
-        static var testExpensesWeekly: String { ls("notifications.testReport.expenses.weekly", comment: "") }
-        static var testExpensesMonthly: String { ls("notifications.testReport.expenses.monthly", comment: "") }
-        static var testIncomeDaily: String { ls("notifications.testReport.income.daily", comment: "") }
-        static var testIncomeWeekly: String { ls("notifications.testReport.income.weekly", comment: "") }
-        static var testIncomeMonthly: String { ls("notifications.testReport.income.monthly", comment: "") }
-        static var testTopCategoryDaily: String { ls("notifications.testReport.topCategory.daily", comment: "") }
-        static var testTopCategoryWeekly: String { ls("notifications.testReport.topCategory.weekly", comment: "") }
-        static var testTopCategoryMonthly: String { ls("notifications.testReport.topCategory.monthly", comment: "") }
         static var testScheduledPayment: String { ls("notifications.testReport.scheduledPayment", comment: "") }
 
         // Section headers

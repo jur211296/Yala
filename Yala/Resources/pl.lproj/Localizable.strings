@@ -2380,18 +2380,6 @@
 
 // Test
 "notifications.testNotification" = "Testowe przypomnienie";
-"notifications.testReport.balance.daily" = "Saldo na koniec dnia: $1,250.00 💰";
-"notifications.testReport.balance.weekly" = "Saldo po tym tygodniu: $1,250.00 💰";
-"notifications.testReport.balance.monthly" = "Saldo po tym miesiącu: $1,250.00 💰";
-"notifications.testReport.expenses.daily" = "Wydano dziś $85.00 📊";
-"notifications.testReport.expenses.weekly" = "Wydano w tym tygodniu $350.00 📊";
-"notifications.testReport.expenses.monthly" = "Wydano w tym miesiącu $1,200.00 📊";
-"notifications.testReport.income.daily" = "Otrzymano dziś $500.00 🎉";
-"notifications.testReport.income.weekly" = "Otrzymano w tym tygodniu $2,500.00 🎉";
-"notifications.testReport.income.monthly" = "Otrzymano w tym miesiącu $8,500.00 🎉";
-"notifications.testReport.topCategory.daily" = "Top wydatek dziś: Jedzenie ($45.00) 👀";
-"notifications.testReport.topCategory.weekly" = "Top wydatek w tym tygodniu: Jedzenie ($180.00) 👀";
-"notifications.testReport.topCategory.monthly" = "Top wydatek w tym miesiącu: Jedzenie ($650.00) 👀";
 "notifications.testReport.scheduledPayment" = "Masz płatność za 3 dni: „Netflix” na USD 14,99";
 
 // Section headers
@@ -2953,7 +2941,6 @@
 "insights.focus.cautious.desc" = "Wczesne ostrzeżenia i budżety zagrożone";
 "insights.toneLabel" = "Ton";
 "insights.focusLabel" = "Skupienie";
-"insights.aiTeaser" = "Obserwacje AI";
 "insights.aiTeaserPlaceholder1" = "Analizuję twoje wzorce wydatków...";
 "insights.aiTeaserPlaceholder2" = "Identyfikuję możliwości oszczędności...";
 "insights.generateAI" = "Wygeneruj inteligentne obserwacje";

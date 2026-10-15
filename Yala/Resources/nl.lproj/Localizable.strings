@@ -2380,18 +2380,6 @@
 
 // Test
 "notifications.testNotification" = "Test-herinnering";
-"notifications.testReport.balance.daily" = "Je saldo bij het einde van de dag: $1.250,00 💰";
-"notifications.testReport.balance.weekly" = "Je saldo na deze week: $1.250,00 💰";
-"notifications.testReport.balance.monthly" = "Je saldo na deze maand: $1.250,00 💰";
-"notifications.testReport.expenses.daily" = "Je hebt vandaag $85,00 uitgegeven 📊";
-"notifications.testReport.expenses.weekly" = "Je hebt deze week $350,00 uitgegeven 📊";
-"notifications.testReport.expenses.monthly" = "Je hebt deze maand $1.200,00 uitgegeven 📊";
-"notifications.testReport.income.daily" = "Je hebt vandaag $500,00 ontvangen 🎉";
-"notifications.testReport.income.weekly" = "Je hebt deze week $2.500,00 ontvangen 🎉";
-"notifications.testReport.income.monthly" = "Je hebt deze maand $8.500,00 ontvangen 🎉";
-"notifications.testReport.topCategory.daily" = "Je grootste uitgave vandaag: Eten ($45,00) 👀";
-"notifications.testReport.topCategory.weekly" = "Je grootste uitgave deze week: Eten ($180,00) 👀";
-"notifications.testReport.topCategory.monthly" = "Je grootste uitgave deze maand: Eten ($650,00) 👀";
 "notifications.testReport.scheduledPayment" = "Je hebt over 3 dagen een betaling: \"Netflix\" voor USD 14,99";
 
 // Section headers
@@ -2953,7 +2941,6 @@
 "insights.focus.cautious.desc" = "Vroege waarschuwingen en budgetten in de gevarenzone";
 "insights.toneLabel" = "Toon";
 "insights.focusLabel" = "Focus";
-"insights.aiTeaser" = "AI-inzichten";
 "insights.aiTeaserPlaceholder1" = "Je uitgavenpatronen worden geanalyseerd...";
 "insights.aiTeaserPlaceholder2" = "Spaarmogelijkheden worden gezocht...";
 "insights.generateAI" = "Slimme observaties genereren";
