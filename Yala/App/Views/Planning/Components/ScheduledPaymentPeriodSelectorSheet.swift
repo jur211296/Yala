@@ -171,12 +171,6 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
 
     // MARK: - Period Generation
 
-    private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
-
     private func generatePeriods() {
         let calendar = Calendar.current
         let today = Date.now
@@ -191,7 +185,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
         var monthDate = startMonth
 
         while monthDate <= endMonth {
-            let monthStr = Self.monthYearFormatter.string(from: monthDate)
+            let monthStr = ScheduledPaymentDateText.monthYear(monthDate)
 
             let isCurrent = calendar.isDate(monthDate, equalTo: viewModel.selectedMonth, toGranularity: .month)
 
@@ -210,7 +204,7 @@ struct ScheduledPaymentPeriodSelectorSheet: View {
 
             generatedPeriods.append(PeriodOption(
                 date: monthDate,
-                title: monthStr.capitalized,
+                title: monthStr,
                 subtitle: specialText,
                 isCurrent: isCurrent
             ))

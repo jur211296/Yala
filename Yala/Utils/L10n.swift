@@ -4300,6 +4300,26 @@ enum L10n {
             static var account: String { ls("scheduled.editor.account", comment: "") }
             static var subcategory: String { ls("scheduled.editor.subcategory", comment: "") }
             static var preview: String { ls("scheduled.editor.preview", comment: "") }
+            /// Estado de UN pago («Activo»). `common.active` es el rótulo de un filtro de Cuentas («Activas»).
+            static var active: String { ls("scheduled.active", comment: "") }
+            /// VoiceOver del ✓ apagado: «Para guardar, falta: cuenta y subcategoría».
+            static func saveMissing(_ fields: String) -> String {
+                String(format: ls("scheduled.editor.save.missing", comment: ""), fields)
+            }
+        }
+
+        /// «Cada 2 meses»: la frecuencia de un pago que se repite cada N (N > 1) días, semanas, meses o años.
+        enum Frequency {
+            static func every(_ interval: Int, _ type: RecurrenceType) -> String {
+                let key: String
+                switch type {
+                case .daily: key = "scheduled.frequency.every.days"
+                case .weekly: key = "scheduled.frequency.every.weeks"
+                case .monthly: key = "scheduled.frequency.every.months"
+                case .yearly: key = "scheduled.frequency.every.years"
+                }
+                return String(format: ls(key, comment: ""), interval)
+            }
         }
 
         enum Detail {
@@ -7429,6 +7449,17 @@ enum L10n {
             /// "Hoy vence: %@ por %@" (name, amount)
             static func dueToday(_ name: String, _ amount: String) -> String {
                 String(format: ls("notifications.scheduledPayment.dueToday", comment: ""), name, amount)
+            }
+
+            /// "Mañana toca pagar %@ por %@" (name, amount): el aviso con un día de antelación. Con `dueSoon` salía
+            /// «En 1 días toca pagar…».
+            static func dueTomorrow(_ name: String, _ amount: String) -> String {
+                String(format: ls("notifications.scheduledPayment.dueTomorrow", comment: ""), name, amount)
+            }
+
+            /// "Mañana llega %@ de %@" (amount, name)
+            static func dueTomorrowIncome(_ amount: String, _ name: String) -> String {
+                String(format: ls("notifications.scheduledPayment.dueTomorrow.income", comment: ""), amount, name)
             }
 
             /// "En %d día(s) vence: %@ por %@" (days, name, amount)

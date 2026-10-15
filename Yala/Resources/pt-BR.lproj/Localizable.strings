@@ -793,7 +793,7 @@
 "scheduled.payments.count" = "%d pagamentos ativos";
 "scheduled.calendar.show.all" = "Ver tudo";
 "scheduled.calendar.day.empty" = "Sem pagamentos neste dia";
-"scheduled.calendar.month.empty" = "Sem pagamentos neste mes";
+"scheduled.calendar.month.empty" = "Sem pagamentos neste mês";
 
 "widget.sizeLabel" = "Tamanho";
 "widget.chatFab.toggle" = "Pergunte ao Yala";
@@ -6621,3 +6621,10 @@
 "budgets.empty.yearly.title" = "Você ainda não tem orçamentos anuais";
 "budgets.empty.unique.title" = "Você ainda não tem orçamentos únicos";
 "budgets.charts.limitAccessibility" = "Limite: %@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "Ativo";
+"scheduled.editor.save.missing" = "Para salvar, preencha: %@";
+"notifications.scheduledPayment.dueTomorrow" = "%1$@ vence amanhã — %2$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "%1$@ de %2$@ chega amanhã 📅";
+"scheduled.filter.empty" = "Nenhum pagamento com este filtro";

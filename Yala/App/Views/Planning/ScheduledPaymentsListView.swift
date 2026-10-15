@@ -82,7 +82,7 @@ struct ScheduledPaymentsListView: View {
 
     private var heroSection: some View {
         let monthlyTotal = viewModel.calculateMonthlyTotal(
-            subscriptions: activePayments,
+            subscriptions: payments,
             for: viewModel.selectedMonth,
             preferredCurrencyCode: currencyCode
         )
@@ -323,7 +323,9 @@ struct ScheduledPaymentsListView: View {
     }
 
     private var weekdayHeaders: some View {
-        let symbols = Calendar.current.veryShortWeekdaySymbols
+        var localeCalendar = Calendar.current
+        localeCalendar.locale = AppLocale.current // las iniciales en el idioma de la app, no en el del sistema
+        let symbols = localeCalendar.veryShortWeekdaySymbols
         let startIndex = appPreferences.firstWeekday.rawValue - 1
         let reorderedSymbols = Array(symbols[startIndex...]) + Array(symbols[..<startIndex])
 
@@ -525,12 +527,14 @@ struct ScheduledPaymentsListView: View {
         .padding(.top, DS.Spacing.md)
     }
 
-    private static let longDateFormatter: DateFormatter = {
+    /// En el idioma de la app; por llamada, porque el idioma se cambia en caliente.
+    private static var longDateFormatter: DateFormatter {
         let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
         formatter.dateStyle = .long
         formatter.timeStyle = .none
         return formatter
-    }()
+    }
 
     private func selectedDayLabel(day: Int) -> String {
         let calendar = Calendar.current
@@ -545,9 +549,29 @@ struct ScheduledPaymentsListView: View {
 
     // MARK: - Empty State
 
+    /// Con pagos que caen otros meses, «Sin pagos este mes»: «Aún no tienes pagos planificados» se lo decía a quien
+    /// acababa de crear uno para el día 1 del mes que viene.
+    @ViewBuilder
     private var emptyState: some View {
-        YalaEmptyState.noScheduledPayments(icon: emptyStateIcon)
-            .padding(.top, DS.Spacing.xxxl)
+        Group {
+            if payments.isEmpty {
+                YalaEmptyState.noScheduledPayments(icon: emptyStateIcon)
+            } else if !viewModel.groupedPayments.isEmpty {
+                // Hay pagos este mes, pero el filtro de «Pagado»/«Pendiente» los oculta.
+                YalaEmptyState(
+                    icon: emptyStateIcon,
+                    title: NSLocalizedString("scheduled.filter.empty", comment: ""),
+                    message: nil
+                )
+            } else {
+                YalaEmptyState(
+                    icon: emptyStateIcon,
+                    title: NSLocalizedString("scheduled.calendar.month.empty", comment: ""),
+                    message: nil
+                )
+            }
+        }
+        .padding(.top, DS.Spacing.xxxl)
     }
 
     private var emptyStateIcon: String {

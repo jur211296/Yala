@@ -474,6 +474,11 @@ final class ScheduledPaymentNotificationService {
             message = isIncome
                 ? L10n.Notifications.ScheduledPayment.dueTodayIncome(formattedAmount, payment.name)
                 : L10n.Notifications.ScheduledPayment.dueToday(payment.name, formattedAmount)
+        case .dueSoon(let days) where days == 1:
+            // «Notificar 1 día antes» decía «En 1 días toca pagar…».
+            message = isIncome
+                ? L10n.Notifications.ScheduledPayment.dueTomorrowIncome(formattedAmount, payment.name)
+                : L10n.Notifications.ScheduledPayment.dueTomorrow(payment.name, formattedAmount)
         case .dueSoon(let days):
             message = isIncome
                 ? L10n.Notifications.ScheduledPayment.dueSoonIncome(days, formattedAmount, payment.name)

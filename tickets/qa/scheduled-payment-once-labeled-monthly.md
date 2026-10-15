@@ -1,10 +1,10 @@
 ---
 id: scheduled-payment-once-labeled-monthly
-status: backlog
+status: qa
 priority: medium
 area: planning
 created: 2026-09-02
-updated: 2026-10-08
+updated: 2026-10-14
 ---
 
 # Un pago planificado de «una sola vez» se muestra como «Mensual» en la lista
@@ -67,3 +67,7 @@ notificaciones. Es presentación.
 - `ScheduledPaymentRowView.recurrenceBadge` (ahora `:136-147`) sigue pintando `summary.payment.recurrenceType` sin consultar `isRecurring`. El fichero no tiene commits desde el 2026-09-02.
 
 Triage 2026-10-08: abierto · low → medium · sigue pasando (recurrenceBadge no mira isRecurring) y la lista le dice al usuario que un pago único se repite cada mes.
+
+## Arreglado (2026-10-14, auditoría UX 2.2, lote 10, B1)
+
+La fila de la lista, el detalle, Ajustes › Pagos planificados y el flujo de caja nombran la frecuencia con una sola regla (`ScheduledPaymentDetailLogic.frequencyText`): «Una sola vez», «Mensual» o «Cada 2 meses». Medido en el simulador creando un pago «una sola vez» a mano (`B1-despues-lista.png` en la entrega del lote 10). Tests: `ScheduledPaymentDetailLogicTests`, `ScheduledPaymentWiringTests`. Falta el QA en un iPhone.

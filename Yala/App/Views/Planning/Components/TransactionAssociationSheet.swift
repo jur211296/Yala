@@ -138,12 +138,14 @@ struct TransactionAssociationSheet: View {
         .padding(.bottom, DS.Spacing.sm)
     }
 
-    private static let mediumDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
+    /// Lo que identifica al registro: su nota o, sin nota, su subcategoría. Sin nota salía la fecha dos veces
+    /// («3 oct. 2026 / 3 oct. 2026») y no se sabía qué gasto era.
+    private func candidateTitle(_ transaction: TransactionItem) -> String {
+        if let note = transaction.note, !note.isEmpty { return note }
+        if let sub = transaction.subcategory { return sub.name }
+        if let category = transaction.category { return category.name }
+        return ScheduledPaymentDateText.medium(transaction.date)
+    }
 
     private func candidateRow(_ transaction: TransactionItem) -> some View {
         return Button {
@@ -175,13 +177,13 @@ struct TransactionAssociationSheet: View {
                 }
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(transaction.note ?? Self.mediumDateFormatter.string(from: transaction.date))
+                    Text(candidateTitle(transaction))
                         .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
                     HStack(spacing: DS.Spacing.xs) {
-                        Text(Self.mediumDateFormatter.string(from: transaction.date))
+                        Text(ScheduledPaymentDateText.medium(transaction.date))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
 

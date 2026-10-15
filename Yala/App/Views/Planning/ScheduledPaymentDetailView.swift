@@ -28,49 +28,46 @@ struct ScheduledPaymentDetailView: View {
     @State private var editingTransaction: TransactionItem?
     @State private var advancedDraft: InboxDraft?
 
-    // Calculate occurrences using getPaymentDatesInMonth (SSOT for date generation)
+    // Fechas del calendario del pago (SSOT: `getPaymentDatesInMonth`). El historial son las que ya llegaron y las
+    // próximas las que no, mire el mes que mire la lista (`ScheduledPaymentDetailLogic`).
     private var pastOccurrences: [Date] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date.now)
-
-        // Selected month past dates
-        let selectedMonthDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
-            .filter { calendar.startOfDay(for: $0) <= today }
-
-        // Previous months (up to 3)
-        var olderDates: [Date] = []
-        for offset in 1...3 {
-            guard let prevMonth = calendar.date(byAdding: .month, value: -offset, to: viewModel.selectedMonth) else { continue }
-            let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: prevMonth)
-            olderDates.append(contentsOf: dates)
+        ScheduledPaymentDetailLogic.pastOccurrences(selectedMonth: viewModel.selectedMonth, today: Date.now) { month in
+            viewModel.getPaymentDatesInMonth(payment: payment, month: month)
         }
-
-        // Most recent first, limit 10
-        return Array((selectedMonthDates + olderDates).sorted(by: >).prefix(10))
     }
 
     private var upcomingOccurrences: [Date] {
         guard payment.isRecurring else { return [] }
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date.now)
-
-        // Selected month future dates
-        var futureDates = viewModel.getPaymentDatesInMonth(payment: payment, month: viewModel.selectedMonth)
-            .filter { calendar.startOfDay(for: $0) > today }
-
-        // Next months until we have 3
-        var nextMonth = viewModel.selectedMonth
-        while futureDates.count < 3 {
-            guard let nm = calendar.date(byAdding: .month, value: 1, to: nextMonth) else { break }
-            nextMonth = nm
-            let dates = viewModel.getPaymentDatesInMonth(payment: payment, month: nm)
-                .filter { $0 > today }
-            futureDates.append(contentsOf: dates)
-            // Safety: don't look more than 6 months ahead
-            if calendar.dateComponents([.month], from: viewModel.selectedMonth, to: nm).month ?? 0 > 6 { break }
+        return ScheduledPaymentDetailLogic.upcomingOccurrences(today: Date.now) { month in
+            viewModel.getPaymentDatesInMonth(payment: payment, month: month)
         }
+    }
 
-        return Array(futureDates.sorted().prefix(3))
+    /// Qué gasto vinculado cubre cada fecha enseñada, con la regla de la lista (por mes y por orden).
+    private var linkedByOccurrence: [Date: TransactionItem] {
+        let occurrences = pastOccurrences + upcomingOccurrences
+        let matches = ScheduledPaymentDetailLogic.linkedOccurrences(
+            occurrences: occurrences,
+            linkedDates: linkedTransactions.map(\.date),
+            isSkipped: { payment.isDateSkipped($0) }
+        )
+        var result: [Date: TransactionItem] = [:]
+        for (occurrenceIndex, txIndex) in matches {
+            result[occurrences[occurrenceIndex]] = linkedTransactions[txIndex]
+        }
+        return result
+    }
+
+    /// La próxima fecha que de verdad toca: desde `nextDueDate`, la primera que no se saltó ni se pagó. Tras «Saltar»
+    /// seguía diciendo la fecha saltada.
+    private var nextDate: Date {
+        ScheduledPaymentDetailLogic.nextDate(
+            nextDueDate: payment.nextDueDate,
+            linkedDates: linkedTransactions.map(\.date),
+            isSkipped: { payment.isDateSkipped($0) }
+        ) { month in
+            viewModel.getPaymentDatesInMonth(payment: payment, month: month)
+        }
     }
 
     var body: some View {
@@ -189,7 +186,7 @@ struct ScheduledPaymentDetailView: View {
                     detailRow(
                         icon: "calendar",
                         label: L10n.Scheduled.Detail.nextDate,
-                        value: formatDate(payment.nextDueDate)
+                        value: formatDate(nextDate)
                     )
 
                     if let endDate = payment.endDate {
@@ -318,7 +315,7 @@ struct ScheduledPaymentDetailView: View {
     private func occurrenceRow(date: Date, isPast: Bool, index: Int?) -> some View {
         let isSkipped = payment.isDateSkipped(date)
         // Derive paid status from actual linked transaction (works across all months)
-        let rowLinkedTx = findLinkedTransaction(for: date)
+        let rowLinkedTx = linkedByOccurrence[date]
         let isPaidForDate = rowLinkedTx != nil
 
         // Binding: true only when THIS row's date is the selected one
@@ -471,24 +468,6 @@ struct ScheduledPaymentDetailView: View {
         linkedTransactions = viewModel.fetchLinkedTransactions(for: payment)
     }
 
-    /// Find the linked transaction closest to a given occurrence date (±7 days)
-    private func findLinkedTransaction(for occurrenceDate: Date) -> TransactionItem? {
-        let calendar = Calendar.current
-        let occurrenceDay = calendar.startOfDay(for: occurrenceDate)
-        var bestMatch: TransactionItem?
-        var bestDistance = Int.max
-
-        for tx in linkedTransactions {
-            let txDay = calendar.startOfDay(for: tx.date)
-            let distance = abs(calendar.dateComponents([.day], from: occurrenceDay, to: txDay).day ?? Int.max)
-            if distance <= 7 && distance < bestDistance {
-                bestDistance = distance
-                bestMatch = tx
-            }
-        }
-        return bestMatch
-    }
-
     // MARK: - Info Note
 
     private var infoNote: some View {
@@ -513,63 +492,33 @@ struct ScheduledPaymentDetailView: View {
     // MARK: - Helpers
 
     private var frequencyDescription: String {
-        if !payment.isRecurring {
-            return L10n.Scheduled.Editor.onetime
-        }
-
-        let type = RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly
-        let interval = payment.recurrenceInterval
-
-        if interval == 1 {
-            return type.localizedName
-        } else {
-            return "\(L10n.Scheduled.Editor.every) \(interval) \(type.localizedNamePlural)"
-        }
+        ScheduledPaymentDetailLogic.frequencyText(
+            isRecurring: payment.isRecurring,
+            recurrenceType: payment.recurrenceType,
+            interval: payment.recurrenceInterval
+        )
     }
 
     private func formatAmount(_ amount: Double, isEstimate: Bool = false) -> String {
         appPreferences.currency(amount, currencyCode: payment.currencyCode, forceFullPrecision: true, isEstimate: isEstimate)
     }
 
-    private static let mediumDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
-
-    private static let fullDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "EEEE, d MMMM yyyy"
-        return f
-    }()
-
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "d"
-        return f
-    }()
-
-    private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM"
-        return f
-    }()
-
+    // Fechas en el idioma de la app y con la plantilla del idioma: «miércoles, 14 de octubre de 2026», no
+    // «14 octubre 2026» en el idioma del sistema.
     private func formatDate(_ date: Date) -> String {
-        Self.mediumDateFormatter.string(from: date)
+        ScheduledPaymentDateText.medium(date)
     }
 
     private func formatFullDate(_ date: Date) -> String {
-        Self.fullDateFormatter.string(from: date)
+        ScheduledPaymentDateText.full(date)
     }
 
     private func dayOfMonth(_ date: Date) -> String {
-        Self.dayFormatter.string(from: date)
+        ScheduledPaymentDateText.day(date)
     }
 
     private func monthAbbrev(_ date: Date) -> String {
-        Self.monthFormatter.string(from: date).uppercased()
+        ScheduledPaymentDateText.monthAbbreviation(date)
     }
 
     private func ordinalText(_ n: Int) -> String {

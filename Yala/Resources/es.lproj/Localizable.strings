@@ -6647,3 +6647,10 @@
 "budgets.empty.yearly.title" = "Aún no tienes presupuestos anuales";
 "budgets.empty.unique.title" = "Aún no tienes presupuestos únicos";
 "budgets.charts.limitAccessibility" = "Límite: %@";
+
+/* Pagos planificados — auditoría UX 2.2, lote 10 */
+"scheduled.active" = "Activo";
+"scheduled.editor.save.missing" = "Para guardar, completa: %@";
+"notifications.scheduledPayment.dueTomorrow" = "Mañana toca pagar %1$@ por %2$@ 📅";
+"notifications.scheduledPayment.dueTomorrow.income" = "Mañana llega %1$@ de %2$@ 📅";
+"scheduled.filter.empty" = "Ningún pago con este filtro";

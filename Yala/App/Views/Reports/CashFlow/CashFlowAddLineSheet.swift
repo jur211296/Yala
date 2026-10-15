@@ -547,7 +547,13 @@ struct CashFlowAddFromScheduledView: View {
                             Text(payment.name)
                                 .font(DS.Typography.body)
                                 .foregroundStyle(.primary)
-                            Text(payment.recurrenceType.capitalized)
+                            // La misma regla que la lista de pagos: decía «Monthly» (el valor guardado, en inglés)
+                            // en cualquier idioma, también a un pago de una sola vez.
+                            Text(ScheduledPaymentDetailLogic.frequencyText(
+                                isRecurring: payment.isRecurring,
+                                recurrenceType: payment.recurrenceType,
+                                interval: payment.recurrenceInterval
+                            ))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.tertiary)
                         }
