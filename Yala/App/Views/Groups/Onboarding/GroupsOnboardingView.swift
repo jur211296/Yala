@@ -168,6 +168,9 @@ struct GroupsOnboardingView: View {
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.thSecondaryText)
                     .multilineTextAlignment(.center)
+                    // Sin esto la pila la comprimía a una línea y la frase salía cortada con «…»
+                    // (medido en el iPhone 17 Pro, 2026-10-15): la nota entera es la que cuenta el registro automático.
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, DS.Spacing.lg)
                 capabilityCard(
                     icon: "arrow.left.arrow.right.circle.fill",

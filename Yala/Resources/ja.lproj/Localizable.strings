@@ -4820,6 +4820,7 @@
 
 /* G4 sign-in body */
 "groups.signin.body" = "グループに参加するにはYalaアカウントが必要です。AppleまたはGoogleでサインインして、招待を続けましょう。";
+"groups.signin.bodyNoInvite" = "グループはYalaアカウントに保存され、全員が同じ支出を最新の状態で見られます。AppleまたはGoogleでサインインして続けましょう。";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "これがあなたのYalaアカウントになります。いつか個人データをクラウドに移すときも、この同じアカウントを使います。";

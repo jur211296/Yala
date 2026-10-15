@@ -4090,6 +4090,7 @@
 
 /* G4 sign-in body */
 "groups.signin.body" = "Para unirte al grupo necesitás una cuenta de Yala. Entrá con Apple o Google y seguí con tu invitación.";
+"groups.signin.bodyNoInvite" = "Tus grupos se guardan en tu cuenta de Yala, para que todos vean los mismos gastos al día. Entrá con Apple o Google para seguir.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Esta será tu cuenta de Yala: si algún día llevás tus datos personales a la nube, vas a usar esta misma.";

@@ -68,6 +68,9 @@ struct GroupsContainerView: View {
     /// C4: el canal de Grupos sigue apagado tras el `refreshIfDue(force: true)` de `requestCreateGroup`.
     /// Antes de C4 este camino abría el form igual y acuñaba un grupo local irrecuperable.
     @State private var showChannelOffAlert = false
+    /// Sube cuando el consent de Grupos cambia en disco (`GroupsConsentState.didChangeNotification`). El estado vacío lo
+    /// lee para volver a decidirse: `GroupsConsentState.isAccepted` es `UserDefaults` y no repinta nada por sí solo.
+    @State private var consentRevision = 0
 
     // MARK: - Body
 
@@ -195,6 +198,9 @@ struct GroupsContainerView: View {
                 for: GroupsAttestStreakStore.didChangeNotification)) { _ in
                 refreshAttestTerminalNotice()
             }
+            // Aceptar el consent desde «Un último paso» cierra la hoja en sitio: sin onAppear ni nada observable que cambie.
+            .onReceive(NotificationCenter.default.publisher(
+                for: GroupsConsentState.didChangeNotification)) { _ in consentRevision &+= 1 }
             .yalaScreenBackground(.panel)
             .navigationTitle(L10n.Groups.title)
             .navigationBarTitleDisplayMode(.large)
@@ -455,6 +461,8 @@ struct GroupsContainerView: View {
     /// busque el id declarado en `YalaEmptyState` no lo encuentra en el árbol.
     @ViewBuilder
     private func emptyState(standardAccessibilityID: String?) -> some View {
+        // Dependencia explícita del consent: sin esta lectura el `switch` no se re-evalúa al aceptarlo.
+        let _ = consentRevision
         switch GroupsEmptyStateLogic.decide(
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSeenEducational: hasSeenGroupsEducational,

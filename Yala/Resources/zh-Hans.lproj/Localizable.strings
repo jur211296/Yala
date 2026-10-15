@@ -4820,6 +4820,7 @@
 
 /* G4 sign-in body */
 "groups.signin.body" = "加入群组需要一个 Yala 账户。用 Apple 或 Google 登录，继续你的邀请吧。";
+"groups.signin.bodyNoInvite" = "你的群组保存在 Yala 账户中，大家都能看到同样的最新支出。用 Apple 或 Google 登录即可继续。";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "这将是你的 Yala 账户：如果有一天你把个人数据迁移到云端，用的也是这个账户。";

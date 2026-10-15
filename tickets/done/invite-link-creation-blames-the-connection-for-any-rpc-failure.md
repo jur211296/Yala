@@ -1,10 +1,10 @@
 ---
 id: invite-link-creation-blames-the-connection-for-any-rpc-failure
-status: backlog
+status: done
 priority: low
 area: "groups, invitaciones, copy"
 created: 2026-09-15
-updated: 2026-10-08
+updated: 2026-10-15
 source: "review adversarial de `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -45,3 +45,11 @@ conexión está bien: lo que falló fue otra cosa.
 - El copy por causa (`GroupInviteLinkCreationLogic.blocker`) solo cubre el `else` de grupo legacy o canal apagado, no el fallo del RPC.
 
 Triage 2026-10-08: abierto · low → low · El `catch` de `GroupDetailViewModel` y de `GroupMembersView.createShareLink` sigue mostrando `L10n.Groups.Errors.inviteFailed` («revisa tu conexión») para cualquier error del RPC.
+
+## Cerrado (2026-10-15, auditoría UX 2.2 · lote 12)
+
+`GroupActionErrorLogic.classifyInviteFailure` en las dos superficies (`GroupMembersView`, `GroupDetailViewModel`): solo
+`transient(status: -1)` —la petición no salió del teléfono— dice «revisa tu conexión» (`groups.errors.inviteFailed`); la
+sesión caducada pide volver a entrar; el attest terminal dice que el teléfono no puede; lo demás (5xx, canal apagado,
+respuesta ilegible, rechazos) usa `groups.errors.inviteChannelOff` («en este momento… en un rato»). Sin copy nuevo.
+Medido en el simulador con la sesión fingida: de «Revisa tu conexión» a «Tu sesión caducó…».

@@ -118,7 +118,7 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 signInDestination = nil
                 routeIdentityDestination(destino)
             }) {
-                GroupsSignInView { destino, origen in
+                GroupsSignInView(isForInvitation: !(pendingGroupsJoinZone ?? "").isEmpty) { destino, origen in
                     signInAuthenticated = true
                     signInDestination = destino
                     showGroupsSignIn = false

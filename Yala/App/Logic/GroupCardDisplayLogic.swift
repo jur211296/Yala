@@ -87,4 +87,16 @@ enum GroupCardDisplayLogic {
     ) -> Bool {
         displayMode(memberStatus: memberStatus, migrationState: migrationState) != .pendingApproval
     }
+
+    /// Cuántas solicitudes pendientes enseña la tarjeta. A quien espera aprobación o tiene la suya rechazada, ninguna:
+    /// el recuento incluye SU propia solicitud, y «1 solicitud pendiente» junto a «Esperando aprobación» se leía
+    /// como que le tocaba aprobar a alguien. Tampoco puede aprobar a nadie: no es admin del grupo hasta que entra.
+    static func visiblePendingCount(_ pendingCount: Int, displayMode: GroupCardDisplayMode) -> Int {
+        switch displayMode {
+        case .pendingApproval, .rejected:
+            return 0
+        case .active, .migratedFrozen, .migratedNeedsUpdate, .migratedPaused:
+            return pendingCount
+        }
+    }
 }

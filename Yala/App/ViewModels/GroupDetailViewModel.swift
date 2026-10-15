@@ -504,7 +504,7 @@ final class GroupDetailViewModel {
             #if DEBUG
             print("GroupDetailViewModel: Error creating share: \(error)")
             #endif
-            surfaceActionError(L10n.Groups.Errors.inviteFailed)
+            surfaceActionError(GroupActionErrorLogic.inviteMessage(for: error))
         }
         isCreatingShare = false
     }

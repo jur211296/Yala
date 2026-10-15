@@ -4820,6 +4820,7 @@
 
 /* G4 sign-in body */
 "groups.signin.body" = "Om lid te worden van de groep heb je een Yala-account nodig. Log in met Apple of Google en ga verder met je uitnodiging.";
+"groups.signin.bodyNoInvite" = "Je groepen worden bewaard in je Yala-account, zodat iedereen dezelfde uitgaven ziet, altijd bijgewerkt. Log in met Apple of Google om verder te gaan.";
 
 /* G4 sign-in R9 account note */
 "groups.signin.accountNote" = "Dit wordt jouw Yala-account: als je ooit je persoonlijke gegevens naar de cloud verplaatst, gebruik je ditzelfde account.";

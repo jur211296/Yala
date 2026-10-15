@@ -273,7 +273,7 @@ struct GroupMembersView: View {
                     showOpeningBalanceApprovalPrompt = true
                 }
             } catch {
-                pendingErrorMessage = error.localizedDescription
+                pendingErrorMessage = GroupActionErrorLogic.message(for: error)
                 showPendingError = true
                 pendingActionMember = nil
                 #if DEBUG
@@ -296,7 +296,7 @@ struct GroupMembersView: View {
             try action(member, group)
             viewModel.loadData()
         } catch {
-            pendingErrorMessage = error.localizedDescription
+            pendingErrorMessage = GroupActionErrorLogic.message(for: error)
             showPendingError = true
             #if DEBUG
             print("GroupMembersView: \(label) failed: \(error)")
@@ -498,7 +498,8 @@ struct GroupMembersView: View {
             }
         } catch {
             isCreatingShare = false
-            shareErrorMessage = L10n.Groups.Errors.inviteFailed
+            // Por causa: «revisa tu conexión» solo cuando la petición no salió del teléfono.
+            shareErrorMessage = GroupActionErrorLogic.inviteMessage(for: error)
             showShareError = true
         }
     }
@@ -510,7 +511,7 @@ struct GroupMembersView: View {
             try GroupService.shared.changeRole(member, to: newRole, in: group)
             viewModel.loadData()
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = GroupActionErrorLogic.message(for: error)
             showActionError = true
         }
     }
@@ -525,7 +526,7 @@ struct GroupMembersView: View {
                 viewModel.loadData()
                 DS.Haptic.warning()
             } catch {
-                actionErrorMessage = error.localizedDescription
+                actionErrorMessage = GroupActionErrorLogic.message(for: error)
                 showActionError = true
             }
         }

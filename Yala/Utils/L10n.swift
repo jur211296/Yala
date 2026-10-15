@@ -2399,6 +2399,9 @@ enum L10n {
         enum SignIn {
             static var title: String { ls("groups.signin.title", comment: "") }
             static var body: String { ls("groups.signin.body", comment: "") }
+            /// Lo mismo cuando NO hay invitación detrás (crear un grupo, o la pestaña sin sesión): `body` habla de «tu
+            /// invitación» y a esa persona no la invitó nadie (auditoría UX 2.2, lote 12).
+            static var bodyNoInvite: String { ls("groups.signin.bodyNoInvite", comment: "") }
             /// Invariante R9: esta será LA cuenta si algún día migra lo personal.
             static var accountNote: String { ls("groups.signin.accountNote", comment: "") }
             static var error: String { ls("groups.signin.error", comment: "") }
