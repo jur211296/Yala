@@ -796,7 +796,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | session-redesign-implementation-order | backlog | tickets/backlog/session-redesign-implementation-order.md |
 | session-redesign-web-and-store-copy | qa | tickets/qa/session-redesign-web-and-store-copy.md |
 | settings-adopt-stalled-before-the-claim-keeps-the-session | done | tickets/done/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
-| settings-footer-shows-a-fixed-version-1-0-0 | backlog | tickets/backlog/settings-footer-shows-a-fixed-version-1-0-0.md |
+| settings-footer-shows-a-fixed-version-1-0-0 | done | tickets/done/settings-footer-shows-a-fixed-version-1-0-0.md |
 | settings-migrate-blocks-a-second-device-before-its-marker | done | tickets/done/settings-migrate-blocks-a-second-device-before-its-marker.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | qa | tickets/qa/settings-redesign-as-grouped-lists-like-ios.md |
