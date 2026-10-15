@@ -1,6 +1,6 @@
 ---
 id: device-qa-apple-id-change-closes-private-session
-status: qa
+status: done
 priority: high
 area: "modo-nube, sesiones, swiftdata"
 created: 2026-09-14
@@ -154,3 +154,7 @@ notificación puede no llegar nunca, y entonces la única red es la comprobació
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con solo el recorrido 2: apagar iCloud Drive NO debe sacar el aviso de cambio de Apple ID. El resto pide un segundo Apple ID.
+
+## QA guiado · 2026-10-15
+
+Cerrado en el QA guiado 2026-10-15: con iCloud Drive apagado y la sesión privada viva, NO sale el aviso de cambio de Apple ID (recorrido 2). Salió otro aviso falso, «Tus datos fueron eliminados de iCloud», que va en su propia card: `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`.

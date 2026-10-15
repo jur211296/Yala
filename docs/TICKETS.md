@@ -138,7 +138,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
 | born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check | backlog | tickets/backlog/born-cloud-sign-up-over-mirror-imported-rows-skips-the-corpus-check.md |
 | born-cloud-signup-into-existing-account-relaunch-says-nothing | backlog | tickets/backlog/born-cloud-signup-into-existing-account-relaunch-says-nothing.md |
-| born-cloud-signup-lands-on-existing-account-silently | qa | tickets/qa/born-cloud-signup-lands-on-existing-account-silently.md |
+| born-cloud-signup-lands-on-existing-account-silently | done | tickets/done/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
@@ -215,7 +215,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-hydration-spinner-never-gives-up-without-attest | done | tickets/done/cloud-hydration-spinner-never-gives-up-without-attest.md |
 | cloud-killswitch-hides-the-only-door-to-detach-groups | done | tickets/done/cloud-killswitch-hides-the-only-door-to-detach-groups.md |
 | cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | done | tickets/done/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
-| cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | qa | tickets/qa/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
+| cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | done | tickets/done/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | done | tickets/done/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | done | tickets/done/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
@@ -272,7 +272,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes | done | tickets/done/detach-with-a-stuck-groups-drain-names-only-the-first-of-two-causes.md |
 | device-handover-groups-leak | discarded | tickets/discarded/device-handover-groups-leak.md |
 | device-qa-activation-restore-start-fresh | done | tickets/done/device-qa-activation-restore-start-fresh.md |
-| device-qa-apple-id-change-closes-private-session | qa | tickets/qa/device-qa-apple-id-change-closes-private-session.md |
+| device-qa-apple-id-change-closes-private-session | done | tickets/done/device-qa-apple-id-change-closes-private-session.md |
 | device-qa-cloud-killswitch-groups-door | done | tickets/done/device-qa-cloud-killswitch-groups-door.md |
 | device-qa-discard-gate-returns-to-restore-without-icloud | done | tickets/done/device-qa-discard-gate-returns-to-restore-without-icloud.md |
 | device-qa-groups-account-association | done | tickets/done/device-qa-groups-account-association.md |
@@ -604,7 +604,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | notification-deeplink-accounts-not-parsed | backlog | tickets/backlog/notification-deeplink-accounts-not-parsed.md |
 | notification-delegate-assigned-after-launch | qa | tickets/qa/notification-delegate-assigned-after-launch.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
-| onboarding-login-should-match-the-sep15-reference | qa | tickets/qa/onboarding-login-should-match-the-sep15-reference.md |
+| onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |

@@ -1,6 +1,6 @@
 ---
 id: born-cloud-signup-lands-on-existing-account-silently
-status: qa
+status: done
 priority: medium
 area: "onboarding, modo-nube, copy"
 created: 2026-09-10
@@ -86,3 +86,7 @@ Necesitas un iPhone de pruebas con un Apple ID que **ya tenga** cuenta de Yala e
 
 Si en el paso 7 sale «Ya casi está — reinicia Yala», es el caso de «Lo que queda fuera»: apúntalo y no lo cuentes
 como fallo de este ticket.
+
+## QA guiado · 2026-10-15
+
+Cerrado en el QA guiado 2026-10-15 (C2 paso 2, card `ni6g`): con un Apple ID que ya tenía cuenta, «Registrarse con Apple» dijo «Ya tenías una cuenta, has entrado en ella» y entró sin onboarding. Antes hubo que borrar también el build Debug de «Yala», que comparte el App Group `.dev` y dejaba datos viejos.

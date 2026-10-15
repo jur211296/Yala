@@ -73,6 +73,7 @@ Captura → Diseño → Construcción → Gate → Commit → QA → Cierre
 - **Review adversarial** (varias lentes independientes + refutación por hallazgo) cuando el cambio toque lógica densa donde un bug sale caro: sync/race (CKShare, bridges, notificaciones), cálculos financieros, migraciones SwiftData, bridge SplitExpense ↔ TransactionItem. Para l10n, rebranding o polish visual no aporta.
 - **`/gate`** antes de commitear: build ×2, unit, XCUITest de las áreas tocadas, audit y validación del índice. Sella el árbol; el hook de pre-commit comprueba ese sello.
 - **`/qa`** es por lotes: una sesión drena varios tickets `qa_`, no uno.
+- **QA de una versión con Jürgen: dos sesiones, en orden.** `/barrido-qa` prueba en el simulador lo que se pueda y le deja solo lo que pide su iPhone o su aprobación; después `/qa-guiado` lo guía paso a paso en el teléfono.
 - **`/cerrar`** al terminar: nada abierto, ticket sincronizado y disco liberado.
 
 ### Dónde se commitea (2026-09-01)
