@@ -184,6 +184,9 @@ struct CustomPeriodPickerSheet: View {
                 }
             }
         }
+        // El color de marca, no el que herede: Estadísticas pone `.tint(.primary)` a sus barras y desde sus pestañas el ✓
+        // salía blanco sobre blanco en modo oscuro (auditoría UX 2.2 · lote 11 · B6).
+        .tint(theme.accent)
         .yalaSheetDetents([.medium])
         .presentationDragIndicator(.visible)
     }

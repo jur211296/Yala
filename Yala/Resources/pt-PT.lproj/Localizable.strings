@@ -1764,7 +1764,6 @@
 "insights.activeSubscriptions" = "Assinaturas ativas";
 "insights.aiCaption" = "A OpenAI analisa seus dados agregados para gerar análises personalizadas. Nenhuma transação individual é enviada.";
 "insights.aiSectionTitle" = "Inteligência Artificial";
-"insights.aiTeaser" = "Insights com IA";
 "insights.aiTeaserPlaceholder1" = "Analisando seus padrões de gasto...";
 "insights.aiTeaserPlaceholder2" = "Identificando oportunidades de economia...";
 "insights.aiToggle" = "Resumo inteligente";
@@ -1957,19 +1956,7 @@
 "notifications.selectDay" = "Quando receber?";
 "notifications.selectWeekdays" = "Quais dias?";
 "notifications.testNotification" = "Testar lembrete";
-"notifications.testReport.balance.daily" = "Seu saldo hoje: $1.250,00";
-"notifications.testReport.balance.monthly" = "Seu saldo este mês: $1.250,00";
-"notifications.testReport.balance.weekly" = "Seu saldo esta semana: $1.250,00";
-"notifications.testReport.expenses.daily" = "Você gastou $85,00 hoje";
-"notifications.testReport.expenses.monthly" = "Você gastou $1.200,00 este mês";
-"notifications.testReport.expenses.weekly" = "Você gastou $350,00 esta semana";
-"notifications.testReport.income.daily" = "Você recebeu $500,00 hoje";
-"notifications.testReport.income.monthly" = "Você recebeu $8.500,00 este mês";
-"notifications.testReport.income.weekly" = "Você recebeu $2.500,00 esta semana";
 "notifications.testReport.scheduledPayment" = "Você tem um pagamento em 3 dias: \"Netflix\" por USD 14,99";
-"notifications.testReport.topCategory.daily" = "Sua maior despesa hoje: Alimentação ($45,00)";
-"notifications.testReport.topCategory.monthly" = "Sua maior despesa do mês: Alimentação ($650,00)";
-"notifications.testReport.topCategory.weekly" = "Sua maior despesa da semana: Alimentação ($180,00)";
 "notifications.text" = "Mensagem";
 "notifications.textPlaceholder" = "Ex: Você registrou seus gastos?";
 "notifications.time" = "Horário";

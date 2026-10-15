@@ -5,11 +5,13 @@
 //  Sheet para crear/editar una notificación.
 //
 
+import SwiftData
 import SwiftUI
 
 struct NotificationEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
+    @Environment(\.modelContext) private var modelContext
     @FocusState private var focusedField: Field?
 
     let notification: NotificationItem?
@@ -532,7 +534,9 @@ struct NotificationEditorSheet: View {
         Button {
             Task {
                 let testText = getTestNotificationText()
-                await NotificationService.shared.sendTestNotification(title: "Yala", body: testText)
+                // El título del informe de verdad («Resumen semanal»), no «Yala».
+                let title = isReportType && !name.isEmpty ? name : "Yala"
+                await NotificationService.shared.sendTestNotification(title: title, body: testText)
             }
         } label: {
             HStack {
@@ -554,39 +558,20 @@ struct NotificationEditorSheet: View {
     /// Get appropriate test text based on notification type
     private func getTestNotificationText() -> String {
         switch notificationType {
-        case .dailyReport:
-            return getTestTextForDataType(period: .daily)
-        case .weeklyReport:
-            return getTestTextForDataType(period: .weekly)
-        case .monthlyReport:
-            return getTestTextForDataType(period: .monthly)
+        case .dailyReport, .weeklyReport, .monthlyReport:
+            // Lo que llegaría ahora con lo elegido en pantalla, con tus datos y tu moneda — no un importe de ejemplo
+            // en dólares (auditoría UX 2.2 · lote 11 · B7).
+            return ReportNotificationService.shared.previewBody(
+                config: ReportConfig(dataType: selectedDataType, dayPreference: selectedDayPreference),
+                type: notificationType,
+                context: modelContext
+            )
         case .scheduledPayments:
             return L10n.Notifications.testScheduledPayment
         case .groups:
             return L10n.Notifications.groupsHint
         case .endOfDay, .lunchTime, .custom:
             return text.isEmpty ? L10n.Notifications.endOfDayText : text
-        }
-    }
-
-    private enum TestPeriod {
-        case daily, weekly, monthly
-    }
-
-    private func getTestTextForDataType(period: TestPeriod) -> String {
-        switch (selectedDataType, period) {
-        case (.balance, .daily): return L10n.Notifications.testBalanceDaily
-        case (.balance, .weekly): return L10n.Notifications.testBalanceWeekly
-        case (.balance, .monthly): return L10n.Notifications.testBalanceMonthly
-        case (.expenses, .daily): return L10n.Notifications.testExpensesDaily
-        case (.expenses, .weekly): return L10n.Notifications.testExpensesWeekly
-        case (.expenses, .monthly): return L10n.Notifications.testExpensesMonthly
-        case (.income, .daily): return L10n.Notifications.testIncomeDaily
-        case (.income, .weekly): return L10n.Notifications.testIncomeWeekly
-        case (.income, .monthly): return L10n.Notifications.testIncomeMonthly
-        case (.topCategory, .daily): return L10n.Notifications.testTopCategoryDaily
-        case (.topCategory, .weekly): return L10n.Notifications.testTopCategoryWeekly
-        case (.topCategory, .monthly): return L10n.Notifications.testTopCategoryMonthly
         }
     }
 

@@ -47,6 +47,9 @@ struct PeriodSummary {
     let dailyAverageExpense: Double
     let dailyAverageVariation: Double?
     let previousPeriodLabel: String
+    /// Días sobre los que se reparte el gasto del período (el denominador de `dailyAverageExpense`). En «Todo el
+    /// tiempo» cuentan desde el primer registro, no desde hace diez años.
+    var dayCount: Int = 1
 
     /// Si algún importe agregado aquí salió de una tasa que no era la de su día — **por lado**,
     /// porque el hero de Tendencias pinta uno de los tres números según la métrica elegida y una
@@ -263,26 +266,35 @@ struct InsightsCalculator {
             converter: converter
         )
 
-        let expenseVariation = PreviousPeriodHelper.calculateVariation(
+        // «Todo el tiempo» no tiene período anterior: `previousInterval` le devuelve su propio intervalo, y las cuatro
+        // variaciones salían 0 % — «= +0 %» en el hero y en el promedio diario, y «Tu balance se mantiene estable» en
+        // Tendencias (auditoría UX 2.2 · lote 11 · B1). Sin anterior, no hay variación.
+        let hasPreviousPeriod = period != .allTime
+        let expenseVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: cashFlow.totalExpense,
             previousAmount: prevCashFlow.totalExpense
-        )
-        let incomeVariation = PreviousPeriodHelper.calculateVariation(
+        ) : nil
+        let incomeVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: cashFlow.totalIncome,
             previousAmount: prevCashFlow.totalIncome
-        )
-        let balanceVariation = PreviousPeriodHelper.calculateVariation(
+        ) : nil
+        let balanceVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: cashFlow.netFlow,
             previousAmount: prevCashFlow.netFlow
-        )
+        ) : nil
 
         let calendar = Calendar.current
+        // Los días sobre los que se reparte el gasto. «Todo el tiempo» es un intervalo de diez años hacia atrás; dividir
+        // por él daba un «Promedio diario» de S/ 55 a quien gasta S/ 277 al día desde hace dos años, y lo mismo el día
+        // de más gasto y el gasto diario por necesidad (auditoría UX 2.2 · lote 11 · B3). Empieza en el primer registro,
+        // como el gasto por día de la semana de Tendencias.
+        let countingInterval = Self.countingInterval(for: period, interval: interval, transactions: transactions, calendar: calendar)
         // El gemelo de `prevDaysInPeriod` (unas líneas abajo), que ya se corrigió el 2026-09-02
         // mientras éste se quedó crudo: los dos dividen sobre el mismo tipo de intervalo. Con el período
         // ACTUAL cerrado —`.lastMonth`, `.lastYear`, un rango personalizado— el denominador salía un día
         // corto e inflaba «Promedio diario» ~3,3 % en un mes de 31. Y como el lado «anterior» ya estaba
         // bien, los dos lados de la comparación usaban reglas distintas.
-        let daysInPeriod = max(1, DateIntervalDayCount.days(in: interval, calendar: calendar))
+        let daysInPeriod = max(1, DateIntervalDayCount.days(in: countingInterval, calendar: calendar))
         let dailyAverageCount = Double(periodTxns.count) / Double(daysInPeriod)
         let dailyAverageExpense = cashFlow.totalExpense / Double(daysInPeriod)
 
@@ -297,10 +309,10 @@ struct InsightsCalculator {
         let prevDaysInPeriod = max(1, DateIntervalDayCount.days(
             in: alignedPrevInterval, calendar: calendar))
         let prevDailyAvg = prevCashFlow.totalExpense / Double(prevDaysInPeriod)
-        let dailyAverageVariation = PreviousPeriodHelper.calculateVariation(
+        let dailyAverageVariation = hasPreviousPeriod ? PreviousPeriodHelper.calculateVariation(
             currentAmount: dailyAverageExpense,
             previousAmount: prevDailyAvg
-        )
+        ) : nil
 
         // Label for previous period (e.g. "vs Feb 25")
         let previousPeriodLabel = PreviousPeriodHelper.formatComparisonText(
@@ -321,6 +333,7 @@ struct InsightsCalculator {
             dailyAverageExpense: dailyAverageExpense,
             dailyAverageVariation: dailyAverageVariation,
             previousPeriodLabel: previousPeriodLabel,
+            dayCount: daysInPeriod,
             incomeAmountsAreApproximate: cashFlow.incomeAmountsAreApproximate,
             expenseAmountsAreApproximate: cashFlow.expenseAmountsAreApproximate,
             amountsAreApproximate: cashFlow.amountsAreApproximate
@@ -329,7 +342,7 @@ struct InsightsCalculator {
         // Weekday Spending (computed before Quick Stats for highestAvgWeekday)
         let weekdaySpending = WeekdaySpendingCalculator.calculate(
             transactions: periodTxns,
-            interval: interval,
+            interval: countingInterval,
             currencyCode: currencyCode,
             adjustment: adjustment,
             converter: converter
@@ -547,6 +560,21 @@ struct InsightsCalculator {
         return HighestExpenseInfo(amount: h.amount, note: h.note)
     }
 
+    /// El tramo sobre el que se cuentan los días de un promedio. Es el intervalo del período, salvo en «Todo el tiempo»,
+    /// que es de diez años hacia atrás: ahí empieza el día del primer registro (y nunca antes del intervalo).
+    static func countingInterval(
+        for period: DetailPeriod,
+        interval: DateInterval,
+        transactions: [TransactionItem],
+        calendar: Calendar = .current
+    ) -> DateInterval {
+        guard period == .allTime,
+              let first = transactions.lazy.map(\.date).min() else { return interval }
+        let start = max(interval.start, calendar.startOfDay(for: first))
+        guard start < interval.end else { return interval }
+        return DateInterval(start: start, end: interval.end)
+    }
+
     private static func calculateSubscriptionsTotal(
         _ payments: [ScheduledPayment],
         currencyCode: String,
@@ -558,6 +586,10 @@ struct InsightsCalculator {
         for payment in payments {
             guard payment.isActive else { continue }
             guard payment.isRecurring else { continue }
+            // Solo las suscripciones, con la misma regla que «Suscripciones activas» de Compromisos. Sumaba todos los
+            // pagos planificados que se repiten —el alquiler incluido—, y la tarjeta «Suscripciones» decía S/ 2,753 al
+            // mes a dos pantallazos de «Suscripciones activas: 4 · S/ 223» (auditoría UX 2.2 · lote 11 · B2).
+            guard payment.paymentCategory == PaymentCategory.subscription.rawValue else { continue }
 
             let amount = convertedAmount(payment.amount, from: payment.currencyCode, to: currencyCode, on: now, converter: converter)
             total += amount

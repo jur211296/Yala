@@ -2380,18 +2380,6 @@
 
 // Test
 "notifications.testNotification" = "测试提醒";
-"notifications.testReport.balance.daily" = "今日收尾余额:$1,250.00 💰";
-"notifications.testReport.balance.weekly" = "本周后余额:$1,250.00 💰";
-"notifications.testReport.balance.monthly" = "本月后余额:$1,250.00 💰";
-"notifications.testReport.expenses.daily" = "你今天花了 $85.00 📊";
-"notifications.testReport.expenses.weekly" = "你本周花了 $350.00 📊";
-"notifications.testReport.expenses.monthly" = "你本月花了 $1,200.00 📊";
-"notifications.testReport.income.daily" = "你今天收到 $500.00 🎉";
-"notifications.testReport.income.weekly" = "你本周收到 $2,500.00 🎉";
-"notifications.testReport.income.monthly" = "你本月收到 $8,500.00 🎉";
-"notifications.testReport.topCategory.daily" = "你今天最大的支出:餐饮 ($45.00) 👀";
-"notifications.testReport.topCategory.weekly" = "你本周最大的支出:餐饮 ($180.00) 👀";
-"notifications.testReport.topCategory.monthly" = "你本月最大的支出:餐饮 ($650.00) 👀";
 "notifications.testReport.scheduledPayment" = "你有一笔付款将在 3 天后到期:「Netflix」 USD 14.99";
 
 // Section headers
@@ -2953,7 +2941,6 @@
 "insights.focus.cautious.desc" = "提前预警和高风险预算";
 "insights.toneLabel" = "语气";
 "insights.focusLabel" = "聚焦";
-"insights.aiTeaser" = "AI 洞察";
 "insights.aiTeaserPlaceholder1" = "正在分析你的支出模式...";
 "insights.aiTeaserPlaceholder2" = "正在识别储蓄机会...";
 "insights.generateAI" = "生成智能观察";
