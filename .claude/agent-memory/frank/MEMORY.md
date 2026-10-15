@@ -24,6 +24,7 @@
 - [Esperar un PR ajeno: mira si puede entrar](feedback_esperar_un_pr_ajeno_mira_si_puede_entrar.md) — DIRTY no entra solo aunque el CI pase; rebasa y sigue.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 
+- [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
 ## Cómo mido y cómo entrego
 - [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
