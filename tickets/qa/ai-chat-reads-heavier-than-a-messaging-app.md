@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "chat, yala-ia, design-system"
 created: 2026-09-15
-updated: 2026-10-02
+updated: 2026-10-15
 qa-status: needs-testing
 source: Jürgen, comparación de capturas Yala IA vs chat de GrokBot (2026-09-15)
 ---
@@ -113,3 +113,7 @@ ninguno bajo la caja; «+» fuera y micro → enviar; párrafos separados), verd
 6. Debajo de la caja no debe quedar ningún texto gris.
 7. Repite con el texto del sistema al máximo (Ajustes › Accesibilidad › Pantalla y tamaño del texto): las tres
    preguntas se parten en varias líneas sin cortarse.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda solo por tu visto bueno, sin iPhone: el chat con el saludo en burbuja, tres preguntas y los avisos arriba se vio en el simulador con respuesta real de staging (`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b4-1*`). El resto lo fijan `ChatMessagingLayoutUITests`.

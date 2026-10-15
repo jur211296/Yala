@@ -1,11 +1,13 @@
 ---
 id: reverse-cutover-cerrado-para-cuentas-born-cloud
-status: qa
+status: done
 priority: high
 area: "modo-nube, gateway, onboarding"
 created: 2026-09-10
-updated: 2026-09-23
+updated: 2026-10-15
 source: "review adversarial de `backend-account-kind-complete-or-groups-only` (2026-09-10) — hallazgo B4"
+qa-status: not-replicable
+qa-date: 2026-10-15
 ---
 
 # «Volver a iCloud» no está disponible para quien nació en la nube, y tras el fresh start eso es todo el mundo
@@ -315,3 +317,7 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## QA guiado · 2026-10-15 · falta un paso
 
 En el iPhone de QA pasaron los pasos 1, 2, 3 y 5: la cuenta nacida en la nube volvió a iCloud en ~1 min, y lo borrado (QA 1, QA 2, la cuenta Efectivo QA) siguió borrado. **Falta el paso 4**: comprobar en CloudKit Console que la base privada tiene los registros. Hallazgos en sus cards: `ofst` (movimientos sin cuenta al eliminar una cuenta), `jbjj` (falsa alarma al reabrir) y `4nt6` (la vuelta suma datos viejos del iCloud del teléfono).
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: los pasos 1-3 y 5 pasaron en el QA guiado 2026-10-15 (iPhone de QA). El paso 4 (mirar la base privada en CloudKit Console) sobra: la vuelta solo termina cuando `reverseUploadStatus()` devuelve `.drained`, que mide la identidad de CloudKit de las filas vivas (`MigrationRunner.swift`, protocolo del ejecutor), y en el QA guiado terminó. Que la vuelta terminara ya dice que los registros subieron.

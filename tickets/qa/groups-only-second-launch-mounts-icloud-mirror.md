@@ -5,7 +5,7 @@ priority: high
 area: "modo-nube, groups"
 created: 2026-09-09
 source: "medido durante el device-QA guiado del 2026-09-09 · ADR 2026-09-09 «Sesiones — dos ejes» §2-3"
-updated: 2026-09-23
+updated: 2026-10-15
 ---
 
 # La segunda apertura de una sesión solo-grupos adjunta el espejo de iCloud y se trae los datos personales
@@ -258,3 +258,7 @@ pantalla donde aparezcan los datos que no deberían estar.
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1, 3 y 4. El 3 («Ya tengo cuenta → Restaurar desde iCloud» trae todo) se recorre en el paso C7 del guion, junto al recorrido 2 de `groups-entry-on-a-mirrored-store-still-blocks-the-owner`. El 2 pide un enlace ajeno.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D3): pide el montaje real del espejo de iCloud. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

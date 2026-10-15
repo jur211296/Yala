@@ -1,11 +1,13 @@
 ---
 id: share-image-reading-does-not-always-start
-status: qa
+status: done
 priority: high
 area: image
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-15
 source: reporte de Jürgen 2026-10-10 10:48 (card tablero-al-compartir-una-imagen-a-yala-la-lectur-nxle)
+qa-status: passed
+qa-date: 2026-10-15
 ---
 
 # Al compartir una imagen a Yala, la lectura no siempre arranca hasta reiniciar la app
@@ -63,3 +65,7 @@ Con ella apagada, el caso del «?» de un widget seguía pasando: el mutante sob
 
 ~~`shared-photo-waits-silently-behind-an-open-panel-sheet`: en el paso 3 la lectura espera sin decir nada.~~ Decidido y
 hecho: Jürgen eligió la opción B el 2026-10-12 y entró en #468 (el ticket está en `done`).
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: probado en el simulador (Yala Dev, iPhone 17 Pro, iOS 27.0, `8cd693cb6`, lectura real contra staging) con la extensión real: Fotos › 3 recibos › Compartir › Yala Dev abre Yala en el Panel y arranca «Leyendo tus fotos… Foto 1 de 3» hasta «Guardar 3». En frío, en segundo plano, con la Bandeja abierta, con otra hoja abierta y con un formulario a medias lo fijan los casos de `SharedImageEntryUITests` (el de frío, rojo en 2.1 sin el arreglo). Lo único que el simulador no reproduce —un Pro comprado en la App Store leído como no Pro en el arranque en frío— no pierde datos (la foto sigue en Fotos) y se da por bueno con el código. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b2-1*`, `b2-2*`.

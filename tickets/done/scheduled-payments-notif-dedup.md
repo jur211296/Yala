@@ -1,9 +1,11 @@
 ---
 id: scheduled-payments-notif-dedup
-status: qa
+status: done
 created: 2026-07-22
-updated: 2026-09-23
+updated: 2026-10-15
 source: YalaWiki/Bugs/qa_pagos-planificados-notifs-incoherentes-y-dedup-sin-entrega.md
+qa-status: passed
+qa-date: 2026-10-15
 ---
 
 
@@ -208,3 +210,7 @@ después, sí) y la fase 6, opcional (más de 5 vencidos). El guion de arriba si
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con la fase 2 del guion (el resumen llega a su hora con la app cerrada, y una sola vez). Ojo al crear los pagos: recurrencia «Una sola vez», o el editor los fecha el día 1 del mes siguiente. La fase 3 necesita que pase la hora sin permiso y choca con la 2 el mismo día; la 3 y la 4 quedan cubiertas por `ScheduledPaymentNotificationGateLogicTests`.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: fase 2 probada en el simulador: con tres pagos «Una sola vez» de hoy y la hora a las 3:31 p. m., con Yala cerrada del todo, a las 15:31:00 llegó **un** aviso «Tienes 3 pagos planificados para hoy 📅»; al tocarlo abre Pagos planificados, y al abrir Yala no llega ningún aviso suelto del pago que cubría el resumen. Las fases 3 y 4 las fijan `ScheduledPaymentNotificationGateLogicTests`. Ojo de entorno: hasta reiniciar el simulador, `UNUserNotificationCenter.add` fallaba con `UNErrorDomain 2003` («Source is not authorized») con el permiso concedido, y el resumen no llegaba (dos intentos); no es de Yala. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/a4-3`, `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/a4-4`.

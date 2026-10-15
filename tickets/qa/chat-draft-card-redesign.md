@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: chat
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-15
 source: encargo 2026-10-04-improve-new-record-cards-in-yala-ai (tablero-mejorar-cards-de-registros-nuevos-en-yal-rdfd)
 ---
 
@@ -71,3 +71,7 @@ pasan a ser la misma pieza; y se lee igual que el resto de la app.
 ## Fuera de esto
 
 Dictado, voz, imagen y vistas en grupos van después (encargo). Nada de proveedor ni coste de IA.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda solo por tu visto bueno, sin iPhone: probado en el simulador con respuesta real (dos tarjetas con píldoras, cambio de cuenta a USD con su símbolo, «Guardar» → «Registrado»). Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b4-2*` a `b4-4*`.

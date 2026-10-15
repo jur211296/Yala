@@ -55,7 +55,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts | backlog | tickets/backlog/a-wipe-that-throws-between-drafts-and-transactions-loses-settlement-drafts.md |
 | abandoned-restore-no-longer-clears-the-session-window-clock | done | tickets/done/abandoned-restore-no-longer-clears-the-session-window-clock.md |
 | account-collections | backlog | tickets/backlog/account-collections.md |
-| account-currency-change-leaves-scheduled-and-favorites-stale | qa | tickets/qa/account-currency-change-leaves-scheduled-and-favorites-stale.md |
+| account-currency-change-leaves-scheduled-and-favorites-stale | done | tickets/done/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
@@ -91,7 +91,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | adopt-with-existing-session-skips-the-unreadable-journal-guard | backlog | tickets/backlog/adopt-with-existing-session-skips-the-unreadable-journal-guard.md |
 | adr-013-does-not-know-yala-has-its-own-commit-msg | backlog | tickets/backlog/adr-013-does-not-know-yala-has-its-own-commit-msg.md |
 | advisory-ui-tests-fail-every-retry | done | tickets/done/advisory-ui-tests-fail-every-retry.md |
-| after-session-redesign-review-widgets-siri-applepay-and-web-copy | qa | tickets/qa/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
+| after-session-redesign-review-widgets-siri-applepay-and-web-copy | done | tickets/done/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-calls-have-no-output-token-cap | backlog | tickets/backlog/ai-calls-have-no-output-token-cap.md |
 | ai-chat-reads-heavier-than-a-messaging-app | qa | tickets/qa/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-comments-ignore-the-app-language | done | tickets/done/ai-comments-ignore-the-app-language.md |
@@ -153,10 +153,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
-| cashflow-scheduled-line-ignores-payment-currency | qa | tickets/qa/cashflow-scheduled-line-ignores-payment-currency.md |
+| cashflow-scheduled-line-ignores-payment-currency | done | tickets/done/cashflow-scheduled-line-ignores-payment-currency.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
-| changing-an-account-currency-orphans-its-whole-history | qa | tickets/qa/changing-an-account-currency-orphans-its-whole-history.md |
+| changing-an-account-currency-orphans-its-whole-history | done | tickets/done/changing-an-account-currency-orphans-its-whole-history.md |
 | chat-assistant-is-down | discarded | tickets/discarded/chat-assistant-is-down.md |
 | chat-assistant-plants-exchange-rate-one | done | tickets/done/chat-assistant-plants-exchange-rate-one.md |
 | chat-compares-with-the-month-in-progress | done | tickets/done/chat-compares-with-the-month-in-progress.md |
@@ -219,7 +219,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | done | tickets/done/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | done | tickets/done/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
-| cloud-sign-in-discovers-account-kind | qa | tickets/qa/cloud-sign-in-discovers-account-kind.md |
+| cloud-sign-in-discovers-account-kind | done | tickets/done/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
 | cloud-sign-out-final-recount-misses-edits-left-only-in-history | backlog | tickets/backlog/cloud-sign-out-final-recount-misses-edits-left-only-in-history.md |
 | cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit | done | tickets/done/cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit.md |
@@ -333,10 +333,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | force-fetch-and-wait-ignores-cancellation | done | tickets/done/force-fetch-and-wait-ignores-cancellation.md |
 | forcesync-returns-ok-without-touching-the-network | backlog | tickets/backlog/forcesync-returns-ok-without-touching-the-network.md |
 | forward-identity-capture-advances-when-it-could-not-read-any-row | backlog | tickets/backlog/forward-identity-capture-advances-when-it-could-not-read-any-row.md |
-| forward-migration-steps-have-no-ceiling-and-no-exit | qa | tickets/qa/forward-migration-steps-have-no-ceiling-and-no-exit.md |
+| forward-migration-steps-have-no-ceiling-and-no-exit | done | tickets/done/forward-migration-steps-have-no-ceiling-and-no-exit.md |
 | forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass | backlog | tickets/backlog/forward-step-ceiling-wins-over-a-cancel-given-in-the-same-pass.md |
 | forward-verify-reads-an-expired-session-as-network | backlog | tickets/backlog/forward-verify-reads-an-expired-session-as-network.md |
 | free-voice-quota-counts-each-dictation-twice | done | tickets/done/free-voice-quota-counts-each-dictation-twice.md |
+| fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed | backlog | tickets/backlog/fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed.md |
 | fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app | done | tickets/done/fresh-start-alert-cancel-after-an-adopt-exit-lands-in-the-app.md |
 | fresh-start-block-count-without-the-loss-exit-sometimes-omits-held-rows | backlog | tickets/backlog/fresh-start-block-count-without-the-loss-exit-sometimes-omits-held-rows.md |
 | fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason | done | tickets/done/fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason.md |
@@ -492,9 +493,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
 | in-app-privacy-copy-says-data-never-leaves-the-device | backlog | tickets/backlog/in-app-privacy-copy-says-data-never-leaves-the-device.md |
+| inbox-alert-scheduled-count-has-no-singular | backlog | tickets/backlog/inbox-alert-scheduled-count-has-no-singular.md |
 | inbox-convert-draft-to-group-expense | done | tickets/done/inbox-convert-draft-to-group-expense.md |
 | inbox-crash-convert-to-group-expense | done | tickets/done/inbox-crash-convert-to-group-expense.md |
-| inbox-dismiss-x-does-not-delete-the-draft-for-good | qa | tickets/qa/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
+| inbox-dismiss-x-does-not-delete-the-draft-for-good | done | tickets/done/inbox-dismiss-x-does-not-delete-the-draft-for-good.md |
 | inbox-header-leaves-no-room-for-drafts-at-large-text | backlog | tickets/backlog/inbox-header-leaves-no-room-for-drafts-at-large-text.md |
 | income-amount-color-is-dim-in-dark-mode | backlog | tickets/backlog/income-amount-color-is-dim-in-dark-mode.md |
 | indice-readme-barre-worktrees-anidados | discarded | tickets/discarded/indice-readme-barre-worktrees-anidados.md |
@@ -519,7 +521,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ipad-large-and-extra-large-widgets | done | tickets/done/ipad-large-and-extra-large-widgets.md |
 | ipad-list-detail-for-groups-and-settings-and-chat-inspector | done | tickets/done/ipad-list-detail-for-groups-and-settings-and-chat-inspector.md |
 | ipad-list-highlights-the-open-row | backlog | tickets/backlog/ipad-list-highlights-the-open-row.md |
-| ipad-locked-pdf-password-may-crash-on-open | qa | tickets/qa/ipad-locked-pdf-password-may-crash-on-open.md |
+| ipad-locked-pdf-password-may-crash-on-open | backlog | tickets/backlog/ipad-locked-pdf-password-may-crash-on-open.md |
 | ipad-multiple-windows-share-one-navigation-state | done | tickets/done/ipad-multiple-windows-share-one-navigation-state.md |
 | ipad-narrowing-the-window-on-groups-crashes-the-app | done | tickets/done/ipad-narrowing-the-window-on-groups-crashes-the-app.md |
 | ipad-native-app | done | tickets/done/ipad-native-app.md |
@@ -546,7 +548,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit | backlog | tickets/backlog/late-icloud-notice-wipe-cancelled-after-it-committed-skips-its-exit.md |
 | late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type | backlog | tickets/backlog/late-icloud-sheet-buttons-may-leave-the-screen-at-large-dynamic-type.md |
 | panel-balance-chart-contradicts-its-own-figure | backlog | tickets/backlog/panel-balance-chart-contradicts-its-own-figure.md |
-| sharing-several-photos-hides-yala | qa | tickets/qa/sharing-several-photos-hides-yala.md |
+| sharing-several-photos-hides-yala | done | tickets/done/sharing-several-photos-hides-yala.md |
 | stats-hero-detail-row-truncates-at-accessibility-text | done | tickets/done/stats-hero-detail-row-truncates-at-accessibility-text.md |
 | late-icloud-wipe-can-re-export-between-its-two-halves | backlog | tickets/backlog/late-icloud-wipe-can-re-export-between-its-two-halves.md |
 | late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace | backlog | tickets/backlog/late-icloud-wipe-failure-does-not-settle-the-remote-wipe-grace.md |
@@ -602,7 +604,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo | discarded | tickets/discarded/nocturna-del-9-sep-dejo-cuatro-xcuitest-en-rojo.md |
 | notification-dedup-deletes-all-custom-reminders-but-one | done | tickets/done/notification-dedup-deletes-all-custom-reminders-but-one.md |
 | notification-deeplink-accounts-not-parsed | backlog | tickets/backlog/notification-deeplink-accounts-not-parsed.md |
-| notification-delegate-assigned-after-launch | qa | tickets/qa/notification-delegate-assigned-after-launch.md |
+| notification-delegate-assigned-after-launch | done | tickets/done/notification-delegate-assigned-after-launch.md |
 | notifications-not-delivered-testflight | done | tickets/done/notifications-not-delivered-testflight.md |
 | onboarding-login-should-match-the-sep15-reference | done | tickets/done/onboarding-login-should-match-the-sep15-reference.md |
 | onboarding-purpose-drops-groups-card | done | tickets/done/onboarding-purpose-drops-groups-card.md |
@@ -619,7 +621,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | backlog | tickets/backlog/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
-| pdf-statement-reads-only-the-first-page | qa | tickets/qa/pdf-statement-reads-only-the-first-page.md |
+| pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
@@ -729,7 +731,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-cancel-pushes-what-the-mirror-imported-during-the-wait | backlog | tickets/backlog/reverse-cancel-pushes-what-the-mirror-imported-during-the-wait.md |
 | reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off | backlog | tickets/backlog/reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off.md |
 | reverse-claim-rejection-has-no-way-out-in-the-client | done | tickets/done/reverse-claim-rejection-has-no-way-out-in-the-client.md |
-| reverse-cutover-cerrado-para-cuentas-born-cloud | qa | tickets/qa/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
+| reverse-cutover-cerrado-para-cuentas-born-cloud | done | tickets/done/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
 | reverse-exit-alert-published-off-screen-never-shows | backlog | tickets/backlog/reverse-exit-alert-published-off-screen-never-shows.md |
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
 | reverse-exit-on-a-reverted-account-rejects-the-retry | qa | tickets/qa/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
@@ -763,7 +765,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
 | scheduled-payment-once-labeled-monthly | backlog | tickets/backlog/scheduled-payment-once-labeled-monthly.md |
 | scheduled-payment-skip-uitests-fail-at-the-end-of-the-month | done | tickets/done/scheduled-payment-skip-uitests-fail-at-the-end-of-the-month.md |
-| scheduled-payments-notif-dedup | qa | tickets/qa/scheduled-payments-notif-dedup.md |
+| scheduled-payments-notif-dedup | done | tickets/done/scheduled-payments-notif-dedup.md |
 | secondary-currency-prompt-uitest-red-on-iphone-se | backlog | tickets/backlog/secondary-currency-prompt-uitest-red-on-iphone-se.md |
 | secondary-entry-healing-writes-owner-not-session | discarded | tickets/discarded/secondary-entry-healing-writes-owner-not-session.md |
 | secondary-groups-off-wipes-owner | discarded | tickets/discarded/secondary-groups-off-wipes-owner.md |
@@ -779,7 +781,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settings-adopt-stalled-before-the-claim-keeps-the-session | done | tickets/done/settings-adopt-stalled-before-the-claim-keeps-the-session.md |
 | settings-migrate-blocks-a-second-device-before-its-marker | done | tickets/done/settings-migrate-blocks-a-second-device-before-its-marker.md |
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
-| settings-redesign-as-grouped-lists-like-ios | qa | tickets/qa/settings-redesign-as-grouped-lists-like-ios.md |
+| settings-redesign-as-grouped-lists-like-ios | done | tickets/done/settings-redesign-as-grouped-lists-like-ios.md |
 | settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist | backlog | tickets/backlog/settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist.md |
 | settlement-amount-change-notice-archived-row-reads-as-a-rejected-payment | backlog | tickets/backlog/settlement-amount-change-notice-archived-row-reads-as-a-rejected-payment.md |
 | settlement-amount-change-notice-on-a-build-before-the-approval-mark | backlog | tickets/backlog/settlement-amount-change-notice-on-a-build-before-the-approval-mark.md |
@@ -787,7 +789,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settlement-approval-leaves-no-trace-so-a-rebridge-asks-again | done | tickets/done/settlement-approval-leaves-no-trace-so-a-rebridge-asks-again.md |
 | settlement-direction-edited-after-approval-leaves-the-bank-stale | backlog | tickets/backlog/settlement-direction-edited-after-approval-leaves-the-bank-stale.md |
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
-| share-image-reading-does-not-always-start | qa | tickets/qa/share-image-reading-does-not-always-start.md |
+| share-image-reading-does-not-always-start | done | tickets/done/share-image-reading-does-not-always-start.md |
 | shared-photo-waits-silently-behind-an-open-panel-sheet | done | tickets/done/shared-photo-waits-silently-behind-an-open-panel-sheet.md |
 | shared-scheduled-expense-shows-twice-in-inbox | done | tickets/done/shared-scheduled-expense-shows-twice-in-inbox.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
@@ -823,7 +825,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | stats-aggregators-sum-stored-amounts-from-other-preferred-currencies | done | tickets/done/stats-aggregators-sum-stored-amounts-from-other-preferred-currencies.md |
 | stats-filter-segment-tap-should-ask-include-or-exclude | backlog | tickets/backlog/stats-filter-segment-tap-should-ask-include-or-exclude.md |
 | stats-per-account-branch-keeps-stale-live-anchor | backlog | tickets/backlog/stats-per-account-branch-keeps-stale-live-anchor.md |
-| step-flows-should-match-the-sep15-reference | qa | tickets/qa/step-flows-should-match-the-sep15-reference.md |
+| step-flows-should-match-the-sep15-reference | done | tickets/done/step-flows-should-match-the-sep15-reference.md |
 | storage-actions-release-the-working-flag-under-a-running-resume | discarded | tickets/discarded/storage-actions-release-the-working-flag-under-a-running-resume.md |
 | storage-groups-copy-says-iphone-on-ipad | backlog | tickets/backlog/storage-groups-copy-says-iphone-on-ipad.md |
 | storage-groups-section-stays-active-during-the-migrate-check | backlog | tickets/backlog/storage-groups-section-stays-active-during-the-migrate-check.md |
@@ -855,6 +857,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-insight-card-v2-bullets | done | tickets/done/trends-insight-card-v2-bullets.md |
 | trends-insight-title-capitalizes-the-period-mid-sentence | backlog | tickets/backlog/trends-insight-title-capitalizes-the-period-mid-sentence.md |
 | trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
+| tutorial-completion-check-appears-only-after-reentering | backlog | tickets/backlog/tutorial-completion-check-appears-only-after-reentering.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
@@ -874,7 +877,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | vigilante-calla-si-no-puede-comprobar-la-nocturna | done | tickets/done/vigilante-calla-si-no-puede-comprobar-la-nocturna.md |
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |
-| vision-reads-every-dollar-sign-as-usd | qa | tickets/qa/vision-reads-every-dollar-sign-as-usd.md |
+| vision-reads-every-dollar-sign-as-usd | done | tickets/done/vision-reads-every-dollar-sign-as-usd.md |
 | voice-entry-end-to-end | qa | tickets/qa/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |

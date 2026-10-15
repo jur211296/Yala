@@ -4,7 +4,7 @@ status: blocked
 priority: high
 area: "groups, sync, cloudkit, onboarding"
 created: 2026-07-11
-updated: 2026-09-02
+updated: 2026-10-15
 source: YalaWiki/Bugs/qa_groups-join-intent-reconciler.md
 ---
 
@@ -274,3 +274,7 @@ TelemetryDeck por Analytics Engine, se retiró el criterio del canario sin emiso
 dos hallazgos nuevos (aviso tardío al admin, y el «Reintentar» inalcanzable).
 
 migrated from YalaWiki Bugs/qa_groups-join-intent-reconciler.md @ 1934e8ad
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tus dos iPhone con TestFlight (D · E1, bloquea). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

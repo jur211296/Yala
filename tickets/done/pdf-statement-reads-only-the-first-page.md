@@ -1,11 +1,13 @@
 ---
 id: pdf-statement-reads-only-the-first-page
-status: qa
+status: done
 priority: high
 area: image, ai, gateway
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-10-15
 source: pregunta de Jürgen en la sesión gpt-4-1-nano-shuts-down-on-october-23 (2026-10-07)
+qa-status: passed
+qa-date: 2026-10-15
 ---
 
 # Un estado de cuenta en PDF solo se lee por su primera página, y si tiene contraseña no se lee
@@ -125,3 +127,7 @@ un PDF de 3 páginas o más (cualquier estado de cuenta) en la app Archivos, y o
   borrador no casa con ninguna cuenta y se elige a mano. Ticket `pdf-statement-pages-without-currency-pick-no-account`.
 - **Una página densa (40 filas) tarda 11–15 s** en leerse, frente a 4–7 s de una normal; el SDK corta a 20 s. Hay margen;
   si algún extracto real lo pasa, sale como «sin leer» con Reintentar.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: probado en el simulador (Yala Dev, iPhone 17 Pro, iOS 27.0, `8cd693cb6`, lectura real contra staging). Archivo › un estado de cuenta de 3 páginas → «Guardar 36»: los 36 movimientos de las tres páginas, sin ningún saldo ni subtotal (la lista está en `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b1-6c-pdf-36-filas.txt`). El PDF con contraseña la pide; una mala da «Contraseña incorrecta. Revísala e inténtalo otra vez.» y la buena lo lee (35). Más de 10 páginas y el cupo a mitad los fijan `ReceiptDropUITests` y `PDFPageImportTests`. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b1-6*` a `b1-9*`.

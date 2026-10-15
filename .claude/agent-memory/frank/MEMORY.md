@@ -85,6 +85,7 @@
 - [Una frase de alcance se cuenta por llamadores](feedback_una_frase_de_alcance_se_cuenta_por_llamadores.md) — «solo en carrer…
 - [`-only-testing` filtra por TIPO, no por fichero](feedback_only_testing_filtra_por_tipo_no_por_fichero.md) — pedí 12 suites…
 - [Capturar el menú de compartir](reference_capturar_el_menu_de_compartir.md) — Fotos + `axe tap` en puntos; vigilar PendingImages/.
+- [Conducir el simulador con axe](reference_conducir_simulador_con_axe.md) — describe-ui filtrado y tap por id: una fracción de snapshot_ui; sin tildes.
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
 - [El vídeo del simulador salta pantallas cortas](feedback_el_video_del_simulador_salta_pantallas_cortas.md) — el «después» breve se conduce a mano y screenshot.

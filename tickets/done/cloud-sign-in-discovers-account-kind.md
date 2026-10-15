@@ -1,11 +1,13 @@
 ---
 id: cloud-sign-in-discovers-account-kind
-status: qa
+status: done
 priority: high
 area: "modo-nube, onboarding, groups"
 created: 2026-09-09
 source: "ADR 2026-09-09 «Sesiones — dos ejes» §7 — el bloque [I]"
-updated: 2026-09-23
+updated: 2026-10-15
+qa-status: not-replicable
+qa-date: 2026-10-15
 ---
 
 # Un solo bloque de identidad en la nube: todo sign-in descubre si la cuenta es nueva, completa o solo grupos, y rutea
@@ -374,3 +376,7 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## QA guiado · 2026-10-15 · falta un paso
 
 Pasó el paso 4 adaptado: el faro de iCloud lleva a «Esa cuenta usa otro método», y «Registrarse con Google» con una cuenta nueva crea la cuenta y lleva al onboarding (canario `cloudConsentAccepted bornCloud`). **Falta el paso 3**: Google con una cuenta solo de grupos → puerta de Grupos. Mejora decidida por Jürgen para este flujo (A + C): card `tablero-entrar-con-google-cuando-este-iphone-ya-vb1f`.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: los pasos 1, 2 y 4 pasaron en el QA guiado 2026-10-15 con inicio de sesión real. El paso 3 (cuenta solo de grupos → puerta de Grupos) lo cubren las tres piezas que cambian respecto a esos pasos: el servidor devuelve `kind` en `/account/exists` (`gateway/test/account.kind.test.ts` y los goldens contra staging de `account.goldens.test.ts`), la app lo lee (`CloudIdentityDiscoveryTests`) y decide `.enterGroupsOnly` (`CloudIdentityRoutingLogicTests` :77-79, `CloudWelcomeSignInFlowTests`). El inicio de sesión real ya se probó en los otros pasos.

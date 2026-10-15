@@ -1,12 +1,13 @@
 ---
 id: vision-reads-every-dollar-sign-as-usd
-status: qa
+status: done
 priority: medium
 area: image, ai
 created: 2026-10-07
-updated: 2026-10-07
-qa-status: needs-testing
+updated: 2026-10-15
+qa-status: passed
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H4)
+qa-date: 2026-10-15
 ---
 
 # El registro por imagen lee todo «$» como dólares
@@ -41,3 +42,7 @@ dólares, se la asigna. Lo mismo en Colombia, Chile, Argentina o Uruguay, que ta
 ## Hecho en la sesión 2 (2026-10-07)
 
 La app pasa al prompt la divisa principal y las de las cuentas (`VisionCurrencyContext`): «$» a secas es la divisa principal si se escribe con «$» y `null` si no. Tests: `VisionCurrencySession2Tests` (MXN → MXN; PEN → no decide) y `gateway/test/ai.bench.test.ts`. Device-QA: paso 5 del guion de `ai-every-call-sends-its-task-and-passes-the-bench`.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: probado en el simulador (Yala Dev, iPhone 17 Pro, iOS 27.0, `8cd693cb6`, lectura real contra staging): con la divisa principal en PEN, el ticket «Taquería Don Pepe» de «$ 250.00» sale como borrador de 250.00 sin divisa y pidiendo cuenta («Falta: Cuenta, Subcategoría»), no en USD. El caso MXN (cuenta en MXN → 250 MXN en esa cuenta) lo fijan `VisionCurrencySession2Tests` y el banco de `gateway/test/ai.bench.test.ts` (100 %). Captura `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b3-1-dolar-a-secas-en-soles-sin-divisa.png`.

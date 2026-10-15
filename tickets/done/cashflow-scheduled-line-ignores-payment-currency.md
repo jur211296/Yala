@@ -1,6 +1,6 @@
 ---
 id: cashflow-scheduled-line-ignores-payment-currency
-status: qa
+status: done
 priority: medium
 area: "cashflow, planning, currency, fx"
 created: 2026-10-08
@@ -61,3 +61,7 @@ caen) y mutante del «≈» (2 caen).
    lo incluye.
 5. Sin red y sin tasas guardadas del día (modo avión tras reinstalar), el importe sale con «≈».
 6. Un pago en PEN se ve igual que antes.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: pasó en el QA guiado 2026-10-15 en el iPhone de QA (A5, card `r6pd` en done): el pago de 100 USD sale convertido en la línea y en el total del mes.

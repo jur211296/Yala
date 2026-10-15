@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "modo-nube, migración, backend"
 created: 2026-09-16
-updated: 2026-10-10
+updated: 2026-10-15
 source: "review adversarial de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de datos — H1; decisión D17 (b) de Jürgen: ticket aparte"
 ---
 
@@ -135,3 +135,7 @@ conservando el espaciado, sigue exigiendo 3, y el banco corre ahora contra el cu
 ## Barrido de QA (2026-10-10)
 
 Pasado a qa en el barrido de QA 2026-10: g17_01 está aplicada en staging y producción desde el 2026-10-09 (md5 776dac35…, K=0, humo OK; detalle en el PR #423). Quedan los goldens `-t "I11-3"` contra staging y el device-QA con dos iPhone de abajo.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tus dos iPhone (D · E2). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

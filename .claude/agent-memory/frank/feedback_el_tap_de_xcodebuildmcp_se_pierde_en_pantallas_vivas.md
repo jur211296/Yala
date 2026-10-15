@@ -5,7 +5,7 @@ metadata:
   type: feedback
 ---
 
-El `tap` de XcodeBuildMCP (y `axe tap`, que además está roto en esta Mac: falta SimulatorKit) **no dispara el botón
+El `tap` de XcodeBuildMCP (y `axe tap`, que el 2026-10-04 estaba roto en esta Mac; el 2026-10-15 ya funcionaba: ver [[conducir-simulador-con-axe]]) **no dispara el botón
 mientras la vista se repinta sin parar** — la hoja de voz grabando actualiza tiempo y nivel cada 0,1 s. El resultado
 dice `SUCCEEDED` con las coordenadas correctas y el temporizador sigue corriendo. `touch` con `down: true, up: true,
 delay: 0.1` sobre el mismo `elementRef` entra a la primera.

@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "chat, yala-ia, voz, design-system"
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-15
 qa-status: needs-testing
 source: Jürgen, 2026-10-03 («el dictado se ve pobre»); tarjeta del tablero `tablero-mejorar-el-diseno-del-dictado-en-yala-ai-apsc`
 ---
@@ -56,3 +56,7 @@ El registro por voz del FAB (`VoiceRecordingSheet`), la respuesta por voz y la m
 
 Capturas de antes y después en `~/Claude/worktrees/_capturas/2026-10-04-mejorar-el-diseno-del-dictado-en-yala-ai/`.
 El lienzo con las tres propuestas está en https://claude.ai/artifact/Hdrw8D3ukrDaAUSfyGcPhh.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (B · dictado del chat): el halo con la voz, la música al cancelar y la transcripción piden micrófono real. El panel y Cancelar se vieron en el simulador (`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b4-5*`), que va también al lote de capturas. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

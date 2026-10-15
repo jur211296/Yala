@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "grupos, onboarding"
 created: 2026-10-05
-updated: 2026-10-06
+updated: 2026-10-15
 qa-status: needs-testing
 source: "caso 4 de `fresh-start-copy-for-another-accounts-group-changes-borrows-the-own-reason` (medido leyendo el código el 2026-10-05)"
 ---
@@ -93,3 +93,7 @@ subido —el caso natural es el iPhone heredado: el dueño anterior apuntó gast
    privado.
 8. Variante: en el paso 3, en vez de cancelar, deja que la activación falle (modo avión) y sal con la flecha. El resto,
    igual.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda en qa y sale de la tanda hasta que se aclare `fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed` (card `8xt4`). En el simulador los pasos 4-5 llevan a la puerta privada (ya no sale «inténtalo en un rato»), pero el paso 6 falla: en vez del motivo y la cifra sale «No pudimos borrar todo». Sin el cambio de grupos pendiente, el mismo camino llega al onboarding.

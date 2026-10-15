@@ -1,6 +1,6 @@
 ---
 id: settings-redesign-as-grouped-lists-like-ios
-status: qa
+status: done
 priority: medium
 area: "settings, design-system, profile"
 created: 2026-09-15
@@ -106,3 +106,6 @@ Lo que XCUITest no ve: el aspecto.
 7. Si tienes un iPad a mano: Perfil → Personalización con la app a pantalla completa. Los bloques no
    pasan de ~700 pt de ancho y quedan centrados.
 
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: pasó en el QA guiado 2026-10-15 en el iPhone de QA (A7, card `5sr2` en done). El paso del iPad (ancho máximo) es de maquetación y no cambia función: se da por bueno con el código.
