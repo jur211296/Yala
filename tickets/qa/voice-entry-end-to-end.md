@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "voz, registro, inbox, design-system"
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-15
 qa-status: needs-testing
 source: tarjeta del tablero `tablero-mejorar-el-registro-por-voz-de-punta-a-p-u58k`; encargo `encargos/lanzados/2026-10-04-mejorar-el-registro-por-voz-de-punta-a-punta.md`
 ---
@@ -69,3 +69,7 @@ Capturas de antes y después en `~/Claude/worktrees/_capturas/2026-10-04-mejorar
 Tests: `YalaTests/VoiceEntryFlowLogicTests` (fallos y Guardar), `YalaUITests/Flows/VoiceEntryReviewUITests` (guardar,
 lo que falta, varios, volver a grabar; seam `-uitest-voice-result`), `VoiceInputCurrencyExamplesUITests` (la hoja abre
 escuchando).
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (B · voz): dictar de verdad, el halo, la música al cancelar y sin conexión piden micrófono y red reales. La hoja y «Entendí 2 registros» se vieron en el simulador (`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/u58k-*`); Guardar, varios y volver a grabar los fija `VoiceEntryReviewUITests`. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

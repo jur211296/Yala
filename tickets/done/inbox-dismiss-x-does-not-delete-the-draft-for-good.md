@@ -1,6 +1,6 @@
 ---
 id: inbox-dismiss-x-does-not-delete-the-draft-for-good
-status: qa
+status: done
 priority: high
 area: "inbox, pagos-programados"
 created: 2026-10-08
@@ -177,3 +177,7 @@ Lo que el simulador no puede probar: el espejo real de iCloud y la nube entre do
 **C. Dos dispositivos en la nube**: repite B con los dos en «Nube» (Ajustes → «Dónde viven tus datos»).
 
 Si algo falla, una captura de la Bandeja y de Planificación del pago basta.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: la parte A pasó en el QA guiado 2026-10-15 en el iPhone de QA (A3, card `yneu` en done). Las partes B y C (dos dispositivos) las fijan `InboxDismissScheduledDraftTests` (dos dispositivos con iCloud) e `InboxDismissScheduledDraftCloudTests` (la nube por el wire real), rojos sin el arreglo.

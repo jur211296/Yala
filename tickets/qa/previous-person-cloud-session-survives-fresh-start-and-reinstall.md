@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "modo-nube, handover, sesiones"
 created: 2026-09-17
-updated: 2026-09-23
+updated: 2026-10-15
 source: "review adversarial de `fresh-start-keeps-a-groups-session-that-migrate-promotes` (lentes de identidad y de puertas), 2026-09-17"
 ---
 
@@ -213,3 +213,7 @@ justo entre la purga y la relectura. Los dos van por unit test con sus mutantes.
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el paso 3 hoy (sale gratis en el bloque D: tras reinstalar, «Ya tengo una cuenta» pide elegir y no entra solo) y el paso 4 (actualizar sin borrar no cierra la sesión) al instalar el próximo TestFlight encima del 13; hasta entonces el ticket sigue en `qa`. Los pasos 5 a 8 quedan cubiertos por `CloudSessionRetirementTests` y sus mutantes.
 
 **2026-09-23 · el TestFlight 14 ya existe.** Build 14 (2.1) subido desde `2.1` y en `IN_BETA_TESTING` para el grupo interno. El paso 4 ya se puede hacer: sesión de A abierta en el **13** (TestFlight → Yala → «Versiones anteriores» si hiciera falta volver) y luego «Actualizar» al 14 sin borrar.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D2, bloquea): actualizar encima de un TestFlight anterior y el llavero tras reinstalar no se reproducen en el simulador. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "web, marketing, legal"
 created: 2026-09-09
-updated: 2026-10-12
+updated: 2026-10-15
 source: "ADR 2026-09-09 «Sesiones — dos ejes» — consecuencias · partido de after-session-redesign-review-widgets-siri-applepay-and-web-copy por decisión de Jürgen (2026-09-09)"
 ---
 
@@ -72,3 +72,7 @@ excepción de Jürgen a «Web/ es de Lola» solo para esta tarea. Cada afirmaci�
 **Lo que este PR no cubre de este ticket** (sigue pendiente y no deja pasar el QA hasta que esté): la
 ficha de la App Store en 7 idiomas y las capturas (Lola), y las etiquetas de privacidad de App Store
 Connect (Jürgen, `docs/RELEASE-CHECKLIST-2.1.md` §1).
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda sin iPhone (E · G2): ficha de Lola en 7 idiomas y la rama de producción de Vercel. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

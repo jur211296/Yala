@@ -5,7 +5,7 @@ priority: high
 area: "groups, onboarding, modo-nube"
 created: 2026-09-09
 source: "medido durante el device-QA guiado del 2026-09-09 · ADR 2026-09-09 «Sesiones — dos ejes» §8"
-updated: 2026-09-23
+updated: 2026-10-15
 ---
 
 # «Activar Yala completo» no pregunta dónde van a vivir tus datos personales
@@ -232,3 +232,7 @@ crea un grupo → registra un gasto que pagas tú y otro que paga el otro miembr
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el recorrido 3 (restaurar tus datos privados desde una sesión solo-grupos, con los gastos de grupo una sola vez en Registros). El 1 pide un iCloud vacío, y el resto queda cubierto por `FullModeActivationChooserUITests` y `GroupsBridgeRestoreConvergenceBehaviourTests`.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D5): pide una sesión real solo de grupos y datos en iCloud; la elección y cancelar ya los fija `FullModeActivationChooserUITests`. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

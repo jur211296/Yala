@@ -1,6 +1,6 @@
 ---
 id: account-currency-change-leaves-scheduled-and-favorites-stale
-status: qa
+status: done
 priority: medium
 area: "accounts, currency, fx, planning"
 created: 2026-09-09
@@ -142,3 +142,7 @@ Montaje: **Yala Dev** compilado desde `2.1` con este PR, con red (la conversión
      favorito «Mercado», el importe precargado es ~930, no 3.500.
 7. Cierra y abre Yala: en la Bandeja aparece el borrador del alquiler por ~930 USD (venció hoy), no por 3.500.
 8. Control: una cuenta con una transferencia sigue saliendo con la Moneda bloqueada, igual que antes.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: pasó en el QA guiado 2026-10-15 en el iPhone de QA (A1, card `v5k7` en done): el aviso con el alquiler y el favorito convertidos, Cancelar deja todo en PEN y Convertir los deja en USD.

@@ -1,11 +1,13 @@
 ---
 id: after-session-redesign-review-widgets-siri-applepay-and-web-copy
-status: qa
+status: done
 priority: high
 area: "widgets, intents, web, marketing"
 created: 2026-09-09
-updated: 2026-10-09
+updated: 2026-10-15
 source: "ADR 2026-09-09 «Sesiones — dos ejes» — consecuencias; pedido por Jürgen para DESPUÉS del rediseño"
+qa-status: passed
+qa-date: 2026-10-15
 ---
 
 # Después del rediseño de sesiones: revisar widgets, Siri, Apple Pay, notificaciones y todos los textos de la web
@@ -171,3 +173,7 @@ con Yala en el mismo Apple ID. El simulador no tiene CloudKit, por eso esto va e
   primer dictado va con listas vacías hasta el siguiente primer plano (antes iba con las viejas). Degrada, no bloquea.
 - **Previo a este cambio**: `DataWipeService.rescheduleSurvivingReminders` no vuelve a planificar los resúmenes de los
   pagos que sobreviven al corte; quedan mudos hasta el siguiente primer plano.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: lo que quedaba (el widget en una sesión solo de grupos, C7) pasó en el simulador (Yala Dev, iOS 27.0, `8cd693cb6`, `-uitest-group-invite -uitest-seed solo-grupos`): el widget Balance dice «Aún no tienes finanzas personales · Activar Yala completo», al tocarlo abre la activación (directamente el onboarding personal: sin App Attest el simulador no ofrece la nube) y, al terminarla, el widget deja de invitar y pasa a Balance. El importe salió «$ 0» en el simulador aunque la app tenía S/ 500 (el widget no se recargó en la sesión; no es parte de este ticket). El vaciado remoto ya lo cubre `RemoteWipeSharedSurfacesTests` (barrido del 10-oct). Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/c7-*`.

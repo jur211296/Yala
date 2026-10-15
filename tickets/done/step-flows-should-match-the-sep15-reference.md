@@ -1,12 +1,13 @@
 ---
 id: step-flows-should-match-the-sep15-reference
-status: qa
+status: done
 priority: medium
 area: "ux, onboarding, design-system"
 created: 2026-09-17
-updated: 2026-10-02
-qa-status: needs-testing
+updated: 2026-10-15
+qa-status: passed
 source: "Pack UI 15-sep (Dan) — Jürgen 2026-09-17: cada punto del pack = ticket aparte"
+qa-date: 2026-10-15
 ---
 
 # Los flujos por pasos de Yala deben acercarse a la referencia del 15-sep
@@ -97,3 +98,7 @@ Usar la referencia ya escrita. Ticket hermano del pack: chat IA, ajustes iOS, on
 - **Avisos de permiso → Ajustes de iOS** (notificaciones, cámara, micrófono): hoy son `.alert`. Convertirlos en guía
   sería un flujo nuevo.
 - Onboarding (ticket hermano), Yala IA (#332) y los flujos de la Cola A, por el encargo.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: probado en el simulador (Yala Dev, iOS 27.0, `8cd693cb6`): Tutoriales › «Registrar con Apple Pay» abre en «Paso 1 de 4»; «Abrir Atajos» abre Atajos y al volver la guía está en «Paso 2 de 4» con el 1 hecho; «Hecho» lleva al «Paso 4 de 4»; «Me atasqué» abre «Contacta con nosotros»; «Listo» vuelve a Tutoriales y el tutorial queda completado. El vídeo no se vio moverse en el simulador (10 s de capturas iguales con el botón de play ya retirado); es el mismo `LoopingVideoView` del carrusel anterior. El ✓ de completado solo aparece al volver a entrar en Tutoriales: ticket nuevo `tutorial-completion-check-appears-only-after-reentering` (low). Face ID (paso 9) lo cubre `StepGuideUITests.test_faceIDGuide_doneAdvancesTheOnlyActiveStep`; girar (paso 10) es maquetación. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/a8-*`.

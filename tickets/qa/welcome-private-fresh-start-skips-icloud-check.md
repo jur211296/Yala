@@ -5,7 +5,7 @@ priority: high
 area: "onboarding, modo-nube"
 created: 2026-09-09
 source: "device-QA guiado por Jürgen (2026-09-09) · ADR 2026-09-09 «Sesiones — dos ejes» §9"
-updated: 2026-09-23
+updated: 2026-10-15
 ---
 
 # «Primera vez → privado» en una instalación fresca no valida iCloud: reinicia y hace el onboarding encima de los datos viejos
@@ -426,3 +426,7 @@ reaparición, no pérdida, y la persona puede repetir el borrado. Ticket:
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1 y 3. Los que borran iCloud o piden otro Apple ID quedan cubiertos por los tests.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D1, bloquea): pide datos reales en iCloud. En el simulador, sin iCloud, «Es mi primera vez» lleva a «No pudimos revisar tu iCloud» › «Seguir así» › reabrir › onboarding (`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/d1-r5-sin-icloud.png`). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

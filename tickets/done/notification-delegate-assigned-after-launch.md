@@ -1,11 +1,13 @@
 ---
 id: notification-delegate-assigned-after-launch
-status: qa
+status: done
 priority: medium
 area: notifications
 created: 2026-10-10
-updated: 2026-10-11
+updated: 2026-10-15
 source: auditoría de puntos de entrada del encargo 2026-10-10-share-image-reading-does-not-always-start
+qa-status: passed
+qa-date: 2026-10-15
 ---
 
 # El delegado de notificaciones se asigna después de que la app termine de lanzarse
@@ -52,3 +54,7 @@ No se puede en simulador: el toque en frío pasa por la pantalla de bloqueo / el
 Nota: el aviso de **Probar** de Ajustes no lleva destino, así que no sirve para esto. Un aviso de cuenta
 (`deepLink: "accounts"`) tampoco lleva a ningún sitio, por otro hueco ya abierto
 (`notification-deeplink-accounts-not-parsed`).
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: probado en el simulador (Yala Dev, iPhone 17 Pro, iOS 27.0, `a10168931`), con Yala cerrada del todo y arrancada por el sistema al tocar el aviso. (1) Un aviso de presupuesto con `deepLink: budgets` (enviado con `simctl push`: llega al mismo `didReceive`, que solo lee esa clave) abre Yala en Planificación › Presupuestos. (2) El resumen real de pagos planificados, a su hora, abre Yala en Planificación › Pagos planificados. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/a4-1…a4-4`. El toque desde la pantalla de bloqueo del iPhone es el mismo camino de arranque.

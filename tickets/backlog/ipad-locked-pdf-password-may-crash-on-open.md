@@ -1,10 +1,10 @@
 ---
 id: ipad-locked-pdf-password-may-crash-on-open
-status: qa
+status: backlog
 priority: medium
 area: "image-entry, pdf, ipad"
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-15
 source: tablero tablero-receiptdropuitests-test-lockedpdf-falla-pbwh (hallazgo del PR #464)
 ---
 
@@ -39,3 +39,7 @@ contraseña, y pásalo al iPad por AirDrop a Archivos.
 - 0 cierres en 6 intentos → el fallo es del simulador. Este ticket pasa a `done` y la card sigue con Frank como test
   intermitente.
 - Algún cierre → bug de producto: este ticket vuelve a `backlog` con prioridad `high` y el informe.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · pasa a backlog: sale de la tanda y vuelve a backlog con la card `tablero-receiptdropuitests-test-lockedpdf-falla-pbwh` (Frank). Es un caso raro (iPad + PDF con contraseña + «Abrir» con el teclado arriba) que no pierde datos: el PDF sigue en Archivos y uno soltado se recupera de `PendingImages/`. El cierre visto en el simulador es un `NSAssertion` de `UIFocusSystem` con teclado físico conectado; averiguar si es del simulador es trabajo de Frank (10 corridas, soltar el foco antes de cambiar de fase), no una prueba de Jürgen. En iPhone el PDF con contraseña pasó en este barrido.

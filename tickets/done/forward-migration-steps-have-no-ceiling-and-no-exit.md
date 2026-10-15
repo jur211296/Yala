@@ -1,11 +1,13 @@
 ---
 id: forward-migration-steps-have-no-ceiling-and-no-exit
-status: qa
+status: done
 priority: very-high
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-23
+updated: 2026-10-15
 source: "Paso 0 de `snapshot-upload-has-no-ceiling-and-no-way-out` (2026-09-22): barrido del mismo patrón en la ida"
+qa-status: not-replicable
+qa-date: 2026-10-15
 ---
 
 # Al activar la nube, tres pasos más pueden quedarse parados para siempre, sin aviso y sin botón
@@ -159,3 +161,7 @@ comprueba en el teléfono es que nada se rompe y, con suerte, el 80 %:
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los pasos 3 y 4 del guion, en la misma pasada que la subida.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: los techos y «Cancelar la activación» son fallos que no se provocan a mano en el instante justo, y los fija `MigrationRunnerTests` §15 (`forwardStepCeiling_*`, `forwardStepCancel_*`) con 22 mutantes muertos, más `ForwardStepCeilingLogicTests` (23). Lo que sí pide el iPhone (una migración completa que no se corta) queda en `snapshot-upload-has-no-ceiling-and-no-way-out`.

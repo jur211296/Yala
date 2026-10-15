@@ -1,7 +1,7 @@
 ---
 id: release-plist-leftovers-widget-build-faceid-appattest
 status: qa
-updated: 2026-10-12
+updated: 2026-10-15
 priority: medium
 area: "release"
 created: 2026-10-10
@@ -48,3 +48,7 @@ El archive de 2.1 sale con el mismo build en la app y el widget, sin el texto de
    Ahí tienes además Perfil → Almacenamiento → panel de Modo Nube → «refresh attest».
 6. En el próximo archive para TestFlight (c59v), el export firma con `production`. No hay que hacer
    nada aparte.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (A · App Attest): el simulador no tiene App Attest. Lo estático (plist del widget, Face ID, entitlements) ya está verificado por #447 y #476. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

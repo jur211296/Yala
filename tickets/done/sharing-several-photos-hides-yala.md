@@ -1,11 +1,13 @@
 ---
 id: sharing-several-photos-hides-yala
-status: qa
+status: done
 priority: medium
 area: "share-extension, image-entry, inbox"
 created: 2026-10-11
-updated: 2026-10-11
+updated: 2026-10-15
 source: tablero tablero-yala-no-aparece-al-compartir-varias-capt-3ut5 (reporte de Jürgen, 2026-10-10)
+qa-status: passed
+qa-date: 2026-10-15
 ---
 
 # Yala no aparece al compartir varias capturas a la vez
@@ -44,3 +46,7 @@ Decisiones (Paso 0 del encargo, en el PR): la tanda viaja en el nombre de los fi
 6. Repite con 10 fotos grandes de la cámara (no capturas). **Esperado:** la extensión no se cierra sola (memoria) y
    llegan las 10.
 7. Sin Pro: compartir 3. **Esperado:** la hoja de Yala Pro sale una vez; al volver a la app no vuelve a salir.
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: probado en el simulador (Yala Dev, iPhone 17 Pro, iOS 27.0, `8cd693cb6`, lectura real contra staging) con la extensión real: con 3 fotos Yala aparece en Compartir y lee las tres («Guardar 3»); al cerrar con la X, los tres borradores quedan en la Bandeja; con 12, lee 10 y dice «Quedaron 2 fotos sin leer: se leen hasta 10 por vez…». Las 10 fotos grandes de cámara (memoria de la extensión) se dan por buenas con el código: `ShareViewController` copia los bytes comprimidos de cada foto (`Data(contentsOf:)`, sin decodificar), unas decenas de MB para 10; y si fallara, las fotos siguen en Fotos. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b2-*`.

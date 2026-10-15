@@ -1,6 +1,6 @@
 ---
 id: changing-an-account-currency-orphans-its-whole-history
-status: qa
+status: done
 priority: high
 area: "accounts, currency, fx"
 created: 2026-09-08
@@ -214,3 +214,7 @@ paso 4, una cuenta nueva sin movimientos.
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los pasos 1, 2 y 4 de «Qué mirar en device-QA».
+
+## Barrido de QA · 2026-10-15
+
+Cerrado en el barrido de QA 2026-10-15: pasó en el QA guiado 2026-10-15 en el iPhone de QA (A1 paso 4, card `v5k7` en done): con movimientos sale «¿Convertir N movimientos?» con el conteo real y los importes quedan reexpresados.
