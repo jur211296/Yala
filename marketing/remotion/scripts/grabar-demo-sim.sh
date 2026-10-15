@@ -47,12 +47,8 @@ ANCLAS_TSV="$SALIDA/marcas-video.tsv"
 LOG="$SALIDA/xcodebuild.log"
 
 grabar() {
-  # --- Reglas de la Mini: franja libre, un simulador, carga baja. ---
-  local hora carga otros
-  hora=$(TZ=America/Lima date +%H)
-  if [ "$hora" -ge 9 ] && [ "$hora" -lt 11 ]; then
-    falla "son las ${hora}h en Lima: de 9:00 a 11:00 el simulador no se usa"
-  fi
+  # --- Reglas de la Mini: a cualquier hora, un solo simulador a la vez, carga baja. ---
+  local carga otros
   carga=$(sysctl -n vm.loadavg | awk '{print int($2)}')
   [ "$carga" -lt 8 ] || falla "carga ${carga} (≥ 8): espera a que baje"
 

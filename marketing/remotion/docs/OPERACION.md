@@ -52,8 +52,9 @@ semilla, sin notificaciones y el mismo recorrido cada vez.
 
 Deja `demo.mp4` (H.264, 60 fps, recortado de «inicio» a «fin») y `marcas.json` con el
 segundo de cada beat, que va directo a los `fromSec` de `copy.ts`. El test marca cada beat
-con `print("DEMO-MARCA:<id> t=<epoch>")`. El script se niega a correr de 9:00 a 11:00 de
-Lima, con carga ≥ 8 o con otro simulador encendido, y lo apaga al acabar.
+con `print("DEMO-MARCA:<id> t=<epoch>")`. El simulador se usa a cualquier hora, pero siempre
+uno solo a la vez: el script se niega a correr con otro simulador encendido o con carga ≥ 8, y
+apaga el suyo al acabar.
 
 ### 2 · Copia el fichero
 
