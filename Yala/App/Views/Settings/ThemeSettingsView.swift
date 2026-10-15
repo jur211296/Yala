@@ -64,6 +64,9 @@ struct ThemeSettingsView: View {
                     ) {
                         ForEach(TranslucentVariant.allCases) { variant in
                             Button {
+                                // El tema se aplica AQUÍ, al elegir variante. Antes se aplicaba al tocar la tarjeta y
+                                // cerrar el diálogo sin elegir lo dejaba puesto (auditoría UX 2.2, lote 16).
+                                themeManager.userChoice = .translucent
                                 themeManager.translucentVariant = variant
                                 Task {
                                     try? await Task.sleep(for: .milliseconds(300))
@@ -108,8 +111,7 @@ struct ThemeSettingsView: View {
             if isLocked {
                 showUpgradeSheet = true
             } else if appTheme == .translucent {
-                // Show variant picker for translucent theme
-                themeManager.userChoice = appTheme
+                // Solo abre el selector de variante: el tema no cambia hasta que se elige una.
                 showTranslucentVariantPicker = true
             } else {
                 themeManager.userChoice = appTheme
@@ -192,6 +194,8 @@ struct ThemeSettingsView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("theme_card_\(appTheme.rawValue)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Theme Preview

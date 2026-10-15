@@ -468,7 +468,6 @@
 "settings.voiceInputEnabled" = "Spraakinvoer";
 "settings.voiceLanguage" = "Spraaktaal";
 "settings.appLanguage" = "Taal van de app";
-"settings.appLanguageRestart" = "Start de app opnieuw op om de wijziging toe te passen.";
 "settings.imageInputEnabled" = "Afbeeldingsinvoer";
 "settings.resetData" = "Gegevens resetten";
 "settings.version" = "Versie";
@@ -674,7 +673,7 @@
 "export.column.tags.description" = "Gekoppelde labels, gescheiden door ';'.";
 "export.column.note.description" = "Vrije notitie bij de transactie.";
 "common.next" = "Volgende";
-"settings.versionInfo" = "Versie 1.0.0 (Build 1)";
+"settings.versionInfo" = "Versie %1$@ (Build %2$@)";
 "tab.panel" = "Start";
 "tab.statistics" = "Statistieken";
 "tab.planning" = "Planning";
@@ -6626,3 +6625,19 @@
 "notifications.scheduledPayment.dueTomorrow" = "%1$@ vervalt morgen voor %2$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "%1$@ van %2$@ komt morgen binnen 📅";
 "scheduled.filter.empty" = "Geen betalingen met dit filter";
+"settings.appLanguageAppliesNow" = "De wijziging wordt meteen toegepast.";
+"support.noMailTitle" = "Geen e-mailapp gevonden";
+"support.noMailMessage" = "Schrijf ons op %@. Kopieer je bericht en plak het in je e-mail; het is niet gewist.";
+"support.copyMessage" = "Bericht kopiëren";
+"profile.icon.person" = "Persoon";
+"profile.icon.smiley" = "Smiley";
+"profile.icon.star" = "Ster";
+"profile.icon.heart" = "Hart";
+"profile.icon.bolt" = "Bliksem";
+"profile.icon.crown" = "Kroon";
+"profile.icon.leaf" = "Blad";
+"profile.icon.flame" = "Vlam";
+"profile.icon.moon" = "Maan";
+"profile.icon.sun" = "Zon";
+"profile.icon.cloud" = "Wolk";
+"profile.icon.drop" = "Druppel";

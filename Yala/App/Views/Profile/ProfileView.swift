@@ -613,7 +613,8 @@ struct ProfileView: View {
                             legalSection
 
                             // Version info
-                            Text(L10n.Settings.versionInfo)
+                            Text(AppVersionInfo.footer())
+                                .accessibilityIdentifier("profile_version_footer")
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.tertiary)
                                 .padding(.top, DS.Spacing.sm)
@@ -1098,6 +1099,7 @@ struct ProfileView: View {
             Button(L10n.Profile.edit) {
                 activeSheet = .personalDetails
             }
+            .accessibilityIdentifier("profile_edit_button")
             .font(DS.Typography.label)
             .foregroundStyle(.primary)
 
@@ -1283,6 +1285,7 @@ struct ProfileView: View {
                 profileRow(
                     icon: "paintpalette.fill", title: L10n.Settings.theme, iconColor: .pink,
                     destination: .themes)
+                .accessibilityIdentifier("profile_theme")
                 .coachMarkAnchor("settingsTheme")
             }
         }
@@ -1628,6 +1631,7 @@ struct ProfileView: View {
                         iconColor: .teal)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_help_contact")
                 .sheet(isPresented: $showSupportSheet) {
                     SupportFormSheet()
                 }

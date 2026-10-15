@@ -4435,8 +4435,10 @@ enum L10n {
         static var appLanguage: String {
             ls("settings.appLanguage", comment: "")
         }
-        static var appLanguageRestart: String {
-            ls("settings.appLanguageRestart", comment: "")
+        /// Pie de «Idioma de la app». El cambio se aplica en caliente (`.languageDidChange` reconstruye la app):
+        /// decía «Reinicia la app para aplicar el cambio», que era falso (auditoría UX 2.2, lote 16).
+        static var appLanguageAppliesNow: String {
+            ls("settings.appLanguageAppliesNow", comment: "Footer under the in-app language row: the change applies immediately")
         }
         static var imageInputEnabled: String {
             ls("settings.imageInputEnabled", comment: "")
@@ -4483,7 +4485,10 @@ enum L10n {
             ls("settings.recommendedCurrencies", comment: "")
         }
 
-        static var versionInfo: String { ls("settings.versionInfo", comment: "") }
+        /// Pie de Ajustes con la versión REAL del bundle. Antes era un texto fijo («Versión 1.0.0 (Build 1)»).
+        static func versionInfo(version: String, build: String) -> String {
+            String(format: ls("settings.versionInfo", comment: "Settings footer: %1$@ = marketing version, %2$@ = build"), version, build)
+        }
 
         // Sections
         static var organization: String { ls("settings.organization", comment: "") }
@@ -4931,6 +4936,12 @@ enum L10n {
         static var message: String { ls("support.message", comment: "") }
         static var messagePlaceholder: String { ls("support.messagePlaceholder", comment: "") }
         static var send: String { ls("support.send", comment: "") }
+        /// Aviso cuando iOS no puede abrir `mailto:` (no hay app de correo): el formulario se queda abierto.
+        static var noMailTitle: String { ls("support.noMailTitle", comment: "Alert title when no email app can open the support message") }
+        static func noMailMessage(_ email: String) -> String {
+            String(format: ls("support.noMailMessage", comment: "Alert body: %@ = support email address"), email)
+        }
+        static var copyMessage: String { ls("support.copyMessage", comment: "Button that copies the support message to the clipboard") }
     }
 
     // MARK: - Profile
@@ -4969,6 +4980,19 @@ enum L10n {
         }
         static var choosePhoto: String { ls("profile.choosePhoto", comment: "") }
         static var chooseIcon: String { ls("profile.chooseIcon", comment: "") }
+        /// Nombre visible de cada icono de perfil (`IconPickerSheet`). Antes eran literales en español en los 16 idiomas.
+        static var iconPerson: String { ls("profile.icon.person", comment: "Name of a profile avatar icon") }
+        static var iconSmiley: String { ls("profile.icon.smiley", comment: "Name of a profile avatar icon") }
+        static var iconStar: String { ls("profile.icon.star", comment: "Name of a profile avatar icon") }
+        static var iconHeart: String { ls("profile.icon.heart", comment: "Name of a profile avatar icon") }
+        static var iconBolt: String { ls("profile.icon.bolt", comment: "Name of a profile avatar icon") }
+        static var iconCrown: String { ls("profile.icon.crown", comment: "Name of a profile avatar icon") }
+        static var iconLeaf: String { ls("profile.icon.leaf", comment: "Name of a profile avatar icon") }
+        static var iconFlame: String { ls("profile.icon.flame", comment: "Name of a profile avatar icon") }
+        static var iconMoon: String { ls("profile.icon.moon", comment: "Name of a profile avatar icon") }
+        static var iconSun: String { ls("profile.icon.sun", comment: "Name of a profile avatar icon") }
+        static var iconCloud: String { ls("profile.icon.cloud", comment: "Name of a profile avatar icon") }
+        static var iconDrop: String { ls("profile.icon.drop", comment: "Name of a profile avatar icon") }
         static var removeAvatar: String { ls("profile.removeAvatar", comment: "") }
         static var editAvatar: String { ls("profile.editAvatar", comment: "") }
     }

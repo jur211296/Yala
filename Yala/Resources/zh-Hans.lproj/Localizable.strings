@@ -468,7 +468,6 @@
 "settings.voiceInputEnabled" = "语音输入";
 "settings.voiceLanguage" = "语音语言";
 "settings.appLanguage" = "应用语言";
-"settings.appLanguageRestart" = "重启应用以应用更改。";
 "settings.imageInputEnabled" = "图片输入";
 "settings.resetData" = "重置数据";
 "settings.version" = "版本";
@@ -674,7 +673,7 @@
 "export.column.tags.description" = "关联标签,以「;」分隔。";
 "export.column.note.description" = "交易的自由格式备注。";
 "common.next" = "下一步";
-"settings.versionInfo" = "版本 1.0.0 (Build 1)";
+"settings.versionInfo" = "版本 %1$@ (Build %2$@)";
 "tab.panel" = "首页";
 "tab.statistics" = "统计";
 "tab.planning" = "计划";
@@ -6626,3 +6625,19 @@
 "notifications.scheduledPayment.dueTomorrow" = "「%1$@」明天到期付款 %2$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "明天会从「%2$@」收到 %1$@ 📅";
 "scheduled.filter.empty" = "没有符合此筛选的付款";
+"settings.appLanguageAppliesNow" = "更改会立即生效。";
+"support.noMailTitle" = "未找到邮件应用";
+"support.noMailMessage" = "请发邮件至 %@。复制你的留言并粘贴到你使用的邮箱中；留言没有被删除。";
+"support.copyMessage" = "复制留言";
+"profile.icon.person" = "人物";
+"profile.icon.smiley" = "笑脸";
+"profile.icon.star" = "星星";
+"profile.icon.heart" = "爱心";
+"profile.icon.bolt" = "闪电";
+"profile.icon.crown" = "皇冠";
+"profile.icon.leaf" = "树叶";
+"profile.icon.flame" = "火焰";
+"profile.icon.moon" = "月亮";
+"profile.icon.sun" = "太阳";
+"profile.icon.cloud" = "云朵";
+"profile.icon.drop" = "水滴";

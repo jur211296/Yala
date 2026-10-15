@@ -2617,7 +2617,6 @@
 "settings.appIconDescription" = "Escolha o icone que melhor se adapta ao seu estilo.";
 "settings.appIconTitle" = "Icone do aplicativo";
 "settings.appLanguage" = "Idioma do app";
-"settings.appLanguageRestart" = "Reinicie o app para aplicar a alteração.";
 "settings.autoFocusAmount" = "Valor";
 "settings.autoFocusField" = "Campo com foco automático";
 "settings.autoFocusFieldDescription" = "Ao criar um novo registro manual, o teclado abrirá automaticamente no campo selecionado.";
@@ -2749,7 +2748,7 @@
 "settings.title" = "Configuracoes";
 "settings.tutorials" = "Tutoriais";
 "settings.version" = "Versao";
-"settings.versionInfo" = "Versao 1.0.0 (Build 1)";
+"settings.versionInfo" = "Versão %1$@ (Build %2$@)";
 "settings.voiceInputEnabled" = "Entrada por voz";
 "settings.voiceLanguage" = "Idioma da voz";
 "settings.widgetHints" = "Textos de ajuda";
@@ -5913,3 +5912,19 @@
 "notifications.scheduledPayment.dueTomorrow" = "%1$@ vence amanhã — %2$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "%1$@ de %2$@ chega amanhã 📅";
 "scheduled.filter.empty" = "Nenhum pagamento com este filtro";
+"settings.appLanguageAppliesNow" = "A alteração aplica-se de imediato.";
+"support.noMailTitle" = "Não encontrámos uma app de e-mail";
+"support.noMailMessage" = "Escreva-nos para %@. Copie a sua mensagem e cole-a no e-mail que usa; não foi apagada.";
+"support.copyMessage" = "Copiar mensagem";
+"profile.icon.person" = "Pessoa";
+"profile.icon.smiley" = "Cara sorridente";
+"profile.icon.star" = "Estrela";
+"profile.icon.heart" = "Coração";
+"profile.icon.bolt" = "Raio";
+"profile.icon.crown" = "Coroa";
+"profile.icon.leaf" = "Folha";
+"profile.icon.flame" = "Chama";
+"profile.icon.moon" = "Lua";
+"profile.icon.sun" = "Sol";
+"profile.icon.cloud" = "Nuvem";
+"profile.icon.drop" = "Gota";

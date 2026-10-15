@@ -466,7 +466,6 @@
 "settings.voiceInputEnabled" = "Entrada por voz";
 "settings.voiceLanguage" = "Idioma da voz";
 "settings.appLanguage" = "Idioma do app";
-"settings.appLanguageRestart" = "Reinicie o app para aplicar a alteração.";
 "settings.imageInputEnabled" = "Entrada por imagem";
 "settings.resetData" = "Limpar dados";
 "settings.version" = "Versao";
@@ -672,7 +671,7 @@
 "export.column.tags.description" = "Etiquetas associadas, separadas por ';'.";
 "export.column.note.description" = "Nota livre associada à transação.";
 "common.next" = "Próximo";
-"settings.versionInfo" = "Versao 1.0.0 (Build 1)";
+"settings.versionInfo" = "Versão %1$@ (Build %2$@)";
 "tab.panel" = "Inicio";
 "tab.statistics" = "Estatisticas";
 "tab.planning" = "Planejamento";
@@ -6614,3 +6613,19 @@
 "notifications.scheduledPayment.dueTomorrow" = "%1$@ vence amanhã — %2$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "%1$@ de %2$@ chega amanhã 📅";
 "scheduled.filter.empty" = "Nenhum pagamento com este filtro";
+"settings.appLanguageAppliesNow" = "A alteração vale na hora.";
+"support.noMailTitle" = "Não encontramos um app de e-mail";
+"support.noMailMessage" = "Escreva para %@. Copie sua mensagem e cole no e-mail que você usa; ela não foi apagada.";
+"support.copyMessage" = "Copiar mensagem";
+"profile.icon.person" = "Pessoa";
+"profile.icon.smiley" = "Carinha feliz";
+"profile.icon.star" = "Estrela";
+"profile.icon.heart" = "Coração";
+"profile.icon.bolt" = "Raio";
+"profile.icon.crown" = "Coroa";
+"profile.icon.leaf" = "Folha";
+"profile.icon.flame" = "Chama";
+"profile.icon.moon" = "Lua";
+"profile.icon.sun" = "Sol";
+"profile.icon.cloud" = "Nuvem";
+"profile.icon.drop" = "Gota";

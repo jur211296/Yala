@@ -468,7 +468,6 @@
 "settings.voiceInputEnabled" = "音声入力";
 "settings.voiceLanguage" = "音声言語";
 "settings.appLanguage" = "アプリの言語";
-"settings.appLanguageRestart" = "変更を反映するにはアプリを再起動してください。";
 "settings.imageInputEnabled" = "画像入力";
 "settings.resetData" = "データをリセット";
 "settings.version" = "バージョン";
@@ -674,7 +673,7 @@
 "export.column.tags.description" = "関連付けられたタグ(';'で区切る)。";
 "export.column.note.description" = "取引の自由記述メモ。";
 "common.next" = "次へ";
-"settings.versionInfo" = "バージョン1.0.0 (ビルド1)";
+"settings.versionInfo" = "バージョン%1$@ (ビルド%2$@)";
 "tab.panel" = "ホーム";
 "tab.statistics" = "統計";
 "tab.planning" = "計画";
@@ -6626,3 +6625,19 @@
 "notifications.scheduledPayment.dueTomorrow" = "%2$@の支払いは明日: %1$@ 📅";
 "notifications.scheduledPayment.dueTomorrow.income" = "%2$@からの%1$@が明日入金 📅";
 "scheduled.filter.empty" = "このフィルターに合う支払いはありません";
+"settings.appLanguageAppliesNow" = "変更はすぐに反映されます。";
+"support.noMailTitle" = "メールアプリが見つかりません";
+"support.noMailMessage" = "%@ までメールでご連絡ください。メッセージをコピーして、お使いのメールに貼り付けてください。メッセージは消えていません。";
+"support.copyMessage" = "メッセージをコピー";
+"profile.icon.person" = "人";
+"profile.icon.smiley" = "笑顔";
+"profile.icon.star" = "星";
+"profile.icon.heart" = "ハート";
+"profile.icon.bolt" = "稲妻";
+"profile.icon.crown" = "王冠";
+"profile.icon.leaf" = "葉";
+"profile.icon.flame" = "炎";
+"profile.icon.moon" = "月";
+"profile.icon.sun" = "太陽";
+"profile.icon.cloud" = "雲";
+"profile.icon.drop" = "しずく";
