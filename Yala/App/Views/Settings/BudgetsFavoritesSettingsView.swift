@@ -15,6 +15,7 @@ struct BudgetsFavoritesSettingsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = BudgetsFavoritesSettingsViewModel()
 
@@ -372,16 +373,11 @@ struct BudgetsFavoritesSettingsView: View {
 
     // MARK: - Helpers
 
-    private static let amountFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.maximumFractionDigits = 0
-        return f
-    }()
-
+    /// Con la preferencia de divisa del usuario (símbolo o código, decimales), como el resto de la app. Antes
+    /// llevaba su propio formateador sin decimales y con la región del iPhone: «S/ 1,800» aquí y «S/ 1,800.00» en
+    /// Planificación (auditoría UX 2.2, lote 9).
     private func formatAmount(_ amount: Double, currency: String) -> String {
-        Self.amountFormatter.currencyCode = currency
-        return Self.amountFormatter.string(from: NSNumber(value: amount)) ?? "\(currency) \(Int(amount))"
+        appPreferences.currency(amount, currencyCode: currency)
     }
 }
 

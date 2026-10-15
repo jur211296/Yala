@@ -5193,6 +5193,28 @@ enum L10n {
         }
 
         static var emptyTitle: String { ls("budgets.empty.title", comment: "") }
+
+        /// Vacío de UN tipo de período: «Aún no tienes presupuestos anuales». El genérico («Aún no tienes
+        /// presupuestos») mentía a quien tiene presupuestos de otro tipo (auditoría UX 2.2, lote 9).
+        static func emptyTitle(for periodType: BudgetPeriodType) -> String {
+            switch periodType {
+            case .weekly: ls("budgets.empty.weekly.title", comment: "")
+            case .monthly: ls("budgets.empty.monthly.title", comment: "")
+            case .yearly: ls("budgets.empty.yearly.title", comment: "")
+            case .unique: ls("budgets.empty.unique.title", comment: "")
+            }
+        }
+
+        /// Estado de UN presupuesto («Activo» / «Inactivo»). `BudgetStatus.localizedName` es el rótulo de una
+        /// SECCIÓN de la lista («Activos») y `common.active` el de un filtro («Activas»).
+        static func state(isActive: Bool) -> String {
+            isActive ? ls("budgets.state.active", comment: "") : ls("budgets.state.inactive", comment: "")
+        }
+
+        /// VoiceOver de la línea del límite en las gráficas («Límite: S/ 600.00»).
+        static func chartLimitAccessibility(_ amount: String) -> String {
+            String(format: ls("budgets.charts.limitAccessibility", comment: ""), amount)
+        }
         static var emptyMessage: String { ls("budgets.empty.message", comment: "") }
 
         // Shared expenses

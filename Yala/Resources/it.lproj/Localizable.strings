@@ -6622,3 +6622,12 @@
 "bulkEdit.cannotEditGroupRecords" = "Alcune registrazioni selezionate vengono da un gruppo: questo si modifica dal gruppo. Toglile dalla selezione o modificale una per una.";
 "records.groupRecordsOnlyTitle" = "Queste registrazioni vengono da un gruppo";
 "records.groupRecordsDeleteFromGroup" = "Si eliminano dal gruppo, così i conti di tutti continuano a tornare.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Attivo";
+"budgets.state.inactive" = "Inattivo";
+"budgets.empty.weekly.title" = "Nessun budget settimanale per ora";
+"budgets.empty.monthly.title" = "Nessun budget mensile per ora";
+"budgets.empty.yearly.title" = "Nessun budget annuale per ora";
+"budgets.empty.unique.title" = "Nessun budget una tantum per ora";
+"budgets.charts.limitAccessibility" = "Limite: %@";

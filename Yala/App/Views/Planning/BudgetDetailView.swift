@@ -26,7 +26,6 @@ struct BudgetDetailView: View {
     @Query(sort: \Tag.name) private var allTags: [Tag]
 
     @State private var showEditor = false
-    @State private var showCharts = false
     @State private var summary: BudgetSummary?
 
     private var isBudgetValid: Bool {
@@ -84,9 +83,16 @@ struct BudgetDetailView: View {
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                YalaToolbarButton(systemName: "chart.bar.fill", label: L10n.BudgetDetail.chartsTitle) {
-                    showCharts = true
+                // Por valor (`BudgetChartsNavigationID`), sobre la pila de la columna de detalle: el
+                // `navigationDestination(isPresented:)` de antes no tenía pila donde empujar y no hacía nada.
+                NavigationLink(value: BudgetChartsNavigationID(id: budget.persistentModelID)) {
+                    Image(systemName: "chart.bar.fill")
+                        .fontWeight(.medium)
+                        .foregroundStyle(Color.primary)
                 }
+                .accessibilityLabel(L10n.BudgetDetail.chartsTitle)
+                .accessibilityIdentifier("budget_detail_charts_button")
+                .buttonBorderShape(.circle)
             }
             ToolbarSpacer(.fixed, placement: .topBarTrailing)
             ToolbarItem(placement: .topBarTrailing) {
@@ -95,6 +101,11 @@ struct BudgetDetailView: View {
                 }
             }
         }
+        // Registrado aquí, en el detalle, que vive en la pila de la columna de detalle (`PlanningView`). Resuelve el
+        // presupuesto por el id del valor, no por el `budget` de esta vista.
+        .navigationDestination(for: BudgetChartsNavigationID.self) { navID in
+            BudgetChartsDestination(budgetID: navID.id, viewModel: viewModel)
+        }
         .sheet(isPresented: $showEditor) {
             BudgetEditorView(budget: budget)
                 .onDisappear {
@@ -102,9 +113,6 @@ struct BudgetDetailView: View {
                     viewModel.loadData()
                     refreshSummary()
                 }
-        }
-        .navigationDestination(isPresented: $showCharts) {
-            BudgetChartsView(budget: budget, viewModel: viewModel)
         }
     }
 
@@ -280,7 +288,7 @@ struct BudgetDetailView: View {
                         .frame(width: 24)
                         .accessibilityHidden(true)
 
-                    Text(budget.isActive ? BudgetStatus.active.localizedName : BudgetStatus.inactive.localizedName)
+                    Text(L10n.Budgets.state(isActive: budget.isActive))
                         .font(DS.Typography.label)
                         .foregroundStyle(.primary)
 
@@ -415,6 +423,22 @@ struct BudgetDetailView: View {
         return thresholds.split(separator: ",").map { "\($0)%" }.joined(separator: ", ")
     }
 
+}
+
+/// Resuelve el presupuesto de las gráficas por su id (`BudgetChartsNavigationID`).
+private struct BudgetChartsDestination: View {
+    let budgetID: PersistentIdentifier
+    @Bindable var viewModel: BudgetsViewModel
+
+    @Environment(\.modelContext) private var modelContext
+
+    var body: some View {
+        if let budget = modelContext.model(for: budgetID) as? Budget {
+            BudgetChartsView(budget: budget, viewModel: viewModel)
+        } else {
+            ContentUnavailableView(L10n.BudgetDetail.notFound, systemImage: "exclamationmark.triangle")
+        }
+    }
 }
 
 #Preview {

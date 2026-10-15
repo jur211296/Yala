@@ -6618,3 +6618,12 @@
 "bulkEdit.cannotEditGroupRecords" = "Some of the selected records come from a group, and that is changed from the group. Remove them from the selection or edit them one by one.";
 "records.groupRecordsOnlyTitle" = "These records come from a group";
 "records.groupRecordsDeleteFromGroup" = "They’re deleted from the group, so everyone’s balances keep adding up.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Active";
+"budgets.state.inactive" = "Inactive";
+"budgets.empty.weekly.title" = "You don't have any weekly budgets yet";
+"budgets.empty.monthly.title" = "You don't have any monthly budgets yet";
+"budgets.empty.yearly.title" = "You don't have any yearly budgets yet";
+"budgets.empty.unique.title" = "You don't have any one-time budgets yet";
+"budgets.charts.limitAccessibility" = "Limit: %@";

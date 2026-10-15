@@ -6624,3 +6624,12 @@
 "bulkEdit.cannotEditGroupRecords" = "選択した記録の一部はグループのものです。これはグループ側で変更します。選択から外すか、1件ずつ編集してください。";
 "records.groupRecordsOnlyTitle" = "これらの記録はグループのものです";
 "records.groupRecordsDeleteFromGroup" = "グループ側で削除します。全員の残高が合うようにするためです。";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "有効";
+"budgets.state.inactive" = "無効";
+"budgets.empty.weekly.title" = "週ごとの予算はまだありません";
+"budgets.empty.monthly.title" = "月ごとの予算はまだありません";
+"budgets.empty.yearly.title" = "年ごとの予算はまだありません";
+"budgets.empty.unique.title" = "1回限りの予算はまだありません";
+"budgets.charts.limitAccessibility" = "上限：%@";

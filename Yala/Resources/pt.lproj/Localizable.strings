@@ -449,9 +449,9 @@
 "settings.notifications" = "Notificacoes";
 "settings.favorites" = "Pagamentos favoritos";
 "settings.budgets" = "Orçamentos";
-"settings.budgetsFavorites" = "Orcamentos favoritos";
-"settings.budgetsFavoritesInfo" = "Os orcamentos favoritos aparecem no widget de Orcamentos (3 em medio, 5 em grande).";
-"settings.budgetsFavoritesEmptyHint" = "Crie orcamentos na aba Planejamento.";
+"settings.budgetsFavorites" = "Orçamentos favoritos";
+"settings.budgetsFavoritesInfo" = "Os orçamentos favoritos aparecem no widget de Orçamentos (3 em médio, 5 em grande).";
+"settings.budgetsFavoritesEmptyHint" = "Crie orçamentos na aba Planejamento.";
 "settings.budgetsFavoritesReorder" = "Ordenar favoritos";
 "budgets.favorites.previewTitle" = "Assim ficará o seu widget";
 "budgets.favorites.previewEmpty" = "Selecione favoritos para ver a pré-visualização";
@@ -508,7 +508,7 @@
 // MARK: - Planning
 
 "planning.title" = "Planejamento";
-"planning.budgets" = "Orcamentos";
+"planning.budgets" = "Orçamentos";
 "planning.goals" = "Metas";
 "planning.comingSoon" = "Em breve";
 "planning.scheduledPayments" = "Pagamentos agendados";
@@ -523,13 +523,13 @@
 
 // MARK: - Budgets
 
-"budgets.title" = "Orcamentos";
-"budgets.empty.title" = "Sem orcamentos";
-"budgets.empty.message" = "Crie orcamentos para controlar seus gastos.";
+"budgets.title" = "Orçamentos";
+"budgets.empty.title" = "Sem orçamentos";
+"budgets.empty.message" = "Crie orçamentos para controlar seus gastos.";
 "budgets.includeSharedExpenses" = "Incluir gastos compartilhados";
 "budgets.includeSharedExpensesHint" = "Quando desativado, apenas seus gastos pessoais contam";
 "budgets.widget.noFavorites.title" = "Sem favoritos";
-"budgets.widget.noFavorites.message" = "Marque orcamentos como favoritos em Configuracoes > Orcamentos para ve-los aqui.";
+"budgets.widget.noFavorites.message" = "Marque orçamentos como favoritos em Configurações > Orçamentos para vê-los aqui.";
 "budgets.widget.selectFavorites" = "Selecionar favoritos";
 "budgets.alerts.title" = "Alertas";
 "budgets.alerts.enable" = "Notificar ao atingir limite";
@@ -538,20 +538,20 @@
 "budgets.alerts.message.75" = "75%% de \"%1$@\" usado — %2$@ de %3$@";
 "budgets.alerts.message.90" = "\"%1$@\" está acabando — %2$@ de %3$@ usados";
 "budgets.alerts.message.100" = "Limite atingido em \"%1$@\" — %2$@ de %3$@";
-"budgets.alerts.globalDisabledHint" = "Ative os alertas de orcamento em Perfil > Notificacoes para recebe-los";
+"budgets.alerts.globalDisabledHint" = "Ative os alertas de orçamento em Perfil > Notificações para recebê-los";
 "budgets.alerts.custom" = "Personalizar";
 "budgets.alerts.addThreshold" = "Adicionar";
-"budgets.new" = "Novo orcamento";
-"budgets.edit" = "Editar orcamento";
-"budgets.delete" = "Eliminar orcamento";
-"budgets.delete.confirm.title" = "Eliminar orcamento?";
-"budgets.delete.confirm.message" = "Esta acao nao pode ser desfeita.";
+"budgets.new" = "Novo orçamento";
+"budgets.edit" = "Editar orçamento";
+"budgets.delete" = "Eliminar orçamento";
+"budgets.delete.confirm.title" = "Eliminar orçamento?";
+"budgets.delete.confirm.message" = "Esta ação não pode ser desfeita.";
 
 // Budget Period Types
 "budgets.period.weekly" = "Semanal";
 "budgets.period.monthly" = "Mensal";
 "budgets.period.yearly" = "Anual";
-"budgets.period.unique" = "Unico";
+"budgets.period.unique" = "Único";
 "budgets.period.all" = "Todos";
 
 // Budget Status
@@ -568,11 +568,11 @@
 "budgets.exceeded.encouragement" = "Passaste do orçamento — o próximo período será melhor!";
 
 // Budget Editor
-"budgets.editor.name.placeholder" = "Nome do orcamento";
+"budgets.editor.name.placeholder" = "Nome do orçamento";
 "budgets.editor.amount.placeholder" = "Valor";
-"budgets.editor.basic.info" = "Informacao basica";
+"budgets.editor.basic.info" = "Informação básica";
 "budgets.editor.filters" = "Filtros";
-"budgets.editor.period.type" = "Periodo";
+"budgets.editor.period.type" = "Período";
 "budgets.editor.date.range" = "Intervalo de datas";
 "budgets.editor.start.date" = "Data inicial";
 "budgets.editor.end.date" = "Data final";
@@ -2381,7 +2381,7 @@
 "notifications.section.reports" = "Relatórios";
 "notifications.section.system" = "Sistema";
 "notifications.section.custom" = "Personalizados";
-"notifications.budgetAlerts.title" = "Alertas de orcamento";
+"notifications.budgetAlerts.title" = "Alertas de orçamento";
 "notifications.budgetAlerts.hint" = "Receba avisos ao se aproximar dos limites";
 
 // Scheduled Payment Notifications (personalized)
@@ -6612,3 +6612,12 @@
 "bulkEdit.cannotEditGroupRecords" = "Alguns registros selecionados vêm de um grupo, e isso se altera no grupo. Tire-os da seleção ou edite-os um por um.";
 "records.groupRecordsOnlyTitle" = "Esses registros vêm de um grupo";
 "records.groupRecordsDeleteFromGroup" = "Eles são excluídos no grupo, para que as contas de todos continuem batendo.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Ativo";
+"budgets.state.inactive" = "Inativo";
+"budgets.empty.weekly.title" = "Você ainda não tem orçamentos semanais";
+"budgets.empty.monthly.title" = "Você ainda não tem orçamentos mensais";
+"budgets.empty.yearly.title" = "Você ainda não tem orçamentos anuais";
+"budgets.empty.unique.title" = "Você ainda não tem orçamentos únicos";
+"budgets.charts.limitAccessibility" = "Limite: %@";

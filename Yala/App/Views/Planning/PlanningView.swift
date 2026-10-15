@@ -56,10 +56,14 @@ struct PlanningView: View {
         ListDetailSplit {
             listColumn
         } detail: {
-            ContentUnavailableView(L10n.Planning.detailPlaceholder, systemImage: ConfigurableTab.planning.iconName)
-                .yalaScreenBackground(.panel)
-                .accessibilityIdentifier("planning_detail_placeholder")
-                .marksEmptyDetailColumn()
+            // Pila propia: lo que el detalle empuja por su cuenta (las gráficas de un presupuesto) necesita una pila en
+            // ESTA columna; sin ella su botón no hacía nada (auditoría UX 2.2, lote 9).
+            NavigationStack {
+                ContentUnavailableView(L10n.Planning.detailPlaceholder, systemImage: ConfigurableTab.planning.iconName)
+                    .yalaScreenBackground(.panel)
+                    .accessibilityIdentifier("planning_detail_placeholder")
+                    .marksEmptyDetailColumn()
+            }
         }
     }
 
@@ -89,7 +93,9 @@ struct PlanningView: View {
                                 .font(DS.Typography.body).fontWeight(.medium)
                                 .foregroundStyle(DS.Semantic.favoriteIcon)
                         }
-                        .accessibilityLabel(L10n.Accessibility.favoriteTemplates)
+                        // Abre los presupuestos favoritos del widget, no plantillas (VoiceOver decía «Plantillas
+                        // favoritas»; auditoría UX 2.2, lote 9).
+                        .accessibilityLabel(L10n.Settings.budgetsFavorites)
                     }
 
                     // iOS 26 spacer creates separate glass groups

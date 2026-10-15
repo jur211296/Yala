@@ -6612,3 +6612,12 @@
 "bulkEdit.cannotEditGroupRecords" = "Einige ausgewählte Einträge stammen aus einer Gruppe – das änderst du in der Gruppe. Entferne sie aus der Auswahl oder bearbeite sie einzeln.";
 "records.groupRecordsOnlyTitle" = "Diese Einträge stammen aus einer Gruppe";
 "records.groupRecordsDeleteFromGroup" = "Sie werden in der Gruppe gelöscht, damit die Salden aller stimmen.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Aktiv";
+"budgets.state.inactive" = "Inaktiv";
+"budgets.empty.weekly.title" = "Noch keine Wochenbudgets";
+"budgets.empty.monthly.title" = "Noch keine Monatsbudgets";
+"budgets.empty.yearly.title" = "Noch keine Jahresbudgets";
+"budgets.empty.unique.title" = "Noch keine einmaligen Budgets";
+"budgets.charts.limitAccessibility" = "Limit: %@";

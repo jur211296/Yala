@@ -6624,3 +6624,12 @@
 "bulkEdit.cannotEditGroupRecords" = "所选记录中有些来自群组，这些需要在群组中修改。请将它们移出选择，或逐条编辑。";
 "records.groupRecordsOnlyTitle" = "这些记录来自群组";
 "records.groupRecordsDeleteFromGroup" = "请在群组中删除，这样每个人的账目才能对得上。";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "启用";
+"budgets.state.inactive" = "停用";
+"budgets.empty.weekly.title" = "你还没有每周预算";
+"budgets.empty.monthly.title" = "你还没有每月预算";
+"budgets.empty.yearly.title" = "你还没有年度预算";
+"budgets.empty.unique.title" = "你还没有一次性预算";
+"budgets.charts.limitAccessibility" = "上限：%@";

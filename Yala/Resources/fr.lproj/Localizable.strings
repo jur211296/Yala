@@ -451,8 +451,8 @@
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budgets favoris";
 "settings.budgetsFavoritesInfo" = "Les budgets favoris apparaissent dans le widget Budgets (3 en moyen, 5 en grand).";
-"settings.budgetsFavoritesEmptyHint" = "Creez des budgets dans l'onglet Planification.";
-"settings.budgetsFavoritesReorder" = "Reordonner les favoris";
+"settings.budgetsFavoritesEmptyHint" = "Créez des budgets dans l'onglet Planification.";
+"settings.budgetsFavoritesReorder" = "Réordonner les favoris";
 "budgets.favorites.previewTitle" = "Voici à quoi ressemblera votre widget";
 "budgets.favorites.previewEmpty" = "Sélectionnez des favoris pour voir l'aperçu";
 "settings.tabBarConfig" = "Personnaliser la navigation";
@@ -525,27 +525,27 @@
 
 "budgets.title" = "Budgets";
 "budgets.empty.title" = "Aucun budget";
-"budgets.empty.message" = "Creez des budgets pour controler vos depenses.";
-"budgets.includeSharedExpenses" = "Inclure les depenses partagees";
-"budgets.includeSharedExpensesHint" = "Desactive, seules vos depenses personnelles comptent";
+"budgets.empty.message" = "Créez des budgets pour contrôler vos dépenses.";
+"budgets.includeSharedExpenses" = "Inclure les dépenses partagées";
+"budgets.includeSharedExpensesHint" = "Désactivé, seules vos dépenses personnelles comptent";
 "budgets.widget.noFavorites.title" = "Aucun favori";
-"budgets.widget.noFavorites.message" = "Marquez des budgets comme favoris dans Parametres > Budgets pour les voir ici.";
-"budgets.widget.selectFavorites" = "Selectionner les favoris";
+"budgets.widget.noFavorites.message" = "Marquez des budgets comme favoris dans Paramètres > Budgets pour les voir ici.";
+"budgets.widget.selectFavorites" = "Sélectionner les favoris";
 "budgets.alerts.title" = "Alertes";
-"budgets.alerts.enable" = "Notifier a l'atteinte de la limite";
-"budgets.alerts.thresholds" = "Notifier a:";
+"budgets.alerts.enable" = "Notifier à l'atteinte de la limite";
+"budgets.alerts.thresholds" = "Notifier à :";
 "budgets.alerts.message.50" = "À mi-chemin sur \"%1$@\" — %2$@ sur %3$@ utilisés";
 "budgets.alerts.message.75" = "75%% de \"%1$@\" utilisé — %2$@ sur %3$@";
 "budgets.alerts.message.90" = "\"%1$@\" se termine — %2$@ sur %3$@ utilisés";
 "budgets.alerts.message.100" = "Limite atteinte sur \"%1$@\" — %2$@ sur %3$@";
-"budgets.alerts.globalDisabledHint" = "Active les alertes de budget dans Profil > Notifications pour les recevoir";
+"budgets.alerts.globalDisabledHint" = "Activez les alertes de budget dans Profil > Notifications pour les recevoir";
 "budgets.alerts.custom" = "Personnaliser";
 "budgets.alerts.addThreshold" = "Ajouter";
 "budgets.new" = "Nouveau budget";
 "budgets.edit" = "Modifier le budget";
 "budgets.delete" = "Supprimer le budget";
-"budgets.delete.confirm.title" = "Supprimer le budget?";
-"budgets.delete.confirm.message" = "Cette action ne peut pas etre annulee.";
+"budgets.delete.confirm.title" = "Supprimer le budget ?";
+"budgets.delete.confirm.message" = "Cette action ne peut pas être annulée.";
 
 // Budget Period Types
 "budgets.period.weekly" = "Hebdomadaire";
@@ -555,15 +555,15 @@
 "budgets.period.all" = "Tous";
 
 // Budget Status
-"budgets.status.exceeded" = "Depasses";
+"budgets.status.exceeded" = "Dépassés";
 "budgets.status.active" = "Actifs";
 "budgets.status.inactive" = "Inactifs";
 "budget.noInactive" = "Aucun budget inactif";
 
 // Budget Details
-"budgets.spent.percent" = "%@ depense";
+"budgets.spent.percent" = "%@ dépensé";
 "budgets.days.remaining" = "%@ jours restants";
-"budgets.period.past" = "Passe";
+"budgets.period.past" = "Passé";
 "budgets.amount.of" = "sur %@";
 "budgets.exceeded.encouragement" = "Budget dépassé — la prochaine période sera meilleure !";
 
@@ -572,20 +572,20 @@
 "budgets.editor.amount.placeholder" = "Montant";
 "budgets.editor.basic.info" = "Informations de base";
 "budgets.editor.filters" = "Filtres";
-"budgets.editor.period.type" = "Periode";
+"budgets.editor.period.type" = "Période";
 "budgets.editor.date.range" = "Plage de dates";
-"budgets.editor.start.date" = "Date de debut";
+"budgets.editor.start.date" = "Date de début";
 "budgets.editor.end.date" = "Date de fin";
 
 // Period Selector
 "budgets.period.selector.title.weekly" = "Choisissez une semaine";
 "budgets.period.selector.title.monthly" = "Choisissez un mois";
-"budgets.period.selector.title.yearly" = "Choisissez une annee";
+"budgets.period.selector.title.yearly" = "Choisissez une année";
 "budgets.period.week.of" = "Semaine du %@";
 "budgets.period.current.week" = "Cette semaine";
 "budgets.period.current.month" = "Ce mois";
-"budgets.period.current.year" = "Cette annee";
-"budgets.period.confirm" = "Termine";
+"budgets.period.current.year" = "Cette année";
+"budgets.period.confirm" = "Terminé";
 "budgets.period.goToToday" = "Aller à aujourd'hui";
 
 // Budget Detail
@@ -2384,7 +2384,7 @@
 "notifications.section.system" = "Système";
 "notifications.section.custom" = "Personnalisés";
 "notifications.budgetAlerts.title" = "Alertes de budget";
-"notifications.budgetAlerts.hint" = "Recevez des alertes a l'approche de vos limites";
+"notifications.budgetAlerts.hint" = "Recevez des alertes à l'approche de vos limites";
 
 // Scheduled Payment Notifications (personalized)
 "notifications.scheduledPayment.dueToday" = "C'est le jour de payer %1$@ — %2$@ 💰";
@@ -6613,3 +6613,12 @@
 "bulkEdit.cannotEditGroupRecords" = "Certains enregistrements sélectionnés viennent d’un groupe : cela se modifie depuis le groupe. Retirez-les de la sélection ou modifiez-les un par un.";
 "records.groupRecordsOnlyTitle" = "Ces enregistrements viennent d’un groupe";
 "records.groupRecordsDeleteFromGroup" = "Ils se suppriment depuis le groupe, pour que les comptes de chacun restent justes.";
+
+// Presupuestos (auditoría UX 2.2, lote 9)
+"budgets.state.active" = "Actif";
+"budgets.state.inactive" = "Inactif";
+"budgets.empty.weekly.title" = "Aucun budget hebdomadaire pour l’instant";
+"budgets.empty.monthly.title" = "Aucun budget mensuel pour l’instant";
+"budgets.empty.yearly.title" = "Aucun budget annuel pour l’instant";
+"budgets.empty.unique.title" = "Aucun budget unique pour l’instant";
+"budgets.charts.limitAccessibility" = "Limite : %@";
