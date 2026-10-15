@@ -1408,7 +1408,6 @@
 "subcategory.unassigned" = "Nicht zugewiesen";
 "subcategory.deleteTransactionsConfirmMessage" = "%d Transaktionen werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.";
 
-"account.deleteBalanceError" = "Du kannst dieses Konto nicht löschen, da es einen Saldo ungleich null hat. Passe den Saldo auf 0 an, bevor du es löschst.";
 "account.type.general" = "Allgemein";
 "account.type.cash" = "Bargeld";
 "account.type.current" = "Girokonto";
@@ -6589,3 +6588,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Du hattest schon ein Konto und bist jetzt darin angemeldet.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "„%@“ löschen";
+"account.removal.intro" = "Bevor du es löschst, wähle, was mit seinem Inhalt passieren soll.";
+"account.removal.countRecords" = "Buchungen";
+"account.removal.countScheduled" = "Geplante Zahlungen";
+"account.removal.countFavorites" = "Favoritenzahlungen";
+"account.removal.countDrafts" = "Offen im Posteingang";
+"account.removal.choiceHeader" = "Was soll damit passieren";
+"account.removal.moveTitle" = "In ein anderes Konto verschieben";
+"account.removal.moveSubtitle" = "Empfohlen. Dein Verlauf und dein Saldo bleiben erhalten.";
+"account.removal.noDestination" = "Du hast kein anderes Konto, in das du es verschieben kannst.";
+"account.removal.deleteTitle" = "Buchungen löschen";
+"account.removal.deleteSubtitle" = "Sie werden endgültig gelöscht, zusammen mit dem Konto.";
+"account.removal.deleteBlockedGroups" = "Es enthält Buchungen aus deinen Gruppen: Sie können nur verschoben werden.";
+"account.removal.destinationHeader" = "Verschieben nach";
+"account.removal.destinationBlockedCurrency" = "Nicht verfügbar: Es enthält Überweisungen oder Gruppenbuchungen, die nicht in diese Währung umgerechnet werden können.";
+"account.removal.convertNote" = "Alles in einer anderen Währung wird in %@ umgerechnet: Buchungen zum Wechselkurs ihres Datums, geplante und Favoritenzahlungen zum heutigen Kurs.";
+"account.removal.collapsedNote" = "Überweisungen zwischen „%1$@“ und „%2$@“ werden entfernt: Innerhalb eines Kontos bewegen sie kein Geld.";
+"account.removal.partnersNote" = "Überweisungen mit anderen Konten bleiben dort als normale Buchungen.";
+"account.removal.plansNote" = "Geplante Zahlungen, Favoriten und offene Einträge im Posteingang bleiben ohne Konto: Du wählst eines, wenn du sie verwendest.";
+"account.removal.moveAction" = "Verschieben und Konto löschen";
+"account.removal.deleteAction" = "Löschen und Konto entfernen";
+"account.removal.confirmDeleteTitle" = "Buchungen löschen?";
+"account.removal.confirmDeleteCount" = "Zu löschende Buchungen";
+"account.removal.confirmDeleteMessage" = "Sie werden endgültig gelöscht und das lässt sich nicht rückgängig machen. Das Konto wird ebenfalls gelöscht.";
+"account.removal.confirmDeleteAction" = "Ja, alles löschen";
+"account.removal.working" = "Konto wird gelöscht…";
+"account.removal.failedTitle" = "Das Konto wurde nicht gelöscht";
+"account.removal.failedUnreadable" = "Wir konnten den Inhalt dieses Kontos nicht lesen. Es wurde nichts geändert.";
+"account.removal.failedChanged" = "Am Konto hat sich in der Zwischenzeit etwas geändert. Prüfe es und versuche es erneut.";
+"account.removal.failedRates" = "Wir konnten die Wechselkurse für die Umrechnung nicht abrufen. Es wurde nichts verschoben: Versuche es mit Internetverbindung erneut.";
+"account.removal.noAllowedDestination" = "Deine anderen Konten sind in einer anderen Währung, und hier gibt es Überweisungen oder Gruppeneinträge, die nicht umgerechnet werden können.";
+"account.removal.countBudgets" = "Budgets";
+"account.removal.budgetsMovedNote" = "Budgets, die dieses Konto verfolgt haben, verfolgen jetzt „%@“.";
+"account.removal.budgetsOnlyNote" = "Einige Budgets haben nur dieses Konto verfolgt: Ohne es verfolgen sie alle deine Konten.";

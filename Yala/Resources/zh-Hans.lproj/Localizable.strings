@@ -1406,7 +1406,6 @@
 "subcategory.unassigned" = "未分配";
 "subcategory.deleteTransactionsConfirmMessage" = "%d 笔交易将被永久删除。此操作无法撤销。";
 
-"account.deleteBalanceError" = "无法删除此账户,因为它的余额不为零。请将余额调为 0 后再删除。";
 "account.type.general" = "通用";
 "account.type.cash" = "现金";
 "account.type.current" = "活期账户";
@@ -6601,3 +6600,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "你之前已有账户，现已登录该账户。";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "删除“%@”";
+"account.removal.intro" = "删除前，请选择如何处理其中的内容。";
+"account.removal.countRecords" = "交易";
+"account.removal.countScheduled" = "计划付款";
+"account.removal.countFavorites" = "收藏付款";
+"account.removal.countDrafts" = "收件箱中待处理";
+"account.removal.choiceHeader" = "如何处理";
+"account.removal.moveTitle" = "移到另一个账户";
+"account.removal.moveSubtitle" = "推荐。你的历史记录和余额都会保留。";
+"account.removal.noDestination" = "你没有其他可以移入的账户。";
+"account.removal.deleteTitle" = "删除交易";
+"account.removal.deleteSubtitle" = "它们会连同账户一起被永久删除。";
+"account.removal.deleteBlockedGroups" = "其中包含你群组的交易：只能移动。";
+"account.removal.destinationHeader" = "移到";
+"account.removal.destinationBlockedCurrency" = "不可用：其中有无法换算为此币种的转账或群组交易。";
+"account.removal.convertNote" = "其他币种的内容将换算为%@：交易按各自日期的汇率，计划付款和收藏付款按今天的汇率。";
+"account.removal.collapsedNote" = "“%1$@”与“%2$@”之间的转账将被移除：在同一个账户内它们不会移动资金。";
+"account.removal.partnersNote" = "与其他账户之间的转账会作为普通交易留在那些账户中。";
+"account.removal.plansNote" = "计划付款、收藏和收件箱中待处理的项目将没有账户：使用时再选择账户。";
+"account.removal.moveAction" = "移动并删除账户";
+"account.removal.deleteAction" = "删除交易和账户";
+"account.removal.confirmDeleteTitle" = "删除这些交易？";
+"account.removal.confirmDeleteCount" = "将删除的交易";
+"account.removal.confirmDeleteMessage" = "它们会被永久删除且无法撤销。账户也会被删除。";
+"account.removal.confirmDeleteAction" = "是，全部删除";
+"account.removal.working" = "正在删除账户…";
+"account.removal.failedTitle" = "账户未删除";
+"account.removal.failedUnreadable" = "无法读取此账户中的内容。未做任何更改。";
+"account.removal.failedChanged" = "在此期间账户发生了变化。请检查后重试。";
+"account.removal.failedRates" = "无法获取用于换算的汇率。未移动任何内容：请联网后重试。";
+"account.removal.noAllowedDestination" = "你的其他账户是另一种币种，而此账户中有无法换算的转账或群组项目。";
+"account.removal.countBudgets" = "预算";
+"account.removal.budgetsMovedNote" = "原本跟踪此账户的预算将改为跟踪“%@”。";
+"account.removal.budgetsOnlyNote" = "有些预算只跟踪此账户：删除后，它们将跟踪你的所有账户。";

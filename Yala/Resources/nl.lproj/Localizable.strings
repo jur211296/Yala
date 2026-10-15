@@ -1406,7 +1406,6 @@
 "subcategory.unassigned" = "Niet-toegewezen";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transacties worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.";
 
-"account.deleteBalanceError" = "Je kunt deze rekening niet verwijderen omdat het saldo niet nul is. Pas het saldo aan naar 0 voordat je hem verwijdert.";
 "account.type.general" = "Algemeen";
 "account.type.cash" = "Contant";
 "account.type.current" = "Betaalrekening";
@@ -6601,3 +6600,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Je had al een account en je bent er nu in ingelogd.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "„%@” verwijderen";
+"account.removal.intro" = "Kies voordat je hem verwijdert wat er met de inhoud moet gebeuren.";
+"account.removal.countRecords" = "Transacties";
+"account.removal.countScheduled" = "Geplande betalingen";
+"account.removal.countFavorites" = "Favoriete betalingen";
+"account.removal.countDrafts" = "Wachtend in de inbox";
+"account.removal.choiceHeader" = "Wat doen we ermee";
+"account.removal.moveTitle" = "Naar een andere rekening verplaatsen";
+"account.removal.moveSubtitle" = "Aanbevolen. Je geschiedenis en je saldo blijven behouden.";
+"account.removal.noDestination" = "Je hebt geen andere rekening om naartoe te verplaatsen.";
+"account.removal.deleteTitle" = "De transacties verwijderen";
+"account.removal.deleteSubtitle" = "Ze worden definitief verwijderd, samen met de rekening.";
+"account.removal.deleteBlockedGroups" = "Er staan transacties van je groepen in: die kunnen alleen worden verplaatst.";
+"account.removal.destinationHeader" = "Verplaatsen naar";
+"account.removal.destinationBlockedCurrency" = "Niet beschikbaar: er staan overboekingen of groepstransacties in die niet naar deze valuta kunnen worden omgerekend.";
+"account.removal.convertNote" = "Wat in een andere valuta staat, gaat naar %@: transacties tegen de wisselkoers van hun datum, geplande en favoriete betalingen tegen die van vandaag.";
+"account.removal.collapsedNote" = "Overboekingen tussen „%1$@” en „%2$@” worden verwijderd: binnen één rekening verplaatsen ze geen geld.";
+"account.removal.partnersNote" = "Overboekingen met andere rekeningen blijven op die rekeningen staan als gewone transacties.";
+"account.removal.plansNote" = "Geplande betalingen, favorieten en wachtende items in de inbox blijven zonder rekening: je kiest er een als je ze gebruikt.";
+"account.removal.moveAction" = "Verplaatsen en rekening verwijderen";
+"account.removal.deleteAction" = "Transacties en rekening verwijderen";
+"account.removal.confirmDeleteTitle" = "De transacties verwijderen?";
+"account.removal.confirmDeleteCount" = "Te verwijderen transacties";
+"account.removal.confirmDeleteMessage" = "Ze worden definitief verwijderd en dit kan niet ongedaan worden gemaakt. De rekening wordt ook verwijderd.";
+"account.removal.confirmDeleteAction" = "Ja, alles verwijderen";
+"account.removal.working" = "Rekening verwijderen…";
+"account.removal.failedTitle" = "De rekening is niet verwijderd";
+"account.removal.failedUnreadable" = "We konden de inhoud van deze rekening niet lezen. Er is niets gewijzigd.";
+"account.removal.failedChanged" = "Er is intussen iets aan de rekening veranderd. Controleer het en probeer het opnieuw.";
+"account.removal.failedRates" = "We konden de wisselkoersen voor het omrekenen niet ophalen. Er is niets verplaatst: probeer het opnieuw met een verbinding.";
+"account.removal.noAllowedDestination" = "Je andere rekeningen zijn in een andere valuta, en deze heeft overboekingen of groepsitems die niet kunnen worden omgerekend.";
+"account.removal.countBudgets" = "Budgetten";
+"account.removal.budgetsMovedNote" = "Budgetten die deze rekening volgden, volgen voortaan „%@”.";
+"account.removal.budgetsOnlyNote" = "Sommige budgetten volgden alleen deze rekening: zonder haar volgen ze al je rekeningen.";

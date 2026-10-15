@@ -660,7 +660,6 @@
 "account.currency" = "Moneda";
 "account.currentBalance" = "Saldo actual";
 "account.delete" = "Eliminar cuenta";
-"account.deleteBalanceError" = "No puedes eliminar esta cuenta porque tiene saldo distinto de cero. Ajusta el saldo a 0 antes de eliminarla.";
 "account.deleteError" = "Esta cuenta no se puede eliminar";
 "account.edit" = "Editar cuenta";
 "account.excludeFromStats" = "Excluir de las estadísticas";
@@ -5874,3 +5873,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Ya tenías una cuenta, has entrado en ella";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "Eliminar «%@»";
+"account.removal.intro" = "Antes de eliminarla, elige qué hacer con lo que tiene.";
+"account.removal.countRecords" = "Movimientos";
+"account.removal.countScheduled" = "Pagos planificados";
+"account.removal.countFavorites" = "Pagos favoritos";
+"account.removal.countDrafts" = "Pendientes en la bandeja";
+"account.removal.choiceHeader" = "Qué hacemos con ello";
+"account.removal.moveTitle" = "Moverlo a otra cuenta";
+"account.removal.moveSubtitle" = "Recomendado. Tu historial y tu saldo se conservan.";
+"account.removal.noDestination" = "No tienes otra cuenta a la que moverlo.";
+"account.removal.deleteTitle" = "Borrar los movimientos";
+"account.removal.deleteSubtitle" = "Se borran para siempre, junto con la cuenta.";
+"account.removal.deleteBlockedGroups" = "Tiene movimientos de tus grupos: solo se pueden mover.";
+"account.removal.destinationHeader" = "Mover a";
+"account.removal.destinationBlockedCurrency" = "No disponible: tiene transferencias o movimientos de grupos que no se pueden convertir a esta moneda.";
+"account.removal.convertNote" = "Lo que esté en otra moneda pasa a %@: los movimientos, con el tipo de cambio de su fecha; los pagos planificados y favoritos, con el de hoy.";
+"account.removal.collapsedNote" = "Las transferencias entre «%1$@» y «%2$@» se quitan: dentro de una misma cuenta no mueven dinero.";
+"account.removal.partnersNote" = "Las transferencias con otras cuentas se quedan en esas cuentas como movimientos normales.";
+"account.removal.plansNote" = "Los pagos planificados, favoritos y pendientes de la bandeja se quedan sin cuenta: la elegirás al usarlos.";
+"account.removal.moveAction" = "Mover y eliminar la cuenta";
+"account.removal.deleteAction" = "Borrar y eliminar la cuenta";
+"account.removal.confirmDeleteTitle" = "¿Borrar los movimientos?";
+"account.removal.confirmDeleteCount" = "Movimientos que se borran";
+"account.removal.confirmDeleteMessage" = "Se borran para siempre y no se puede deshacer. La cuenta también se elimina.";
+"account.removal.confirmDeleteAction" = "Sí, borrar todo";
+"account.removal.working" = "Eliminando la cuenta…";
+"account.removal.failedTitle" = "No se eliminó la cuenta";
+"account.removal.failedUnreadable" = "No pudimos leer lo que hay en esta cuenta. No se cambió nada.";
+"account.removal.failedChanged" = "Algo cambió en la cuenta mientras tanto. Revísalo y vuelve a intentarlo.";
+"account.removal.failedRates" = "No pudimos traer los tipos de cambio para convertir. No se movió nada: inténtalo con conexión.";
+"account.removal.noAllowedDestination" = "Tus otras cuentas están en otra moneda, y aquí hay transferencias o cosas de grupos que no se pueden convertir.";
+"account.removal.countBudgets" = "Presupuestos";
+"account.removal.budgetsMovedNote" = "Los presupuestos que miraban esta cuenta pasan a mirar «%@».";
+"account.removal.budgetsOnlyNote" = "Hay presupuestos que solo miraban esta cuenta: sin ella, pasarán a mirar todas tus cuentas.";

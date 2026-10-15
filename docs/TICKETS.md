@@ -148,6 +148,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | budget-tied-to-income-or-expense | backlog | tickets/backlog/budget-tied-to-income-or-expense.md |
 | bulk-edit-uitests-fail-on-the-small-iphone | backlog | tickets/backlog/bulk-edit-uitests-fail-on-the-small-iphone.md |
 | bulk-move-to-another-currency-account-relabels-the-amount | backlog | tickets/backlog/bulk-move-to-another-currency-account-relabels-the-amount.md |
+| records-orphaned-by-earlier-account-deletions-stay-invisible | backlog | tickets/backlog/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
+| account-deletion-can-still-orphan-records-that-arrive-later | backlog | tickets/backlog/account-deletion-can-still-orphan-records-that-arrive-later.md |
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |

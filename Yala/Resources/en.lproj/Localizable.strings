@@ -1406,7 +1406,6 @@
 "subcategory.unassigned" = "Unassigned";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transactions will be permanently deleted. This action cannot be undone.";
 
-"account.deleteBalanceError" = "You cannot delete this account because it has a non-zero balance. Adjust the balance to 0 before deleting it.";
 "account.type.general" = "General";
 "account.type.cash" = "Cash";
 "account.type.current" = "Checking Account";
@@ -6595,3 +6594,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "You already had an account, and you're now signed in to it.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "Delete “%@”";
+"account.removal.intro" = "Before deleting it, choose what to do with what it holds.";
+"account.removal.countRecords" = "Transactions";
+"account.removal.countScheduled" = "Planned payments";
+"account.removal.countFavorites" = "Favorite payments";
+"account.removal.countDrafts" = "Pending in the inbox";
+"account.removal.choiceHeader" = "What should we do with it";
+"account.removal.moveTitle" = "Move it to another account";
+"account.removal.moveSubtitle" = "Recommended. Your history and your balance are kept.";
+"account.removal.noDestination" = "You don't have another account to move it to.";
+"account.removal.deleteTitle" = "Delete the transactions";
+"account.removal.deleteSubtitle" = "They're deleted for good, along with the account.";
+"account.removal.deleteBlockedGroups" = "It has transactions from your groups: they can only be moved.";
+"account.removal.destinationHeader" = "Move to";
+"account.removal.destinationBlockedCurrency" = "Not available: it has transfers or group transactions that can't be converted to this currency.";
+"account.removal.convertNote" = "Anything in another currency moves to %@: transactions at the exchange rate of their date; planned and favorite payments at today's rate.";
+"account.removal.collapsedNote" = "Transfers between “%1$@” and “%2$@” are removed: within one account they don't move money.";
+"account.removal.partnersNote" = "Transfers with other accounts stay in those accounts as regular transactions.";
+"account.removal.plansNote" = "Planned payments, favorites and items pending in the inbox are left without an account: you'll choose one when you use them.";
+"account.removal.moveAction" = "Move and delete the account";
+"account.removal.deleteAction" = "Delete and remove the account";
+"account.removal.confirmDeleteTitle" = "Delete the transactions?";
+"account.removal.confirmDeleteCount" = "Transactions to delete";
+"account.removal.confirmDeleteMessage" = "They're deleted for good and this can't be undone. The account is deleted too.";
+"account.removal.confirmDeleteAction" = "Yes, delete everything";
+"account.removal.working" = "Deleting the account…";
+"account.removal.failedTitle" = "The account wasn't deleted";
+"account.removal.failedUnreadable" = "We couldn't read what's in this account. Nothing was changed.";
+"account.removal.failedChanged" = "Something changed in the account in the meantime. Check it and try again.";
+"account.removal.failedRates" = "We couldn't get the exchange rates to convert. Nothing was moved: try again with a connection.";
+"account.removal.noAllowedDestination" = "Your other accounts are in another currency, and this one has transfers or group items that can't be converted.";
+"account.removal.countBudgets" = "Budgets";
+"account.removal.budgetsMovedNote" = "Budgets that tracked this account will track “%@” instead.";
+"account.removal.budgetsOnlyNote" = "Some budgets only tracked this account: without it, they'll track all your accounts.";
