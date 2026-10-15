@@ -1408,7 +1408,6 @@
 "subcategory.unassigned" = "Non assegnato";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transazioni verranno eliminate permanentemente. Questa azione non puo essere annullata.";
 
-"account.deleteBalanceError" = "Non puoi eliminare questo conto perche ha un saldo diverso da zero. Regola il saldo a 0 prima di eliminarlo.";
 "account.type.general" = "Generale";
 "account.type.cash" = "Contanti";
 "account.type.current" = "Conto Corrente";
@@ -6599,3 +6598,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Avevi già un account e hai effettuato l'accesso.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "Elimina «%@»";
+"account.removal.intro" = "Prima di eliminarlo, scegli cosa fare con ciò che contiene.";
+"account.removal.countRecords" = "Movimenti";
+"account.removal.countScheduled" = "Pagamenti pianificati";
+"account.removal.countFavorites" = "Pagamenti preferiti";
+"account.removal.countDrafts" = "In attesa nella posta in arrivo";
+"account.removal.choiceHeader" = "Cosa ne facciamo";
+"account.removal.moveTitle" = "Spostarlo su un altro conto";
+"account.removal.moveSubtitle" = "Consigliato. La tua cronologia e il tuo saldo restano.";
+"account.removal.noDestination" = "Non hai un altro conto su cui spostarlo.";
+"account.removal.deleteTitle" = "Eliminare i movimenti";
+"account.removal.deleteSubtitle" = "Vengono eliminati per sempre, insieme al conto.";
+"account.removal.deleteBlockedGroups" = "Contiene movimenti dei tuoi gruppi: si possono solo spostare.";
+"account.removal.destinationHeader" = "Sposta su";
+"account.removal.destinationBlockedCurrency" = "Non disponibile: contiene trasferimenti o movimenti di gruppo che non si possono convertire in questa valuta.";
+"account.removal.convertNote" = "Ciò che è in un'altra valuta passa a %@: i movimenti al tasso di cambio della loro data; i pagamenti pianificati e preferiti al tasso di oggi.";
+"account.removal.collapsedNote" = "I trasferimenti tra «%1$@» e «%2$@» vengono rimossi: all’interno di uno stesso conto non spostano denaro.";
+"account.removal.partnersNote" = "I trasferimenti con altri conti restano in quei conti come movimenti normali.";
+"account.removal.plansNote" = "I pagamenti pianificati, i preferiti e gli elementi in attesa nella posta in arrivo restano senza conto: lo sceglierai quando li userai.";
+"account.removal.moveAction" = "Sposta ed elimina il conto";
+"account.removal.deleteAction" = "Elimina movimenti e conto";
+"account.removal.confirmDeleteTitle" = "Eliminare i movimenti?";
+"account.removal.confirmDeleteCount" = "Movimenti da eliminare";
+"account.removal.confirmDeleteMessage" = "Vengono eliminati per sempre e non si può annullare. Anche il conto viene eliminato.";
+"account.removal.confirmDeleteAction" = "Sì, elimina tutto";
+"account.removal.working" = "Eliminazione del conto…";
+"account.removal.failedTitle" = "Il conto non è stato eliminato";
+"account.removal.failedUnreadable" = "Non siamo riusciti a leggere il contenuto di questo conto. Non è stato modificato nulla.";
+"account.removal.failedChanged" = "Qualcosa è cambiato nel conto nel frattempo. Controllalo e riprova.";
+"account.removal.failedRates" = "Non siamo riusciti a ottenere i tassi di cambio per convertire. Non è stato spostato nulla: riprova con una connessione.";
+"account.removal.noAllowedDestination" = "I tuoi altri conti sono in un'altra valuta, e qui ci sono trasferimenti o elementi di gruppo che non si possono convertire.";
+"account.removal.countBudgets" = "Budget";
+"account.removal.budgetsMovedNote" = "I budget che seguivano questo conto seguiranno «%@».";
+"account.removal.budgetsOnlyNote" = "Alcuni budget seguivano solo questo conto: senza di esso, seguiranno tutti i tuoi conti.";

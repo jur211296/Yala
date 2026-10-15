@@ -3420,10 +3420,53 @@ enum L10n {
         static var archiveExcludedNotice: String { ls("account.archiveExcludedNotice", comment: "") }
         static var delete: String { ls("account.delete", comment: "") }
         static var deleteError: String { ls("account.deleteError", comment: "") }
-        static var deleteBalanceError: String {
-            ls("account.deleteBalanceError", comment: "")
-        }
         static var addAccount: String { ls("account.addAccount", comment: "") }
+
+        // MARK: - Eliminar con movimientos (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst)
+        enum Removal {
+            static func title(_ name: String) -> String {
+                String(format: ls("account.removal.title", comment: ""), name)
+            }
+            static func convertNote(_ to: String) -> String {
+                String(format: ls("account.removal.convertNote", comment: ""), to)
+            }
+            static func budgetsMovedNote(_ destination: String) -> String {
+                String(format: ls("account.removal.budgetsMovedNote", comment: ""), destination)
+            }
+            static var noAllowedDestination: String { ls("account.removal.noAllowedDestination", comment: "") }
+            static var countBudgets: String { ls("account.removal.countBudgets", comment: "") }
+            static var budgetsOnlyNote: String { ls("account.removal.budgetsOnlyNote", comment: "") }
+            static func collapsedNote(_ source: String, _ destination: String) -> String {
+                String(format: ls("account.removal.collapsedNote", comment: ""), source, destination)
+            }
+            static var intro: String { ls("account.removal.intro", comment: "") }
+            static var countRecords: String { ls("account.removal.countRecords", comment: "") }
+            static var countScheduled: String { ls("account.removal.countScheduled", comment: "") }
+            static var countFavorites: String { ls("account.removal.countFavorites", comment: "") }
+            static var countDrafts: String { ls("account.removal.countDrafts", comment: "") }
+            static var choiceHeader: String { ls("account.removal.choiceHeader", comment: "") }
+            static var moveTitle: String { ls("account.removal.moveTitle", comment: "") }
+            static var moveSubtitle: String { ls("account.removal.moveSubtitle", comment: "") }
+            static var noDestination: String { ls("account.removal.noDestination", comment: "") }
+            static var deleteTitle: String { ls("account.removal.deleteTitle", comment: "") }
+            static var deleteSubtitle: String { ls("account.removal.deleteSubtitle", comment: "") }
+            static var deleteBlockedGroups: String { ls("account.removal.deleteBlockedGroups", comment: "") }
+            static var destinationHeader: String { ls("account.removal.destinationHeader", comment: "") }
+            static var destinationBlockedCurrency: String { ls("account.removal.destinationBlockedCurrency", comment: "") }
+            static var partnersNote: String { ls("account.removal.partnersNote", comment: "") }
+            static var plansNote: String { ls("account.removal.plansNote", comment: "") }
+            static var moveAction: String { ls("account.removal.moveAction", comment: "") }
+            static var deleteAction: String { ls("account.removal.deleteAction", comment: "") }
+            static var confirmDeleteTitle: String { ls("account.removal.confirmDeleteTitle", comment: "") }
+            static var confirmDeleteCount: String { ls("account.removal.confirmDeleteCount", comment: "") }
+            static var confirmDeleteMessage: String { ls("account.removal.confirmDeleteMessage", comment: "") }
+            static var confirmDeleteAction: String { ls("account.removal.confirmDeleteAction", comment: "") }
+            static var working: String { ls("account.removal.working", comment: "") }
+            static var failedTitle: String { ls("account.removal.failedTitle", comment: "") }
+            static var failedUnreadable: String { ls("account.removal.failedUnreadable", comment: "") }
+            static var failedChanged: String { ls("account.removal.failedChanged", comment: "") }
+            static var failedRates: String { ls("account.removal.failedRates", comment: "") }
+        }
 
         enum AccountType {
             static var general: String { ls("account.type.general", comment: "") }

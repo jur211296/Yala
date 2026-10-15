@@ -1406,7 +1406,6 @@
 "subcategory.unassigned" = "未割り当て";
 "subcategory.deleteTransactionsConfirmMessage" = "%d件の取引が完全に削除されます。この操作は取り消せません。";
 
-"account.deleteBalanceError" = "残高が0でないため、この口座は削除できません。削除する前に残高を0に調整してください。";
 "account.type.general" = "一般";
 "account.type.cash" = "現金";
 "account.type.current" = "普通預金";
@@ -6601,3 +6600,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "すでにアカウントをお持ちだったため、そのアカウントにログインしました。";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "「%@」を削除";
+"account.removal.intro" = "削除する前に、中身をどうするか選んでください。";
+"account.removal.countRecords" = "取引";
+"account.removal.countScheduled" = "予定の支払い";
+"account.removal.countFavorites" = "お気に入りの支払い";
+"account.removal.countDrafts" = "受信トレイの保留中";
+"account.removal.choiceHeader" = "中身の扱い";
+"account.removal.moveTitle" = "別の口座に移動する";
+"account.removal.moveSubtitle" = "おすすめ。履歴と残高はそのまま残ります。";
+"account.removal.noDestination" = "移動先にできる口座がほかにありません。";
+"account.removal.deleteTitle" = "取引を削除する";
+"account.removal.deleteSubtitle" = "口座とともに完全に削除されます。";
+"account.removal.deleteBlockedGroups" = "グループの取引が含まれています。移動のみ可能です。";
+"account.removal.destinationHeader" = "移動先";
+"account.removal.destinationBlockedCurrency" = "利用不可：この通貨に換算できない振替やグループの取引が含まれています。";
+"account.removal.convertNote" = "別の通貨のものは%@に換算されます。取引は各日付の為替レートで、予定の支払いとお気に入りは本日のレートで換算されます。";
+"account.removal.collapsedNote" = "「%1$@」と「%2$@」の間の振替は削除されます。同じ口座内ではお金が動かないためです。";
+"account.removal.partnersNote" = "ほかの口座との振替は、その口座に通常の取引として残ります。";
+"account.removal.plansNote" = "予定の支払い、お気に入り、受信トレイの保留中の項目は口座なしになります。使うときに口座を選んでください。";
+"account.removal.moveAction" = "移動して口座を削除";
+"account.removal.deleteAction" = "取引と口座を削除";
+"account.removal.confirmDeleteTitle" = "取引を削除しますか？";
+"account.removal.confirmDeleteCount" = "削除される取引";
+"account.removal.confirmDeleteMessage" = "完全に削除され、元に戻せません。口座も削除されます。";
+"account.removal.confirmDeleteAction" = "はい、すべて削除";
+"account.removal.working" = "口座を削除しています…";
+"account.removal.failedTitle" = "口座は削除されませんでした";
+"account.removal.failedUnreadable" = "この口座の中身を読み込めませんでした。何も変更されていません。";
+"account.removal.failedChanged" = "その間に口座で変更がありました。確認してもう一度お試しください。";
+"account.removal.failedRates" = "換算用の為替レートを取得できませんでした。何も移動されていません。接続してからもう一度お試しください。";
+"account.removal.noAllowedDestination" = "ほかの口座は別の通貨で、この口座には換算できない振替やグループの項目があります。";
+"account.removal.countBudgets" = "予算";
+"account.removal.budgetsMovedNote" = "この口座を対象にしていた予算は「%@」を対象にします。";
+"account.removal.budgetsOnlyNote" = "この口座だけを対象にしていた予算があります。口座がなくなると、すべての口座が対象になります。";

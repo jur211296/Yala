@@ -1408,7 +1408,6 @@
 "subcategory.unassigned" = "Non attribue";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transactions seront supprimees definitivement. Cette action ne peut pas etre annulee.";
 
-"account.deleteBalanceError" = "Vous ne pouvez pas supprimer ce compte car il a un solde non nul. Ajustez le solde a 0 avant de le supprimer.";
 "account.type.general" = "General";
 "account.type.cash" = "Especes";
 "account.type.current" = "Compte Courant";
@@ -6590,3 +6589,39 @@
 
 /* Título de la pantalla final cuando la persona intentó crear una cuenta en la nube y su Apple ID ya tenía una: ha entrado en la existente */
 "welcome.bornCloud.readyExistingAccountTitle" = "Tu avais déjà un compte : tu viens d'y accéder.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "Supprimer « %@ »";
+"account.removal.intro" = "Avant de le supprimer, choisis quoi faire de son contenu.";
+"account.removal.countRecords" = "Opérations";
+"account.removal.countScheduled" = "Paiements planifiés";
+"account.removal.countFavorites" = "Paiements favoris";
+"account.removal.countDrafts" = "En attente dans la boîte de réception";
+"account.removal.choiceHeader" = "Que faire de son contenu";
+"account.removal.moveTitle" = "Le déplacer vers un autre compte";
+"account.removal.moveSubtitle" = "Recommandé. Ton historique et ton solde sont conservés.";
+"account.removal.noDestination" = "Tu n’as pas d’autre compte vers lequel le déplacer.";
+"account.removal.deleteTitle" = "Supprimer les opérations";
+"account.removal.deleteSubtitle" = "Elles sont supprimées définitivement, avec le compte.";
+"account.removal.deleteBlockedGroups" = "Il contient des opérations de tes groupes : elles peuvent seulement être déplacées.";
+"account.removal.destinationHeader" = "Déplacer vers";
+"account.removal.destinationBlockedCurrency" = "Indisponible : il contient des virements ou des opérations de groupe qui ne peuvent pas être converties dans cette devise.";
+"account.removal.convertNote" = "Ce qui est dans une autre devise passe en %@ : les opérations au taux de change de leur date ; les paiements planifiés et favoris au taux du jour.";
+"account.removal.collapsedNote" = "Les virements entre « %1$@ » et « %2$@ » sont retirés : au sein d’un même compte, ils ne déplacent pas d’argent.";
+"account.removal.partnersNote" = "Les virements avec d’autres comptes restent dans ces comptes comme des opérations normales.";
+"account.removal.plansNote" = "Les paiements planifiés, les favoris et les éléments en attente dans la boîte de réception restent sans compte : tu le choisiras en les utilisant.";
+"account.removal.moveAction" = "Déplacer et supprimer le compte";
+"account.removal.deleteAction" = "Supprimer les opérations et le compte";
+"account.removal.confirmDeleteTitle" = "Supprimer les opérations ?";
+"account.removal.confirmDeleteCount" = "Opérations supprimées";
+"account.removal.confirmDeleteMessage" = "Elles sont supprimées définitivement et c’est irréversible. Le compte est aussi supprimé.";
+"account.removal.confirmDeleteAction" = "Oui, tout supprimer";
+"account.removal.working" = "Suppression du compte…";
+"account.removal.failedTitle" = "Le compte n’a pas été supprimé";
+"account.removal.failedUnreadable" = "Nous n’avons pas pu lire le contenu de ce compte. Rien n’a été modifié.";
+"account.removal.failedChanged" = "Quelque chose a changé dans le compte entre-temps. Vérifie-le et réessaie.";
+"account.removal.failedRates" = "Nous n’avons pas pu obtenir les taux de change pour convertir. Rien n’a été déplacé : réessaie avec une connexion.";
+"account.removal.noAllowedDestination" = "Tes autres comptes sont dans une autre devise, et celui-ci contient des virements ou des éléments de groupe qui ne peuvent pas être convertis.";
+"account.removal.countBudgets" = "Budgets";
+"account.removal.budgetsMovedNote" = "Les budgets qui suivaient ce compte suivront « %@ ».";
+"account.removal.budgetsOnlyNote" = "Certains budgets ne suivaient que ce compte : sans lui, ils suivront tous tes comptes.";
