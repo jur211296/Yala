@@ -4940,6 +4940,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Tu cuenta Yala en la nube, si la creaste con tu cuenta de Google.";
+"welcome.existing.usedOnThisDeviceNote" = "La que usaste en este iPhone";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Usa la misma cuenta de Google con la que creaste tu cuenta de la nube.";

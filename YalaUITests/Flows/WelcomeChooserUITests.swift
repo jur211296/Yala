@@ -492,6 +492,13 @@ final class WelcomeChooserUITests: XCTestCase {
                       "No apareció el botón de Apple de la tarjeta.")
         XCTAssertTrue(app.buttons["welcome_existing_google"].exists, "No apareció el botón de Google.")
         XCTAssertTrue(app.buttons["welcome_existing_restore"].exists, "No apareció Restaurar desde iCloud.")
+        // vb1f · CONTROL del test del faro de abajo: sin faro, ninguna entrada lleva «La que usaste en este iPhone» y
+        // Apple sigue primero. La presencia de los tres botones de arriba es la que discrimina esta ausencia.
+        XCTAssertFalse(app.descendants(matching: .any)["welcome_existing_used_on_this_device"].exists,
+                       "La nota del método usado salió sin faro.")
+        XCTAssertLessThan(app.buttons["welcome_existing_cloud"].frame.minY,
+                          app.buttons["welcome_existing_google"].frame.minY,
+                          "Sin faro el orden de siempre es Apple y luego Google.")
 
         let back = app.buttons["welcome_back_button"].firstMatch
         XCTAssertTrue(back.exists, "No apareció el botón Volver.")
@@ -506,5 +513,37 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_new_cloud"].waitForExistence(timeout: 10),
                       "La pregunta de pie no llevó a «Es mi primera vez».")
         XCTAssertTrue(app.buttons["welcome_new_private"].exists, "Falta la opción privada en «Es mi primera vez».")
+    }
+
+    /// **vb1f (opción A)** · con el faro diciendo que la cuenta de este Apple ID se creó con Google, «¡Hola de nuevo!»
+    /// pone Google por delante de Apple y le cuelga «La que usaste en este iPhone»; Apple sigue ahí. El faro se finge
+    /// con `-uitest-fake-beacon`, que no persiste nada; el orden lo decide la lógica real. Su control —sin faro, sin
+    /// nota y Apple primero— va en `testExistingChooser_footerQuestion_opensTheFirstTimeBranch`.
+    func testExistingChooser_googleBeacon_putsGoogleFirst_withTheUsedHereNote() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(
+            reset: true,
+            skipOnboarding: false,
+            seed: nil,
+            extraArguments: ["-uitest-cloud-chooser", "-uitest-fake-beacon", "google"]
+        )
+        let heroCTA = app.buttons["welcome_hero_cta"]
+        XCTAssertTrue(heroCTA.waitForExistence(timeout: 60), "No apareció el CTA del Hero.")
+        heroCTA.tap()
+
+        let restoreBranch = app.buttons["welcome_chooser_restore"]
+        XCTAssertTrue(restoreBranch.waitForExistence(timeout: 10), "No apareció la card 'Ya tengo una cuenta'.")
+        restoreBranch.tap()
+
+        let google = app.buttons["welcome_existing_google"]
+        let apple = app.buttons["welcome_existing_cloud"]
+        XCTAssertTrue(google.waitForExistence(timeout: 10), "No apareció el botón de Google.")
+        XCTAssertTrue(apple.exists, "Apple tiene que seguir disponible.")
+        XCTAssertLessThan(google.frame.minY, apple.frame.minY, "Con el faro de Google, Google va primero.")
+
+        let note = app.descendants(matching: .any)["welcome_existing_used_on_this_device"]
+        XCTAssertTrue(note.exists, "Falta «La que usaste en este iPhone».")
+        XCTAssertGreaterThan(note.frame.minY, google.frame.minY, "La nota va bajo el botón de Google…")
+        XCTAssertLessThan(note.frame.minY, apple.frame.minY, "…y antes del de Apple.")
     }
 }

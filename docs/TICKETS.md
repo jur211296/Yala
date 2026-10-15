@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (876)
+## Index (881)
 
 | id | status | path |
 |---|---|---|
@@ -372,6 +372,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | gateway-typecheck-roto-y-fuera-del-ci | discarded | tickets/discarded/gateway-typecheck-roto-y-fuera-del-ci.md |
 | generated-index-lands-above-yaml-frontmatter | done | tickets/done/generated-index-lands-above-yaml-frontmatter.md |
 | goldens-de-staging-solo-pasan-a-trozos | done | tickets/done/goldens-de-staging-solo-pasan-a-trozos.md |
+| google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke | backlog | tickets/backlog/google-signup-with-reused-credential-leaves-no-sdk-session-to-revoke.md |
 | gpt-4-1-nano-shuts-down-on-october-23 | done | tickets/done/gpt-4-1-nano-shuts-down-on-october-23.md |
 | group-balance-service-shares-not-deduped | backlog | tickets/backlog/group-balance-service-shares-not-deduped.md |
 | group-expense-edit-save-disabled-without-saying-the-account-is-missing | done | tickets/done/group-expense-edit-save-disabled-without-saying-the-account-is-missing.md |

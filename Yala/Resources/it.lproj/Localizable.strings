@@ -4933,6 +4933,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Il tuo account Yala nel cloud, se l'hai creato con il tuo account Google.";
+"welcome.existing.usedOnThisDeviceNote" = "Quella che hai usato su questo iPhone";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Usa lo stesso account Google con cui hai creato il tuo account cloud.";

@@ -4935,6 +4935,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Googleアカウントで作成した場合の、クラウド上のYalaアカウントです。";
+"welcome.existing.usedOnThisDeviceNote" = "このiPhoneで使った方法";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
