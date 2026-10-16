@@ -985,6 +985,16 @@ final class AppBootstrapper {
         if UITestHooks.fakeICloudAvailable {
             iCloudSyncService.shared._uiTestSimulateAvailableAccount()
         }
+        // **«¿Espeja este arranque?» contesta la verdad del host de test: no.** El store `YalaModel-UITest` monta con
+        // `cloudKitDatabase: .none`, pero sale de `personalConfiguration` ANTES de capturar la decisión del mount, así
+        // que `personalStoreMountedDecision` se queda en `.iCloudMirror` y `mirrorWillSync()` decía `true` en toda
+        // corrida. Con eso los borrados del Welcome esperaban un import de iCloud que aquí no puede llegar —sin cuenta,
+        // `waitForImportQuiescence` sale `false` al instante— y devolvían `importNotQuiescent`: «Borrar todo y
+        // continuar» con cambios de grupos acababa en «No pudimos borrar todo» en vez de en la oferta de perderlos
+        // (ticket `fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed`). Es la regla «El
+        // testigo del mount MIENTE en los hosts de test» de `swiftdata-cloudkit.md`: el default va en la verdad del
+        // host, no en una inversión. Con `-uitest-fake-icloud` también: fingir la cuenta no hace que este store espeje.
+        ICloudPersonalCorpusProbe.mirrorWillSync = { false }
         #endif
 
         // Deep link en cold launch (PRE-init): `-uitest-deeplink-url <url>` entra por

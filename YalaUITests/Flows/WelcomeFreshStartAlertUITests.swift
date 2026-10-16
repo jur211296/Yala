@@ -159,4 +159,43 @@ final class WelcomeFreshStartAlertUITests: XCTestCase {
             sobre unos datos que el borrado no llegó a tocar.
             """)
     }
+
+    /// Ticket `fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed`. Con cambios de grupos que no
+    /// pueden subir (la fila viva de `-uitest-groups-outbox-pending`, sin sesión), «Borrar todo y continuar» sigue en la
+    /// puerta privada, que tiene que enseñar el motivo con su cifra y ofrecer perderlos (decisión A de la card 069g). Lo
+    /// que salía era «No pudimos borrar todo»: el borrado esperaba un import de iCloud porque el testigo del mount decía
+    /// que este store espeja, y bajo `-uitest` no espeja. Se recorre hasta el onboarding: la oferta que no lleva a ningún
+    /// sitio cumpliría la primera mitad y seguiría sin salida.
+    func testAfterAnAdoptExit_withGroupChanges_offersTheLossWithItsCount_andLosingThemReachesOnboarding() throws {
+        let app = XCUIApplication()
+        app.launchForUITest(reset: true, skipOnboarding: false, seed: "minimal", groupsOutboxPending: true,
+                            welcomeAfterAdoptExit: true)
+
+        let newBranch = app.buttons["welcome_chooser_new"]
+        XCTAssertTrue(newBranch.waitForExistence(timeout: 60), "El Welcome de vuelta de un adopt no apareció en la elección.")
+        newBranch.tap()
+
+        let confirm = app.alerts.buttons.element(boundBy: 0)
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "No apareció «¿Borrar todo y continuar?».")
+        confirm.tap()
+
+        let lose = app.buttons["welcome_private_icloud_groups_pending_lose"]
+        XCTAssertTrue(lose.waitForExistence(timeout: 30), """
+            «Borrar todo y continuar» con cambios de grupos no llegó a la oferta de perderlos. \
+            ¿«No pudimos borrar todo»? \(app.staticTexts["welcome_private_icloud_wipe_failed_device"].exists)
+            """)
+        XCTAssertFalse(app.staticTexts["welcome_private_icloud_wipe_failed_device"].exists,
+                       "Sale el fallo del borrado del teléfono junto a la oferta.")
+        // La cifra: el seam deja UNA fila viva. Se lee de la confirmación, que la dice sola en su frase («…: 1.»).
+        lose.tap()
+        let confirmLose = app.buttons["welcome_private_icloud_groups_loss_confirm_lose"]
+        XCTAssertTrue(confirmLose.waitForExistence(timeout: 10), "No apareció «¿Perder estos cambios?».")
+        let withCount = app.staticTexts.matching(NSPredicate(
+            format: "identifier == 'welcome_private_icloud_groups_loss_confirm' AND label CONTAINS ': 1.'"))
+        XCTAssertEqual(withCount.count, 1, "La confirmación no dice cuántos cambios se pierden (1).")
+        confirmLose.tap()
+
+        XCTAssertTrue(app.textFields["onboarding_name_field"].waitForExistence(timeout: 30),
+                      "Perder los cambios de grupos no siguió al onboarding: el borrado no terminó.")
+    }
 }
