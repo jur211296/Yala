@@ -29,15 +29,20 @@ enum OrphanedRecordsLogic {
         let hasAccount: Bool
         /// Lleva puntero a un gasto o liquidación de grupo.
         let hasGroupPointer: Bool
+        /// Fila de grupo que `GroupLegKindLogic` PRUEBA que es la pata real. Sin puntero no se mira.
+        var groupLegIsProvenReal: Bool = false
     }
 
-    /// Sin cuenta y SIN puntero de grupo.
+    /// Sin cuenta, y sin puntero de grupo o con él si es una pata REAL probada.
     ///
-    /// **Las filas de grupo se quedan fuera, a propósito:** una pata virtual vive en una cuenta de sistema de Grupos, y
-    /// con esa cuenta aún sin hidratar se lee igual que una huérfana (`BridgedEditPolicy` la trata así). Moverla a una
-    /// cuenta real la convertiría en una pata real y el gasto contaría dos veces. Las gobierna el puente de grupos.
+    /// **Una fila de grupo sin cuenta solo entra si se prueba que es la pata real** (2026-10-16, ticket
+    /// `orphaned-group-records-stay-out-of-the-notice`). Una pata VIRTUAL vive en una cuenta de sistema de Grupos, y con
+    /// esa cuenta ausente se lee igual que una huérfana: moverla a una cuenta real la convertiría en una pata real y el
+    /// gasto contaría dos veces. Una pata real sí es dinero que salió de una cuenta que se eliminó, y moverla no cuenta
+    /// nada dos veces: sigue siendo la pata real de su gasto. Qué se puede probar lo dice `GroupLegKindLogic`.
     static func isOrphan(_ candidate: Candidate) -> Bool {
-        !candidate.hasAccount && !candidate.hasGroupPointer
+        guard !candidate.hasAccount else { return false }
+        return !candidate.hasGroupPointer || candidate.groupLegIsProvenReal
     }
 
     /// ¿Se enseña el aviso? Con algo que mover y el import QUIETO: durante una restauración un movimiento puede llegar
@@ -57,6 +62,9 @@ enum OrphanedRecordsLogic {
         let keptInTheirCurrency: Int
         /// Los que se quitan: patas de transferencia que quedarían dentro de la cuenta destino.
         let removed: Int
+        /// De los que pasan tal cual, los que son patas de grupo (su importe lo manda el grupo). `keptInTheirCurrency` cuenta
+        /// solo las transferencias: cada caso tiene su nota.
+        var groupKeptInTheirCurrency: Int = 0
     }
 
     /// Qué pasa al mover los huérfanos a `destinationID`, con las reglas de la hoja de eliminar cuenta
@@ -82,6 +90,7 @@ enum OrphanedRecordsLogic {
         var converted = 0
         var kept = 0
         var removed = 0
+        var groupKept = 0
         for (index, row) in rows.enumerated() {
             let pairedInside = index < pairedWithinOrphans.count && pairedWithinOrphans[index]
             if pairedInside || row.transferPartnerAccount == destinationID {
@@ -92,9 +101,11 @@ enum OrphanedRecordsLogic {
             if AccountRemovalLogic.rowConverts(row, to: target) {
                 converted += 1
             } else if normalizeCurrencyCode(row.currencyCode) != target {
-                kept += 1
+                if row.isGroupRecord { groupKept += 1 } else { kept += 1 }
             }
         }
-        return MoveOutcome(moved: moved, converted: converted, keptInTheirCurrency: kept, removed: removed)
+        return MoveOutcome(
+            moved: moved, converted: converted, keptInTheirCurrency: kept, removed: removed,
+            groupKeptInTheirCurrency: groupKept)
     }
 }

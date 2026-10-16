@@ -47,6 +47,9 @@ final class InboxViewModel {
 
     private(set) var allDrafts: [InboxDraft] = []
     private(set) var pendingDrafts: [InboxDraft] = []
+    /// Gastos de grupo pendientes sin su grupo en este teléfono: se les ofrece «Quitar de aquí»
+    /// (`InboxGroupDraftsHiddenHere`).
+    private(set) var hideableHereIDs: Set<PersistentIdentifier> = []
 
     // MARK: - Setup
 
@@ -62,6 +65,18 @@ final class InboxViewModel {
     func loadData() {
         loadAllDrafts()
         loadPendingDrafts()
+        loadHideableHere()
+    }
+
+    /// Qué borradores pendientes se pueden quitar de la Bandeja solo aquí.
+    private func loadHideableHere() {
+        guard let context = modelContext else { return }
+        let ids = InboxGroupDraftsHiddenHere.hideableIDs(in: pendingDrafts, context: context)
+        if ids != hideableHereIDs { hideableHereIDs = ids }
+    }
+
+    func canHideHere(_ draft: InboxDraft) -> Bool {
+        hideableHereIDs.contains(draft.persistentModelID)
     }
 
     private func loadAllDrafts() {
@@ -73,7 +88,8 @@ final class InboxViewModel {
         descriptor.fetchLimit = 500
 
         do {
-            let fetched = try context.fetch(descriptor)
+            // Sin los gastos de grupo quitados de la Bandeja en este teléfono (`InboxGroupDraftsHiddenHere`).
+            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
             if fetched != allDrafts { allDrafts = fetched }
         } catch {
             #if DEBUG
@@ -92,7 +108,7 @@ final class InboxViewModel {
         descriptor.fetchLimit = 200
 
         do {
-            let fetched = try context.fetch(descriptor)
+            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(descriptor), context: context)
             if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG

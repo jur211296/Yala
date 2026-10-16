@@ -113,7 +113,12 @@ struct WelcomeCloudSignInView: View {
     /// `offersFullActivation` (paso 8) distingue los dos destinos de [I] que llegan aquí: quien entró por
     /// «Primera vez → nube» venía a estrenar Yala entero y su cuenta resultó ser de grupos, así que cuando su
     /// sesión solo-grupos quede montada se le pone delante «Activar Yala completo» (ADR §7).
-    var onEnterGroupsOnly: (_ offersFullActivation: Bool) -> Void
+    ///
+    /// `sessionOpenedHere` dice si la sesión la abrió ESTE intento (`ensureSignedIn`) o era una que ya estaba en el
+    /// llavero. Solo con la primera se puede afirmar que los grupos que baje el canal son de quien está delante
+    /// (`LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet`): una sesión que sobrevivió a una reinstalación es
+    /// de la persona anterior.
+    var onEnterGroupsOnly: (_ offersFullActivation: Bool, _ sessionOpenedHere: Bool) -> Void
     /// **Paso 6** · «Crear otra cuenta» desde la entrada encaminada por el faro: cerrar este cover y volver
     /// a «Elige dónde quieres guardar tus datos» ENTERO —las dos cards, privado incluido (decisión de
     /// Jürgen 2026-09-09, que deroga el «card nube activa» del ticket)—. Es un callback y no una fase propia
@@ -1181,7 +1186,7 @@ struct WelcomeCloudSignInView: View {
                 // sabe pedir lo que falte en este dispositivo. Los dos destinos comparten rama porque van al
                 // mismo sitio; lo único que los separa es la oferta de «Activar Yala completo» al terminar
                 // (paso 8), y viaja como argumento.
-                onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation)
+                onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation, sessionOpenedHere)
                 return
             // `.adoptAsComplete` es el destino NORMAL de esta puerta: sigue al guard cross-cuenta y al
             // adopt de abajo, intactos. Los demás son inalcanzables aquí con `exists == true` —lo afirma

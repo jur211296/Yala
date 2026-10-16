@@ -3389,6 +3389,7 @@ enum L10n {
         }
         static var noDestination: String { ls("orphanedRecords.noDestination", comment: "") }
         static var keptCurrencyNote: String { ls("orphanedRecords.keptCurrencyNote", comment: "") }
+        static var groupKeptCurrencyNote: String { ls("orphanedRecords.groupKeptCurrencyNote", comment: "") }
         static func convertNote(_ to: String) -> String {
             String(format: ls("orphanedRecords.convertNote", comment: ""), to)
         }
@@ -6510,6 +6511,13 @@ enum L10n {
         /// "Esta transacción se elimina solo desde el grupo origen."
         static var groupDraftCannotDelete: String {
             ls("inbox.groupDraftCannotDelete", comment: "")
+        }
+        /// "Quitar de aquí": oculta en este teléfono un gasto de grupo cuyo grupo no está aquí.
+        static var hideHere: String {
+            ls("inbox.hideHere", comment: "")
+        }
+        static var hideHereHint: String {
+            ls("inbox.hideHereHint", comment: "")
         }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")

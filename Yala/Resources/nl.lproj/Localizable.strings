@@ -6727,3 +6727,12 @@
 "storage.revert.prior.wipeFailed" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Controleer je verbinding en probeer het opnieuw.";
 "storage.revert.prior.noAccountTitle" = "Log in bij iCloud op deze iPhone";
 "storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en deze iPhone is niet ingelogd bij iCloud. Log in via Instellingen op de iPhone en probeer het opnieuw.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Hier verwijderen";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Verwijdert het alleen op deze telefoon. Als de groep binnenkomt, verschijnt het weer.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Groepsuitgaven in een andere valuta gaan ongewijzigd mee, zonder omrekening: het bedrag bepaalt de groep.";

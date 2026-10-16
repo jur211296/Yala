@@ -729,9 +729,22 @@ struct InboxView: View {
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
-        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)) {
+        // «Quitar de aquí» no va con deslizamiento completo: no tiene «deshacer», y un gesto largo accidental lo escondería.
+        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)
+                      && !viewModel.canHideHere(draft)) {
             if !isSelectionMode {
-                if selectedFilter == .pending {
+                if selectedFilter == .pending && viewModel.canHideHere(draft) {
+                    // Gasto de grupo sin su grupo en este teléfono: no se rechaza ni se borra (viajaría al otro
+                    // dispositivo); se quita de la Bandeja solo aquí (`InboxGroupDraftsHiddenHere`).
+                    Button {
+                        hideDraftHere(draft)
+                    } label: {
+                        Label(L10n.Inbox.hideHere, systemImage: "eye.slash")
+                    }
+                    .tint(DS.Semantic.warningForeground)
+                    .accessibilityHint(L10n.Inbox.hideHereHint)
+                    .accessibilityIdentifier("inbox_hide_here")
+                } else if selectedFilter == .pending {
                     // Pending: Delete + Reject. El aviso de importe cambiado no se borra (`DraftService.deleteDraft`):
                     // rechazarlo es «dejarla como está».
                     if !draft.isSettlementAmountChangeNotice {
@@ -749,6 +762,7 @@ struct InboxView: View {
                         Label(L10n.Inbox.reject, systemImage: "xmark.circle")
                     }
                     .tint(DS.Semantic.warningForeground)
+                    .accessibilityIdentifier("inbox_swipe_reject")
                 } else if draft.status == .rejected && !draft.isSettlementAmountChangeNotice {
                     // Archived (rejected only): Delete
                     Button {
@@ -808,6 +822,18 @@ struct InboxView: View {
     private func rejectDraft(_ draft: InboxDraft) {
         removeDraftWithAnimation(draft, hapticStyle: .light) { service, d in
             try service.rejectDraft(d)
+        }
+    }
+
+    /// Quita el gasto de grupo de la Bandeja SOLO en este teléfono. No toca la fila: nada viaja al otro dispositivo.
+    private func hideDraftHere(_ draft: InboxDraft) {
+        guard InboxGroupDraftsHiddenHere.hide(draft, context: modelContext) else {
+            viewModel.loadData()
+            return
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        dsWithAnimation(reduceMotion) {
+            viewModel.removeDraft(draft)
         }
     }
 

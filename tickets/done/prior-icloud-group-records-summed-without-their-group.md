@@ -1,11 +1,11 @@
 ---
 id: prior-icloud-group-records-summed-without-their-group
-status: backlog
+status: done
 priority: medium
 area: "modo-nube, grupos, inbox"
 created: 2026-10-15
 source: "decisión de `reverse-to-icloud-merges-prior-icloud-data-without-asking` (2026-10-15) · nota de Jürgen en la card 4nt6"
-updated: 2026-10-15
+updated: 2026-10-16
 ---
 
 # Los movimientos de grupo que llegan de iCloud sin su grupo no se pueden quitar de la Bandeja
@@ -38,3 +38,21 @@ espejo, así que la salida tiene que ser algo que no le quite nada al otro dispo
 
 Tras sumar los datos de antes, la persona puede quitar de la Bandeja los gastos de grupo que no puede explicar, y el otro
 dispositivo con esos grupos no pierde nada.
+
+## Resuelto (2026-10-16)
+
+**Qué cambia para el usuario.** En la Bandeja, un gasto de grupo cuyo grupo no está en este teléfono ofrece al deslizarlo
+una sola acción, «Quitar de aquí». Lo quita de la Bandeja y del contador del Panel **solo en este teléfono**. Si el grupo
+llega después, vuelve a aparecer solo.
+
+**Qué se eligió y por qué.** Ocultarlo en una lista local (`InboxGroupDraftsHiddenHere`, `UserDefaults` sin sincronizar,
+clave = el gasto), no rechazarlo ni borrarlo. Rechazar o borrar cambian la fila, y la fila viaja por el espejo de iCloud y
+por el canal de la nube: en el otro dispositivo el borrador del Caso A es lo único que crea la pata real del gasto. La
+lista local no le quita nada a nadie y es reversible. No espera a que el canal de Grupos esté al día: al ser reversible no
+hace falta, y esperar dejaría sin salida a quien no tiene sesión de Grupos. La clave es el gasto y no el borrador porque el
+otro dispositivo crea borradores nuevos del mismo gasto al re-puentear.
+
+**Evidencia.** `InboxGroupDraftsHiddenHereTests` (quitarlo no deja el contexto sucio ni cambia la fila; vuelve si llega el
+grupo; un borrador nuevo del mismo gasto sigue oculto; la Bandeja y el Panel no lo cuentan; «Vaciar datos» retira la
+lista) y `GroupRowsWithoutGroupUITests` (quitarlo, y sigue quitado tras relanzar). Capturas en
+`_capturas/2026-10-16-grupos-icloud/` (`antes-2-sin-salida.png` → `despues-2-quitar-de-aqui.png`).

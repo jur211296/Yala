@@ -2849,6 +2849,7 @@ struct ContentView: View {
 /// `fullScreenCover` (sin frame "azul vacío" entre ambos). El alert
 /// "Detectamos tu cuenta" vive dentro del `WelcomeFlowContainer`.
 private struct WelcomeFlowModifier: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
     @Binding var showWelcomeFlow: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     @Binding var showOnboarding: Bool
@@ -3198,7 +3199,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         showWelcomeCloudSignIn = false
                         showOnboarding = true
                     },
-                    onEnterGroupsOnly: { offersFullActivation in
+                    onEnterGroupsOnly: { offersFullActivation, sessionOpenedHere in
                         // Paso 8 · la oferta viaja hasta que la sesión solo-grupos quede montada.
                         offersFullActivationAfterGroupsEntry = offersFullActivation
                         // **Bloque [I]** · el backend dijo que esta cuenta solo lleva grupos, así que no
@@ -3232,6 +3233,13 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // baja en el boot siguiente.
                         StorageModePersistence.clearGroupsOnlyWipeArm()
                         GroupsSignOutBannerMarker.clear()
+                        // Los grupos que el canal baje desde aquí son de quien acaba de entrar: si deja el alta a
+                        // medias y vuelve a «Es mi primera vez → privado», la puerta no los trata como de otra persona
+                        // (ticket `groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`). Solo con la
+                        // sesión abierta en este intento: una del llavero puede ser de la persona anterior.
+                        if sessionOpenedHere {
+                            LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
+                        }
                         welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
                         showWelcomeFlow = true
                         showWelcomeCloudSignIn = false

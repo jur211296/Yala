@@ -186,6 +186,7 @@ struct OrphanedRecordsSheet: View {
         var lines: [String] = []
         if outcome.converted > 0 { lines.append(L10n.OrphanedRecords.convertNote(option.currencyCode)) }
         if outcome.keptInTheirCurrency > 0 { lines.append(L10n.OrphanedRecords.keptCurrencyNote) }
+        if outcome.groupKeptInTheirCurrency > 0 { lines.append(L10n.OrphanedRecords.groupKeptCurrencyNote) }
         if outcome.removed > 0 { lines.append(L10n.OrphanedRecords.collapsedNote(option.name)) }
         return lines.isEmpty ? nil : lines.joined(separator: "\n\n")
     }

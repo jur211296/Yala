@@ -358,6 +358,27 @@ enum GroupBridgeSystemEntities {
         return Set(subs.filter { names.contains($0.name.lowercased()) }.map { $0.persistentModelID })
     }
 
+    /// Read-only: ids de las subcategorías de sistema de cada rol pedido, reconocidas por nombre en todos los idiomas
+    /// (no hay campo de rol). Para `GroupLegEvidence`: decidir si una pata de grupo SIN cuenta es real o virtual.
+    ///
+    /// **Lanza** si el fetch falla, a diferencia de `loanToGroupsSubcategoryIDs`: aquí un conjunto vacío no es
+    /// conservador. Con «Liquidación enviada» sin reconocer, la pata real de una liquidación se leería como de sistema
+    /// cualquiera, o sea virtual, y se borraría.
+    static func subcategoryIDs(
+        roles: [SystemSubcategoryRole],
+        context: ModelContext
+    ) throws -> [SystemSubcategoryRole: Set<PersistentIdentifier>] {
+        let subs = try context.fetch(FetchDescriptor<Subcategory>(
+            predicate: #Predicate { $0.isSystem || $0.isDefaultSeed }
+        ))
+        var result: [SystemSubcategoryRole: Set<PersistentIdentifier>] = [:]
+        for role in roles {
+            let names = Set(localizedNames(forKey: role.localizationKey).map { $0.lowercased() })
+            result[role] = Set(subs.filter { names.contains($0.name.lowercased()) }.map(\.persistentModelID))
+        }
+        return result
+    }
+
     /// Find multi-idioma de la subcategoría de sistema del rol. Self-heal `isSystem` si la
     /// encuentra con el flag en false (CloudKit no hidratado). No persiste (el caller guarda).
     private static func findSystemSubcategory(
