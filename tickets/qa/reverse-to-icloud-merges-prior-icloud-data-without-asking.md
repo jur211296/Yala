@@ -5,7 +5,7 @@ priority: high
 area: "modo-nube, migración"
 created: 2026-10-15
 source: "QA guiado del 2026-10-15 (C3 + A2, iPhone de QA) · card tablero-volver-a-icloud-con-una-cuenta-nacida-en-4nt6"
-updated: 2026-10-15
+updated: 2026-10-16
 qa-status: needs-testing
 qa-notes: simulador cubierto con seams; falta el iPhone con un iCloud real con datos previos
 ---
@@ -104,3 +104,7 @@ CloudKit no existe en el simulador: lo que falta es la pregunta y el borrado con
 
 Si en el paso 3 sale siempre «No pudimos revisar tu iCloud» con buena conexión, es el punto sin medir de la lista de campos
 de la sonda (`ICloudPersonalCorpusProbe.foreignDesiredKeys`): dímelo y paso al plan B (contar sin campos).
+
+## Barrido de QA · 2026-10-16
+
+Barrido de QA 2026-10-16 · se queda: §4 iCloud real con datos previos y entrada real con Google en staging. Las ramas de la decisión, el borrado y los fallos los fijan 33 unitarios, 7 XCUITest y 11 mutantes (#517). Prueba A · 4nt6 de `docs/qa/tanda-qa-jurgen-2.1.md`, en el mismo montaje que A · C4.

@@ -1,7 +1,7 @@
 ---
 id: release-plist-leftovers-widget-build-faceid-appattest
 status: qa
-updated: 2026-10-15
+updated: 2026-10-16
 priority: medium
 area: "release"
 created: 2026-10-10
@@ -52,3 +52,7 @@ El archive de 2.1 sale con el mismo build en la app y el widget, sin el texto de
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (A · App Attest): el simulador no tiene App Attest. Lo estático (plist del widget, Face ID, entitlements) ya está verificado por #447 y #476. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+## Barrido de QA · 2026-10-16
+
+Barrido de QA 2026-10-16 · sale de la tanda de 2.1: la card g8rc pasa a versión 2.2. Lo único que falta es el build **Debug** del scheme «Yala» desde Xcode, que no llega a ningún usuario, y la card ya decía que no bloquea 2.1. La ruta de TestFlight (App Attest en `production`) la ejerce cualquier uso de la IA del bloque B con TestFlight 17. Lo estático (plist del widget, Face ID, entitlements) ya lo verificaron #447 y #476.

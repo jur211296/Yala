@@ -1,11 +1,11 @@
 ---
 id: ai-chat-reads-heavier-than-a-messaging-app
-status: qa
+status: done
 priority: medium
 area: "chat, yala-ia, design-system"
 created: 2026-09-15
-updated: 2026-10-15
-qa-status: needs-testing
+updated: 2026-10-16
+qa-status: passed
 source: Jürgen, comparación de capturas Yala IA vs chat de GrokBot (2026-09-15)
 ---
 
@@ -117,3 +117,7 @@ ninguno bajo la caja; «+» fuera y micro → enviar; párrafos separados), verd
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda solo por tu visto bueno, sin iPhone: el chat con el saludo en burbuja, tres preguntas y los avisos arriba se vio en el simulador con respuesta real de staging (`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b4-1*`). El resto lo fijan `ChatMessagingLayoutUITests`.
+
+## Barrido de QA · 2026-10-16
+
+Cerrado en el barrido de QA 2026-10-16: Jürgen aprobó la pantalla con capturas el 2026-10-15 (captura b4-1, card rdfd en done). No pide nada del iPhone.

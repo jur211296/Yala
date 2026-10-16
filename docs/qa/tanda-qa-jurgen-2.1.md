@@ -1,30 +1,33 @@
 # Tanda de QA de Jürgen — 2.1
 
-Barrido del 2026-10-15 con `/barrido-qa`, sobre `origin/2.1` en `8cd693cb6` (#513). Sustituye al del 12-oct y recoge lo
-que quedó del QA guiado del 14-15 oct (pasaron 8 de 31).
+Barrido del 2026-10-16 con `/barrido-qa`, sobre `origin/2.1` en `c648223bc` (#526). El #527 (Novedades) estaba en cola de auto-merge: su hoja sale de sus
+capturas. Sustituye al del 15-oct (#514):
+recoge lo que entró después (#515 a #527) y saca de la tanda lo que ya cerraste tú el 15-oct.
 
-- **Revisado:** las 23 cards de 2.1 (21 «in qa» y 2 «blocked»), los 41 tickets de `tickets/qa/` y los 2 de
-  `tickets/blocked/`, los PRs #474 a #513 y las 23 pruebas que el QA guiado dejó pendientes.
-- **Pasan a done:** 6 cards y 16 tickets. Cinco de esos tickets ya habían pasado en el QA guiado y solo faltaba
-  moverlos. Un ticket vuelve a backlog (F1).
-- **Probado en el simulador:** 12 pruebas, todas con la evidencia en `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/`.
-  Una falló y tiene card de bug (C5).
-- **Se quedan para tu iPhone:** 18 pruebas en 4 bloques. **Sin iPhone:** 5. **Para aprobar con capturas:** 7 pantallas.
-- **Tiempo total estimado: unas 6 h 40 min** (iPhone 5 h 35 min, sin iPhone 55 min, capturas 10 min). Lo que bloquea
-  el lanzamiento suma **2 h 35 min**.
+- **Revisado:** las 23 cards de 2.1 (16 «in qa», 2 «blocked» y 5 de backlog), los 25 tickets de `tickets/qa/` y los
+  PRs #515 a #527.
+- **Pasan a done:** 1 card y 3 tickets.
+- **Probado en el simulador:** 3 pruebas, con la evidencia en `~/Claude/worktrees/_capturas/2026-10-16-barrido-qa-2-1-2/`.
+  Ninguna falló.
+- **Pasan a 2.2:** 2 cards.
+- **Se quedan para tu iPhone:** 19 pruebas en 4 bloques. **Sin iPhone:** 6. **Para aprobar con capturas:** 2 pantallas.
+- **Tiempo total estimado: unas 7 h 15 min** (iPhone 6 h, sin iPhone 1 h 10 min, capturas 5 min). Lo que bloquea el
+  lanzamiento suma **3 h 50 min**.
 
 Los ids de card van sin el prefijo `tablero-`. Cada prueba dice qué la retiene: §4 es «solo en un iPhone real» y §5 es
 «tu visto bueno».
 
 ## Antes de empezar
 
-1. **Builds.** El TestFlight 16 (`7ac7d21a6`, #476) no lleva #427, #490, #501 ni #512. El bloque A va con **Yala Dev
-   compilado desde `2.1`** (`8cd693cb6` o posterior). Si subes un TestFlight 17 desde ese `2.1`, vale para todo.
-2. **D2 empieza con el build anterior:** en ese iPhone no borres Yala antes de C · D2.
-3. **A · App Attest instala el scheme «Yala» desde Xcode** y sustituye a la Yala de TestFlight de ese iPhone. Hazla la
-   última del día, o en un iPhone sin la Yala de TestFlight.
-4. **Archivos de prueba** en `~/Claude/entregas/qa-guiado-2-1/`: fotos en `1-para-Fotos/` y, en `2-para-Archivos/`,
-   el CSV de 1.500 movimientos para A · C1. Pásalos por AirDrop.
+1. **El esquema de iCloud va antes que el TestFlight.** Despliega el campo nuevo del flujo de caja (E · esquema, abajo)
+   **antes** de subir ningún build. Si el build llega antes, los ajustes de un mes siguen sin sincronizar.
+2. **Sube un TestFlight 17 desde `2.1` con el #527 dentro**. El TestFlight 16 (12-oct) no lleva nada de lo que
+   entró desde el #514. Los bloques B, C y D van con el 17.
+3. **El bloque A va con Yala Dev compilado desde ese mismo `2.1`**, contra staging.
+4. **Guarda dos instalaciones viejas:** un iPhone con el **TestFlight 16** para C · D2, y el iPhone A del bloque D con
+   **Yala 2.0.4 de la App Store** para D · ly22. No las actualices antes de llegar a esas pruebas.
+5. **Archivos de prueba** en `~/Claude/entregas/qa-guiado-2-1/`: el CSV de 1.500 movimientos para A · C1 está en
+   `2-para-Archivos/`. Pásalo por AirDrop.
 
 ## Qué bloquea el lanzamiento
 
@@ -32,42 +35,69 @@ Si una falla, 2.1 no sale: se pierden datos, un usuario nuevo no puede entrar o 
 
 | # | Prueba | Card / ticket | Min |
 |---|---|---|---|
-| 1 | E · G1 · Etiquetas de App Privacy | `el-manifiesto-de-privacidad-no-declara-l-kgqv` | 15 |
-| 2 | E · G2 · La ficha cuenta la nube | `la-web-la-politica-y-la-ficha-dicen-que-i6tj` | 5 |
-| 3 | E · G3 · Checklist de envío | `checklist-de-envio-de-2-1-a-app-store-ve-d0ui` | 15 |
-| 4 | A · C1 · Activar la nube con muchos movimientos | `snapshot-upload-has-no-ceiling-and-no-way-out` | 20 |
-| 5 | C · D1 · «Primera vez › privado» mira iCloud | `welcome-private-fresh-start-skips-icloud-check` | 20 |
-| 6 | C · D2 · Actualizar encima no cierra la sesión | `previous-person-cloud-session-survives-…` | 10 |
-| 7 | C · D3 · «Vengo por un grupo» con datos de iCloud | `groups-entry-on-a-mirrored-store-…` (2 tickets) | 40 |
-| 8 | D · E1 · Unirse a un grupo con dos iPhone | `validar-en-testflight-unirse-a-un-grupo-e1ah` | 30 |
+| 1 | E · esquema · El campo nuevo del flujo de caja en iCloud | `los-ajustes-de-un-mes-del-flujo-de-caja-ly22` | 15 |
+| 2 | E · G1 · Etiquetas de App Privacy | `el-manifiesto-de-privacidad-no-declara-l-kgqv` | 15 |
+| 3 | E · G2 · La ficha cuenta la nube | `la-web-la-politica-y-la-ficha-dicen-que-i6tj` | 5 |
+| 4 | E · G3 · Checklist de envío | `checklist-de-envio-de-2-1-a-app-store-ve-d0ui` | 15 |
+| 5 | E · gateway · «Eliminar mi cuenta» borra el contador | `desplegar-el-gateway-eliminar-mi-cuenta-z9uu` | 10 |
+| 6 | A · i1o5 · Apagar iCloud Drive no ofrece borrar | `apagar-icloud-drive-hace-que-yala-diga-t-i1o5` | 5 |
+| 7 | A · C1 · Activar la nube con muchos movimientos | `snapshot-upload-has-no-ceiling-and-no-way-out` | 20 |
+| 8 | A · 4nt6 · «Volver a iCloud» con datos viejos en ese iCloud | `volver-a-icloud-con-una-cuenta-nacida-en-4nt6` | 20 |
+| 9 | C · D1 · «Primera vez › privado» mira iCloud | `welcome-private-fresh-start-skips-icloud-check` | 20 |
+| 10 | C · D2 · Actualizar encima no cierra la sesión | `previous-person-cloud-session-survives-…` | 10 |
+| 11 | C · D3 · «Vengo por un grupo» con datos de iCloud | `groups-entry-on-a-mirrored-store-…` (2 tickets) | 40 |
+| 12 | D · E1 · Unirse a un grupo con dos iPhone | `validar-en-testflight-unirse-a-un-grupo-e1ah` | 30 |
+| 13 | D · ly22 · Los ajustes del flujo de caja viajan | `los-ajustes-de-un-mes-del-flujo-de-caja-ly22` | 25 |
 
-**Orden:** E · G1-G3 primero (no piden iPhone y Apple los mira al enviar). Luego los bloques en orden A, B, C y D.
+**Orden:** el bloque E primero (no pide iPhone, y el esquema tiene que estar antes del TestFlight 17). Luego los bloques
+A, B, C y D.
 
 ---
 
-## A. iPhone de QA con Yala Dev contra staging — 1 h 30 min
+## A. iPhone de QA con Yala Dev contra staging — 1 h 35 min
+
+Yala Dev compilado desde `2.1` con #527. Empieza con una sesión **privada** con datos (al menos 20 movimientos).
+
+### A · i1o5 — Apagar iCloud Drive no dice que tus datos se borraron · 5 min · **bloquea** · §4 iCloud real
+Card `apagar-icloud-drive-hace-que-yala-diga-t-i1o5` (#515). El simulador no tiene iCloud: ahí ya sale el aviso nuevo,
+pero no se puede apagar Drive con datos ni ver la reimportación.
+1. Apunta cuántos movimientos tienes. Ajustes del iPhone › tu nombre › iCloud › iCloud Drive: apágalo.
+2. Abre Yala y espera 10 s → «iCloud no está disponible en este dispositivo», con un solo botón, «Entendido». **No**
+   debe salir «Tus datos fueron eliminados» ni «Empezar de cero». Toca «Entendido».
+3. Enciende iCloud Drive y reabre Yala → los movimientos vuelven solos, y mientras vuelven no sale ningún aviso de
+   borrado.
 
 ### A · vb1f — Entrar con Google cuando este iPhone ya tiene cuenta con Apple (parte C) · 5 min · §4 inicio de sesión real
-Card `entrar-con-google-cuando-este-iphone-ya-vb1f`. La parte A (Apple primero con su nota) ya pasó en el simulador.
+Card `entrar-con-google-cuando-este-iphone-ya-vb1f`. La parte A ya pasó en el simulador.
 Montaje: el Apple ID del iPhone con una cuenta de Yala creada con Apple, y una cuenta de Google **sin** cuenta en Yala.
-1. Borra Yala Dev y vuelve a instalarla. «Empezar» › «Ya tengo una cuenta».
+1. Borra Yala Dev y vuelve a instalarla. «Ya tengo una cuenta».
 2. «Entrar con Google» › consentimiento › la cuenta de Google sin Yala → «Esa cuenta usa otro método».
 3. Toca **«Crear cuenta con Google»** → consentimiento. **No** debe volver a salir la hoja de Google, y sigue al
    onboarding. Si vuelve a salir, avisa a Frank: el servidor rechazó la credencial reusada.
 
 ### A · C6 — El consentimiento de Grupos queda registrado · 15 min · §4 inicio de sesión real
 Ticket `groups-consent-door-spec`.
-1. Instalación fresca con una cuenta Apple o Google de pruebas: «Vengo por un grupo» › «Crear mi primer grupo» →
+1. Instalación nueva con una cuenta Apple o Google de pruebas: «Vengo por un grupo» › «Crear mi primer grupo» →
    explicación › entrar › «Grupos en la nube» › «¿Cómo te llamas?».
 2. «Aceptar y continuar», pon tu nombre y crea un grupo.
 3. Avisa a Frank: comprueba en staging que hay **una** fila de consentimiento de esa cuenta.
 4. Perfil › «Cerrar sesión» y vuelve a entrar por «Vengo por un grupo» con la misma cuenta → no vuelve a salir «Grupos
    en la nube», y sigue habiendo una sola fila.
 
+### A · dzih — Un alta de Grupos a medias no se confunde con datos ajenos · 10 min · §4 inicio de sesión real
+Card `un-alta-de-grupos-a-medias-llega-al-avis-dzih`, ticket `groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`
+(#522). Va justo después de C6: usa esa misma cuenta de solo grupos, que ya tiene un grupo. Bajo XCUITest este camino
+no se puede conducir; la cadena de decisiones la fija un test.
+1. Borra Yala Dev y reinstala. «Ya tengo una cuenta» › entra con la cuenta de C6.
+2. En Grupos, vuelve atrás **sin** terminar el alta.
+3. Manda Yala a segundo plano unos segundos y vuelve.
+4. «Es mi primera vez en Yala» › «Tu cuenta en tu iCloud privado» → **no** debe salir «Ya hay datos en este teléfono».
+5. Termina el onboarding → tu grupo sigue en Grupos.
+
 ### A · C1 — Activar la nube con muchos movimientos · 20 min (casi todo espera) · **bloquea** · §4 sesión real e iCloud
 Ticket `snapshot-upload-has-no-ceiling-and-no-way-out`. Los techos, el modo avión al 55 % y «Cancelar la activación» ya
-los fijan los tests (22 mutantes). Lo único que falta es ver que el techo no salta en una subida larga de verdad.
-Montaje: Yala Dev en modo privado con datos y una cuenta de staging **nueva** (no la Google A, que ya volvió a iCloud).
+los fijan los tests (22 mutantes). Falta ver que el techo no salta en una subida larga de verdad.
+Montaje: Yala Dev en modo privado con datos y una cuenta de staging **nueva**.
 1. Perfil › «Importar archivo» › `movimientos-qa-1500.csv`.
 2. Perfil › «Dónde viven tus datos» › «Migrar a la nube» › consentimiento › entra con la cuenta nueva.
 3. No toques nada: la barra avanza (22, 35, 55, 75 y 80 %) sin quedarse parada y acaba pidiendo cerrar y volver a abrir
@@ -82,18 +112,30 @@ A · C1, con esa misma cuenta ya en la nube. Con el iPhone por cable, la Consola
    conservan cuenta y subcategoría, también tras reabrir.
 3. Apunta si la Consola mostró «danglingRef». Si se pierde algo, avisa: el ticket sube a very-high.
 
-### A · App Attest — El build de Xcode de «Yala» consigue sesión de IA · 5 min · §4 App Attest
-Card `declarar-el-entitlement-de-app-attest-de-g8rc`, ticket `release-plist-leftovers-widget-build-faceid-appattest`.
-Ver el punto 3 de «Antes de empezar».
-1. Xcode › scheme **Yala** (no Yala Dev), Debug, en el iPhone.
-2. Haz una pregunta a Yala IA → responde. Antes daba 401.
+### A · 4nt6 — «Volver a iCloud» avisa si ese iCloud ya tiene datos de Yala · 20 min · **bloquea** · §4 iCloud real
+Card `volver-a-icloud-con-una-cuenta-nacida-en-4nt6`, ticket `reverse-to-icloud-merges-prior-icloud-data-without-asking`
+(#517). Las ramas de la decisión las fijan 33 unitarios, 7 XCUITest y 11 mutantes; falta la pregunta y el borrado
+contra un iCloud de verdad. Tras C1 y C4 el iCloud de este iPhone ya tiene datos de Yala de otra cuenta: es el montaje.
+Necesitas dos cuentas de Google **nuevas** (A y B).
+1. Perfil › «Cerrar sesión». En la bienvenida: «Es mi primera vez en Yala» › «Tu cuenta en la nube» › Google A. Crea 2
+   movimientos.
+2. Perfil › «Dónde viven tus datos» › «Volver a iCloud» → «Revisando tu iCloud…» y luego «Tu iCloud ya tiene datos de
+   Yala», con cifras.
+3. «Sumarlos a mis datos» › confirma. Al terminar, en Registros están tus 2 y los de antes.
+4. «Cerrar sesión» › «Es mi primera vez en Yala» › «Tu cuenta en la nube» › Google B. Crea 1 movimiento.
+5. «Volver a iCloud» → el aviso sale otra vez.
+6. «Empezar sin ellos» › «Borrar y volver a iCloud».
+7. Al terminar, en Registros y en la Bandeja: solo el movimiento de B, ningún gasto de grupo.
+8. Si en el paso 2 sale siempre «No pudimos revisar tu iCloud» con buena red, avisa: es el único punto que no se pudo
+   medir.
 
 ---
 
-## B. Cámara y micrófono, con Pro — 23 min
+## B. Cámara y micrófono, con Pro — 20 min
 
-Sirve el TestFlight 16 o Yala Dev. El simulador no tiene cámara, y en la Mac sin micrófono no se puede dictar. Todo lo
-demás de estas pantallas pasó en el simulador.
+TestFlight 17 o Yala Dev. El simulador no tiene cámara, y en la Mac sin micrófono no se puede dictar. Las pantallas ya
+las aprobaste el 15-oct; aquí solo queda lo que pide el hardware. Cualquier uso de la IA de este bloque con el TestFlight
+17 prueba además App Attest en producción.
 
 ### B · cámara — Registro por foto con la cámara · 5 min · §4 cámara
 Card `mejorar-el-registro-por-imagen-de-punta-g5wl`, ticket `image-entry-end-to-end-redesign`.
@@ -102,53 +144,46 @@ Card `mejorar-el-registro-por-imagen-de-punta-g5wl`, ticket `image-entry-end-to-
 2. Ajustes de iOS › Yala › Cámara apagada. Vuelve y toca «Cámara» → «Yala no puede usar la cámara» con «Abrir
    Configuración». Vuelve a encenderla.
 
-### B · voz — Registro por voz de punta a punta · 8 min · §4 micrófono
-Card `mejorar-el-registro-por-voz-de-punta-a-p-u58k`, ticket `voice-entry-end-to-end`.
+### B · micrófono — Voz, dictado del chat e idioma de voz · 15 min · §4 micrófono
+Card `ia-sesion-2-la-app-manda-su-tarea-las-12-h52f`; tickets `voice-entry-end-to-end`, `chat-dictation-looks-poor` y
+`ai-every-call-sends-its-task-and-passes-the-bench`. La voz es la segunda tarjeta de las Novedades de 2.1.
 1. Panel › icono de onda (Voz) → la hoja ya escucha (la primera vez iOS pide el micrófono). Habla normal y luego fuerte:
    el halo crece con la voz.
-2. Con música en otra app, abre Voz y toca «Cancelar» → la música vuelve a sonar.
-3. Voz › di «taxi 12 y café 8» › «Listo» → dos filas y «Guardar 2» registra las dos.
+2. Di «taxi 12 y café 8» › «Listo» → dos filas, y «Guardar 2» registra las dos.
+3. Con música en otra app, abre Voz y toca «Cancelar» → la música vuelve a sonar.
 4. Con modo avión, toca Voz → «Sin conexión» con «Usar imagen» y «Volver a grabar». Quita el modo avión.
-
-### B · idioma de voz — La voz en otros idiomas · 6 min · §4 micrófono
-Card `ia-sesion-2-la-app-manda-su-tarea-las-12-h52f`, ticket `ai-every-call-sends-its-task-and-passes-the-bench`.
-1. Perfil › Personalización › «Idioma de voz» → «Idioma de la app» y los 10 idiomas.
-2. Dicta «Ayer 25 soles con 50 en <tu comercio habitual>» → 25,50 y el comercio bien escrito.
-3. Elige English y dicta «Coffee 4.50 at Starbucks» → borrador de 4,50. Vuelve a «Idioma de la app».
-
-### B · dictado del chat — Dictar en Yala IA · 4 min · §4 micrófono
-Card `mejorar-el-diseno-del-dictado-en-yala-ai-apsc`, ticket `chat-dictation-looks-poor`.
-1. Yala IA › micro → «Escuchando…». Habla: el halo crece con la voz.
-2. Con música en otra app, «Cancelar» → la caja vuelve vacía y la música vuelve a sonar.
-3. Micro › di «gasté 25 en el almuerzo con la tarjeta» › «Listo» → el texto queda en la caja, sin enviarse.
+5. Yala IA › micro → «Escuchando…». Di «gasté 25 en el almuerzo con la tarjeta» › «Listo» → el texto queda en la caja,
+   sin enviarse.
+6. Perfil › Personalización › «Idioma de voz» → «Idioma de la app» y los 10 idiomas. Elige English, dicta en Voz «Coffee
+   4.50 at Starbucks» → borrador de 4,50. Vuelve a «Idioma de la app».
 
 ---
 
-## C. TestFlight con tu Apple ID — 2 h 35 min
+## C. TestFlight 17 con tu Apple ID — 2 h 35 min
 
 Un iPhone de pruebas con tu Apple ID: estas pruebas leen tus datos reales de iCloud y solo TestFlight ve ese contenedor.
 Ninguna borra iCloud salvo que lo elijas. Todas son §4 (iCloud real; D2, además, actualizar encima).
 
 ### C · D1 — «Primera vez › privado» mira iCloud antes de empezar · 20 min · **bloquea**
-Ticket `welcome-private-fresh-start-skips-icloud-check`. Sin iCloud ya pasó en el simulador: «No pudimos revisar tu
-iCloud» › «Seguir así» › reabrir › onboarding.
+Ticket `welcome-private-fresh-start-skips-icloud-check`. Sin iCloud ya pasó en el simulador.
 1. Apunta cuántos movimientos y cuentas tienes, y el mes del más antiguo. Desinstala e instala Yala.
-2. «Es mi primera vez» › «Tu cuenta en tu iCloud privado» → «Revisando qué hay en tu iCloud…» y luego un aviso con
-   cifras que casan con lo apuntado.
+2. «Es mi primera vez en Yala» › «Tu cuenta en tu iCloud privado» → «Revisando qué hay en tu iCloud…» y luego un aviso
+   con cifras que casan con lo apuntado.
 3. Si en cambio sale siempre «No pudimos conectarnos a iCloud», para: es el fallo que bloquearía a todo usuario nuevo.
 4. Toca volver → regresas a la elección. Entra otra vez por privado → mismas cifras; «Traer mis datos».
 
 ### C · D2 — Actualizar encima no cierra la sesión · 10 min · **bloquea**
 Ticket `previous-person-cloud-session-survives-fresh-start-and-reinstall`.
-1. Con el build anterior, entra con una cuenta de nube de prueba y crea un grupo → Perfil › «Dónde viven tus datos»
+1. Con el **TestFlight 16**, entra con una cuenta de nube de prueba y crea un grupo → Perfil › «Dónde viven tus datos»
    muestra su correo.
-2. Instala el build nuevo **encima**, sin borrar → la sesión sigue abierta y Grupos entra sin pedir nada.
+2. Instala el TestFlight 17 **encima**, sin borrar → la sesión sigue abierta y Grupos entra sin pedir nada.
 3. Borra Yala y reinstala → la bienvenida de instalación nueva; «Ya tengo una cuenta» pide elegir y no entra solo.
 4. Entra con la cuenta de prueba → recupera sus grupos.
 
 ### C · D3 — «Vengo por un grupo» en un teléfono con tus datos de iCloud · 40 min · **bloquea**
 Tickets `groups-entry-on-a-mirrored-store-still-blocks-the-owner` y `groups-only-second-launch-mounts-icloud-mirror`.
-1. Borra Yala, reinstala, «Primera vez» › iCloud privado › «Traer mis datos» y deja que baje. Cierra Yala del todo.
+1. Borra Yala, reinstala, «Es mi primera vez en Yala» › iCloud privado › «Traer mis datos» y deja que baje. Cierra Yala
+   del todo.
 2. Vuelve a la bienvenida › «Vengo por un grupo» › «Crear mi primer grupo» → nada de «Aquí ya hay datos guardados»; sale
    «Estamos subiendo tus últimos cambios a iCloud…» y te pide reabrir.
 3. Reabre → la puerta de Grupos y el inicio de sesión sin elegir de nuevo; crea el grupo. Cierra y abre tres veces → solo
@@ -182,10 +217,33 @@ Ticket `restore-start-fresh-keeps-the-imported-corpus`.
 
 ---
 
-## D. Dos iPhone — 1 h 5 min
+## D. Dos iPhone — 1 h 30 min
 
-E2 y E3 piden la misma cuenta en los dos. E1 pide dos cuentas distintas y los dos con el build de TestFlight: un build
-de Xcode da 401 contra producción. Las tres son §4 (dos dispositivos físicos).
+ly22 y E3 piden el **mismo Apple ID** en los dos y van seguidas. E2 pide la misma cuenta en la nube en los dos. E1 pide
+dos cuentas distintas. Todo con el TestFlight 17: un build de Xcode da 401 contra producción. Las cuatro son §4 (dos
+dispositivos físicos).
+
+### D · ly22 — Los ajustes de un mes del flujo de caja viajan al otro iPhone · 25 min · **bloquea**
+Card `los-ajustes-de-un-mes-del-flujo-de-caja-ly22`, ticket `personal-cloudkit-cashflow-override-line-declared-as-reference`
+(#523). Con E · esquema ya hecho. La migración la fijan los tests; falta el viaje real por iCloud. De paso, prueba
+también las Novedades de 2.1 (card `novedades-de-2-1-en-la-app-h4hj`, §4 actualizar encima).
+1. iPhone A, todavía con **Yala 2.0.4 de la App Store**: pestaña «Más» › «Flujo de caja», toca la celda de un mes de una
+   línea, pon 1.111 y «Guardar ajuste». Si no ves «Flujo de caja», apaga «Solo gastos» en Personalización.
+2. Instala el TestFlight 17 encima en A, y también en B.
+3. Abre A → sale «Mira lo nuevo en Yala» con «Grupos», «Anotar nunca fue tan fácil» y «Tus datos, tus reglas». Lee el
+   texto en español y toca «Continuar». Cierra Yala del todo y reábrela → la hoja no vuelve.
+4. Abre B › «Más» › «Flujo de caja» → en uno o dos minutos (o al reabrir) ese mes enseña 1.111. **Si no llega, no
+   publiques:** el build no arregla los ajustes que ya había.
+5. En A, ajusta otro mes a 1.234 › en B aparece. En B cámbialo a 2.000 › en A aparece.
+
+### D · E3 — Un ajuste viaja al otro iPhone · 15 min
+Card `las-preferencias-se-volvian-a-guardar-so-d44s` (blocked), ticket `tickets/blocked/apppreferences-rewritten-on-launch.md`.
+Va después de ly22: «Solo gastos» esconde el flujo de caja.
+1. iPhone A: Perfil › Personalización › activa «Solo gastos». A los pocos minutos, el iPhone B lo tiene activado.
+2. iPhone A: concede el permiso de notificaciones desde el primer aviso → en el B, las alertas de presupuesto salen
+   activadas.
+3. Cierra Yala en el A. En el B, cambia la divisa principal. Abre el A → tiene la divisa nueva; abrirlo no la pisa.
+4. Apaga «Solo gastos» otra vez.
 
 ### D · E1 — Unirse a un grupo por enlace · 30 min · **bloquea**
 Card `validar-en-testflight-unirse-a-un-grupo-e1ah` (blocked), ticket `tickets/blocked/groups-join-intent-reconciler.md`.
@@ -205,16 +263,24 @@ Card `en-el-segundo-dispositivo-de-una-cuenta-gk5w`, ticket `reverse-exit-on-a-r
 3. En el segundo, «Volver a iCloud» → sale la espera; cancélala.
 4. Reintenta en el segundo → avanza. No debe salir «tu cuenta no lo permitía».
 
-### D · E3 — Un ajuste viaja al otro iPhone · 15 min
-Card `las-preferencias-se-volvian-a-guardar-so-d44s` (blocked), ticket `tickets/blocked/apppreferences-rewritten-on-launch.md`.
-1. iPhone A: Perfil › Personalización › activa «Solo gastos». A los pocos minutos, el iPhone B lo tiene activado.
-2. iPhone A: concede el permiso de notificaciones desde el primer aviso → en el B, las alertas de presupuesto salen
-   activadas.
-3. Cierra Yala en el A. En el B, cambia la divisa principal. Abre el A → tiene la divisa nueva; abrirlo no la pisa.
-
 ---
 
-## E. Sin iPhone: App Store Connect, la ficha y las claves — 55 min
+## E. Sin iPhone: iCloud, App Store Connect, la ficha y el gateway — 1 h 10 min
+
+### E · esquema — El campo nuevo del flujo de caja en iCloud · 15 min · **bloquea** · antes del TestFlight 17
+Card `los-ajustes-de-un-mes-del-flujo-de-caja-ly22`. Runbook entero en `docs/cloudkit-schema-diff-2.1.md`, sección «El
+campo nuevo de los ajustes del flujo de caja», pasos A a E.
+1. CloudKit Console › `iCloud.com.jurgenschmidt.yala` › Development › Schema › Record Types › `CD_CashFlowOverride` ›
+   añade el campo `CD_cashFlowLine`, tipo String › Save.
+2. «Deploy Schema Changes…» a Production. La lista tiene que ser solo de altas; si sale un «Remove» o un «Change»,
+   cancela.
+3. Verifica con el export del paso C que Production tiene `CD_cashFlowLine STRING` y `CD_line REFERENCE`.
+4. Lo mismo en `iCloud.com.jurgenschmidt.yala.dev` (paso D).
+
+### E · gateway — «Eliminar mi cuenta» borra el contador de uso · 10 min · **bloquea**
+Card `desplegar-el-gateway-eliminar-mi-cuenta-z9uu` (#519). La política ya dice que se borra.
+1. `cd gateway && npm run deploy:staging`, y luego `npm run deploy:production` (pasos en `gateway/RUNBOOK.md`).
+2. Borra una cuenta de prueba de staging y mira en `wrangler tail` que no sale «quota cleanup falló».
 
 ### E · G1 — Etiquetas de App Privacy · 15 min · **bloquea**
 Card `el-manifiesto-de-privacidad-no-declara-l-kgqv`.
@@ -224,7 +290,7 @@ Card `el-manifiesto-de-privacidad-no-declara-l-kgqv`.
 
 ### E · G2 — La ficha cuenta la nube · 5 min · **bloquea**
 Card `la-web-la-politica-y-la-ficha-dicen-que-i6tj`, ticket `session-redesign-web-and-store-copy`. La política y los
-términos ya están (#469).
+términos ya están (#469), y la web ya no llama «Beta» a Grupos (#516, #525).
 1. Pregunta a Lola si la ficha de los 7 idiomas ya dice que Grupos vive en la nube y si cambió la rama de producción de
    Vercel de `1.0` a `2.1`.
 2. Con G1 hecho y la ficha al día, la card pasa a done.
@@ -232,7 +298,7 @@ términos ya están (#469).
 ### E · G3 — Checklist de envío · 15 min · **bloquea**
 Card `checklist-de-envio-de-2-1-a-app-store-ve-d0ui`.
 1. Abre `docs/RELEASE-CHECKLIST-2.1.md` y marca lo que ya está: la política (#469), el manifiesto (#446), los plist
-   (#447) y el esquema de CloudKit.
+   (#447) y el esquema de CloudKit (con E · esquema).
 2. Repasa las casillas de fuera del repo: la app de Google en «Prueba», la URL de App Store Server Notifications y la
    rama de producción de Vercel.
 3. Lo que siga sin marcar es lo que te queda antes de enviar.
@@ -243,27 +309,19 @@ Card `ia-sesion-2-la-app-manda-su-tarea-las-12-h52f`.
 2. Mira la caducidad de las claves gateway-staging y gateway-production.
 3. Pasa a 1Password `~/Secrets/yala-gateway/{openai-staging.key, openai-prod.key, staging-dev-shared-secret}`.
 
-### E · capturas de la ficha — Subir el set B a App Store Connect · 10 min
-Card `elegir-la-direccion-de-las-capturas-app-sp9y`. Elegiste B; el set está en
-`~/Claude/propuestas/capturas-app-store-final-2026-10-13/`. Súbelo a la versión 2.1 (o pídeselo a Lola).
-
 ---
 
-## Para aprobar con capturas, sin iPhone — 10 min
+## Para aprobar con capturas, sin iPhone — 5 min
 
-Pantallas nuevas que ya funcionan en el simulador y que no has visto construidas. Si alguna no te convence, dilo y sale
-un ticket de pulido; si te convencen, sus cards pasan a done. Todas en
-`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/`.
+Dos pantallas nuevas que funcionan en el simulador y que no has visto construidas. Si te convencen, sus cards pasan a
+done; si no, dilo y sale un ticket de pulido. Todas en `~/Claude/worktrees/_capturas/2026-10-16-barrido-qa-2-1-2/`.
 
 | Pantalla | Card | Capturas |
 |---|---|---|
-| Eliminar una cuenta con movimientos: mover o borrar | `al-eliminar-una-cuenta-sus-movimientos-q-ofst` | `ofst-1…7` |
-| «¡Hola de nuevo!» con Apple primero y «La que usaste en este iPhone» | `entrar-con-google-cuando-este-iphone-ya-vb1f` | `vb1f-1` |
-| Tarjetas de registro en Yala IA | `mejorar-cards-de-registros-nuevos-en-yal-rdfd` | `b4-2…4` |
-| Yala IA como app de mensajería (saludo y preguntas) | ticket `ai-chat-reads-heavier-than-a-messaging-app` | `b4-1` |
-| Panel de dictado del chat | `mejorar-el-diseno-del-dictado-en-yala-ai-apsc` | `b4-5` |
-| Hoja de voz y «Entendí 2 registros» | `mejorar-el-registro-por-voz-de-punta-a-p-u58k` | `u58k-1`, `u58k-2` |
-| Registro por foto: hoja, lectura, guardado y fallo | `mejorar-el-registro-por-imagen-de-punta-g5wl` | `b1-1…5`, `g5wl-1`, `g5wl-2` |
+| Aviso «Movimientos sin cuenta» en el Panel y su hoja | `los-movimientos-que-quedaron-sin-cuenta-sovw` | `sovw-1…4` |
+| «Mira lo nuevo en Yala» de 2.1 (texto en español) | `novedades-de-2-1-en-la-app-h4hj` | `h4hj-1` |
+
+La de Novedades se cierra con esto y con el paso 3 de D · ly22.
 
 ---
 
@@ -271,9 +329,11 @@ un ticket de pulido; si te convencen, sus cards pasan a done. Todas en
 
 | Qué | Por qué | Quién |
 |---|---|---|
-| C5 · «Borrar todo y continuar» con cambios de grupos (card `decidir-tras-cancelar-la-entrada-con-la-069g`) | En el simulador, en vez de la oferta de perder los cambios sale «No pudimos borrar todo». Sin el cambio pendiente sí llega al onboarding. Card de bug `tras-salir-de-la-nube-borrar-todo-y-cont-8xt4` (high). No la corras hasta que se aclare. | Frank |
-| F1 · PDF con contraseña en el iPad (`ipad-locked-pdf-password-may-crash-on-open`) | Caso raro que no pierde datos; el cierre visto es de `UIFocusSystem` con teclado físico en el simulador. Vuelve a backlog con la card `receiptdropuitests-test-lockedpdf-falla-pbwh`. | Frank |
-| Las 41 cards «in qa» de 2.2 y `rpoy` (reels) | No son de 2.1; `rpoy` es de Lola. | — |
+| `declarar-el-entitlement-de-app-attest-de-g8rc` | Pasa a 2.2: solo falta el build Debug del scheme «Yala» desde Xcode, que no llega a ningún usuario. La ruta de TestFlight la prueba el bloque B. | — |
+| `el-token-de-gestion-de-supabase-en-la-mi-bob7` | Pasa a 2.2: rotar el token no toca la app ni el envío. | Jürgen |
+| `decidir-que-hacer-con-lo-que-llega-a-icl-kyys`, `dos-telefonos-con-el-mismo-ajuste-de-un-fqnc`, `un-ajuste-del-flujo-de-caja-que-llega-a-uk7h` | Backlog de 2.1 que se queda en 2.1 por el criterio del 15-oct (datos y sync), sin prueba en esta tanda. | Frank / Jürgen |
+| Subir las capturas de la ficha a App Store Connect | Card 605d, de Lola. | Lola |
+| Las 36 cards «in qa» de 2.2 | No son de 2.1. | — |
 
 ---
 
@@ -283,59 +343,47 @@ un ticket de pulido; si te convencen, sus cards pasan a done. Todas en
 
 | Card | Motivo | Evidencia |
 |---|---|---|
-| `el-delegado-de-notificaciones-se-asigna-bdxj` | Se puede probar en el simulador | Con Yala cerrada del todo, el toque en un aviso de presupuesto abre Presupuestos y el resumen real de pagos abre Pagos planificados. Capturas `a4-1…4`. |
-| `decidir-el-aviso-no-pudimos-cerrar-tu-se-7m1e` | Se puede probar en el simulador; la card decía «si no sale, se descarta» | Desasociar con un cambio de grupos sin subir muestra su propio aviso y, en Perfil, 15 s sin «No pudimos cerrar tu sesión». Capturas `a6-1…3`. |
-| `tras-vaciar-los-datos-desde-otro-disposi-pb6r` | Se puede probar en el simulador | El widget Balance en solo grupos invita a «Activar Yala completo», el toque abre la activación y luego deja de invitar. Capturas `c7-1…4`. |
-| `al-compartir-una-imagen-a-yala-la-lectur-nxle` | Simulador con la extensión real + XCUITest | Fotos › Compartir › Yala Dev arranca «Leyendo tus fotos…» hasta «Guardar 3»; el resto de casos, `SharedImageEntryUITests`. Capturas `b2-1`, `b2-2`. |
-| `un-estado-de-cuenta-en-pdf-solo-se-lee-e-4j2s` | Simulador con lectura real de staging | 3 páginas → 36 movimientos sin saldos ni subtotales; contraseña mala y buena. Capturas `b1-6…9` y `b1-6c-pdf-36-filas.txt`. |
-| `yala-no-aparece-al-compartir-varias-capt-3ut5` | Simulador con la extensión real; las 10 fotos grandes, por el código | 3 fotos → «Guardar 3» y Bandeja; 12 → 10 leídas y «Quedaron 2 fotos sin leer». Capturas `b2-1…5`. |
+| `decidir-tras-cancelar-la-entrada-con-la-069g` | Decisión tomada (A) e implementada (#372); llegar al estado con un adopt real es casi imposible a mano | `WelcomeFreshStartAlertUITests` (5 casos, el de los cambios de grupos con mutante muerto en #518), re-corrido en el barrido |
 
-Ya estaban en done tras el QA guiado: `v5k7`, `yneu`, `r6pd`, `5sr2` y `ni6g`.
+Ya las habías cerrado tú el 15-oct al aprobar las capturas: `ofst`, `rdfd`, `apsc`, `u58k`; y `8xt4` (#518) y `sp9y`.
 
 ### Tickets
 
 | Ticket | Motivo | Evidencia |
 |---|---|---|
-| `account-currency-change-leaves-scheduled-and-favorites-stale` | Pasó en el QA guiado (A1) | Tu iPhone de QA, 15-oct |
-| `changing-an-account-currency-orphans-its-whole-history` | Pasó en el QA guiado (A1 paso 4) | Tu iPhone de QA, 15-oct |
-| `inbox-dismiss-x-does-not-delete-the-draft-for-good` | Parte A en el QA guiado (A3); B y C, tests de dos dispositivos | `InboxDismissScheduledDraftTests`, `InboxDismissScheduledDraftCloudTests` |
-| `cashflow-scheduled-line-ignores-payment-currency` | Pasó en el QA guiado (A5) | Tu iPhone de QA, 15-oct |
-| `settings-redesign-as-grouped-lists-like-ios` | Pasó en el QA guiado (A7); el iPad es maquetación | Tu iPhone de QA, 15-oct |
-| `notification-delegate-assigned-after-launch` | Simulador | Capturas `a4-1…4` |
-| `scheduled-payments-notif-dedup` | Simulador (fase 2); fases 3 y 4 por test | Resumen a las 15:31:00 con Yala cerrada, una vez; `ScheduledPaymentNotificationGateLogicTests` |
-| `reverse-cutover-cerrado-para-cuentas-born-cloud` | QA guiado + código: la vuelta solo termina con las filas ya en CloudKit | `reverseUploadStatus() == .drained` en `MigrationRunner` |
-| `cloud-sign-in-discovers-account-kind` | QA guiado (pasos 1, 2 y 4) + tests del paso 3 | `account.kind.test.ts`, goldens de staging, `CloudIdentityRoutingLogicTests`, `CloudIdentityDiscoveryTests` |
-| `forward-migration-steps-have-no-ceiling-and-no-exit` | Fallo inyectado, fijado por tests con mutantes | `MigrationRunnerTests` §15 (22 mutantes), `ForwardStepCeilingLogicTests` |
-| `step-flows-should-match-the-sep15-reference` | Simulador + XCUITest (Face ID) | Capturas `a8-1…7`; `StepGuideUITests` |
-| `after-session-redesign-review-widgets-siri-applepay-and-web-copy` | Simulador (C7) + test (vaciado remoto) | Capturas `c7-1…4`; `RemoteWipeSharedSurfacesTests` |
-| `pdf-statement-reads-only-the-first-page` | Simulador, lectura real | Capturas `b1-6…9` |
-| `share-image-reading-does-not-always-start` | Simulador, extensión real + XCUITest | Capturas `b2-1`, `b2-2`; `SharedImageEntryUITests` |
-| `sharing-several-photos-hides-yala` | Simulador, extensión real + código | Capturas `b2-1…5` |
-| `vision-reads-every-dollar-sign-as-usd` | Simulador (PEN) + test (MXN) | Captura `b3-1`; `VisionCurrencySession2Tests` |
+| `fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes` | Igual que la card 069g | `WelcomeFreshStartAlertUITests` |
+| `chat-draft-card-redesign` | Aprobaste la pantalla el 15-oct; lo funcional pasó en el simulador con staging | Capturas `b4-1…4` del barrido del 15-oct |
+| `ai-chat-reads-heavier-than-a-messaging-app` | Aprobaste la pantalla el 15-oct | Captura `b4-1` del barrido del 15-oct |
 
-### PRs desde el barrido del 12-oct que no te piden nada
+### PRs desde el barrido del 15-oct que no te piden nada
 
 | PR | Por qué no |
 |---|---|
-| #490 | Dos avisos en cola salen uno detrás de otro. `ContentViewReadinessReleaseWiringTests` y dos XCUITest de enrutado. |
-| #512 | Eliminar cuenta con movimientos: probado en el simulador, mover a otra divisa y borrar. Solo falta tu visto bueno a la hoja. |
-| #427 | «Crear otra cuenta» que cae en una existente lo dice: pasó en el QA guiado (C2 paso 2). |
-| #476, #501 | Sus restos están en la tanda: A · App Attest y A · vb1f. |
-| #474, #477-#480, #484, #486, #487, #513 | Semillas, TestFlight 16, marketing, encargos y las skills de QA: no cambian la app publicada. |
+| #516, #525 | Web y textos: Grupos sin «Beta» en la política, la landing y el FAQ; tildes en francés. |
+| #518 | Arreglo del montaje de test de C5; ver la card 069g arriba. |
+| #519 | Ya en la app; solo falta desplegar el gateway (E · gateway). |
+| #520 | Probado en el simulador (abajo); solo falta tu visto bueno al aviso. |
+| #522 | La Bandeja y el aviso con filas de grupo, con XCUITest (`GroupRowsWithoutGroupUITests`); lo que pide iPhone es A · dzih. |
+| #523 | La gráfica del Saldo, con tests contra la conversión día a día (card 502e en done); lo que pide iPhone es ly22. |
+| #521, #524, #526 | Semillas y demos de la ficha: no cambian la app publicada. |
 
 ## Lo que se queda
 
 | Card / ticket | Prueba | Qué lo retiene |
 |---|---|---|
-| `entrar-con-google-cuando-este-iphone-ya-vb1f` | A · vb1f + capturas | §4 inicio de sesión real con Google; §5 la pantalla nueva |
+| `los-ajustes-de-un-mes-del-flujo-de-caja-ly22` · `personal-cloudkit-cashflow-override-line-declared-as-reference` | E · esquema y D · ly22 | Tu despliegue del esquema; §4 dos dispositivos |
+| `apagar-icloud-drive-hace-que-yala-diga-t-i1o5` | A · i1o5 | §4 iCloud real (apagar iCloud Drive) |
+| `volver-a-icloud-con-una-cuenta-nacida-en-4nt6` · `reverse-to-icloud-merges-prior-icloud-data-without-asking` | A · 4nt6 | §4 iCloud real y entrada real con Google |
+| `un-alta-de-grupos-a-medias-llega-al-avis-dzih` · `groups-entry-left-half-done-reaches-the-private-gate-with-group-rows` | A · dzih | §4 entrada real con una cuenta de solo grupos |
+| `novedades-de-2-1-en-la-app-h4hj` | Capturas + D · ly22 paso 3 | §5 la hoja nueva; §4 actualizar encima de la App Store |
+| `los-movimientos-que-quedaron-sin-cuenta-sovw` · `records-orphaned-by-earlier-account-deletions-stay-invisible` | Capturas | §5 el aviso nuevo del Panel |
+| `desplegar-el-gateway-eliminar-mi-cuenta-z9uu` | E · gateway | Despliegue tuyo |
+| `entrar-con-google-cuando-este-iphone-ya-vb1f` | A · vb1f | §4 inicio de sesión real con Google |
 | `groups-consent-door-spec` | A · C6 | §4 inicio de sesión real y la fila en staging |
 | `snapshot-upload-has-no-ceiling-and-no-way-out` | A · C1 | §4 sesión real e iCloud |
 | `tras-volver-a-icloud-un-movimiento-cread-amad` · `cloud-tx-epoch-orphan-relations` | A · C4 | §4 CloudKit real |
-| `declarar-el-entitlement-de-app-attest-de-g8rc` · `release-plist-leftovers-widget-build-faceid-appattest` | A · App Attest | §4 App Attest |
-| `mejorar-el-registro-por-imagen-de-punta-g5wl` · `image-entry-end-to-end-redesign` | B · cámara + capturas | §4 cámara; §5 la pantalla nueva |
-| `mejorar-el-registro-por-voz-de-punta-a-p-u58k` · `voice-entry-end-to-end` | B · voz + capturas | §4 micrófono; §5 la pantalla nueva |
-| `ia-sesion-2-la-app-manda-su-tarea-las-12-h52f` · `ai-every-call-sends-its-task-and-passes-the-bench` | B · idioma de voz y E · G4 | §4 micrófono; las claves, sin iPhone |
-| `mejorar-el-diseno-del-dictado-en-yala-ai-apsc` · `chat-dictation-looks-poor` | B · dictado del chat + capturas | §4 micrófono; §5 la pantalla nueva |
+| `mejorar-el-registro-por-imagen-de-punta-g5wl` · `image-entry-end-to-end-redesign` | B · cámara | §4 cámara |
+| `ia-sesion-2-la-app-manda-su-tarea-las-12-h52f` · `ai-every-call-sends-its-task-and-passes-the-bench` · `voice-entry-end-to-end` · `chat-dictation-looks-poor` | B · micrófono y E · G4 | §4 micrófono; las claves, sin iPhone |
 | `welcome-private-fresh-start-skips-icloud-check` | C · D1 | §4 iCloud real |
 | `previous-person-cloud-session-survives-fresh-start-and-reinstall` | C · D2 | §4 actualizar encima de TestFlight |
 | `groups-entry-on-a-mirrored-store-still-blocks-the-owner` · `groups-only-second-launch-mounts-icloud-mirror` | C · D3 | §4 iCloud real |
@@ -348,17 +396,24 @@ Ya estaban en done tras el QA guiado: `v5k7`, `yneu`, `r6pd`, `5sr2` y `ni6g`.
 | `el-manifiesto-de-privacidad-no-declara-l-kgqv` | E · G1 | §4 App Store Connect |
 | `la-web-la-politica-y-la-ficha-dicen-que-i6tj` · `session-redesign-web-and-store-copy` | E · G2 | §4 la ficha (Lola) |
 | `checklist-de-envio-de-2-1-a-app-store-ve-d0ui` | E · G3 | §4 App Store Connect |
-| `elegir-la-direccion-de-las-capturas-app-sp9y` | E · capturas de la ficha | §4 App Store Connect |
-| `al-eliminar-una-cuenta-sus-movimientos-q-ofst` | Capturas | §5 la pantalla nueva |
-| `mejorar-cards-de-registros-nuevos-en-yal-rdfd` · `chat-draft-card-redesign` | Capturas | §5 la pantalla nueva |
-| `ai-chat-reads-heavier-than-a-messaging-app` | Capturas | §5 la pantalla nueva |
-| `decidir-tras-cancelar-la-entrada-con-la-069g` · `fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes` | Fuera, hasta el bug `8xt4` | Falló en el simulador |
+| `release-plist-leftovers-widget-build-faceid-appattest` | Fuera (card g8rc en 2.2) | El build Debug de Xcode; no es de 2.1 |
+
+## Probado en el simulador en este barrido
+
+Yala Dev compilado desde `c648223bc`, iPhone 17 Pro con iOS 27.0. Capturas en
+`~/Claude/worktrees/_capturas/2026-10-16-barrido-qa-2-1-2/`.
+
+| Prueba | Esperado | Salió | Evidencia |
+|---|---|---|---|
+| sovw · Movimientos sin cuenta (semilla `movimientos-sin-cuenta`) | Aviso con un 2, la hoja los lista, mover los devuelve al saldo | Aviso «Movimientos sin cuenta · 2» con S/ 1.000; hoja con Taxi −25 y Teléfono −33; «Mover a «Banco QA»» deja S/ 942, Gastos S/ 58 y sin aviso; en Buscar, Taxi lleva «Banco QA» | `sovw-1…4`; `OrphanedRecordsUITests` 2/2 y `GroupRowsWithoutGroupUITests` 3/3 |
+| 069g · «Borrar todo y continuar» tras salir de un adopt | Sin bucle; con cambios de grupos, oferta con su cifra y onboarding | Como se esperaba | `WelcomeFreshStartAlertUITests` 5/5 |
+| h4hj · «Mira lo nuevo en Yala» | Tres tarjetas con tu texto exacto | El texto casa palabra por palabra con el del 16-oct | `h4hj-1` (captura del #527); `WhatsNewLaunchUITests` en el #527 |
 
 ## Encontrado en el barrido
 
-- **`fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed`** (high, card `8xt4`): el caso de C5, arriba.
-- **`inbox-alert-scheduled-count-has-no-singular`** (low): «Se añadieron 1 pagos planificados a tu bandeja».
-- **`tutorial-completion-check-appears-only-after-reentering`** (low): tras «Listo», el ✓ del tutorial no sale hasta
-  volver a entrar en Tutoriales.
-- Del entorno: hasta reiniciar el simulador, sus notificaciones locales fallaban con `UNErrorDomain 2003` con el permiso
-  concedido. Está en `docs/aprendizajes-tecnicos.md`.
+- **El runbook del esquema mandaba a «Planificación → Flujo de caja».** En la app está en «Más › Flujo de caja», y
+  con «Solo gastos» activado no aparece. Corregido en `docs/cloudkit-schema-diff-2.1.md` (paso F.1), y por eso D · ly22
+  va antes de D · E3, que activa «Solo gastos».
+- **Las cards de voz, dictado y tarjetas del chat se cerraron el 15-oct con sus tickets en qa.** Los dos de tarjetas
+  pasan a done; los de voz y dictado siguen en qa colgados de h52f, porque el micrófono nunca se probó.
+- Nada falló en el simulador: ninguna card de bug nueva.

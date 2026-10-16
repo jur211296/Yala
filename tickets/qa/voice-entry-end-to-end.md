@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "voz, registro, inbox, design-system"
 created: 2026-10-04
-updated: 2026-10-15
+updated: 2026-10-16
 qa-status: needs-testing
 source: tarjeta del tablero `tablero-mejorar-el-registro-por-voz-de-punta-a-p-u58k`; encargo `encargos/lanzados/2026-10-04-mejorar-el-registro-por-voz-de-punta-a-punta.md`
 ---
@@ -73,3 +73,7 @@ escuchando).
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (B · voz): dictar de verdad, el halo, la música al cancelar y sin conexión piden micrófono y red reales. La hoja y «Entendí 2 registros» se vieron en el simulador (`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/u58k-*`); Guardar, varios y volver a grabar los fija `VoiceEntryReviewUITests`. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+## Barrido de QA · 2026-10-16
+
+Barrido de QA 2026-10-16 · se queda: su card (u58k) se cerró el 15-oct al aprobar la pantalla, pero el micrófono sigue sin probarse y la voz encabeza las Novedades de 2.1. La prueba se funde con la de la card h52f en «B · micrófono» de `docs/qa/tanda-qa-jurgen-2.1.md`. §4 micrófono.

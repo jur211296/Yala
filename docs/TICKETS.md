@@ -95,7 +95,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | advisory-ui-tests-fail-every-retry | done | tickets/done/advisory-ui-tests-fail-every-retry.md |
 | after-session-redesign-review-widgets-siri-applepay-and-web-copy | done | tickets/done/after-session-redesign-review-widgets-siri-applepay-and-web-copy.md |
 | ai-calls-have-no-output-token-cap | backlog | tickets/backlog/ai-calls-have-no-output-token-cap.md |
-| ai-chat-reads-heavier-than-a-messaging-app | qa | tickets/qa/ai-chat-reads-heavier-than-a-messaging-app.md |
+| ai-chat-reads-heavier-than-a-messaging-app | done | tickets/done/ai-chat-reads-heavier-than-a-messaging-app.md |
 | ai-comments-ignore-the-app-language | done | tickets/done/ai-comments-ignore-the-app-language.md |
 | ai-every-call-sends-its-task-and-passes-the-bench | qa | tickets/qa/ai-every-call-sends-its-task-and-passes-the-bench.md |
 | ai-insights-error-card-shows-raw-english-errors | done | tickets/done/ai-insights-error-card-shows-raw-english-errors.md |
@@ -168,7 +168,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-context-treats-archived-accounts-as-excluded | done | tickets/done/chat-context-treats-archived-accounts-as-excluded.md |
 | chat-creates-only-one-transaction-per-message | backlog | tickets/backlog/chat-creates-only-one-transaction-per-message.md |
 | chat-dictation-looks-poor | qa | tickets/qa/chat-dictation-looks-poor.md |
-| chat-draft-card-redesign | qa | tickets/qa/chat-draft-card-redesign.md |
+| chat-draft-card-redesign | done | tickets/done/chat-draft-card-redesign.md |
 | chat-draft-drops-the-expense-sign | done | tickets/done/chat-draft-drops-the-expense-sign.md |
 | chat-draft-sign-can-contradict-its-subcategory | done | tickets/done/chat-draft-sign-can-contradict-its-subcategory.md |
 | chat-draft-stamps-its-own-currency-not-the-account | done | tickets/done/chat-draft-stamps-its-own-currency-not-the-account.md |
@@ -350,7 +350,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | fresh-start-drops-mirror-entries-of-another-identity-without-counting-them | done | tickets/done/fresh-start-drops-mirror-entries-of-another-identity-without-counting-them.md |
 | fresh-start-has-no-way-out-when-group-writes-can-never-upload | done | tickets/done/fresh-start-has-no-way-out-when-group-writes-can-never-upload.md |
 | fresh-start-keeps-a-groups-session-that-migrate-promotes | done | tickets/done/fresh-start-keeps-a-groups-session-that-migrate-promotes.md |
-| fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes | qa | tickets/qa/fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes.md |
+| fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes | done | tickets/done/fresh-start-shell-alert-after-an-adopt-exit-has-no-way-out-for-group-changes.md |
 | fresh-start-wipe-kills-unsent-group-writes-silently | done | tickets/done/fresh-start-wipe-kills-unsent-group-writes-silently.md |
 | full-activation-cloud-adopt-when-account-already-complete | backlog | tickets/backlog/full-activation-cloud-adopt-when-account-already-complete.md |
 | full-activation-local-state-never-reaches-the-apple-id-kv | done | tickets/done/full-activation-local-state-never-reaches-the-apple-id-kv.md |

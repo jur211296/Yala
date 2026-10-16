@@ -316,7 +316,7 @@ dos de `.dev` los mismos con `--container-id iCloud.com.jurgenschmidt.yala.dev` 
 
 ### F · Comprobar la sync en dos iPhone (tras el despliegue y con la build nueva en los dos)
 
-1. iPhone A: **Planificación → Flujo de caja**, toca la celda de un mes de una línea y ajusta el importe
+1. iPhone A: pestaña **Más → Flujo de caja** (con «Solo gastos» apagado: si no, no sale), toca la celda de un mes de una línea y ajusta el importe
    (por ejemplo 1.234). Guarda.
 2. iPhone B, con el mismo Apple ID: abre **Flujo de caja**. En uno o dos minutos (o al cerrar y abrir Yala) el mes
    enseña 1.234 con la marca de ajuste.
