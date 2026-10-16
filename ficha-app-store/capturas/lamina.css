@@ -1,0 +1,112 @@
+/* Capturas de la App Store de Yala. Misma línea que los posts de feed (02-posts/post.css),
+   con una regla nueva de Jürgen (13-oct, 15:00): NADA de brillo, glow ni degradado de color.
+   Fondo navy liso con estrellas planas de cuatro puntas (las de los posts, sin glow); el acento vive en la pill, el subrayado y formas planas de color sólido. */
+:root{
+  --navy:#0F172A; --navy-2:#16203A; --navy-3:#1E2A48;
+  --rosa:#FF2D78; --azul:#6164EB; --teal:#3BD6F0; --violeta:#8B5CF6;
+  --sub:rgba(255,255,255,.74);
+  --acento:var(--teal);
+  --fuente:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"SF Mono",Menlo,"Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--navy);overflow:hidden}
+body{font-family:var(--fuente);color:#fff;-webkit-font-smoothing:antialiased}
+.lienzo{position:absolute;top:0;left:0;overflow:hidden;background:var(--navy)}
+[data-acento=rosa]{--acento:var(--rosa)}
+[data-acento=azul]{--acento:var(--azul)}
+[data-acento=teal]{--acento:var(--teal)}
+[data-acento=violeta]{--acento:var(--violeta)}
+
+/* Texto: pill, titular con UNA palabra subrayada, subtítulo */
+.texto{position:absolute;z-index:6}
+.pill{display:inline-block;font-weight:800;letter-spacing:3px;text-transform:uppercase;
+  color:var(--acento);background:color-mix(in srgb,var(--acento) 15%,transparent);border-radius:999px;
+  border:2px solid color-mix(in srgb,var(--acento) 32%,transparent)}
+.titular{font-weight:850;line-height:1.06;letter-spacing:-3px;text-wrap:balance}
+.titular u{position:relative;text-decoration:none;color:var(--acento);white-space:nowrap}
+.titular u::after{content:"";position:absolute;left:3px;right:3px;bottom:-.07em;height:.12em;border-radius:8px;background:var(--acento)}
+.sub{font-weight:600;color:var(--sub);line-height:1.3;text-wrap:pretty}
+.logo{position:absolute;z-index:9}
+
+/* Formas planas: la barra del subrayado, en grande. Color sólido, sin sombra. */
+.barra{position:absolute;z-index:1;border-radius:999px;background:var(--c,var(--acento))}
+.disco{position:absolute;z-index:1;border-radius:50%;background:var(--c,var(--navy-2))}
+/* Estrellas del fondo: las de los posts, planas (sin glow). Debajo del teléfono y del texto. */
+.estrella{position:absolute;z-index:2;pointer-events:none}
+.traza{position:absolute;z-index:1;left:0;top:0;overflow:visible}
+
+/* iPhone 17 Pro, plano: cuerpo de un solo tono, aro claro, isla, botones y grosor.
+   Sin reflejo sobre la pantalla y sin resplandor detrás. --w es el ancho de pantalla. */
+.escena{position:absolute;z-index:3;perspective:3200px}
+.phone{position:relative;width:calc(var(--w) * 1.072);aspect-ratio:0.4773;transform-style:preserve-3d}
+.phone .cuerpo{position:absolute;inset:0;border-radius:calc(var(--w) * .165);background:#1A1A20;
+  box-shadow:0 0 0 3px #3A3A44, inset 0 0 0 calc(var(--w)*.008) #2A2A32}
+.phone .grosor{position:absolute;inset:0;border-radius:calc(var(--w) * .165);background:#0B0B0E;
+  transform:translateZ(calc(var(--w) * -.035));box-shadow:0 0 0 3px #2A2A32}
+.phone .sombra{position:absolute;left:10%;right:10%;bottom:-4%;height:12%;border-radius:50%;
+  background:rgba(0,0,0,.55);filter:blur(50px);transform:translateZ(-60px)}
+.phone .pantalla{position:absolute;left:3.4%;right:3.4%;top:1.6%;bottom:1.6%;
+  border-radius:calc(var(--w) * .135);overflow:hidden;background:#000}
+.phone .pantalla img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.phone .isla{position:absolute;top:1.15%;left:50%;transform:translateX(-50%);width:31%;height:1.75%;
+  border-radius:999px;background:#000;z-index:2}
+.phone .boton{position:absolute;width:calc(var(--w)*.012);border-radius:4px;background:#2E2E36}
+
+/* Objetos que flotan */
+.chip{position:absolute;z-index:7;font-weight:750;border-radius:999px;white-space:nowrap;
+  background:var(--navy-3);border:2px solid rgba(255,255,255,.16);color:#fff;box-shadow:0 24px 50px rgba(0,0,0,.35)}
+.chip b{color:var(--acento);font-weight:850}
+.tarjeta{position:absolute;z-index:7;border-radius:44px;background:#1C1C22;border:2px solid rgba(255,255,255,.12);
+  color:#fff;box-shadow:0 30px 70px rgba(0,0,0,.45)}
+.tarjeta .t1{font-weight:750;color:#fff}
+.tarjeta .t2{font-weight:600;color:rgba(255,255,255,.58);margin-top:.2em}
+.tarjeta .monto{font-weight:800;color:#fff}
+.tarjeta .ico{border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;flex:none}
+.burbuja{position:absolute;z-index:7;font-weight:700;color:#fff;border-radius:48px;background:var(--c,var(--azul));
+  box-shadow:0 26px 60px rgba(0,0,0,.4)}
+.burbuja.cola::before{content:"";position:absolute;width:44px;height:30px;bottom:-26px;left:var(--cola,80px);
+  background:var(--c,var(--azul));clip-path:polygon(0 0,100% 0,10% 100%)}
+.cifra{position:absolute;z-index:6;font-weight:900;letter-spacing:-8px;line-height:.9;color:#fff}
+.cifra small{display:block;font-size:.19em;letter-spacing:0;font-weight:650;color:var(--sub);margin-top:.4em}
+.onda{position:absolute;z-index:6;display:flex;align-items:center}
+.onda i{display:block;border-radius:999px;background:var(--acento)}
+
+/* La boleta: papel plano, dientes arriba y abajo. Sus textos e importes son los de OBJ["02_foto"].boleta
+   de cada idioma (la semilla «lee» ese mismo total). */
+.boleta{position:absolute;z-index:4;background:#F4F2EC;color:#1B1B1F;font-family:var(--mono);
+  box-shadow:0 40px 90px rgba(0,0,0,.5);
+  clip-path:polygon(0 1.2%,4% 0,8% 1.2%,12% 0,16% 1.2%,20% 0,24% 1.2%,28% 0,32% 1.2%,36% 0,40% 1.2%,44% 0,48% 1.2%,52% 0,56% 1.2%,60% 0,64% 1.2%,68% 0,72% 1.2%,76% 0,80% 1.2%,84% 0,88% 1.2%,92% 0,96% 1.2%,100% 0,
+    100% 100%,96% 98.8%,92% 100%,88% 98.8%,84% 100%,80% 98.8%,76% 100%,72% 98.8%,68% 100%,64% 98.8%,60% 100%,56% 98.8%,52% 100%,48% 98.8%,44% 100%,40% 98.8%,36% 100%,32% 98.8%,28% 100%,24% 98.8%,20% 100%,16% 98.8%,12% 100%,8% 98.8%,4% 100%,0 98.8%)}
+.boleta .cab{text-align:center;font-weight:700;line-height:1.25}
+.boleta .peq{text-align:center;opacity:.72;line-height:1.35}
+.boleta hr{border:0;border-top:3px dashed rgba(0,0,0,.35)}
+.boleta table{width:100%;border-collapse:collapse}
+.boleta td{padding:.18em 0;vertical-align:top}
+.boleta td:last-child{text-align:right;white-space:nowrap}
+.boleta .tot td{font-weight:800}
+
+/* iPad Pro 13" vertical: proporción de pantalla 2064×2752, marco fino. */
+.tablet{position:relative;width:calc(var(--w) * 1.06);aspect-ratio:0.7676;transform-style:preserve-3d}
+.tablet .cuerpo{position:absolute;inset:0;border-radius:calc(var(--w) * .055);background:#1A1A20;
+  box-shadow:0 0 0 3px #3A3A44, inset 0 0 0 calc(var(--w)*.004) #2A2A32}
+.tablet .grosor{position:absolute;inset:0;border-radius:calc(var(--w) * .055);background:#0B0B0E;
+  transform:translateZ(calc(var(--w) * -.02));box-shadow:0 0 0 3px #2A2A32}
+.tablet .sombra{position:absolute;left:10%;right:10%;bottom:-3%;height:10%;border-radius:50%;
+  background:rgba(0,0,0,.55);filter:blur(60px);transform:translateZ(-60px)}
+.tablet .pantalla{position:absolute;left:3%;right:3%;top:2.3%;bottom:2.3%;
+  border-radius:calc(var(--w) * .03);overflow:hidden;background:#000}
+.tablet .pantalla img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+
+/* La captura de un pago desde el celular: genérica, sin marca de ninguna billetera. */
+.pago{position:absolute;z-index:6;background:#FFFFFF;color:#16161A;border-radius:40px;text-align:center;
+  box-shadow:0 40px 90px rgba(0,0,0,.5)}
+.pago .ok{width:2.3em;height:2.3em;margin:0 auto .5em;border-radius:50%;background:#1FB866;color:#fff;
+  display:grid;place-items:center;font-weight:900;font-size:1.3em}
+.pago .tit{font-weight:700;color:#55555E}
+.pago .monto{font-weight:900;font-size:2.6em;letter-spacing:-.03em;margin-top:.15em}
+.pago .a{font-weight:650;font-size:1.1em;margin-top:.1em}
+.pago hr{border:0;border-top:2px solid #E6E6EA;margin:1em 0}
+.pago table{width:100%;border-collapse:collapse;font-size:.85em;color:#55555E}
+.pago td{padding:.3em 0;text-align:left}
+.pago td:last-child{text-align:right;color:#16161A;font-weight:650}

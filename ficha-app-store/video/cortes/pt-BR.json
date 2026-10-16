@@ -1,0 +1,21 @@
+{
+  "_que": "Tramos [desde, hasta, velocidad] de cada toma de <salida>/pt-BR/video/tomas, medidos fotograma a fotograma el 16-oct-2026. Los toques, en segundos de la grabación y puntos de pantalla (iPhone 17 Pro, 402×874).",
+  "escenas": {
+    "ia": {
+      "tramos": [[7.0, 11.4, 2.0], [11.4, 14.4, 1.0], [14.4, 16.0, 1.2]],
+      "toques": [{"t": 11.35, "x": 364, "y": 810}]
+    },
+    "foto": {
+      "tramos": [[3.6, 5.1, 1.5], [5.1, 5.9, 1.0], [5.9, 11.0, 4.0], [11.0, 14.5, 1.5], [14.5, 16.3, 1.2]],
+      "toques": [{"t": 5.05, "x": 243.5, "y": 289}, {"t": 11.05, "x": 111.5, "y": 608.5}]
+    },
+    "voz": {
+      "tramos": [[3.8, 5.0, 1.0], [5.0, 5.9, 1.0], [5.9, 12.4, 4.0], [12.4, 13.3, 1.0], [13.3, 16.0, 1.2]],
+      "toques": [{"t": 4.9, "x": 192, "y": 289}, {"t": 12.6, "x": 290, "y": 794}]
+    },
+    "grupos": {
+      "tramos": [[2.9, 4.3, 1.0], [4.3, 5.1, 1.0], [5.1, 8.3, 1.0]],
+      "toques": [{"t": 4.3, "x": 201, "y": 372}]
+    }
+  }
+}
