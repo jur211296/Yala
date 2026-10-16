@@ -7701,6 +7701,31 @@ enum L10n {
             static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
+
+            /// El aviso de datos previos en iCloud antes de volver (ticket
+            /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`).
+            enum Prior {
+                static var checking: String { ls("storage.revert.prior.checking", comment: "") }
+                static var title: String { ls("storage.revert.prior.title", comment: "") }
+                static func body(_ summary: String) -> String {
+                    String(format: ls("storage.revert.prior.body", comment: ""), summary)
+                }
+                static var bodyNoCount: String { ls("storage.revert.prior.bodyNoCount", comment: "") }
+                static func groupRecords(_ count: Int) -> String {
+                    String(format: ls("storage.revert.prior.groupRecords", comment: ""), count)
+                }
+                static var groupsNote: String { ls("storage.revert.prior.groupsNote", comment: "") }
+                static var merge: String { ls("storage.revert.prior.merge", comment: "") }
+                static var discard: String { ls("storage.revert.prior.discard", comment: "") }
+                static var discardConfirmTitle: String { ls("storage.revert.prior.discardConfirmTitle", comment: "") }
+                static var discardConfirmBody: String { ls("storage.revert.prior.discardConfirmBody", comment: "") }
+                static var discardConfirm: String { ls("storage.revert.prior.discardConfirm", comment: "") }
+                static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
+                static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
+                static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
+                static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
+                static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
+            }
         }
 
         enum Sync {

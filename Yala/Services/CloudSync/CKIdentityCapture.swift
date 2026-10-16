@@ -365,6 +365,74 @@ enum CKIdentityCapture {
         }
     }
 
+    // MARK: - Qué registros conoce ya el espejo de este store
+
+    /// Lo que contesta `mirroredRecordNames`.
+    enum MirroredRecordNames: Equatable {
+        /// Los `recordName` que el espejo de este store ya enlazó a una fila. **Vacío es una respuesta**: un store que
+        /// nunca montó el espejo no tiene ni la side-table, y entonces todo lo que haya en iCloud le es ajeno.
+        case names(Set<String>)
+        /// No se pudo leer: el SQLite no abre, `sqlite_master` no se deja listar, la tabla está sin su columna o la
+        /// consulta falla. No es «no conozco nada»: quien decide con esto no sigue sin saberlo.
+        case unreadable(String)
+    }
+
+    /// Los `ZCKRECORDNAME` de la side-table `ANSCKRECORDMETADATA` del store, READ-ONLY. Lo usa la vuelta a iCloud para
+    /// separar lo que el espejo bajaría como filas NUEVAS (ajeno) de lo que reconciliaría con una fila que ya tiene
+    /// (una copia propia que dejó una vuelta anterior a medias, ticket `reverse-exit-leaves-a-partial-copy-in-icloud`).
+    ///
+    /// **Por `recordName` y sin la zona**: el espejo los acuña como UUID, así que no se repiten entre zonas, y la zona
+    /// por FK que usa `captureResolved` sobra para esta pregunta.
+    static func mirroredRecordNames(storeURL: URL) -> MirroredRecordNames {
+        var db: OpaquePointer?
+        let openRC = sqlite3_open_v2(storeURL.path, &db, SQLITE_OPEN_READONLY, nil)
+        guard openRC == SQLITE_OK, let db else {
+            if let db { sqlite3_close(db) }
+            return .unreadable("open-failed")
+        }
+        defer { sqlite3_close(db) }
+        // El espejo puede estar escribiendo: un cerrojo ocupado espera un poco en vez de devolver BUSY al instante.
+        sqlite3_busy_timeout(db, 2_000)
+
+        // **Lectura ESTRICTA, y es lo que hace seguro el borrado**: un conjunto que se lee a medias haría pasar la copia
+        // propia por ajena, y «Empezar sin ellos» la borraría. `queryColumn` y `queryTypedRows` dan por buena una lectura
+        // cortada (paran en el primer paso que no es `SQLITE_ROW`), así que aquí no valen.
+        guard let tables = strictTextColumn(db, sql: "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        else { return .unreadable("schema-unreadable") }
+        guard let metaTable = tables.first(where: {
+            let u = $0.uppercased()
+            return u.contains("CK") && u.contains("RECORDMETADATA") && !u.contains("ZONE") && !u.contains("SYSTEMFIELDS")
+        }) else {
+            // Sin ninguna side-table del espejo, el store nunca espejó: no conoce nada. Con otras side-tables y sin esta,
+            // el formato cambió y no se sabe qué conoce.
+            let mirrorTables = tables.filter { $0.uppercased().hasPrefix("ANSCK") }
+            return mirrorTables.isEmpty ? .names([]) : .unreadable("meta-table-missing")
+        }
+        let metaCols = tableColumns(db, table: metaTable)
+        guard let recNameCol = metaCols.first(where: { $0.uppercased() == "ZCKRECORDNAME" })
+                ?? metaCols.first(where: { $0.uppercased().contains("ZCKRECORDNAME") }) else {
+            return .unreadable("meta-columns-missing")
+        }
+        guard let names = strictTextColumn(
+            db, sql: "SELECT \(recNameCol) FROM \(metaTable) WHERE \(recNameCol) IS NOT NULL")
+        else { return .unreadable("meta-query-failed") }
+        return .names(Set(names))
+    }
+
+    /// La primera columna de texto de un SELECT, o `nil` si la consulta no se preparó o no terminó en `SQLITE_DONE`.
+    private static func strictTextColumn(_ db: OpaquePointer, sql: String) -> [String]? {
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return nil }
+        defer { sqlite3_finalize(stmt) }
+        var out: [String] = []
+        var rc = sqlite3_step(stmt)
+        while rc == SQLITE_ROW {
+            if let c = sqlite3_column_text(stmt, 0) { out.append(String(cString: c)) }
+            rc = sqlite3_step(stmt)
+        }
+        return rc == SQLITE_DONE ? out : nil
+    }
+
     // MARK: - URI parsing
 
     /// Resuelve `(entityName, Z_PK)` de un `PersistentIdentifier` (URI `x-coredata://…` → parse). `internal`

@@ -6642,3 +6642,21 @@
 
 /* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
 "icloud.unavailableNotice.message" = "YalaはデータをあなたのiCloudに保存していますが、今は読み込めません。iCloudが再び利用できるようになると、そこにあるデータがまた表示されます。設定のiCloudで確認できます。";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "iCloud を確認しています…";
+"storage.revert.prior.title" = "iCloud にすでに Yala のデータがあります";
+"storage.revert.prior.body" = "この端末の iCloud に、アカウントにない Yala のデータがあります：%@。追加すると、あなたのデータと一緒に表示されます。追加せずに始めると、iCloud から削除されます。";
+"storage.revert.prior.bodyNoCount" = "この端末の iCloud に、アカウントにない Yala のデータがあります。追加すると、あなたのデータと一緒に表示されます。追加せずに始めると、iCloud から削除されます。";
+"storage.revert.prior.groupRecords" = "グループの記録 %d 件";
+"storage.revert.prior.groupsNote" = "グループの記録は、グループなしで届くことがあります。";
+"storage.revert.prior.merge" = "自分のデータに追加";
+"storage.revert.prior.discard" = "追加せずに始める";
+"storage.revert.prior.discardConfirmTitle" = "iCloud から削除しますか？";
+"storage.revert.prior.discardConfirmBody" = "iCloud と、この Apple ID で iCloud を使っているデバイスから削除されます。コピーは残らず、復元できません。その後、iCloud への切り替えが始まります。";
+"storage.revert.prior.discardConfirm" = "削除して iCloud に戻る";
+"storage.revert.prior.checkFailedTitle" = "iCloud を確認できませんでした";
+"storage.revert.prior.checkFailedBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。接続の問題かもしれません。もう一度お試しください。";
+"storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
+"storage.revert.prior.noAccountTitle" = "この iPhone で iCloud にサインインしてください";
+"storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この iPhone は iCloud にサインインしていません。iPhone の設定からサインインして、もう一度お試しください。";

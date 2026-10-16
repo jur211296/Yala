@@ -6642,3 +6642,21 @@
 
 /* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
 "icloud.unavailableNotice.message" = "Yala bewaart je gegevens in je iCloud en kan ze nu niet lezen. Zodra iCloud weer beschikbaar is, verschijnt wat daar staat weer. Je kunt dit controleren in Instellingen, bij iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Je iCloud wordt gecontroleerd…";
+"storage.revert.prior.title" = "Je iCloud heeft al Yala-gegevens";
+"storage.revert.prior.body" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan: %@. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.bodyNoCount" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.groupRecords" = "%d groepsrecords";
+"storage.revert.prior.groupsNote" = "Groepsrecords kunnen zonder hun groep binnenkomen.";
+"storage.revert.prior.merge" = "Toevoegen aan mijn gegevens";
+"storage.revert.prior.discard" = "Zonder beginnen";
+"storage.revert.prior.discardConfirmTitle" = "Uit je iCloud verwijderen?";
+"storage.revert.prior.discardConfirmBody" = "Ze worden verwijderd uit je iCloud en van de apparaten die die met deze Apple ID gebruiken. Er blijft geen kopie en we kunnen ze niet terughalen. Daarna begint de terugkeer naar iCloud.";
+"storage.revert.prior.discardConfirm" = "Verwijderen en terug naar iCloud";
+"storage.revert.prior.checkFailedTitle" = "We konden je iCloud niet controleren";
+"storage.revert.prior.checkFailedBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. Misschien ligt het aan je verbinding: probeer het opnieuw.";
+"storage.revert.prior.wipeFailed" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Controleer je verbinding en probeer het opnieuw.";
+"storage.revert.prior.noAccountTitle" = "Log in bij iCloud op deze iPhone";
+"storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en deze iPhone is niet ingelogd bij iCloud. Log in via Instellingen op de iPhone en probeer het opnieuw.";

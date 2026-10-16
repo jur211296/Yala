@@ -6642,3 +6642,21 @@
 
 /* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
 "icloud.unavailableNotice.message" = "Yala 将你的数据保存在你的 iCloud 中,目前无法读取。iCloud 恢复可用后,其中的内容会重新显示。你可以在「设置」中的 iCloud 里查看。";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "正在检查你的 iCloud…";
+"storage.revert.prior.title" = "你的 iCloud 里已经有 Yala 数据";
+"storage.revert.prior.body" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据：%@。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.bodyNoCount" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.groupRecords" = "%d 条群组记录";
+"storage.revert.prior.groupsNote" = "群组记录可能会在没有所属群组的情况下出现。";
+"storage.revert.prior.merge" = "合并到我的数据";
+"storage.revert.prior.discard" = "不带它们开始";
+"storage.revert.prior.discardConfirmTitle" = "要从你的 iCloud 中删除吗？";
+"storage.revert.prior.discardConfirmBody" = "它们会从你的 iCloud 以及使用此 Apple ID 的设备上删除。不会保留副本，我们也无法恢复。之后会开始返回 iCloud。";
+"storage.revert.prior.discardConfirm" = "删除并返回 iCloud";
+"storage.revert.prior.checkFailedTitle" = "无法检查你的 iCloud";
+"storage.revert.prior.checkFailedBody" = "返回之前，我们会检查你的 iCloud 里是否已有 Yala 数据，以免在不告诉你的情况下混在一起。可能是网络问题：请再试一次。";
+"storage.revert.prior.wipeFailed" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。请检查网络后再试一次。";
+"storage.revert.prior.noAccountTitle" = "请在这部 iPhone 上登录 iCloud";
+"storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这部 iPhone 没有登录 iCloud。请在 iPhone 的“设置”中登录后再试一次。";

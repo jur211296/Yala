@@ -6630,3 +6630,21 @@
 
 /* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
 "icloud.unavailableNotice.message" = "O Yala guarda seus dados no seu iCloud e agora não consegue lê-los. Quando o iCloud voltar a ficar disponível, o que você tiver lá vai aparecer de novo. Você pode verificar isso nos Ajustes, em iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Verificando seu iCloud…";
+"storage.revert.prior.title" = "Seu iCloud já tem dados do Yala";
+"storage.revert.prior.body" = "O iCloud deste telefone tem dados do Yala que não estão na sua conta: %@. Se você somá-los, eles vão aparecer junto com os seus. Se começar sem eles, eles serão apagados do seu iCloud.";
+"storage.revert.prior.bodyNoCount" = "O iCloud deste telefone tem dados do Yala que não estão na sua conta. Se você somá-los, eles vão aparecer junto com os seus. Se começar sem eles, eles serão apagados do seu iCloud.";
+"storage.revert.prior.groupRecords" = "%d registros de grupos";
+"storage.revert.prior.groupsNote" = "Os registros de grupos podem chegar sem o grupo deles.";
+"storage.revert.prior.merge" = "Somar aos meus dados";
+"storage.revert.prior.discard" = "Começar sem eles";
+"storage.revert.prior.discardConfirmTitle" = "Apagar do seu iCloud?";
+"storage.revert.prior.discardConfirmBody" = "Eles serão apagados do seu iCloud e dos dispositivos que o usam com este Apple ID. Não fica cópia e não conseguimos recuperá-los. Depois começa a volta ao iCloud.";
+"storage.revert.prior.discardConfirm" = "Apagar e voltar ao iCloud";
+"storage.revert.prior.checkFailedTitle" = "Não conseguimos verificar seu iCloud";
+"storage.revert.prior.checkFailedBody" = "Antes de voltar, verificamos se seu iCloud já tem dados do Yala, para não misturá-los sem avisar. Pode ser a conexão: tente de novo.";
+"storage.revert.prior.wipeFailed" = "Não conseguimos terminar de apagar os dados antigos do seu iCloud, então não começamos a volta: você continua na nuvem. Verifique sua conexão e tente de novo.";
+"storage.revert.prior.noAccountTitle" = "Entre no iCloud neste iPhone";
+"storage.revert.prior.noAccountBody" = "Antes de voltar, verificamos o que há no seu iCloud, e este iPhone não está com o iCloud ativo. Entre nos Ajustes do iPhone e tente de novo.";
