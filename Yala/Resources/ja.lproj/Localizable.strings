@@ -4209,7 +4209,7 @@
 "welcome.hero.cards.budgets.title" = "予算と目標";
 "welcome.hero.cards.budgets.body" = "限度を決めて、守る。";
 "welcome.hero.cards.multiAndCurrencies.title" = "複数口座と通貨";
-"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、48以上の通貨。";
+"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、50以上の通貨。";
 "welcome.hero.cards.import.title" = "履歴をインポート";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
 "welcome.hero.cards.icloud.title" = "プライベートiCloud";
