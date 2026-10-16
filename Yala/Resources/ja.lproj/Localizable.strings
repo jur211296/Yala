@@ -4237,12 +4237,12 @@
 "yalaAI.onboarding.progressLabel" = "ステップ %1$d / %2$d";
 "yalaAI.onboarding.step1.title" = "Yala AIをご紹介します";
 "yalaAI.onboarding.step1.subtitle" = "あなたの家計のパートナーです。";
-"yalaAI.onboarding.step1.demoScenario1User" = "ランチに1,200円使いました。";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。1,200円のランチを記録しました。";
+"yalaAI.onboarding.step1.demoScenario1User" = "ランチに%@使いました。";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。%@のランチを記録しました。";
 "yalaAI.onboarding.step1.demoScenario2User" = "今月のコーヒーにいくら使いましたか？";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは4,500円です ☕ — 4月より12%減ですが、いつもの平均より800円多めです。";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは%1$@です ☕ 4月より12%%減ですが、いつもの平均より%2$@多めです。";
 "yalaAI.onboarding.step1.demoScenario3User" = "アドバイスは？";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 デリバリーが先月より20%増えています。いつものペースに戻すと月8,000円、年間で約96,000円の節約になります。";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 デリバリーが先月より20%%増えています。いつものペースに戻すと月%1$@、年間で%2$@の節約になります。";
 "yalaAI.onboarding.step1.demoAmountLabel" = "ランチ";
 "yalaAI.onboarding.step1.a11yLabel" = "Yala AIが支出を記録するチャットの例";
 "yalaAI.onboarding.step2.title" = "できることはこちら";
@@ -4268,11 +4268,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "毎月、より多く節約できるようサポートします。";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "ずれがあればお知らせし、見落としを防ぎます。";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "今月の支出は収入でカバーできています。良いペースです。";
-"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%減らすと、月3,000円の節約になります。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%%減らすと、月%@の節約になります。";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "注意：デリバリーのペースが先月より速くなっています。";
 "yalaAI.onboarding.step5.title" = "準備完了！";
 "yalaAI.onboarding.step5.subtitle" = "いつでもYalaに必要なことを伝えてください。";
-"yalaAI.onboarding.step5.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
+"yalaAI.onboarding.step5.tip" = "💡 例：「%@のコーヒーを記録して」「今日いくら使った？」";
 "yalaAI.onboarding.step5.cta" = "チャットを始める";
 
 // MARK: - Stats Records polish

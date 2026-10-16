@@ -4193,18 +4193,18 @@
 "yalaAI.onboarding.close" = "Cerrar";
 "yalaAI.onboarding.previewLabel" = "Vista previa";
 "yalaAI.onboarding.progressLabel" = "Paso %1$d de %2$d";
-"yalaAI.onboarding.step1.title" = "Te presento a Yala AI";
+"yalaAI.onboarding.step1.title" = "Te presento a Yala IA";
 "yalaAI.onboarding.step1.subtitle" = "Tu mano derecha financiera.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Gasté $12 en almuerzo.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "¡Listo! Registré tu almuerzo de $12.";
+"yalaAI.onboarding.step1.demoScenario1User" = "Gasté %@ en almuerzo.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "¡Listo! Registré tu almuerzo de %@.";
 "yalaAI.onboarding.step1.demoScenario2User" = "¿Cuánto gasté en café este mes?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "Llevas $45 en café este mes ☕ — un 12% menos que en abril, pero $8 sobre tu promedio habitual.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Llevas %1$@ en café este mes ☕, un 12%% menos que en abril, pero %2$@ sobre tu promedio habitual.";
 "yalaAI.onboarding.step1.demoScenario3User" = "¿Algún consejo?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Tus delivery subieron 20% vs el mes pasado. Volviendo a tu ritmo normal ahorras $80 al mes — son casi $1.000 al año.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Tus delivery subieron 20%% vs el mes pasado. Volviendo a tu ritmo normal ahorras %1$@ al mes: son %2$@ al año.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Almuerzo";
-"yalaAI.onboarding.step1.a11yLabel" = "Ejemplo de chat con Yala AI registrando un gasto";
+"yalaAI.onboarding.step1.a11yLabel" = "Ejemplo de chat con Yala IA registrando un gasto";
 "yalaAI.onboarding.step2.title" = "Esto es lo que puedes hacer";
-"yalaAI.onboarding.step2.subtitle" = "Tres formas de aprovechar a Yala AI.";
+"yalaAI.onboarding.step2.subtitle" = "Tres formas de aprovechar a Yala IA.";
 "yalaAI.onboarding.step2.card1.badge" = "Nuevo";
 "yalaAI.onboarding.step2.card1.title" = "Registra gastos al instante";
 "yalaAI.onboarding.step2.card1.body" = "Por texto o voz, sin formularios. Solo dilo.";
@@ -4226,11 +4226,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Te ayuda a recortar y a guardar más cada mes.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Te avisa ante cualquier desvío para que no te pase nada.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Tus ingresos cubren los gastos del mes. Buen ritmo.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "Si bajas un 10% en restaurantes, ahorras $120 al mes.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "Si bajas un 10%% en restaurantes, ahorras %@ al mes.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Atento: vas más rápido que el mes pasado en delivery.";
 "yalaAI.onboarding.step5.title" = "¡Todo listo!";
 "yalaAI.onboarding.step5.subtitle" = "Cuando quieras, dile a Yala lo que necesitas.";
-"yalaAI.onboarding.step5.tip" = "💡 Prueba: \"Registra un café de 5 pesos\" o \"¿Cuánto gasté hoy?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Prueba: \"Registra un café de %@\" o \"¿Cuánto gasté hoy?\"";
 "yalaAI.onboarding.step5.cta" = "Empezar a chatear";
 
 // MARK: - Stats Records polish

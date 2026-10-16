@@ -16,8 +16,11 @@ struct ChatDraftPreviewCard: View {
 
     @Environment(\.yalaTheme) private var theme
 
+    /// El importe del almuerzo del escenario, ya formateado en la divisa principal: el mismo que dicen las burbujas.
+    let amount: String
+
     // Misma forma que la card real desde el 2026-10-04 (propuesta A): la fila del registro, una píldora y el pie.
-    // Todo es texto: aquí nada se toca. El importe sigue a lo que dice el mensaje del escenario («$12»).
+    // Todo es texto: aquí nada se toca.
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.none) {
             HStack(spacing: DS.ListRow.spacing) {
@@ -33,7 +36,7 @@ struct ChatDraftPreviewCard: View {
                     .font(DS.Typography.label)
                     .foregroundStyle(.primary)
                 Spacer(minLength: DS.Spacing.sm)
-                Text(Decimal(12), format: .currency(code: "USD"))
+                Text(amount)
                     .font(DS.Typography.headline)
                     .monospacedDigit()
             }
