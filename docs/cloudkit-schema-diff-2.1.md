@@ -98,8 +98,8 @@ Production: el arreglo es de código (otro nombre para la relación). Ticket nue
 exacto (`knownTypeMismatches`) para no ocultar nada más.
 
 **Confirmado el 2026-10-12 y arreglado en código el 2026-10-16**: la relación pasó a un campo nuevo,
-`CD_cashFlowLine`. Falta desplegarlo: sección [«El campo nuevo de los ajustes del flujo de
-caja»](#el-campo-nuevo-de-los-ajustes-del-flujo-de-caja-despliegue-pendiente).
+`CD_cashFlowLine`, **desplegado a Production en los dos contenedores el 2026-10-16**: sección [«El campo nuevo
+de los ajustes del flujo de caja»](#el-campo-nuevo-de-los-ajustes-del-flujo-de-caja-desplegado-el-2026-10-16).
 
 ### Sobran (no se tocan)
 
@@ -225,10 +225,14 @@ xcodebuild test -project Yala.xcodeproj -scheme "Yala Dev" \
 
 Verde = el export real cubre todo lo que la app escribe. Commitea los cuatro `.ckdb` exportados.
 
-## El campo nuevo de los ajustes del flujo de caja (despliegue pendiente)
+## El campo nuevo de los ajustes del flujo de caja (desplegado el 2026-10-16)
 
 Fecha: 2026-10-16 · Ticket: `personal-cloudkit-cashflow-override-line-declared-as-reference` · **Lo despliega
 Jürgen.** Ninguna sesión despliega esquema a Production.
+
+**Hecho el 2026-10-16** en `iCloud.com.jurgenschmidt.yala` y `iCloud.com.jurgenschmidt.yala.dev`. El export de
+la consola de los cuatro entornos trae `CD_cashFlowLine STRING`, coincide byte a byte con los `.ckdb` del repo y
+`PersonalCloudKitSchemaParityTests` pasa contra él. Los pasos de abajo quedan como registro.
 
 ### Qué cambia
 
