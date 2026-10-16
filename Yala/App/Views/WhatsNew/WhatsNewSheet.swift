@@ -46,6 +46,7 @@ struct WhatsNewSheet: View {
                             .fontWeight(.bold)
                             .foregroundStyle(.thPrimaryText)
                             .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("whats_new_title")
 
                         Text(L10n.WhatsNew.subtitle(version))
                             .font(DS.Typography.subheadline)
@@ -71,6 +72,7 @@ struct WhatsNewSheet: View {
             YalaPrimaryButton(L10n.WhatsNew.continueButton) {
                 onDismiss()
             }
+            .accessibilityIdentifier("whats_new_continue")
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xl)
             .padding(.top, DS.Spacing.md)
@@ -116,6 +118,7 @@ struct WhatsNewSheet: View {
                 Text(feature.title)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thPrimaryText)
+                    .accessibilityIdentifier("whats_new_feature_title_\(index)")
 
                 Text(feature.description)
                     .font(DS.Typography.subheadline)

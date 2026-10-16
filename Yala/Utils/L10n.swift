@@ -7501,6 +7501,12 @@ enum L10n {
         static var v20AIDescription: String { ls("whatsNew.v20.ai.description", comment: "") }
         static var v20RedesignTitle: String { ls("whatsNew.v20.redesign.title", comment: "") }
         static var v20RedesignDescription: String { ls("whatsNew.v20.redesign.description", comment: "") }
+        static var v21GroupsTitle: String { ls("whatsNew.v21.groups.title", comment: "") }
+        static var v21GroupsDescription: String { ls("whatsNew.v21.groups.description", comment: "") }
+        static var v21LoggingTitle: String { ls("whatsNew.v21.logging.title", comment: "") }
+        static var v21LoggingDescription: String { ls("whatsNew.v21.logging.description", comment: "") }
+        static var v21DataTitle: String { ls("whatsNew.v21.data.title", comment: "") }
+        static var v21DataDescription: String { ls("whatsNew.v21.data.description", comment: "") }
     }
 
     // MARK: - App Update

@@ -2077,8 +2077,10 @@ struct ContentView: View {
     /// Nil otherwise. Used to enqueue `.presentWhatsNew` router intent.
     private func whatsNewDataIfPending() -> (features: [WhatsNewFeature], version: String)? {
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-        guard !currentVersion.isEmpty, currentVersion != lastSeenAppVersion,
-              let features = WhatsNewConfig.features(for: currentVersion) else { return nil }
+        let features = WhatsNewConfig.features(for: currentVersion)
+        guard WhatsNewLaunchLogic.shouldPresent(
+            currentVersion: currentVersion, lastSeenVersion: lastSeenAppVersion, hasFeatures: features != nil
+        ), let features else { return nil }
         return (features: features, version: currentVersion)
     }
 
@@ -2114,6 +2116,16 @@ struct ContentView: View {
         // un único dominio y el cableado se conserva porque la forma sigue siendo la correcta.)
         GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider = {
             UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        }
+
+        // Novedades solo al ACTUALIZAR: un dispositivo que arranca sin el onboarding hecho estrena Yala en esta
+        // versión, así que se da por vista ya. Va antes de la rama de invitación porque un alta por invitación
+        // también es una instalación nueva. Ver `WhatsNewLaunchLogic`.
+        if let version = WhatsNewLaunchLogic.versionToMarkSeenAtLaunch(
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        ) {
+            lastSeenAppVersion = version
         }
 
         // GC-08: If group invite onboarding is pending, skip normal flow entirely.

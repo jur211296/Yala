@@ -4489,6 +4489,14 @@
 "whatsNew.v20.redesign.title" = "Een compleet nieuw uiterlijk";
 "whatsNew.v20.redesign.description" = "We hebben Yala van top tot teen opnieuw ontworpen: nieuwe widgets, duidelijkere overzichten in elke sectie en de nieuwe Liquid Glass-afwerking van iOS in de hele app. Daarnaast hebben we veel bugs opgelost zodat alles soepeler aanvoelt.";
 
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "Groepen";
+"whatsNew.v21.groups.description" = "Deel uitgaven met wie je maar wilt. Nodig uit met een link, houd samen bij en Yala rekent uit wie wie wat verschuldigd is. Zonder rekenwerk en zonder ongemak.";
+"whatsNew.v21.logging.title" = "Bijhouden was nog nooit zo makkelijk";
+"whatsNew.v21.logging.description" = "Praat ertegen, maak een foto of typ zoals aan een vriend. Yala begrijpt wat je hebt uitgegeven en legt het voor je vast, zodat je je geldzaken in een paar seconden bijhoudt.";
+"whatsNew.v21.data.title" = "Jouw gegevens, jouw regels";
+"whatsNew.v21.data.description" = "Jij kiest waar je gegevens staan: in je privé-iCloud of in de Yala-cloud, zodat je ze op al je apparaten hebt. Plus een vernieuwd Start-scherm en Yala op volledig scherm op je iPad.";
+
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
 "transaction.exchangeRateShort %@" = "Koers: %@";
