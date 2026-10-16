@@ -54,6 +54,12 @@ extension XCUIApplication {
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
         pendingICloudWipe: Bool = false,
+        // «Volver a iCloud» en un teléfono nacido en la nube y la respuesta fingida de la pregunta a iCloud (ticket
+        // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
+        // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
+        bornCloudStorage: Bool = false,
+        reversePriorICloud: String? = nil,
+        reversePriorICloudWipeFails: Bool = false,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
@@ -185,6 +191,12 @@ extension XCUIApplication {
         // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
+        if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
+        if let reversePriorICloud {
+            args.append("-uitest-reverse-prior-icloud")
+            args.append(reversePriorICloud)
+        }
+        if reversePriorICloudWipeFails { args.append("-uitest-reverse-prior-icloud-wipe-fails") }
         // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
         // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
         // verdad, la comprobación no podría (sin sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la

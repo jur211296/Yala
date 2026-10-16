@@ -5908,3 +5908,21 @@
 
 /* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
 "icloud.unavailableNotice.message" = "Yala guarda tus datos en tu iCloud y ahora no puede leerlos. Cuando iCloud vuelva a estar disponible, lo que tengas ahí va a volver a aparecer. Podés revisarlo en Ajustes, en iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Revisando tu iCloud…";
+"storage.revert.prior.title" = "Tu iCloud ya tiene datos de Yala";
+"storage.revert.prior.body" = "En el iCloud de este teléfono hay datos de Yala que no están en tu cuenta: %@. Si los sumas, aparecerán junto a los tuyos. Si empiezas sin ellos, se borran de tu iCloud.";
+"storage.revert.prior.bodyNoCount" = "En el iCloud de este teléfono hay datos de Yala que no están en tu cuenta. Si los sumas, aparecerán junto a los tuyos. Si empiezas sin ellos, se borran de tu iCloud.";
+"storage.revert.prior.groupRecords" = "%d registros de grupos";
+"storage.revert.prior.groupsNote" = "Los registros de grupos pueden llegar sin su grupo.";
+"storage.revert.prior.merge" = "Sumarlos a mis datos";
+"storage.revert.prior.discard" = "Empezar sin ellos";
+"storage.revert.prior.discardConfirmTitle" = "¿Borrarlos de tu iCloud?";
+"storage.revert.prior.discardConfirmBody" = "Se borran de tu iCloud y de los dispositivos que lo usan con este Apple ID. No queda copia y no podemos recuperarlos. Después empieza la vuelta a iCloud.";
+"storage.revert.prior.discardConfirm" = "Borrar y volver a iCloud";
+"storage.revert.prior.checkFailedTitle" = "No pudimos revisar tu iCloud";
+"storage.revert.prior.checkFailedBody" = "Antes de volver miramos si tu iCloud ya tiene datos de Yala, para no mezclarlos sin avisarte. Puede ser la conexión: inténtalo otra vez.";
+"storage.revert.prior.wipeFailed" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en la nube. Revisa tu conexión y vuelve a intentarlo.";
+"storage.revert.prior.noAccountTitle" = "Abre iCloud en este iPhone";
+"storage.revert.prior.noAccountBody" = "Antes de volver miramos qué hay en tu iCloud, y este iPhone no tiene iCloud abierto. Ábrelo en Ajustes del iPhone y vuelve a intentarlo.";

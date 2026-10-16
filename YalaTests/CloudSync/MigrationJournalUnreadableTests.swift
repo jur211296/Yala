@@ -584,7 +584,9 @@ struct MigrationJournalUnreadableWiringTests {
             "let mountedDecision = SwiftDataConfiguration.personalStoreMountedDecision",
             "let mirrorOffArmed = StorageModePersistence.isMirrorOffArmed()",
             "uiState = CloudMigrationUIStateDeriver.derive(",
-            "storageMode: StorageModePersistence.read(),",
+            // El modo persistido, leído por el lector que admite el seam DEBUG `-uitest-born-cloud-storage` (ticket
+            // `reverse-to-icloud-merges-prior-icloud-data-without-asking`); en producción es `StorageModePersistence.read()`.
+            "storageMode: Self.readPersistedStorageMode(),",
             "read: read.phaseRead,",
             "mirrorOffArmed: mirrorOffArmed,",
             "mountedDecision: mountedDecision,",

@@ -6631,3 +6631,21 @@
 
 /* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
 "icloud.unavailableNotice.message" = "Yala garde tes données dans ton iCloud et ne peut pas les lire pour le moment. Quand iCloud sera de nouveau disponible, ce qui s'y trouve réapparaîtra. Tu peux vérifier dans Réglages, rubrique iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Vérification de ton iCloud…";
+"storage.revert.prior.title" = "Ton iCloud contient déjà des données Yala";
+"storage.revert.prior.body" = "L’iCloud de ce téléphone contient des données Yala qui ne sont pas dans ton compte : %@. Si tu les ajoutes, elles apparaîtront à côté des tiennes. Si tu commences sans elles, elles sont supprimées de ton iCloud.";
+"storage.revert.prior.bodyNoCount" = "L’iCloud de ce téléphone contient des données Yala qui ne sont pas dans ton compte. Si tu les ajoutes, elles apparaîtront à côté des tiennes. Si tu commences sans elles, elles sont supprimées de ton iCloud.";
+"storage.revert.prior.groupRecords" = "%d enregistrements de groupes";
+"storage.revert.prior.groupsNote" = "Les enregistrements de groupes peuvent arriver sans leur groupe.";
+"storage.revert.prior.merge" = "Les ajouter à mes données";
+"storage.revert.prior.discard" = "Commencer sans elles";
+"storage.revert.prior.discardConfirmTitle" = "Les supprimer de ton iCloud ?";
+"storage.revert.prior.discardConfirmBody" = "Elles sont supprimées de ton iCloud et des appareils qui l’utilisent avec cet identifiant Apple. Aucune copie n’est conservée et nous ne pourrons pas les récupérer. Ensuite, le retour à iCloud commence.";
+"storage.revert.prior.discardConfirm" = "Supprimer et revenir à iCloud";
+"storage.revert.prior.checkFailedTitle" = "Impossible de vérifier ton iCloud";
+"storage.revert.prior.checkFailedBody" = "Avant de revenir, on vérifie si ton iCloud contient déjà des données Yala, pour ne pas les mélanger sans te prévenir. C’est peut-être la connexion : réessaie.";
+"storage.revert.prior.wipeFailed" = "Nous n’avons pas pu finir de supprimer les anciennes données de ton iCloud, donc le retour n’a pas commencé : tu restes dans le cloud. Vérifie ta connexion et réessaie.";
+"storage.revert.prior.noAccountTitle" = "Connecte-toi à iCloud sur cet iPhone";
+"storage.revert.prior.noAccountBody" = "Avant de revenir, on vérifie ce que contient ton iCloud, et cet iPhone n’est pas connecté à iCloud. Connecte-toi dans les Réglages de l’iPhone et réessaie.";

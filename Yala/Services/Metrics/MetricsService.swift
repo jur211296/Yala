@@ -164,6 +164,14 @@ enum MetricsCanary: String {
     /// Una vez por proceso y `detail`. `failed:` sostenido en la flota dice que la sonda no funciona en producción, y deja
     /// esperando a quien adopta así hasta el techo de 72 h.
     case cloudAdoptICloudCorpusChecked
+    /// «Volver a iCloud» en un teléfono nacido en la nube le preguntó a CloudKit si ese iCloud tiene datos que la vuelta
+    /// sumaría (ticket `reverse-to-icloud-merges-prior-icloud-data-without-asking`). `detail` = `found`, `none`,
+    /// `noAccount` o `failed:<motivo>` (la vuelta no empieza). Una vez por proceso y `detail`. `failed:` sostenido en la
+    /// flota dice que la pregunta no funciona en producción, y con ella nadie nacido en la nube puede volver a iCloud.
+    case cloudReverseICloudPriorDataChecked
+    /// Lo que eligió la persona en el aviso de datos previos: `merge` (sumarlos), `discard` (borrados, la vuelta empieza)
+    /// o `discardFailed:<motivo>` (el borrado no terminó y la vuelta no empezó). Uno por gesto.
+    case cloudReverseICloudPriorDataChoice
     case cloudConsentAccepted
     case cloudAccountUnavailable
     case cloudAccountReverting
@@ -954,6 +962,14 @@ extension MetricsService {
 
     static func cloudAdoptICloudCorpusChecked(outcome: String) {
         canaryOnce(.cloudAdoptICloudCorpusChecked, key: outcome, detail: outcome)
+    }
+
+    static func cloudReverseICloudPriorDataChecked(outcome: String) {
+        canaryOnce(.cloudReverseICloudPriorDataChecked, key: outcome, detail: outcome)
+    }
+
+    static func cloudReverseICloudPriorDataChoice(_ choice: String) {
+        canary(.cloudReverseICloudPriorDataChoice, detail: choice)
     }
 
     static func cloudConsentAccepted(path: String) {

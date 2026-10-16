@@ -6630,3 +6630,21 @@
 
 /* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
 "icloud.unavailableNotice.message" = "Yala speichert deine Daten in deiner iCloud und kann sie gerade nicht lesen. Sobald iCloud wieder verfügbar ist, erscheint wieder, was dort liegt. Du kannst das in den Einstellungen unter iCloud prüfen.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Deine iCloud wird geprüft…";
+"storage.revert.prior.title" = "In deiner iCloud liegen schon Yala-Daten";
+"storage.revert.prior.body" = "In der iCloud dieses Telefons liegen Yala-Daten, die nicht in deinem Konto sind: %@. Wenn du sie hinzufügst, erscheinen sie neben deinen. Wenn du ohne sie startest, werden sie aus deiner iCloud gelöscht.";
+"storage.revert.prior.bodyNoCount" = "In der iCloud dieses Telefons liegen Yala-Daten, die nicht in deinem Konto sind. Wenn du sie hinzufügst, erscheinen sie neben deinen. Wenn du ohne sie startest, werden sie aus deiner iCloud gelöscht.";
+"storage.revert.prior.groupRecords" = "%d Gruppeneinträge";
+"storage.revert.prior.groupsNote" = "Gruppeneinträge kommen eventuell ohne ihre Gruppe an.";
+"storage.revert.prior.merge" = "Zu meinen Daten hinzufügen";
+"storage.revert.prior.discard" = "Ohne sie starten";
+"storage.revert.prior.discardConfirmTitle" = "Aus deiner iCloud löschen?";
+"storage.revert.prior.discardConfirmBody" = "Sie werden aus deiner iCloud und von den Geräten gelöscht, die sie mit dieser Apple-ID nutzen. Es bleibt keine Kopie, und wir können sie nicht wiederherstellen. Danach beginnt die Rückkehr zu iCloud.";
+"storage.revert.prior.discardConfirm" = "Löschen und zu iCloud zurück";
+"storage.revert.prior.checkFailedTitle" = "Wir konnten deine iCloud nicht prüfen";
+"storage.revert.prior.checkFailedBody" = "Vor der Rückkehr prüfen wir, ob deine iCloud schon Yala-Daten hat, damit wir sie nicht ungefragt mischen. Vielleicht liegt’s an der Verbindung: Versuch es noch einmal.";
+"storage.revert.prior.wipeFailed" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in der Cloud. Prüf deine Verbindung und versuch es noch einmal.";
+"storage.revert.prior.noAccountTitle" = "Melde dich auf diesem iPhone bei iCloud an";
+"storage.revert.prior.noAccountBody" = "Vor der Rückkehr prüfen wir, was in deiner iCloud liegt, und dieses iPhone ist nicht bei iCloud angemeldet. Melde dich in den iPhone-Einstellungen an und versuch es noch einmal.";

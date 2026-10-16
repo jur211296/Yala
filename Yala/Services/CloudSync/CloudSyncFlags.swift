@@ -106,7 +106,9 @@ nonisolated enum StorageModePersistence {
     /// **Existe para que la puerta de «Volver a iCloud» pueda FALLAR CERRADO, y ese matiz es todo el punto.**
     /// El guardarraíl `ReverseEligibility` exige un mapa de coordenadas CloudKit porque sin él remontar el
     /// mirror puede RESUCITAR lo que el usuario borró durante la época nube (la zona CloudKit sigue teniendo
-    /// esos records). A un born-cloud no le aplica: nunca tuvo zona. Pero «no tengo pruebas de que migrara»
+    /// esos records). A un born-cloud no le aplica: la CUENTA nunca tuvo zona. **El iCloud del teléfono sí puede tenerla**,
+    /// con datos de otra cuenta de Yala, y eso lo pregunta el botón de la vuelta antes de empezar (ticket
+    /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`). Pero «no tengo pruebas de que migrara»
     /// **no es** «nació en la nube», y derivarlo de la AUSENCIA de algo abre el guardarraíl justo cuando la
     /// señal falla. Medido el 2026-09-10 con el `CloudMigrationMarker`, que era el candidato obvio: falta en
     /// un 2.º device adoptado cuyo marcador no llegó por el mirror (su propio belt lo registra y sigue,

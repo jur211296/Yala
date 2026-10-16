@@ -211,6 +211,47 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-born-cloud-storage`: `CloudMigrationController` LEE el modo persistido como `.cloud` y «la cuenta nació en la
+    /// nube aquí» como cierto, al derivar la pantalla de Almacenamiento y la elegibilidad de «Volver a iCloud» (ticket
+    /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`). Sin esto la tarjeta de la vuelta es inalcanzable en el
+    /// simulador: crear una cuenta en la nube pide App Attest, y el secreto de staging no está en esta Mac.
+    ///
+    /// **Finge la ENTRADA, no la decisión**, y solo esa lectura: el modo real sigue en `.icloud`, el store monta igual y el
+    /// motor no arranca. Lo que la pantalla pinta lo siguen decidiendo `CloudMigrationUIStateDeriver` y
+    /// `ReverseEligibility`. No persiste nada. Solo DEBUG.
+    nonisolated static var fakeBornCloudStorage: Bool { hasArg("-uitest-born-cloud-storage") }
+
+    /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|noAccount>`: lo que contesta la pregunta a iCloud antes
+    /// de «Volver a iCloud» (`ICloudPersonalCorpusProbe.foreignCorpusForReverse`), que en el simulador no tiene CloudKit.
+    /// `found`: 12 registros, 2 cuentas y 1 presupuesto ajenos; `foundGroups`: solo 9 registros de grupos, el caso del QA
+    /// del 2026-10-15. **Finge la respuesta, no la decisión**: qué hace el botón lo decide `ReverseICloudPriorDataLogic`.
+    /// Un valor desconocido se ignora. Solo DEBUG.
+    nonisolated static var fakeReverseForeignCorpus: ICloudForeignCorpusCheck? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-reverse-prior-icloud", from: ProcessInfo.processInfo.arguments) {
+        case "found":
+            return .measured(ICloudForeignCorpus(
+                transactions: 12, groupTransactions: 0, accounts: 2, budgets: 1, otherRecords: 6,
+                truncated: false, fieldsUnread: false))
+        case "foundGroups":
+            return .measured(ICloudForeignCorpus(
+                transactions: 0, groupTransactions: 9, accounts: 0, budgets: 0, otherRecords: 0,
+                truncated: false, fieldsUnread: false))
+        case "none":      return .measured(.empty)
+        case "noAccount": return .noAccount
+        case "failed": return .failed("uitest")
+        default:       return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-reverse-prior-icloud-wipe-fails`: el borrado de «Empezar sin ellos» falla. Solo el fallo: un borrado que
+    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Solo DEBUG.
+    nonisolated static var fakeReverseForeignWipeFails: Bool { hasArg("-uitest-reverse-prior-icloud-wipe-fails") }
+
     /// `-uitest-migration-journal-unreadable`: el fetch del journal de la migración que hace `CloudMigrationController` LANZA
     /// (ticket `an-unreadable-migration-journal-reads-as-never-started`). Existe para el XCUITest de la pantalla de
     /// Almacenamiento con el journal ilegible: con un `ModelContext` real no hay forma de hacer fallar esa lectura desde

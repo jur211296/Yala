@@ -37,6 +37,7 @@
 
 import CloudKit
 import Foundation
+import SwiftData
 
 // MARK: - Lo que la sonda encuentra
 
@@ -232,6 +233,8 @@ enum ICloudPersonalCorpusProbe {
         wipe = { await deleteMirrorZonesFromCloudKit() }
         mirrorWillSync = { SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror }
         adoptRelevantRecords = { await findAdoptRelevantRecord() }
+        foreignCorpusForReverse = { await measureForeignCorpusFromCloudKit() }
+        wipeForeignCorpusForReverse = { await deleteForeignRecordsFromCloudKit() }
     }
     #endif
 
@@ -488,6 +491,360 @@ enum ICloudPersonalCorpusProbe {
         } catch {
             #if DEBUG
             print("ICloudPersonalCorpusProbe: wipe failed: \(error)")
+            #endif
+            return String(describing: type(of: error))
+        }
+    }
+}
+
+// MARK: - La pregunta de la vuelta a iCloud
+
+/// Lo que el iCloud de este Apple ID tiene y el espejo de ESTE store no conoce: lo que la vuelta a iCloud SUMARÍA a los
+/// datos de la persona al montar el espejo encima (ticket `reverse-to-icloud-merges-prior-icloud-data-without-asking`).
+///
+/// **No es `ICloudPersonalCorpus`, y la diferencia es el bug del ticket.** Aquél describe un corpus para decidir si
+/// borrarlo y deja fuera lo que la persona no escribió: los movimientos que vienen de un grupo y las cuentas de sistema.
+/// El espejo los baja igual, y en el QA del 2026-10-15 era justo lo único que había —9 gastos de grupo de otra cuenta de
+/// Yala—, así que con aquella sonda este aviso no habría salido. Aquí cuenta TODO lo que bajaría; las cifras solo eligen
+/// el texto.
+///
+/// **Y solo lo AJENO**: un registro cuyo `recordName` ya está en los metadatos del espejo de este store no se suma, se
+/// reconcilia con la fila que lo tiene. Es la copia propia que deja una vuelta anterior a medias
+/// (`reverse-exit-leaves-a-partial-copy-in-icloud`), y avisar por ella sería un aviso falso.
+nonisolated struct ICloudForeignCorpus: Equatable, Sendable {
+    /// Movimientos sin puntero de grupo.
+    let transactions: Int
+    /// Movimientos con `CD_splitExpenseID` o `CD_splitSettlementID`. Van aparte porque llegan sin su grupo si esta
+    /// cuenta no está en él.
+    let groupTransactions: Int
+    /// Cuentas que no son de sistema.
+    let accounts: Int
+    /// Presupuestos, todos (no hay de sistema: ver `ICloudPersonalCorpus.budgets`).
+    let budgets: Int
+    /// Todo lo demás que el espejo bajaría: categorías, etiquetas, borradores, pagos programados, cuentas de sistema…
+    let otherRecords: Int
+    /// Se alcanzó el tope de registros ajenos: las cifras son un mínimo.
+    let truncated: Bool
+    /// El servidor no aceptó la lista de campos y se contó solo con metadatos: los movimientos de grupo no se pudieron
+    /// separar y van todos en `transactions`, y las cuentas de sistema cuentan como cuentas. Cuenta de más, nunca de menos.
+    let fieldsUnread: Bool
+
+    /// Cualquier registro ajeno basta, también uno que no tenga casilla propia: el espejo lo bajaría igual. Y el tope
+    /// cuenta como «sí»: con él se sabe que hay al menos tantos.
+    var hasAnyData: Bool {
+        truncated || transactions > 0 || groupTransactions > 0 || accounts > 0 || budgets > 0 || otherRecords > 0
+    }
+
+    static let empty = ICloudForeignCorpus(
+        transactions: 0, groupTransactions: 0, accounts: 0, budgets: 0, otherRecords: 0,
+        truncated: false, fieldsUnread: false)
+}
+
+/// Cómo terminó la pregunta de la vuelta a iCloud. A diferencia de la sonda del Welcome, **`failed` sí para**: quien la
+/// consume no empieza la vuelta sin respuesta, porque seguir es justo sumar sin avisar.
+nonisolated enum ICloudForeignCorpusCheck: Equatable, Sendable {
+    case measured(ICloudForeignCorpus)
+    /// CloudKit dice que no hay cuenta a la que preguntar: el espejo no va a bajar nada.
+    case noAccount
+    /// No se pudo contestar: red, CloudKit, el plazo, o los metadatos locales del espejo que no se dejaron leer.
+    case failed(String)
+
+    /// El detalle del canario `cloudReverseICloudPriorDataChecked`. Sin PII: literales fijos y el código del fallo.
+    var canaryDetail: String {
+        switch self {
+        case .measured(let corpus): return corpus.hasAnyData ? "found" : "none"
+        case .noAccount:            return "noAccount"
+        case .failed(let reason):   return "failed:\(reason)"
+        }
+    }
+}
+
+extension ICloudPersonalCorpusProbe {
+
+    /// Los tipos que cuentan para «hay datos de antes»: las entidades del canal personal menos los tipos de cambio, que
+    /// siembra cualquier teléfono al arrancar y no son datos de nadie. Es el mismo conjunto que mira el adopt.
+    static var reverseCountedRecordTypes: Set<String> { adoptRelevantRecordTypes }
+
+    /// Los tipos que «Empezar sin ellos» borra si son ajenos: las 16 entidades del canal personal, tipos de cambio
+    /// incluidos, para que el espejo no baje nada que esta cuenta no tenga. `CD_CloudMigrationMarker` no: es de la
+    /// migración de otra cuenta y no se pinta en ningún sitio.
+    static var reverseWipedRecordTypes: Set<String> {
+        Set(CloudSyncEngine.personalEntityNames.map { "CD_" + $0 })
+    }
+
+    /// Plazo de la pregunta. Más largo que el del Welcome (`scanDeadline`) porque aquí se recorren también los registros
+    /// que el espejo local ya conoce, y una copia propia grande no puede dejar la vuelta en «no pudimos revisar».
+    static let foreignScanDeadline: TimeInterval = 60
+
+    /// Plazo del borrado de «Empezar sin ellos»: recorre la zona entera y borra por tandas.
+    static let foreignWipeDeadline: TimeInterval = 120
+
+    /// Tamaño de tanda del borrado: el máximo de elementos que acepta una petición de CloudKit.
+    static let foreignWipeBatchSize = 400
+
+    /// Los campos que se bajan para separar las casillas. Misma salvedad que `desiredKeys`: una lista para una zona
+    /// multi-tipo, sin medir contra CloudKit real. Si el servidor la rechaza, se repite sin campos (`fieldsUnread`).
+    static let foreignDesiredKeys: [CKRecord.FieldKey] = ["CD_splitExpenseID", "CD_splitSettlementID", "CD_isSystemAccount"]
+
+    // MARK: Seams
+
+    /// Pregunta de producción. Sustituible en tests: no hay CloudKit en el simulador ni en CI.
+    static var foreignCorpusForReverse: @MainActor () async -> ICloudForeignCorpusCheck = {
+        await measureForeignCorpusFromCloudKit()
+    }
+
+    /// Borrado de producción de «Empezar sin ellos». Devuelve `nil` si fue bien, o el motivo del fallo.
+    static var wipeForeignCorpusForReverse: @MainActor () async -> String? = {
+        await deleteForeignRecordsFromCloudKit()
+    }
+
+    // MARK: Recuento (puro)
+
+    /// Suma registros a las casillas de `ICloudForeignCorpus`. Pura: los tests le pasan `CKRecord` fabricados, que no
+    /// necesitan red.
+    struct ForeignTally {
+        /// Los `recordName` que el espejo de este store ya conoce.
+        let known: Set<String>
+        /// Los tipos que cuentan (`reverseCountedRecordTypes`).
+        let countedTypes: Set<String>
+        /// `false` si se bajaron solo metadatos: entonces no se separa nada por campos.
+        let readsFields: Bool
+
+        private(set) var transactions = 0
+        private(set) var groupTransactions = 0
+        private(set) var accounts = 0
+        private(set) var budgets = 0
+        private(set) var otherRecords = 0
+
+        init(known: Set<String>, countedTypes: Set<String>, readsFields: Bool) {
+            self.known = known
+            self.countedTypes = countedTypes
+            self.readsFields = readsFields
+        }
+
+        /// Lo contado hasta ahora, que es lo que acota el tope.
+        var counted: Int { transactions + groupTransactions + accounts + budgets + otherRecords }
+
+        /// Cuenta un registro si es de un tipo que cuenta y el espejo local no lo conoce. Devuelve si contó.
+        @discardableResult
+        mutating func add(_ record: CKRecord) -> Bool {
+            let type = record.recordType
+            guard countedTypes.contains(type), !known.contains(record.recordID.recordName) else { return false }
+            switch type {
+            case "CD_TransactionItem":
+                if readsFields, record["CD_splitExpenseID"] != nil || record["CD_splitSettlementID"] != nil {
+                    groupTransactions += 1
+                } else {
+                    transactions += 1
+                }
+            case "CD_Account":
+                if readsFields, ICloudPersonalCorpusProbe.isFlagSet(record["CD_isSystemAccount"]) {
+                    otherRecords += 1
+                } else {
+                    accounts += 1
+                }
+            case "CD_Budget":
+                budgets += 1
+            default:
+                otherRecords += 1
+            }
+            return true
+        }
+
+        func corpus(truncated: Bool) -> ICloudForeignCorpus {
+            ICloudForeignCorpus(
+                transactions: transactions, groupTransactions: groupTransactions, accounts: accounts,
+                budgets: budgets, otherRecords: otherRecords, truncated: truncated, fieldsUnread: !readsFields)
+        }
+    }
+
+    // MARK: Decisiones puras (las fija `ReverseICloudPriorDataTests`)
+
+    /// Errores propios del recorrido: un registro que no se dejó leer, o el plazo.
+    enum ForeignScanError: Error {
+        case partialRecordFailure
+        case deadline
+    }
+
+    /// Un error de la pregunta → su desenlace. **Solo CloudKit declara «no hay cuenta»** (`notAuthenticated`,
+    /// `managedAccountRestricted`); todo lo demás es «no se supo», que no deja empezar la vuelta.
+    static func foreignCheckOutcome(for error: Error) -> ICloudForeignCorpusCheck {
+        switch error {
+        case ForeignScanError.partialRecordFailure: return .failed("partialRecordFailure")
+        case ForeignScanError.deadline:             return .failed("scanDeadline")
+        case let ck as CKError:
+            if ck.code == .notAuthenticated || ck.code == .managedAccountRestricted { return .noAccount }
+            return .failed("CKError.\(ck.code.rawValue)")
+        default:
+            return .failed(String(describing: type(of: error)))
+        }
+    }
+
+    /// ¿Borra «Empezar sin ellos» este registro? Si es de un tipo del canal personal (`reverseWipedRecordTypes`) y el
+    /// espejo local NO lo conoce. Lo que conoce es la copia propia: borrarla podría hacer que el espejo, al remontar con su
+    /// token, borre también las filas locales que la enlazan.
+    static func wipesForeignRecord(type: String, recordName: String, known: Set<String>) -> Bool {
+        reverseWipedRecordTypes.contains(type) && !known.contains(recordName)
+    }
+
+    /// El primer fallo de una tanda de borrados, o `nil` si todos entraron. **Los fallos por registro llegan dentro del
+    /// resultado, en silencio** (la regla de `modifyRecordZones`): ignorarlos sería decir «borrado» de lo que sigue en
+    /// iCloud y que el espejo va a sumar. «Ya no estaba» (`unknownItem`) no es un fallo.
+    static func deleteFailure(in results: [CKRecord.ID: Result<Void, Error>]) -> String? {
+        for (_, result) in results {
+            guard case .failure(let error) = result else { continue }
+            if let ck = error as? CKError, ck.code == .unknownItem { continue }
+            #if DEBUG
+            print("ICloudPersonalCorpusProbe: foreign record delete failed: \(error)")
+            #endif
+            return (error as? CKError).map { "CKError.\($0.code.rawValue)" } ?? String(describing: type(of: error))
+        }
+        return nil
+    }
+
+    // MARK: Implementación de producción
+
+    /// Los `recordName` que el espejo del store personal ya conoce, o el motivo por el que no se pudieron leer.
+    private static func knownMirroredRecordNames() -> Result<Set<String>, ForeignScanErrorReason> {
+        switch CKIdentityCapture.mirroredRecordNames(storeURL: SwiftDataConfiguration.personalConfiguration.url) {
+        case .names(let names):        return .success(names)
+        case .unreadable(let reason):  return .failure(ForeignScanErrorReason(text: "localMetadata:\(reason)"))
+        }
+    }
+
+    private struct ForeignScanErrorReason: Error { let text: String }
+
+    private static func measureForeignCorpusFromCloudKit() async -> ICloudForeignCorpusCheck {
+        let known: Set<String>
+        switch knownMirroredRecordNames() {
+        case .success(let names): known = names
+        case .failure(let reason): return .failed(reason.text)
+        }
+        do {
+            return .measured(try await scanForeignCorpus(known: known, desiredKeys: foreignDesiredKeys))
+        } catch let error as CKError where error.code == .invalidArguments {
+            // El plan B escrito en `desiredKeys`: el servidor validó la lista contra el schema de cada tipo. Sin campos
+            // se cuenta de más (movimientos de grupo como movimientos), que es el lado seguro de un aviso.
+            #if DEBUG
+            print("ICloudPersonalCorpusProbe: foreign scan rejected the field list, retrying without fields: \(error)")
+            #endif
+            do {
+                return .measured(try await scanForeignCorpus(known: known, desiredKeys: []))
+            } catch {
+                return foreignCheckFailure(error)
+            }
+        } catch {
+            return foreignCheckFailure(error)
+        }
+    }
+
+    private static func foreignCheckFailure(_ error: Error) -> ICloudForeignCorpusCheck {
+        #if DEBUG
+        print("ICloudPersonalCorpusProbe: foreign scan failed: \(error)")
+        #endif
+        return foreignCheckOutcome(for: error)
+    }
+
+    /// Recorre las zonas del espejo y cuenta lo ajeno. **Un registro que falla no se salta**: contar de menos hacia «no
+    /// hay nada» es sumar sin avisar, el bug. El tope cuenta solo lo ajeno, porque es lo que el texto cifra; el plazo
+    /// acota la espera entera entre páginas (una petición colgada la acota el propio CloudKit).
+    private static func scanForeignCorpus(known: Set<String>,
+                                          desiredKeys: [CKRecord.FieldKey]) async throws -> ICloudForeignCorpus {
+        let startedAt = Date()
+        var tally = ForeignTally(known: known, countedTypes: reverseCountedRecordTypes,
+                                 readsFields: !desiredKeys.isEmpty)
+        var truncated = false
+        for zoneID in try await mirrorZoneIDs() {
+            var token: CKServerChangeToken?
+            var moreComing = true
+            while moreComing {
+                let batch: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, Error>],
+                            deletions: [CKDatabase.RecordZoneChange.Deletion],
+                            changeToken: CKServerChangeToken, moreComing: Bool)
+                do {
+                    batch = try await privateDatabase.recordZoneChanges(
+                        inZoneWith: zoneID, since: token, desiredKeys: desiredKeys)
+                } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
+                    // La zona se fue entre la lista y la lectura: no hay nada que el espejo vaya a bajar de ella.
+                    break
+                }
+                for (_, result) in batch.modificationResultsByID {
+                    guard case .success(let modification) = result else { throw ForeignScanError.partialRecordFailure }
+                    tally.add(modification.record)
+                }
+                token = batch.changeToken
+                moreComing = batch.moreComing
+                if tally.counted >= recordScanCap {
+                    truncated = true
+                    moreComing = false
+                }
+                if Date().timeIntervalSince(startedAt) > foreignScanDeadline { throw ForeignScanError.deadline }
+            }
+            if truncated { break }
+        }
+        return tally.corpus(truncated: truncated)
+    }
+
+    /// Borra de iCloud los registros ajenos (`wipesForeignRecord`), **uno a uno y nunca la zona**. Borrar la zona entera
+    /// se llevaría también la copia propia que el espejo local ya conoce, y no está medido qué hace el espejo al remontar
+    /// sobre una zona borrada con sus metadatos todavía en el store: en el peor caso purga las filas locales, que aquí son
+    /// el corpus de la persona. Borrar un registro que el espejo local no tiene no le cambia nada, **siempre que `known`
+    /// esté completo**: por eso un metadato que no se lee entero es `.unreadable` y aquí no se borra nada.
+    ///
+    /// Recorre la zona otra vez (sin tope: tiene que llegar a todo) en vez de reusar lo que contó la pregunta, para no
+    /// borrar con una lista vieja, y **borra cada página al leerla**: con el plazo vencido, lo borrado se queda borrado y
+    /// el reintento avanza con lo que quede. Un fallo por registro que no sea «ya no estaba» devuelve el motivo.
+    private static func deleteForeignRecordsFromCloudKit() async -> String? {
+        let known: Set<String>
+        switch knownMirroredRecordNames() {
+        case .success(let names): known = names
+        case .failure(let reason): return reason.text
+        }
+        let startedAt = Date()
+        do {
+            for zoneID in try await mirrorZoneIDs() {
+                var token: CKServerChangeToken?
+                var moreComing = true
+                while moreComing {
+                    let batch: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, Error>],
+                                deletions: [CKDatabase.RecordZoneChange.Deletion],
+                                changeToken: CKServerChangeToken, moreComing: Bool)
+                    do {
+                        batch = try await privateDatabase.recordZoneChanges(
+                            inZoneWith: zoneID, since: token, desiredKeys: [])
+                    } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
+                        break
+                    }
+                    var foreign: [CKRecord.ID] = []
+                    for (recordID, result) in batch.modificationResultsByID {
+                        guard case .success(let modification) = result else { return "partialRecordFailure" }
+                        if wipesForeignRecord(type: modification.record.recordType, recordName: recordID.recordName,
+                                              known: known) {
+                            foreign.append(recordID)
+                        }
+                    }
+                    var start = 0
+                    while start < foreign.count {
+                        let end = min(start + foreignWipeBatchSize, foreign.count)
+                        let (_, deleteResults) = try await privateDatabase.modifyRecords(
+                            saving: [], deleting: Array(foreign[start..<end]), atomically: false)
+                        if let failure = deleteFailure(in: deleteResults) { return failure }
+                        start = end
+                    }
+                    token = batch.changeToken
+                    moreComing = batch.moreComing
+                    if Date().timeIntervalSince(startedAt) > foreignWipeDeadline { return "wipeDeadline" }
+                }
+            }
+            return nil
+        } catch let error as CKError {
+            #if DEBUG
+            print("ICloudPersonalCorpusProbe: foreign wipe failed: \(error)")
+            #endif
+            return "CKError.\(error.code.rawValue)"
+        } catch {
+            #if DEBUG
+            print("ICloudPersonalCorpusProbe: foreign wipe failed: \(error)")
             #endif
             return String(describing: type(of: error))
         }

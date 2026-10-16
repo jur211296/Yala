@@ -142,9 +142,14 @@ extension SyncPullClient: ReverseTombstoneSource {
 ///
 /// `isBornCloud` es lo que faltaba, y es lo que separa dos poblaciones que `hasCKMap` metía en el mismo
 /// saco: el **migrado sin mapa** (tiene zona CloudKit y no sabe dónde está: sigue excluido, el riesgo es
-/// real) y el **born-cloud** (nunca tuvo zona, así que no hay nada que pueda resucitar). Hasta el
+/// real) y el **born-cloud** (la CUENTA nunca tuvo zona, así que no hay nada suyo que pueda resucitar). Hasta el
 /// 2026-09-10 el born-cloud quedaba fuera por arrastre — y tras el fresh start de ese día eso era todo el
 /// mundo, con la fila E de la matriz prometiendo un camino que nadie podía recorrer.
+///
+/// **Ojo: «la cuenta no tuvo zona» no es «el iCloud del teléfono está vacío».** La zona es del Apple ID, y puede traer
+/// el corpus de otra cuenta de Yala que usó este iPhone (medido en el QA del 2026-10-15: 9 gastos de grupo ajenos). Eso
+/// no lo decide esta elegibilidad: lo pregunta el botón antes de empezar (`CloudMigrationController.checkICloudBeforeReverse`,
+/// ticket `reverse-to-icloud-merges-prior-icloud-data-without-asking`).
 ///
 /// **La señal es POSITIVA a propósito, y ese matiz es todo el diseño.** Es
 /// `StorageModePersistence.isBornCloud`, que solo escribe el alta born-cloud de este dispositivo. La
