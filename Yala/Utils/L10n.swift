@@ -8435,12 +8435,17 @@ enum L10n {
             // Step 1 — Hero with chat preview animation (3 scenarios)
             static var step1Title: String { ls("yalaAI.onboarding.step1.title", comment: "") }
             static var step1Subtitle: String { ls("yalaAI.onboarding.step1.subtitle", comment: "") }
-            static var step1DemoScenario1User: String { ls("yalaAI.onboarding.step1.demoScenario1User", comment: "") }
-            static var step1DemoScenario1Bot: String { ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: "") }
+            // Los importes llegan ya formateados en la divisa principal (`YalaAIOnboardingDemoAmounts`).
+            static func step1DemoScenario1User(_ lunch: String) -> String { String(format: ls("yalaAI.onboarding.step1.demoScenario1User", comment: ""), lunch) }
+            static func step1DemoScenario1Bot(_ lunch: String) -> String { String(format: ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: ""), lunch) }
             static var step1DemoScenario2User: String { ls("yalaAI.onboarding.step1.demoScenario2User", comment: "") }
-            static var step1DemoScenario2Bot: String { ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: "") }
+            static func step1DemoScenario2Bot(_ coffeeThisMonth: String, _ aboveAverage: String) -> String {
+                String(format: ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: ""), coffeeThisMonth, aboveAverage)
+            }
             static var step1DemoScenario3User: String { ls("yalaAI.onboarding.step1.demoScenario3User", comment: "") }
-            static var step1DemoScenario3Bot: String { ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: "") }
+            static func step1DemoScenario3Bot(_ perMonth: String, _ perYear: String) -> String {
+                String(format: ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: ""), perMonth, perYear)
+            }
             static var step1DemoAmountLabel: String { ls("yalaAI.onboarding.step1.demoAmountLabel", comment: "") }
             static var step1A11yLabel: String { ls("yalaAI.onboarding.step1.a11yLabel", comment: "") }
 
@@ -8472,13 +8477,13 @@ enum L10n {
             static var step4FocusSaverDescription: String { ls("yalaAI.onboarding.step4.focusSaverDescription", comment: "") }
             static var step4FocusCautiousDescription: String { ls("yalaAI.onboarding.step4.focusCautiousDescription", comment: "") }
             static var step4FocusBalancedQuote: String { ls("yalaAI.onboarding.step4.focusBalancedQuote", comment: "") }
-            static var step4FocusSaverQuote: String { ls("yalaAI.onboarding.step4.focusSaverQuote", comment: "") }
+            static func step4FocusSaverQuote(_ perMonth: String) -> String { String(format: ls("yalaAI.onboarding.step4.focusSaverQuote", comment: ""), perMonth) }
             static var step4FocusCautiousQuote: String { ls("yalaAI.onboarding.step4.focusCautiousQuote", comment: "") }
 
             // Step 5 — Done
             static var step5Title: String { ls("yalaAI.onboarding.step5.title", comment: "") }
             static var step5Subtitle: String { ls("yalaAI.onboarding.step5.subtitle", comment: "") }
-            static var step5Tip: String { ls("yalaAI.onboarding.step5.tip", comment: "") }
+            static func step5Tip(_ coffee: String) -> String { String(format: ls("yalaAI.onboarding.step5.tip", comment: ""), coffee) }
             static var step5CTA: String { ls("yalaAI.onboarding.step5.cta", comment: "") }
         }
     }

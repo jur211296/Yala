@@ -74,7 +74,7 @@ const privacyUrl = lang === 'es' ? '/privacy' : `/${lang}/privacy`;
         <p class="text-neutral-300 leading-relaxed" set:html={t.termsDataText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>').replace(/Política de Privacidad|Privacy Policy|Datenschutzrichtlinie|Politique de Confidentialité|Informativa sulla Privacy|Política de Privacidade/, `<a href="${privacyUrl}" class="text-yala-cyan hover:text-yala-indigo transition-colors">$&</a>`)} />
       </section>
 
-      <!-- 6. Groups (Beta) -->
+      <!-- 6. Groups -->
       <section class="mb-8">
         <h2 class="text-xl font-semibold text-white mb-3">{t.termsGroupsTitle}</h2>
         <p class="text-neutral-300 leading-relaxed" set:html={t.termsGroupsText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')} />

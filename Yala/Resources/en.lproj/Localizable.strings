@@ -4211,12 +4211,12 @@
 "yalaAI.onboarding.progressLabel" = "Step %1$d of %2$d";
 "yalaAI.onboarding.step1.title" = "Meet Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Your financial right hand.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Spent $12 on lunch.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Done! I logged your $12 lunch.";
+"yalaAI.onboarding.step1.demoScenario1User" = "Spent %@ on lunch.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Done! I logged your %@ lunch.";
 "yalaAI.onboarding.step1.demoScenario2User" = "How much on coffee this month?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "You're at $45 on coffee this month ☕ — 12% less than April, but $8 above your usual average.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "You're at %1$@ on coffee this month ☕, 12%% less than April, but %2$@ above your usual average.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Any tip?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Your delivery is up 20% vs last month. Back to your usual pace and you save $80 a month — nearly $1,000 a year.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Your delivery is up 20%% vs last month. Back to your usual pace and you save %1$@ a month. That's %2$@ a year.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Example chat with Yala AI logging an expense";
 "yalaAI.onboarding.step2.title" = "Here's what you can do";
@@ -4242,11 +4242,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Helps you cut back and save more each month.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Flags any drift so nothing catches you off guard.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Your income covers this month's expenses. Good rhythm.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "Cut restaurants by 10% and save $40 a month.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "Cut restaurants by 10%% and save %@ a month.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Heads up: you're pacing faster than last month on delivery.";
 "yalaAI.onboarding.step5.title" = "All set!";
 "yalaAI.onboarding.step5.subtitle" = "Whenever you want, tell Yala what you need.";
-"yalaAI.onboarding.step5.tip" = "💡 Try: \"Log a $5 coffee\" or \"How much did I spend today?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Try: \"Log a %@ coffee\" or \"How much did I spend today?\"";
 "yalaAI.onboarding.step5.cta" = "Start chatting";
 
 // MARK: - Stats Records polish
