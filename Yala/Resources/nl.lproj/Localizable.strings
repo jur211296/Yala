@@ -6636,6 +6636,23 @@
 "account.removal.countBudgets" = "Budgetten";
 "account.removal.budgetsMovedNote" = "Budgetten die deze rekening volgden, volgen voortaan „%@”.";
 "account.removal.budgetsOnlyNote" = "Sommige budgetten volgden alleen deze rekening: zonder haar volgen ze al je rekeningen.";
+"orphanedRecords.title" = "Transacties zonder rekening";
+"orphanedRecords.bannerMessage" = "Ze zijn hun rekening kwijtgeraakt toen een rekening werd verwijderd en tellen niet mee in je saldo of je uitgaven.";
+"orphanedRecords.bannerAction" = "Rekening kiezen";
+"orphanedRecords.intro" = "Deze transacties zijn hun rekening kwijtgeraakt toen een rekening werd verwijderd. Zolang ze er geen hebben, tellen ze niet mee in je saldo of je uitgaven. Kies naar welke rekening je ze verplaatst.";
+"orphanedRecords.listHeader" = "Welke het zijn";
+"orphanedRecords.moreNote" = "En nog %d.";
+"orphanedRecords.noDestination" = "Maak een rekening aan om ze te kunnen verplaatsen.";
+"orphanedRecords.keptCurrencyNote" = "Overboekingen in een andere valuta gaan mee zoals ze zijn, zonder omrekening, zodat hun tegenboeking blijft kloppen.";
+"orphanedRecords.convertNote" = "Wat in een andere valuta staat, gaat naar %@ tegen de wisselkoers van de datum.";
+"orphanedRecords.collapsedNote" = "Overboekingen die binnen ‘%@’ zouden belanden, worden verwijderd: binnen dezelfde rekening verplaatsen ze geen geld.";
+"orphanedRecords.moveAction" = "Verplaatsen naar ‘%@’";
+"orphanedRecords.moveActionGeneric" = "Verplaatsen";
+"orphanedRecords.working" = "Verplaatsen…";
+"orphanedRecords.failedTitle" = "Niet verplaatst";
+"orphanedRecords.failedUnreadable" = "We konden de transacties niet lezen. Er is niets gewijzigd.";
+"orphanedRecords.failedChanged" = "Er is intussen iets veranderd. Controleer het en probeer het opnieuw.";
+"orphanedRecords.untitled" = "Geen omschrijving";
 
 /* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
 "icloud.unavailableNotice.title" = "iCloud is niet beschikbaar op dit apparaat";

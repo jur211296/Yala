@@ -497,6 +497,12 @@ struct PanelView: View {
                         )
                         .headerBandColumn(.leading)
 
+                        // Movimientos sin cuenta: el primero de los avisos tras la cabecera. No ofrece nada: dice que hay
+                        // dinero fuera del saldo y de los gastos, y lleva a la única salida (darles una cuenta).
+                        OrphanedRecordsNotice(count: viewModel.orphanedRecordCount) {
+                            sheets.showOrphanedRecords = true
+                        }
+
                         if !UITestHooks.isActive, appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
                             SiriTipCard(isVisible: Binding(
                                 get: { appPreferences.showSiriTip },

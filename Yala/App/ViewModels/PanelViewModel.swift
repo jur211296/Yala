@@ -267,6 +267,8 @@ final class PanelViewModel {
     private(set) var budgets: [Budget] = []
     private(set) var scheduledPayments: [ScheduledPayment] = []
     private(set) var pendingDrafts: [InboxDraft] = []
+    /// Cuántos movimientos se quedaron sin cuenta (`OrphanedRecordsService.isOrphan`). Lo pinta el aviso del Panel.
+    private(set) var orphanedRecordCount = 0
 
     /// Proyección de "mi parte" (neto) de los gastos de grupo BRIDGEADOS para la capa de
     /// stats. Se reconstruye en `loadData()` desde `transactions` — el set MÁS AMPLIO (con
@@ -470,6 +472,13 @@ final class PanelViewModel {
         // con AMBAS hermanas del bridge). `transactions` solo cambia aquí → `statsAdjustment`
         // queda siempre fresco ANTES de cualquier cálculo de widget (contexto y Hero).
         statsAdjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
+
+        // Movimientos sin cuenta (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`): se recuentan en CADA
+        // recarga, no una vez, para que el aviso enseñe también los que llegan tarde por sync tras eliminar su cuenta
+        // (card `tablero-eliminar-una-cuenta-todavia-puede-dejar-mjzx`). Se recuenta aunque `transactions` no cambie:
+        // mover uno le cambia la cuenta en sitio, y el array sigue siendo el mismo.
+        let orphans = transactions.filter(OrphanedRecordsService.isOrphan).count
+        if orphans != orphanedRecordCount { orphanedRecordCount = orphans }
 
         var budgetsDesc = FetchDescriptor<Budget>(
             predicate: #Predicate<Budget> { $0.isActive },

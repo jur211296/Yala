@@ -27,6 +27,8 @@ enum DevSeedAccountRemoval {
         static let taxiAmount: Double = -25
         static let phoneAmount: Double = -33
         static let salaryNote = "Sueldo QA"
+        /// `-uitest-seed movimientos-sin-cuenta`: lo mismo, con «Efectivo QA» ya eliminada.
+        static let orphanedProfile = "movimientos-sin-cuenta"
     }
 
     @MainActor
@@ -64,6 +66,21 @@ enum DevSeedAccountRemoval {
         insert(UITest.taxiNote, UITest.taxiAmount, day(1), source, expenseSub)
         insert(UITest.phoneNote, UITest.phoneAmount, day(2), source, expenseSub)
         insert(UITest.salaryNote, 1000, day(3), bank, incomeSub)
+    }
+
+    /// El corpus de `create` con «Efectivo QA» eliminada como lo hacía la app antes de la 2.1: sin mirar lo que tenía.
+    /// `Account.transactions` es `.nullify`, así que Taxi y Teléfono se quedan sin cuenta al guardar. Es el estado del
+    /// iPhone de QA de Jürgen (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`).
+    @MainActor
+    static func createOrphaned(subcategoryLookup: [String: Subcategory], in context: ModelContext) {
+        create(subcategoryLookup: subcategoryLookup, in: context)
+        let name = UITest.sourceName
+        do {
+            let source = try context.fetch(FetchDescriptor<Account>(predicate: #Predicate { $0.name == name }))
+            source.forEach { context.delete($0) }
+        } catch {
+            print("DevSeedAccountRemoval: Error: \(error)")
+        }
     }
 }
 #endif

@@ -45,7 +45,11 @@
         "Yala/App/ViewModels/Accounts/AccountRemovalViewModel.swift",
         "Yala/App/Logic/AccountRemovalLogic.swift",
         "Yala/Services/AccountRemovalService.swift",
-        "Yala/Seed/DevSeedAccountRemoval.swift"
+        "Yala/Seed/DevSeedAccountRemoval.swift",
+        "Yala/App/ViewModels/Accounts/OrphanedRecordsViewModel.swift",
+        "Yala/App/Logic/OrphanedRecordsLogic.swift",
+        "Yala/Services/OrphanedRecordsService.swift",
+        "Yala/App/Views/Panel/Components/OrphanedRecordsBanner.swift"
       ],
       "scenarioIDs": [
         "F-ACC-01",
@@ -54,7 +58,7 @@
         "F-ACC-05"
       ],
       "classification": "deterministic",
-      "coverage": "xcuitest:YalaUITests/AccountsCrudUITests,AccountRemovalUITests | 2026-10-15 (tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst): eliminar una cuenta con movimientos, programados, favoritos o borradores pendientes pregunta si moverlos a otra cuenta (convirtiendo con la tasa de su fecha si la moneda cambia) o borrarlos tras confirmar la cifra; vacía, se elimina como antes. XCUI: test_deleteAccountWithRecords_movesThemToAnotherAccount, test_deleteAccountWithRecords_deletesThemAfterConfirming (seed cuenta-con-movimientos); unit: AccountRemovalLogicTests, AccountRemovalServiceTests. | 2026-10-03 (archived-accounts-still-count-in-the-panel-total): archivar una cuenta enciende «Excluir de las estadísticas» y lo avisa bajo el toggle; re-incluirla a mano retira el aviso sin desarchivar, y desarchivar en la misma edición deshace solo la auto-exclusión. XCUI: test_archivingAccount_turnsOnExcludeAndShowsNotice; unit: AccountFormViewModelTests (archiving_*/unarchiving_*). | 2026-09-09: el selector de divisa del formulario de cuenta ya no es un NavigationLink liso — se bloquea (con el motivo a la vista) cuando el histórico lo manda otra entidad, y pide confirmación cuando hay que reexpresarlo. Red en unit: AccountFormCurrencyGateTests. Área fx-conversion-persistence.",
+      "coverage": "xcuitest:YalaUITests/AccountsCrudUITests,AccountRemovalUITests,OrphanedRecordsUITests | 2026-10-15 (tablero-los-movimientos-que-quedaron-sin-cuenta-sovw + tablero-eliminar-una-cuenta-todavia-puede-dejar-mjzx): los movimientos sin cuenta (borrados de antes de la 2.1 o que llegan tarde por sync) salen en un aviso del Panel con la cifra; la hoja «Movimientos sin cuenta» deja elegir la cuenta y moverlos con las reglas de eliminar cuenta, y vuelven al saldo. XCUI: test_orphanedRecords_noticeCountsThem_andMovingThemRestoresTheBalance, test_noOrphanedRecords_noNotice (seeds movimientos-sin-cuenta / cuenta-con-movimientos); unit: OrphanedRecordsLogicTests, OrphanedRecordsServiceTests. | 2026-10-15 (tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst): eliminar una cuenta con movimientos, programados, favoritos o borradores pendientes pregunta si moverlos a otra cuenta (convirtiendo con la tasa de su fecha si la moneda cambia) o borrarlos tras confirmar la cifra; vacía, se elimina como antes. XCUI: test_deleteAccountWithRecords_movesThemToAnotherAccount, test_deleteAccountWithRecords_deletesThemAfterConfirming (seed cuenta-con-movimientos); unit: AccountRemovalLogicTests, AccountRemovalServiceTests. | 2026-10-03 (archived-accounts-still-count-in-the-panel-total): archivar una cuenta enciende «Excluir de las estadísticas» y lo avisa bajo el toggle; re-incluirla a mano retira el aviso sin desarchivar, y desarchivar en la misma edición deshace solo la auto-exclusión. XCUI: test_archivingAccount_turnsOnExcludeAndShowsNotice; unit: AccountFormViewModelTests (archiving_*/unarchiving_*). | 2026-09-09: el selector de divisa del formulario de cuenta ya no es un NavigationLink liso — se bloquea (con el motivo a la vista) cuando el histórico lo manda otra entidad, y pide confirmación cuando hay que reexpresarlo. Red en unit: AccountFormCurrencyGateTests. Área fx-conversion-persistence.",
       "owner": "",
       "lastVerified": "2026-10-15"
     },

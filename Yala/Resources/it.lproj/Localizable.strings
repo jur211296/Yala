@@ -6634,6 +6634,23 @@
 "account.removal.countBudgets" = "Budget";
 "account.removal.budgetsMovedNote" = "I budget che seguivano questo conto seguiranno «%@».";
 "account.removal.budgetsOnlyNote" = "Alcuni budget seguivano solo questo conto: senza di esso, seguiranno tutti i tuoi conti.";
+"orphanedRecords.title" = "Movimenti senza conto";
+"orphanedRecords.bannerMessage" = "Hanno perso il loro conto quando è stato eliminato un conto e non contano né nel saldo né nelle spese.";
+"orphanedRecords.bannerAction" = "Scegli il conto";
+"orphanedRecords.intro" = "Questi movimenti hanno perso il loro conto quando è stato eliminato un conto. Finché non ne hanno uno, non contano né nel saldo né nelle spese. Scegli su quale conto spostarli.";
+"orphanedRecords.listHeader" = "Quali sono";
+"orphanedRecords.moreNote" = "E altri %d.";
+"orphanedRecords.noDestination" = "Crea un conto per poterli spostare.";
+"orphanedRecords.keptCurrencyNote" = "I trasferimenti in un'altra valuta passano così come sono, senza conversione: così la loro controparte continua a tornare.";
+"orphanedRecords.convertNote" = "Quelli in un'altra valuta passano a %@ con il tasso di cambio della loro data.";
+"orphanedRecords.collapsedNote" = "I trasferimenti che resterebbero all'interno di «%@» vengono rimossi: nello stesso conto non spostano denaro.";
+"orphanedRecords.moveAction" = "Sposta su «%@»";
+"orphanedRecords.moveActionGeneric" = "Sposta";
+"orphanedRecords.working" = "Spostamento…";
+"orphanedRecords.failedTitle" = "Non sono stati spostati";
+"orphanedRecords.failedUnreadable" = "Non siamo riusciti a leggere i movimenti. Non è cambiato nulla.";
+"orphanedRecords.failedChanged" = "Nel frattempo è cambiato qualcosa. Controlla e riprova.";
+"orphanedRecords.untitled" = "Senza descrizione";
 
 /* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
 "icloud.unavailableNotice.title" = "iCloud non è disponibile su questo dispositivo";

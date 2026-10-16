@@ -3374,6 +3374,38 @@ enum L10n {
         }
     }
 
+    // MARK: - Movimientos sin cuenta
+
+    /// El aviso del Panel y la hoja «Movimientos sin cuenta» (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`).
+    enum OrphanedRecords {
+        static var title: String { ls("orphanedRecords.title", comment: "") }
+        static var bannerTitle: String { title }
+        static var bannerMessage: String { ls("orphanedRecords.bannerMessage", comment: "") }
+        static var bannerAction: String { ls("orphanedRecords.bannerAction", comment: "") }
+        static var intro: String { ls("orphanedRecords.intro", comment: "") }
+        static var listHeader: String { ls("orphanedRecords.listHeader", comment: "") }
+        static func moreNote(_ count: Int) -> String {
+            String(format: ls("orphanedRecords.moreNote", comment: ""), count)
+        }
+        static var noDestination: String { ls("orphanedRecords.noDestination", comment: "") }
+        static var keptCurrencyNote: String { ls("orphanedRecords.keptCurrencyNote", comment: "") }
+        static func convertNote(_ to: String) -> String {
+            String(format: ls("orphanedRecords.convertNote", comment: ""), to)
+        }
+        static func collapsedNote(_ destination: String) -> String {
+            String(format: ls("orphanedRecords.collapsedNote", comment: ""), destination)
+        }
+        static func moveAction(_ destination: String) -> String {
+            String(format: ls("orphanedRecords.moveAction", comment: ""), destination)
+        }
+        static var moveActionGeneric: String { ls("orphanedRecords.moveActionGeneric", comment: "") }
+        static var working: String { ls("orphanedRecords.working", comment: "") }
+        static var failedTitle: String { ls("orphanedRecords.failedTitle", comment: "") }
+        static var failedUnreadable: String { ls("orphanedRecords.failedUnreadable", comment: "") }
+        static var failedChanged: String { ls("orphanedRecords.failedChanged", comment: "") }
+        static var untitled: String { ls("orphanedRecords.untitled", comment: "") }
+    }
+
     // MARK: - Account
 
     enum Account {

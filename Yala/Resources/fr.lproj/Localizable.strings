@@ -6625,6 +6625,23 @@
 "account.removal.countBudgets" = "Budgets";
 "account.removal.budgetsMovedNote" = "Les budgets qui suivaient ce compte suivront « %@ ».";
 "account.removal.budgetsOnlyNote" = "Certains budgets ne suivaient que ce compte : sans lui, ils suivront tous tes comptes.";
+"orphanedRecords.title" = "Opérations sans compte";
+"orphanedRecords.bannerMessage" = "Elles ont perdu leur compte lors de la suppression d'un compte et ne comptent ni dans ton solde ni dans tes dépenses.";
+"orphanedRecords.bannerAction" = "Choisir un compte";
+"orphanedRecords.intro" = "Ces opérations ont perdu leur compte lors de la suppression d'un compte. Tant qu'elles n'en ont pas, elles ne comptent ni dans ton solde ni dans tes dépenses. Choisis vers quel compte les déplacer.";
+"orphanedRecords.listHeader" = "Lesquelles";
+"orphanedRecords.moreNote" = "Et %d de plus.";
+"orphanedRecords.noDestination" = "Crée un compte pour pouvoir les déplacer.";
+"orphanedRecords.keptCurrencyNote" = "Les virements dans une autre devise passent tels quels, sans conversion : leur contrepartie reste ainsi cohérente.";
+"orphanedRecords.convertNote" = "Celles dans une autre devise passent en %@ au taux de change de leur date.";
+"orphanedRecords.collapsedNote" = "Les virements qui resteraient au sein de « %@ » sont supprimés : dans un même compte, ils ne déplacent pas d'argent.";
+"orphanedRecords.moveAction" = "Déplacer vers « %@ »";
+"orphanedRecords.moveActionGeneric" = "Déplacer";
+"orphanedRecords.working" = "Déplacement…";
+"orphanedRecords.failedTitle" = "Elles n'ont pas été déplacées";
+"orphanedRecords.failedUnreadable" = "Nous n'avons pas pu lire les opérations. Rien n'a été modifié.";
+"orphanedRecords.failedChanged" = "Quelque chose a changé entre-temps. Vérifie et réessaie.";
+"orphanedRecords.untitled" = "Sans description";
 
 /* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
 "icloud.unavailableNotice.title" = "iCloud n'est pas disponible sur cet appareil";
