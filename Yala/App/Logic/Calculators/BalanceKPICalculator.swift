@@ -51,9 +51,9 @@ enum BalanceKPICalculator {
         /// **Hoy solo se rellena en el régimen VIVO.** Ahí el número lo arma `LiveBalanceCalculator`
         /// convirtiendo cada bucket con el TC de hoy, y su `Breakdown` mide la calidad de cada
         /// conversión, así que la señal viene con el valor. En el régimen CERRADO el número es el
-        /// último punto de la curva acumulada de `TrendDataProcessor`, que suma el importe resuelto
-        /// de cada fila y descarta su calidad (`TrendDataProcessor.balanceAmount` se queda con el
-        /// valor): **la curva no acumula la señal**, ni aquí ni en ninguna otra pantalla que muestre
+        /// último punto de la curva acumulada de `TrendDataProcessor`, que desde el 2026-10-16 valora
+        /// el saldo nativo al cierre con la tasa de ese día (`BalanceValuation`) y se queda solo con el
+        /// valor: **la curva no acumula la señal**, ni aquí ni en ninguna otra pantalla que muestre
         /// ese saldo. `false` ahí dice «no lo sé», no «es exacto».
         ///
         /// **Y que conste que es alcance, no imposibilidad** — la review adversarial del 2026-09-09

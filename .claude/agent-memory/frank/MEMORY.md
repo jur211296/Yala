@@ -16,7 +16,7 @@
 - [Un límite de plataforma se explica en la pregunta](feedback_un_limite_de_plataforma_se_explica_en_la_pregunta.md) — preguntó por qu…
 - [Credencial pendiente: se aparca y se mide](feedback_credencial_pendiente_se_aparca.md) — pídela una vez; al llegar, mide a qué alcanza antes de usarla.
 - [El carril espera a Cola A](feedback_carril_espera_a_cola_a.md) — nada al simulador con Cola A viva; al acabar, validar que limpió.
-- [Elige la propuesta completa aunque apriete](feedback_elige_la_propuesta_completa_aunque_aprieta.md) — recomienda por producto, no por esfuerzo.
+- [Elige la propuesta completa aunque apriete](feedback_elige_la_propuesta_completa_aunque_aprieta.md) — por producto y, en finanzas, por la regla del dominio.
 - [Gasto a la medida del tráfico](feedback_gasto_a_la_medida_del_trafico.md) — plan mínimo que funcione; estima el gasto y avisa antes.
 - [Verificar prod del gateway: token acuñado](feedback_verificar_prod_del_gateway_con_token_acunado.md) — staging con Yala Dev de Jürgen; prod con token 15 min, preguntando.
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.

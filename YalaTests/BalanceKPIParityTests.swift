@@ -100,7 +100,10 @@ struct BalanceKPIParityTests {
             grouping: .day,
             interval: interval,
             currencyCode: currencyCode,
-            liveBalanceOverride: override
+            liveBalanceOverride: override,
+            // El Panel le pasa a la curva el mismo converter que a la cifra (`calcContext.converter`). Sin él, este
+            // espejo convertía con el compartido y solo coincidía mientras la curva no convertía nada.
+            converter: converter
         ).finalBalance
     }
 
@@ -403,30 +406,64 @@ struct BalanceKPIParityTests {
         #expect(kpi != flow, "El KPI de Balance volvió a ser el flujo del período")
     }
 
-    // MARK: - Período cerrado: histórico, no saldo de hoy
+    // MARK: - Período cerrado: el saldo al cierre, a la tasa del cierre
 
-    /// Un período pasado NO debe enseñar el saldo de hoy: sería mostrar la cifra
-    /// de esta mañana bajo una etiqueta que dice "Mes pasado".
-    @Test func balanceKPI_closedPeriod_usesHistoricalSnapshot_notLiveRate() {
+    /// Una tasa por fecha: `antes` hasta el inicio de este mes, `hoy` desde entonces. Es lo que distingue «la tasa
+    /// del cierre del mes pasado» de «la tasa de hoy»: con una sola tasa para todo, las dos dan el mismo número.
+    private struct DatedRateConverter: CurrencyConverting {
+        let cutoff: Date
+        let antes: Decimal
+        let hoy: Decimal
+
+        func convert(_ amount: Decimal, from: String, to: String, on date: Date) -> Decimal {
+            convertChecked(amount, from: from, to: to, on: date).amount
+        }
+        func convertWithLatestRate(_ amount: Decimal, from: String, to: String) -> Decimal {
+            convertCheckedWithLatestRate(amount, from: from, to: to).amount
+        }
+        func convertChecked(_ amount: Decimal, from: String, to: String, on date: Date)
+            -> (amount: Decimal, quality: RateQuality) {
+            if from == to { return (amount, .exact) }
+            return (amount * (date < cutoff ? antes : hoy), .exact)
+        }
+        func convertCheckedWithLatestRate(_ amount: Decimal, from: String, to: String)
+            -> (amount: Decimal, quality: RateQuality) {
+            if from == to { return (amount, .exact) }
+            return (amount * hoy, .exact)
+        }
+    }
+
+    /// Un período pasado NO enseña el saldo de hoy: ni lo que pasó después del cierre ni el tipo de cambio de hoy.
+    /// Desde `panel-balance-chart-contradicts-its-own-figure` (2026-10-16, decisión de Jürgen: «cada día a su
+    /// tipo de cambio») tampoco suma cada fila al tipo de su día: vale lo que había en cada divisa al cierre, por
+    /// la tasa de ESE día. 1.000 USD comprados a 3,0 + 1.000 PEN; el cierre del mes pasado a 3,2; hoy a 3,5 y con
+    /// 500 PEN más.
+    @Test func balanceKPI_closedPeriod_valuesTheCloseAtTheClosingRate() {
         let lastMonthInterval = DetailPeriod.lastMonth.dateInterval()
         let dateInLastMonth = calendar.date(
             byAdding: .day, value: 1, to: lastMonthInterval.start
         )!
-
         let fixture = multiCurrencyFixture(date: dateInLastMonth)
+        let despues = makeTransaction(
+            amount: 500, date: Date(), account: fixture.accounts[1], amountInPreferredCurrency: 500
+        )
+        let converter = DatedRateConverter(
+            cutoff: DetailPeriod.thisMonth.dateInterval().start, antes: 3.2, hoy: 3.5
+        )
 
         let kpi = BalanceKPICalculator.value(
-            transactions: fixture.transactions,
+            transactions: fixture.transactions + [despues],
             accounts: fixture.accounts,
             interval: lastMonthInterval,
             period: .lastMonth,
             currencyCode: "PEN",
-            converter: fixture.converter
+            converter: converter
         )
 
-        // Snapshots históricos acumulados: 3000 + 1000 = 4000. No 4500.
-        #expect(kpi == 4000)
-        #expect(kpi != 4500, "Un período cerrado no debe mostrar el saldo vivo de hoy")
+        #expect(kpi == 4_200, "1.000 USD × 3,2 + 1.000 PEN")
+        #expect(kpi != 4_000, "no la suma de cada fila a su tipo (el coste)")
+        #expect(kpi != 4_500, "no la tasa de hoy")
+        #expect(kpi != 5_000, "no el saldo vivo de hoy")
     }
 
     @Test func balanceKPI_closedPeriod_matchesPanel() {

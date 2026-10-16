@@ -11,6 +11,13 @@
 //  categorías) seguir usando `tx.amountInPreferredCurrency` directamente
 //  — esa semántica es correcta porque refleja "qué pasó económicamente".
 //
+//  Las CURVAS de saldo no son un flujo: dibujan este saldo en el tiempo. Desde
+//  el 2026-10-16 acumulan el saldo nativo con `addNative` y lo valoran cada día
+//  a su tipo de cambio, y hoy con `convertAtLatestRate` (`BalanceValuation`),
+//  así que acaban en esta cifra. Antes sumaban cada fila al tipo de su fecha y
+//  la curva acababa lejos de la cifra que tenía al lado: el Panel decía
+//  «+179,062» y dibujaba ~201K (ticket `panel-balance-chart-contradicts-its-own-figure`).
+//
 
 import Foundation
 import SwiftData
@@ -134,27 +141,12 @@ struct LiveBalanceCalculator {
             guard let acc = tx.account,
                 eligibleAccountIDs.contains(acc.persistentModelID)
             else { continue }
-            nativeBalances[tx.currencyCode, default: 0] += Decimal(tx.amount)
+            addNative(tx, to: &nativeBalances)
         }
 
-        var convertedTotal: Decimal = 0
-        // Numerador del umbral: la incertidumbre que ENTRÓ, en magnitudes (los errores de dos
-        // divisas no se cancelan). El denominador es el saldo que se MUESTRA, que es una resta
-        // (una tarjeta en dólares resta): `|convertedTotal|`, como pide `ApproximateMarkThreshold`.
-        var approximateMagnitude: Decimal = 0
-        for (code, amount) in nativeBalances {
-            if code == preferredCurrencyCode {
-                convertedTotal += amount
-            } else {
-                let outcome = converter.convertCheckedWithLatestRate(
-                    amount, from: code, to: preferredCurrencyCode
-                )
-                convertedTotal += outcome.amount
-                if !outcome.quality.isExact {
-                    approximateMagnitude += abs(outcome.amount)
-                }
-            }
-        }
+        let (convertedTotal, approximateMagnitude) = convertAtLatestRate(
+            nativeBalances, to: preferredCurrencyCode, converter: converter
+        )
         let amountsAreApproximate = ApproximateMarkThreshold.marks(
             approximate: (approximateMagnitude as NSDecimalNumber).doubleValue,
             total: (convertedTotal as NSDecimalNumber).doubleValue
@@ -167,6 +159,47 @@ struct LiveBalanceCalculator {
             amountsAreApproximate: amountsAreApproximate,
             eligibleAccountIDs: eligibleAccountIDs
         )
+    }
+
+    // MARK: - La regla del saldo vivo, compartida con las curvas de saldo
+
+    /// Lo que una fila suma al saldo, en su divisa NATIVA. Es la mitad de la regla del saldo vivo; la otra es
+    /// `convertAtLatestRate`. Las curvas de saldo acumulan con esta misma función y valoran el punto de hoy con
+    /// `convertAtLatestRate` (`BalanceValuation`): así su último punto ES la cifra del saldo, por construcción
+    /// (ticket `panel-balance-chart-contradicts-its-own-figure`).
+    static func addNative(_ transaction: TransactionItem, to nativeBalances: inout [String: Decimal]) {
+        nativeBalances[transaction.currencyCode, default: 0] += Decimal(transaction.amount)
+    }
+
+    /// Un saldo por divisa nativa, pasado a `preferredCurrencyCode` con el tipo de cambio ACTUAL.
+    ///
+    /// Devuelve también la magnitud convertida con una tasa que no era la de hoy: el numerador de
+    /// `ApproximateMarkThreshold`, en magnitudes (los errores de dos divisas no se cancelan). El denominador es el
+    /// saldo que se MUESTRA, que es una resta (una tarjeta en dólares resta): `|total|`.
+    static func convertAtLatestRate(
+        _ nativeBalances: [String: Decimal],
+        to preferredCurrencyCode: String,
+        converter: CurrencyConverting
+    ) -> (total: Decimal, approximateMagnitude: Decimal) {
+        var total: Decimal = 0
+        var approximateMagnitude: Decimal = 0
+        // Orden estable: la suma en `Decimal` no depende del orden, pero así el resultado no puede depender del
+        // orden de iteración de un diccionario ni en el último dígito.
+        for code in nativeBalances.keys.sorted() {
+            guard let amount = nativeBalances[code] else { continue }
+            if code == preferredCurrencyCode {
+                total += amount
+            } else {
+                let outcome = converter.convertCheckedWithLatestRate(
+                    amount, from: code, to: preferredCurrencyCode
+                )
+                total += outcome.amount
+                if !outcome.quality.isExact {
+                    approximateMagnitude += abs(outcome.amount)
+                }
+            }
+        }
+        return (total, approximateMagnitude)
     }
 
     /// Override del último punto del trend chart. Solo retorna no-nil cuando

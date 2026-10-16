@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (896)
+## Index (900)
 
 | id | status | path |
 |---|---|---|
@@ -135,6 +135,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | done | tickets/done/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
+| balance-figure-counts-future-dated-rows-the-curve-never-draws | backlog | tickets/backlog/balance-figure-counts-future-dated-rows-the-curve-never-draws.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
 | blocked-sign-in-still-binds-the-subscription-to-that-account | backlog | tickets/backlog/blocked-sign-in-still-binds-the-subscription-to-that-account.md |
@@ -153,8 +154,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
+| cashflow-override-synced-to-an-old-version-stays-invisible-after-updating | backlog | tickets/backlog/cashflow-override-synced-to-an-old-version-stays-invisible-after-updating.md |
 | cashflow-scheduled-line-ignores-payment-currency | done | tickets/done/cashflow-scheduled-line-ignores-payment-currency.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
+| cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two | backlog | tickets/backlog/cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | done | tickets/done/changing-an-account-currency-orphans-its-whole-history.md |
 | chat-assistant-is-down | discarded | tickets/discarded/chat-assistant-is-down.md |
@@ -322,6 +325,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | faq-says-long-press-starts-bulk-edit | backlog | tickets/backlog/faq-says-long-press-starts-bulk-edit.md |
+| ficha-mx-vida-rates-jump-on-the-last-day | backlog | tickets/backlog/ficha-mx-vida-rates-jump-on-the-last-day.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
@@ -611,7 +615,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | orphaned-group-records-stay-out-of-the-notice | done | tickets/done/orphaned-group-records-stay-out-of-the-notice.md |
 | owner-preferences-return-via-ikv-after-private-sign-out | backlog | tickets/backlog/owner-preferences-return-via-ikv-after-private-sign-out.md |
 | panel-accounts-redesign | done | tickets/done/panel-accounts-redesign.md |
-| panel-balance-chart-contradicts-its-own-figure | backlog | tickets/backlog/panel-balance-chart-contradicts-its-own-figure.md |
+| panel-balance-chart-contradicts-its-own-figure | done | tickets/done/panel-balance-chart-contradicts-its-own-figure.md |
 | panel-colapsa-la-seleccion-de-cuentas-a-la-primera | done | tickets/done/panel-colapsa-la-seleccion-de-cuentas-a-la-primera.md |
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | backlog | tickets/backlog/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
@@ -624,7 +628,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
 | personal-clock-ahead-wins-every-conflict-until-real-time-catches-up | done | tickets/done/personal-clock-ahead-wins-every-conflict-until-real-time-catches-up.md |
 | personal-clock-rollback-wedges-the-drain-forever | done | tickets/done/personal-clock-rollback-wedges-the-drain-forever.md |
-| personal-cloudkit-cashflow-override-line-declared-as-reference | backlog | tickets/backlog/personal-cloudkit-cashflow-override-line-declared-as-reference.md |
+| personal-cloudkit-cashflow-override-line-declared-as-reference | qa | tickets/qa/personal-cloudkit-cashflow-override-line-declared-as-reference.md |
 | personal-cloudkit-schema-snapshot-misses-optional-fields | done | tickets/done/personal-cloudkit-schema-snapshot-misses-optional-fields.md |
 | personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy | done | tickets/done/personal-drain-that-always-aborts-blocks-cloud-sign-out-with-a-wait-a-moment-copy.md |
 | personal-loss-without-a-count-covers-own-edits-made-after-the-notice | backlog | tickets/backlog/personal-loss-without-a-count-covers-own-edits-made-after-the-notice.md |

@@ -125,10 +125,13 @@ struct WidgetPreferredCurrencyTests {
         #expect(cerca(summary.periodBalance, 1_455), "saldo: \(String(describing: summary.periodBalance))")
     }
 
-    @Test("Saldo: con todo en la principal, lee el monto guardado")
-    func balance_singlePreferredCurrency_readsStoredAmounts() {
-        let summary = resumen(unaSolaDivisa(date: haceDias(1)), tasa: tasaAbsurda)
-        #expect(cerca(summary.periodBalance, 1_455), "saldo: \(String(describing: summary.periodBalance))")
+    /// Desde `panel-balance-chart-contradicts-its-own-figure` (2026-10-16) el saldo no lee el monto guardado: es lo
+    /// que hay en cada divisa NATIVA al cierre, valorado con la tasa de ese día (`BalanceValuation`). Con las filas de
+    /// USD guardadas a 3,7 y la tasa a 4: 900 + 150 × 4 = 1.500 (al tipo guardado saldría 1.455).
+    @Test("Saldo: valora lo nativo con la tasa del cierre, no el monto guardado")
+    func balance_valuesNativeAmountsAtTheClosingRate() {
+        let summary = resumen(unaSolaDivisa(date: haceDias(1)), tasa: 4)
+        #expect(cerca(summary.periodBalance, 1_500), "saldo: \(String(describing: summary.periodBalance))")
     }
 
     // MARK: - Categorías y subcategorías
@@ -197,32 +200,60 @@ struct WidgetPreferredCurrencyTests {
 
     // MARK: - Curva de saldo
 
-    /// La curva se recorre HACIA ATRÁS desde el saldo de hoy, que ya está en la divisa vigente: el
-    /// punto de antes del día de la mezcla es `saldo − cambio de ese día`.
-    private func puntoAntesDeLaMezcla(_ filas: [TransactionItem], tasa: Decimal) -> Double? {
-        // Una fila vieja y nula fija cuántos días de curva hay (5), sin mover el saldo.
-        let ancla = tx(nativo: 0, divisa: "PEN", guardado: 0, guardadaEn: "PEN",
-                       category: comida, date: haceDias(5))
-        let trend = WidgetDataCache.buildTrendData(
-            transactions: filas + [ancla],
-            totalBalance: 10_000,
-            currencyCode: "PEN",
-            converter: MockCurrencyConverter(fixedRate: tasa)
+    /// La curva del widget: cada punto es el saldo NATIVO al cierre de su día valorado con la tasa de ese día, y el de
+    /// hoy es el saldo vivo que se le pasa (`BalanceValuation`, la regla de la curva de la app desde
+    /// `panel-balance-chart-contradicts-its-own-figure`). Un saldo inicial de 10.000 soles hace 5 días y la mezcla
+    /// ayer.
+    private func curva(
+        _ filas: [TransactionItem], tasa: Decimal, sinCuenta: [TransactionItem] = []
+    ) -> (trend: WidgetTrendData, saldoVivo: Double) {
+        let apertura = tx(nativo: 10_000, divisa: "PEN", guardado: 10_000, guardadaEn: "PEN",
+                          category: sueldo, date: haceDias(5))
+        let cuenta = Account(name: "Principal", currencyCode: "PEN", colorHex: "#000000", iconName: "creditcard", type: "bank")
+        let todas = filas + [apertura]
+        for fila in todas { fila.account = cuenta }
+        let converter = MockCurrencyConverter(fixedRate: tasa)
+        // El saldo de hoy como lo calcula `buildSnapshot`: la regla del saldo vivo sobre las mismas filas.
+        let saldoVivo = LiveBalanceCalculator.liveBalance(
+            accounts: [cuenta], transactions: todas, preferredCurrencyCode: "PEN", converter: converter
         )
-        let antes = calendar.startOfDay(for: haceDias(2))
-        return trend.dailyPoints.first { $0.date == antes }?.balance
+        let trend = WidgetDataCache.buildTrendData(
+            transactions: todas + sinCuenta, totalBalance: saldoVivo, currencyCode: "PEN", converter: converter
+        )
+        return (trend, saldoVivo)
     }
 
-    @Test("Curva de saldo: el día de la mezcla resta en la divisa vigente")
-    func trend_mixedPreferredCurrencies_convertsBeforeSubtracting() {
-        let punto = puntoAntesDeLaMezcla(mezcla(date: haceDias(1)), tasa: tasaUSD)
-        #expect(cerca(punto, 10_000 - 1_455), "punto: \(String(describing: punto))")
+    private func punto(_ trend: WidgetTrendData, haceDias dias: Int) -> Double? {
+        let dia = calendar.startOfDay(for: haceDias(dias))
+        return trend.dailyPoints.first { $0.date == dia }?.balance
     }
 
-    @Test("Curva de saldo: con todo en la principal, lee el monto guardado")
-    func trend_singlePreferredCurrency_readsStoredAmounts() {
-        let punto = puntoAntesDeLaMezcla(unaSolaDivisa(date: haceDias(1)), tasa: tasaAbsurda)
-        #expect(cerca(punto, 10_000 - 1_455), "punto: \(String(describing: punto))")
+    @Test("Curva de saldo: el día de la mezcla vale lo nativo a la tasa de ese día")
+    func trend_mixedPreferredCurrencies_valuesNativeAtThatDaysRate() {
+        let (trend, saldoVivo) = curva(mezcla(date: haceDias(1)), tasa: tasaUSD)
+        #expect(cerca(punto(trend, haceDias: 2), 10_000), "antes de la mezcla: \(String(describing: punto(trend, haceDias: 2)))")
+        #expect(cerca(punto(trend, haceDias: 1), 10_000 + 1_455), "el día de la mezcla: \(String(describing: punto(trend, haceDias: 1)))")
+        // Hoy es el saldo vivo que recibe, y sin movimientos hoy coincide con el de ayer: ningún escalón.
+        #expect(cerca(punto(trend, haceDias: 0), saldoVivo))
+        #expect(cerca(saldoVivo, 10_000 + 1_455))
+    }
+
+    /// Una fila sin cuenta (pasa durante una importación de iCloud, con la relación aún sin llegar) no cuenta en el
+    /// saldo vivo y tampoco en la curva: si contara solo en la curva, el punto de hoy pintaría un escalón.
+    @Test("Curva de saldo: una fila sin cuenta no cuenta en ningún punto")
+    func trend_rowWithoutAccount_countsInNoPoint() {
+        let huerfana = tx(nativo: -3_000, divisa: "PEN", guardado: -3_000, guardadaEn: "PEN",
+                          category: comida, date: haceDias(3))
+        let (trend, saldoVivo) = curva(mezcla(date: haceDias(1)), tasa: tasaUSD, sinCuenta: [huerfana])
+        #expect(cerca(saldoVivo, 10_000 + 1_455), "el saldo vivo no la cuenta")
+        #expect(cerca(punto(trend, haceDias: 1), saldoVivo), "ayer = hoy sin movimientos hoy: \(String(describing: punto(trend, haceDias: 1)))")
+        #expect(cerca(punto(trend, haceDias: 2), 10_000))
+    }
+
+    @Test("Curva de saldo: no lee el monto guardado, valora lo nativo")
+    func trend_valuesNativeAmounts_notTheStoredOnes() {
+        let (trend, _) = curva(unaSolaDivisa(date: haceDias(1)), tasa: 4)
+        #expect(cerca(punto(trend, haceDias: 1), 10_000 + 1_500), "el día de la mezcla: \(String(describing: punto(trend, haceDias: 1)))")
     }
 
     // MARK: - La fila que viaja al widget

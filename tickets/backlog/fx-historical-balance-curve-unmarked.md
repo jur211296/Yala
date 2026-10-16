@@ -5,7 +5,7 @@ priority: medium
 area: currency
 created: 2026-09-09
 source: hallazgo de camino en fx-approximate-mark-missing-on-secondary-surfaces (2026-09-09)
-updated: 2026-10-08
+updated: 2026-10-16
 ---
 
 # El saldo de un mes cerrado nunca avisa de que es aproximado
@@ -66,3 +66,12 @@ alimenta a la vez la curva y el KPI, y tocarlo es cirugía en núcleo con suite 
 - Ningún commit en esos dos ficheros desde el 09-sep.
 
 Triage 2026-10-08: abierto · medium → medium · `fillBalanceBuckets` (`TrendDataProcessor.swift:296`) no produce la señal y `BalanceKPICalculator.swift:142` sigue con `isApproximate: false` en el período cerrado.
+
+## Actualización 2026-10-16: la premisa cambió y el trabajo es más barato
+
+Con `panel-balance-chart-contradicts-its-own-figure` (decisión de Jürgen: «cada día a su tipo de cambio») un saldo
+pasado ya no suma `amountInPreferredCurrency`: es el saldo nativo al cierre por la tasa de ese día
+(`BalanceValuation`). La duda de ese número es la **calidad de la tasa del cierre** (`RateQuality` de
+`rateFactors`), no el flag de cada fila, y `BalanceValuation.value` ya la devuelve (`approximateMagnitude`); el
+widget la usa para `periodBalanceIsApproximate`. Falta que `fillBalanceBuckets` la guarde para el último punto y que
+`BalanceKPICalculator` la lea en el régimen cerrado. Los AC de arriba siguen valiendo con esa fuente.

@@ -113,11 +113,26 @@ struct TrendsPreferredCurrencyTests {
         #expect(cerca(r.finalBalance, 2_910), "finalBalance: \(r.finalBalance)")
     }
 
-    @Test("Saldo agregado: con todo en la principal, la curva lee el monto guardado")
-    func balanceCurve_singlePreferredCurrency_readsStoredAmounts() throws {
-        let r = saldoAgregado(marzoYAbril(unaSolaDivisa), tasa: tasaAbsurda)
+    /// Una tasa distinta de la guardada en las filas (3,7): 1 USD = 4 PEN. El doble da la misma todos los días.
+    private let tasaHoy: Decimal = 4
+
+    /// Desde `panel-balance-chart-contradicts-its-own-figure` (2026-10-16) la curva de saldo es lo que hay en cada
+    /// divisa NATIVA, valorado con la tasa de cada día (`BalanceValuation`): el monto guardado, convertido el día de
+    /// la fila, ya no cuenta. Con las filas de USD guardadas a 3,7 y la tasa a 4:
+    /// 2 × (1.000 − 100 + (200 − 50) × 4) = 3.000 (al tipo guardado saldría 2.910).
+    @Test("Saldo agregado: la curva valora el importe nativo con la tasa, no el monto guardado")
+    func balanceCurve_valuesNativeAmountsAtTodaysRate() throws {
+        let r = saldoAgregado(marzoYAbril(unaSolaDivisa), tasa: tasaHoy)
         let fin = try #require(r.rawPoints.last?.value)
-        #expect(cerca(fin, 2_910), "saldo al cierre: \(fin)")
+        #expect(cerca(fin, 3_000), "saldo al cierre: \(fin)")
+    }
+
+    @Test("Saldo agregado: lo que está en la divisa principal no pasa por el converter")
+    func balanceCurve_rowsInThePreferredCurrency_skipTheConverter() throws {
+        let soloSoles = marzoYAbril { date in Array(unaSolaDivisa(date).prefix(2)) }
+        let r = saldoAgregado(soloSoles, tasa: tasaAbsurda)
+        let fin = try #require(r.rawPoints.last?.value)
+        #expect(cerca(fin, 1_800), "saldo al cierre: \(fin)")
     }
 
     // MARK: - KPI de saldo de un período cerrado
@@ -164,14 +179,15 @@ struct TrendsPreferredCurrencyTests {
         #expect(cerca(saldo, 2_910), "saldo al cierre: \(saldo)")
     }
 
-    @Test("Por cuenta: con todo en la principal, leen el monto guardado")
+    @Test("Por cuenta: con todo en la principal, ingreso y gasto leen el monto guardado; el saldo valora el nativo")
     func accountCurves_singlePreferredCurrency_readStoredAmounts() throws {
         let ingreso = porCuenta(.income, unaSolaDivisa(day(2026, 4, 10)), tasa: tasaAbsurda)
         #expect(cerca(suma(ingreso), 1_740), "ingreso: \(suma(ingreso))")
         let gasto = porCuenta(.expense, unaSolaDivisa(day(2026, 4, 10)), tasa: tasaAbsurda)
         #expect(cerca(suma(gasto), 285), "gasto: \(suma(gasto))")
-        let saldo = try #require(ultimo(porCuenta(.balance, marzoYAbril(unaSolaDivisa), tasa: tasaAbsurda)))
-        #expect(cerca(saldo, 2_910), "saldo al cierre: \(saldo)")
+        // El saldo no lee el monto guardado: valora el nativo con la tasa, como la curva agregada.
+        let saldo = try #require(ultimo(porCuenta(.balance, marzoYAbril(unaSolaDivisa), tasa: tasaHoy)))
+        #expect(cerca(saldo, 3_000), "saldo al cierre: \(saldo)")
     }
 
     /// La vista por cuenta y la agregada, sobre las mismas filas de una sola cuenta, dan el mismo
