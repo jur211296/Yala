@@ -102,25 +102,33 @@ final class ChatAssistantViewModel {
             print("ChatAssistantViewModel: seedDraftConversationForUITest fetch failed: \(error)")
             return
         }
-        guard let account = accounts.first(where: { $0.currencyCode == "PEN" }) ?? accounts.first else { return }
+        // La cuenta principal en la divisa preferida (soles con la semilla de siempre, dólares o reales con `ficha` en
+        // inglés o en portugués), como `uiTestReplyDrafts`.
+        let preferred = CurrencyDefaults.currentPreferred
+        let inPreferred = accounts.filter { $0.currencyCode == preferred }
+        guard let account = inPreferred.first(where: { $0.name == L10n.DevSeed.accountMain })
+            ?? inPreferred.first
+            ?? accounts.first
+        else { return }
         let expenseSubs = subcategories.filter { !$0.safeCategory.isIncome }
-        let taxi = expenseSubs.first(where: { $0.name.localizedCaseInsensitiveContains("taxi") })
-            ?? expenseSubs.first(where: { $0.safeCategory.name.localizedCaseInsensitiveContains("transporte") })
+        let taxi = expenseSubs.first(where: { $0.name == L10n.Subcategory.rideshare })
+            ?? expenseSubs.first(where: { $0.name.localizedCaseInsensitiveContains("taxi") })
+            ?? expenseSubs.first(where: { $0.safeCategory.name == L10n.Category.transport })
             ?? expenseSubs.first
         let now = Date.now
         let drafts = [
             ChatTransactionDraft(
-                amount: 45, currencyCode: account.currencyCode, isExpense: true, note: "Taxi al aeropuerto",
+                amount: 45, currencyCode: account.currencyCode, isExpense: true, note: L10n.UITestDemo.Chat.draftNoteTaxi,
                 date: now, accountID: account.persistentModelID, subcategoryID: taxi?.persistentModelID
             ),
             ChatTransactionDraft(
                 amount: Decimal(string: "120.50"), currencyCode: account.currencyCode, isExpense: true,
-                note: "Compras del súper", date: now, accountID: account.persistentModelID,
+                note: L10n.UITestDemo.Chat.draftNoteGroceries, date: now, accountID: account.persistentModelID,
                 needsUserInput: ["subcategory"]
             ),
         ]
         messages = [
-            ChatMessage(role: .user, text: "Gasté 45 en un taxi al aeropuerto y 120.50 en el súper", timestamp: now),
+            ChatMessage(role: .user, text: L10n.UITestDemo.Chat.draftMessage, timestamp: now),
             ChatMessage(
                 role: .assistant, text: L10n.Chat.Draft.confirmRegisterPlural, timestamp: now,
                 attachments: [.drafts(drafts)]
@@ -186,18 +194,20 @@ final class ChatAssistantViewModel {
             ?? expenseSubs.first(where: { $0.safeCategory.name == L10n.Category.food })
         return [
             ChatTransactionDraft(
-                amount: 280, currencyCode: account.currencyCode, isExpense: true, note: "Pizza",
+                amount: 280, currencyCode: account.currencyCode, isExpense: true, note: L10n.UITestDemo.Chat.pizzaNote,
                 date: Date.now, accountID: account.persistentModelID, subcategoryID: restaurants?.persistentModelID
             ),
         ]
     }
 
-    /// `-uitest-chat-suggestions`: las tres sugerencias del chat vacío, fijas.
-    private static let uiTestSuggestions = [
-        ChatSuggestion(text: "¿Cómo se distribuyeron mis gastos en Hogar y Personal?", icon: "chart.pie", type: .biggestCategory),
-        ChatSuggestion(text: "¿Cuánto gasté en Restaurantes y Delivery este mes?", icon: "cart", type: .topMerchant),
-        ChatSuggestion(text: "¿Mi presupuesto de Compras Super fue suficiente?", icon: "dollarsign.circle", type: .activeBudget),
-    ]
+    /// `-uitest-chat-suggestions`: las tres sugerencias del chat vacío, fijas y en el idioma de la app.
+    private static var uiTestSuggestions: [ChatSuggestion] {
+        [
+            ChatSuggestion(text: L10n.UITestDemo.Chat.suggestionSplit, icon: "chart.pie", type: .biggestCategory),
+            ChatSuggestion(text: L10n.UITestDemo.Chat.suggestionMonth, icon: "cart", type: .topMerchant),
+            ChatSuggestion(text: L10n.UITestDemo.Chat.suggestionBudget, icon: "dollarsign.circle", type: .activeBudget),
+        ]
+    }
     #endif
 
     // MARK: - Setup

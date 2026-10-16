@@ -8349,6 +8349,66 @@ enum L10n {
         static var stepDone: String { ls("devseed.stepDone", comment: "") }
         static var stepDeleting: String { ls("devseed.stepDeleting", comment: "") }
         static var stepReloading: String { ls("devseed.stepReloading", comment: "") }
+
+        /// Perfil `ficha` (capturas y vídeo de la App Store): los grupos y la cuenta en divisa extranjera, en el idioma
+        /// de la app. Las cifras viven en `DevSeedFicha`, por divisa.
+        enum Ficha {
+            static var groupTrip: String { ls("devseed.ficha.groupTrip", comment: "") }
+            static var groupWeekend: String { ls("devseed.ficha.groupWeekend", comment: "") }
+            static var memberYou: String { ls("devseed.ficha.memberYou", comment: "") }
+            static var memberA: String { ls("devseed.ficha.memberA", comment: "") }
+            static var memberB: String { ls("devseed.ficha.memberB", comment: "") }
+            static var memberC: String { ls("devseed.ficha.memberC", comment: "") }
+            static var expenseLodging: String { ls("devseed.ficha.expenseLodging", comment: "") }
+            static var expenseTour: String { ls("devseed.ficha.expenseTour", comment: "") }
+            static var expenseGroupDinner: String { ls("devseed.ficha.expenseGroupDinner", comment: "") }
+            static var expenseAirportTaxi: String { ls("devseed.ficha.expenseAirportTaxi", comment: "") }
+            static var expenseLocalMeal: String { ls("devseed.ficha.expenseLocalMeal", comment: "") }
+            static var expenseMuseum: String { ls("devseed.ficha.expenseMuseum", comment: "") }
+            static var expenseTransport: String { ls("devseed.ficha.expenseTransport", comment: "") }
+            static var expenseGroceries: String { ls("devseed.ficha.expenseGroceries", comment: "") }
+            static var expenseSouvenirs: String { ls("devseed.ficha.expenseSouvenirs", comment: "") }
+            static var expenseWeekendStay: String { ls("devseed.ficha.expenseWeekendStay", comment: "") }
+            static var expenseWeekendMeal: String { ls("devseed.ficha.expenseWeekendMeal", comment: "") }
+            /// «Travel EUR», «Viagem USD», «Ahorros USD»: el nombre lleva el código ISO de la cuenta.
+            static func accountForeign(_ currencyCode: String) -> String {
+                String(format: ls("devseed.ficha.accountForeign", comment: ""), currencyCode)
+            }
+        }
+    }
+
+    // MARK: - UI-test demo seams
+
+    /// Lo que «dicen» los seams DEBUG que sustituyen a la red en las capturas y el vídeo de la App Store
+    /// (`-uitest-chat-draft`, `-uitest-chat-suggestions`, `-uitest-chat-reply`, `-uitest-voice-result`,
+    /// `-uitest-image-result`). En español conservan el texto de siempre, que es el que leen los XCUITest.
+    enum UITestDemo {
+        enum Chat {
+            static var draftMessage: String { ls("uitestDemo.chat.draftMessage", comment: "") }
+            static var draftNoteTaxi: String { ls("uitestDemo.chat.draftNoteTaxi", comment: "") }
+            static var draftNoteGroceries: String { ls("uitestDemo.chat.draftNoteGroceries", comment: "") }
+            static var suggestionSplit: String { ls("uitestDemo.chat.suggestionSplit", comment: "") }
+            static var suggestionMonth: String { ls("uitestDemo.chat.suggestionMonth", comment: "") }
+            static var suggestionBudget: String { ls("uitestDemo.chat.suggestionBudget", comment: "") }
+            static var pizzaNote: String { ls("uitestDemo.chat.pizzaNote", comment: "") }
+        }
+        enum Voice {
+            static var lunchTranscript: String { ls("uitestDemo.voice.lunchTranscript", comment: "") }
+            static var lunchNote: String { ls("uitestDemo.voice.lunchNote", comment: "") }
+            static var twoTranscript: String { ls("uitestDemo.voice.twoTranscript", comment: "") }
+            static var taxiNote: String { ls("uitestDemo.voice.taxiNote", comment: "") }
+            static var coffeeNote: String { ls("uitestDemo.voice.coffeeNote", comment: "") }
+        }
+        enum Photo {
+            static var merchant: String { ls("uitestDemo.photo.merchant", comment: "") }
+            static var secondMerchant: String { ls("uitestDemo.photo.secondMerchant", comment: "") }
+            /// El total del recibo de la ficha de cada idioma (la boleta que se ve al lado en la captura), con punto
+            /// decimal. 251.81 si la cadena no es un número.
+            static var receiptTotal: Double { Double(ls("uitestDemo.photo.receiptTotal", comment: "")) ?? 251.81 }
+            static func page(_ number: Int) -> String {
+                String(format: ls("uitestDemo.photo.pageFormat", comment: ""), number)
+            }
+        }
     }
 
     // MARK: - Yala AI Onboarding

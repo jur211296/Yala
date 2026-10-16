@@ -74,6 +74,10 @@ enum DevSeedProfile: String {
     /// `.fichaMX`. Una sola persona para todas las capturas, así que las cifras cuadran entre pantallas. Ver
     /// `relabelPersonalDataToMXN`.
     case fichaMXVida = "ficha-mx-vida"
+    /// Capturas y vídeo de la ficha de la App Store en el idioma de la app: la vida personal de `.realista` en la divisa
+    /// preferida (`-defaultCurrencyCode`) y los grupos de la ficha. Las cifras que citan los textos salen con el reloj
+    /// en el 13-oct-2026 (lo pone el molde de `ficha-app-store/`). Ver `DevSeedFicha` y `DevSeedGroups.createFicha`.
+    case ficha
     /// Eliminar una cuenta con movimientos: «Efectivo QA» (dos gastos en soles), «Banco QA» (soles) y «Dólares QA»
     /// (vacía). Sin nada más, para que el diálogo de eliminar enseñe cifras exactas. Ver `DevSeedAccountRemoval`.
     case cuentaConMovimientos = "cuenta-con-movimientos"
@@ -92,7 +96,7 @@ enum DevSeedProfile: String {
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta: return 7
         case .fichaMXVida: return 365
-        case .realista: return 730
+        case .realista, .ficha: return 730
         case .pesado: return 3650
         }
     }
@@ -101,7 +105,7 @@ enum DevSeedProfile: String {
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
             || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
-            || self == .fichaMX || self == .fichaMXVida
+            || self == .fichaMX || self == .fichaMXVida || self == .ficha
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
@@ -271,6 +275,11 @@ final class DevSeedService {
         if profile == .fichaMXVida {
             relabelPersonalDataToMXN(in: context)
         }
+        // La ficha de la App Store en la divisa preferida (dólares en inglés, reales en portugués de Brasil). También
+        // antes de los grupos, que ya nacen en esa divisa.
+        if profile == .ficha {
+            DevSeedFicha.adaptPersonalData(in: context, mainCurrency: CurrencyDefaults.currentPreferred)
+        }
 
         // Step 10: Grupos (perfiles .grupos / .gruposInvitado / .gruposSaldado / .soloGrupos) — grupo local
         // para QA del tab Grupos
@@ -282,6 +291,7 @@ final class DevSeedService {
             case .gruposPendiente: DevSeedGroups.createAsPendingMember(in: context)
             case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
             case .fichaMX, .fichaMXVida: DevSeedGroups.createFichaMX(in: context)
+            case .ficha:          DevSeedGroups.createFicha(in: context, mainCurrency: CurrencyDefaults.currentPreferred)
             default:              DevSeedGroups.create(in: context)
             }
         }

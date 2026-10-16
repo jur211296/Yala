@@ -628,7 +628,9 @@ struct LegacyGroupsRetirementWiringTests {
         // Y lo protegió: el seed pasó a 5 en `a620118e` y el pin se quedó en 4, así que `2.1` llevaba
         // este rojo desde ese merge. Comprobado antes de subir el número, que es lo único que hace útil
         // subirlo: las 5 construcciones tienen sus 5 marcas — el grupo nuevo NO nace legacy.
-        #expect(constructions == 6, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
+        // 7 desde el 2026-10-16: `createFicha` (perfil `ficha`, capturas de la ficha en cada idioma) construye sus dos
+        // grupos con UN `SplitGroup(` dentro de su helper `seedGroup`, que marca backend justo debajo.
+        #expect(constructions == 7, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
         #expect(marks == constructions,
                 "Un grupo del seed volvió a nacer legacy: la retirada lo oculta y los XCUITest de Grupos se quedan sin datos.")
     }

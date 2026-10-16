@@ -534,6 +534,19 @@ final class UITestHooks {
         #endif
     }
 
+    /// Valor de `-uitest-image-file <ruta>`: con `-uitest-image-result one`, la foto que «elige» Fotos es este fichero en
+    /// vez del recibo de ejemplo de la práctica guiada. Lo pasa el molde de la ficha de la App Store
+    /// (`ficha-app-store/`) con el recibo de cada idioma, para que la foto que se «lee» diga lo mismo que la hoja: los
+    /// recibos de ejemplo traducidos siguen siendo de Lima y en soles. Nil si falta.
+    nonisolated static var imageFile: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-image-file", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// Valor de `-uitest-receipt-drop <unreadable|readable|pdf3|pdf3-locked>`: en cuanto la ventana queda libre, suelta un
     /// recibo por el camino real del `onDrop` (`ReceiptDropHandler.handle`). `unreadable`: un «PDF» que no lo es ·
     /// `readable`: el recibo de ejemplo como imagen · `pdf3`: un extracto ficticio de tres páginas · `pdf3-locked`: el mismo
