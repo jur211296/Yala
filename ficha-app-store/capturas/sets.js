@@ -84,13 +84,14 @@ laminas: [
   {k: "cifra", pos: {left: 90, top: 560}, estilo: {"font-size": 250}, html: O["07_presu"].cifra},
   P("s-presupuestos.png", 1000, {left: 200, top: 1180}, "rotateZ(-3deg)"),
 ]},
-// 08 · Tus cuentas · de frente, con las cuentas como etiquetas alrededor
-{ logo: LOGO, acento: "violeta", els: [
+// 08 · Tus cuentas · de frente, con «Tus finanzas» desplegado: efectivo y tarjeta en el carrusel, cada chip junto a la
+// suya (16-oct-2026, revisión de Lola); el de ahorro, sobre la tendencia. La estrella de abajo sube: el chip la tapaba.
+{ logo: LOGO, acento: "violeta", estrellas: [[1150, 470, 72, "rosa", -8], [50, 1560, 54, "teal", 12], [1200, 1700, 48, "azul", -14], [70, 2780, 60, "teal", 6]], els: [
   t("cuentas", {pos: {left: 90, top: 150, width: 1140}, subw: 1060}),
   P("s-panel.png", 820, {left: 230, top: 1050}),
-  chip(O["08_cuentas"].chips[0], {left: 60, top: 1300}, {"font-size": 46, padding: "22px 40px", transform: "rotate(-6deg)"}),
-  chip(O["08_cuentas"].chips[1], {right: 60, top: 1620}, {"font-size": 46, padding: "22px 40px", transform: "rotate(5deg)"}),
-  chip(O["08_cuentas"].chips[2], {left: 80, top: 2160}, {"font-size": 46, padding: "22px 40px", transform: "rotate(4deg)"}),
+  chip(O["08_cuentas"].chips[0], {left: 50, top: 2215}, {"font-size": 46, padding: "22px 40px", transform: "rotate(-6deg)"}),
+  chip(O["08_cuentas"].chips[1], {right: 50, top: 1800}, {"font-size": 46, padding: "22px 40px", transform: "rotate(5deg)"}),
+  chip(O["08_cuentas"].chips[2], {left: 70, top: 2600}, {"font-size": 46, padding: "22px 40px", transform: "rotate(4deg)"}),
 ]},
 // 09 · Multimoneda · el saldo de la cuenta en divisa extranjera, sacado de la app
 { logo: LOGO, acento: "rosa", els: [
@@ -171,13 +172,14 @@ laminas: [
     tarjeta(O["07_presu"].tarjetaIpad, {pos: {left: "-7%", width: "62%", top: "47.5%"}, escala: 1.55, icoC: "#6164EB"}),
   ]}),
 ]},
-// 08 · Tus cuentas
+// 08 · Tus cuentas · efectivo y tarjeta bajo sus tarjetas del carrusel; el de ahorro, en el hueco bajo las acciones
+// (16-oct-2026: el chip de efectivo tapaba el saldo).
 { logo: LOGO_I, acento: "violeta", els: [
   TI("cuentas", {subw: 1600}),
   TAB("i-panel.png", 1640, {left: 210, top: 1050}),
-  chip(O["08_cuentas"].chips[0], {left: 90, top: 1350}, {"font-size": 60, padding: "28px 52px", transform: "rotate(-6deg)"}),
-  chip(O["08_cuentas"].chips[1], {right: 80, top: 1700}, {"font-size": 60, padding: "28px 52px", transform: "rotate(5deg)"}),
-  chip(O["08_cuentas"].chips[2], {left: 110, top: 2280}, {"font-size": 60, padding: "28px 52px", transform: "rotate(4deg)"}),
+  chip(O["08_cuentas"].chips[0], {left: 1130, top: 1665}, {"font-size": 60, padding: "28px 52px", transform: "rotate(-6deg)"}),
+  chip(O["08_cuentas"].chips[1], {right: 70, top: 1650}, {"font-size": 60, padding: "28px 52px", transform: "rotate(5deg)"}),
+  chip(O["08_cuentas"].chips[2], {left: 110, top: 1565}, {"font-size": 60, padding: "28px 52px", transform: "rotate(4deg)"}),
 ]},
 // 09 · Multimoneda · la tarjeta del saldo en divisa extranjera tapa la otra cuenta de la semilla (sale en negativo)
 { logo: LOGO_I, acento: "rosa", els: [
@@ -197,13 +199,25 @@ laminas: [
 ]};
 
 // Ajustes de composición por idioma: se funden sobre los elementos de la lámina (por índice de `els`).
+const fundir = (o, cambio) => {
+  const r = Object.assign({}, o);
+  for (const [k, v] of Object.entries(cambio)) {
+    r[k] = (v && typeof v === "object" && !Array.isArray(v)) ? Object.assign({}, o[k], v) : v;
+  }
+  return r;
+};
 for (const aparato of ["iphone", "ipad"]) {
   for (const [n, porEl] of Object.entries((aj[aparato] || {}))) {
     const lamina = SETS[aparato].laminas[+n - 1];
     for (const [i, cambio] of Object.entries(porEl)) {
       const el = lamina.els[+i];
       for (const [k, v] of Object.entries(cambio)) {
-        el[k] = (v && typeof v === "object" && !Array.isArray(v)) ? Object.assign({}, el[k], v) : v;
+        if (k === "encima") {
+          // Lo que va encima de una pantalla es una lista: el ajuste va por índice, {encima: {0: {…}}}.
+          el.encima = el.encima.map((o, j) => v[j] ? fundir(o, v[j]) : o);
+        } else {
+          el[k] = (v && typeof v === "object" && !Array.isArray(v)) ? Object.assign({}, el[k], v) : v;
+        }
       }
     }
   }
@@ -217,7 +231,13 @@ const AJUSTES = {
   "pt-BR": {
     iphone: {
       1: {0: {tit: 108}},                        // «Escreva pro Yala como pra uma amiga» bajaba a 3 líneas bajo la burbuja
+      2: {1: {pos: {width: 760}}},               // «Tributos aprox. (incl.)» partía en dos líneas (revisión de Lola, 16-oct)
       6: {3: {pos: {left: 470}}},                // «Mercado · Ana pagou R$ 240» llegaba al borde derecho
+    },
+    ipad: {
+      // «US$ 3.615,00» se montaba sobre «Poupança · USD · Saldo» (revisión de Lola, 16-oct): tarjeta más ancha y algo menor.
+      9: {2: {encima: {0: {escala: 1.25, pos: {left: "24%", width: "76%"}}}}},
+      2: {2: {pos: {width: 960}}},             // «Tributos aprox. (incl.)» partía en dos líneas
     },
   },
 };

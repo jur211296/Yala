@@ -29,6 +29,7 @@ struct DevSeedFichaTests {
         #expect(c.foreignBalance == 1_850)
         #expect(c.phone == 65)
         #expect(c.spotify == 11.99)
+        #expect(c.pizza == 28, "«Pizza with friends 28» del vídeo en inglés")
     }
 
     @Test func cifras_brl_areTheBrazilianStoreFigures() {
@@ -39,12 +40,14 @@ struct DevSeedFichaTests {
         #expect(c.foreignBalance == 3_615)
         #expect(c.phone == 59.90)
         #expect(c.spotify == 21.90)
+        #expect(c.pizza == 90, "«Pizza com os amigos 90»: 280 reales no eran creíbles")
     }
 
     @Test func cifras_pen_areTheSpanishSetUnchanged() {
         let c = DevSeedFicha.cifras(forMainCurrency: "PEN")
         #expect(c == DevSeedFicha.Cifras(groupFactor: 1, groupSecondaryCurrency: "USD", foreignCurrency: "USD",
-                                         foreignBalance: 33_615, phone: 60, spotify: 18))
+                                         foreignBalance: 33_615, phone: 60, spotify: 18,
+                                         cash: 380, cardDebt: -1_284.30, pizza: 280))
     }
 
     // MARK: - Grupos
@@ -89,10 +92,10 @@ struct DevSeedFichaTests {
         let notes = try context.fetch(FetchDescriptor<TransactionItem>()).compactMap(\.note)
         #expect(notes.contains(L10n.DevSeed.noteTransferTo(savings.name)), "La transferencia nombra la cuenta nueva")
         #expect(!notes.contains(L10n.DevSeed.noteTransferTo(L10n.DevSeed.accountSavings)))
-        // El total de «Tus finanzas» no cambia: lo que la cuenta extranjera deja de valer lo recupera la principal.
-        // Solo lo mueve Teléfono, que pasa de 60 a 65.
+        // Lo que la cuenta extranjera deja de valer lo recupera la principal. Mueven el total Teléfono, que pasa de 60 a
+        // 65, y las dos cuentas nuevas: efectivo +140 y la tarjeta −612,40.
         let totalAfter = try totalInMainCurrency(context)
-        #expect(abs(totalAfter - (totalBefore - 5)) < 0.05, "El total pasó de \(totalBefore) a \(totalAfter)")
+        #expect(abs(totalAfter - (totalBefore - 5 + 140 - 612.40)) < 0.05, "El total pasó de \(totalBefore) a \(totalAfter)")
     }
 
     @Test func adaptPersonalData_movesFreelanceIncomeToTheMainAccountWithItsValue() throws {
@@ -138,8 +141,37 @@ struct DevSeedFichaTests {
         #expect(!phoneCharges.isEmpty && phoneCharges.allSatisfy { $0.amount == -59.90 })
         let row = try #require(try context.fetch(FetchDescriptor<ExchangeRate>()).first)
         #expect(row.decodedRates()["BRL"] != nil, "Sin la tasa del real la conversión caería al respaldo con «≈»")
-        // El cargo de Teléfono pasa de 60 a 59,90: es lo único que mueve el total.
-        #expect(abs(try totalInMainCurrency(context) - (totalBefore + 0.10)) < 0.05)
+        // El cargo de Teléfono pasa de 60 a 59,90, y entran efectivo (+320) y la tarjeta (−1.480,90).
+        #expect(abs(try totalInMainCurrency(context) - (totalBefore + 0.10 + 320 - 1_480.90)) < 0.05)
+    }
+
+    /// La captura de «Tus cuentas» dice efectivo, tarjeta y ahorro: la semilla tiene que traer las dos primeras, en la
+    /// divisa principal y con su saldo inicial en la fecha del de la principal (la curva del Saldo no salta).
+    @Test func adaptPersonalData_addsCashAndCreditCardInTheMainCurrency() throws {
+        let context = try makeTestContext()
+        let (main, _) = try seedMiniPersonalLife(in: context)
+        let mainInitialDate = try #require((main.transactions ?? []).first {
+            $0.balanceAdjustmentType == InitialBalanceService.typeInitialBalance
+        }).date
+
+        DevSeedFicha.adaptPersonalData(in: context, mainCurrency: "BRL")
+        DevSeedFicha.adaptPersonalData(in: context, mainCurrency: "BRL")   // idempotente: no las duplica
+
+        let accounts = try context.fetch(FetchDescriptor<Account>())
+        let cash = try #require(accounts.first { $0.name == L10n.Account.AccountType.cash })
+        let card = try #require(accounts.first { $0.name == L10n.Account.AccountType.creditCard })
+        #expect(accounts.filter { $0.name == cash.name || $0.name == card.name }.count == 2)
+        #expect(cash.type == AccountType.cash.rawValue && card.type == AccountType.creditCard.rawValue)
+        #expect(cash.currencyCode == "BRL" && card.currencyCode == "BRL")
+        for (account, balance) in [(cash, 320.0), (card, -1_480.90)] {
+            let txs = account.transactions ?? []
+            #expect(txs.count == 1)
+            let initial = try #require(txs.first)
+            #expect(initial.amount == balance && initial.amountInPreferredCurrency == balance)
+            #expect(initial.balanceAdjustmentType == InitialBalanceService.typeInitialBalance)
+            #expect(initial.date == mainInitialDate, "En otra fecha la curva del Saldo saltaría ese día")
+            #expect(!initial.isExchangeRateProvisional)
+        }
     }
 
     @Test func adaptPersonalData_pen_leavesTheSpanishSetAsItIs() throws {

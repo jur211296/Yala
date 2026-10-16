@@ -94,13 +94,13 @@ final class DemoIAPizzaUITests: XCTestCase {
         XCTAssertTrue(sentMessage.waitForExistence(timeout: 5), "El mensaje enviado no aparece en el hilo.")
         marca("enviado")
 
-        // 5 · La card del gasto: Pizza · 280 · Restaurantes, lista para registrar.
+        // 5 · La card del gasto: Pizza · su importe (280 pesos, 28 dólares, 90 reales) · Restaurantes, lista para registrar.
         let save = app.buttons["chat_draft_save"]
         XCTAssertTrue(save.waitForExistence(timeout: 15), "Yala IA no contestó con la card del gasto.")
         let card = app.buttons["chat_draft_row"]
         XCTAssertTrue(card.exists, "Falta la fila de la card.")
         XCTAssertTrue(card.label.contains("Pizza"), "La card no dice Pizza: «\(card.label)».")
-        XCTAssertTrue(card.label.contains("280"), "La card no trae el importe 280: «\(card.label)».")
+        XCTAssertTrue(card.label.contains(idioma.amount), "La card no trae el importe \(idioma.amount): «\(card.label)».")
         XCTAssertTrue(card.label.contains(idioma.restaurants), "La card no va a \(idioma.restaurants): «\(card.label)».")
         XCTAssertTrue(save.isEnabled, "La card completa debe poder registrarse.")
         marca("tarjeta")
@@ -123,7 +123,7 @@ final class DemoIAPizzaUITests: XCTestCase {
         close.tap()
         let row = pizzaRow(in: app)
         XCTAssertTrue(row.waitForExistence(timeout: 10), "El gasto de la pizza no aparece en Registros.")
-        XCTAssertTrue(row.label.contains("280"), "La fila de Registros no trae el importe 280: «\(row.label)».")
+        XCTAssertTrue(row.label.contains(idioma.amount), "La fila de Registros no trae el importe \(idioma.amount): «\(row.label)».")
         XCTAssertTrue(row.label.contains(idioma.restaurants), "La fila de Registros no va a \(idioma.restaurants): «\(row.label)».")
         marca("registros")
         pausa(2.5)
@@ -141,18 +141,20 @@ final class DemoIAPizzaUITests: XCTestCase {
         let appleLocale: String
         let currency: String
         let typedText: String
+        /// El importe que escribe y que contesta Yala IA (`DevSeedFicha.Cifras.pizza` de esa divisa).
+        let amount: String
         let restaurants: String
         let savedBadge: String
 
         static let esMX = DemoIdioma(
             seed: "ficha-mx-vida", appleLanguages: "(es-MX)", appleLocale: "es_MX", currency: "MXN",
-            typedText: "Pizza con amigos 280", restaurants: "Restaurantes", savedBadge: "Registrado")
+            typedText: "Pizza con amigos 280", amount: "280", restaurants: "Restaurantes", savedBadge: "Registrado")
         static let en = DemoIdioma(
             seed: "ficha", appleLanguages: "(en-US)", appleLocale: "en_US", currency: "USD",
-            typedText: "Pizza with friends 280", restaurants: "Restaurants", savedBadge: "Saved")
+            typedText: "Pizza with friends 28", amount: "28", restaurants: "Restaurants", savedBadge: "Saved")
         static let ptBR = DemoIdioma(
             seed: "ficha", appleLanguages: "(pt-BR)", appleLocale: "pt_BR", currency: "BRL",
-            typedText: "Pizza com os amigos 280", restaurants: "Restaurantes", savedBadge: "Registrado")
+            typedText: "Pizza com os amigos 90", amount: "90", restaurants: "Restaurantes", savedBadge: "Registrado")
 
         static var actual: DemoIdioma {
             switch ProcessInfo.processInfo.environment["YALA_DEMO_IDIOMA"] {

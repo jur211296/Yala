@@ -1,5 +1,5 @@
 {
-  "_que": "Un idioma de la ficha = una entrada aquí + su textos/<idioma>.js (+ la fila de su divisa en Yala/Seed/DevSeedFicha.swift si es nueva).",
+  "_que": "Un idioma de la ficha = una entrada aquí + su textos/<idioma>.js (+ la fila de su divisa en Yala/Seed/DevSeedFicha.swift si es nueva). monedaExtranjera = la foreignCurrency de esa fila (la cuenta de la 09).",
   "reloj": "2026-10-13 09:41:00",
   "simuladores": {
     "iphone": "iPhone 17 Pro",
@@ -10,19 +10,22 @@
       "appleLanguages": "(es-419)",
       "appleLocale": "es_PE",
       "moneda": "PEN",
-      "lproj": "es-419"
+      "lproj": "es-419",
+      "monedaExtranjera": "USD"
     },
     "en": {
       "appleLanguages": "(en-US)",
       "appleLocale": "en_US",
       "moneda": "USD",
-      "lproj": "en"
+      "lproj": "en",
+      "monedaExtranjera": "EUR"
     },
     "pt-BR": {
       "appleLanguages": "(pt-BR)",
       "appleLocale": "pt_BR",
       "moneda": "BRL",
-      "lproj": "pt-BR"
+      "lproj": "pt-BR",
+      "monedaExtranjera": "USD"
     }
   }
 }

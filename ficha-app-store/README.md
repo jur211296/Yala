@@ -23,7 +23,7 @@ capturas/conducir.sh en ipad          # las 10 del iPad Pro 13"               �
 xcrun simctl shutdown all
 
 capturas/render.sh en                 # láminas: en/6.9, en/6.5, en/ipad-13 (PNG sin alfa)
-python3 capturas/hojas.py en iphone && python3 capturas/hojas.py en ipad
+python3 capturas/hojas.py en iphone && python3 capturas/hojas.py en iphone65 && python3 capturas/hojas.py en ipad
 video/render.sh en                    # en/video/yala-preview-6.9.mp4 y -musica.mp4
 ```
 
@@ -35,9 +35,12 @@ cada pantalla. `YALA_FICHA_SIN_SEMBRAR=1` se salta las dos cosas, para repetir u
 ## Sumar un idioma (de, fr, it, ja…)
 
 1. **`textos/<idioma>.js`**: el fichero de Lola, con la misma forma que `en.js` (`TXT`, `OBJ`, `VIDEO`).
-2. **Una línea en `idiomas.json`**: `appleLanguages`, `appleLocale`, `moneda` y el `.lproj` de la app.
+2. **Una línea en `idiomas.json`**: `appleLanguages`, `appleLocale`, `moneda`, el `.lproj` de la app y
+   `monedaExtranjera` (la `foreignCurrency` de su fila en la semilla: la cuenta de la 09).
 3. **Si su divisa es nueva** (EUR, JPY), su fila en `Yala/Seed/DevSeedFicha.swift → cifras(forMainCurrency:)`, con las
-   cifras de su `OBJ`: factor de los gastos del viaje, divisa y saldo de la cuenta extranjera, Teléfono y Spotify.
+   cifras de su `OBJ`: factor de los gastos del viaje, divisa y saldo de la cuenta extranjera, Teléfono y Spotify,
+   efectivo y deuda de la tarjeta (la 08) y el importe de la pizza del vídeo, que tiene que ser creíble en esa divisa
+   (`video/grabar.sh` escribe ese mismo número).
    Los nombres (viaje, amigos, gastos, la frase del chat, el comercio del recibo…) ya están en los 16 idiomas de la
    app, con las claves `devseed.ficha.*` y `uitestDemo.*`; si el texto de Lola dice otra cosa, se cambian ahí.
 4. **La corrida de arriba.** Las cifras de la semilla salen iguales que en español porque la app cree que es el
@@ -84,6 +87,10 @@ cae desplazado, se fija a mano en `"toques"` de la escena.
 
 ## Trampas medidas (16-oct-2026)
 
+- **«Tus cuentas» (08) enseña las cuentas.** La semilla añade efectivo y tarjeta de crédito en la divisa principal,
+  `lanzar.sh` las pone primero en el carrusel (`-accountsSortOrderNames`, con los nombres del `.strings` de la app) y
+  `conducir.sh panel` despliega «Tus finanzas» antes de capturar. `divisas` busca la tarjeta de la cuenta extranjera
+  por su nombre y pasa el carrusel hasta verla entera.
 - **El Panel al relanzar.** Sin `-uitest-reset`, la app a veces pasaba al Panel con todas las secciones en vez del de
   usuario nuevo. `lanzar.sh` fija el Panel de `PanelDefaults` por argumentos de arranque; si cambian esos
   predeterminados, cambian allí.

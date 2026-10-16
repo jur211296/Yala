@@ -24,7 +24,15 @@ toque() {
   xy=$(echo "$caja" | sed -E 's/.*@(-?[0-9]+),(-?[0-9]+) ([0-9]+)x([0-9]+)$/\1 \2 \3 \4/' | awk '{print $1+$3/2, $2+$4/2}')
   # axe tarda en conectar: el toque llega al final de la llamada, así que la marca va después (medido: ~2 s de retraso
   # si se apunta antes).
-  axe tap --udid "$U" -x "${xy% *}" -y "${xy#* }" >/dev/null
+  # Medido el 16-oct-2026: el campo del chat solo toma el foco con una pulsación de dedo (abajo, 0,25 s, arriba); con
+  # `axe tap` lo tecleado se perdía. Pero esa pulsación, en una tarjeta con menú contextual (la del grupo), abre el menú:
+  # el resto va con el toque físico.
+  if [ "$1" = chat_input ]; then
+    axe touch --udid "$U" -x "${xy% *}" -y "${xy#* }" --down >/dev/null; sleep 0.25
+    axe touch --udid "$U" -x "${xy% *}" -y "${xy#* }" --up >/dev/null
+  else
+    axe tap --tap-style physical --udid "$U" -x "${xy% *}" -y "${xy#* }" >/dev/null
+  fi
   MARCAS+=("{\"t\": $(python3 -c "print(round($(ahora) - $T0 - 0.1, 3))"), \"x\": ${xy% *}, \"y\": ${xy#* }, \"tipo\": \"toque\", \"que\": \"$1\"}")
 }
 graba() {   # graba <escena>: arranca la grabación y espera a que de verdad grabe
@@ -48,13 +56,15 @@ corta() {   # corta <escena>: para la grabación, la pasa a 30 fps y escribe sus
   rm -f "$T/$1.mov" "$T/$1.log"
   echo "✓ $IDIOMA · $1: $(printf %.1f "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$T/$1.mp4")") s, ${#MARCAS[@]} marcas"
 }
-relanza() { "$L" "$IDIOMA" iphone --sin-semilla "$@" >/dev/null; }
+# Tras `uitest_ready` la app aún termina de arrancar: un toque en los primeros segundos se perdía (medido el 16-oct-2026,
+# Yala IA y la tarjeta del grupo no se abrían).
+relanza() { "$L" "$IDIOMA" iphone --sin-semilla "$@" >/dev/null; sleep 3; }
 
-# Lo que se escribe en el chat (la respuesta la finge -uitest-chat-reply pizza: «Pizza · 280 · Restaurantes»). Sin tildes:
-# axe no las escribe.
+# Lo que se escribe en el chat (la respuesta la finge -uitest-chat-reply pizza: «Pizza · <importe> · Restaurantes», con el
+# importe de DevSeedFicha.Cifras.pizza en la divisa de la ficha: 28 dólares, 90 reales). Sin tildes: axe no las escribe.
 case "$IDIOMA" in
-  en) FRASE="Pizza with friends 280" ;;
-  pt-BR) FRASE="Pizza com os amigos 280" ;;
+  en) FRASE="Pizza with friends 28" ;;
+  pt-BR) FRASE="Pizza com os amigos 90" ;;
   *) FRASE="Pizza con amigos 280" ;;
 esac
 
@@ -69,7 +79,7 @@ escena() {
       relanza -uitest-chat-suggestions -uitest-chat-reply pizza -uitest-ai-chat-ready
       id panel_action_ai; esperar "chat_suggestion"; sleep 1
       graba ia; sleep 1.2
-      toque chat_input; sleep 0.6; marca escribe
+      toque chat_input; sleep 1.2; marca escribe
       axe type "$FRASE" --udid "$U" >/dev/null; sleep 0.8
       toque chat_send; esperar "chat_draft_save" 15; marca tarjeta; sleep 2.5
       corta ia ;;

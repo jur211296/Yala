@@ -21,20 +21,51 @@ ESTE_MES=$(python3 -c 'import re,sys
 t=open(sys.argv[1],encoding="utf-8").read()
 print(re.search(r"^\"period\.thisMonth\" = \"(.*)\";", t, re.M).group(1))' "$MOLDE/../Yala/Resources/$LPROJ.lproj/Localizable.strings")
 HECHA_FOTO=0
+# «Tus finanzas» desplegado: por argumento de arranque (`relanza -panelAccountsCollapsed NO`). Medido el 16-oct-2026:
+# tocar la cabecera por su id (el centro) no la despliega; solo el «+» de la derecha.
+DESPLEGADO=(-panelAccountsCollapsed NO)
+desplegar_cuentas() { esperar "panel_account_card_0"; }
+# Por dónde se arrastra el carrusel de cuentas: «x_desde x_hasta y» en puntos, sobre la primera tarjeta (en el iPad el
+# carrusel va en la columna derecha). Reintenta: una lectura del árbol puede volver vacía (medido el 16-oct-2026).
+carrusel() {
+  local r
+  for _ in 1 2 3 4 5; do
+    # La primera tarjeta que empieza a la derecha del borde de la columna (el de la cabecera «Tus finanzas»): las ya
+    # pasadas quedan a su izquierda, y en el iPad, bajo la columna del saldo.
+    r=$(arbol | python3 -c 'import re,sys
+L=sys.stdin.read().splitlines(); f=lambda l: list(map(int,re.search(r"@(-?\d+),(-?\d+) (\d+)x(\d+)$",l).groups()))
+borde=next(f(l)[0] for l in L if "|panel_panorama_header|" in l)
+for l in L:
+    if "|panel_account_card_" in l:
+        x,y,w,h=f(l)
+        if x>=borde-2: print(x+int(w*.9), x+int(w*.1), y+h//2); break' 2>/dev/null)
+    [ -n "$r" ] && { echo "$r"; return; }; sleep 0.7
+  done
+  echo "300 60 480"
+}
 
 [ "${YALA_FICHA_SIN_SEMBRAR:-}" = 1 ] || preparar "$U"
 [ "${YALA_FICHA_SIN_SEMBRAR:-}" = 1 ] || "$L" "$IDIOMA" "$APARATO"     # la siembra, una vez (YALA_FICHA_SIN_SEMBRAR=1 la salta)
 for p in "${PANTALLAS[@]}"; do
   case "$p" in
     panel)
-      relanza; esperar "panel_action_new"; cap panel ;;
+      # La 08 habla de efectivo, tarjeta y ahorro: «Tus finanzas» desplegado, con sus tarjetas (efectivo primero).
+      relanza "${DESPLEGADO[@]}"; esperar "panel_action_new"; desplegar_cuentas; sleep 1; cap panel ;;
     divisas)
-      # «Tus finanzas» recuerda si estaba desplegado: se toca solo si las tarjetas no están.
-      relanza; esperar "panel_panorama_header"
-      arbol | grep -qF "|panel_account_card_1|" || id panel_panorama_header
-      esperar "panel_account_card_1"
-      [ "$APARATO" = iphone ] && axe swipe --udid "$U" --start-x 300 --start-y 480 --end-x 60 --end-y 480 --duration 0.3 >/dev/null && sleep 1
-      tocar_linea "|panel_account_card_1|"; cap divisas 2.5 ;;
+      # La tarjeta de la cuenta extranjera, por su nombre (el orden del carrusel lo fija lanzar.sh). En el iPhone se
+      # pasa el carrusel hasta que se vea entera.
+      relanza "${DESPLEGADO[@]}"; desplegar_cuentas
+      for _ in 1 2 3 4; do
+        entera "|panel_account_card_" "$CUENTA_EXTRANJERA" && break
+        read -r X1 X2 Y <<<"$(carrusel)"
+        axe swipe --udid "$U" --start-x "$X1" --start-y "$Y" --end-x "$X2" --end-y "$Y" --duration 0.3 >/dev/null; sleep 1
+      done
+      # Por su id, con el carrusel ya quieto: tocar sus coordenadas recién arrastrado no abría la ficha. Y con el toque
+      # del simulador: en el iPad el «físico» se leía como pulsación larga y abría el menú contextual (16-oct-2026).
+      sleep 1
+      CARTA="$(arbol | grep -F "|panel_account_card_" | grep -F "$CUENTA_EXTRANJERA" | head -1 | cut -d'|' -f3)"
+      axe tap --tap-style simulator --udid "$U" --id "$CARTA" >/dev/null
+      cap divisas 3 ;;
     estadisticas)
       relanza -uitest-deeplink statistics
       id "detail_chip_categorías"; sleep 1

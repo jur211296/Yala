@@ -3117,8 +3117,8 @@
 "groups.expense.noExpenses" = "Sem despesas";
 "groups.expense.youPaid" = "Você pagou %@";
 "groups.expense.memberPaid" = "%@ pagou %@";
-"groups.expense.youAreOwed" = "Emprestou";
-"groups.expense.youOwe" = "Te emprestaram";
+"groups.expense.youAreOwed" = "Você emprestou";
+"groups.expense.youOwe" = "Você deve";
 "groups.expense.notIncluded" = "Não participou";
 "groups.expense.newExpense" = "Nova despesa";
 

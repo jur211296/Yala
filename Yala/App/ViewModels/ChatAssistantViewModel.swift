@@ -168,9 +168,9 @@ final class ChatAssistantViewModel {
         persistSession()
     }
 
-    /// Los borradores de cada perfil de `-uitest-chat-reply`, resueltos contra la semilla. `pizza`: un gasto de 280 en
-    /// la cuenta principal de la divisa preferida (con `ficha-mx-vida`, «Cuenta principal» en MXN), en Restaurantes y
-    /// con fecha de hoy.
+    /// Los borradores de cada perfil de `-uitest-chat-reply`, resueltos contra la semilla. `pizza`: un gasto en la cuenta
+    /// principal de la divisa preferida (con `ficha-mx-vida`, «Cuenta principal» en MXN), en Restaurantes y con fecha
+    /// de hoy, por el importe de la ficha en esa divisa (`DevSeedFicha.Cifras.pizza`: 28 dólares, 90 reales, 280 pesos).
     private func uiTestReplyDrafts(profile: String, _ ctx: ModelContext) -> [ChatTransactionDraft]? {
         guard profile == "pizza" else { return nil }
         let accounts: [Account]
@@ -194,7 +194,9 @@ final class ChatAssistantViewModel {
             ?? expenseSubs.first(where: { $0.safeCategory.name == L10n.Category.food })
         return [
             ChatTransactionDraft(
-                amount: 280, currencyCode: account.currencyCode, isExpense: true, note: L10n.UITestDemo.Chat.pizzaNote,
+                amount: Decimal(DevSeedFicha.cifras(forMainCurrency: account.currencyCode).pizza),
+                currencyCode: account.currencyCode,
+                isExpense: true, note: L10n.UITestDemo.Chat.pizzaNote,
                 date: Date.now, accountID: account.persistentModelID, subcategoryID: restaurants?.persistentModelID
             ),
         ]

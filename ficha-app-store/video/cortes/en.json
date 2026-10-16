@@ -1,29 +1,34 @@
 {
-  "_que": "Tramos [desde, hasta, velocidad] de cada toma de <salida>/en/video/tomas, medidos fotograma a fotograma el 16-oct-2026 (foto y voz regrabadas con el Panel de usuario nuevo). Los toques, en segundos de la grabación y puntos de pantalla (iPhone 17 Pro, 402×874).",
+  "_que": "Tramos [desde, hasta, velocidad] de cada toma de <salida>/en/video/tomas, medidos fotograma a fotograma el 16-oct-2026 (foto y voz regrabadas con el Panel de usuario nuevo; ia regrabada con la pizza a 28 tras la revisión de Lola). Los toques, en segundos de la grabación y puntos de pantalla (iPhone 17 Pro, 402×874).",
   "escenas": {
     "ia": {
       "tramos": [
         [
-          10.5,
-          15.0,
-          2.0
+          9.3,
+          12.5,
+          1.6
         ],
         [
-          15.0,
-          18.0,
+          12.5,
+          19.3,
+          6.8
+        ],
+        [
+          19.3,
+          21.6,
           1.0
         ],
         [
-          18.0,
-          20.0,
+          21.6,
+          23.6,
           1.5
         ]
       ],
       "toques": [
         {
-          "t": 15.3,
+          "t": 19.6,
           "x": 364,
-          "y": 810
+          "y": 516
         }
       ]
     },

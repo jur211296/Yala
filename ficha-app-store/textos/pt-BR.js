@@ -11,7 +11,7 @@ const TEXTOS = {
     ia:      ["Yala IA · Pro", "Escreva pro Yala como pra uma <u>amiga</u>", null],
     foto:    ["Por foto · Pro", "Tire <u>foto</u> da nota e pronto", "O Yala lê o estabelecimento, a data e o total."],
     voz:     ["Por voz · Pro", "<u>Fale</u> do seu jeito. O Yala anota", "Sem digitar: você fala e já cai na categoria."],
-    yape:    ["Por print · Pro", "Registre seus Pix com um <u>print</u>", "O Yala tira o valor, o estabelecimento e a data."],
+    yape:    ["Por print · Pro", "Registre suas transferências com um <u>print</u>", "O Yala tira o valor, o estabelecimento e a data."],
     stats:   ["Estatísticas", "Veja para onde foi cada <u>real</u>", "Categoria por categoria, sem abrir planilha."],
     grupos:  ["Grupos", "Viagem ao Rio: contas <u>claras</u> e amizade intacta", null],
     presu:   ["Orçamentos", "Quanto <u>sobra</u> este mês?", null],
@@ -33,8 +33,8 @@ const TEXTOS = {
     }},
     "03_voz":   {burbuja: "“Almoço 25 no cartão”"},
     "04_yape":  {
-      // Comprovante de Pix genérico: sem nome nem logo de banco ou carteira.
-      pago: {tit: "Pix enviado", monto: "R$ 35,00", a: "para Padaria São Jorge",
+      // Comprovante de transferência genérico: sem Pix, sem nome nem logo de banco ou carteira (diretriz 5.2, como o Yape).
+      pago: {tit: "Transferência enviada", monto: "R$ 35,00", a: "para Padaria São Jorge",
              filas: [["Data", "13/10/2026"], ["Hora", "12:40"], ["ID da transação", "04812736"]]},
       chip: "Compartilhar → <b>Yala</b>",
     },
@@ -47,7 +47,7 @@ const TEXTOS = {
       chips: ["Mercado · Ana pagou <b>R$ 240</b>", "Churrascaria · Beto pagou <b>R$ 360</b>"],
     },
     "07_presu": {
-      cifra: "R$ 470<small>sobram em Comer fora, para 19 dias</small>",
+      cifra: "R$ 470<small>para Comer fora nos próximos 19 dias</small>",
       tarjetaIpad: {ico: "R$", t1: "Sobram R$ 470", t2: "Comer fora · 19 dias", monto: "74%"},
     },
     "08_cuentas": {chips: ["Dinheiro", "Cartão", "Poupança em <b>US$</b>"]},

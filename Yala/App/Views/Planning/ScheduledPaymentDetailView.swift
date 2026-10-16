@@ -540,7 +540,9 @@ struct ScheduledPaymentDetailView: View {
 
     private static let fullDateFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = "EEEE, d MMMM yyyy"
+        // Plantilla, no formato fijo: «Thursday, October 15, 2026» en EE. UU. y «quinta-feira, 15 de outubro de
+        // 2026» en Brasil. El formato fijo «EEEE, d MMMM yyyy» se comía el «de» y el orden de cada idioma.
+        f.setLocalizedDateFormatFromTemplate("EEEEdMMMMyyyy")
         return f
     }()
 

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (900)
+## Index (903)
 
 | id | status | path |
 |---|---|---|
@@ -135,6 +135,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | done | tickets/done/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
+| balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label | backlog | tickets/backlog/balance-chart-last-axis-label-overlaps-and-today-pill-covers-the-top-label.md |
 | balance-figure-counts-future-dated-rows-the-curve-never-draws | backlog | tickets/backlog/balance-figure-counts-future-dated-rows-the-curve-never-draws.md |
 | beacon-routes-only-never-blocks | done | tickets/done/beacon-routes-only-never-blocks.md |
 | blocked-copy-mapping-lives-in-three-views-untestable | backlog | tickets/backlog/blocked-copy-mapping-lives-in-three-views-untestable.md |
@@ -670,6 +671,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | backlog | tickets/backlog/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
+| pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
 | pt-pt-needs-a-native-review-after-the-pt-br-sweep | backlog | tickets/backlog/pt-pt-needs-a-native-review-after-the-pt-br-sweep.md |
 | push-client-ignores-yala-kind | backlog | tickets/backlog/push-client-ignores-yala-kind.md |
 | push-unexpected-4xx-is-told-to-try-again-later | backlog | tickets/backlog/push-unexpected-4xx-is-told-to-try-again-later.md |
@@ -806,6 +808,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | sheet-size-follows-the-device-not-the-window | done | tickets/done/sheet-size-follows-the-device-not-the-window.md |
 | shell-and-wipe-alert-read-the-session-axis-differently | backlog | tickets/backlog/shell-and-wipe-alert-read-the-session-axis-differently.md |
 | shell-derives-from-two-session-axes | done | tickets/done/shell-derives-from-two-session-axes.md |
+| short-dates-keep-day-month-order-in-en-us | backlog | tickets/backlog/short-dates-keep-day-month-order-in-en-us.md |
 | sidebar-test-fails-after-the-narrowing-cases-on-ipad | backlog | tickets/backlog/sidebar-test-fails-after-the-narrowing-cases-on-ipad.md |
 | sign-out-block-reason-is-only-logged-on-the-cloud-path | backlog | tickets/backlog/sign-out-block-reason-is-only-logged-on-the-cloud-path.md |
 | sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches | backlog | tickets/backlog/sign-out-blocked-by-a-surviving-session-already-dropped-the-account-caches.md |

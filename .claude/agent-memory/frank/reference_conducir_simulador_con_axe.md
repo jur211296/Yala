@@ -14,6 +14,12 @@ En el barrido de QA del 2026-10-15 recorrí ~40 pantallas con `axe` (CLI en `/op
   llevan espacios falló en silencio: toca por punto.
 - **Pulsación con duración:** `axe touch -x <x> -y <y> --down --up --delay 0.15` (son `-x/-y`, no `--x`). Hace falta
   para widgets, la pantalla de inicio (pulsación larga de 2 s) y vistas que se repintan.
+- **El estilo de toque cambia el resultado (medido el 2026-10-16, axe 1.8.0, iOS 27.0, molde de la ficha):**
+  `axe tap` por defecto (simulador) dejó de abrir Yala IA y de desplegar «Tus finanzas»; con `--tap-style physical`,
+  sí. Pero en el iPad ese toque físico sobre una tarjeta con menú contextual (cuenta, grupo) se lee como pulsación
+  larga y abre el menú: ahí, `--tap-style simulator`. Y un `TextField` solo tomó el foco con `axe touch --down`,
+  0,25 s, `--up` (con `tap`, lo tecleado se perdía en silencio). Un toque en los ~3 s tras `uitest_ready` también se
+  perdía. Si un toque «no hace nada», prueba los tres antes de culpar a la app.
 - **Escribir:** `axe type` no escribe tildes ni «ñ» («No keycode found for character: 'é'»): escribe sin ellas.
 - **Ver:** `simctl io <U> screenshot` + `sips -Z 700` a JPEG; las coordenadas de la imagen × (402/ancho) dan puntos.
 - Las marcas de selección de Fotos se pintan con retraso: el contador «Mostrar selección (N)» es la verdad, no la captura.
