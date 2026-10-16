@@ -16,6 +16,10 @@
 //  (`-uitest-chat-suggestions`) y la respuesta del chat fingida por `-uitest-chat-reply pizza`, que contesta por el
 //  mismo camino que una respuesta real.
 //
+//  Idioma: es-MX por defecto (lo que corre el CI). El vídeo de la ficha de cada idioma lo graba con
+//  `TEST_RUNNER_YALA_DEMO_IDIOMA=en` o `=pt-BR` (xcodebuild quita el prefijo `TEST_RUNNER_`): semilla `ficha`, la
+//  región y la divisa de esa ficha y lo que se escribe en ese idioma (`DemoIdioma`).
+//
 
 import XCTest
 
@@ -26,22 +30,25 @@ final class DemoIAPizzaUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
+    /// El idioma de la demo, de `YALA_DEMO_IDIOMA`; sin él, es-MX.
+    private let idioma = DemoIdioma.actual
+
     /// Lo que se escribe en el chat. El perfil `pizza` contesta siempre lo mismo; esto es lo que se ve teclear.
-    private let typedText = "Pizza con amigos 280"
+    private var typedText: String { idioma.typedText }
 
     func test_registrarPizzaConYalaIA() {
         let app = XCUIApplication()
         app.launchForUITest(
             pro: true,
-            seed: "ficha-mx-vida",
+            seed: idioma.seed,
             deeplink: "records",
             aiChatReady: true,
-            appleLanguages: "(es-MX)",
-            appleLocale: "es_MX",
+            appleLanguages: idioma.appleLanguages,
+            appleLocale: idioma.appleLocale,
             extraArguments: [
                 "-uitest-chat-suggestions",
                 "-uitest-chat-reply", "pizza",
-                "-defaultCurrencyCode", "MXN",
+                "-defaultCurrencyCode", idioma.currency,
             ]
         )
         // Un año de vida personal tarda más en sembrarse que la semilla mínima.
@@ -94,7 +101,7 @@ final class DemoIAPizzaUITests: XCTestCase {
         XCTAssertTrue(card.exists, "Falta la fila de la card.")
         XCTAssertTrue(card.label.contains("Pizza"), "La card no dice Pizza: «\(card.label)».")
         XCTAssertTrue(card.label.contains("280"), "La card no trae el importe 280: «\(card.label)».")
-        XCTAssertTrue(card.label.contains("Restaurantes"), "La card no va a Restaurantes: «\(card.label)».")
+        XCTAssertTrue(card.label.contains(idioma.restaurants), "La card no va a \(idioma.restaurants): «\(card.label)».")
         XCTAssertTrue(save.isEnabled, "La card completa debe poder registrarse.")
         marca("tarjeta")
         pausa(3.0)
@@ -106,7 +113,7 @@ final class DemoIAPizzaUITests: XCTestCase {
             app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Pizza")).firstMatch.exists,
             "Tras registrar, la fila de la pizza desapareció del chat."
         )
-        XCTAssertTrue(app.staticTexts["Registrado"].waitForExistence(timeout: 5), "La card no dice «Registrado».")
+        XCTAssertTrue(app.staticTexts[idioma.savedBadge].waitForExistence(timeout: 5), "La card no dice «\(idioma.savedBadge)».")
         marca("registrado")
         pausa(2.0)
 
@@ -117,11 +124,43 @@ final class DemoIAPizzaUITests: XCTestCase {
         let row = pizzaRow(in: app)
         XCTAssertTrue(row.waitForExistence(timeout: 10), "El gasto de la pizza no aparece en Registros.")
         XCTAssertTrue(row.label.contains("280"), "La fila de Registros no trae el importe 280: «\(row.label)».")
-        XCTAssertTrue(row.label.contains("Restaurantes"), "La fila de Registros no va a Restaurantes: «\(row.label)».")
+        XCTAssertTrue(row.label.contains(idioma.restaurants), "La fila de Registros no va a \(idioma.restaurants): «\(row.label)».")
         marca("registros")
         pausa(2.5)
 
         marca("fin")
+    }
+
+    // MARK: - Idioma
+
+    /// Lo que cambia por idioma. `es-MX` es el de siempre; `en` y `pt-BR`, los del vídeo de la ficha 2.1, con su semilla
+    /// en la divisa de la ficha. Las etiquetas (`restaurants`, `savedBadge`) son las de la app en ese idioma.
+    struct DemoIdioma {
+        let seed: String
+        let appleLanguages: String
+        let appleLocale: String
+        let currency: String
+        let typedText: String
+        let restaurants: String
+        let savedBadge: String
+
+        static let esMX = DemoIdioma(
+            seed: "ficha-mx-vida", appleLanguages: "(es-MX)", appleLocale: "es_MX", currency: "MXN",
+            typedText: "Pizza con amigos 280", restaurants: "Restaurantes", savedBadge: "Registrado")
+        static let en = DemoIdioma(
+            seed: "ficha", appleLanguages: "(en-US)", appleLocale: "en_US", currency: "USD",
+            typedText: "Pizza with friends 280", restaurants: "Restaurants", savedBadge: "Saved")
+        static let ptBR = DemoIdioma(
+            seed: "ficha", appleLanguages: "(pt-BR)", appleLocale: "pt_BR", currency: "BRL",
+            typedText: "Pizza com os amigos 280", restaurants: "Restaurantes", savedBadge: "Registrado")
+
+        static var actual: DemoIdioma {
+            switch ProcessInfo.processInfo.environment["YALA_DEMO_IDIOMA"] {
+            case "en": return .en
+            case "pt-BR": return .ptBR
+            default: return .esMX
+            }
+        }
     }
 
     // MARK: - Ayudas

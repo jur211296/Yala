@@ -1250,10 +1250,15 @@ struct ImageSelectionView: View {
     // MARK: - Seam de XCUITest
 
     #if DEBUG
-    /// `-uitest-image-result`: las fotos que «elige» Fotos son los recibos de ejemplo de la práctica guiada.
+    /// `-uitest-image-result`: las fotos que «elige» Fotos son los recibos de ejemplo de la práctica guiada, o la de
+    /// `-uitest-image-file` si la hay y se pide una sola.
     private func uiTestImages() -> [UIImage] {
         let names = ["ExampleImages/example-receipt-es", "ExampleImages/example-bank-alert-es"]
         let count = ["two", "partial"].contains(UITestHooks.imageResult ?? "") ? 2 : 1
+        if count == 1, let path = UITestHooks.imageFile {
+            if let image = UIImage(contentsOfFile: path) { return [image] }
+            print("ImageSelectionView: Error: -uitest-image-file no se pudo leer: \(path)")
+        }
         return names.prefix(count).compactMap { UIImage(named: $0) }
     }
 
@@ -1279,10 +1284,13 @@ struct ImageSelectionView: View {
         let isFirst = index == 0
         // `pages`: un movimiento distinto por página, para que la deduplicación no junte dos páginas en uno.
         let perPage = profile.hasPrefix("pages")
+        // Comercio y total en el idioma de la app: el recibo de la ficha de cada idioma (en español, el de siempre).
         let transaction = VisionTransaction(
-            amount: perPage ? -Double(10 + index) : (isFirst ? -251.81 : -22),
+            amount: perPage ? -Double(10 + index) : (isFirst ? -L10n.UITestDemo.Photo.receiptTotal : -22),
             date: today,
-            merchant: perPage ? "Página \(index + 1)" : (isFirst ? "Restaurante El Buen Gusto" : "Taxi"),
+            merchant: perPage
+                ? L10n.UITestDemo.Photo.page(index + 1)
+                : (isFirst ? L10n.UITestDemo.Photo.merchant : L10n.UITestDemo.Photo.secondMerchant),
             note: nil,
             currency: uiTestAccountCurrency()
         )

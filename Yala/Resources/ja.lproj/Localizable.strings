@@ -3239,6 +3239,56 @@
 "devseed.stepDeleting" = "データを削除中...";
 "devseed.stepReloading" = "データを再読み込み中...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "リスボン旅行";
+"devseed.ficha.groupWeekend" = "ポルトの週末";
+"devseed.ficha.memberYou" = "あなた";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "宿泊";
+"devseed.ficha.expenseTour" = "ガイドツアー";
+"devseed.ficha.expenseGroupDinner" = "みんなで夕食";
+"devseed.ficha.expenseAirportTaxi" = "空港タクシー";
+"devseed.ficha.expenseLocalMeal" = "シーフードディナー";
+"devseed.ficha.expenseMuseum" = "美術館チケット";
+"devseed.ficha.expenseTransport" = "交通費";
+"devseed.ficha.expenseGroceries" = "食料品";
+"devseed.ficha.expenseSouvenirs" = "お土産";
+"devseed.ficha.expenseWeekendStay" = "ポルトのホテル";
+"devseed.ficha.expenseWeekendMeal" = "ワインテイスティング";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "旅行 %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "空港までのタクシーに45、スーパーで120.50使った";
+"uitestDemo.chat.draftNoteTaxi" = "空港までのタクシー";
+"uitestDemo.chat.draftNoteGroceries" = "スーパーの買い物";
+"uitestDemo.chat.suggestionSplit" = "住居と個人の支出はどう分かれていますか？";
+"uitestDemo.chat.suggestionMonth" = "今月のレストランとデリバリーの支出は？";
+"uitestDemo.chat.suggestionBudget" = "外食の予算は足りましたか？";
+"uitestDemo.chat.pizzaNote" = "ピザ";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "ランチ25、カードで";
+"uitestDemo.voice.lunchNote" = "ランチ";
+"uitestDemo.voice.twoTranscript" = "タクシー12とコーヒー8、カードで";
+"uitestDemo.voice.taxiNote" = "タクシー";
+"uitestDemo.voice.coffeeNote" = "コーヒー";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "ビストロ・ブルードア";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "タクシー";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "%ldページ";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "はじめに";
@@ -4159,7 +4209,7 @@
 "welcome.hero.cards.budgets.title" = "予算と目標";
 "welcome.hero.cards.budgets.body" = "限度を決めて、守る。";
 "welcome.hero.cards.multiAndCurrencies.title" = "複数口座と通貨";
-"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、48以上の通貨。";
+"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、50以上の通貨。";
 "welcome.hero.cards.import.title" = "履歴をインポート";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
 "welcome.hero.cards.icloud.title" = "プライベートiCloud";

@@ -3228,6 +3228,56 @@
 "devseed.stepDeleting" = "Daten löschen...";
 "devseed.stepReloading" = "Daten neu laden...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "Lissabon-Reise";
+"devseed.ficha.groupWeekend" = "Wochenende in Porto";
+"devseed.ficha.memberYou" = "Du";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "Unterkunft";
+"devseed.ficha.expenseTour" = "Stadtführung";
+"devseed.ficha.expenseGroupDinner" = "Gruppenessen";
+"devseed.ficha.expenseAirportTaxi" = "Taxi zum Flughafen";
+"devseed.ficha.expenseLocalMeal" = "Fischessen";
+"devseed.ficha.expenseMuseum" = "Museumstickets";
+"devseed.ficha.expenseTransport" = "Nahverkehr";
+"devseed.ficha.expenseGroceries" = "Einkauf";
+"devseed.ficha.expenseSouvenirs" = "Souvenirs";
+"devseed.ficha.expenseWeekendStay" = "Hotel in Porto";
+"devseed.ficha.expenseWeekendMeal" = "Weinprobe";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "Reise %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "45 fürs Taxi zum Flughafen und 120,50 im Supermarkt ausgegeben";
+"uitestDemo.chat.draftNoteTaxi" = "Taxi zum Flughafen";
+"uitestDemo.chat.draftNoteGroceries" = "Supermarkt";
+"uitestDemo.chat.suggestionSplit" = "Wie verteilen sich meine Ausgaben für Wohnen und Persönliches?";
+"uitestDemo.chat.suggestionMonth" = "Wie viel habe ich diesen Monat für Restaurants und Lieferdienste ausgegeben?";
+"uitestDemo.chat.suggestionBudget" = "Hat mein Budget fürs Auswärtsessen gereicht?";
+"uitestDemo.chat.pizzaNote" = "Pizza";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "Mittagessen 25 mit Karte";
+"uitestDemo.voice.lunchNote" = "Mittagessen";
+"uitestDemo.voice.twoTranscript" = "Taxi 12 und Kaffee 8 mit Karte";
+"uitestDemo.voice.taxiNote" = "Taxi";
+"uitestDemo.voice.coffeeNote" = "Kaffee";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "Restaurant Zum Goldenen Löffel";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "Taxi";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "Seite %ld";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "Erste Schritte";
@@ -4127,7 +4177,7 @@
 "welcome.hero.cards.budgets.title" = "Budgets und Ziele";
 "welcome.hero.cards.budgets.body" = "Grenzen setzen. Einhalten.";
 "welcome.hero.cards.multiAndCurrencies.title" = "Konten und Währungen";
-"welcome.hero.cards.multiAndCurrencies.body" = "Karten, Bargeld, 48+ Währungen.";
+"welcome.hero.cards.multiAndCurrencies.body" = "Karten, Bargeld, 50+ Währungen.";
 "welcome.hero.cards.import.title" = "Historie importieren";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Fertig.";
 "welcome.hero.cards.icloud.title" = "Privates iCloud";

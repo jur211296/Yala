@@ -657,16 +657,21 @@ struct VoiceRecordingView: View {
                 tagHints: [], currencyHint: currency, confidence: confidence
             )
         }
+        // En el idioma de la app: en español, el texto de siempre (el que leen los XCUITest).
+        let lunch = L10n.UITestDemo.Voice.lunchTranscript
         switch profile {
         case "incomplete":
-            return ("Almuerzo 25 con la tarjeta", [expense("Almuerzo", 25, subcategory: nil)])
+            return (lunch, [expense(L10n.UITestDemo.Voice.lunchNote, 25, subcategory: nil)])
         case "two":
             return (
-                "Taxi 12 y café 8 con la tarjeta",
-                [expense("Taxi", 12, subcategory: subcategory), expense("Café", 8, subcategory: subcategory)]
+                L10n.UITestDemo.Voice.twoTranscript,
+                [
+                    expense(L10n.UITestDemo.Voice.taxiNote, 12, subcategory: subcategory),
+                    expense(L10n.UITestDemo.Voice.coffeeNote, 8, subcategory: subcategory),
+                ]
             )
         default:
-            return ("Almuerzo 25 con la tarjeta", [expense("Almuerzo", 25, subcategory: subcategory)])
+            return (lunch, [expense(L10n.UITestDemo.Voice.lunchNote, 25, subcategory: subcategory)])
         }
     }
 

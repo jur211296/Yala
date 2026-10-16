@@ -156,6 +156,95 @@ enum DevSeedGroups {
         }
     }
 
+    /// Perfil `.ficha`: los grupos de las capturas y el vídeo de la ficha, en el idioma y la divisa de la app. Es el
+    /// dataset de `create` (el viaje con Ana y otra persona más un segundo grupo de dos), con los nombres por L10n y los
+    /// importes de `DevSeedFicha.Cifras`: el viaje en la divisa principal (× `groupFactor`) y, si la ficha la tiene, la
+    /// otra mitad en `groupSecondaryCurrency`. En inglés: «Lisbon trip», te deben $190.00 + €46.67; en portugués de
+    /// Brasil: «Viagem ao Rio» en reales, te devem R$ 380,00; en español, «Viaje a Cusco» como siempre.
+    /// Las subcategorías son las de la app en ese idioma, para que cada gasto lleve su icono.
+    static func createFicha(in context: ModelContext, mainCurrency main: String) {
+        let cifras = DevSeedFicha.cifras(forMainCurrency: main)
+        let cal = Calendar.current
+        func monthsAgo(_ n: Int) -> Date {
+            let base = cal.date(byAdding: .month, value: -n, to: Date.now) ?? Date.now
+            let comps = cal.dateComponents([.year, .month], from: base)
+            return cal.date(from: DateComponents(year: comps.year, month: comps.month, day: 15)) ?? base
+        }
+        typealias Gasto = (desc: String, amount: Double, currency: String, payer: Int, subcat: String?, monthsAgo: Int)
+
+        func seedGroup(name: String, others: [String], gastos: [Gasto]) -> SplitGroup {
+            let group = SplitGroup(name: name, iconName: "airplane", currencyCode: main, isOwner: true)
+            group.isBackendGroup = true  // C3: ver el porqué en `create(in:)`.
+            context.insert(group)
+            let zoneID = group.cloudKitZoneID
+            var members = [SplitMember(
+                groupZoneID: zoneID, displayName: L10n.DevSeed.Ficha.memberYou,
+                cloudKitUserRecordID: "uitest-current-user",
+                role: "admin", status: .active, isGroupOwner: true, isCurrentUser: true
+            )]
+            for other in others {
+                members.append(SplitMember(
+                    groupZoneID: zoneID, displayName: other,
+                    cloudKitUserRecordID: "uitest-member-ficha-\(other.lowercased())", status: .active
+                ))
+            }
+            for m in members { context.insert(m) }
+            let memberIDs = members.map { $0.id.uuidString }
+            for g in gastos {
+                let payerID = memberIDs[g.payer]
+                let expense = SplitExpense(
+                    groupZoneID: zoneID, amount: g.amount, currencyCode: g.currency,
+                    expenseDescription: g.desc, paidByMemberID: payerID,
+                    splitType: "equal",
+                    subcategoryName: g.subcat
+                )
+                expense.date = monthsAgo(g.monthsAgo)
+                context.insert(expense)
+                let perHead = ((g.amount / Double(memberIDs.count)) * 100).rounded() / 100
+                for mid in memberIDs {
+                    context.insert(SplitShare(
+                        expenseID: expense.id, memberID: mid, amount: perHead,
+                        isPaid: mid == payerID, groupZoneID: zoneID
+                    ))
+                }
+            }
+            return group
+        }
+
+        typealias T = L10n.DevSeed.Ficha
+        typealias Sub = L10n.Subcategory
+        let k = cifras.groupFactor
+        // Índice del pagador: 0 = tú, 1 = Ana, 2 = Beto/Ben. Mismo reparto que `create`: te deben 190 × k.
+        var trip: [Gasto] = [
+            (T.expenseLodging, 600 * k, main, 0, Sub.travel, 3),
+            (T.expenseGroupDinner, 240 * k, main, 1, Sub.restaurants, 2),
+            (T.expenseLocalMeal, 180 * k, main, 2, Sub.restaurants, 1),
+            (T.expenseTransport, 90 * k, main, 2, Sub.publicTransport, 0),
+            (T.expenseGroceries, 120 * k, main, 1, Sub.supermarkets, 0),
+        ]
+        if let secondary = cifras.groupSecondaryCurrency {
+            trip += [
+                (T.expenseTour, 150, secondary, 1, Sub.shows, 3),
+                (T.expenseAirportTaxi, 50, secondary, 2, Sub.rideshare, 2),
+                (T.expenseMuseum, 90, secondary, 0, Sub.shows, 1),
+                (T.expenseSouvenirs, 80, secondary, 0, Sub.gifts, 0),
+            ]
+        }
+        let tripGroup = seedGroup(name: T.groupTrip, others: [T.memberA, T.memberB], gastos: trip)
+        _ = seedGroup(name: T.groupWeekend, others: [T.memberC], gastos: [
+            (T.expenseWeekendStay, 400 * k, main, 0, Sub.travel, 1),
+            (T.expenseWeekendMeal, 120 * k, main, 1, Sub.restaurants, 0),
+        ])
+        if UITestHooks.isActive {
+            UserDefaults.standard.set(tripGroup.id.uuidString, forKey: UITestHooks.seededGroupIDKey)
+        }
+        do {
+            try context.save()
+        } catch {
+            print("DevSeedGroups: ficha save error: \(error)")
+        }
+    }
+
     /// Perfil `.fichaMX`: los grupos de las capturas de la ficha en es-MX. Tres grupos en MXN, de 3 a 5
     /// miembros, con saldos abiertos para que la lista y el detalle tengan «te deben» y «debes».
     /// Todo canal backend (`isBackendGroup`), por el mismo motivo que `create`.
