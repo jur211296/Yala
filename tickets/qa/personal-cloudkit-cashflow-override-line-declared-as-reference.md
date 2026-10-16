@@ -49,9 +49,10 @@ El snapshot estaba mal. Se re-exporta y se quita la entrada de `knownTypeMismatc
       campo viejo se queda) e implementado, con test.
 - [x] `knownTypeMismatches` con la entrada de `CD_line` justificada en el propio test (la propiedad legado sigue en
       el modelo y la app ya no la escribe; un source-scan lo fija).
-- [ ] **Jürgen:** desplegar `CD_cashFlowLine` a Production en los dos contenedores y verificarlo con un export,
-      ANTES de subir la build a TestFlight. Runbook: `docs/cloudkit-schema-diff-2.1.md`, sección «El campo nuevo
-      de los ajustes del flujo de caja (despliegue pendiente)», pasos A a E.
+- [x] **Jürgen:** desplegar `CD_cashFlowLine` a Production en los dos contenedores y verificarlo con un export,
+      ANTES de subir la build a TestFlight. Hecho el 2026-10-16: el export de los cuatro entornos coincide byte a
+      byte con los `.ckdb` del repo y `PersonalCloudKitSchemaParityTests` pasa (6/6). Runbook:
+      `docs/cloudkit-schema-diff-2.1.md`, sección «El campo nuevo de los ajustes del flujo de caja».
 - [ ] **Jürgen:** device-QA en dos iPhone (guion abajo).
 
 ## Lo que se hizo (2026-10-16)
