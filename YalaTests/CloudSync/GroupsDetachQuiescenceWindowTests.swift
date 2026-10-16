@@ -82,7 +82,12 @@ struct GroupsDetachQuiescenceWindowTests {
         context.insert(SplitExpense(groupZoneID: zone, amount: 20, expenseDescription: "Cena"))
         let expenseID = UUID().uuidString
         if withBridge {
-            let tx = TransactionItem(date: .now, amount: -20, currencyCode: "PEN")
+            // La pata REAL, con su cuenta. Sin cuenta, desde el 2026-10-16 (`GroupLegKindLogic`) una fila cuyo gasto no
+            // prueba qué es se deja tal cual en vez de soltarse por si fuera real, y esta suite no mide eso.
+            let account = Account(
+                name: "Banco", currencyCode: "PEN", colorHex: "#6366F1", iconName: "creditcard.fill", type: "checking")
+            context.insert(account)
+            let tx = TransactionItem(date: .now, amount: -20, currencyCode: "PEN", account: account)
             tx.splitExpenseID = expenseID
             tx.splitGroupZoneID = zone
             context.insert(tx)

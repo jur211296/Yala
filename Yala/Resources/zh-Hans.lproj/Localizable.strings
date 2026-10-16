@@ -6727,3 +6727,12 @@
 "storage.revert.prior.wipeFailed" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。请检查网络后再试一次。";
 "storage.revert.prior.noAccountTitle" = "请在这部 iPhone 上登录 iCloud";
 "storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这部 iPhone 没有登录 iCloud。请在 iPhone 的“设置”中登录后再试一次。";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "在此移除";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "仅在这部手机上移除。如果它的群组到达，会重新显示。";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "其他货币的群组支出按原样移动，不做换算：金额由群组决定。";

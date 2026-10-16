@@ -100,7 +100,11 @@ enum OrphanedBridgedTxSweeper {
     struct TxShape: Equatable {
         let expensePointerIsOrphan: Bool
         let settlementPointerIsOrphan: Bool
-        let accountIsSystem: Bool
+        /// Real, virtual o no se sabe (`GroupLegKindLogic`). Con cuenta lo decide la cuenta; sin cuenta, solo lo que se
+        /// puede probar. **«No se sabe» no se toca**: hasta el 2026-10-16 una fila sin cuenta se trataba como real y se
+        /// soltaba, y una VIRTUAL soltada así entraba en el aviso «Movimientos sin cuenta» como movible — moverla la
+        /// convertía en un gasto real contado dos veces (ticket `orphaned-group-records-stay-out-of-the-notice`).
+        let leg: GroupLegKindLogic.Kind
         /// El canal de la zona del puente **agotó su entrega** y esta zona estaba en su alcance
         /// (`GroupChannelFreshnessGate.evaluate(...) == .fresh`).
         ///
@@ -121,28 +125,44 @@ enum OrphanedBridgedTxSweeper {
         let zoneEvidenceIsFresh: Bool
 
         init(
-            expensePointerIsOrphan: Bool, settlementPointerIsOrphan: Bool, accountIsSystem: Bool,
+            expensePointerIsOrphan: Bool, settlementPointerIsOrphan: Bool, leg: GroupLegKindLogic.Kind,
             zoneEvidenceIsFresh: Bool
         ) {
             self.expensePointerIsOrphan = expensePointerIsOrphan
             self.settlementPointerIsOrphan = settlementPointerIsOrphan
-            self.accountIsSystem = accountIsSystem
+            self.leg = leg
             self.zoneEvidenceIsFresh = zoneEvidenceIsFresh
+        }
+
+        /// Fila CON cuenta: la cuenta decide.
+        init(
+            expensePointerIsOrphan: Bool, settlementPointerIsOrphan: Bool, accountIsSystem: Bool,
+            zoneEvidenceIsFresh: Bool
+        ) {
+            self.init(
+                expensePointerIsOrphan: expensePointerIsOrphan, settlementPointerIsOrphan: settlementPointerIsOrphan,
+                leg: accountIsSystem ? .virtual : .real, zoneEvidenceIsFresh: zoneEvidenceIsFresh)
         }
     }
 
     /// Decisión pura. `nil` = la transacción no es huérfana (o no hay evidencia suficiente) y NO se toca.
     ///
-    /// Una transacción sin cuenta (`accountIsSystem` no computable) se trata como REAL: ante la duda, la
-    /// dirección segura es preservar el rastro, nunca borrar.
+    /// Una transacción sin cuenta que no se puede clasificar (`.unknown`) NO se toca: ni se borra (puede ser dinero
+    /// real) ni se suelta (puede ser una virtual, y soltada entraría en el aviso de movimientos sin cuenta como movible).
+    /// Con el puntero muerto el editor ya le da a la persona su salida (`BridgedEditPolicy.pointerResolves`).
     static func decide(_ shape: TxShape) -> Action? {
         guard shape.zoneEvidenceIsFresh else { return nil }
         guard shape.expensePointerIsOrphan || shape.settlementPointerIsOrphan else { return nil }
-        switch GroupTransactionBridge.classifyForSoftDelete(
-            transactionAccountIsSystem: shape.accountIsSystem
-        ) {
-        case .releaseRealAccountTx: return .releasePointers
-        case .preserveVirtualSystemTx: return .deleteVirtual
+        switch shape.leg {
+        case .unknown:
+            return nil
+        case .real, .virtual:
+            switch GroupTransactionBridge.classifyForSoftDelete(
+                transactionAccountIsSystem: shape.leg == .virtual
+            ) {
+            case .releaseRealAccountTx: return .releasePointers
+            case .preserveVirtualSystemTx: return .deleteVirtual
+            }
         }
     }
 
@@ -274,13 +294,16 @@ enum OrphanedBridgedTxSweeper {
         // regresión respecto a no tener barrido.
         var orphanTxs: [TransactionItem] = []
         var actions: [(tx: TransactionItem, action: Action)] = []
+        // Sin cuenta, la fila se clasifica con la regla común. El gasto de una huérfana ya no está por definición, así que
+        // solo cuenta su subcategoría (`readSources: false`).
+        let legEvidence = GroupLegEvidence.read(for: bridgedTxs, context: context, readSources: false)
         for tx in bridgedTxs {
             let expenseIsOrphan = isOrphan(tx.splitExpenseID, in: liveExpenseIDs)
             let settlementIsOrphan = isOrphan(tx.splitSettlementID, in: liveSettlementIDs)
             let shape = TxShape(
                 expensePointerIsOrphan: expenseIsOrphan,
                 settlementPointerIsOrphan: settlementIsOrphan,
-                accountIsSystem: tx.account?.isSystemAccount == true,
+                leg: legEvidence.kind(of: tx),
                 zoneEvidenceIsFresh: zoneIsSweepable(
                     tx.splitGroupZoneID, pointerIsOrphan: expenseIsOrphan || settlementIsOrphan)
             )

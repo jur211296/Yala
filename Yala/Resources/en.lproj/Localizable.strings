@@ -6721,3 +6721,12 @@
 "storage.revert.prior.wipeFailed" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. Check your connection and try again.";
 "storage.revert.prior.noAccountTitle" = "Sign in to iCloud on this iPhone";
 "storage.revert.prior.noAccountBody" = "Before returning, we check what’s in your iCloud, and this iPhone isn’t signed in to iCloud. Sign in from the iPhone’s Settings and try again.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Remove here";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Removes it on this phone only. If its group arrives, it comes back.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Group expenses in another currency move as they are, without converting: the group sets their amount.";

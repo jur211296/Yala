@@ -411,7 +411,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-drain-failure-reads-as-nothing-pending | done | tickets/done/groups-drain-failure-reads-as-nothing-pending.md |
 | groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save | backlog | tickets/backlog/groups-drain-has-no-rollback-and-keeps-the-mirror-of-a-failed-save.md |
 | groups-drain-that-always-aborts-takes-the-loss-exit-away | done | tickets/done/groups-drain-that-always-aborts-takes-the-loss-exit-away.md |
-| groups-entry-left-half-done-reaches-the-private-gate-with-group-rows | backlog | tickets/backlog/groups-entry-left-half-done-reaches-the-private-gate-with-group-rows.md |
+| groups-entry-left-half-done-reaches-the-private-gate-with-group-rows | qa | tickets/qa/groups-entry-left-half-done-reaches-the-private-gate-with-group-rows.md |
 | groups-entry-on-a-mirrored-store-still-blocks-the-owner | qa | tickets/qa/groups-entry-on-a-mirrored-store-still-blocks-the-owner.md |
 | groups-equal-split-shows-not-participating-on-peer | done | tickets/done/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | done | tickets/done/groups-expense-notif-only-on-foreground.md |
@@ -608,7 +608,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
 | orphan-alerts-behind-fullscreen-covers | backlog | tickets/backlog/orphan-alerts-behind-fullscreen-covers.md |
-| orphaned-group-records-stay-out-of-the-notice | backlog | tickets/backlog/orphaned-group-records-stay-out-of-the-notice.md |
+| orphaned-group-records-stay-out-of-the-notice | done | tickets/done/orphaned-group-records-stay-out-of-the-notice.md |
 | owner-preferences-return-via-ikv-after-private-sign-out | backlog | tickets/backlog/owner-preferences-return-via-ikv-after-private-sign-out.md |
 | panel-accounts-redesign | done | tickets/done/panel-accounts-redesign.md |
 | panel-balance-chart-contradicts-its-own-figure | backlog | tickets/backlog/panel-balance-chart-contradicts-its-own-figure.md |
@@ -644,7 +644,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | prefs-synced-keys-upload-not-download | backlog | tickets/backlog/prefs-synced-keys-upload-not-download.md |
 | presentation-net-desarm-has-no-automated-net | done | tickets/done/presentation-net-desarm-has-no-automated-net.md |
 | previous-person-cloud-session-survives-fresh-start-and-reinstall | qa | tickets/qa/previous-person-cloud-session-survives-fresh-start-and-reinstall.md |
-| prior-icloud-group-records-summed-without-their-group | backlog | tickets/backlog/prior-icloud-group-records-summed-without-their-group.md |
+| prior-icloud-group-records-summed-without-their-group | done | tickets/done/prior-icloud-group-records-summed-without-their-group.md |
 | privacy-manifest-misses-cloud-account-data | done | tickets/done/privacy-manifest-misses-cloud-account-data.md |
 | privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion | done | tickets/done/privacy-policy-and-terms-miss-cloud-mode-identifiers-and-account-deletion.md |
 | private-exit-export-wait-cached-zero-misses-outside-writes | backlog | tickets/backlog/private-exit-export-wait-cached-zero-misses-outside-writes.md |

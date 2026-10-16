@@ -20,9 +20,23 @@
 //  respuesta. Equivocarse hacia «no vale» no es gratis: el Welcome vuelve a ofrecer el handover, que sella el dominio en
 //  este teléfono; lo que lo frena es que la persona lo confirma.
 //
+//  EL SEGUNDO ESCRITOR (2026-10-16, ticket `groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`).
+//  Quien entra con «Ya tengo una cuenta» y una cuenta de solo grupos llega a la mini-app de Grupos con su sesión viva
+//  (`onEnterGroupsOnly`), y el canal de Grupos baja sus grupos aunque el onboarding no haya terminado. Si deja el alta a
+//  medias y vuelve a «Es mi primera vez → privado», la puerta privada contaba esos grupos —SUYOS— como de otra persona y
+//  su «Borrar» los purgaba con el alcance del traspaso: dominio sellado y sesión retirada. Es el mismo hecho que esta
+//  marca ya describe («los grupos de este teléfono son de la persona que está en el onboarding»), así que la escribe
+//  también `onEnterGroupsOnly`, con DOS condiciones: **la sesión la abrió ese mismo intento** (`sessionOpenedHere` de
+//  `WelcomeCloudSignInView`; una sesión que sobrevivió a una reinstalación en el llavero es de la persona anterior y el
+//  Welcome la reutiliza sin pedir nada, review adversarial del 2026-10-16) **y en ese instante no hay ningún
+//  `SplitGroup`** (`shouldRecordAtGroupsEntry`): así todo lo que baje después lo bajó la sesión que la persona acaba de
+//  abrir. Sin cualquiera de las dos no se escribe y el Welcome hace lo de siempre. Residual heredado de la semántica de
+//  la marca: si esa sesión se va sin borrado (un 401, la cuenta borrada desde otro dispositivo), «sin sesión» la sigue
+//  dando por buena.
+//
 //  CUÁNTO VIVE. Lo que tarda la persona en terminar el onboarding, y no más:
 //    · NACE en `ContentView.performLateICloudWipe`, en la rama que conserva los grupos, ANTES de que el llamador desarme
-//      el borrado: un kill entre medias reanuda el borrado y la vuelve a escribir.
+//      el borrado: un kill entre medias reanuda el borrado y la vuelve a escribir. Y en `onEnterGroupsOnly` (arriba).
 //    · MUERE al completarse el onboarding (`ContentView`, en la transición; y el barrido del arranque,
 //      `retireIfOnboardingCompleted`, para la que un kill dejó atrás), dentro de `DataWipeService.wipeLocalGroupsDomain`
 //      (los grupos que describía ya no están) y en el borrado del cierre de sesión
@@ -33,6 +47,7 @@
 //
 
 import Foundation
+import SwiftData
 
 /// La marca de los grupos que el aviso tardío conservó. `nonisolated` porque la limpia también el boot-wipe pre-mount,
 /// que corre fuera del main actor.
@@ -68,6 +83,27 @@ nonisolated enum LateNoticeKeptGroupsMark {
     /// La lectura de producción: la sesión viva de este proceso.
     @MainActor static func vouchesNow(_ defaults: UserDefaults = .standard) -> Bool {
         vouches(forCurrentSessionSub: currentSessionSubProvider(), defaults)
+    }
+
+    /// ¿La escribe la entrada a la mini-app de Grupos? Solo si el teléfono no tiene ningún grupo en ese instante. `nil`
+    /// (no se pudo contar) no la escribe: sin saber qué había, el Welcome hace lo de siempre.
+    static func shouldRecordAtGroupsEntry(localGroupCount: Int?) -> Bool {
+        localGroupCount == 0
+    }
+
+    /// La escritura de `onEnterGroupsOnly`: atada a la sesión que la persona acaba de abrir, y solo sin grupos aquí.
+    @MainActor static func recordAtGroupsEntryIfNoGroupsYet(context: ModelContext, _ defaults: UserDefaults = .standard) {
+        let count: Int?
+        do {
+            count = try context.fetchCount(FetchDescriptor<SplitGroup>())
+        } catch {
+            #if DEBUG
+            print("LateNoticeKeptGroupsMark: no se pudo contar los grupos al entrar a Grupos: \(error)")
+            #endif
+            count = nil
+        }
+        guard shouldRecordAtGroupsEntry(localGroupCount: count) else { return }
+        recordNow(defaults)
     }
 
     static func clear(_ defaults: UserDefaults = .standard) {

@@ -5993,3 +5993,12 @@
 "storage.revert.prior.wipeFailed" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en la nube. Revisa tu conexión y vuelve a intentarlo.";
 "storage.revert.prior.noAccountTitle" = "Abre iCloud en este iPhone";
 "storage.revert.prior.noAccountBody" = "Antes de volver miramos qué hay en tu iCloud, y este iPhone no tiene iCloud abierto. Ábrelo en Ajustes del iPhone y vuelve a intentarlo.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Quitar de aquí";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Lo quita solo en este teléfono. Si su grupo llega, vuelve a aparecer.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Los gastos de grupo en otra moneda pasan tal cual, sin convertir: su importe lo manda el grupo.";

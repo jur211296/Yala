@@ -6727,3 +6727,12 @@
 "storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
 "storage.revert.prior.noAccountTitle" = "この iPhone で iCloud にサインインしてください";
 "storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この iPhone は iCloud にサインインしていません。iPhone の設定からサインインして、もう一度お試しください。";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "この端末で非表示";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "この端末でのみ非表示にします。グループが届くと再び表示されます。";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "別の通貨のグループの支出は換算せずそのまま移動します。金額はグループが決めます。";

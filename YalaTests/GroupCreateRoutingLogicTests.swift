@@ -191,7 +191,8 @@ struct GroupCreateRoutingWiringTests {
             "GroupsSyncClient.swift",                // born-remote del pull, isBackendGroup = true
             "DevSeedGroups.swift",                   // #if DEBUG — C3
             "DevSeedTransactions.swift",             // #if DEBUG — fixture de puntero muerto, ver abajo
-            "DevSeedSettlementAmountChange.swift"    // #if DEBUG entero, y nace con isBackendGroup = true
+            "DevSeedSettlementAmountChange.swift",   // #if DEBUG entero, y nace con isBackendGroup = true
+            "DevSeedGroupRowsWithoutGroup.swift"     // #if DEBUG entero, y nace con isBackendGroup = true
         ]
         // `DevSeedTransactions.swift` entra por el MISMO criterio que `DevSeedGroups.swift`: el
         // fichero está entero bajo `#if DEBUG` (`:8` … `:676`, que es su última línea), así que no
