@@ -89,3 +89,7 @@ real entre dos dispositivos ni el esquema vivo se pueden ver desde aquí. Que un
 
 - `cashflow-override-synced-to-an-old-version-stays-invisible-after-updating`
 - `cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two`
+
+## Barrido de QA · 2026-10-16
+
+Barrido de QA 2026-10-16 · se queda: §4 dos iPhone con el mismo Apple ID y, antes, el despliegue del esquema (tuyo). La migración la fijan `CashFlowOverrideLineMigrationTests` y `PersonalCloudKitSchemaParityTests`, con 6 tests que caen ante sus mutantes (#523). Prueba D · ly22 de `docs/qa/tanda-qa-jurgen-2.1.md`; el despliegue va primero, en «Antes de empezar».

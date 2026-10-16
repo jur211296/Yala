@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "accounts, transactions, data-repair"
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 source: encargo tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst (medido en simulador)
 ---
 
@@ -46,3 +46,7 @@ Avisar que hay movimientos sin cuenta de borrados antiguos y dejar elegir a qué
 2. Abre Yala en el Panel: debe salir «Movimientos sin cuenta» con un 2 (Taxi 25 y Teléfono 33 de «Efectivo QA»).
 3. Toca el aviso: la hoja lista Taxi y Teléfono. Elige la cuenta en soles y toca «Mover a «…»».
 4. El aviso desaparece, el saldo baja 58 y «Gastos» sube 58. En Registros, las dos filas ya llevan el nombre de la cuenta.
+
+## Barrido de QA · 2026-10-16
+
+Barrido de QA 2026-10-16 · se queda: lo funcional pasó en el simulador (Yala Dev, iOS 27.0, `c648223bc`, semilla `movimientos-sin-cuenta`): el Panel avisa «Movimientos sin cuenta · 2» con S/ 1.000; la hoja lista Taxi −25 y Teléfono −33; «Mover a «Banco QA»» deja el saldo en S/ 942, Gastos en S/ 58 y el aviso desaparece; en Buscar, Taxi ya lleva «Banco QA». Capturas `~/Claude/worktrees/_capturas/2026-10-16-barrido-qa-2-1-2/sovw-1…4`. `OrphanedRecordsUITests` (2) y `GroupRowsWithoutGroupUITests` (3) re-corridos en verde. Solo espera tu visto bueno al aviso nuevo del Panel, en el lote de capturas de `docs/qa/tanda-qa-jurgen-2.1.md`. Ya no pide iPhone.

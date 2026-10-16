@@ -21,7 +21,7 @@
 - [Verificar prod del gateway: token acuñado](feedback_verificar_prod_del_gateway_con_token_acunado.md) — staging con Yala Dev de Jürgen; prod con token 15 min, preguntando.
 - [UI compleja: capturas antes de cerrar](feedback_ui_compleja_capturas_antes_de_cerrar.md) — aprueba sobre el simulador, no el lienzo; pide aire.
 - [El atasco se prueba con segundos y el mismo cambio](feedback_el_atasco_se_prueba_con_segundos_y_el_mismo_cambio.md) — backoff de segundos + mismo fallo antes de abrir una salida que pierde datos.
-- [Esperar un PR ajeno: mira si puede entrar](feedback_esperar_un_pr_ajeno_mira_si_puede_entrar.md) — DIRTY no entra solo aunque el CI pase; rebasa y sigue.
+- [No esperes el CI ajeno](feedback_no_esperar_ci_ajeno.md) — ni antes del gate: sigue y rebasa una vez antes de tu PR.
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.

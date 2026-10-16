@@ -68,3 +68,7 @@ por buena.
 3. Manda Yala a segundo plano unos segundos y vuelve (para que baje los grupos).
 4. «Es mi primera vez» → «Tu cuenta en tu iCloud privado».
 5. **Pasa si** NO sale «Ya hay datos en este teléfono» y sigues al onboarding; al terminarlo, tus grupos siguen en Grupos.
+
+## Barrido de QA · 2026-10-16
+
+Barrido de QA 2026-10-16 · se queda: §4 entrada real con una cuenta de solo grupos: bajo XCUITest el montaje nunca es neutro (medido en #522), así que el camino solo se conduce en un iPhone. La cadena de decisiones la fija un test (21 aserciones caen con el arreglo revertido). Prueba A · dzih de `docs/qa/tanda-qa-jurgen-2.1.md`.
