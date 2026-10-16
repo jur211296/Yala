@@ -432,14 +432,17 @@ final class CashFlowPlanViewModel {
     func setOverride(line: CashFlowLine, monthKey: String, amount: Double, note: String) {
         guard let ctx = modelContext else { return }
 
-        // Remove existing override for same monthKey
-        if let existing = line.overrides?.first(where: { $0.monthKey == monthKey }) {
+        // Remove existing override for same monthKey. También uno del legado (`overrides`) que aún no migró:
+        // si no, quedarían dos ajustes del mismo mes y la pantalla enseñaría cualquiera de los dos.
+        for existing in Self.overrides(of: line, monthKey: monthKey) {
             ctx.delete(existing)
         }
 
         let override = CashFlowOverride(monthKey: monthKey, amount: amount, note: note)
         ctx.insert(override)
-        override.line = line
+        // `cashFlowLine`, NUNCA `line`: el campo de `line` lo rechaza iCloud en Production
+        // (`CashFlowOverrideLineMigration`).
+        override.cashFlowLine = line
 
         do {
             try ctx.save()
@@ -468,8 +471,9 @@ final class CashFlowPlanViewModel {
 
     func removeOverride(line: CashFlowLine, monthKey: String) {
         guard let ctx = modelContext else { return }
-        if let existing = line.overrides?.first(where: { $0.monthKey == monthKey }) {
-            ctx.delete(existing)
+        let existing = Self.overrides(of: line, monthKey: monthKey)
+        if !existing.isEmpty {
+            existing.forEach { ctx.delete($0) }
             do {
                 try ctx.save()
             } catch {
@@ -478,6 +482,11 @@ final class CashFlowPlanViewModel {
                 #endif
             }
         }
+    }
+
+    /// Los ajustes de ese mes de la línea, en las dos relaciones: la nueva y la de legado que aún no migró.
+    static func overrides(of line: CashFlowLine, monthKey: String) -> [CashFlowOverride] {
+        ((line.monthOverrides ?? []) + (line.overrides ?? [])).filter { $0.monthKey == monthKey }
     }
 
     // MARK: - Recalculate

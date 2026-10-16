@@ -64,10 +64,18 @@ struct PersonalCloudKitSchemaParityTests {
     ]
 
     /// Tipos que el snapshot declara distinto de lo que escribe la app y que NO se pueden corregir en
-    /// el fichero: un tipo de campo no cambia nunca en Production. Cada entrada es un hallazgo abierto
-    /// con ticket, no una excepción cómoda — si la consola confirma el tipo del snapshot, el registro
-    /// no sincroniza y el arreglo es de código (otro nombre de relación), no de esquema.
-    /// Ticket: `personal-cloudkit-cashflow-override-line-declared-as-reference`.
+    /// el fichero: un tipo de campo no cambia nunca en Production. Cada entrada lleva su porqué, no es
+    /// una excepción cómoda.
+    ///
+    /// **`CD_CashFlowOverride.CD_line` (REFERENCE en el contenedor de producción, confirmado el
+    /// 2026-10-12) ya está ARREGLADO en código y la entrada se queda a propósito.** La relación pasó a
+    /// `CashFlowOverride.cashFlowLine` (campo `CD_cashFlowLine`, STRING). `line` sigue en el modelo como
+    /// legado —es lo único que deja leer los ajustes de antes en cada dispositivo— y por eso este test
+    /// todavía lo espera como STRING; la app no lo escribe nunca salvo para vaciarlo
+    /// (`CashFlowOverrideLineMigration`), y un registro con el campo vacío no lo trae [inferido: el
+    /// espejo no pone en el registro una relación a `nil`; lo comprueba el device-QA del ticket]. Que nadie vuelva a
+    /// escribirlo lo fija `CashFlowOverrideLineMigrationTests`. Ticket:
+    /// `personal-cloudkit-cashflow-override-line-declared-as-reference`.
     static let knownTypeMismatches: [String: [String: String]] = [
         "yala-production.ckdb": ["CD_CashFlowOverride.CD_line": "REFERENCE"],
         "yala-development.ckdb": ["CD_CashFlowOverride.CD_line": "REFERENCE"],
@@ -207,6 +215,16 @@ struct PersonalCloudKitSchemaParityTests {
             \(gaps.joined(separator: "\n"))
             """
         )
+    }
+
+    /// El arreglo de `CD_line`: el ajuste de un mes viaja ahora por `CD_cashFlowLine`, que la app escribe
+    /// como STRING (el recordName de la línea) y que los cuatro snapshots declaran STRING. Es lo que hay que
+    /// desplegar a Production (`docs/cloudkit-schema-diff-2.1.md`, «El campo nuevo de los ajustes»).
+    @Test(arguments: snapshots)
+    func cashFlowOverride_travelsByTheNewStringField(_ file: String) throws {
+        let expected = try #require(try Self.expectedSchema()["CD_CashFlowOverride"])
+        #expect(expected["CD_cashFlowLine"] == .field("STRING"))
+        #expect(try Self.snapshot(file)["CD_CashFlowOverride"]?["CD_cashFlowLine"] == "STRING")
     }
 
     /// El parser es la mitad del test: si dejara de leer RECORD TYPEs o campos, el test de arriba

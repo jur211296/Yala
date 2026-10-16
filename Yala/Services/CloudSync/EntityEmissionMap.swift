@@ -724,13 +724,13 @@ enum EntityEmissionMap {
             ColumnEmitter("month_key") { m, _ in .string(m.monthKey) },
             ColumnEmitter("amount") { m, _ in .money(m.amount) },
             ColumnEmitter("note") { m, _ in .string(m.note) },
-            ColumnEmitter("line_ref") { m, _ in Emit.ref(m.line?.id) },
+            ColumnEmitter("line_ref") { m, _ in Emit.ref(m.cashFlowLine?.id) },
         ],
         columnKeyPaths: [
             \CashFlowOverride.monthKey: ["month_key"],
             \CashFlowOverride.amount: ["amount"],
             \CashFlowOverride.note: ["note"],
-            \CashFlowOverride.line: ["line_ref"],
+            \CashFlowOverride.cashFlowLine: ["line_ref"],
         ]
     )
 
