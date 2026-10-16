@@ -125,6 +125,12 @@ final class AppBootstrapper {
         //      Pérdida acotada a config local de Cash Flow (feature Pro nueva que nunca sincronizó).
         CashFlowWipeService.wipeCashFlowDataIfNeeded(in: context)
 
+        // 0.0-cashflow. Los ajustes de un mes pasan de `CashFlowOverride.line` (campo REFERENCE en Production, que
+        //      rechaza lo que la app escribe) a `cashFlowLine`. En cada arranque, idempotente: ver
+        //      `CashFlowOverrideLineMigration`. Va aquí por lo mismo que el wipe: cuanto antes, menos tiempo con un
+        //      registro que iCloud rechaza en la cola.
+        CashFlowOverrideLineMigration.migrateIfNeeded(in: context)
+
         // 0.0-bis. EL EJE 1, backfilleado una sola vez (ADR 2026-09-09 «Sesiones — dos ejes»).
         //
         // Quien ya tiene el onboarding hecho y todavía no tiene marca es el parque existente: se le

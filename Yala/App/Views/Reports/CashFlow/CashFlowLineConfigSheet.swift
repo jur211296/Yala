@@ -267,7 +267,7 @@ struct CashFlowLineConfigSheet: View {
     // MARK: - Overrides
 
     private var overrides: [CashFlowOverride] {
-        (line.overrides ?? []).sorted { $0.monthKey < $1.monthKey }
+        (line.monthOverrides ?? []).sorted { $0.monthKey < $1.monthKey }
     }
 
     private var overridesSection: some View {

@@ -876,7 +876,8 @@ final class StatisticsViewModel: Filterable {
     /// Cada importe sale en `currencyCode` aunque la fila se guardara con otra divisa principal
     /// (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`), con la misma regla
     /// que la vista agregada: ingreso y gasto con `CashFlowCalculator.resolvedAmount` y «mi parte»
-    /// de los gastos de grupo; el saldo con `TrendDataProcessor.balanceAmount`, la fila entera. Sin
+    /// de los gastos de grupo; el saldo, la fila entera en su divisa nativa, valorado cada día a su tipo de
+    /// cambio y hoy con la regla del saldo vivo (`BalanceValuation`, como la curva agregada). Sin
     /// esto, pasar de la vista agregada a la de cuentas cambiaba el número del mismo período.
     static func accountBuckets(
         metric: TrendMetric,
@@ -894,14 +895,26 @@ final class StatisticsViewModel: Filterable {
 
         switch metric {
         case .balance:
-            // Initial balance is now a transaction, start from 0
-            var runningBalance = 0.0
+            // Initial balance is now a transaction, start from 0. Saldo NATIVO acumulado, valorado al cierre de
+            // cada bucket con el tipo de cambio de ese día y hoy con la regla del saldo vivo (`BalanceValuation`):
+            // la regla de la curva agregada (`TrendDataProcessor.fillBalanceBuckets`), así que la vista por cuenta
+            // y la agregada siguen dando el mismo número.
+            var native: [String: Decimal] = [:]
+            let sortedBuckets = bucketDates.sorted()
+            let closings = sortedBuckets.map {
+                BalanceValuation.closingInstant(bucketStart: $0, grouping: grouping, cap: Date.now, calendar: calendar)
+            }
+            let valuation = BalanceValuation(
+                currencies: Set(accountTransactions.map(\.currencyCode)),
+                to: currencyCode,
+                closingDates: closings,
+                converter: converter,
+                calendar: calendar
+            )
 
             // Add transactions before interval
             for txn in accountTransactions where txn.date < intervalStart {
-                runningBalance += TrendDataProcessor.balanceAmount(
-                    txn, currencyCode: currencyCode, converter: converter
-                )
+                LiveBalanceCalculator.addNative(txn, to: &native)
             }
 
             // Fill buckets
@@ -909,15 +922,13 @@ final class StatisticsViewModel: Filterable {
                 grouping.dateKey(for: txn.date, calendar: calendar)
             }
 
-            for date in bucketDates.sorted() {
+            for (index, date) in sortedBuckets.enumerated() {
                 if let txns = transactionsByBucket[date] {
                     for txn in txns {
-                        runningBalance += TrendDataProcessor.balanceAmount(
-                            txn, currencyCode: currencyCode, converter: converter
-                        )
+                        LiveBalanceCalculator.addNative(txn, to: &native)
                     }
                 }
-                buckets[date] = runningBalance
+                buckets[date] = valuation.doubleValue(native, at: closings[index])
             }
 
         case .income:

@@ -268,8 +268,8 @@ struct CashFlowProjectionCalculatorTests {
 
         let currentKey = CashFlowProjectionCalculator.monthKey(for: currentMonthStart, calendar: calendar)
         let override = CashFlowOverride(monthKey: currentKey, amount: 800, note: "Vacaciones")
-        override.line = line
-        line.overrides = [override]
+        override.cashFlowLine = line
+        line.monthOverrides = [override]
 
         let result = CashFlowProjectionCalculator.calculate(
             plan: plan, lines: [line], transactions: [],

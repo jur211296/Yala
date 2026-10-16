@@ -79,6 +79,37 @@ protocol CurrencyConverting {
     /// `convertWithLatestRate` + de dónde salió la tasa.
     func convertCheckedWithLatestRate(_ amount: Decimal, from: String, to: String)
         -> (amount: Decimal, quality: RateQuality)
+
+    /// Las tasas de VARIAS fechas a la vez: para cada fecha y cada divisa de `codes`, cuánto vale una unidad en
+    /// `to` y de dónde salió la tasa. Da lo mismo que `convertChecked(1, from: code, to: to, on: fecha)` fecha a
+    /// fecha (`CurrencyConverterDailyFactorsTests` lo compara); existe porque una curva de saldo valora cada día
+    /// a su tipo de cambio y pedirlas una a una cuesta una consulta por día
+    /// (`panel-balance-chart-contradicts-its-own-figure`).
+    func rateFactors(for codes: Set<String>, to: String, on dates: [Date]) -> [Date: [String: RateFactor]]
+}
+
+/// Cuánto vale una unidad de una divisa en otra en una fecha, y de dónde salió la tasa. La conversión es lineal,
+/// así que `importe × factor` es la conversión del importe.
+struct RateFactor: Equatable {
+    let factor: Decimal
+    let quality: RateQuality
+}
+
+extension CurrencyConverting {
+    /// Por defecto, fecha a fecha con `convertChecked`: la calidad es la que declara cada conformer, no una
+    /// inventada aquí (ver la nota del protocolo sobre las variantes `…Checked`).
+    func rateFactors(for codes: Set<String>, to: String, on dates: [Date]) -> [Date: [String: RateFactor]] {
+        var out: [Date: [String: RateFactor]] = [:]
+        for date in dates {
+            var byCode: [String: RateFactor] = [:]
+            for code in codes {
+                let converted = convertChecked(1, from: code, to: to, on: date)
+                byCode[code] = RateFactor(factor: converted.amount, quality: converted.quality)
+            }
+            out[date] = byCode
+        }
+        return out
+    }
 }
 
 // MARK: - Currency Converter
@@ -491,6 +522,114 @@ final class CurrencyConverter: CurrencyConverting {
     /// Cuántas filas anteriores se miran como mucho al completar una fecha. Acotado a propósito: es
     /// una consulta por conversión y el caso normal se resuelve en la primera.
     private static let carryForwardLookback = 30
+
+    // MARK: - Tasas de varias fechas en bloque
+
+    /// `rateFactors` sin una consulta por fecha: lee de una vez las filas del rango —y las `carryForwardLookback`
+    /// anteriores, que el escalón 2 de la primera fecha puede necesitar— y aplica a cada fecha y cada par
+    /// `(divisa, to)` la MISMA escalera que `resolveRates`: la fila del día, las anteriores rellenando solo lo que
+    /// falta, la tabla estática. Por par y no con todas las divisas a la vez, como `convertChecked`: con todas, una
+    /// divisa sin tasa le empeoraría la calidad a las demás.
+    ///
+    /// **Si tocas `resolveRates`, toca esto**: `CurrencyConverterDailyFactorsTests` compara las dos rutas sobre
+    /// filas parciales, huecos y tasas a cero, y se pone rojo si divergen.
+    func rateFactors(for codes: Set<String>, to: String, on dates: [Date]) -> [Date: [String: RateFactor]] {
+        guard let context = modelContext, !dates.isEmpty else {
+            var out: [Date: [String: RateFactor]] = [:]
+            for date in dates {
+                var byCode: [String: RateFactor] = [:]
+                for code in codes {
+                    let converted = convertChecked(1, from: code, to: to, on: date)
+                    byCode[code] = RateFactor(factor: converted.amount, quality: converted.quality)
+                }
+                out[date] = byCode
+            }
+            return out
+        }
+        let toCode = normalizeCurrencyCode(to)
+        let keyed = dates.map { (date: $0, key: dateFormatter.string(from: $0)) }
+        guard let minKey = keyed.map(\.key).min(), let maxKey = keyed.map(\.key).max() else { return [:] }
+
+        // Las filas del rango y las anteriores que el escalón 2 puede pedir, en orden de fecha.
+        let previous = fetchRates(strictlyBefore: minKey, limit: Self.carryForwardLookback, context: context)
+        let inRange = fetchRates(from: minKey, through: maxKey, context: context)
+        // Sin quitar duplicados de una misma fecha (dos dispositivos pueden escribir la fila del día): el escalón 2 de
+        // `resolveRates` los recorre todos y cuenta cada uno en sus 30, y aquí tiene que ser igual. La fila «propia» de
+        // una fecha es la primera de su clave, como en `fetchExchangeRate`.
+        let rows: [(key: String, rates: [String: Double])] = (previous + inRange)
+            .sorted { $0.dateKey < $1.dateKey }
+            .map { ($0.dateKey, $0.decodedRates().filter { Self.isUsableRate($0.value) }) }
+        var rowIndexByKey: [String: Int] = [:]
+        for (index, row) in rows.enumerated() where rowIndexByKey[row.key] == nil { rowIndexByKey[row.key] = index }
+        let staticTable = fallbackRates
+
+        var out: [Date: [String: RateFactor]] = [:]
+        for (date, key) in keyed {
+            // Las filas estrictamente anteriores a la fecha, de la más reciente hacia atrás, como `fetchRates`.
+            let upper = rowIndexByKey[key] ?? rows.firstIndex { $0.key > key } ?? rows.count
+            let before = rows[..<upper].suffix(Self.carryForwardLookback).reversed()
+            let own = rowIndexByKey[key].map { rows[$0].rates } ?? [:]
+
+            var byCode: [String: RateFactor] = [:]
+            for rawCode in codes {
+                let fromCode = normalizeCurrencyCode(rawCode)
+                if fromCode == toCode {
+                    byCode[rawCode] = RateFactor(factor: 1, quality: .exact)
+                    continue
+                }
+                let needing: Set<String> = [fromCode, toCode]
+                var merged = own
+                func missing() -> Set<String> { needing.subtracting(merged.keys) }
+                var quality: RateQuality = .exact
+                if merged.isEmpty || !missing().isEmpty {
+                    var carriedFrom: String?
+                    for row in before where !missing().isEmpty {
+                        for code in missing() {
+                            guard let rate = row.rates[code], Self.isUsableRate(rate) else { continue }
+                            merged[code] = rate
+                            if carriedFrom == nil { carriedFrom = row.key }
+                        }
+                    }
+                    var usedStatic = false
+                    for code in missing() {
+                        if let staticRate = staticTable[code], Self.isUsableRate(staticRate) {
+                            merged[code] = staticRate
+                            usedStatic = true
+                        }
+                    }
+                    if merged.isEmpty {
+                        merged = staticTable
+                        quality = .staticFallback
+                    } else if usedStatic {
+                        quality = .staticFallback
+                    } else if let carriedFrom {
+                        quality = .carriedForward(fromDateKey: carriedFrom)
+                    }
+                }
+                byCode[rawCode] = RateFactor(
+                    factor: performConversion(amount: 1, from: fromCode, to: toCode, rates: merged),
+                    quality: quality
+                )
+            }
+            out[date] = byCode
+        }
+        return out
+    }
+
+    private func fetchRates(from fromKey: String, through toKey: String, context: ModelContext) -> [ExchangeRate] {
+        let descriptor = FetchDescriptor<ExchangeRate>(
+            predicate: #Predicate { $0.dateKey >= fromKey && $0.dateKey <= toKey },
+            sortBy: [SortDescriptor(\ExchangeRate.dateKey)]
+        )
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            #if DEBUG
+            print("CurrencyConverter: Error fetching rates in range: \(error)")
+            #endif
+            return []
+        }
+    }
 
     private func fetchRates(
         strictlyBefore dateKey: String,

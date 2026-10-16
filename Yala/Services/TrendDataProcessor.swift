@@ -182,11 +182,14 @@ struct TrendDataProcessor {
             fillBalanceBuckets(
                 &buckets,
                 transactions: transactions,
-                accounts: accounts,
                 interval: effectiveInterval,  // Use the matched interval
                 grouping: grouping,
                 calendar: calendar,
-                valueTransform: { balanceAmount($0, currencyCode: currencyCode, converter: converter) }
+                currencyCode: currencyCode,
+                // El último punto vale el saldo al CIERRE del periodo mostrado (o de hoy), no al de su
+                // último movimiento: un mes cerrado vale lo que tenías el último día, a la tasa de ese día.
+                valuationCap: min(interval.end, Date.now),
+                converter: converter
             )
 
         case .income:
@@ -307,39 +310,29 @@ struct TrendDataProcessor {
         min(range.lowerBound, value)...max(range.upperBound, value)
     }
 
-    /// Lo que una fila suma al saldo acumulado, en `currencyCode`.
+    /// Fill balance buckets with running balance calculation.
     ///
-    /// La fila ENTERA (`adjustment: .none`): el saldo es de la cuenta, y en la cuenta salió el pago
-    /// completo, no «mi parte». `resolvedAmount` es la regla de la curva de ingreso y gasto: el monto
-    /// guardado si se guardó en la divisa vigente, y si no, el nativo reconvertido con la tasa de su
-    /// fecha — que es justo lo que habría guardado (`trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`).
-    /// También la usan las curvas de saldo por cuenta de Estadísticas.
-    static func balanceAmount(
-        _ transaction: TransactionItem,
-        currencyCode: String,
-        converter: CurrencyConverting
-    ) -> Double {
-        CashFlowCalculator.resolvedAmount(
-            transaction, currencyCode: currencyCode, adjustment: .none, converter: converter
-        ).value
-    }
-
-    /// Fill balance buckets with running balance calculation
+    /// Cada punto es el saldo NATIVO acumulado hasta el cierre de su bucket, valorado con el tipo de cambio de ese
+    /// cierre; el de hoy, con la regla del saldo vivo (`BalanceValuation`). Así el último punto de una curva que llega
+    /// a hoy ES la cifra del saldo, y el de un periodo cerrado, lo que valía el saldo ese día. Hasta el 2026-10-16
+    /// sumaba cada fila al tipo de su fecha, y con una cuenta en dólares la curva acababa lejos de la cifra
+    /// (ticket `panel-balance-chart-contradicts-its-own-figure`).
     private static func fillBalanceBuckets(
         _ buckets: inout [Date: Double],
         transactions: [TransactionItem],
-        accounts: [Account],
         interval: DateInterval,
         grouping: TrendGrouping,
         calendar: Calendar,
-        valueTransform: (TransactionItem) -> Double
+        currencyCode: String,
+        valuationCap: Date,
+        converter: CurrencyConverting
     ) {
         // Start with 0 - initial balance is now a transaction
-        var runningBalance = 0.0
+        var native: [String: Decimal] = [:]
 
         // Add transactions before interval
         for transaction in transactions where transaction.date < interval.start {
-            runningBalance += valueTransform(transaction)
+            LiveBalanceCalculator.addNative(transaction, to: &native)
         }
 
         // Group transactions by bucket date
@@ -349,15 +342,28 @@ struct TrendDataProcessor {
             grouping.dateKey(for: transaction.date, calendar: calendar)
         }
 
-        // Fill buckets with cumulative balance
         let sortedDates = buckets.keys.sorted()
-        for date in sortedDates {
+        var closings = sortedDates.map {
+            BalanceValuation.closingInstant(bucketStart: $0, grouping: grouping, cap: valuationCap, calendar: calendar)
+        }
+        // El último bucket acaba en el último movimiento, pero el saldo no cambia hasta el cierre: se valora al cierre.
+        if let last = closings.indices.last { closings[last] = max(closings[last], valuationCap) }
+        let valuation = BalanceValuation(
+            currencies: Set(transactions.map(\.currencyCode)),
+            to: currencyCode,
+            closingDates: closings,
+            converter: converter,
+            calendar: calendar
+        )
+
+        // Fill buckets with cumulative balance
+        for (index, date) in sortedDates.enumerated() {
             if let txns = transactionsByBucket[date] {
                 for txn in txns {
-                    runningBalance += valueTransform(txn)
+                    LiveBalanceCalculator.addNative(txn, to: &native)
                 }
             }
-            buckets[date] = runningBalance
+            buckets[date] = valuation.doubleValue(native, at: closings[index])
         }
     }
 

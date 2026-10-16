@@ -572,7 +572,8 @@ struct CloudSyncWiredEntitiesTests {
         let line = try context.fetch(FetchDescriptor<CashFlowLine>()).first { $0.id == lineID }
         let override = try context.fetch(FetchDescriptor<CashFlowOverride>()).first { $0.id == overrideID }
         #expect(line?.plan?.id == planID)              // line→plan re-resuelto
-        #expect(override?.line?.id == lineID)          // override→line re-resuelto
+        #expect(override?.cashFlowLine?.id == lineID)          // override→line re-resuelto
+        #expect(override?.line == nil)                 // el legado no lo escribe nadie (CD_line es REFERENCE en Production)
         #expect(line?.manualAmount == 1000)
         #expect(try context.fetch(FetchDescriptor<SyncDanglingRef>()).isEmpty)
     }

@@ -73,6 +73,13 @@ final class CashFlowLine {
     @Relationship(deleteRule: .nullify)
     var plan: CashFlowPlan?   // Explicit for CloudKit REFERENCE mapping
 
+    /// Los ajustes de un mes de esta línea. Inversa de `CashFlowOverride.cashFlowLine`, que es la relación que
+    /// sincroniza (ver su docblock). Es la que leen y escriben todos los caminos de la app.
+    @Relationship(deleteRule: .cascade, inverse: \CashFlowOverride.cashFlowLine)
+    var monthOverrides: [CashFlowOverride]?
+
+    /// LEGADO: inversa de `CashFlowOverride.line`. Solo la mira `CashFlowOverrideLineMigration`; tras migrar queda
+    /// vacía. Conserva el `.cascade` para que borrar una línea se lleve también un ajuste que aún no migró.
     @Relationship(deleteRule: .cascade, inverse: \CashFlowOverride.line)
     var overrides: [CashFlowOverride]?
 

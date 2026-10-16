@@ -1296,7 +1296,10 @@ final class PanelViewModel {
                 interval: calcContext.effectiveInterval,
                 accounts: calcContext.eligibleAccounts,
                 transactions: calcContext.balanceTransactions,
-                preferredCurrencyCode: calcContext.defaultCurrencyCode
+                preferredCurrencyCode: calcContext.defaultCurrencyCode,
+                // El mismo converter que la curva: la cifra y su último punto salen de la misma regla
+                // (`panel-balance-chart-contradicts-its-own-figure`).
+                converter: calcContext.converter
             )
             let result = TrendDataProcessor.processTrendData(
                 transactions: transactionsForTrend,
@@ -2784,7 +2787,8 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             accounts: context.eligibleAccounts,
             transactions: context.balanceTransactions,
-            preferredCurrencyCode: context.defaultCurrencyCode
+            preferredCurrencyCode: context.defaultCurrencyCode,
+            converter: context.converter
         )
 
         let currentResult = TrendDataProcessor.processTrendData(
