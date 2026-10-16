@@ -174,6 +174,23 @@ struct DevSeedFichaTests {
         }
     }
 
+    /// La regresión de las láminas 02 y 03 (16-oct): con efectivo y tarjeta en la divisa principal, la regla real de foto
+    /// y voz ya no elige cuenta (bien hecho: hay tres), y las demos de `-uitest` salían con «Selecciona cuenta» y
+    /// Guardar apagado. La demo elige la corriente para la foto y la tarjeta para la voz.
+    @Test func demoAccounts_withTheFichaAccounts_pickMainForThePhotoAndTheCardForTheVoice() throws {
+        let context = try makeTestContext()
+        let (main, _) = try seedMiniPersonalLife(in: context)
+        DevSeedFicha.adaptPersonalData(in: context, mainCurrency: "USD")
+        let accounts = try context.fetch(FetchDescriptor<Account>())
+
+        #expect(DraftBuilder.findAccount(byCurrency: "USD", in: accounts) == nil,
+                "Premisa: tres cuentas en dólares, la regla real no adivina")
+        let photo = UITestDemoAccountLogic.account(for: .photo, among: accounts, currencyCode: "USD")
+        let voice = UITestDemoAccountLogic.account(for: .voice, among: accounts, currencyCode: "USD")
+        #expect(photo?.persistentModelID == main.persistentModelID, "Foto: \(photo?.name ?? "nil")")
+        #expect(voice?.name == L10n.Account.AccountType.creditCard, "Voz: \(voice?.name ?? "nil")")
+    }
+
     @Test func adaptPersonalData_pen_leavesTheSpanishSetAsItIs() throws {
         let context = try makeTestContext()
         let (main, savings) = try seedMiniPersonalLife(in: context, savingsTotal: 33_615)

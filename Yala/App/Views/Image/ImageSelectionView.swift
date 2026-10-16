@@ -1300,6 +1300,14 @@ struct ImageSelectionView: View {
             confidence: VisionConfidence(overall: 1, imageType: 1)
         )
         let made = VisionDraftFactory.makeDrafts(from: response, rawText: nil, context: modelContext)
+        // Con varias cuentas en la divisa (la semilla `ficha`) la regla real no elige; la demo va a la corriente.
+        if let currency = transaction.currency, made.contains(where: { $0.account == nil }) {
+            let account = UITestDemoAccountLogic.account(for: .photo, among: uiTestActiveAccounts(), currencyCode: currency)
+            for draft in made where draft.account == nil {
+                draft.account = account
+                if account != nil { draft.needsUserInput.removeAll { $0 == DraftInputRequirement.account } }
+            }
+        }
         if profile != "incomplete" {
             let subcategory = uiTestExpenseSubcategory()
             for draft in made where draft.subcategory == nil {
@@ -1308,6 +1316,15 @@ struct ImageSelectionView: View {
             }
         }
         return made
+    }
+
+    private func uiTestActiveAccounts() -> [Account] {
+        do {
+            return try modelContext.fetch(FetchDescriptor<Account>())
+        } catch {
+            print("ImageSelectionView: Error fetching accounts for the UI-test seam: \(error)")
+            return []
+        }
     }
 
     private func uiTestAccountCurrency() -> String? {
