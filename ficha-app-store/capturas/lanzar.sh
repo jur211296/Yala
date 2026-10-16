@@ -19,6 +19,9 @@ PANEL_NUEVO=(-panelPrefsMigratedV2 YES -panelSectionsHidden "health,distribucion
   -panelDistribucionOrder "categorias_torta,subcategorias_torta,gastos_por_naturaleza,categorias_principales,subcategorias_principales,distribucion_por_etiquetas"
   -panelDistribucionHidden "categorias_principales,subcategorias_principales,distribucion_por_etiquetas"
   -panelPlanificacionOrder "pagos_planificados,presupuestos")
+# El carrusel de «Tus finanzas» empieza por efectivo y tarjeta: son los chips de la 08 («Cash», «Card»), y en el iPhone
+# solo se ve una tarjeta entera y asoma la siguiente. Sin orden guardado iría por nombre («Cartão» antes que «Dinheiro»).
+ORDEN_CUENTAS="$CUENTA_EFECTIVO|$CUENTA_TARJETA|$CUENTA_PRINCIPAL|$CUENTA_EXTRANJERA"
 RELOJ_DYLIB="$("$MOLDE/reloj/compilar.sh")"
 DESFASE=$(( $(date -j -f "%Y-%m-%d %H:%M:%S" "$RELOJ" +%s) - $(date +%s) ))
 xcrun simctl ui "$U" appearance dark
@@ -27,7 +30,7 @@ xcrun simctl terminate "$U" "$BUNDLE" 2>/dev/null || true
 SIMCTL_CHILD_DYLD_INSERT_LIBRARIES="$RELOJ_DYLIB" SIMCTL_CHILD_YALA_RELOJ_DESFASE="$DESFASE" \
 xcrun simctl launch "$U" "$BUNDLE" -uitest ${SEMILLA[@]+"${SEMILLA[@]}"} -uitest-skip-onboarding -uitest-pro -uitest-ai-consent \
   -userTheme 2 -defaultCurrencyCode "$MONEDA" -AppleLanguages "$APPLE_LANGUAGES" -AppleLocale "$APPLE_LOCALE" \
-  "${PANEL_NUEVO[@]}" "$@" >/dev/null
+  "${PANEL_NUEVO[@]}" -accountsSortOrderNames "$ORDEN_CUENTAS" "$@" >/dev/null
 # La semilla de dos años tarda: se espera a la señal de la app (`uitest_ready` en el árbol de accesibilidad).
 for _ in $(seq 1 90); do
   if axe describe-ui --udid "$U" 2>/dev/null | grep -q '"uitest_ready"'; then echo "✓ $IDIOMA · $APARATO listo"; exit 0; fi

@@ -14,6 +14,8 @@
 //    que deja de valer en la divisa principal lo recupera la cuenta principal en la misma fecha: el total de «Tus
 //    finanzas» y su tendencia quedan como en la ficha en soles (con la cuenta extranjera pequeña salía negativo);
 //  - Teléfono y Spotify cuestan lo que dice la ficha de esa divisa;
+//  - dos cuentas más en la divisa principal, efectivo y tarjeta de crédito, para la captura de «Tus cuentas» (sus
+//    chips dicen efectivo, tarjeta y ahorro);
 //  - los grupos los siembra `DevSeedGroups.createFicha`.
 //  Los textos van por L10n (`L10n.DevSeed.Ficha`); lo que cambia por divisa, en `Cifras`.
 //
@@ -37,19 +39,27 @@ enum DevSeedFicha {
         /// Importe mensual de Teléfono y de Spotify en la divisa principal.
         let phone: Double
         let spotify: Double
+        /// Saldo de la cuenta de efectivo y deuda de la tarjeta de crédito (negativa: «a pagar»), en la principal.
+        let cash: Double
+        let cardDebt: Double
+        /// El importe de «Pizza con amigos» que escribe el vídeo y contesta Yala IA (`-uitest-chat-reply pizza`).
+        let pizza: Double
     }
 
     static func cifras(forMainCurrency code: String) -> Cifras {
         switch code {
         case "USD":
             return Cifras(groupFactor: 1, groupSecondaryCurrency: "EUR", foreignCurrency: "EUR",
-                          foreignBalance: 1_850, phone: 65, spotify: 11.99)
+                          foreignBalance: 1_850, phone: 65, spotify: 11.99,
+                          cash: 140, cardDebt: -612.40, pizza: 28)
         case "BRL":
             return Cifras(groupFactor: 2, groupSecondaryCurrency: nil, foreignCurrency: "USD",
-                          foreignBalance: 3_615, phone: 59.90, spotify: 21.90)
+                          foreignBalance: 3_615, phone: 59.90, spotify: 21.90,
+                          cash: 320, cardDebt: -1_480.90, pizza: 90)
         default:
             return Cifras(groupFactor: 1, groupSecondaryCurrency: "USD", foreignCurrency: "USD",
-                          foreignBalance: 33_615, phone: 60, spotify: 18)
+                          foreignBalance: 33_615, phone: 60, spotify: 18,
+                          cash: 380, cardDebt: -1_284.30, pizza: 280)
         }
     }
 
@@ -77,6 +87,7 @@ enum DevSeedFicha {
             }
             try retargetForeignAccount(cifras, mainCurrency: main, in: context)
             try repriceScheduledPayments(cifras, in: context)
+            try addEverydayAccounts(cifras, mainCurrency: main, in: context)
             try context.save()
         } catch {
             print("DevSeedFicha: Error adapting personal data to \(main): \(error)")
@@ -209,6 +220,41 @@ enum DevSeedFicha {
         let newNote = L10n.DevSeed.noteTransferTo(newName)
         for tx in try context.fetch(FetchDescriptor<TransactionItem>()) where tx.note == oldNote {
             tx.note = newNote
+        }
+    }
+
+    /// Efectivo y tarjeta de crédito en la divisa principal, cada una con su saldo inicial en la fecha del de la cuenta
+    /// principal: la curva del Saldo se desplaza entera y no salta ningún día. Sus nombres son los del tipo de cuenta
+    /// en el idioma de la app («Cash», «Dinheiro»), que es lo que dicen los chips de la captura. Si ya están, no se
+    /// vuelven a crear.
+    @MainActor
+    private static func addEverydayAccounts(_ cifras: Cifras, mainCurrency main: String, in context: ModelContext) throws {
+        let accounts = try context.fetch(FetchDescriptor<Account>())
+        guard let mainAccount = accounts.first(where: { $0.name == L10n.DevSeed.accountMain }),
+              let mainInitial = (mainAccount.transactions ?? []).first(where: {
+                  $0.balanceAdjustmentType == InitialBalanceService.typeInitialBalance
+              })
+        else {
+            print("DevSeedFicha: Error: falta la cuenta «\(L10n.DevSeed.accountMain)» o su saldo inicial")
+            return
+        }
+        let nuevas: [(name: String, type: AccountType, icon: String, color: String, balance: Double)] = [
+            (L10n.Account.AccountType.cash, .cash, "banknote.fill", "#10B981", cifras.cash),
+            (L10n.Account.AccountType.creditCard, .creditCard, "creditcard.fill", "#F59E0B", cifras.cardDebt),
+        ]
+        for nueva in nuevas where !accounts.contains(where: { $0.name == nueva.name }) {
+            let account = Account(name: nueva.name, currencyCode: main, colorHex: nueva.color,
+                                  iconName: nueva.icon, type: nueva.type.rawValue)
+            context.insert(account)
+            let initial = TransactionItem(
+                date: mainInitial.date, amount: nueva.balance, currencyCode: main, note: mainInitial.note,
+                category: mainInitial.category, subcategory: mainInitial.subcategory, account: account,
+                exchangeRate: 1, amountInPreferredCurrency: nueva.balance, preferredCurrencyCode: main
+            )
+            initial.balanceAdjustmentType = InitialBalanceService.typeInitialBalance
+            initial.createdAt = mainInitial.createdAt
+            initial.isExchangeRateProvisional = false
+            context.insert(initial)
         }
     }
 

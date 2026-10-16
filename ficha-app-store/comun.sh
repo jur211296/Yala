@@ -1,5 +1,6 @@
 # comun.sh — lo que comparten los scripts del molde. Uso: source "<molde>/comun.sh" <idioma>
-# Deja: MOLDE, IDIOMA, APPLE_LANGUAGES, APPLE_LOCALE, MONEDA, LPROJ, RELOJ, SALIDA (la carpeta del idioma) y la función udid.
+# Deja: MOLDE, IDIOMA, APPLE_LANGUAGES, APPLE_LOCALE, MONEDA, LPROJ, MONEDA_EXTRANJERA, RELOJ, SALIDA (la carpeta del
+# idioma) y las funciones udid, texto_app y cuentas.
 MOLDE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IDIOMA="${1:?Falta el idioma (es, en, pt-BR…: las claves de idiomas.json)}"
 _campo() { python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); v=d
@@ -9,6 +10,7 @@ APPLE_LANGUAGES="$(_campo idiomas "$IDIOMA" appleLanguages)" || { echo "✗ «${
 APPLE_LOCALE="$(_campo idiomas "$IDIOMA" appleLocale)"
 MONEDA="$(_campo idiomas "$IDIOMA" moneda)"
 LPROJ="$(_campo idiomas "$IDIOMA" lproj)"
+MONEDA_EXTRANJERA="$(_campo idiomas "$IDIOMA" monedaExtranjera)"
 RELOJ="$(_campo reloj)"
 SALIDA="${YALA_FICHA_SALIDA:-$HOME/Claude/propuestas/ficha-app-store-2.1}/$IDIOMA"
 BUNDLE="${YALA_FICHA_BUNDLE:-com.jurgenschmidt.yala}"
@@ -58,3 +60,19 @@ print(next((d["state"] for ds in json.load(sys.stdin)["devices"].values() for d 
   xcrun simctl install "$U" "$copia"
   echo "✓ simulador limpio en ${APPLE_LANGUAGES//[()]/}"
 }
+
+# texto_app <clave> [%@]: una cadena de la app en el idioma de la ficha (su Localizable.strings), con %@ sustituido.
+texto_app() {
+  python3 -c 'import re,sys
+t=open(sys.argv[1],encoding="utf-8").read()
+m=re.search(r"^\"%s\" = \"(.*)\";" % re.escape(sys.argv[2]), t, re.M)
+if not m: sys.exit("no está la clave %s" % sys.argv[2])
+print(m.group(1).replace("%@", sys.argv[3] if len(sys.argv) > 3 else "%@"))' \
+    "$MOLDE/../Yala/Resources/$LPROJ.lproj/Localizable.strings" "$@"
+}
+# Las cuentas de la semilla `ficha` como las nombra la app en ese idioma (DevSeedFicha): efectivo, tarjeta, principal y
+# la de la divisa extranjera (la de la 09).
+CUENTA_EFECTIVO="$(texto_app account.type.cash)"
+CUENTA_TARJETA="$(texto_app account.type.creditCard)"
+CUENTA_PRINCIPAL="$(texto_app devseed.accountMain)"
+CUENTA_EXTRANJERA="$(texto_app devseed.ficha.accountForeign "$MONEDA_EXTRANJERA")"

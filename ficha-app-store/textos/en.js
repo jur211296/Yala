@@ -17,7 +17,7 @@ const TEXTOS = {
     presu:   ["Budgets", "What's <u>left</u> this month?", null],
     cuentas: ["Your accounts", "All your accounts. No bank <u>linking</u>.", "Cash, cards and savings on one screen. You decide what to log."],
     divisas: ["Multi-currency", "50+ currencies, no <u>calculator</u>", "Each account in its own currency. Yala converts."],
-    recor:   ["Reminders", "We <u>remind</u> you before every bill", "Electric, phone, your card payment: you set the date."],
+    recor:   ["Reminders", "We <u>remind</u> you before every bill", "Electricity, phone, your card payment: you set the date."],
   },
 
   OBJ: {
