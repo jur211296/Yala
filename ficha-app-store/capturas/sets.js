@@ -238,6 +238,9 @@ const AJUSTES = {
       // «US$ 3.615,00» se montaba sobre «Poupança · USD · Saldo» (revisión de Lola, 16-oct): tarjeta más ancha y algo menor.
       9: {2: {encima: {0: {escala: 1.25, pos: {left: "24%", width: "76%"}}}}},
       2: {2: {pos: {width: 960}}},             // «Tributos aprox. (incl.)» partía en dos líneas
+      // El titular baja a 3 líneas y la tarjeta «Transferência enviada» tapaba «o estabelecimento» (revisión de Lola
+      // 2, 16-oct): la tarjeta y el chip bajan.
+      4: {3: {pos: {top: 1110}}, 4: {pos: {top: 2210}}},
     },
   },
 };
