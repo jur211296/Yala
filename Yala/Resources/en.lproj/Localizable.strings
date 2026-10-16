@@ -6630,6 +6630,23 @@
 "account.removal.countBudgets" = "Budgets";
 "account.removal.budgetsMovedNote" = "Budgets that tracked this account will track “%@” instead.";
 "account.removal.budgetsOnlyNote" = "Some budgets only tracked this account: without it, they'll track all your accounts.";
+"orphanedRecords.title" = "Transactions without an account";
+"orphanedRecords.bannerMessage" = "They lost their account when an account was deleted, so they don't count in your balance or your expenses.";
+"orphanedRecords.bannerAction" = "Choose where they go";
+"orphanedRecords.intro" = "These transactions lost their account when an account was deleted. Until they have one, they don't count in your balance or your expenses. Choose which account to move them to.";
+"orphanedRecords.listHeader" = "Which ones";
+"orphanedRecords.moreNote" = "And %d more.";
+"orphanedRecords.noDestination" = "Create an account to be able to move them.";
+"orphanedRecords.keptCurrencyNote" = "Transfers in another currency move as they are, without converting, so their other side still matches.";
+"orphanedRecords.convertNote" = "Any in another currency switch to %@ at the exchange rate of their date.";
+"orphanedRecords.collapsedNote" = "Transfers that would end up within “%@” are removed: within the same account they don't move money.";
+"orphanedRecords.moveAction" = "Move to “%@”";
+"orphanedRecords.moveActionGeneric" = "Move";
+"orphanedRecords.working" = "Moving…";
+"orphanedRecords.failedTitle" = "They weren't moved";
+"orphanedRecords.failedUnreadable" = "We couldn't read the transactions. Nothing was changed.";
+"orphanedRecords.failedChanged" = "Something changed in the meantime. Check it and try again.";
+"orphanedRecords.untitled" = "No description";
 
 /* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
 "icloud.unavailableNotice.title" = "iCloud isn't available on this device";

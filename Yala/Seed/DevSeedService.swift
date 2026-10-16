@@ -77,6 +77,10 @@ enum DevSeedProfile: String {
     /// Eliminar una cuenta con movimientos: «Efectivo QA» (dos gastos en soles), «Banco QA» (soles) y «Dólares QA»
     /// (vacía). Sin nada más, para que el diálogo de eliminar enseñe cifras exactas. Ver `DevSeedAccountRemoval`.
     case cuentaConMovimientos = "cuenta-con-movimientos"
+    /// El estado que dejaba eliminar una cuenta antes de la 2.1: el mismo corpus de `.cuentaConMovimientos` con
+    /// «Efectivo QA» eliminada a pelo, así que sus dos gastos se quedan sin cuenta (`.nullify`). Ver
+    /// `DevSeedAccountRemoval.createOrphaned`.
+    case movimientosSinCuenta = "movimientos-sin-cuenta"
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -86,7 +90,7 @@ enum DevSeedProfile: String {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
-             .cuentaConMovimientos: return 7
+             .cuentaConMovimientos, .movimientosSinCuenta: return 7
         case .fichaMXVida: return 365
         case .realista: return 730
         case .pesado: return 3650
@@ -130,7 +134,7 @@ final class DevSeedService {
             seedDeadPointerFixtures(in: context)
             return
         }
-        if profile == .cuentaConMovimientos {
+        if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
             // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
@@ -139,7 +143,11 @@ final class DevSeedService {
             let end = Date.now
             let start = Calendar.current.date(byAdding: .day, value: -7, to: end) ?? end
             DevSeedExchangeRates.create(startDate: start, endDate: end, rng: &rng, in: context)
-            DevSeedAccountRemoval.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            if profile == .movimientosSinCuenta {
+                DevSeedAccountRemoval.createOrphaned(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else {
+                DevSeedAccountRemoval.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            }
             do { try context.save() } catch {
                 print("DevSeedService: cuenta-con-movimientos save error: \(error)")
             }

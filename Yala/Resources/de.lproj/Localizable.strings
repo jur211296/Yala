@@ -6624,6 +6624,23 @@
 "account.removal.countBudgets" = "Budgets";
 "account.removal.budgetsMovedNote" = "Budgets, die dieses Konto verfolgt haben, verfolgen jetzt „%@“.";
 "account.removal.budgetsOnlyNote" = "Einige Budgets haben nur dieses Konto verfolgt: Ohne es verfolgen sie alle deine Konten.";
+"orphanedRecords.title" = "Buchungen ohne Konto";
+"orphanedRecords.bannerMessage" = "Sie haben ihr Konto verloren, als ein Konto gelöscht wurde, und zählen weder zu deinem Saldo noch zu deinen Ausgaben.";
+"orphanedRecords.bannerAction" = "Konto auswählen";
+"orphanedRecords.intro" = "Diese Buchungen haben ihr Konto verloren, als ein Konto gelöscht wurde. Solange sie keines haben, zählen sie weder zu deinem Saldo noch zu deinen Ausgaben. Wähle, auf welches Konto sie verschoben werden.";
+"orphanedRecords.listHeader" = "Welche es sind";
+"orphanedRecords.moreNote" = "Und %d weitere.";
+"orphanedRecords.noDestination" = "Erstelle ein Konto, um sie verschieben zu können.";
+"orphanedRecords.keptCurrencyNote" = "Überweisungen in einer anderen Währung werden unverändert übernommen, ohne Umrechnung, damit ihre Gegenbuchung weiter passt.";
+"orphanedRecords.convertNote" = "Was in einer anderen Währung ist, wird zum Wechselkurs seines Datums in %@ umgerechnet.";
+"orphanedRecords.collapsedNote" = "Überweisungen, die innerhalb von „%@“ landen würden, werden entfernt: Innerhalb desselben Kontos bewegen sie kein Geld.";
+"orphanedRecords.moveAction" = "Nach „%@“ verschieben";
+"orphanedRecords.moveActionGeneric" = "Verschieben";
+"orphanedRecords.working" = "Wird verschoben…";
+"orphanedRecords.failedTitle" = "Nicht verschoben";
+"orphanedRecords.failedUnreadable" = "Wir konnten die Buchungen nicht lesen. Es wurde nichts geändert.";
+"orphanedRecords.failedChanged" = "Inzwischen hat sich etwas geändert. Prüfe es und versuche es erneut.";
+"orphanedRecords.untitled" = "Ohne Beschreibung";
 
 /* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
 "icloud.unavailableNotice.title" = "iCloud ist auf diesem Gerät nicht verfügbar";

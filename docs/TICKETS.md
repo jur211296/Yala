@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (890)
+## Index (892)
 
 | id | status | path |
 |---|---|---|
@@ -57,7 +57,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | account-collections | backlog | tickets/backlog/account-collections.md |
 | account-currency-change-leaves-scheduled-and-favorites-stale | done | tickets/done/account-currency-change-leaves-scheduled-and-favorites-stale.md |
 | account-currency-conversion-overlay-has-no-ceiling | backlog | tickets/backlog/account-currency-conversion-overlay-has-no-ceiling.md |
-| account-deletion-can-still-orphan-records-that-arrive-later | backlog | tickets/backlog/account-deletion-can-still-orphan-records-that-arrive-later.md |
+| account-deletion-can-still-orphan-records-that-arrive-later | done | tickets/done/account-deletion-can-still-orphan-records-that-arrive-later.md |
 | account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare | done | tickets/done/account-deletion-leaves-attest-key-and-usage-counter-in-cloudflare.md |
 | account-form-as-medium-detent-sheet | done | tickets/done/account-form-as-medium-detent-sheet.md |
 | account-form-redesign | backlog | tickets/backlog/account-form-redesign.md |
@@ -608,6 +608,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | only-testing-filters-may-be-silently-empty | backlog | tickets/backlog/only-testing-filters-may-be-silently-empty.md |
 | open-worktrees-lack-the-attribution-hook | backlog | tickets/backlog/open-worktrees-lack-the-attribution-hook.md |
 | orphan-alerts-behind-fullscreen-covers | backlog | tickets/backlog/orphan-alerts-behind-fullscreen-covers.md |
+| orphaned-group-records-stay-out-of-the-notice | backlog | tickets/backlog/orphaned-group-records-stay-out-of-the-notice.md |
 | owner-preferences-return-via-ikv-after-private-sign-out | backlog | tickets/backlog/owner-preferences-return-via-ikv-after-private-sign-out.md |
 | panel-accounts-redesign | done | tickets/done/panel-accounts-redesign.md |
 | panel-balance-chart-contradicts-its-own-figure | backlog | tickets/backlog/panel-balance-chart-contradicts-its-own-figure.md |
@@ -682,7 +683,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | backlog | tickets/backlog/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
-| records-orphaned-by-earlier-account-deletions-stay-invisible | backlog | tickets/backlog/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
+| records-orphaned-by-earlier-account-deletions-stay-invisible | qa | tickets/qa/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
 | records-summary-approximate-mark-fails-only-alongside-group-suites | backlog | tickets/backlog/records-summary-approximate-mark-fails-only-alongside-group-suites.md |
 | records-summary-chips-hide-their-amount-from-voiceover | backlog | tickets/backlog/records-summary-chips-hide-their-amount-from-voiceover.md |

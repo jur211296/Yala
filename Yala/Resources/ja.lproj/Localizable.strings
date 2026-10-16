@@ -6636,6 +6636,23 @@
 "account.removal.countBudgets" = "予算";
 "account.removal.budgetsMovedNote" = "この口座を対象にしていた予算は「%@」を対象にします。";
 "account.removal.budgetsOnlyNote" = "この口座だけを対象にしていた予算があります。口座がなくなると、すべての口座が対象になります。";
+"orphanedRecords.title" = "口座のない取引";
+"orphanedRecords.bannerMessage" = "口座を削除したときに口座がなくなり、残高にも支出にも含まれていません。";
+"orphanedRecords.bannerAction" = "移動先の口座を選ぶ";
+"orphanedRecords.intro" = "口座を削除したときに、これらの取引は口座がなくなりました。口座がない間は、残高にも支出にも含まれません。移動先の口座を選んでください。";
+"orphanedRecords.listHeader" = "対象の取引";
+"orphanedRecords.moreNote" = "ほか%d件。";
+"orphanedRecords.noDestination" = "移動するには口座を作成してください。";
+"orphanedRecords.keptCurrencyNote" = "別の通貨の振替は換算せずにそのまま移動します。相手側の金額と合ったままにするためです。";
+"orphanedRecords.convertNote" = "別の通貨のものは、その日付の為替レートで%@に換算されます。";
+"orphanedRecords.collapsedNote" = "「%@」の中で完結してしまう振替は削除されます：同じ口座内ではお金は動かないためです。";
+"orphanedRecords.moveAction" = "「%@」に移動";
+"orphanedRecords.moveActionGeneric" = "移動";
+"orphanedRecords.working" = "移動中…";
+"orphanedRecords.failedTitle" = "移動できませんでした";
+"orphanedRecords.failedUnreadable" = "取引を読み込めませんでした。何も変更されていません。";
+"orphanedRecords.failedChanged" = "その間に変更がありました。確認してもう一度お試しください。";
+"orphanedRecords.untitled" = "説明なし";
 
 /* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
 "icloud.unavailableNotice.title" = "このデバイスではiCloudを利用できません";

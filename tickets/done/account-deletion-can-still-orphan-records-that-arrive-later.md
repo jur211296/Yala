@@ -1,6 +1,6 @@
 ---
 id: account-deletion-can-still-orphan-records-that-arrive-later
-status: backlog
+status: done
 priority: low
 area: "accounts, sync, cloudkit, modo-nube"
 created: 2026-10-15
@@ -31,3 +31,12 @@ Esperar a una importación asentada (`hasCompletedFirstImport`) puede no abrirse
 (`ICloudRestoreInProgressLogic`, «es una ventana, no un interruptor»), y bloquear el borrado ahí dejaría a la persona sin
 poder eliminar. El arreglo natural va con `records-orphaned-by-earlier-account-deletions-stay-invisible`: dar salida a
 los movimientos sin cuenta, vengan de donde vengan.
+
+## Cómo se cerró (2026-10-15)
+
+Con la salida de `records-orphaned-by-earlier-account-deletions-stay-invisible`, sin bloquear el borrado: el Panel
+recuenta los movimientos sin cuenta en CADA recarga, así que uno que llegue después de eliminar su cuenta (una
+restauración a medias, otro dispositivo) sale en el mismo aviso y se puede mover. Lo fijan
+`OrphanedRecordsServiceTests.movimientoQueLlegaTarde_trasEliminarLaCuenta_tambienSale` y
+`cuentaEliminadaDespuesDeQueLlegaraSuMovimiento_elMovimientoSale`. El aviso espera al import quieto, para no avisar de
+filas a medio hidratar. Lo que sigue fuera son las filas de grupo (`orphaned-group-records-stay-out-of-the-notice`).

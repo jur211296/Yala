@@ -6636,6 +6636,23 @@
 "account.removal.countBudgets" = "预算";
 "account.removal.budgetsMovedNote" = "原本跟踪此账户的预算将改为跟踪“%@”。";
 "account.removal.budgetsOnlyNote" = "有些预算只跟踪此账户：删除后，它们将跟踪你的所有账户。";
+"orphanedRecords.title" = "没有账户的交易";
+"orphanedRecords.bannerMessage" = "删除某个账户时它们失去了账户，因此不计入你的余额和支出。";
+"orphanedRecords.bannerAction" = "选择账户";
+"orphanedRecords.intro" = "删除某个账户时，这些交易失去了账户。在有账户之前，它们不计入你的余额和支出。请选择要移入的账户。";
+"orphanedRecords.listHeader" = "具体是哪些";
+"orphanedRecords.moreNote" = "还有 %d 笔。";
+"orphanedRecords.noDestination" = "先创建一个账户才能移动它们。";
+"orphanedRecords.keptCurrencyNote" = "其他货币的转账按原样移动、不换算，这样另一端仍然对得上。";
+"orphanedRecords.convertNote" = "其他货币的交易会按其日期的汇率换算为 %@。";
+"orphanedRecords.collapsedNote" = "会落在「%@」内部的转账会被移除：在同一账户内转账不会移动资金。";
+"orphanedRecords.moveAction" = "移到「%@」";
+"orphanedRecords.moveActionGeneric" = "移动";
+"orphanedRecords.working" = "正在移动…";
+"orphanedRecords.failedTitle" = "未能移动";
+"orphanedRecords.failedUnreadable" = "无法读取这些交易。未做任何更改。";
+"orphanedRecords.failedChanged" = "这期间有内容发生了变化。请检查后重试。";
+"orphanedRecords.untitled" = "无描述";
 
 /* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
 "icloud.unavailableNotice.title" = "此设备上的 iCloud 不可用";
