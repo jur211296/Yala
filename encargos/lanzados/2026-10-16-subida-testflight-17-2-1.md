@@ -58,3 +58,13 @@ Auto-contestadas, MODO AUTÓNOMO, de día:
 - **Pase de estrés.** No aplica: este PR no cambia UI, solo el número de build.
 - **Grupos de testers.** No se tocan; el externo pide beta review, decisión de Jürgen.
 - **Limpieza al lanzar.** Sin DerivedData de worktrees retirados (el único en `/Volumes/ExtDev/DerivedData` es del árbol principal) y sin cachés de XcodeBuildMCP de worktrees Yala retirados. Disco: 16 GB libres en `/`.
+
+## Resultado
+
+- **TestFlight 17**, versión 2.1, desde `2.1` en `55c473e03` (merge de #527) + el bump. El PR se rebasó después sobre `bfb136dcc` (#528, solo docs), que no cambia el binario.
+- Respecto al 16 (`7ac7d21a6`) lleva 27 PRs: #427, #477-#480, #484, #486, #487, #490, #501 y #511-#527.
+- Leído del `.xcarchive`: 2.1 (17) en la app, `YalaShare` y `YalaWidgets`. Xcode 27A9275, SDK iphoneos27.1. Firma de distribución: `aps-environment` y `appattest-environment` en `production`, `get-task-allow` false. Preflight OK.
+- `asc builds upload` → exit 0 (upload `41de397c…`). `VALID` en ~2 min; `internalBuildState: IN_BETA_TESTING`, `externalBuildState: READY_FOR_BETA_SUBMISSION` (no se sometió).
+- **Versión 2.1 de App Store**: build 17 asignado con `asc versions attach-build` (sustituye al 16). Sigue en `PREPARE_FOR_SUBMISSION`; no se tocaron textos ni capturas ni se envió a revisión.
+- Esquema de iCloud: sin desplegar (lo hace Jürgen antes de instalar el 17).
+- Trampa: `scripts/asc-preflight.sh` lee el `.xcarchive`, no el `.ipa`; con el `.ipa` sale «No se encontró el Info.plist».
