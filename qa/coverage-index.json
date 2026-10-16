@@ -2775,15 +2775,16 @@
       "area": "whats-new-sheet",
       "codeGlobs": [
         "Yala/App/Views/WhatsNew/WhatsNewSheet.swift",
-        "Yala/App/Views/WhatsNew/WhatsNewConfig.swift"
+        "Yala/App/Views/WhatsNew/WhatsNewConfig.swift",
+        "Yala/App/Logic/WhatsNewLaunchLogic.swift"
       ],
       "scenarioIDs": [
         "F-PRO-05"
       ],
-      "classification": "agentic",
-      "coverage": "device-qa",
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/WhatsNewLaunchUITests | 2026-10-16 (tablero-novedades-de-2-1-en-la-app-h4hj): entrada 2.1 con tres tarjetas (Grupos, Anotar, Tus datos) en los 16 idiomas; la hoja sale solo al actualizar. Un arranque sin el onboarding hecho da la versión por vista, y se compara major.minor para que un hotfix no la repita. XCUI: actualización desde 2.0.4 sale una vez; arranque en el onboarding no la ve después. Lógica en YalaTests/WhatsNewLaunchLogicTests.",
       "owner": "",
-      "lastVerified": "2026-06-10"
+      "lastVerified": "2026-10-16"
     },
     {
       "area": "widgets-widgetkit",

@@ -38,6 +38,19 @@ final class UITestHooks {
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
+    /// `-uitest-last-seen-version <valor>`: qué `lastSeenAppVersion` deja el arranque uitest. Sin el flag, la versión
+    /// actual (las Novedades no tapan el primer tap de ningún XCUITest). Con una versión (`2.0.4`), esa: el
+    /// dispositivo «viene de actualizar». `none` borra la key; `keep` no la toca, para medir lo que dejó el
+    /// arranque anterior. Lo usa `WhatsNewLaunchUITests`.
+    nonisolated static var lastSeenAppVersionOverride: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-last-seen-version", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-onboarding`: presenta el OnboardingView directo (salta Welcome Hero/Chooser),
     /// SIN marcar onboarding completado. Para testear el flujo de onboarding aislado.
     nonisolated static var startAtOnboarding: Bool { hasArg("-uitest-onboarding") }

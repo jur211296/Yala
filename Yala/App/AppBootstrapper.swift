@@ -950,9 +950,19 @@ final class AppBootstrapper {
         }
         // El What's New de la versión corriente se marca visto en todo arranque
         // uitest: con contenido publicado para la versión (WhatsNewConfig), el sheet
-        // intercepta el primer tap de cualquier XCUITest post-onboarding.
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-        UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
+        // intercepta el primer tap de cualquier XCUITest post-onboarding. Salvo que el
+        // test pida otro estado con `-uitest-last-seen-version` (ver `UITestHooks`).
+        switch UITestHooks.lastSeenAppVersionOverride {
+        case "keep":
+            break
+        case "none":
+            UserDefaults.standard.removeObject(forKey: "lastSeenAppVersion")
+        case let version?:
+            UserDefaults.standard.set(version, forKey: "lastSeenAppVersion")
+        case nil:
+            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+            UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
+        }
 
         // Adopción del dominio Grupos dada por hecha en uitest: los XCUITests prueban la
         // funcionalidad de Grupos, no el acto de adoptarla, y con el sello del handover puesto un

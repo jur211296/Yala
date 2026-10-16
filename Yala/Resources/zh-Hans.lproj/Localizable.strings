@@ -4489,6 +4489,14 @@
 "whatsNew.v20.redesign.title" = "全新设计";
 "whatsNew.v20.redesign.description" = "我们对 Yala 进行了彻底重新设计：全新小组件、每个板块更清晰的摘要，以及贯穿整个应用的 iOS 全新 Liquid Glass 质感。此外，我们还修复了大量问题，让一切更顺滑。";
 
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "群组";
+"whatsNew.v21.groups.description" = "和任何人分摊支出。通过链接邀请，一起记账，Yala 自动算出谁欠谁多少。不用算账，也不尴尬。";
+"whatsNew.v21.logging.title" = "记账从未如此简单";
+"whatsNew.v21.logging.description" = "对它说话、拍张照片，或者像跟朋友聊天一样打字。Yala 能听懂你花了什么，并帮你记下来，管好账只需几秒。";
+"whatsNew.v21.data.title" = "你的数据，你做主";
+"whatsNew.v21.data.description" = "信息存在哪里由你决定：你的私人 iCloud，或 Yala 云端，让它在你的所有设备上随时可用。此外，还有全新的首页，以及在 iPad 上全屏使用 Yala。";
+
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
 "transaction.exchangeRateShort %@" = "汇率：%@";

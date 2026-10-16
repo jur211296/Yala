@@ -74,6 +74,10 @@ extension XCUIApplication {
         // esa lectura del teléfono fingida e iCloud «sin cuenta» (ticket `private-gate-device-notice-has-no-forward-exit`).
         privateGateDeviceReading: String? = nil,
         scheduledSeedDay: Int? = nil,
+        // `-uitest-last-seen-version <versión|none|keep>`: la última versión cuyas Novedades «vio» el dispositivo
+        // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
+        // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
+        lastSeenAppVersion: String? = nil,
         // Idioma y región de la corrida. El default es el de toda la suite (ver abajo); solo lo cambia un test que
         // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
         // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
@@ -232,6 +236,10 @@ extension XCUIApplication {
         if signOutKeepsSession { args.append("-uitest-sign-out-keeps-session") }
         if groupsGateMirrorLive { args.append("-uitest-groups-gate-mirror-live") }
         if groupsGateWipeFailed { args.append("-uitest-groups-gate-wipe-failed") }
+        if let lastSeenAppVersion {
+            args.append("-uitest-last-seen-version")
+            args.append(lastSeenAppVersion)
+        }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado
