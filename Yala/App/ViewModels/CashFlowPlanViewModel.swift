@@ -36,6 +36,11 @@ final class CashFlowPlanViewModel {
     private(set) var plan: CashFlowPlan?
     var hasPlan: Bool { plan != nil }
     private(set) var projection: CashFlowProjection?
+    /// Sube cuando un cambio del plan llega sin hoja de por medio que recalcule al cerrarse (borrar una
+    /// línea desde su menú, guardar el horizonte). `CashFlowTableView` lo observa y recalcula: la proyección
+    /// es un valor calculado y no ve sola que el plan cambió. Antes, la línea borrada seguía en pantalla y el
+    /// horizonte nuevo no se aplicaba hasta salir y volver.
+    private(set) var planRevision: Int = 0
     var suggestedLines: [SuggestedLine] = []
     private(set) var isLoading: Bool = false
 
@@ -368,6 +373,7 @@ final class CashFlowPlanViewModel {
             print("CashFlowPlanViewModel: Error removing line: \(error)")
             #endif
         }
+        planRevision += 1
     }
 
     func reorderLines(_ offsets: IndexSet, to destination: Int) {
@@ -559,6 +565,7 @@ final class CashFlowPlanViewModel {
             print("CashFlowPlanViewModel: Error updating horizon: \(error)")
             #endif
         }
+        planRevision += 1
     }
 
     // MARK: - Reset

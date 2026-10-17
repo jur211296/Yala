@@ -33,6 +33,7 @@ struct CashFlowMonthStrip: View {
                         }
                         .buttonStyle(.plain)
                         .contentShape(Rectangle())
+                        .accessibilityIdentifier("cashflow_month_capsule_\(month.monthKey)")
                         .id(month.monthKey)
                     }
                 }

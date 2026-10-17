@@ -890,6 +890,7 @@
 "cashFlowPlan.resetPlan" = "Resetuj plan";
 "cashFlowPlan.resetConfirmation" = "Zresetować plan? Wszystkie linie i korekty zostaną usunięte. Tej operacji nie można cofnąć.";
 "cashFlowPlan.deleteLineConfirmation" = "Usunąć tę linię z planu? Tej operacji nie można cofnąć.";
+"cashFlowPlan.deleteLine" = "Usuń linię";
 "cashFlowPlan.suggestPayment" = "Nowa płatność: %@. Dodać do planu?";
 "cashFlowPlan.chartsTitle" = "Wykresy";
 "cashFlowPlan.chartsSectionTitle" = "Twój przepływ środków";
@@ -911,7 +912,7 @@
 "cashFlowPlan.average3mDesc" = "Średnia z ostatnich 3 miesięcy";
 "cashFlowPlan.average6mDesc" = "Średnia z ostatnich 6 miesięcy";
 "cashFlowPlan.average12mDesc" = "Średnia z ostatniego roku";
-"cashFlowPlan.lastMonthDesc" = "To, co wydałeś w poprzednim miesiącu";
+"cashFlowPlan.lastMonthDesc" = "Kwota z poprzedniego miesiąca";
 "cashFlowPlan.manualDesc" = "Ustawiasz dokładną kwotę";
 "cashFlowPlan.scheduledDesc" = "Używa kwoty z twojej zaplanowanej płatności";
 "cashFlowPlan.trendDesc" = "Liczy trend z ostatnich miesięcy";
@@ -929,6 +930,7 @@
 // Cell Detail Sheet (Inc 4)
 "cashFlowPlan.cellDetailOf" = "z";
 "cashFlowPlan.cellDetailRemaining" = "Pozostało ci %@";
+"cashFlowPlan.cellDetailPendingIncome" = "Do otrzymania: %@";
 "cashFlowPlan.cellDetailRecentTransactions" = "Ostatnie transakcje";
 "cashFlowPlan.cellDetailSpent" = "Wydano";
 "cashFlowPlan.cellDetailEarned" = "Zarobiono";
@@ -953,6 +955,7 @@
 
 // Add Line redesign (Inc 6)
 "cashFlowPlan.addFromExpenses" = "Z moich wydatków";
+"cashFlowPlan.addFromIncome" = "Z moich dochodów";
 "cashFlowPlan.addFromExpensesDesc" = "Wybierz podkategorię z historią";
 "cashFlowPlan.addFromScheduled" = "Z zaplanowanej płatności";
 "cashFlowPlan.addFromScheduledDesc" = "Użyj aktywnej płatności jako stałej linii";
@@ -3300,7 +3303,7 @@
 "guide.transaction.title" = "Zapisz wydatek lub dochód";
 "guide.transaction.message" = "Wpisz tylko kwotę i kategorię. Reszta jest opcjonalna. Im więcej zapisujesz, tym lepiej rozumiesz wydatki.";
 "guide.comparative.title" = "Porównuj okresy";
-"guide.comparative.message" = "Zobacz, czy wydałeś więcej, czy mniej w tym miesiącu vs poprzednim. Czerwone = więcej, zielone = mniej.";
+"guide.comparative.message" = "Zobacz, czy wydałeś więcej, czy mniej w tym miesiącu vs poprzednim. Różowe = więcej, fioletowe = mniej.";
 "guide.cashflow.title" = "Czy ci wystarczy?";
 "guide.cashflow.message" = "Yala oblicza, czy pieniądze wystarczą do końca miesiąca na podstawie dochodów i wydatków.";
 "guide.insights.title" = "Yala analizuje za ciebie";

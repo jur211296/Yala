@@ -13,6 +13,8 @@ struct NetFlowSummaryView: View {
     let previousAmount: Double?
     let variation: Double?
     let currencyCode: String
+    /// `false` en «Todo el tiempo»: no hay período anterior con el que comparar.
+    var showsComparison: Bool = true
 
     @Environment(AppPreferences.self) private var appPreferences
     private var showVariations: Bool { appPreferences.showVariations }
@@ -58,7 +60,7 @@ struct NetFlowSummaryView: View {
             }
             .frame(minWidth: 80, alignment: .trailing)
 
-            if showVariations {
+            if showVariations && showsComparison {
                 VariationChip(
                     variation: variation,
                     size: .small,

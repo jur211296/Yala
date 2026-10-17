@@ -24,6 +24,7 @@ struct CashFlowHorizonSheet: View {
                         Spacer()
                         Stepper("\(monthsAhead)", value: $monthsAhead, in: 1...24)
                             .labelsHidden()
+                            .accessibilityIdentifier("cashflow_horizon_ahead")
                         Text("\(monthsAhead)")
                             .font(DS.Typography.amount)
                             .monospacedDigit()

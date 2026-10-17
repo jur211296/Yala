@@ -890,6 +890,7 @@
 "cashFlowPlan.resetPlan" = "計画をリセット";
 "cashFlowPlan.resetConfirmation" = "計画をリセットしますか？すべての項目と調整が削除されます。この操作は取り消せません。";
 "cashFlowPlan.deleteLineConfirmation" = "この項目を計画から削除しますか？この操作は取り消せません。";
+"cashFlowPlan.deleteLine" = "項目を削除";
 "cashFlowPlan.suggestPayment" = "新しい支払い: %@。計画に追加しますか？";
 "cashFlowPlan.chartsTitle" = "グラフ";
 "cashFlowPlan.chartsSectionTitle" = "キャッシュフロー";
@@ -908,10 +909,10 @@
 "cashFlowPlan.accumulatedHintMessage" = "計画開始からの合計残高。各月の利用可能額を積み上げた数値です。";
 "cashFlowPlan.editStartingBalance" = "初期残高を編集";
 "cashFlowPlan.editStartingBalanceSave" = "保存";
-"cashFlowPlan.average3mDesc" = "過去3ヶ月の平均支出";
+"cashFlowPlan.average3mDesc" = "過去3ヶ月の平均";
 "cashFlowPlan.average6mDesc" = "過去6ヶ月の平均";
 "cashFlowPlan.average12mDesc" = "過去1年の平均";
-"cashFlowPlan.lastMonthDesc" = "先月の支出額";
+"cashFlowPlan.lastMonthDesc" = "先月の金額";
 "cashFlowPlan.manualDesc" = "正確な金額を自分で設定";
 "cashFlowPlan.scheduledDesc" = "予定支払いの金額を使用";
 "cashFlowPlan.trendDesc" = "最近数ヶ月のトレンドから計算";
@@ -929,6 +930,7 @@
 // Cell Detail Sheet (Inc 4)
 "cashFlowPlan.cellDetailOf" = "/";
 "cashFlowPlan.cellDetailRemaining" = "残り%@";
+"cashFlowPlan.cellDetailPendingIncome" = "あと%@の受け取り予定";
 "cashFlowPlan.cellDetailRecentTransactions" = "最近の取引";
 "cashFlowPlan.cellDetailSpent" = "支出額";
 "cashFlowPlan.cellDetailEarned" = "受取額";
@@ -953,6 +955,7 @@
 
 // Add Line redesign (Inc 6)
 "cashFlowPlan.addFromExpenses" = "自分の支出から";
+"cashFlowPlan.addFromIncome" = "自分の収入から";
 "cashFlowPlan.addFromExpensesDesc" = "履歴のあるサブカテゴリーを選択";
 "cashFlowPlan.addFromScheduled" = "予定支払いから";
 "cashFlowPlan.addFromScheduledDesc" = "アクティブな支払いを固定項目として使用";
@@ -3300,7 +3303,7 @@
 "guide.transaction.title" = "支出や収入を記録";
 "guide.transaction.message" = "金額とカテゴリーを入力するだけ。それ以外は任意です。記録するほど支出が把握しやすくなります。";
 "guide.comparative.title" = "期間を比較";
-"guide.comparative.message" = "今月と先月でどちらが多く使ったか確認できます。赤=多く使った、緑=少なく使った。";
+"guide.comparative.message" = "今月と先月でどちらが多く使ったか確認できます。ピンク=多く使った、紫=少なく使った。";
 "guide.cashflow.title" = "今月もちますか？";
 "guide.cashflow.message" = "Yalaが収入と支出をもとに、月末までお金がもつかを計算します。";
 "guide.insights.title" = "Yalaが分析します";

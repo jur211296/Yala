@@ -15,6 +15,8 @@ struct CashFlowCellMiniChart: View {
     let plannedAmount: Double
     let month: CashFlowMonth
     let currencyCode: String
+    /// En una línea de ingreso la leyenda dice «Recibido», no «Gastado».
+    var isIncome: Bool = false
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -144,7 +146,7 @@ struct CashFlowCellMiniChart: View {
             HStack(spacing: DS.Spacing.lg) {
                 HStack(spacing: DS.Spacing.xs) {
                     Circle().fill(theme.accent).frame(width: 8, height: 8)
-                    Text(L10n.CashFlowPlan.real)
+                    Text(isIncome ? L10n.CashFlowPlan.realIncome : L10n.CashFlowPlan.real)
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
                 }

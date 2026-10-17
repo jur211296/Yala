@@ -48,7 +48,7 @@ struct CashFlowAddLineSheet: View {
                         } label: {
                             flowRow(
                                 icon: "chart.bar.fill",
-                                title: L10n.CashFlowPlan.addFromExpenses,
+                                title: isIncome ? L10n.CashFlowPlan.addFromIncome : L10n.CashFlowPlan.addFromExpenses,
                                 subtitle: L10n.CashFlowPlan.addFromExpensesDesc,
                                 trailing: nil
                             )
@@ -165,7 +165,10 @@ struct CashFlowAddLineSheet: View {
 
     private var availableScheduledPayments: [ScheduledPayment] {
         let linkedIDs = Set((viewModel.plan?.lines ?? []).compactMap { $0.scheduledPayment?.persistentModelID })
-        return scheduledPayments.filter { !linkedIDs.contains($0.persistentModelID) }
+        return scheduledPayments.filter {
+            !linkedIDs.contains($0.persistentModelID)
+                && CashFlowLineSideLogic.scheduledPaymentMatchesSide(transactionType: $0.transactionType, isIncome: isIncome)
+        }
     }
 
     private func categorySpending(for cats: [Category]) -> [PersistentIdentifier: Double] {
@@ -231,7 +234,7 @@ struct CashFlowAddFromExpensesView: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .yalaScreenBackground(.subtle)
-        .navigationTitle(L10n.CashFlowPlan.addFromExpenses)
+        .navigationTitle(isIncome ? L10n.CashFlowPlan.addFromIncome : L10n.CashFlowPlan.addFromExpenses)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -604,16 +607,21 @@ struct CashFlowAddFromScheduledView: View {
     }
 
     private var previewCard: some View {
-        let amount = abs(selectedPayment?.amount ?? 0)
+        // El mismo importe que la fila del pago: convertido a la divisa del plan. Antes pintaba
+        // `abs(payment.amount)` con el símbolo del plan, así que 100 USD salían como «S/ 100».
+        let converted = selectedPayment.map {
+            ScheduledPaymentAmountConversion.magnitude(of: $0, in: currencyCode, converter: CurrencyConverter.shared)
+        }
         return HStack {
             Text(L10n.CashFlowPlan.plan)
                 .font(DS.Typography.body)
                 .foregroundStyle(.secondary)
             Spacer()
             AmountText(
-                value: amount,
+                value: converted?.amount ?? 0,
                 currencyCode: currencyCode,
-                font: DS.Typography.headline.weight(.semibold).monospacedDigit()
+                font: DS.Typography.headline.weight(.semibold).monospacedDigit(),
+                isEstimate: (selectedPayment?.isVariableAmount ?? false) || (converted?.isApproximate ?? false)
             )
         }
         .padding(DS.Spacing.lg)
