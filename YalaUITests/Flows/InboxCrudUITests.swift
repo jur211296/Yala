@@ -153,4 +153,68 @@ final class InboxCrudUITests: XCTestCase {
         )
         XCTAssertTrue(undo.waitForNonExistence(timeout: 5), "El aviso no se fue tras tocar «Deshacer».")
     }
+
+    /// Deslizar DEL TODO descarta: el borrador va a Archivados y se puede recuperar (auditoría UX 2.2 · lote 4 · L4-6).
+    /// Antes la primera acción era Eliminar y el gesto largo borraba para siempre, sin preguntar.
+    func test_fullSwipeDiscardsToArchived_insteadOfDeletingForGood() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let rowA = app.buttons["inbox_draft_row_\(draftA)"]
+        XCTAssertTrue(rowA.waitForExistence(timeout: 5), "No apareció el draft a descartar.")
+
+        let start = rowA.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
+        let end = rowA.coordinate(withNormalizedOffset: CGVector(dx: -0.6, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: end)
+
+        XCTAssertTrue(rowA.waitForNonExistence(timeout: 5), "Deslizar del todo no sacó el draft de pendientes.")
+
+        let archived = app.buttons["inbox_filter_archived"]
+        XCTAssertTrue(archived.waitForExistence(timeout: 5), "No apareció el filtro Archivados.")
+        archived.tap()
+        XCTAssertTrue(
+            app.buttons["inbox_draft_row_\(draftA)"].waitForExistence(timeout: 5),
+            "Deslizar del todo no lo dejó en Archivados: lo borró para siempre."
+        )
+    }
+
+    /// «Guardar los N listos» guarda de un toque todo lo completo, tras confirmar (auditoría UX 2.2 · lote 4 · L4-7).
+    /// Antes eran cuatro toques: ✓, Seleccionar todo, Editar y Aprobar.
+    func test_saveReadyButton_savesEveryCompleteDraftAfterConfirming() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+
+        openInbox(app)
+
+        let saveReady = app.buttons["inbox_save_ready"]
+        XCTAssertTrue(saveReady.waitForExistence(timeout: 5), "Con dos borradores completos no salió «Guardar los listos».")
+        saveReady.tap()
+
+        let confirm = app.alerts.firstMatch.buttons["inbox_save_ready_confirm"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "No se pidió confirmación antes de guardar todo.")
+        confirm.tap()
+
+        let back = app.buttons["inbox_bulk_success_back"]
+        XCTAssertTrue(back.waitForExistence(timeout: 10), "No salió la pantalla final tras guardar los listos.")
+        XCTAssertTrue(app.staticTexts["inbox_bulk_success_summary"].exists, "La pantalla final no dice cuánto se guardó.")
+        back.tap()
+
+        // Sin pendientes la Bandeja se cierra sola: se vuelve a abrir para mirar la lista, no su ausencia.
+        let pendingFilter = app.buttons["inbox_filter_pending"]
+        if !pendingFilter.waitForExistence(timeout: 3) {
+            openInbox(app)
+            XCTAssertTrue(pendingFilter.waitForExistence(timeout: 5), "No se pudo volver a abrir la Bandeja.")
+        }
+        XCTAssertFalse(app.buttons["inbox_draft_row_\(draftA)"].exists, "El primer borrador completo sigue en pendientes.")
+        XCTAssertFalse(app.buttons["inbox_draft_row_\(draftB)"].exists, "El segundo borrador completo sigue en pendientes.")
+        app.buttons["inbox_filter_archived"].tap()
+        XCTAssertTrue(
+            app.buttons["inbox_draft_row_\(draftA)"].waitForExistence(timeout: 5),
+            "El borrador guardado no está en Archivados: no se guardó."
+        )
+    }
 }

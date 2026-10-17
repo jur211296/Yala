@@ -96,6 +96,7 @@ struct InboxBulkActionsSheet: View {
     @State private var showBulkSuccessView = false
     @State private var bulkApprovedCount = 0
     @State private var bulkApprovedSummary = InboxBulkApproveSummaryLogic.Summary(total: nil, currencyCode: nil, accountName: nil)
+    @State private var bulkLeftoverLine: String?
 
     private var approveableCount: Int {
         selectedDrafts.count(where: { $0.isReadyToApprove })
@@ -108,6 +109,7 @@ struct InboxBulkActionsSheet: View {
                     InboxBulkApproveSuccessView(
                         approvedCount: bulkApprovedCount,
                         summary: bulkApprovedSummary,
+                        leftoverLine: bulkLeftoverLine,
                         onViewRecords: {
                             onNavigateToRecords?()
                             finishEditing()
@@ -319,6 +321,8 @@ struct InboxBulkActionsSheet: View {
 
     private func approveSelected() {
         draftService.setContext(modelContext)
+        // Lo elegido que no se puede guardar se queda en pendientes; la pantalla final lo dice (UX 2.2 · L4-7).
+        bulkLeftoverLine = InboxSaveReadyLogic.leftoverLine(selectedDrafts.filter { !$0.isReadyToApprove })
         do {
             let transactions = try draftService.bulkApprove(
                 selectedDrafts,

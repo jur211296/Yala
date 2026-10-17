@@ -294,7 +294,7 @@ struct FavoriteEditorView: View {
     }
 
     private var amountColor: Color {
-        transactionType == .income ? Color.electricIndigo : Color.hotPink
+        Color.amountTint(isIncome: transactionType == .income)
     }
 
     // MARK: - Bottom Chips

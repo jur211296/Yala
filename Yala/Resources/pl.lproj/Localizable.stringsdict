@@ -883,13 +883,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d z %2$d gotowy do zatwierdzenia</string>
+			<string>%1$d z %2$d gotowy do zapisu</string>
 			<key>few</key>
-			<string>%1$d z %2$d gotowe do zatwierdzenia</string>
+			<string>%1$d z %2$d gotowe do zapisu</string>
 			<key>many</key>
-			<string>%1$d z %2$d gotowych do zatwierdzenia</string>
+			<string>%1$d z %2$d gotowych do zapisu</string>
 			<key>other</key>
-			<string>%1$d z %2$d gotowych do zatwierdzenia</string>
+			<string>%1$d z %2$d gotowych do zapisu</string>
 		</dict>
 	</dict>
 	<key>inbox.alert.message.scheduled</key>

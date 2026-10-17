@@ -19,6 +19,9 @@ struct FinancialScoreView: View {
     /// callsite pueda dibujar el título fuera de la card (consistente con el
     /// resto de section headers en Insights / Stats).
     var hideHeader: Bool = false
+    /// Hay presupuestos activos. Con presupuestos y sin nota de presupuestos (uno creado este mes cuenta desde el
+    /// siguiente), su hoja lo dice en vez de invitar a crear el primero (UX 2.2 · L3-13).
+    var hasBudgets: Bool = false
 
     // A11Y-DT: ring diameter scales with Dynamic Type.
     @ScaledMetric(relativeTo: .largeTitle) private var mainRingSize: CGFloat = 88
@@ -36,7 +39,9 @@ struct FinancialScoreView: View {
             FinancialScoreDetailSheet(
                 kind: kind,
                 score: score(for: kind),
-                onPrimaryCTA: primaryCTA(for: kind)
+                onPrimaryCTA: primaryCTA(for: kind),
+                breakdown: score,
+                hasBudgets: hasBudgets
             )
         }
     }
@@ -157,15 +162,12 @@ struct FinancialScoreView: View {
         }
     }
 
+    /// Relleno sólido, sin degradado (UX 2.2 · L3-14; regla de Jürgen: nada de degradados).
     private var mainRingForeground: AnyShapeStyle {
         guard let total = score.total else {
             return AnyShapeStyle(DS.Semantic.disabledForeground.opacity(0.4))
         }
-        return AnyShapeStyle(LinearGradient(
-            colors: panoramaGradientColors(score: total),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        ))
+        return AnyShapeStyle(FinancialScoreTint.color(for: total))
     }
 
     private var mainRingAccessibilityLabel: String {
@@ -221,11 +223,7 @@ private struct SubScoreBarRow: View {
             .overlay(alignment: .leading) {
                 if let value {
                     Capsule()
-                        .fill(LinearGradient(
-                            colors: panoramaGradientColors(score: value),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ))
+                        .fill(FinancialScoreTint.color(for: value))
                         .frame(width: fillWidth(for: value), height: 8)
                 }
             }
@@ -252,9 +250,12 @@ private struct SubScoreBarRow: View {
 
 /// End-color pivots on 50–100: 100 → indigo, 75 → 50/50 mix, ≤50 → pink.
 /// The composite score rarely dips below 50 thanks to its soft floor.
-private func panoramaGradientColors(score: Int) -> [Color] {
-    let clamped = max(50, min(100, score))
-    let t = Double(100 - clamped) / 50
-    let endColor = Color.indigo.mix(with: .pink, by: t)
-    return [.indigo, endColor]
+/// El color de una nota de salud: índigo arriba, rosa abajo, en un solo tono sólido (UX 2.2 · L3-14). Antes era un
+/// degradado índigo→rosa, que va contra la regla de no usar degradados; el tono conserva lo que el degradado decía.
+enum FinancialScoreTint {
+    static func color(for score: Int) -> Color {
+        let clamped = max(50, min(100, score))
+        let t = Double(100 - clamped) / 50
+        return Color.indigo.mix(with: .pink, by: t)
+    }
 }

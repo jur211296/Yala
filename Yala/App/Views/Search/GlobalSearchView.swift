@@ -416,7 +416,7 @@ struct SearchResultRow: View {
 
     private var amountColor: Color {
         let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-        return isIncome ? Color.electricIndigo : Color.hotPink
+        return Color.amountTint(isIncome: isIncome)
     }
 }
 

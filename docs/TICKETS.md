@@ -342,7 +342,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | finish-halfway-wipe-early-failure-shows-no-feedback | backlog | tickets/backlog/finish-halfway-wipe-early-failure-shows-no-feedback.md |
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
 | first-expense-practice-alert-tears-down-the-success-screen | done | tickets/done/first-expense-practice-alert-tears-down-the-success-screen.md |
-| first-panel-says-available-zero-next-to-the-opening-balance | backlog | tickets/backlog/first-panel-says-available-zero-next-to-the-opening-balance.md |
+| first-panel-says-available-zero-next-to-the-opening-balance | qa | tickets/qa/first-panel-says-available-zero-next-to-the-opening-balance.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
@@ -647,7 +647,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |
 | panel-stayed-filtered-after-removing-the-account-chip | backlog | tickets/backlog/panel-stayed-filtered-after-removing-the-account-chip.md |
-| panel-trend-chart-labels-overlap | backlog | tickets/backlog/panel-trend-chart-labels-overlap.md |
+| panel-trend-chart-labels-overlap | qa | tickets/qa/panel-trend-chart-labels-overlap.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | backlog | tickets/backlog/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |

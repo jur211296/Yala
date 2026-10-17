@@ -16,12 +16,23 @@ struct RootCommandsModifier: ViewModifier {
     let canSearch: Bool
     let isGroupsOnly: Bool
 
+    /// Hay algo arrastrándose encima de la ventana: se marca dónde soltar (UX 2.2 · L4-11). Antes `isTargeted: nil`
+    /// y nada decía que soltar fuera a hacer algo.
+    @State private var isDropTargeted = false
+
     func body(content: Content) -> some View {
         content
             .focusedSceneValue(\.rootCommands, actions)
-            .onDrop(of: ReceiptDropHandler.acceptedTypes, isTargeted: nil) { providers in
+            .onDrop(of: ReceiptDropHandler.acceptedTypes, isTargeted: $isDropTargeted) { providers in
                 ReceiptDropHandler.handle(providers, isGroupsOnly: isGroupsOnly, navigation: navigation)
             }
+            .overlay {
+                if isDropTargeted && ReceiptDropLogic.accepts(isGroupsOnly: isGroupsOnly) {
+                    ReceiptDropTargetOverlay()
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.15), value: isDropTargeted)
             .modifier(UITestReceiptDropSeam(navigation: navigation, isGroupsOnly: isGroupsOnly))
     }
 
@@ -34,6 +45,32 @@ struct RootCommandsModifier: ViewModifier {
             isGroupsOnly: isGroupsOnly,
             perform: { RootCommandPerformer.perform($0, navigation: navigation, canSearch: canSearch) }
         )
+    }
+}
+
+// MARK: - Marco al arrastrar un recibo (UX 2.2 · L4-11)
+
+/// Marco y rótulo «Suelta para leer el recibo» mientras se arrastra un archivo encima. Relleno índigo de marca con texto
+/// blanco (AA), sin brillo; no recibe toques.
+private struct ReceiptDropTargetOverlay: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                .strokeBorder(Color.selectedIndigoFill, style: StrokeStyle(lineWidth: 3, dash: [10, 6]))
+                .background(
+                    RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
+                        .fill(Color.selectedIndigoFill.opacity(0.08))
+                )
+                .padding(DS.Spacing.md)
+            Label(L10n.Image.Entry.dropToRead, systemImage: "doc.viewfinder")
+                .font(DS.Typography.headline)
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
+                .background(Capsule().fill(Color.selectedIndigoFill))
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

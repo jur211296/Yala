@@ -246,6 +246,14 @@ extension Color {
     /// usándose `priorityNeed`: el requisito de contraste es del TEXTO.
     static let incomeAmount = Color(hex: "0F7A80")
 
+    /// El tono de un IMPORTE de movimiento, el mismo que el Panel en toda la app (UX 2.2 · L4-14, decisión de Jürgen
+    /// 2026-10-14): el ingreso en `incomeAmount`, el gasto en el color del texto. Se colorea la excepción; el signo
+    /// del importe ya dice que es gasto. Antes la Bandeja, Registros y otras pantallas pintaban el gasto en rosa y el
+    /// ingreso en índigo, y el mismo borrador salía en blanco al revisarlo y en rosa en la Bandeja.
+    static func amountTint(isIncome: Bool) -> Color {
+        isIncome ? Color.incomeAmount : Color.primary
+    }
+
     // MARK: - Rellenos sólidos del onboarding (UX 2.2 · L1UI, variante 2 elegida por Jürgen el 2026-10-13)
 
     /// Índigo profundo: la tarjeta ELEGIDA del onboarding y las fichas de resultado de la calculadora del saldo.

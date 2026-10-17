@@ -102,18 +102,31 @@ struct SharedImageBatchTests {
     }
 
     /// Yala aparece en el menú de compartir hasta el número que dice `YalaShare/Info.plist`: tiene que ser el de la app,
-    /// y mayor que el tope, o con más fotos que el tope Yala desaparecería sin avisar (el bug).
+    /// y mayor que el tope, o con más fotos que el tope Yala desaparecería sin avisar (el bug). Desde UX 2.2 · L4-10 la
+    /// regla es un predicado (fotos o UN PDF), así que el número se lee de él.
     @Test func shareExtensionActivation_matchesTheAppAndExceedsTheCap() throws {
+        let rule = try shareActivationRule()
+        let match = try #require(rule.firstMatch(of: /"public\.image"\)\.@count <= (\d+)/))
+        let maxCount = try #require(Int(match.1))
+        #expect(maxCount == SharedImageBatch.maxSharedImages)
+        #expect(maxCount > SharedImageBatch.maxImages)
+    }
+
+    /// UX 2.2 · L4-10: Yala aparece también al compartir UN PDF (el estado de cuenta que llega por correo), igual que
+    /// «Archivo» dentro de la app. Sin esta rama del predicado, Yala no salía en el menú.
+    @Test func shareExtensionActivation_acceptsASinglePDF() throws {
+        let rule = try shareActivationRule()
+        #expect(rule.contains(#"UTI-CONFORMS-TO "com.adobe.pdf").@count == 1"#))
+    }
+
+    private func shareActivationRule() throws -> String {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let data = try Data(contentsOf: root.appendingPathComponent("YalaShare/Info.plist"))
         let plist = try #require(
             try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
-        let rule = try #require(
+        return try #require(
             ((plist["NSExtension"] as? [String: Any])?["NSExtensionAttributes"] as? [String: Any])?[
-                "NSExtensionActivationRule"] as? [String: Any])
-        let maxCount = try #require(rule["NSExtensionActivationSupportsImageWithMaxCount"] as? Int)
-        #expect(maxCount == SharedImageBatch.maxSharedImages)
-        #expect(maxCount > SharedImageBatch.maxImages)
+                "NSExtensionActivationRule"] as? String)
     }
 
     // MARK: - En disco (App Group)

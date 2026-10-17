@@ -16,7 +16,7 @@ nonisolated enum PanelAccountCardLogic {
     enum Style: Equatable {
         /// Sin filtro sobre ella: tarjeta de siempre, el color de la cuenta solo en el icono.
         case plain
-        /// La cuenta está dentro del filtro (modo incluir): fondo teñido de su color.
+        /// La cuenta está dentro del filtro (modo incluir): rellena de su color y con «Filtrando» (UX 2.2 · L3-16).
         case tinted
         /// La cuenta está excluida (modo excluir): atenuada, con el signo menos.
         case excluded

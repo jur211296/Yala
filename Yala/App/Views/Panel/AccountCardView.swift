@@ -79,6 +79,11 @@ struct AccountCardView: View {
     var body: some View {
         let style = PanelAccountCardLogic.style(isSelected: isSelected, isExcludeMode: isExcludeMode)
         let color = accountColor
+        // La cuenta que filtra el Panel va RELLENA de su color y dice «Filtrando» (UX 2.2 · L3-16, variante 2): el
+        // tinte al 16 % no se distinguía sobre el glass oscuro. El texto pasa al color que contrasta con el relleno.
+        let isFilled = style == .tinted
+        let primaryText = isFilled ? Color.contrastingText(for: color) : theme.primaryText
+        let secondaryText = isFilled ? Color.contrastingText(for: color).opacity(0.8) : theme.secondaryText
 
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
             HStack(alignment: .center, spacing: DS.Spacing.md) {
@@ -88,24 +93,37 @@ struct AccountCardView: View {
                     .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                     .background(
                         RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
-                            .fill(color)
+                            .fill(isFilled ? Color.black.opacity(0.18) : color)
                     )
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(account.name)
                         .font(DS.Typography.headline)
-                        .foregroundStyle(theme.primaryText)
+                        .foregroundStyle(primaryText)
                         .lineLimit(1)
                         .truncationMode(.tail)
 
                     Text(subtitle)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(theme.secondaryText)
+                        .foregroundStyle(secondaryText)
                         .lineLimit(1)
                 }
 
                 Spacer(minLength: 0)
+
+                if isFilled {
+                    Text(L10n.PanelAccountCard.filtering)
+                        .font(DS.Typography.captionSmall)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(primaryText)
+                        .padding(.horizontal, DS.Spacing.sm)
+                        .padding(.vertical, DS.Spacing.xxs)
+                        .background(Capsule().fill(Color.black.opacity(0.18)))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .accessibilityIdentifier("panel_account_card_filtering")
+                }
 
                 if style == .excluded {
                     Image(systemName: "minus.circle.fill")
@@ -122,7 +140,7 @@ struct AccountCardView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(amountLabel)
                     .font(DS.Typography.caption)
-                    .foregroundStyle(theme.secondaryText)
+                    .foregroundStyle(secondaryText)
                     .lineLimit(1)
 
                 AmountText(
@@ -130,7 +148,7 @@ struct AccountCardView: View {
                     currencyCode: currencyCode,
                     font: DS.Typography.largeTitle.bold(),
                     secondaryFont: DS.Typography.title3,
-                    tint: .color(theme.primaryText)
+                    tint: .color(primaryText)
                 )
 
                 if let converted = convertedToDefault(shownValue, kind: kind) {
@@ -139,7 +157,7 @@ struct AccountCardView: View {
                         currencyCode: appPreferences.defaultCurrencyCode.rawValue,
                         font: DS.Typography.subheadline,
                         secondaryFont: DS.Typography.caption,
-                        tint: .color(theme.secondaryText),
+                        tint: .color(secondaryText),
                         isEstimate: true
                     )
                 }
@@ -148,21 +166,20 @@ struct AccountCardView: View {
         .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, minHeight: Self.minHeight, alignment: .leading)
         .background {
-            // El tinte va encima del fondo de la tarjeta: sobre `theme.card` sale claro en modo claro y oscuro en
-            // oscuro, y el texto sigue en sus colores de siempre, así que el contraste no depende del color que el
-            // usuario eligió para la cuenta.
+            // La cuenta que filtra va rellena de su color sobre el fondo de la tarjeta; el texto de encima pasa a
+            // `contrastingText(for:)`, así que el contraste sale del color que el usuario eligió para la cuenta.
             ZStack {
                 RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
                     .fill(theme.card)
-                if style == .tinted {
+                if isFilled {
                     RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                        .fill(color.opacity(0.16))
+                        .fill(color)
                 }
             }
         }
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .stroke(style == .tinted ? color.opacity(0.45) : DS.Colors.borderDark, lineWidth: style == .tinted ? 1.5 : 1)
+                .stroke(isFilled ? color : DS.Colors.borderDark, lineWidth: 1)
         )
         .opacity(style == .excluded ? 0.5 : 1.0)
         .accessibilityElement(children: .combine)

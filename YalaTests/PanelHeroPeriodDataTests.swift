@@ -3,7 +3,7 @@
 //  YalaTests
 //
 //  Tests puros del payload period-scoped del Hero. Cubre:
-//   • `available` = max(0, income - expense) — floor en 0 (modo normal).
+//   • La cifra del hero: balance con signo, o el lado que filtra la píldora (UX 2.2 · L3-1/L3-3).
 //   • `spentVariation` (chip "vs período anterior" del hero en Solo Gastos):
 //     % del gasto del período vs el previo comparable; nil sin previo o previo 0.
 //
@@ -15,16 +15,39 @@ import Testing
 
 struct PanelHeroPeriodDataTests {
 
-    // MARK: - available (modo normal)
+    // MARK: - Cifra del hero (UX 2.2 · L3-1 y L3-3)
 
-    @Test func available_floorsAtZero_whenExpenseExceedsIncome() {
-        let data = PanelHeroPeriodData(income: 0, expense: 1250)
-        #expect(data.available == 0)
+    /// Desde el lote 3 de la auditoría UX la cifra es el BALANCE y puede ser negativo: la línea «Entró − salió» de
+    /// debajo tiene que cuadrar con ella. «Disponible» se quedaba en 0.
+    @Test func balance_isSigned_whenExpenseExceedsIncome() {
+        #expect(PanelHeroFigure.balance.value(income: 0, expense: 1250) == -1250)
     }
 
-    @Test func available_isIncomeMinusExpense_whenPositive() {
-        let data = PanelHeroPeriodData(income: 4500, expense: 900)
-        #expect(data.available == 3600)
+    @Test func balance_isIncomeMinusExpense_whenPositive() {
+        #expect(PanelHeroFigure.balance.value(income: 4500, expense: 900) == 3600)
+    }
+
+    @Test func filteredFigure_countsWhatThePillFilters() {
+        #expect(PanelHeroFigure.expense.value(income: 4500, expense: 900) == 900)
+        #expect(PanelHeroFigure.income.value(income: 4500, expense: 900) == 4500)
+    }
+
+    @Test func figure_followsTheNatureFilter() {
+        #expect(PanelHeroFigureLogic.figure(natures: []) == .balance)
+        #expect(PanelHeroFigureLogic.figure(natures: [.income, .expense]) == .balance)
+        #expect(PanelHeroFigureLogic.figure(natures: [.expense]) == .expense)
+        #expect(PanelHeroFigureLogic.figure(natures: [.income]) == .income)
+    }
+
+    @Test func namedMonth_onlyForCalendarMonths() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/Lima"))
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 17)))
+        let last = PanelHeroFigureLogic.namedMonth(for: .lastMonth, now: now, calendar: calendar)
+        #expect(last.map { calendar.component(.month, from: $0) } == 9)
+        #expect(PanelHeroFigureLogic.namedMonth(for: .thisMonth, now: now, calendar: calendar) == now)
+        #expect(PanelHeroFigureLogic.namedMonth(for: .thisYear, now: now, calendar: calendar) == nil)
+        #expect(PanelHeroFigureLogic.namedMonth(for: .allTime, now: now, calendar: calendar) == nil)
     }
 
     // MARK: - spentVariation (Solo Gastos)

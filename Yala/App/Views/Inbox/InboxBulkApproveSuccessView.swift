@@ -14,6 +14,8 @@ struct InboxBulkApproveSuccessView: View {
     let approvedCount: Int
     /// Total y cuenta de lo aprobado; cada parte sale solo si es la misma para todos.
     var summary: InboxBulkApproveSummaryLogic.Summary = .init(total: nil, currencyCode: nil, accountName: nil)
+    /// Lo que no se guardó y qué le falta (UX 2.2 · L4-7): antes «2 transacciones creadas» no decía que uno se quedó.
+    var leftoverLine: String? = nil
     let onViewRecords: () -> Void
     let onBackToInbox: () -> Void
 
@@ -53,6 +55,15 @@ struct InboxBulkApproveSuccessView: View {
                         .padding(.horizontal, DS.Spacing.xl)
                         .accessibilityIdentifier("inbox_bulk_success_summary")
                 }
+
+                if let leftoverLine {
+                    Label(leftoverLine, systemImage: "exclamationmark.circle")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(DS.Semantic.warningForeground)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .accessibilityIdentifier("inbox_bulk_success_leftover")
+                }
             }
 
             Spacer()
@@ -63,11 +74,13 @@ struct InboxBulkApproveSuccessView: View {
                 YalaPrimaryButton(L10n.Inbox.viewInRecords, icon: "list.bullet.rectangle") {
                     onViewRecords()
                 }
+                .accessibilityIdentifier("inbox_bulk_success_records")
 
                 // Secondary: Back to Inbox
                 YalaSecondaryButton(L10n.Inbox.backToInbox, icon: "tray") {
                     onBackToInbox()
                 }
+                .accessibilityIdentifier("inbox_bulk_success_back")
             }
             .padding(.horizontal, DS.Spacing.xl)
             .padding(.bottom, DS.Spacing.xxl)

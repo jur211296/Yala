@@ -24,8 +24,9 @@ struct PanelPanoramaSection: View {
 
     var body: some View {
         let isExpanded = !appPreferences.panelAccountsCollapsed
-        // Sin la frase de IA ni su botón desde el 2026-10-03 (`panel-accounts-redesign`): la sección enseña las
-        // cuentas y la salud, y la cabecera lleva el total.
+        // Sin la frase de IA ni su botón desde el 2026-10-03 (`panel-accounts-redesign`). Sin la línea «Tienes X en
+        // N cuentas» desde el lote 3 de la auditoría UX 2.2 (L3-1): el saldo lo cuenta el hero y cada cuenta el suyo.
+        // Plegada enseña las cuentas en chips (L3-9, variante 3); desplegada, el carrusel y la salud.
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             header
 
@@ -33,7 +34,33 @@ struct PanelPanoramaSection: View {
                 content
                     .padding(.top, DS.Spacing.sm)
                     .transition(.opacity.combined(with: .move(edge: .top)))
+            } else if accountsVisible && !viewModel.accounts.isEmpty {
+                PanelAccountChipsRow(
+                    viewModel: viewModel,
+                    orderedAccounts: viewModel.orderedActiveAccounts(
+                        from: viewModel.accounts,
+                        sortOrderNames: accountsSortOrderNames
+                    ),
+                    isExpensesOnlyMode: sessionState.isExpensesOnlyMode,
+                    onAddAccount: addAccount,
+                    onEditAccount: { accountFormSheet = AccountFormSheet(account: $0) },
+                    onOpenAccount: { accountDetail = AccountDetailPresentation(account: $0) }
+                )
+                .transition(.opacity)
             }
+        }
+    }
+
+    private var isAccountsLimitReached: Bool {
+        let activeCount = viewModel.accounts.billableUserAccounts.count
+        return !FeatureGateService.shared.canCreate(.accounts, currentCount: activeCount)
+    }
+
+    private func addAccount() {
+        if isAccountsLimitReached {
+            showUpgradeForAccounts = true
+        } else {
+            accountFormSheet = AccountFormSheet(account: nil)
         }
     }
 
@@ -43,14 +70,13 @@ struct PanelPanoramaSection: View {
         let expanded = !appPreferences.panelAccountsCollapsed
         return CollapsibleSectionHeader(
             title: L10n.Panel.panoramaTitle,
-            subtitleAttributed: accountsSummaryAttributed,
             isExpanded: expanded,
             // `title3` como en `PanelSection`: «Tu panorama» es un título de
             // section, no de widget, y con el resto ya a 20 pt quedarse en 15
             // lo dejaba como el único rótulo pequeño de la columna.
             titleFont: DS.Typography.title3,
             subtitleFont: DS.Typography.subheadline,
-            accessibilityValue: accessibilityValue(expanded: expanded),
+            accessibilityValue: expanded ? L10n.Panel.panoramaExpandedValue : L10n.Panel.panoramaCollapsedValue,
             accessibilityHint: expanded ? L10n.Panel.panoramaCollapse : L10n.Panel.panoramaExpand
         ) {
             DS.Haptic.selection()
@@ -59,67 +85,6 @@ struct PanelPanoramaSection: View {
             }
         }
         .accessibilityIdentifier("panel_panorama_header")
-    }
-
-    /// Conteo de cuentas del saldo total: las que `viewModel.panelTotalBalance` acaba de sumar
-    /// (filtro de cuentas y toggle de grupos incluidos), no las activas.
-    private var totalAccountsCount: Int {
-        PanelTotalAccountsLogic.summedAccountsCount(
-            viewModel.accounts,
-            summedAccountIDs: viewModel.panelTotalAccountIDs
-        )
-    }
-
-    private var accountsSummary: String? {
-        let activeCount = totalAccountsCount
-        guard activeCount > 0 else { return nil }
-        let formattedBalance = appPreferences.currency(
-            viewModel.panelTotalBalance,
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            isEstimate: viewModel.panelTotalBalanceIsApproximate
-        )
-        return L10n.Panel.panoramaCollapsedSummary(formattedBalance, accounts: activeCount)
-    }
-
-    /// Versión atribuida de `accountsSummary`: monto con jerarquía (symbol y
-    /// decimales en secondary tamaño caption, integer en subheadline) embebido
-    /// dentro de "Tienes <amount> en N cuentas". Splittea el string L10n por
-    /// el formattedBalance para concatenar el AttributedString del amount
-    /// entre los fragmentos textuales — preserva la traducción cross-locale.
-    private var accountsSummaryAttributed: AttributedString? {
-        let activeCount = totalAccountsCount
-        guard activeCount > 0 else { return nil }
-        let formattedBalance = appPreferences.currency(
-            viewModel.panelTotalBalance,
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            isEstimate: viewModel.panelTotalBalanceIsApproximate
-        )
-        let full = L10n.Panel.panoramaCollapsedSummary(formattedBalance, accounts: activeCount)
-        let parts = full.components(separatedBy: formattedBalance)
-
-        var result = AttributedString()
-        if let first = parts.first {
-            result.append(AttributedString(first))
-        }
-        result.append(AmountText.attributedAmount(
-            value: viewModel.panelTotalBalance,
-            currencyCode: appPreferences.defaultCurrencyCode.rawValue,
-            prefs: appPreferences,
-            isEstimate: viewModel.panelTotalBalanceIsApproximate
-        ))
-        if parts.count > 1 {
-            result.append(AttributedString(parts.dropFirst().joined(separator: formattedBalance)))
-        }
-        return result
-    }
-
-    private func accessibilityValue(expanded: Bool) -> String {
-        var parts: [String] = []
-        parts.append(expanded ? L10n.Panel.panoramaExpandedValue : L10n.Panel.panoramaCollapsedValue)
-        if let accountsSummary {
-            parts.append(accountsSummary)
-        }
-        return parts.joined(separator: ". ")
     }
 
     // MARK: - Content

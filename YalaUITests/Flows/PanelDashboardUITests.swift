@@ -133,9 +133,17 @@ final class PanelDashboardUITests: XCTestCase {
         let visibles = ["accounts", "tendencias", "planificacion", "latestRecords"]
         let ocultas = ["health", "distribucion", "tools"]
 
+        // Desde el lote 3 de la auditoría UX 2.2 (L3-6) cada fila lleva una línea de qué contiene, y a media altura no
+        // caben todas: la lista solo monta las visibles. Se pasa a la hoja grande antes de buscarlas.
+        app.swipeUp()
         for kind in visibles + ocultas {
             let toggle = app.switches["panel_section_toggle_\(kind)"]
-            XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No apareció el toggle de \(kind).")
+            var swipes = 0
+            while !toggle.waitForExistence(timeout: 2) && swipes < 3 {
+                app.swipeUp()
+                swipes += 1
+            }
+            XCTAssertTrue(toggle.exists, "No apareció el toggle de \(kind).")
         }
 
         for kind in visibles {

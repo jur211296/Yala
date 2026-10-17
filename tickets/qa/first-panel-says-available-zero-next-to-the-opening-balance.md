@@ -1,10 +1,10 @@
 ---
 id: first-panel-says-available-zero-next-to-the-opening-balance
-status: backlog
+status: qa
 area: panel
 priority: low
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-17
 source: auditoría UX 2.2, pasada UI del lote 1 (primera vez y onboarding)
 ---
 
@@ -32,3 +32,12 @@ ingreso. Lo que falla es que la pantalla no lo dice. Va como mejora **L3-1** con
 `~/Claude/propuestas/auditoria-ux-2.2/variantes-L3.html` (recomendada: rótulo «Balance de octubre» y una línea con la
 cuenta; sin movimientos, «Aún no registras movimientos este mes · Tienes S/ 1.800 en tus cuentas»). Card de Jürgen:
 `tablero-ux-2-2-l3-1-la-cifra-grande-dice-disponi-dg5z`. Este ticket se cierra cuando se implemente la opción elegida.
+
+## Implementado (2026-10-17, encargo «implementar 2.2 · lotes 3 y 4»)
+
+Variante 2 de L3-1: el hero dice «Balance de octubre» (otros períodos, «Balance del período») y debajo «Entró X −
+salió Y»; sin movimientos, «Aún no registras movimientos en este período» y «Tienes S/ 1.800 en tus cuentas». La
+cifra es ya el balance con signo (antes «Disponible» se quedaba en 0 si salía más de lo que entraba).
+
+**QA en el simulador:** alta nueva con saldo y sin movimientos → el hero enseña las dos líneas; con un gasto, la
+línea «Entró − salió» cuadra con la cifra. Captura en `_capturas/2026-10-17-implementar-2-2-l3-l4-panel-y-bandeja/`.

@@ -154,7 +154,6 @@ struct PanelHeroData: Equatable {
 struct PanelHeroPeriodData: Equatable {
     var income: Double = 0
     var expense: Double = 0
-    var available: Double { max(0, income - expense) }
     /// Gasto del período anterior COMPARABLE (MTD-alineado), mismo scope que
     /// `expense`. Alimenta el chip "vs período anterior" del hero en modo Solo
     /// Gastos. `nil` cuando no hay previo acotado (`.allTime`) — el chip se
@@ -172,11 +171,11 @@ struct PanelHeroPeriodData: Equatable {
     /// `HeroBucketsCalculator`, o sea del flag `isExchangeRateProvisional` de las transacciones
     /// sumadas: el importe se muestra igual, pero deja de presentarse como exacto.
     ///
-    /// Separadas por lado porque el hero pinta `expense` en modo Solo Gastos y `available` —que sí
+    /// Separadas por lado porque el hero pinta `expense` en modo Solo Gastos y el balance —que sí
     /// agrega los dos— en el normal.
     var incomeApproximate: Bool = false
     var expenseApproximate: Bool = false
-    /// Para `available`, que resta un lado del otro.
+    /// Para el balance, que resta un lado del otro.
     ///
     /// **Ya no es `income || expense`** (2026-09-08): con umbrales por lado ese OR se apagaba
     /// justo en el caso peligroso — dos lados grandes, cada uno por debajo del 5 %, y un
@@ -2361,8 +2360,10 @@ final class PanelViewModel {
         // Get budgets to display: favorites first (sorted by order), then fill with active non-favorites
         let sortedFavorites = favoriteBudgets.sorted { $0.favoriteOrder < $1.favoriteOrder }
 
-        // Calculate summaries for favorite budgets
-        let summaries = sortedFavorites.compactMap { budget -> BudgetSummary? in
+        // Sin favoritos, los dos presupuestos más usados (UX 2.2 · L3-13): antes el widget decía «Sin presupuestos
+        // favoritos» a quien tenía presupuestos, y parecía que no se habían guardado. La estrella sigue eligiendo.
+        let shown = newHasBudgetsButNoFavorites ? budgets.filter { $0.isActive } : sortedFavorites
+        let computed = shown.compactMap { budget -> BudgetSummary? in
             calculateBudgetSummary(
                 budget: budget,
                 transactions: transactions,
@@ -2371,6 +2372,9 @@ final class PanelViewModel {
                 excludedSubcategoryIDs: excludedSubcategoryIDs
             )
         }
+        let summaries = newHasBudgetsButNoFavorites
+            ? PanelBudgetsFallbackLogic.mostUsed(computed, percentage: \.percentage)
+            : computed
 
         let newBudgets = PanelBudgetsData(
             topBudgetSummaries: summaries,

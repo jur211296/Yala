@@ -202,6 +202,29 @@ enum SmartAxisHelper {
         .map(\.1)
     }
 
+    /// Quita las fechas intermedias cuyas etiquetas se pisarían (UX 2.2 · L3-17: «abr 26oct 26»). `labelWidthFraction` es
+    /// lo que ocupa una etiqueta respecto al ancho del eje. Entre dos etiquetas centradas, 1,3 anchos; junto a la primera y
+    /// la última, que se anclan a su borde y crecen hacia dentro, dos. El margen de más cubre el relleno del dominio: el
+    /// tramo de fechas no llena el eje entero (medido: con 1,7 «abr 26» seguía a 53 pt de «oct 26»).
+    /// La primera y la última se quedan siempre.
+    static func droppingCrowdedNeighbors(_ dates: [Date], labelWidthFraction: Double = 0.12) -> [Date] {
+        guard dates.count > 2, let first = dates.first, let last = dates.last else { return dates }
+        let span = last.timeIntervalSince(first)
+        guard span > 0 else { return dates }
+        let interiorGap = span * labelWidthFraction * 1.3
+        let edgeGap = span * labelWidthFraction * 2.0
+        var kept: [Date] = [first]
+        for date in dates.dropFirst().dropLast() {
+            guard let previous = kept.last else { continue }
+            let minFromPrevious = previous == first ? edgeGap : interiorGap
+            if date.timeIntervalSince(previous) >= minFromPrevious, last.timeIntervalSince(date) >= edgeGap {
+                kept.append(date)
+            }
+        }
+        kept.append(last)
+        return kept
+    }
+
     // MARK: - Calendar Unit Centering
 
     /// Center a date within its calendar unit for axis alignment with BarMark(unit:)

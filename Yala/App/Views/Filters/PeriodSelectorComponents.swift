@@ -105,9 +105,20 @@ struct CustomPeriodPickerSheet: View {
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
 
-    /// Date range limits (from first to last transaction)
+    /// Límites del calendario: cualquier fecha hasta hoy (UX 2.2 · L3-4). Antes iban del primer al último movimiento,
+    /// y una cuenta nueva solo podía elegir un día, con el resto en gris y sin explicación. Si hay movimientos con
+    /// fecha futura (pagos planificados ya registrados), el tope llega hasta el último.
     let minDate: Date
     let maxDate: Date
+
+    /// Suelo del calendario: el primer movimiento o veinte años atrás, lo que sea antes. «Cualquier fecha» sin un
+    /// suelo dejaría la rueda del año en el año 1.
+    static func pickerBounds(firstRecord: Date, lastRecord: Date, now: Date = .now, calendar: Calendar = .current) -> (min: Date, max: Date) {
+        let floor = calendar.date(byAdding: .year, value: -20, to: calendar.startOfDay(for: now)) ?? firstRecord
+        let lower = min(firstRecord, lastRecord, floor)
+        let upper = max(firstRecord, lastRecord, now)
+        return (lower, upper)
+    }
 
     /// Local state for editingPer
     @State private var startDate: Date
@@ -115,8 +126,9 @@ struct CustomPeriodPickerSheet: View {
 
     init(minDate: Date, maxDate: Date, currentRange: DateInterval?) {
         // Ensure minDate <= maxDate to prevent range crashes
-        let safeMinDate = min(minDate, maxDate)
-        let safeMaxDate = max(minDate, maxDate)
+        let bounds = Self.pickerBounds(firstRecord: minDate, lastRecord: maxDate)
+        let safeMinDate = bounds.min
+        let safeMaxDate = bounds.max
 
         self.minDate = safeMinDate
         self.maxDate = safeMaxDate

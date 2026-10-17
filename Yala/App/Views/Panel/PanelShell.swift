@@ -25,6 +25,7 @@ struct PanelShell: View {
                 sheets: $sheets,
                 viewModel: viewModel
             ))
+            .modifier(PanelRecordSheetsModifier(sheets: $sheets, viewModel: viewModel))
             .modifier(PanelDataObservers(
                 viewModel: viewModel,
                 sessionState: sessionState

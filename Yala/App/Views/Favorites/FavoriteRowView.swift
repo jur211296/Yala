@@ -165,6 +165,6 @@ struct FavoriteRowView: View {
     }
 
     private var amountColor: Color {
-        favorite.type == .income ? Color.electricIndigo : Color.hotPink
+        Color.amountTint(isIncome: favorite.type == .income)
     }
 }

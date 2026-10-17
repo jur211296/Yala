@@ -32,15 +32,38 @@ struct FinancialScore: Equatable {
 
 enum FinancialScoreCalculator {
 
+    /// La parte que más sube el total si llega a 100 (UX 2.2 · L3-14): lo que le falta, por su peso. No siempre es la
+    /// de nota más baja: con Presupuestos 80 y Ritmo 75, Presupuestos suma 8 puntos y Ritmo 6,25. A igualdad, la de nota
+    /// más baja. `nil` si no hay ninguna con nota o si todas van bien (90 o más).
+    static func weakestPart(of score: FinancialScore) -> FinancialScoreDetailKind? {
+        let parts: [(FinancialScoreDetailKind, Int?, Double)] = [
+            (.budget, score.budget, weightBudget),
+            (.activity, score.activity, weightRhythm),
+            (.bills, score.bills, weightCommitments)
+        ]
+        let candidates = parts.compactMap { kind, value, weight -> (FinancialScoreDetailKind, Int, Double)? in
+            guard let value, value < 90 else { return nil }
+            return (kind, value, Double(100 - value) * weight)
+        }
+        let best = candidates.max { lhs, rhs in
+            lhs.2 == rhs.2 ? lhs.1 > rhs.1 : lhs.2 < rhs.2
+        }
+        return best?.0
+    }
+
     // MARK: - Tuning
 
     /// Soft floor del total para no mostrar números desalentadores en escenarios extremos.
     private static let totalSoftFloor = 50
 
-    /// Pesos del composite (re-normalizados cuando algún sub-score es `nil`).
-    private static let weightBudget       = 0.40
-    private static let weightRhythm       = 0.25
-    private static let weightCommitments  = 0.35
+    /// Pesos del composite (re-normalizados cuando algún sub-score es `nil`). Visibles: la hoja de la nota los enseña
+    /// (UX 2.2 · L3-14), y así no pueden divergir de lo que se calcula.
+    static let weightBudget       = 0.40
+    static let weightRhythm       = 0.25
+    static let weightCommitments  = 0.35
+
+    /// La nota total no baja de este suelo; la hoja lo dice.
+    static var totalFloor: Int { totalSoftFloor }
 
     // Budget penalties por bucket (réplica de la lógica monthly anterior aplicada localmente).
     private static let budgetPenaltyExceeded     = 8

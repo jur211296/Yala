@@ -44,9 +44,19 @@ struct ApproximateMarkWiringTests {
             El hero en modo Solo Gastos pinta `periodSummary.expense`: su marca tiene que ser la del
             gasto, no la del período entero.
             """)
-        #expect(src.contains("isEstimate: periodSummary.amountsAreApproximate"), """
-            El hero normal pinta `available`, que agrega los dos lados.
+        // Desde el lote 3 de la auditoría UX 2.2 (L3-1/L3-3) la cifra del hero normal es el balance, o el lado que
+        // filtra la píldora puesta: cada caso con SU marca. Se fija el emparejamiento entero, no la presencia: con los
+        // casos intercambiados, un `contains` suelto seguiría verde.
+        #expect(src.contains("case .balance: return periodSummary.amountsAreApproximate"), """
+            El balance agrega los dos lados: su marca es la del período entero.
             """)
+        #expect(src.contains("case .expense: return periodSummary.expenseApproximate"), """
+            Con «solo gastos» la cifra es el gasto: su marca es la del gasto.
+            """)
+        #expect(src.contains("case .income: return periodSummary.incomeApproximate"), """
+            Con «solo ingresos» la cifra es el ingreso: su marca es la del ingreso.
+            """)
+        #expect(src.contains("isEstimate: figureIsApproximate"), "La cifra grande no lee la marca de su caso.")
     }
 
     /// VoiceOver tiene que oír lo mismo que se ve. La marca es información, y dejarla solo en el
@@ -63,19 +73,24 @@ struct ApproximateMarkWiringTests {
             """)
     }
 
-    /// El saldo del panorama es el caso más puro: se convierte al TC de HOY, sin ningún monto
-    /// guardado en el que apoyarse. Sus tres composiciones del importe —resumen, resumen atribuido
-    /// y el monto con jerarquía— tienen que llevar la marca, o dos de ellas contradicen a la tercera
-    /// en la misma pantalla.
-    @Test("El saldo del panorama pasa la marca en sus tres composiciones")
+    /// El saldo total del Panel es el caso más puro: se convierte al TC de HOY, sin ningún monto
+    /// guardado en el que apoyarse. Desde el lote 3 de la auditoría UX 2.2 (L3-1) ya no lo pinta
+    /// «Tus finanzas» («Tienes X en N cuentas» se fue): lo dice el hero cuando el período no tiene
+    /// movimientos, y la línea «Con tus datos» de la ayuda de la gráfica de saldo. Los dos con marca.
+    @Test("El saldo total pasa la marca donde se pinta")
     func panoramaBalancePassesTheMark() throws {
-        let src = try Self.source("Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift")
-        let ocurrencias = src.components(separatedBy: "isEstimate: viewModel.panelTotalBalanceIsApproximate").count - 1
-
-        #expect(ocurrencias == 3, """
-            Se esperaban 3 y hay \(ocurrencias). Los tres sitios pintan el MISMO saldo: si uno se
-            queda sin marca, la pantalla se contradice a sí misma.
-            """)
+        let section = try Self.source("Yala/App/Views/Panel/Sections/PanelHeroSection.swift")
+        #expect(section.contains("totalBalanceIsApproximate: viewModel.panelTotalBalanceIsApproximate"),
+                "El hero no recibe la marca del saldo total.")
+        let hero = try Self.source("Yala/App/Views/Panel/HeroMonthView.swift")
+        #expect(hero.contains("appPreferences.currency(totalBalance, currencyCode: currencyCode, isEstimate: totalBalanceIsApproximate)"),
+                "«Tienes X en tus cuentas» pinta el saldo total sin su marca.")
+        let help = try Self.source("Yala/App/Views/Panel/InfoSheets/WidgetInfoSheet.swift")
+        #expect(help.contains("money(viewModel.panelTotalBalance, isEstimate: viewModel.panelTotalBalanceIsApproximate)"),
+                "La ayuda de la gráfica de saldo pinta el saldo total sin su marca.")
+        let panorama = try Self.source("Yala/App/Views/Panel/Sections/PanelPanoramaSection.swift")
+        #expect(!panorama.contains("viewModel.panelTotalBalance"),
+                "«Tus finanzas» vuelve a pintar el saldo total: si lo hace, que lleve la marca y este test se actualice.")
     }
 
     /// El hero de Tendencias muestra uno de tres números según la métrica, así que su marca no puede
@@ -293,11 +308,12 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
 
         let hero = try Self.code("Yala/App/Views/Panel/HeroMonthView.swift")
         #expect(hero.contains("isEstimate: periodSummary.incomeApproximate"))
-        // `expenseApproximate` sale 3 veces: hero de Solo Gastos, pill de gasto y la etiqueta de
-        // accesibilidad. Es el MISMO número en las tres, y ese es el punto: hasta hoy la pill lo
-        // pintaba exacto mientras el hero de al lado lo pintaba con «≈».
+        // `expenseApproximate` sale 5 veces: hero de Solo Gastos, pill de gasto, la etiqueta de
+        // accesibilidad, la cifra con «solo gastos» puesto y la línea «Entró − salió» (UX 2.2 · L3-1/L3-3).
+        // Es el MISMO número en todas, y ese es el punto: hasta hoy la pill lo pintaba exacto mientras
+        // el hero de al lado lo pintaba con «≈».
         let expense = hero.components(separatedBy: "periodSummary.expenseApproximate").count - 1
-        #expect(expense == 3, "se esperaban 3 y hay \(expense)")
+        #expect(expense == 5, "se esperaban 5 y hay \(expense)")
     }
 
     /// El widget de inicio es el único donde la señal no existía: había que producirla.

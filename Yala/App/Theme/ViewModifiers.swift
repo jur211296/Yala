@@ -338,8 +338,11 @@ struct AIConsentAlertModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // UX 2.2 · L4-2: el aviso dice qué gana la persona y el botón bueno va destacado (`.defaultAction` lo pinta
+            // en negrita). Sigue siendo una alerta del sistema: no admite relleno ni un enlace pequeño, y pasarla a hoja
+            // tocaría las cinco pantallas que la presentan justo antes de otra hoja (la de voz o foto).
             .alert(L10n.AIConsent.processingTitle, isPresented: $isPresented) {
-                Button(L10n.AIConsent.accept) {
+                Button(L10n.AIConsent.processingAccept) {
                     aiDataConsentAccepted = true
                     let input = pendingInput
                     Task { @MainActor in
@@ -347,6 +350,7 @@ struct AIConsentAlertModifier: ViewModifier {
                         onAccepted(input)
                     }
                 }
+                .keyboardShortcut(.defaultAction)
                 Button(L10n.AIConsent.privacyPolicy) {
                     openURL(AppConstants.privacyURL)
                 }

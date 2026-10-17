@@ -23,6 +23,11 @@ struct RecentRecordsWidget: View {
 
     /// Slot pedagógico opcional inyectado en el header (Panel Polish #2).
     var headerInfoButton: AnyView? = nil
+    /// En el Panel la sección de encima ya se llama «Últimos registros»: el widget no repite el título y deja solo el
+    /// «?» (UX 2.2 · L3-12). En la vista previa del «?» sí lo lleva.
+    var showsTitle: Bool = true
+    /// Tocar una fila abre el registro (UX 2.2 · L3-12). `nil` = filas que no se tocan (vista previa).
+    var onOpenRecord: ((TransactionItem) -> Void)? = nil
 
     // MARK: - Static Formatters (avoid recreation on each render)
 
@@ -58,10 +63,14 @@ struct RecentRecordsWidget: View {
 
     private var headerSection: some View {
         HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-            Text(L10n.Records.latest)
-                .font(DS.Typography.subheadlineEmphasized)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+            if showsTitle {
+                Text(L10n.Records.latest)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+            } else {
+                Spacer()
+            }
 
             WidgetHeaderInfoSlot(
                 injected: headerInfoButton,
@@ -69,7 +78,11 @@ struct RecentRecordsWidget: View {
                 legacyMessage: L10n.Widget.Hint.recentRecords
             )
 
-            Spacer()
+            // Sin título, el «?» va a la derecha, como en las tarjetas vecinas: con un Spacer a cada lado quedaba
+            // suelto en el centro.
+            if showsTitle {
+                Spacer()
+            }
         }
     }
 
@@ -82,12 +95,29 @@ struct RecentRecordsWidget: View {
         PairedCardsStack(rowSpacing: DS.Spacing.md, columnSpacing: DS.Spacing.xxl) {
             ForEach(Array(records.prefix(5).enumerated()), id: \.element.persistentModelID) {
                 _, record in
-                recordRow(record)
+                tappableRow(record)
             }
         }
     }
 
     // MARK: - Record Rows
+
+    @ViewBuilder
+    private func tappableRow(_ record: TransactionItem) -> some View {
+        if let onOpenRecord {
+            Button {
+                onOpenRecord(record)
+            } label: {
+                recordRow(record)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("panel_latest_record_row")
+            .pointerHighlight(cornerRadius: DS.Radius.md)
+        } else {
+            recordRow(record)
+        }
+    }
 
     private func recordRow(_ record: TransactionItem) -> some View {
         // A tamaños de accesibilidad el importe baja bajo el concepto, como en `RecordRowView`: en fila se

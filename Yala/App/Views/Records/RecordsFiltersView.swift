@@ -66,13 +66,23 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         NavigationStack {
             ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
-                        // Include/Exclude mode selector
-                        Picker("", selection: $localIsExcludeMode) {
-                            Text(L10n.Filters.includeMode).tag(false)
-                            Text(L10n.Filters.excludeMode).tag(true)
+                        // Mostrar solo / Ocultar (UX 2.2 · L3-5): el selector invertía todo sin decir cómo. Los
+                        // segmentos van cortos para que quepan en un iPhone pequeño y en alemán; la frase de debajo
+                        // dice qué hace el que está puesto.
+                        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                            Picker("", selection: $localIsExcludeMode) {
+                                Text(L10n.Filters.includeMode).tag(false)
+                                Text(L10n.Filters.excludeMode).tag(true)
+                            }
+                            .pickerStyle(.segmented)
+                            .accessibilityIdentifier("filters_include_exclude_picker")
+
+                            Text(localIsExcludeMode ? L10n.Filters.excludeModeExplanation : L10n.Filters.includeModeExplanation)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("filters_mode_explanation")
                         }
-                        .pickerStyle(.segmented)
-                        .accessibilityIdentifier("filters_include_exclude_picker")
 
                         SectionBox(title: L10n.Filters.filterOptions) {
                             VStack(spacing: DS.Spacing.none) {
@@ -84,14 +94,21 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                 }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 categoriesContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                tagsContent
+                                // Sin etiquetas la fila no lleva a nada (UX 2.2 · L3-5): no se pinta.
+                                if !filtersViewModel.activeTags.isEmpty {
+                                    Divider().padding(.leading, DS.Spacing.lg)
+                                    tagsContent
+                                }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 needsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
-                                Divider().padding(.leading, DS.Spacing.lg)
-                                amountContent
+                                // El monto necesita UNA moneda. Antes, sin ella, salía una nota que hablaba de un campo
+                                // que no se veía (UX 2.2 · L3-5); ahora la fila solo sale cuando se puede usar.
+                                if amountCurrencyCode != nil {
+                                    Divider().padding(.leading, DS.Spacing.lg)
+                                    amountContent
+                                }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 noteContent
                             }
@@ -484,11 +501,11 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         guard !filtersViewModel.currenciesWithTransactions.isEmpty else { return "" }
 
         if localSelectedCurrencies.isEmpty {
-            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
         }
         if !localIsExcludeMode &&
            localSelectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
-            return L10n.Filters.all
+            return L10n.Filters.allFeminine
         }
         return "\(localSelectedCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
     }
@@ -496,9 +513,16 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     private var amountContent: some View {
         AmountFilterView(
             condition: $localAmountCondition,
-            currencyCode: localSelectedCurrencies.count == 1
-                ? localSelectedCurrencies.first : nil
+            currencyCode: amountCurrencyCode
         )
+    }
+
+    /// La moneda del filtro de monto: la elegida si hay una sola, o la única que tienen los registros. Con varias
+    /// monedas y ninguna elegida no hay monto que comparar.
+    private var amountCurrencyCode: CurrencyCode? {
+        if localSelectedCurrencies.count == 1 { return localSelectedCurrencies.first }
+        guard localSelectedCurrencies.isEmpty, filtersViewModel.currenciesWithTransactions.count == 1 else { return nil }
+        return filtersViewModel.currenciesWithTransactions.first
     }
 
     private var noteContent: some View {

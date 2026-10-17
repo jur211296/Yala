@@ -334,7 +334,7 @@ struct CashFlowMonthDetailView: View {
                     value: total,
                     currencyCode: currencyCode,
                     font: DS.Typography.amountSmall.weight(.bold).monospacedDigit(),
-                    tint: .color(isIncome ? Color.electricIndigo : Color.hotPink)
+                    tint: .color(Color.amountTint(isIncome: isIncome))
                 )
             }
             .padding(.horizontal, DS.Spacing.lg)

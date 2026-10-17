@@ -190,7 +190,7 @@ struct GroupDraftFinalizationScaffold<Selector: View>: View {
     // MARK: - Helpers
 
     private var amountColor: Color {
-        (amount ?? 0) < 0 ? Color.hotPink : Color.electricIndigo
+        Color.amountTint(isIncome: (amount ?? 0) >= 0)
     }
 
     /// Escala el tamaño del monto según la longitud del string formateado (réplica de

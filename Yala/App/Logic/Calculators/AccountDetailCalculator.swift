@@ -58,6 +58,43 @@ nonisolated enum AccountDetailCalculator {
         var hasActivity: Bool { !latest.isEmpty }
     }
 
+    /// La cuenta del saldo en el período (UX 2.2 · L3-11): «saldo al empezar + entró − salió = saldo al terminar».
+    /// Antes la ficha ponía lo que entró y salió en el período junto a un saldo de siempre, sin decir cómo se
+    /// relacionaban.
+    struct Reconciliation: Equatable {
+        /// Lo que había antes del período, más el saldo inicial si se puso dentro (es el punto de partida, no dinero
+        /// que entró).
+        let opening: Double
+        let moneyIn: Double
+        let moneyOut: Double
+        var closing: Double { opening + moneyIn - moneyOut }
+    }
+
+    /// Cuadra por construcción con `summary`: `moneyIn` y `moneyOut` son los mismos, y `closing` es la suma de todo
+    /// lo fechado hasta el final del período.
+    ///
+    /// Un período en curso cierra en la medianoche de mañana y `DateInterval` incluye su final: sin quitar ese instante,
+    /// un movimiento fechado mañana a las 00:00 entraba en «Saldo hoy». Un período cerrado ya acaba en 23:59:59 y no se
+    /// toca (CLAUDE.md, «Cálculos con fechas»).
+    static func reconciliation(
+        entries: [Entry],
+        interval: DateInterval,
+        calendar: Calendar = .current
+    ) -> Reconciliation {
+        let end = calendar.startOfDay(for: interval.end) == interval.end && interval.end > interval.start
+            ? interval.end.addingTimeInterval(-1)
+            : interval.end
+        let before = entries.filter { $0.date < interval.start }.reduce(0) { $0 + $1.amount }
+        let inPeriod = entries.filter { $0.date >= interval.start && $0.date <= end }
+        let initial = inPeriod.filter { $0.adjustmentType == initialBalanceType }.reduce(0) { $0 + $1.amount }
+        let flows = inPeriod.filter { $0.adjustmentType != initialBalanceType }
+        return Reconciliation(
+            opening: before + initial,
+            moneyIn: flows.filter { $0.amount > 0 }.reduce(0) { $0 + $1.amount },
+            moneyOut: flows.filter { $0.amount < 0 }.reduce(0) { $0 + abs($1.amount) }
+        )
+    }
+
     static let initialBalanceType = "initial_balance"
     static let topCategoriesLimit = 3
     static let latestLimit = 5

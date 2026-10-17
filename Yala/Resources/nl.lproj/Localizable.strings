@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Verplichtingen";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "Je financiële gezondheid";
-"panel.health.total.sheet.explanation" = "Combineert drie dingen: je budgetten, je registratieritme en je verplichtingen voor de periode. Elk weegt anders en herbalanceert wanneer er één niet van toepassing is.";
+"panel.health.total.sheet.explanation" = "Je score bestaat uit drie delen. Elk telt zoveel als ernaast staat; heeft een deel nog geen gegevens, dan verdelen de andere zijn gewicht.";
 "panel.health.total.headline.high" = "Je doet het geweldig!";
 "panel.health.total.headline.mid" = "Lekker bezig";
 "panel.health.total.headline.low" = "Kleine stappen, grote verandering";
@@ -218,8 +218,8 @@
 "filters.type" = "Type";
 "filters.need" = "Behoefte";
 "filters.currency" = "Valuta";
-"filters.includeMode" = "Insluiten";
-"filters.excludeMode" = "Uitsluiten";
+"filters.includeMode" = "Alleen tonen";
+"filters.excludeMode" = "Verbergen";
 "filters.nothingExcluded" = "Geen";
 "filters.datePrefix %@" = "Datum: %@";
 
@@ -1665,7 +1665,7 @@
 "accessibility.currenciesCount %d" = "%d valuta's";
 "accessibility.cashFlowSummary %@ %@" = "Inkomsten %@, uitgaven %@";
 "accessibility.selectAtLeastOneDraft" = "Selecteer minstens één concept";
-"accessibility.approveCompleteHint" = "Om goed te keuren: vul rekening, bedrag en categorie in";
+"accessibility.approveCompleteHint" = "Vul rekening, bedrag en categorie in om op te slaan";
 "accessibility.updatingExchangeRates" = "Wisselkoersen worden bijgewerkt";
 "accessibility.authenticating" = "Bezig met authenticeren";
 "accessibility.showMoreSubcategories" = "Meer subcategorieën tonen";
@@ -1680,7 +1680,7 @@
 "accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
 "accessibility.regeneratingInsights" = "Inzichten worden gegenereerd, even geduld";
 "accessibility.completeCalculation" = "Vul de waarden in om de uitkomst te berekenen";
-"accessibility.noDraftsToApprove" = "Er zijn geen concepten klaar om goed te keuren";
+"accessibility.noDraftsToApprove" = "Geen concepten klaar om op te slaan";
 "accessibility.categoriesLocked" = "Subcategorieën van de geselecteerde categorie worden getoond";
 "accessibility.systemMonochromeIcons" = "Systeeminstelling vereist monochrome iconen";
 "accessibility.maxCurrenciesSelected" = "Maximaal aantal valuta's geselecteerd";
@@ -2006,22 +2006,22 @@
 "inbox.missingLabel" = "Ontbrekende gegevens";
 "inbox.needsAccount" = "Selecteer rekening";
 "inbox.needsSubcategory" = "Selecteer subcategorie";
-"inbox.approve" = "Goedkeuren";
+"inbox.approve" = "Opslaan";
 "inbox.delete" = "Verwijderen";
 "inbox.noPending" = "Geen openstaande concepten";
-"inbox.noPendingDescription" = "Nieuwe spraak- en afbeeldingsconcepten verschijnen hier.";
+"inbox.noPendingDescription" = "Hier komt binnen wat Yala voor je vastlegt: spraak, foto’s, Apple Pay, Siri en geplande betalingen.";
 "inbox.bulkHint" = "Tik op ✓ om er meerdere te kiezen";
-"inbox.status.rejected" = "afgewezen";
-"inbox.status.approved" = "goedgekeurd";
+"inbox.status.rejected" = "weggegooid";
+"inbox.status.approved" = "opgeslagen";
 "inbox.status.pending" = "in afwachting";
 "inbox.subtitleMultiplePending" = "%d transacties wachten, stap voor stap.";
 "inbox.subtitleOnePending" = "Eén transactie wacht, bekijk wanneer je kunt.";
 "inbox.subtitleAllDone" = "Inbox leeg, goed gedaan.";
 "inbox.newTag" = "Nieuw";
 "inbox.noArchived" = "Geen gearchiveerde concepten";
-"inbox.noArchivedDescription" = "Goedgekeurde of geweigerde concepten verschijnen hier.";
+"inbox.noArchivedDescription" = "Wat je hebt opgeslagen of weggegooid, staat hier.";
 "inbox.editDraft" = "Concept bewerken";
-"inbox.cannotApprove" = "Kan niet goedkeuren";
+"inbox.cannotApprove" = "Kan niet opslaan";
 "inbox.sourceVoice" = "Spraak";
 "inbox.sourceEmail" = "E-mail";
 "inbox.sourceScreenshot" = "Schermafbeelding";
@@ -2035,25 +2035,25 @@
 "inbox.errorNoAccount" = "Je moet een rekening selecteren";
 "inbox.errorNoAmount" = "Je moet een bedrag opgeven";
 "inbox.errorNoSubcategory" = "Je moet een subcategorie selecteren";
-"inbox.errorArchivedAccount" = "Deze rekening is gearchiveerd. Bewerk het concept en wijzig de rekening om goed te keuren.";
-"inbox.errorFutureDate" = "Transacties met een toekomstige datum kunnen niet worden goedgekeurd";
+"inbox.errorArchivedAccount" = "Deze rekening is gearchiveerd. Bewerk het concept en kies een andere rekening om het op te slaan.";
+"inbox.errorFutureDate" = "Registraties met een datum in de toekomst kunnen niet worden opgeslagen";
 "inbox.duplicateWarningTitle" = "Mogelijk duplicaat";
-"inbox.duplicateWarningMessage" = "Er bestaat al een vergelijkbare transactie. Toch aanmaken?";
-"inbox.createAnyway" = "Toch aanmaken";
-"inbox.saveLater" = "Later goedkeuren";
+"inbox.duplicateWarningMessage" = "Er bestaat al een vergelijkbare registratie. Toch opslaan?";
+"inbox.createAnyway" = "Toch opslaan";
+"inbox.saveLater" = "Bewaar voor later";
 "inbox.deleteTitle" = "Concept verwijderen";
 "inbox.deleteMessage" = "Deze actie kan niet ongedaan worden gemaakt.";
-"inbox.reject" = "Weigeren";
-"inbox.approveAll" = "Alles goedkeuren";
+"inbox.reject" = "Weggooien";
+"inbox.approveAll" = "Alles opslaan";
 "inbox.returnToPending" = "Terug naar openstaand";
 "inbox.discardChangesTitle" = "Wijzigingen negeren?";
 "inbox.discardChanges" = "Negeren";
 "inbox.keepEditing" = "Doorgaan met bewerken";
 "inbox.discardChangesMessage" = "Je hebt niet-opgeslagen wijzigingen die verloren gaan.";
-"inbox.approveSuccess" = "Transactie aangemaakt";
-"inbox.approveNext" = "Volgende goedkeuren";
-"inbox.transactionCreated" = "transactie aangemaakt";
-"inbox.transactionsCreated" = "transacties aangemaakt";
+"inbox.approveSuccess" = "Registratie opgeslagen";
+"inbox.approveNext" = "Volgende opslaan";
+"inbox.transactionCreated" = "registratie opgeslagen";
+"inbox.transactionsCreated" = "registraties opgeslagen";
 "inbox.viewInRecords" = "Bekijken in boekingen";
 "inbox.backToInbox" = "Terug naar inbox";
 
@@ -2080,7 +2080,7 @@
 "image.reviewDraft" = "Bekijken";
 "image.transactionsDetected" = "Transacties gedetecteerd";
 "image.goToInbox" = "Naar inbox";
-"image.transactionsDetectedMessage" = "We hebben %d transacties gedetecteerd. Je kunt ze in de inbox bekijken en goedkeuren.";
+"image.transactionsDetectedMessage" = "Ik vond %d registraties. Je kunt ze in de inbox controleren en opslaan.";
 "image.analyzingIn" = "Analyseren in %d...";
 "image.imagesSelected" = "%d afbeeldingen geselecteerd";
 "image.youCanUpload" = "Je kunt uploaden:";
@@ -2531,7 +2531,7 @@
 "shortcut.notification.title" = "Nieuwe automatische boeking";
 "shortcut.notification.expense" = "uitgave";
 "shortcut.notification.income" = "inkomsten";
-"shortcut.notification.body" = "Er is een %@ van %@%@ geboekt. Open de app om hem goed te keuren.";
+"shortcut.notification.body" = "Er is een %@ van %@%@ genoteerd. Open Yala om het te controleren en op te slaan.";
 
 // MARK: - Category Seeds
 
@@ -2868,8 +2868,8 @@
 "aiPrivacy.policyLink" = "Privacybeleid";
 
 // MARK: - AI Consent
-"aiConsent.processingTitle" = "Spraak- en afbeeldingsverwerking";
-"aiConsent.processingMessage" = "Deze functies gebruiken OpenAI om je gegevens te verwerken:\n\n• Spraak: je audio-opname wordt getranscribeerd\n• Afbeeldingen: de foto (bon of schermafbeelding) wordt geanalyseerd om de uitgavegegevens eruit te halen\n\nAlleen wat je op dat moment verstuurt, wordt verwerkt. OpenAI gebruikt deze gegevens niet om zijn modellen te trainen.";
+"aiConsent.processingTitle" = "Yala legt het voor je vast";
+"aiConsent.processingMessage" = "Spreek het in of kies een foto van het bonnetje, en Yala legt de uitgave vast. Daarvoor gaat de opname of foto alleen op dat moment naar een AI-dienst (OpenAI). Het wordt niet gebruikt om de AI te trainen.";
 "aiConsent.insightsTitle" = "Slim overzicht";
 "aiConsent.insightsMessage" = "Deze functie stuurt een samenvatting van je financiën naar OpenAI — totalen en trends per categorie, budgetten en terugkerende betalingen — om je analyse te genereren.\n\nJe volledige transactiegeschiedenis wordt niet verstuurd. OpenAI gebruikt deze gegevens niet om zijn modellen te trainen.";
 "aiConsent.accept" = "Accepteren en inschakelen";
@@ -3358,8 +3358,8 @@
 "guide.cashflow.message" = "Yala berekent of je geld tot het eind van de maand toereikend is op basis van je inkomsten en uitgaven.";
 "guide.insights.title" = "Yala analyseert voor je";
 "guide.insights.message" = "Op basis van je uitgaven vertelt Yala je nuttige dingen: je duurste dag, of je meer uitgeeft dan gewoonlijk, enz.";
-"guide.inbox.title" = "Wachten op beoordeling";
-"guide.inbox.message" = "Wanneer je betalingen moet bevestigen of automatische uitgaven hebt, verschijnen ze hier om te bekijken.";
+"guide.inbox.title" = "Te controleren en op te slaan";
+"guide.inbox.message" = "Wat Yala voor je vastlegt (spraak, foto’s, Apple Pay, Siri, vervallende betalingen) wacht hier tot je het controleert en opslaat.";
 "guide.budgetEditor.title" = "Wat is een budget?";
 "guide.budgetEditor.message" = "Het is een grens die je instelt om je uitgaven te beheren. Geef hem een naam, een bedrag en kies de categorieën waarop hij van toepassing is. Je kunt hem altijd bewerken of verwijderen.";
 "guide.scheduledEditor.title" = "Wat is een geplande betaling?";
@@ -3620,16 +3620,16 @@
 "panel.widgetInfo.cashFlow.chip2" = "Uitgaven";
 
 /* Panel Polish #2 — Chip 3 CashFlow */
-"panel.widgetInfo.cashFlow.chip3" = "Per periode";
+"panel.widgetInfo.cashFlow.chip3" = "Volgt de gekozen periode";
 
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "Saldo-ontwikkeling";
 
 /* Panel Polish #2 — Chip 1 Trend */
-"panel.widgetInfo.trend.chip1" = "Interactief";
+"panel.widgetInfo.trend.chip1" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — Chip 2 Trend */
-"panel.widgetInfo.trend.chip2" = "Per periode";
+"panel.widgetInfo.trend.chip2" = "Volgt de gekozen periode";
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3680,7 +3680,7 @@
 "panel.widgetInfo.trend.largeHowA" = "Houd je vinger op de grafiek om de waarde op elk punt te zien. Wissel tussen saldo, inkomsten en uitgaven met de knoppen in de koptekst.";
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
-"panel.widgetInfo.cashFlow.chip4" = "Interactief";
+"panel.widgetInfo.cashFlow.chip4" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "Verdeling per categorie";
@@ -3692,7 +3692,7 @@
 "panel.widgetInfo.categoriesPie.chip2" = "Huidige periode";
 
 /* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
-"panel.widgetInfo.categoriesPie.chip3" = "Interactief";
+"panel.widgetInfo.categoriesPie.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.smallWhatQ" = "Wat zie je?";
@@ -3728,7 +3728,7 @@
 "panel.widgetInfo.subcategoriesPie.chip2" = "Huidige periode";
 
 /* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
-"panel.widgetInfo.subcategoriesPie.chip3" = "Interactief";
+"panel.widgetInfo.subcategoriesPie.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — SubcategoriesPie S: pregunta */
 "panel.widgetInfo.subcategoriesPie.smallWhatQ" = "Wat zie je?";
@@ -3764,7 +3764,7 @@
 "panel.widgetInfo.tagsPie.chip2" = "Huidige periode";
 
 /* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
-"panel.widgetInfo.tagsPie.chip3" = "Interactief";
+"panel.widgetInfo.tagsPie.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — TagsPie S: pregunta */
 "panel.widgetInfo.tagsPie.smallWhatQ" = "Wat zie je?";
@@ -3800,7 +3800,7 @@
 "panel.widgetInfo.expensesByNeed.chip2" = "Huidige periode";
 
 /* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
-"panel.widgetInfo.expensesByNeed.chip3" = "Interactief";
+"panel.widgetInfo.expensesByNeed.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — ExpensesByNeed S: pregunta */
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "Wat zie je?";
@@ -3848,7 +3848,7 @@
 "panel.widgetInfo.topCategories.chip2" = "Huidige periode";
 
 /* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
-"panel.widgetInfo.topCategories.chip3" = "Interactief";
+"panel.widgetInfo.topCategories.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — TopCategories S: pregunta */
 "panel.widgetInfo.topCategories.smallWhatQ" = "Wat zie je?";
@@ -3878,7 +3878,7 @@
 "panel.widgetInfo.topSubcategories.chip2" = "Huidige periode";
 
 /* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
-"panel.widgetInfo.topSubcategories.chip3" = "Interactief";
+"panel.widgetInfo.topSubcategories.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — TopSubcategories S: pregunta */
 "panel.widgetInfo.topSubcategories.smallWhatQ" = "Wat zie je?";
@@ -3926,7 +3926,7 @@
 "panel.widgetInfo.scheduledPayments.chip2" = "Huidige maand";
 
 /* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
-"panel.widgetInfo.scheduledPayments.chip3" = "Interactief";
+"panel.widgetInfo.scheduledPayments.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
 "panel.widgetInfo.scheduledPayments.whatQ" = "Wat zie je?";
@@ -3956,7 +3956,7 @@
 "panel.widgetInfo.budgets.chip2" = "Huidige periode";
 
 /* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
-"panel.widgetInfo.budgets.chip3" = "Interactief";
+"panel.widgetInfo.budgets.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — Budgets S: pregunta */
 "panel.widgetInfo.budgets.smallWhatQ" = "Wat zie je?";
@@ -3986,7 +3986,7 @@
 "panel.widgetInfo.exchangeRate.chip2" = "Actuele koersen";
 
 /* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
-"panel.widgetInfo.exchangeRate.chip3" = "Interactief";
+"panel.widgetInfo.exchangeRate.chip3" = "Je kunt erop tikken";
 
 /* Panel Polish #2 — ExchangeRate: pregunta */
 "panel.widgetInfo.exchangeRate.whatQ" = "Wat zie je?";
@@ -4319,7 +4319,7 @@
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Periode-vergelijking";
 "panel.widgetInfo.periodComparison.chip1" = "Vergelijking";
-"panel.widgetInfo.periodComparison.chip2" = "Per periode";
+"panel.widgetInfo.periodComparison.chip2" = "Volgt de gekozen periode";
 "panel.widgetInfo.periodComparison.whatQ" = "Wat zie je hier?";
 "panel.widgetInfo.periodComparison.whatA" = "Het saldo, de inkomsten of uitgaven van je huidige periode naast de vorige periode. Zo zie je in één oogopslag of de trend verbetert.";
 "panel.widgetInfo.periodComparison.howQ" = "Waarmee wordt vergeleken?";
@@ -4327,7 +4327,7 @@
 "panel.widgetInfo.sankey.title" = "Geldstroom";
 "panel.widgetInfo.sankey.chip1" = "Stroom";
 "panel.widgetInfo.sankey.chip2" = "Per behoefte";
-"panel.widgetInfo.sankey.chip3" = "Interactief";
+"panel.widgetInfo.sankey.chip3" = "Je kunt erop tikken";
 "panel.widgetInfo.sankey.whatQ" = "Wat zie je hier?";
 "panel.widgetInfo.sankey.whatA" = "De route van je geld in deze periode: waar het binnenkomt (inkomsten) en waar het naartoe gaat, gegroepeerd per type behoefte. Hoe breder het lint, hoe groter het bedrag.";
 "panel.widgetInfo.sankey.howQ" = "Hoe gebruik ik dit?";
@@ -5563,7 +5563,7 @@
 "stats.hero.captionAccountsBalance" = "Rekeningsaldo";
 
 /* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Netto in de periode";
+"stats.hero.captionNetPeriod" = "Saldo in de periode";
 
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Inkomsten in de periode";
@@ -6803,3 +6803,195 @@
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Groepsuitgaven in een andere valuta gaan ongewijzigd mee, zonder omrekening: het bedrag bepaalt de groep.";
+
+/* Panel hero label: income minus expenses of a named month. %@ = month name */
+"panel.hero.balanceOfMonth" = "Saldo %@";
+
+/* Panel hero label when only expenses are shown. %@ = month name */
+"panel.hero.expensesOfMonth" = "Uitgaven %@";
+
+/* Panel hero label when only income is shown. %@ = month name */
+"panel.hero.incomeOfMonth" = "Inkomsten %@";
+
+/* Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses */
+"panel.hero.flowCaption" = "Binnen %1$@ − uit %2$@";
+
+/* Line under the panel hero when the period has no income or expenses yet */
+"panel.hero.noMovements" = "Nog geen bewegingen in deze periode";
+
+/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
+"panel.hero.totalInAccounts" = "Je hebt %@ op je rekeningen";
+
+/* Small hint next to the panel hero label: tapping opens Statistics */
+"panel.hero.seeDetail" = "Details";
+
+/* Chip under the panel hero while the expenses-only filter is on */
+"panel.hero.onlyExpensesChip" = "Alleen uitgaven";
+
+/* Chip under the panel hero while the income-only filter is on */
+"panel.hero.onlyIncomeChip" = "Alleen inkomsten";
+
+/* VoiceOver label of the chip that removes the income/expense filter */
+"panel.hero.clearNatureFilter" = "Filter verwijderen";
+
+/* Tag on the account card that is filtering the Panel */
+"panel.accounts.card.filtering" = "Filter actief";
+
+/* Last chip in the Panel account chips row: adds an account */
+"panel.accounts.addChip" = "Toevoegen";
+
+/* Panel with no accounts: pink button that creates the first account */
+"panel.createFirstAccount" = "Maak je eerste rekening";
+
+/* Line under the create-first-account button on the Panel */
+"panel.createFirstAccountHint" = "Tik hier en we helpen je: één stap en dan kun je registreren.";
+
+/* Filters sheet: what the include mode does */
+"filters.includeModeExplanation" = "Alleen wat je hieronder kiest wordt getoond.";
+
+/* Filters sheet: what the exclude mode does */
+"filters.excludeModeExplanation" = "Wat je hieronder kiest wordt verborgen; de rest blijft zichtbaar.";
+
+/* Filter status when nothing narrows a feminine noun list (accounts, categories, tags, currencies) */
+"filters.allFeminine" = "Alle";
+
+/* Panel sections config: what the accounts section shows */
+"panel.sectionsConfig.desc.accounts" = "Je rekeningen met hun saldo.";
+
+/* Panel sections config: what the financial health section shows */
+"panel.sectionsConfig.desc.health" = "Een score van 0 tot 100 voor hoe het gaat, en wat beter kan.";
+
+/* Panel sections config: what the trends section shows */
+"panel.sectionsConfig.desc.trends" = "Grafieken van je saldo, inkomsten en uitgaven door de tijd.";
+
+/* Panel sections config: what the distribution section shows */
+"panel.sectionsConfig.desc.distribution" = "Waar je geld heen gaat: per categorie, label en behoefte.";
+
+/* Panel sections config: what the planning section shows */
+"panel.sectionsConfig.desc.planning" = "Je budgetten en de komende geplande betalingen.";
+
+/* Panel sections config: what the latest records section shows */
+"panel.sectionsConfig.desc.latestRecords" = "Wat je het laatst hebt vastgelegd.";
+
+/* Panel sections config: what the tools section shows */
+"panel.sectionsConfig.desc.tools" = "De wisselkoers van je valuta.";
+
+/* Widget help sheet: heading of the line with the user's own numbers */
+"panel.widgetInfo.yourData.title" = "Met jouw cijfers";
+
+/* Widget help, balance chart: what the user has today. %@ = amount */
+"panel.widgetInfo.yourData.trend" = "Vandaag heb je %@ op je rekeningen. De lijn laat zien hoe je daar dag voor dag kwam.";
+
+/* Widget help, cash flow: income and expenses of the period. %1$@ = income, %2$@ = expenses */
+"panel.widgetInfo.yourData.cashFlow" = "Deze periode kwam er %1$@ binnen en ging er %2$@ uit.";
+
+/* Widget help, spending breakdown: where the user spends most. %1$@ = category, %2$@ = amount */
+"panel.widgetInfo.yourData.topSpending" = "Waar je het meest uitgeeft: %1$@, met %2$@.";
+
+/* Widget help, tags: tag with most spending. %1$@ = tag, %2$@ = amount */
+"panel.widgetInfo.yourData.topTag" = "Het label met de meeste uitgaven: %1$@, met %2$@.";
+
+/* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
+"panel.widgetInfo.yourData.scheduled" = "Geplande betalingen deze maand: %1$@. Nog te betalen: %2$d.";
+
+/* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
+"panel.widgetInfo.yourData.weekday" = "De dag waarop je gemiddeld het meest uitgeeft: %@.";
+
+/* Panel notices pager: which notice of how many. %1$d = position, %2$d = total */
+"panel.notices.position" = "Melding %1$d van %2$d";
+
+/* Panel notices pager: button that shows the next notice */
+"panel.notices.next" = "Volgende";
+
+/* Account sheet, balance equation: balance on a date. %@ = date */
+"accountDetail.balanceOn" = "Saldo op %@";
+
+/* Account sheet, balance equation: last line when the period runs until today */
+"accountDetail.balanceToday" = "Saldo vandaag";
+
+/* Account sheet: heading of the balance equation for the period */
+"accountDetail.equationTitle" = "Zo komt je saldo tot stand in deze periode";
+
+/* Health budget sheet when budgets exist but none counts yet */
+"panel.health.budget.headline.startsNextMonth" = "Je budget telt vanaf volgende maand mee";
+
+/* Health breakdown row: part name and its weight. %1$@ = name, %2$d = percent */
+"panel.health.part.title" = "%1$@ · telt %2$d%%";
+
+/* Health breakdown: what the budgets part measures */
+"panel.health.part.budget" = "Hoe je ervoor staat binnen de grenzen van je budgetten.";
+
+/* Health breakdown: what the rhythm part measures */
+"panel.health.part.activity" = "Hoeveel dagen achter elkaar je niets vastlegt. Tot 2 is prima.";
+
+/* Health breakdown: what the commitments part measures */
+"panel.health.part.bills" = "Of je saldo de komende betalingen dekt, en hoeveel van je inkomen ze kosten.";
+
+/* Health breakdown: a part without data, so it does not count */
+"panel.health.part.notCounting" = "Telt nog niet mee";
+
+/* Health: what would raise the score most (budgets) */
+"panel.health.improve.budget" = "Om je score te verhogen: bekijk het budget waar je het verst overheen gaat.";
+
+/* Health: what would raise the score most (rhythm) */
+"panel.health.improve.activity" = "Om je score te verhogen: leg minstens om de twee dagen iets vast.";
+
+/* Health: what would raise the score most (commitments) */
+"panel.health.improve.bills" = "Om je score te verhogen: bekijk je geplande betalingen; ze drukken zwaar op je saldo.";
+
+/* Health: all three parts are fine */
+"panel.health.improve.nothing" = "Wat al meetelt, gaat goed. Ga zo door.";
+
+/* Health: the total never goes below this number. %d = floor */
+"panel.health.floorNote" = "De totaalscore komt nooit onder %d.";
+
+/* Live balance sheet: heading of the per-currency sum */
+"panel.liveAnchorEducation.sumTitle" = "De som, valuta per valuta";
+
+/* Live balance sheet: why the balance moves on its own (second sentence) */
+"panel.liveAnchorEducation.bodyShortWhy" = "Je andere valuta veranderen elke dag van waarde, dus dit saldo beweegt ook als je niets vastlegt.";
+
+/* Balance chart: label of the dashed average line. %@ = short amount */
+"panel.trend.averageLabel" = "Gemiddelde %@";
+
+/* Primary button of the voice/photo AI notice */
+"aiConsent.processingAccept" = "Inschakelen";
+
+/* Secondary button when voice/photo fails: open the manual entry form */
+"voice.enterManually" = "Zelf invoeren";
+
+/* Hint in the photo/file sheet on iPad: you can drop a receipt on the window */
+"image.entry.dropHint" = "Je kunt ook een bonnetje of pdf naar het Yala-venster slepen.";
+
+/* Label shown while dragging a file over the window */
+"image.entry.dropToRead" = "Laat los om het bonnetje te lezen";
+
+/* Hint under the PDF password message: which password it usually is */
+"image.entry.passwordHint" = "Je bank heeft het ingesteld: meestal je identiteitsnummer of geboortedatum. Kijk in de e-mail waarmee de pdf kwam.";
+
+/* Pro gate for voice input: one example of what it does */
+"featureGate.voiceExample" = "Zeg „lunch 25 met de kaart” en het staat erin, met categorie en rekening.";
+
+/* Pro gate for photo input: one example of what it does */
+"featureGate.imageExample" = "Maak een foto van het bonnetje en Yala legt bedrag, datum en categorie vast.";
+
+/* Draft editor of a discarded draft: when it was discarded. %@ = short date */
+"inbox.draft.discardedOn" = "Je hebt het op %@ weggegooid. Het staat bij Gearchiveerd.";
+
+/* Fixed line under the Inbox title: what lands here */
+"inbox.explainer" = "Hier komt binnen wat Yala voor je vastlegde (spraak, foto’s, Apple Pay, betalingen die vervallen). Controleer en sla op.";
+
+/* Inbox button above the list: save every ready draft at once. %d = count (2 or more) */
+"inbox.saveReady" = "De %d klare opslaan";
+
+/* Confirmation before saving every ready draft. %d = count */
+"inbox.saveReady.confirmTitle" = "De %d klare registraties opslaan?";
+
+/* Confirmation message before saving every ready draft */
+"inbox.saveReady.confirmMessage" = "De volledige gaan naar je registraties. Wat nog iets mist, blijft hier.";
+
+/* Confirmation button: save them */
+"inbox.saveReady.confirmButton" = "Opslaan";
+
+/* Bulk save success: how many drafts are still pending. %d = count */
+"inbox.stillPending" = "Nog open: %d";

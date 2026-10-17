@@ -45,6 +45,9 @@ struct VoiceRecordingView: View {
     @State private var trialReported = false
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var showUpgrade = false
+    /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la voz no puede, Nuevo registro sube encima y, al cerrarse, se cierra
+    /// también esta hoja.
+    @State private var showManualEntry = false
 
     /// Para cambiar a la entrada por imagen cuando no hay conexión.
     var onSwitchToImage: (() -> Void)?
@@ -89,6 +92,9 @@ struct VoiceRecordingView: View {
         .onDisappear(perform: tearDown)
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
             InboxDraftEditSheet(draft: draft)
+        }
+        .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
+            NewTransactionView()
         }
         .sheet(isPresented: $showUpgrade) {
             UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
@@ -351,12 +357,14 @@ struct VoiceRecordingView: View {
     private func failureActions(_ failure: VoiceEntryFailure) -> some View {
         switch failure {
         case .micPermission:
+            secondaryButton(L10n.Voice.enterManually, identifier: "voice_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Voice.openSettings, isEnabled: true, identifier: "voice_open_settings", action: openSystemSettings)
         case .trialUsedUp:
             secondaryButton(L10n.Action.close, identifier: "voice_failure_close") { dismiss() }
             primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "voice_trial_see_pro") { showUpgrade = true }
         case .serviceUnavailable:
-            primaryButton(L10n.Action.close, isEnabled: true, identifier: "voice_failure_close") { dismiss() }
+            secondaryButton(L10n.Action.close, identifier: "voice_failure_close") { dismiss() }
+            primaryButton(L10n.Voice.enterManually, isEnabled: true, identifier: "voice_enter_manually") { showManualEntry = true }
         case .noConnection:
             if let switchToImage = onSwitchToImage {
                 secondaryButton(L10n.Voice.tryImage, identifier: "voice_try_image") {
@@ -366,6 +374,7 @@ struct VoiceRecordingView: View {
             }
             primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
         case .noVoice, .noAmount:
+            secondaryButton(L10n.Voice.enterManually, identifier: "voice_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
         case .generic, .saveFailed:
             if failure.retriesSameAudio, pendingAudioData != nil {

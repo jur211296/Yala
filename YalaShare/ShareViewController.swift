@@ -7,6 +7,9 @@ import UniformTypeIdentifiers
 /// (`Info.plist`), guarda las primeras `SharedImageBatch.maxImages` como una tanda y la app avisa de las que no entraron.
 /// La tanda va en el nombre de cada fichero (`SharedImageBatch.fileName`). Se escriben como `.part` y se renombran al
 /// final, para que la recuperación de la app no lea media tanda.
+///
+/// Un PDF (UX 2.2 · L4-10): si no hay fotos, se guarda tal cual como `<UUID>.pdf` y la app lo trocea por el mismo
+/// camino que un PDF soltado en el iPad, contraseña incluida.
 class ShareViewController: UIViewController {
 
     /// App Group identifier from shared helper.
@@ -32,7 +35,21 @@ class ShareViewController: UIViewController {
             .filter { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }
 
         guard !imageProviders.isEmpty else {
-            completeWithError()
+            let pdfProvider = extensionItems
+                .flatMap { $0.attachments ?? [] }
+                .first { $0.hasItemConformingToTypeIdentifier(UTType.pdf.identifier) }
+            guard let pdfProvider else {
+                completeWithError()
+                return
+            }
+            loadPDFData(from: pdfProvider) { [weak self] data in
+                guard let self = self else { return }
+                guard let data = data else {
+                    self.completeWithError()
+                    return
+                }
+                self.savePDFToSharedContainer(data)
+            }
             return
         }
 
@@ -96,6 +113,59 @@ class ShareViewController: UIViewController {
                     completion(nil)
                 }
             }
+        }
+    }
+
+    private func loadPDFData(from provider: NSItemProvider, completion: @escaping (Data?) -> Void) {
+        provider.loadItem(forTypeIdentifier: UTType.pdf.identifier, options: nil) { item, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    #if DEBUG
+                    print("ShareViewController: Error loading PDF: \(error)")
+                    #endif
+                    completion(nil)
+                    return
+                }
+                if let url = item as? URL {
+                    do {
+                        completion(try Data(contentsOf: url))
+                    } catch {
+                        #if DEBUG
+                        print("ShareViewController: Error reading PDF data: \(error)")
+                        #endif
+                        completion(nil)
+                    }
+                } else if let data = item as? Data {
+                    completion(data)
+                } else {
+                    completion(nil)
+                }
+            }
+        }
+    }
+
+    /// Un PDF suelto, sin tanda: la app lo reconoce por la extensión y lo trocea (`ImageSelectionView.readSharedFile`).
+    private func savePDFToSharedContainer(_ data: Data) {
+        guard let containerURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: appGroupIdentifier
+        ) else {
+            completeWithError()
+            return
+        }
+        let pendingImagesURL = containerURL.appendingPathComponent("PendingImages", isDirectory: true)
+        let finalURL = pendingImagesURL.appendingPathComponent("\(UUID().uuidString).pdf")
+        let partialURL = pendingImagesURL.appendingPathComponent(finalURL.lastPathComponent + SharedImageBatch.partialSuffix)
+        do {
+            try FileManager.default.createDirectory(at: pendingImagesURL, withIntermediateDirectories: true)
+            try data.write(to: partialURL)
+            try FileManager.default.moveItem(at: partialURL, to: finalURL)
+            completeSuccessfully()
+        } catch {
+            #if DEBUG
+            print("ShareViewController: Error saving PDF: \(error)")
+            #endif
+            removeLeftovers([partialURL])
+            completeWithError()
         }
     }
 
