@@ -4715,6 +4715,15 @@
 /* Apple confirmó la compra pero el derecho Pro no quedó activo */
 "subscription.purchaseNotActivated" = "O pagamento foi confirmado, mas o Yala Pro ainda não está ativo. Experimenta Restaurar compras.";
 
+/* Periodo mensual detrás del precio, como subscription.perYear (lote 17) */
+"subscription.perMonthUnit" = "/ mês";
+
+/* Título del aviso cuando Restaurar compras falla y no fue por cancelar (lote 17) */
+"subscription.restoreErrorTitle" = "Não foi possível restaurar as compras";
+
+/* Apple devolvió una compra cuya firma no se pudo verificar (lote 17) */
+"subscription.error.verificationFailed" = "Não conseguimos verificar a compra junto da Apple. Tente novamente ou use Restaurar compras.";
+
 /* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
 "panel.aiPill" = "IA";
 

@@ -632,11 +632,18 @@ notificación del banco». Este lote revisa lo que hay **hoy**; lo que cambie Si
 - Productos: mensual a 4,99 y anual a 29,99, los dos con un mes gratis (`Configuration.storekit`).
 - La fila de suscripciones no existe en solo grupos.
 - `UpgradePromptSheet` es a menudo una hoja sobre otra hoja.
-- En el flujo de caja, tocar un método con candado no hace nada ni ofrece Pro.
+- ~~En el flujo de caja, tocar un método con candado no hace nada ni ofrece Pro.~~ Medido en el lote 17 (2026-10-16):
+  ningún método pasa `proOnly`, así que no hay candado; lo Pro del flujo de caja es el horizonte y la IA de las
+  gráficas, que sí abre su hoja.
 
 **Tickets abiertos del lote:** `paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch`,
 `blocked-sign-in-still-binds-the-subscription-to-that-account`, `orphan-alerts-behind-fullscreen-covers`,
-`journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update`.
+`journal-unreadable-card-says-reopen-when-a-downgrade-needs-an-update` (este último habla de volver a una versión
+anterior de Yala, no de dejar Pro: no es del lote).
+
+**Hecho (lote 17, 2026-10-16):** ocho bugs arreglados y nueve mejoras a decisión de Jürgen; informe en
+`~/Claude/entregas/Yala--auditoria-ux-2-2-lote-17-yala-pro/`. Para ver precios y comprar en el simulador hace falta
+la tienda de prueba de Apple (`SKTestSession`): `xcodebuild` + `simctl` no aplican la configuración StoreKit del scheme.
 
 ---
 

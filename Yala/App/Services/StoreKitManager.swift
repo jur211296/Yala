@@ -34,6 +34,10 @@ final class StoreKitManager {
     /// Loading state for purchases
     private(set) var isPurchasing: Bool = false
 
+    /// Si esta cuenta de Apple aún tiene derecho a la prueba gratis. Se mide al cargar los productos; hasta
+    /// entonces no hay tarjetas de plan que pintar, así que el `true` inicial no promete nada (lote 17 · B4).
+    private(set) var isIntroOfferEligible: Bool = true
+
     /// Error / status message to display
     var errorMessage: String?
 
@@ -162,6 +166,10 @@ final class StoreKitManager {
             products = storeProducts.sorted { p1, _ in
                 p1.id == Self.proYearlyID
             }
+            // Quien ya usó la prueba no la vuelve a tener: el paywall no puede prometérsela (lote 17 · B4).
+            if let subscription = storeProducts.first?.subscription {
+                isIntroOfferEligible = await subscription.isEligibleForIntroOffer
+            }
         } catch {
             #if DEBUG
             print("StoreKitManager: Error loading products: \(error)")
@@ -218,7 +226,10 @@ final class StoreKitManager {
                 return false
             }
         } catch {
-            errorMessage = error.localizedDescription
+            // Antes salía «Transaction verification failed.» en inglés en cualquier idioma (lote 17 · B8).
+            errorMessage = (error as? StoreError) == .failedVerification
+                ? L10n.Subscription.verificationFailed
+                : error.localizedDescription
             return false
         }
     }
@@ -257,8 +268,15 @@ final class StoreKitManager {
                 errorMessage = L10n.Subscription.restoreEmpty
             }
         } catch {
-            alertTitle = L10n.Subscription.errorTitle
-            errorMessage = error.localizedDescription
+            // Cancelar el inicio de sesión de Apple no es un error, y restaurar no es comprar: antes salía
+            // «Error de compra · Solicitud cancelada» (lote 17 · B2).
+            if let alert = PaywallPricingLogic.restoreFailureAlert(
+                isUserCancellation: PaywallPricingLogic.isUserCancellation(error),
+                message: error.localizedDescription
+            ) {
+                alertTitle = alert.title
+                errorMessage = alert.message
+            }
         }
     }
 
@@ -444,15 +462,15 @@ final class StoreKitManager {
     func monthlyEquivalent(for product: Product) -> String? {
         guard product.id == Self.proYearlyID else { return nil }
         let monthlyPrice = product.price / 12
-        return monthlyPrice.formatted(.currency(code: product.priceFormatStyle.currencyCode))
+        // Con el mismo formato que `displayPrice` («$2.50» junto a «$29.99»), no con el código de la divisa
+        // («USD 2.50»), que es lo que daba `.currency(code:)` con el idioma del teléfono (lote 17 · B5).
+        return monthlyPrice.formatted(product.priceFormatStyle)
     }
 
     /// Calculate savings percentage for yearly vs monthly
     var yearlySavingsPercent: Int? {
         guard let monthly = monthlyProduct, let yearly = yearlyProduct else { return nil }
-        let yearlyMonthly = yearly.price / 12
-        let savings = (1 - (yearlyMonthly / monthly.price)) * 100
-        return NSDecimalNumber(decimal: savings).intValue
+        return PaywallPricingLogic.yearlySavingsPercent(monthly: monthly.price, yearly: yearly.price)
     }
 
     // MARK: - Private Helpers
@@ -631,7 +649,9 @@ enum StoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .failedVerification:
-            return "Transaction verification failed."
+            // `NSLocalizedString` y no `L10n`: este tipo no es del main actor. Quien lo pinta (`purchase`) usa
+            // `L10n` para respetar el idioma elegido dentro de la app.
+            return NSLocalizedString("subscription.error.verificationFailed", comment: "")
         }
     }
 }

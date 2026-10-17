@@ -7068,6 +7068,12 @@ enum L10n {
         static var planMonthly: String { ls("subscription.planMonthly", comment: "") }
         static var planYearly: String { ls("subscription.planYearly", comment: "") }
         static var perYear: String { ls("subscription.perYear", comment: "") }
+        /// «/ mes» sin precio, para ir detrás de `displayPrice` como `perYear`. `perMonth("")` dejaba un espacio de más.
+        static var perMonthUnit: String { ls("subscription.perMonthUnit", comment: "") }
+        /// Título del aviso cuando «Restaurar compras» falla por algo que no es cancelar.
+        static var restoreErrorTitle: String { ls("subscription.restoreErrorTitle", comment: "") }
+        /// Apple devolvió una compra cuya firma no se pudo verificar.
+        static var verificationFailed: String { ls("subscription.error.verificationFailed", comment: "") }
         static func perMonth(_ price: String) -> String {
             String(format: ls("subscription.perMonth", comment: ""), price)
         }
