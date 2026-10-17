@@ -2854,14 +2854,14 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala 帮你记下来";
-"aiConsent.processingMessage" = "说出来或选一张收据照片，Yala 就会记下这笔支出。为此，音频或照片只会在当时发送给 AI 服务（OpenAI），不会用于训练 AI。";
+"aiConsent.processingMessage" = "说出来或选一张收据照片，Yala 就会记下这笔支出。为此，音频或照片只会在当时发送给 AI 服务，不会用于训练 AI。";
 "aiConsent.insightsTitle" = "智能概览";
-"aiConsent.insightsMessage" = "此功能会向 OpenAI 发送你财务的摘要——按类别的总计和趋势、预算以及定期付款——以生成你的分析。\n\n不会发送你的完整记录历史。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.insightsMessage" = "Yala 会分析你的财务，告诉你目前的状况。为此，它会把一份摘要——按类别的总计和趋势、预算以及定期付款——发送给 AI 服务，不会发送你的完整记录历史。这些数据不会用于训练 AI。";
 "aiConsent.accept" = "接受并启用";
 "aiConsent.privacyPolicy" = "隐私政策";
-"aiConsent.inlineHintProcessing" = "你的语音和图片数据由 OpenAI 处理,不会被永久存储。";
-"aiConsent.inlineHintInsights" = "你的财务摘要会发送到 OpenAI 用于分析，不会被永久存储。";
-"aiConsent.inlineHintBoth" = "你的语音、图片和摘要数据由 OpenAI 处理,不会被永久存储。";
+"aiConsent.inlineHintProcessing" = "你的语音和图片数据由 AI 服务处理，不会被永久存储。";
+"aiConsent.inlineHintInsights" = "你的财务摘要会发送到 AI 服务用于分析，不会被永久存储。";
+"aiConsent.inlineHintBoth" = "你的语音、图片和摘要数据由 AI 服务处理，不会被永久存储。";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "人工智能";
@@ -3405,9 +3405,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "财务助理";
-"aiConsent.chatMessage" = "为回答你的问题，此功能会向 OpenAI 发送你最近 13 个月财务状况的摘要：你的账户余额和名称、按类别的总计、常用商家、预算和定期付款。\n\n这些数据仅用于生成回答。OpenAI 不会使用这些数据来训练其模型。";
-"aiConsent.inlineHintChat" = "你的财务摘要由 OpenAI 处理以作答，不会被永久存储。";
-"aiConsent.inlineHintMultiple" = "多项 AI 功能使用 OpenAI 处理你的数据,不会被永久存储。";
+"aiConsent.chatMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务：账户余额和名称、按类别的总计、常用商家、预算和定期付款。这些数据仅用于回答你，不会用于训练 AI。";
+"aiConsent.inlineHintChat" = "你的财务摘要由 AI 服务处理以作答，不会被永久存储。";
+"aiConsent.inlineHintMultiple" = "多项功能使用 AI 服务处理你的数据，不会被永久存储。";
 
 // MARK: - Chat Assistant Feature Gate & Settings
 "featureGate.chatAssistant" = "聊天助理";

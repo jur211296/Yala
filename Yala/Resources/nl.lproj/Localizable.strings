@@ -2854,14 +2854,14 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala legt het voor je vast";
-"aiConsent.processingMessage" = "Spreek het in of kies een foto van het bonnetje, en Yala legt de uitgave vast. Daarvoor gaat de opname of foto alleen op dat moment naar een AI-dienst (OpenAI). Het wordt niet gebruikt om de AI te trainen.";
+"aiConsent.processingMessage" = "Spreek het in of kies een foto van het bonnetje, en Yala legt de uitgave vast. Daarvoor gaat de opname of foto alleen op dat moment naar een AI-dienst. Het wordt niet gebruikt om de AI te trainen.";
 "aiConsent.insightsTitle" = "Slim overzicht";
-"aiConsent.insightsMessage" = "Deze functie stuurt een samenvatting van je financiën naar OpenAI — totalen en trends per categorie, budgetten en terugkerende betalingen — om je analyse te genereren.\n\nJe volledige boekingsgeschiedenis wordt niet verstuurd. OpenAI gebruikt deze gegevens niet om zijn modellen te trainen.";
+"aiConsent.insightsMessage" = "Yala analyseert je financiën en laat zien hoe je ervoor staat. Daarvoor gaat er een samenvatting naar een AI-dienst — totalen en trends per categorie, budgetten en terugkerende betalingen —, niet je volledige boekingsgeschiedenis. Die wordt niet gebruikt om de AI te trainen.";
 "aiConsent.accept" = "Accepteren en inschakelen";
 "aiConsent.privacyPolicy" = "Privacybeleid";
-"aiConsent.inlineHintProcessing" = "Je spraak- en afbeeldingsgegevens worden door OpenAI verwerkt. Ze worden niet permanent bewaard.";
-"aiConsent.inlineHintInsights" = "Je financiële samenvatting wordt voor de analyse naar OpenAI gestuurd. Deze wordt niet permanent bewaard.";
-"aiConsent.inlineHintBoth" = "Je spraak-, afbeeldings- en samenvattingsgegevens worden door OpenAI verwerkt. Ze worden niet permanent bewaard.";
+"aiConsent.inlineHintProcessing" = "Je spraak- en afbeeldingsgegevens worden door een AI-dienst verwerkt. Ze worden niet permanent bewaard.";
+"aiConsent.inlineHintInsights" = "Je financiële samenvatting wordt voor de analyse naar een AI-dienst gestuurd. Deze wordt niet permanent bewaard.";
+"aiConsent.inlineHintBoth" = "Je spraak-, afbeeldings- en samenvattingsgegevens worden door een AI-dienst verwerkt. Ze worden niet permanent bewaard.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Kunstmatige intelligentie";
@@ -3405,9 +3405,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financiële assistent";
-"aiConsent.chatMessage" = "Om je vragen te beantwoorden stuurt deze functie een samenvatting van je financiële situatie van de afgelopen 13 maanden naar OpenAI: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen.\n\nDe gegevens worden alleen gebruikt om het antwoord te genereren. OpenAI gebruikt ze niet om zijn modellen te trainen.";
-"aiConsent.inlineHintChat" = "Je financiële samenvatting wordt door OpenAI verwerkt om te antwoorden. Deze wordt niet permanent bewaard.";
-"aiConsent.inlineHintMultiple" = "Meerdere AI-functies gebruiken OpenAI om je gegevens te verwerken. Ze worden niet permanent bewaard.";
+"aiConsent.chatMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen. Die wordt alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
+"aiConsent.inlineHintChat" = "Je financiële samenvatting wordt door een AI-dienst verwerkt om te antwoorden. Deze wordt niet permanent bewaard.";
+"aiConsent.inlineHintMultiple" = "Meerdere functies gebruiken een AI-dienst om je gegevens te verwerken. Ze worden niet permanent bewaard.";
 
 // MARK: - Chat Assistant Feature Gate & Settings
 "featureGate.chatAssistant" = "Chat-assistent";

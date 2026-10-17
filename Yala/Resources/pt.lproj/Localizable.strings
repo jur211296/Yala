@@ -2850,14 +2850,14 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "O Yala registra por você";
-"aiConsent.processingMessage" = "Você dita ou escolhe uma foto do recibo e o Yala registra o gasto. Para isso, envia o áudio ou a foto a um serviço de IA (OpenAI), só naquele momento. Eles não são usados para treinar a IA.";
+"aiConsent.processingMessage" = "Você dita ou escolhe uma foto do recibo e o Yala registra o gasto. Para isso, envia o áudio ou a foto a um serviço de IA, só naquele momento. Eles não são usados para treinar a IA.";
 "aiConsent.insightsTitle" = "Resumo inteligente";
-"aiConsent.insightsMessage" = "Esta função envia à OpenAI um resumo das suas finanças — totais e tendências por categoria, orçamentos e pagamentos recorrentes — para gerar sua análise.\n\nSeu histórico completo de registros não é enviado. A OpenAI não usa estes dados para treinar os seus modelos.";
+"aiConsent.insightsMessage" = "O Yala analisa suas finanças e mostra como você está indo. Para isso, envia a um serviço de IA um resumo — totais e tendências por categoria, orçamentos e pagamentos recorrentes —, não seu histórico completo de registros. Ele não é usado para treinar a IA.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
-"aiConsent.inlineHintProcessing" = "Seus dados de voz e imagens são processados com OpenAI. Não são armazenados permanentemente.";
-"aiConsent.inlineHintInsights" = "O resumo das suas finanças é enviado à OpenAI para a análise. Não é armazenado permanentemente.";
-"aiConsent.inlineHintBoth" = "Seus dados de voz, imagens e resumo são processados com OpenAI. Não são armazenados permanentemente.";
+"aiConsent.inlineHintProcessing" = "Seus dados de voz e imagens são processados por um serviço de IA. Não são armazenados permanentemente.";
+"aiConsent.inlineHintInsights" = "O resumo das suas finanças é enviado a um serviço de IA para a análise. Não é armazenado permanentemente.";
+"aiConsent.inlineHintBoth" = "Seus dados de voz, imagens e resumo são processados por um serviço de IA. Não são armazenados permanentemente.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Inteligência Artificial";
@@ -3394,9 +3394,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistente financeiro";
-"aiConsent.chatMessage" = "Para responder às suas perguntas, esta função envia à OpenAI um resumo da sua situação financeira dos últimos 13 meses: saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos e pagamentos recorrentes.\n\nOs dados são usados apenas para gerar a resposta. A OpenAI não os usa para treinar os seus modelos.";
-"aiConsent.inlineHintChat" = "O resumo das suas finanças é processado pela OpenAI para responder. Não é armazenado permanentemente.";
-"aiConsent.inlineHintMultiple" = "Várias funções de IA usam a OpenAI para processar seus dados. Não são armazenados permanentemente.";
+"aiConsent.chatMessage" = "O Yala responde às suas perguntas sobre suas finanças com os seus próprios números. Para isso, envia a um serviço de IA um resumo dos seus últimos 13 meses: saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos e pagamentos recorrentes. Ele é usado só para responder, não para treinar a IA.";
+"aiConsent.inlineHintChat" = "O resumo das suas finanças é processado por um serviço de IA para responder. Não é armazenado permanentemente.";
+"aiConsent.inlineHintMultiple" = "Várias funções usam um serviço de IA para processar seus dados. Não são armazenados permanentemente.";
 
 // MARK: - Chat Assistant Feature Gate & Settings
 "featureGate.chatAssistant" = "Assistente de chat";
