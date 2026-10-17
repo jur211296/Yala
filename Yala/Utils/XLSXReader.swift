@@ -22,18 +22,17 @@ enum XLSXReader {
         case invalidHeader(found: String)
         case missingSharedStrings
 
+        /// En llano y traducido (auditoría UX 2.2, lote 7, L7-17), sin el encabezado crudo.
         var errorDescription: String? {
             switch self {
-            case .cannotOpenFile:
-                return "No se pudo abrir el archivo XLSX."
+            case .cannotOpenFile, .missingSharedStrings:
+                return L10n.UXL7.ImportErrors.xlsxCannotOpen
             case .noWorksheets:
-                return "El archivo XLSX no contiene hojas de cálculo."
+                return L10n.UXL7.ImportErrors.xlsxNoSheets
             case .cannotParseWorksheet:
-                return "No se pudo leer la hoja de cálculo."
-            case .invalidHeader(let found):
-                return "El encabezado del XLSX no es válido. Se encontró: \(found)."
-            case .missingSharedStrings:
-                return "El archivo XLSX no contiene la tabla de strings compartidos."
+                return L10n.UXL7.ImportErrors.xlsxCannotRead
+            case .invalidHeader:
+                return L10n.UXL7.ImportErrors.invalidHeader
             }
         }
     }

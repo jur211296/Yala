@@ -28,6 +28,10 @@ struct AccountFormView: View {
     /// La hoja eliminó la cuenta: al cerrarse, se cierra también el formulario (en su `onDismiss`, no
     /// mientras la hoja sigue montada — dos `dismiss` a la vez dejan presentaciones colgadas).
     @State private var accountWasRemoved: Bool = false
+    /// La X o el gesto de cerrar con algo escrito (L7-5).
+    @State private var showDiscardChangesAlert: Bool = false
+    /// «Más opciones» plegado al crear la cuenta (L7-4).
+    @State private var showsMoreOptions: Bool = false
     @FocusState private var focusedField: Field?
     /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
     @State private var selectedDetent: PresentationDetent = .medium
@@ -70,29 +74,29 @@ struct AccountFormView: View {
                         if viewModel.selectedType == .creditCard {
                             creditCardSection
                         }
-                        if viewModel.showAdjustmentMode {
-                            adjustmentSection
-                        }
-                        balanceSection
-
-                        // Balance calculator link (only for new accounts, not editing)
-                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
-                            Button {
-                                showBalanceCalculator = true
-                            } label: {
-                                HStack(spacing: DS.Spacing.xs) {
-                                    Image(systemName: "questionmark.circle")
-                                        .font(DS.Typography.subheadline)
-                                    Text(L10n.Onboarding.accountBalanceLearnMore)
-                                        .font(DS.Typography.subheadline)
-                                        .fontWeight(.semibold)
-                                }
-                                .foregroundStyle(Color.electricIndigo)
+                        if usesBalanceEditor {
+                            // «Editar el saldo» (pantalla 8 del rediseño, auditoría UX 2.2, L7-6).
+                            balanceEditSection
+                        } else {
+                            if viewModel.showAdjustmentMode {
+                                adjustmentSection
                             }
-                            .buttonStyle(.plain)
+                            balanceSection
                         }
 
-                        actionsSection
+                        // La ayuda para calcular el saldo, con la tarjeta rosa del onboarding (L7-2, variante 1):
+                        // el enlace índigo de 15 pt que había aquí no se veía, y es donde la gente se atasca.
+                        if !viewModel.isEditing && !sessionState.isExpensesOnlyMode {
+                            guidedBalanceCard
+                        }
+
+                        if viewModel.isEditing {
+                            actionsSection
+                        } else {
+                            // Al crear, «Archivar» no tiene sentido y «Excluir» es una decisión avanzada: va
+                            // plegado bajo «Más opciones», como en el rediseño aprobado (L7-4).
+                            newAccountMoreOptionsSection
+                        }
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
@@ -100,12 +104,13 @@ struct AccountFormView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             .yalaScreenBackground(isLargeDetent ? .subtle : .transparent)
-            .navigationTitle(L10n.Account.configure)
+            // «Nueva cuenta» o «Editar cuenta»: alta y edición compartían «Configurar cuenta» (L7-4).
+            .navigationTitle(viewModel.isEditing ? L10n.Account.edit : L10n.Account.new)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        requestClose()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -159,6 +164,8 @@ struct AccountFormView: View {
                 calcFieldState.reset()
             }
             .onAppear {
+                // Antes del contexto: decide qué pide el campo del saldo al abrir una cuenta ya creada (L7-6).
+                viewModel.editsTodayBalance = !sessionState.isExpensesOnlyMode
                 viewModel.setContext(modelContext)
                 // Auto-focus name field for new accounts
                 if !viewModel.isEditing {
@@ -197,32 +204,16 @@ struct AccountFormView: View {
                 Text(L10n.Common.saveError)
             }
         )
-        .alert(
-            L10n.Account.secondaryCurrencyTitle,
-            isPresented: Binding(
-                get: { viewModel.currencyToSuggestAsSecondary != nil },
-                set: { if !$0 { viewModel.currencyToSuggestAsSecondary = nil } }
-            ),
-            actions: {
-                Button(L10n.Account.secondaryCurrencyAccept) {
-                    acceptSecondaryCurrency()
-                    dismiss()
-                }
-                Button(L10n.Account.secondaryCurrencyReject, role: .cancel) {
-                    viewModel.currencyToSuggestAsSecondary = nil
-                    dismiss()
-                }
+        .modifier(SecondaryCurrencySuggestionAlert(
+            suggestion: $viewModel.secondaryCurrencySuggestion,
+            preferred: CurrencyDefaults.currentPreferred,
+            onAccept: { new, old in
+                acceptSecondaryCurrency(new, replacing: old)
+                dismiss()
             },
-            message: {
-                if let code = viewModel.currencyToSuggestAsSecondary {
-                    Text(L10n.Account.secondaryCurrencyMessage(
-                        code.rawValue,
-                        CurrencyDefaults.currentPreferred,
-                        code.rawValue
-                    ))
-                }
-            }
-        )
+            onDecline: { dismiss() }
+        ))
+        .modifier(DiscardAccountChangesAlert(isPresented: $showDiscardChangesAlert) { dismiss() })
         .alert(
             viewModel.pendingCurrencyConversion.map { Self.currencyConversionTitle($0) } ?? "",
             isPresented: Binding(
@@ -289,8 +280,27 @@ struct AccountFormView: View {
             }
         }
         // A media conversión el histórico está partido entre dos divisas: cerrar el formulario ahí
-        // dejaría la cuenta en un estado que ninguna pantalla sabe leer.
-        .interactiveDismissDisabled(viewModel.isConvertingCurrency)
+        // dejaría la cuenta en un estado que ninguna pantalla sabe leer. Y con algo escrito, el gesto de
+        // cerrar pregunta antes de tirarlo, como la X (L7-5).
+        .onSheetDismissAttempt(isActive: viewModel.isConvertingCurrency || viewModel.hasUnsavedChanges) {
+            guard !viewModel.isConvertingCurrency else { return }
+            showDiscardChangesAlert = true
+        }
+    }
+
+    /// La X: con algo escrito pregunta «¿Descartar cambios?», como la Bandeja y Categorías (L7-5).
+    private func requestClose() {
+        if viewModel.hasUnsavedChanges {
+            focusedField = nil
+            showDiscardChangesAlert = true
+        } else {
+            dismiss()
+        }
+    }
+
+    /// Edición fuera del modo «solo gastos»: el saldo se edita con la pantalla «Editar el saldo» (L7-6).
+    private var usesBalanceEditor: Bool {
+        viewModel.isEditing && viewModel.editsTodayBalance
     }
 
     // MARK: - Texto del aviso de conversión
@@ -314,9 +324,20 @@ struct AccountFormView: View {
         _ pending: AccountFormViewModel.PendingCurrencyConversion
     ) -> String {
         var paragraphs: [String] = []
+        // Lo primero, la cifra que la persona entiende: en cuánto queda su saldo (L7-7).
+        if let balance = pending.balancePreview {
+            paragraphs.append(L10n.UXL7.currencyBalanceLine(
+                formatPlanAmount(balance.before, currencyCode: pending.fromCurrencyCode, isEstimate: false),
+                formatPlanAmount(balance.after, currencyCode: pending.toCurrencyCode, isEstimate: !balance.isExact)
+            ))
+        }
         if pending.rowCount > 0 {
-            paragraphs.append(L10n.Account.CurrencyChange.confirmMessage(
-                pending.fromCurrencyCode, pending.toCurrencyCode))
+            var line = L10n.Account.CurrencyChange.confirmMessage(pending.fromCurrencyCode, pending.toCurrencyCode)
+            // Con una cuenta recién creada, el único «registro» es el saldo de partida: se nombra (L7-7).
+            if pending.includesInitialBalance {
+                line += " " + L10n.UXL7.currencyIncludesInitialBalance
+            }
+            paragraphs.append(line)
         }
         if pending.draftCount > 0 {
             paragraphs.append(L10n.Account.CurrencyChange.draftsLine(
@@ -395,22 +416,7 @@ struct AccountFormView: View {
 
                 SubsectionDivider()
 
-                NavigationLink {
-                    AccountTypeSelectorView(selectedType: $viewModel.selectedType)
-                } label: {
-                    HStack {
-                        Text(L10n.Account.type)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Text(viewModel.selectedType.localizedName)
-                            .foregroundStyle(.secondary)
-                        Image(systemName: "chevron.right")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding()
-                }
-                .buttonStyle(.plain)
+                AccountTypeChips(selectedType: $viewModel.selectedType)
 
                 SubsectionDivider()
 
@@ -483,6 +489,9 @@ struct AccountFormView: View {
             }
         }
         .padding()
+        // Dentro del label y tras el padding: sin esto el `Spacer` deja el centro de la fila muerto y solo
+        // respondían la bandera y el chevron (`swiftui-ds.md`, medido el 2026-10-17 con XCUITest).
+        .contentShape(Rectangle())
     }
 
     /// Los motivos del bloqueo, como lista legible. El orden lo fija el ViewModel para que el texto
@@ -518,6 +527,7 @@ struct AccountFormView: View {
                             .foregroundStyle(.tertiary)
                     }
                     .padding()
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
@@ -537,8 +547,10 @@ struct AccountFormView: View {
                         Text(L10n.Account.adjustmentDate)
                             .font(DS.Typography.body)
                         Spacer()
+                        // Hasta hoy, como en «Editar el saldo»: un ajuste fechado mañana no cuenta en el saldo de hoy.
                         DateFieldButton(
                             date: $viewModel.adjustmentDate,
+                            maxDate: nil,
                             title: L10n.Account.adjustmentDate
                         )
                     }
@@ -598,54 +610,22 @@ struct AccountFormView: View {
                 SubsectionDivider()
 
                 // Balance input
-                HStack {
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
-                        Text(
-                            viewModel.selectedAdjustmentMode == .changeInitialBalance
-                                ? L10n.Account.initialBalance : L10n.Account.newBalance
-                        )
+                balanceInput(
+                    caption: viewModel.selectedAdjustmentMode == .changeInitialBalance
+                        ? L10n.Account.initialBalance : L10n.Account.newBalance
+                )
+                .padding()
+
+                // Por qué «Guardar» sigue apagado en una cuenta nueva: falta el saldo (L7-1, molde del onboarding).
+                if !viewModel.isEditing && viewModel.parsedBalanceAmount == nil {
+                    Text(L10n.UXL7.balanceRequiredHint)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
-
-                        ZStack(alignment: .trailing) {
-                            // Placeholder
-                            if viewModel.balanceText.isEmpty {
-                                Text("0.00")
-                                    .font(DS.Typography.largeTitle)
-                                    .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
-                            }
-
-                            TextField("", text: $viewModel.balanceText)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .font(DS.Typography.largeTitle)
-                                .focused($focusedField, equals: .balance)
-                                .accessibilityIdentifier("account_balance_field")
-                        }
-                        .onChange(of: focusedField) { _, newField in
-                            let isFocused = newField == .balance
-                            // When field gains focus, clear placeholder values
-                            if isFocused
-                                && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00" || viewModel.balanceText == "0,00")
-                            {
-                                viewModel.balanceText = ""
-                            }
-                            // When field loses focus, format if has value
-                            if !isFocused && !viewModel.balanceText.isEmpty {
-                                let amount = AmountInputHelper.parseDecimal(viewModel.balanceText)
-                                viewModel.balanceText = AmountInputHelper.formatWithGrouping(amount)
-                            }
-                        }
-                        .onChange(of: viewModel.balanceText) { _, newValue in
-                            let filtered = AmountInputHelper.filterAmountInput(newValue)
-                            if filtered != newValue {
-                                viewModel.balanceText = filtered
-                            }
-                        }
-                    }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_balance_required_hint")
                 }
-                .padding()
 
                 // Show calculated final balance for "Cambiar saldo inicial" mode
                 if viewModel.isEditing
@@ -790,6 +770,345 @@ struct AccountFormView: View {
         }
     }
 
+    /// El campo grande del saldo, con su rótulo encima. Lo comparten el alta y «Editar el saldo».
+    private func balanceInput(caption: String) -> some View {
+        HStack {
+            Spacer()
+            VStack(alignment: .trailing, spacing: DS.Spacing.xs) {
+                if !caption.isEmpty {
+                    Text(caption)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ZStack(alignment: .trailing) {
+                    // «Ej. 1500», como el onboarding (L7-1): el «0.00» gris se leía como un valor ya puesto.
+                    if viewModel.balanceText.isEmpty {
+                        Text(L10n.Onboarding.balancePlaceholder)
+                            .font(DS.Typography.largeTitle)
+                            .foregroundStyle(DS.Semantic.disabledForeground.opacity(DS.Opacity.overlay))
+                            .accessibilityHidden(true)
+                    }
+
+                    TextField("", text: $viewModel.balanceText)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .font(DS.Typography.largeTitle)
+                        .focused($focusedField, equals: .balance)
+                        .accessibilityIdentifier("account_balance_field")
+                }
+                .onChange(of: focusedField) { _, newField in
+                    let isFocused = newField == .balance
+                    // When field gains focus, clear placeholder values
+                    if isFocused
+                        && (viewModel.balanceText == "0" || viewModel.balanceText == "0.00" || viewModel.balanceText == "0,00")
+                    {
+                        viewModel.balanceText = ""
+                    }
+                    // When field loses focus, format if has value
+                    if !isFocused && !viewModel.balanceText.isEmpty {
+                        let amount = AmountInputHelper.parseDecimal(viewModel.balanceText)
+                        viewModel.balanceText = AmountInputHelper.formatWithGrouping(amount)
+                    }
+                }
+                .onChange(of: viewModel.balanceText) { _, newValue in
+                    let filtered = AmountInputHelper.filterAmountInput(newValue)
+                    if filtered != newValue {
+                        viewModel.balanceText = filtered
+                    }
+                }
+            }
+        }
+    }
+
+    /// El selector de signo, con los rótulos de tarjeta cuando toca.
+    private var signPicker: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Text(L10n.Account.sign)
+                .font(DS.Typography.subheadline)
+            Spacer()
+            Picker(L10n.Account.sign, selection: $viewModel.isPositive) {
+                if viewModel.selectedType == .creditCard {
+                    Text(L10n.Account.Sign.inFavor).tag(true)
+                    Text(L10n.Account.Sign.consumed).tag(false)
+                } else {
+                    Text(L10n.Account.positive).tag(true)
+                    Text(L10n.Account.negative).tag(false)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    // MARK: - Nueva cuenta: ayuda del saldo y «Más opciones» (L7-2, L7-4)
+
+    /// La tarjeta rosa del onboarding («¿No sabes tu saldo? Toca aquí y te ayudamos a calcularlo»), a todo el
+    /// ancho bajo la caja del saldo (L7-2, variante 1). Rosa de marca sólido, sin degradado ni halo.
+    private var guidedBalanceCard: some View {
+        Button {
+            focusedField = nil
+            showBalanceCalculator = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                        .fill(Color.white)
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "plus.forwardslash.minus")
+                        .font(.system(size: 20, weight: .semibold)) // A11Y-DT: icono de la tarjeta, como el onboarding
+                        .foregroundStyle(Color.emphasisPinkFill)
+                }
+                .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                    Text(L10n.Onboarding.balanceGuidedTitle)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(Color.white)
+                    Text(L10n.Onboarding.balanceGuidedSubtitle)
+                        .font(DS.Typography.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.white)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .bold)) // A11Y-DT: chevron de la tarjeta destacada
+                    .foregroundStyle(Color.white)
+                    .accessibilityHidden(true)
+            }
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.emphasisPinkFill)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("account_balance_guided_card")
+    }
+
+    /// Al crear: solo «Excluir de las estadísticas», plegado (L7-4). Archivar llega al editar la cuenta.
+    private var newAccountMoreOptionsSection: some View {
+        SectionBox(title: "") {
+            VStack(spacing: DS.Spacing.none) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { showsMoreOptions.toggle() }
+                } label: {
+                    HStack {
+                        Text(L10n.Common.moreOptions)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .font(DS.Typography.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(showsMoreOptions ? 180 : 0))
+                            .accessibilityHidden(true)
+                    }
+                    .padding()
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("account_more_options")
+
+                if showsMoreOptions {
+                    SubsectionDivider()
+                    Toggle(isOn: $viewModel.excludeFromStatistics) {
+                        Text(L10n.Account.excludeFromStats)
+                    }
+                    .onChange(of: viewModel.excludeFromStatistics) { _, excluded in
+                        viewModel.excludeChanged(to: excluded)
+                    }
+                    .accessibilityIdentifier("account_exclude_stats_toggle")
+                    .padding()
+                }
+            }
+        }
+    }
+
+    // MARK: - Editar el saldo (L7-6)
+
+    /// La pantalla 8 del rediseño de cuentas, adelantada sola: lo que dice Yala, cuánto tiene la persona de
+    /// verdad hoy, la diferencia, cómo se corrige (las dos opciones de siempre, contadas en llano) y en
+    /// cuánto queda la cuenta al guardar. El cálculo vive en `AccountBalanceCorrectionLogic`.
+    private var balanceEditSection: some View {
+        // Con un cambio de moneda pendiente el campo se vacía al guardar y el ajuste no se aplica: enseñar la
+        // diferencia o «queda en» prometería una cifra que no queda (review de L7-6). Solo el saldo de hoy.
+        let correction = viewModel.isCurrencyChangeRequested ? nil : viewModel.balanceCorrection
+        let fixes = correction?.needsCorrection == true
+        let currency = viewModel.balanceDisplayCurrency
+        return VStack(spacing: DS.Spacing.xxl) {
+            SectionBox(title: L10n.UXL7.BalanceEdit.sectionTitle) {
+                VStack(spacing: DS.Spacing.none) {
+                    HStack {
+                        Text(L10n.UXL7.BalanceEdit.yalaSays)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(formatAmount(viewModel.currentBalance, currency: currency))
+                            .font(DS.Typography.headline)
+                            .strikethrough(fixes)
+                            .foregroundStyle(fixes ? Color.secondary : Color.primary)
+                            .accessibilityIdentifier("account_balance_yala_says")
+                    }
+                    .padding()
+
+                    SubsectionDivider()
+
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        Text(L10n.UXL7.BalanceEdit.question)
+                            .font(DS.Typography.bodyBold)
+                            .foregroundStyle(.primary)
+                        Text(L10n.UXL7.BalanceEdit.questionHint)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top)
+
+                    signPicker
+                        .padding()
+
+                    balanceInput(caption: "")
+                        .padding(.horizontal)
+                        .padding(.bottom)
+
+                    if let correction {
+                        SubsectionDivider()
+                        if fixes {
+                            HStack {
+                                Text(L10n.UXL7.BalanceEdit.difference)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(formatAdjustment(correction.difference, currency: currency))
+                                    .font(DS.Typography.headline)
+                                    .foregroundStyle(correction.difference >= 0
+                                        ? DS.Semantic.successForeground : DS.Semantic.errorForeground)
+                                    .accessibilityIdentifier("account_balance_difference")
+                            }
+                            .padding()
+                        } else {
+                            Text(L10n.UXL7.BalanceEdit.matches)
+                                .font(DS.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                        }
+                    }
+                }
+            }
+
+            if let correction, fixes {
+                SectionBox(title: L10n.UXL7.BalanceEdit.howTitle) {
+                    VStack(spacing: DS.Spacing.sm) {
+                        correctionOption(
+                            .byEntry,
+                            title: L10n.UXL7.BalanceEdit.byEntryTitle,
+                            description: L10n.UXL7.BalanceEdit.byEntryDesc,
+                            icon: "plus.forwardslash.minus"
+                        )
+                        if viewModel.selectedAdjustmentMode == .byEntry {
+                            HStack {
+                                Text(L10n.Account.adjustmentDate)
+                                    .font(DS.Typography.body)
+                                Spacer()
+                                // Hasta hoy: un ajuste fechado mañana no cuenta en el «Saldo hoy» de la ficha,
+                                // y «Al guardar, queda en» no sería verdad hoy.
+                                DateFieldButton(
+                                    date: $viewModel.adjustmentDate,
+                                    maxDate: nil,
+                                    title: L10n.Account.adjustmentDate
+                                )
+                            }
+                            .padding(.horizontal, DS.Spacing.sm)
+                        }
+                        correctionOption(
+                            .changeInitialBalance,
+                            title: L10n.UXL7.BalanceEdit.initialTitle,
+                            description: L10n.UXL7.BalanceEdit.initialDesc,
+                            icon: "flag"
+                        )
+                        if viewModel.selectedAdjustmentMode == .changeInitialBalance {
+                            Text(L10n.UXL7.BalanceEdit.initialChange(
+                                formatAmount(correction.currentInitialBalance, currency: currency),
+                                formatAmount(correction.newInitialBalance, currency: currency)
+                            ))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, DS.Spacing.sm)
+                            .accessibilityIdentifier("account_balance_initial_change")
+                        }
+                    }
+                    .padding()
+                }
+
+                Text(L10n.UXL7.BalanceEdit.result(
+                    viewModel.trimmedName.isEmpty ? (viewModel.accountToEdit?.name ?? "") : viewModel.trimmedName,
+                    formatAmount(correction.resultingBalance, currency: currency)
+                ))
+                .font(DS.Typography.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.xs)
+                .accessibilityIdentifier("account_balance_result")
+            }
+        }
+        .onChange(of: viewModel.selectedAdjustmentMode) {
+            viewModel.adjustmentModeChanged()
+        }
+        .disabled(viewModel.isCurrencyChangeRequested)
+    }
+
+    /// Una de las dos formas de corregir, como tarjeta: la elegida, rellena de índigo (criterio de foco).
+    private func correctionOption(
+        _ mode: AdjustmentMode, title: String, description: String, icon: String
+    ) -> some View {
+        let isSelected = viewModel.selectedAdjustmentMode == mode
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) { viewModel.selectedAdjustmentMode = mode }
+        } label: {
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(isSelected ? Color.white : Color.electricIndigo)
+                    .frame(width: 28)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(title)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    Text(description)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(DS.Typography.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.white)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(DS.Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .fill(isSelected ? Color.selectedIndigoFill : Color.primary.opacity(0.06))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("account_balance_fix_\(mode == .byEntry ? "entry" : "initial")")
+    }
+
     private var creditCardSection: some View {
         SectionBox(title: L10n.Account.CreditCard.sectionTitle) {
             VStack(spacing: DS.Spacing.none) {
@@ -845,7 +1164,7 @@ struct AccountFormView: View {
 
     private func saveAccount() {
         if viewModel.saveAccount(context: modelContext) {
-            if viewModel.currencyToSuggestAsSecondary == nil {
+            if viewModel.secondaryCurrencySuggestion == nil {
                 dismiss()
             }
             // else: alert will show and dismiss after user responds
@@ -862,19 +1181,17 @@ struct AccountFormView: View {
     ) {
         Task {
             if await viewModel.confirmCurrencyConversion(pending, context: modelContext) {
-                if viewModel.currencyToSuggestAsSecondary == nil {
+                if viewModel.secondaryCurrencySuggestion == nil {
                     dismiss()
                 }
             }
         }
     }
 
-    private func acceptSecondaryCurrency() {
-        guard let code = viewModel.currencyToSuggestAsSecondary else { return }
+    /// Añade la moneda nueva a las que enseña el Panel, o la pone en el sitio de `old` (L7-8).
+    private func acceptSecondaryCurrency(_ code: String, replacing old: String?) {
         let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
-        var existing = raw.split(separator: ",").map(String.init).filter { !$0.isEmpty }
-        existing.append(code.rawValue)
-        let newValue = existing.joined(separator: ",")
+        let newValue = SecondaryCurrencySuggestionLogic.applying(code, replacing: old, to: raw)
         PreferenceSyncService.shared.set(string: newValue, forKey: "secondaryCurrencies")
         SessionState.shared.needsExchangeRateWidgetRefresh = true
 

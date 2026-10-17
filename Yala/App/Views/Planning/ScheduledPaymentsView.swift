@@ -19,6 +19,8 @@ struct ScheduledPaymentsView: View {
 
     // ViewModel
     @State private var viewModel = ScheduledPaymentsViewModel()
+    /// Sube al cerrarse el editor: es cuando se pregunta «¿era de prueba?» (UX 2.2 · L5-5).
+    @State private var paymentEditorClosedToken = 0
 
     var body: some View {
         ZStack {
@@ -45,7 +47,7 @@ struct ScheduledPaymentsView: View {
             newPaymentFAB
         }
         .yalaScreenBackground(.panel)
-        .sheet(isPresented: $viewModel.showPaymentEditor) {
+        .sheet(isPresented: $viewModel.showPaymentEditor, onDismiss: { paymentEditorClosedToken += 1 }) {
             if let payment = viewModel.editingPayment {
                 ScheduledPaymentEditorView(payment: payment)
                     .onDisappear {
@@ -62,6 +64,8 @@ struct ScheduledPaymentsView: View {
                     }
             }
         }
+        // «¿Era de prueba?» del primer pago, al cerrar el editor y aquí mismo (UX 2.2 · L5-5).
+        .practiceCleanupPrompt(for: [.scheduledPayment], editorClosedToken: paymentEditorClosedToken) { refreshData() }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)

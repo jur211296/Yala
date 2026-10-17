@@ -61,6 +61,16 @@ struct SecondaryCurrencyPickerSheet: View {
                             selectedSection
                         }
 
+                        // Por qué las demás se apagan: el límite es dos (auditoría UX 2.2, lote 7, L7-9).
+                        Text(selectedCurrencies.count >= maxSelections
+                            ? L10n.UXL7.CurrencyPicker.secondaryFull
+                            : L10n.UXL7.CurrencyPicker.secondaryLimit)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, DS.Spacing.xs)
+                            .accessibilityIdentifier("secondary_currency_limit_note")
+
                         // Recommended section (only if there are available recommendations)
                         if !recommendedCurrencies.isEmpty {
                             recommendedSection

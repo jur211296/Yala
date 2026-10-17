@@ -48,7 +48,7 @@ final class ProUpsellService {
 
     // MARK: - Milestones
 
-    private let milestones = [10, 50, 100]
+    private let milestones = MilestoneProgress.milestones
 
     // MARK: - Public API
 

@@ -129,7 +129,7 @@ struct PanelSheetsModifier: ViewModifier {
                         )
                     } : nil,
                     onSetupTrialSkipped: sheets.isVoiceSetupTrial ? {
-                        SetupChecklistManager.shared.markCompleted(.tryVoiceInput)
+                        SetupChecklistManager.shared.markSkipped(.tryVoiceInput)
                     } : nil
                 )
             }
@@ -144,7 +144,7 @@ struct PanelSheetsModifier: ViewModifier {
                         )
                     } : nil,
                     onSetupTrialSkipped: sheets.isImageSetupTrial ? {
-                        SetupChecklistManager.shared.markCompleted(.tryImageInput)
+                        SetupChecklistManager.shared.markSkipped(.tryImageInput)
                     } : nil
                 )
             }

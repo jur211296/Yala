@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Cette catégorie a une sous-catégorie avec %d transaction. Pour la supprimer, supprimez ou transférez d'abord cette transaction de sa sous-catégorie.</string>
+			<string>Cette catégorie a une sous-catégorie avec %d enregistrement. Pour la supprimer, supprimez ou déplacez d'abord cet enregistrement de sa sous-catégorie.</string>
 			<key>other</key>
-			<string>Cette categorie a des sous-categories avec %d transactions. Pour la supprimer, supprimez ou transferez d'abord les transactions de chaque sous-categorie.</string>
+			<string>Cette catégorie a des sous-catégories avec %d enregistrements. Pour la supprimer, supprimez ou déplacez d'abord les enregistrements de chaque sous-catégorie.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d transaction sera supprimée définitivement. Cette action ne peut pas être annulée.</string>
+			<string>%d enregistrement sera supprimé définitivement. Cette action ne peut pas être annulée.</string>
 			<key>other</key>
-			<string>%d transactions seront supprimees definitivement. Cette action ne peut pas etre annulee.</string>
+			<string>%d enregistrements seront supprimés définitivement. Cette action ne peut pas être annulée.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Il y a %1$d transaction dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
+			<string>Il y a %1$d enregistrement dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
 			<key>other</key>
-			<string>Il y a %1$d transactions dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
+			<string>Il y a %1$d enregistrements dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>
@@ -381,9 +381,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dépense enregistrée !</string>
+			<string>%d enregistrement !</string>
 			<key>other</key>
-			<string>%d dépenses enregistrées !</string>
+			<string>%d enregistrements !</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>
@@ -525,9 +525,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Convertir %d opération ?</string>
+			<string>Convertir %d enregistrement ?</string>
 			<key>other</key>
-			<string>Convertir %d opérations ?</string>
+			<string>Convertir %d enregistrements ?</string>
 		</dict>
 	</dict>
 	<key>storage.sync.needsSignIn</key>
@@ -906,6 +906,134 @@
 			<string>Tous les ans</string>
 			<key>other</key>
 			<string>Tous les %d ans</string>
+		</dict>
+	</dict>
+	<key>import.preview.failuresHeader</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d ligne ne sera pas importée</string>
+			<key>other</key>
+			<string>%d lignes ne seront pas importées</string>
+		</dict>
+	</dict>
+	<key>records.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d enregistrement</string>
+			<key>other</key>
+			<string>%d enregistrements</string>
+		</dict>
+	</dict>
+	<key>category.cannotDelete.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Elle a %d enregistrement.</string>
+			<key>other</key>
+			<string>Elle a %d enregistrements.</string>
+		</dict>
+	</dict>
+	<key>import.result.notImported</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d ligne n'a pas été importée :</string>
+			<key>other</key>
+			<string>%d lignes n'ont pas été importées :</string>
+		</dict>
+	</dict>
+	<key>import.preview.futureIgnored</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d ligne a une date future et est laissée de côté.</string>
+			<key>other</key>
+			<string>%d lignes ont une date future et sont laissées de côté.</string>
+		</dict>
+	</dict>
+	<key>import.preview.importButton</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Importer %d enregistrement</string>
+			<key>other</key>
+			<string>Importer %d enregistrements</string>
+		</dict>
+	</dict>
+	<key>tag.deleteConfirm.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Elle sera retirée de %d enregistrement ; il n'est pas supprimé. Action irréversible.</string>
+			<key>other</key>
+			<string>Elle sera retirée de %d enregistrements ; ils ne sont pas supprimés. Action irréversible.</string>
+		</dict>
+	</dict>
+	<key>import.preview.more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>… et %d autre</string>
+			<key>other</key>
+			<string>… et %d autres</string>
 		</dict>
 	</dict>
 </dict>

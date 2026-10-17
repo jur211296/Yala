@@ -19,6 +19,7 @@ struct ContextualGuideBanner: View {
     let isDismissible: Bool
 
     @AppStorage private var dismissed: Bool
+    @Environment(\.yalaTheme) private var theme
 
     // MARK: - Init
 
@@ -40,6 +41,72 @@ struct ContextualGuideBanner: View {
 
     var body: some View {
         if !UITestHooks.isActive, !isDismissible || !dismissed {
+            if isDismissible {
+                guideCard
+            } else {
+                infoCard
+            }
+        }
+    }
+
+    /// UX 2.2 · L5-8 (variante 2, decisión de Jürgen): barra lateral del color de la app, rótulo «GUÍA» y una X para
+    /// cerrar. Antes era el mismo cristal gris que cualquier tarjeta, con «Entendido» en texto pequeño, y no se leía
+    /// como ayuda.
+    private var guideCard: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(theme.accent)
+                .frame(width: 4)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: "lightbulb.fill")
+                        .font(DS.Typography.labelTiny)
+                        .accessibilityHidden(true)
+                    Text(L10n.ContextualGuide.label)
+                        .font(DS.Typography.labelTiny.weight(.bold))
+                        .tracking(0.8)
+                    Spacer(minLength: DS.Spacing.xs)
+                    Button {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            dismissed = true
+                        }
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(DS.Typography.labelSmall.weight(.semibold))
+                            .foregroundStyle(.thSecondaryText)
+                            .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, -DS.Spacing.sm)
+                    .accessibilityLabel(L10n.ContextualGuide.dismiss)
+                    .accessibilityIdentifier("contextual_guide_dismiss")
+                }
+                .foregroundStyle(theme.accent)
+
+                Text(title)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+
+                Text(message)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.thSecondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .yalaCard(padding: DS.Spacing.md, radius: DS.Radius.md, shadow: false)
+        .accessibilityElement(children: .contain)
+        .transition(.asymmetric(
+            insertion: .opacity,
+            removal: .opacity.combined(with: .scale(scale: 0.95))
+        ))
+    }
+
+    /// El aviso fijo (no se cierra), como el resumen del filtro de un presupuesto: sigue con su molde.
+    private var infoCard: some View {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 HStack(alignment: .top, spacing: DS.Spacing.sm) {
                     Image(systemName: icon)
@@ -60,30 +127,8 @@ struct ContextualGuideBanner: View {
 
                     Spacer(minLength: 0)
                 }
-
-                if isDismissible {
-                    HStack {
-                        Spacer()
-                        Button {
-                            withAnimation(.easeOut(duration: 0.25)) {
-                                dismissed = true
-                            }
-                        } label: {
-                            Text(L10n.ContextualGuide.dismiss)
-                                .font(DS.Typography.labelSmall)
-                                .foregroundStyle(.thAccent)
-                                .padding(.horizontal, DS.Spacing.md)
-                                .padding(.vertical, DS.Spacing.xs)
-                        }
-                    }
-                }
             }
             .yalaCard(padding: DS.Spacing.md, radius: DS.Radius.md, shadow: false)
-            .transition(.asymmetric(
-                insertion: .opacity,
-                removal: .opacity.combined(with: .scale(scale: 0.95))
-            ))
-        }
     }
 }
 
@@ -93,6 +138,10 @@ extension L10n {
     enum ContextualGuide {
         static var dismiss: String {
             NSLocalizedString("contextualGuide.dismiss", comment: "Dismiss contextual guide")
+        }
+        /// Rótulo «GUÍA» de la tarjeta de ayuda (UX 2.2 · L5-8).
+        static var label: String {
+            NSLocalizedString("contextualGuide.label", comment: "Small uppercase label on a guide card")
         }
     }
 }
@@ -173,39 +222,12 @@ extension ContextualGuideBanner {
         )
     }
 
-    static func budgetEditor() -> ContextualGuideBanner {
-        ContextualGuideBanner(
-            guideID: "budgetEditor",
-            icon: "chart.pie.fill",
-            title: L10n.ContextualGuide.BudgetEditor.title,
-            message: L10n.ContextualGuide.BudgetEditor.message
-        )
-    }
-
-    static func scheduledEditor() -> ContextualGuideBanner {
-        ContextualGuideBanner(
-            guideID: "scheduledEditor",
-            icon: "calendar.badge.clock",
-            title: L10n.ContextualGuide.ScheduledEditor.title,
-            message: L10n.ContextualGuide.ScheduledEditor.message
-        )
-    }
-
     static func comparative() -> ContextualGuideBanner {
         ContextualGuideBanner(
             guideID: "comparative",
             icon: "arrow.left.arrow.right",
             title: L10n.ContextualGuide.Comparative.title,
             message: L10n.ContextualGuide.Comparative.message
-        )
-    }
-
-    static func cashflow() -> ContextualGuideBanner {
-        ContextualGuideBanner(
-            guideID: "cashflow",
-            icon: "chart.bar.fill",
-            title: L10n.ContextualGuide.CashFlow.title,
-            message: L10n.ContextualGuide.CashFlow.message
         )
     }
 
@@ -358,39 +380,12 @@ extension L10n.ContextualGuide {
         }
     }
 
-    enum BudgetEditor {
-        static var title: String {
-            NSLocalizedString("guide.budgetEditor.title", comment: "Budget editor guide title")
-        }
-        static var message: String {
-            NSLocalizedString("guide.budgetEditor.message", comment: "Budget editor guide message")
-        }
-    }
-
-    enum ScheduledEditor {
-        static var title: String {
-            NSLocalizedString("guide.scheduledEditor.title", comment: "Scheduled editor guide title")
-        }
-        static var message: String {
-            NSLocalizedString("guide.scheduledEditor.message", comment: "Scheduled editor guide message")
-        }
-    }
-
     enum Comparative {
         static var title: String {
             NSLocalizedString("guide.comparative.title", comment: "Comparative guide title")
         }
         static var message: String {
             NSLocalizedString("guide.comparative.message", comment: "Comparative guide message")
-        }
-    }
-
-    enum CashFlow {
-        static var title: String {
-            NSLocalizedString("guide.cashflow.title", comment: "Cash flow guide title")
-        }
-        static var message: String {
-            NSLocalizedString("guide.cashflow.message", comment: "Cash flow guide message")
         }
     }
 

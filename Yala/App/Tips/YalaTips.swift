@@ -23,6 +23,8 @@ extension View {
 
 // MARK: - Grupo D: Tour de Settings
 
+/// UX 2.2 · L5-9 (opción A): tres pasos, lo que una persona nueva necesita saber dónde está —dónde se corrige el
+/// saldo, dónde se personaliza y dónde están los tutoriales—. Antes eran nueve que leían el nombre de cada fila.
 enum SettingsTourSteps {
     static let steps: [CoachMarkStep] = [
         CoachMarkStep(
@@ -31,39 +33,9 @@ enum SettingsTourSteps {
             message: L10n.TipKit.settingsAccountsMessage
         ),
         CoachMarkStep(
-            id: "settingsCategories",
-            title: L10n.TipKit.settingsCategories,
-            message: L10n.TipKit.settingsCategoriesMessage
-        ),
-        CoachMarkStep(
-            id: "settingsTags",
-            title: L10n.TipKit.settingsTags,
-            message: L10n.TipKit.settingsTagsMessage
-        ),
-        CoachMarkStep(
-            id: "settingsBudgets",
-            title: L10n.TipKit.settingsBudgets,
-            message: L10n.TipKit.settingsBudgetsMessage
-        ),
-        CoachMarkStep(
-            id: "settingsPlanned",
-            title: L10n.TipKit.settingsPlanned,
-            message: L10n.TipKit.settingsPlannedMessage
-        ),
-        CoachMarkStep(
             id: "settingsPersonalization",
             title: L10n.TipKit.settingsPersonalization,
             message: L10n.TipKit.settingsPersonalizationMessage
-        ),
-        CoachMarkStep(
-            id: "settingsAppIcon",
-            title: L10n.TipKit.settingsAppIcon,
-            message: L10n.TipKit.settingsAppIconMessage
-        ),
-        CoachMarkStep(
-            id: "settingsTheme",
-            title: L10n.TipKit.settingsTheme,
-            message: L10n.TipKit.settingsThemeMessage
         ),
         CoachMarkStep(
             id: "settingsTutorials",
@@ -141,19 +113,30 @@ enum ProTourSteps {
         ),
     ]
 
-    /// Phase 2: PanelView — FAB with voice/image options + chat assistant
-    static let panelSteps: [CoachMarkStep] = [
-        CoachMarkStep(
-            id: "fab",
-            title: L10n.TipKit.proFabTitle,
-            message: L10n.TipKit.proFabMessage
-        ),
-        CoachMarkStep(
-            id: "proChatFab",
-            title: L10n.TipKit.proChatFabTitle,
-            message: L10n.TipKit.proChatFabMessage
-        ),
-    ]
+    /// Phase 2: PanelView — la fila de acciones de arriba (UX 2.2 · L5-12, opción A): un paso sobre «Voz» y «Foto» y
+    /// otro sobre «IA». Antes señalaba un «+» flotante que solo salía durante el tour y que el Panel de verdad no tiene
+    /// arriba. Sin la píldora de IA (el usuario la escondió), su paso no se monta: apuntaría a una vista que no existe.
+    static func panelSteps(includesAssistant: Bool) -> [CoachMarkStep] {
+        var steps = [
+            CoachMarkStep(
+                id: panelVoiceImageAnchor,
+                title: L10n.TipKit.proQuickEntryTitle,
+                message: L10n.TipKit.proQuickEntryMessage
+            ),
+        ]
+        if includesAssistant {
+            steps.append(CoachMarkStep(
+                id: panelAssistantAnchor,
+                title: L10n.TipKit.proChatFabTitle,
+                message: L10n.TipKit.proQuickAIMessage
+            ))
+        }
+        return steps
+    }
+
+    /// Los anclas de la fila de acciones del Panel (`PanelQuickActionsRow`).
+    static let panelVoiceImageAnchor = "proQuickVoiceImage"
+    static let panelAssistantAnchor = "proQuickAI"
 
     /// Phase 3: InsightsTabView — AI summary button
     static let insightsSteps: [CoachMarkStep] = [

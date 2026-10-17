@@ -103,6 +103,23 @@ final class FavoriteEditorViewModel {
         }
     }
 
+    /// «Eliminar favorito» desde el editor (auditoría UX 2.2, lote 7, L7-14). Lo mismo que deslizar la fila.
+    func deleteFavorite(_ favorite: FavoritePayment) -> Bool {
+        guard let context = modelContext else { return false }
+        context.delete(favorite)
+        do {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+            return true
+        } catch {
+            #if DEBUG
+            print("FavoriteEditorViewModel: Error deleting favorite: \(error)")
+            #endif
+            showSaveError = true
+            return false
+        }
+    }
+
     func dismissSaveError() {
         showSaveError = false
     }

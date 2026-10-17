@@ -51,7 +51,7 @@ final class FirstExpensePracticeAlertUITests: XCTestCase {
             accept.waitForExistence(timeout: 10),
             "No apareció la pantalla de éxito: el aviso «¿era de prueba?» cerró el formulario antes de tiempo."
         )
-        let keep = app.alerts.buttons["Conservar"]
+        let keep = app.alerts.buttons["Guardarlo"]  // UX 2.2 · L5-5: antes «Conservar»
         XCTAssertFalse(keep.exists, "El aviso «¿era de prueba?» salió encima de la pantalla de éxito.")
         // Se espera: la pantalla de éxito entra con animación y `isHittable` da `false` mientras se desliza.
         XCTAssertTrue(accept.waitForHittable(timeout: 5), "La pantalla de éxito está tapada.")
@@ -63,10 +63,10 @@ final class FirstExpensePracticeAlertUITests: XCTestCase {
         // botones de un `.alert` no llevan identificador.
         XCTAssertTrue(
             keep.waitForExistence(timeout: 10),
-            "Tras cerrar la pantalla de éxito no apareció el aviso «¿era de prueba?» (botón «Conservar»)."
+            "Tras cerrar la pantalla de éxito no apareció el aviso «¿era de prueba?» (botón «Guardarlo»)."
         )
         keep.tap()
-        XCTAssertTrue(keep.waitForNonExistence(timeout: 5), "El aviso no se cerró con «Conservar».")
+        XCTAssertTrue(keep.waitForNonExistence(timeout: 5), "El aviso no se cerró con «Guardarlo».")
         XCTAssertTrue(newRecord.waitForHittable(timeout: 10), "Tras el aviso el Panel no quedó usable.")
     }
 }

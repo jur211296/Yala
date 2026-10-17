@@ -71,6 +71,12 @@
   antes del rediseño. Los sustituye **un solo eje**: ¿hay sesión privada en este teléfono? Se
   persiste en el dispositivo y **no viaja** por el iCloud del Apple ID, que es lo que impide que la
   shell de un móvil se la recorte otro.
+- **registro · moneda** — en pantalla, lo que la persona apunta es un **registro** (la pestaña
+  «Registros»), nunca «transacción» ni «movimiento»; y el dinero va en una **moneda**, nunca
+  «divisa» («Moneda principal», «Monedas secundarias», «Moneda y tipo de cambio»). Cada idioma usa
+  el término de su `tab.records`: record, Eintrag, enregistrement, registrazione, registro (pt-PT
+  registo), boeking, wpis, 記録, 记录. Decisión L7-18 de la auditoría UX 2.2. Excepción: la
+  «transacción» de Apple Wallet en el atajo de Apple Pay, que es el término de Apple.
 <!-- GLOSARIO:manual:fin -->
 
 <!-- GLOSARIO:generado:inicio - no editar a mano -->

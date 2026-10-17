@@ -42,10 +42,13 @@ final class SetupChecklistManager {
     /// Completion state for each step.
     private(set) var stepCompleted: [SetupStepID: Bool] = [:]
 
+    /// Pasos saltados con «Ahora no» (UX 2.2 · L5-2). No cuentan como hechos; sí cierran la lista.
+    private(set) var stepSkipped: [SetupStepID: Bool] = [:]
+
     /// Whether the user has collapsed the card.
     private(set) var isCollapsed: Bool = false
 
-    /// Whether all 8 steps are completed.
+    /// Whether every step is resolved: done, or skipped with «Ahora no» (UX 2.2 · L5-2).
     private(set) var isAllComplete: Bool = false
 
     /// Date when all steps were completed (nil if not yet).
@@ -72,20 +75,22 @@ final class SetupChecklistManager {
         return Double(completedCount) / Double(totalCount)
     }
 
-    /// All steps with their current state, in order.
-    /// Sequential locking: only the first pending step is unlocked.
+    /// All steps with their current state, in order. None is locked (UX 2.2 · L5-1): any step can be tapped.
     var steps: [SetupStep] {
-        let firstPendingID = SetupStepID.allCases.first { stepCompleted[$0] != true }
-        return SetupStepID.allCases.map { id in
+        SetupStepID.allCases.map { id in
             let completed = stepCompleted[id] ?? false
-            let isLocked = !completed && id != firstPendingID
-            return SetupStep(id: id, isCompleted: completed, isLocked: isLocked)
+            return SetupStep(id: id, isCompleted: completed, isSkipped: !completed && stepSkipped[id] == true)
         }
     }
 
-    /// First incomplete step (the "current" one to highlight).
+    /// First step neither done nor skipped (the "current" one to highlight).
     var currentStep: SetupStep? {
-        steps.first { !$0.isCompleted && !$0.isLocked }
+        steps.first { !$0.isCompleted && !$0.isSkipped }
+    }
+
+    /// Si se saltó algún paso con «Ahora no»: el final de la lista ya no dice «¡Ya eres experto!» (UX 2.2 · L5-2).
+    var hasSkippedSteps: Bool {
+        SetupStepID.allCases.contains { stepCompleted[$0] != true && stepSkipped[$0] == true }
     }
 
     /// Whether the checklist card should be visible.
@@ -118,8 +123,16 @@ final class SetupChecklistManager {
         return Date.now.timeIntervalSince(date) < 5
     }
 
-    /// Pending practice cleanup item (set by editors, consumed by PanelView).
+    /// Pending practice cleanup item (set by editors, consumed by PanelView or by Planning — UX 2.2 · L5-5).
     var pendingPracticeCleanup: PracticeCleanupItem?
+
+    /// Toma la pregunta pendiente si es de uno de estos pasos (Planificación pregunta por el presupuesto y el pago al
+    /// cerrar su editor, UX 2.2 · L5-5). La deja en su sitio si es de otro paso: esa la hace el Panel.
+    func takePendingPracticeCleanup(for steps: Set<SetupStepID>) -> PracticeCleanupItem? {
+        guard let pending = pendingPracticeCleanup, steps.contains(pending.stepID) else { return nil }
+        pendingPracticeCleanup = nil
+        return pending
+    }
 
     /// Lo que pasa al completar «Primeros pasos»: la oferta de prueba (UX 2.2 · L1-12, `TrialOfferMomentLogic`).
     /// Inyectable porque el de producción escribe en `SessionState` y pide al router, y un test que complete la
@@ -143,12 +156,24 @@ final class SetupChecklistManager {
         }
 
         stepCompleted[step] = true
+        stepSkipped[step] = false
         UserDefaults.standard.set(true, forKey: step.storageKey)
+        UserDefaults.standard.removeObject(forKey: step.skippedStorageKey)
 
         #if DEBUG
         print("SetupChecklist: Step \(step.rawValue) completed (\(completedCount)/\(totalCount))")
         #endif
 
+        checkAllComplete()
+    }
+
+    /// «Ahora no» en la práctica de voz o de foto (UX 2.2 · L5-2): el paso queda saltado, no hecho. No suma al
+    /// progreso, se ve en gris con «Probar», y si con él se resuelve la lista, el final no dice «¡Ya eres experto!».
+    /// Antes «Ahora no» lo marcaba como hecho, con ✓.
+    func markSkipped(_ step: SetupStepID) {
+        guard stepCompleted[step] != true, stepSkipped[step] != true else { return }
+        stepSkipped[step] = true
+        UserDefaults.standard.set(true, forKey: step.skippedStorageKey)
         checkAllComplete()
     }
 
@@ -181,7 +206,12 @@ final class SetupChecklistManager {
 
     /// Si marcar `step` completaría «Primeros pasos»: es el único paso que falta.
     func wouldCompleteAll(by step: SetupStepID) -> Bool {
-        !isAllComplete && SetupStepID.allCases.allSatisfy { $0 == step || stepCompleted[$0] == true }
+        !isAllComplete && SetupStepID.allCases.allSatisfy { $0 == step || isResolved($0) }
+    }
+
+    /// Hecho o saltado: ya no falta para cerrar la lista.
+    private func isResolved(_ step: SetupStepID) -> Bool {
+        stepCompleted[step] == true || stepSkipped[step] == true
     }
 
     /// Lo recién guardado es lo único de su tipo: no había nada antes.
@@ -261,6 +291,7 @@ final class SetupChecklistManager {
         let defaults = UserDefaults.standard
         for step in SetupStepID.allCases {
             defaults.removeObject(forKey: step.storageKey)
+            defaults.removeObject(forKey: step.skippedStorageKey)
         }
         defaults.removeObject(forKey: Keys.collapsed)
         defaults.removeObject(forKey: Keys.collapsedAtSession)
@@ -270,6 +301,7 @@ final class SetupChecklistManager {
         // Keep isNewInstall — a new install remains new after wipe
 
         stepCompleted = [:]
+        stepSkipped = [:]
         isCollapsed = false
         isAllComplete = false
         isCompletedDismissed = false
@@ -283,6 +315,7 @@ final class SetupChecklistManager {
 
         for step in SetupStepID.allCases {
             stepCompleted[step] = defaults.bool(forKey: step.storageKey)
+            stepSkipped[step] = defaults.bool(forKey: step.skippedStorageKey)
         }
 
         isCollapsed = defaults.bool(forKey: Keys.collapsed)
@@ -298,7 +331,7 @@ final class SetupChecklistManager {
     private func checkAllComplete() {
         guard !isAllComplete else { return }
 
-        let allDone = SetupStepID.allCases.allSatisfy { stepCompleted[$0] == true }
+        let allDone = SetupStepID.allCases.allSatisfy { isResolved($0) }
         if allDone {
             isAllComplete = true
             completedAllDate = .now

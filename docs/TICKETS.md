@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (940)
+## Index (941)
 
 | id | status | path |
 |---|---|---|
@@ -748,7 +748,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | restore-beacon-outlives-account-deletion | backlog | tickets/backlog/restore-beacon-outlives-account-deletion.md |
 | restore-empty-state-resolution-cannot-be-cancelled | backlog | tickets/backlog/restore-empty-state-resolution-cannot-be-cancelled.md |
 | restore-error-state-is-never-reached | backlog | tickets/backlog/restore-error-state-is-never-reached.md |
-| restore-found-copy-says-icloud-for-groups-that-never-were | backlog | tickets/backlog/restore-found-copy-says-icloud-for-groups-that-never-were.md |
+| restore-found-copy-says-icloud-for-groups-that-never-were | qa | tickets/qa/restore-found-copy-says-icloud-for-groups-that-never-were.md |
 | restore-found-state-leaves-no-breadcrumb | backlog | tickets/backlog/restore-found-state-leaves-no-breadcrumb.md |
 | restore-gate-claims-a-wipe-this-device-did-not-do | backlog | tickets/backlog/restore-gate-claims-a-wipe-this-device-did-not-do.md |
 | restore-prefill-skips-currency-for-an-empty-summary | backlog | tickets/backlog/restore-prefill-skips-currency-for-an-empty-summary.md |
@@ -961,6 +961,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | backlog | tickets/backlog/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
+| whats-new-2-2-review-before-release | backlog | tickets/backlog/whats-new-2-2-review-before-release.md |
 | widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
 | widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |

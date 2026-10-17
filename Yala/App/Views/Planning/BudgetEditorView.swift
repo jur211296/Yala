@@ -67,10 +67,9 @@ struct BudgetEditorView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
-                    // Contextual guide for new users creating first budget
-                    if budget == nil {
-                        ContextualGuideBanner.budgetEditor()
-                    }
+                    // Sin banner «¿Qué es un presupuesto?» (UX 2.2 · L5-6, opción A): Planificación ya lo explica y el
+                    // editor trae sus propias ayudas por sección; con los dos, la misma idea salía dos veces y el
+                    // formulario bajaba.
 
                     // Basic Information Section
                     basicInfoSection
@@ -163,6 +162,7 @@ struct BudgetEditorView: View {
                 guard didLoadInitialData else { return }
                 updateCurrencyFromAccounts(newAccounts)
             }
+            .modifier(BudgetAlertNotificationPrimer(alertEnabled: alertEnabled, isLoaded: didLoadInitialData))
             .onChange(of: viewModel.showSaveError) { _, new in if new { showSaveError = true } }
             .alert(
                 L10n.Common.error,

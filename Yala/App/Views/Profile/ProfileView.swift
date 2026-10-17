@@ -59,6 +59,11 @@ struct ProfileView: View {
     @State private var showUpgradeForInsights = false
     @State private var showUpgradeForChat = false
     @State private var showSupportSheet = false
+    /// Ajustes › Ayuda › Novedades (UX 2.2 · L5-15).
+    @State private var showWhatsNewSheet = false
+    private static var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    }
 
     // Coach mark: Settings tour
     @State private var showSettingsTour = false
@@ -1641,6 +1646,24 @@ struct ProfileView: View {
                     icon: "questionmark.circle.fill", title: L10n.Settings.faq,
                     iconColor: .orange, destination: .faq)
                 SubsectionDivider()
+                // Volver a ver las Novedades de esta versión (UX 2.2 · L5-15): cerrada la hoja, no había forma.
+                if let whatsNew = WhatsNewConfig.current(version: Self.appVersion) {
+                    Button {
+                        showWhatsNewSheet = true
+                    } label: {
+                        settingsRowContent(
+                            icon: "sparkles", title: L10n.Settings.whatsNew,
+                            iconColor: .pink)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("profile_help_whats_new")
+                    .sheet(isPresented: $showWhatsNewSheet) {
+                        WhatsNewSheet(features: whatsNew.features, version: whatsNew.version) {
+                            showWhatsNewSheet = false
+                        }
+                    }
+                    SubsectionDivider()
+                }
                 Button {
                     showSupportSheet = true
                 } label: {
