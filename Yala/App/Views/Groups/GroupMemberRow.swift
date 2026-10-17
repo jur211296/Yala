@@ -21,6 +21,9 @@ struct GroupMemberRow: View {
     /// leyendo el flag, su PROPIA fila mostraba «quitar» y «cambiar rol» — y el botón funciona:
     /// llama al RPC. Se podía echar de su propio grupo.
     let isSelf: Bool
+    /// `false` en un grupo del canal backend: el servidor no cambia roles y el botón fallaría siempre
+    /// (`GroupService.offersRoleChange`).
+    var offersRoleChange: Bool = true
     let onChangeRole: () -> Void
     let onRemove: () -> Void
     var onApprove: (() -> Void)? = nil
@@ -86,10 +89,12 @@ struct GroupMemberRow: View {
                     }
                 } else if member.isActive {
                     Menu {
-                        Button {
-                            onChangeRole()
-                        } label: {
-                            Label(L10n.Groups.Member.changeRole, systemImage: "arrow.left.arrow.right")
+                        if offersRoleChange {
+                            Button {
+                                onChangeRole()
+                            } label: {
+                                Label(L10n.Groups.Member.changeRole, systemImage: "arrow.left.arrow.right")
+                            }
                         }
 
                         Button(role: .destructive) {

@@ -4843,6 +4843,7 @@ enum L10n {
         static var batchLeaveProgress: String { ls("settings.batchLeaveProgress", comment: "") }
         static var batchLeaveAllDone: String { ls("settings.batchLeaveAllDone", comment: "") }
         static var batchLeaveSomeNeedDecision: String { ls("settings.batchLeaveSomeNeedDecision", comment: "") }
+        static var batchLeaveNoneLeft: String { ls("settings.batchLeaveNoneLeft", comment: "") }
         static var batchLeaveStatLeft: String { ls("settings.batchLeaveStatLeft", comment: "") }
         static var batchLeaveStatTransferred: String { ls("settings.batchLeaveStatTransferred", comment: "") }
         static var batchLeaveNeedsDecisionHeader: String { ls("settings.batchLeaveNeedsDecisionHeader", comment: "") }
@@ -7421,6 +7422,9 @@ enum L10n {
             }
             static func modifiedExpense(_ member: String, _ desc: String, _ myShare: String) -> String {
                 String(format: ls("notifications.groups.modifiedExpense", comment: ""), member, desc, myShare)
+            }
+            static func modifiedExpenseNoDesc(_ member: String, _ myShare: String) -> String {
+                String(format: ls("notifications.groups.modifiedExpenseNoDesc", comment: ""), member, myShare)
             }
             static func settlement(_ member: String, _ amount: String) -> String {
                 String(format: ls("notifications.groups.settlement", comment: ""), member, amount)

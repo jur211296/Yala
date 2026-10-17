@@ -2370,6 +2370,7 @@
 "notifications.groups.newExpense" = "🧾 %1$@ added '%2$@' — you owe %3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@ added an expense — you owe %2$@";
 "notifications.groups.modifiedExpense" = "✏️ %1$@ updated '%2$@' — you owe %3$@";
+"notifications.groups.modifiedExpenseNoDesc" = "✏️ %1$@ updated an expense — you owe %2$@";
 "notifications.groups.settlement" = "💸 %@ paid you %@!";
 "notifications.groups.newMember" = "🙌 %@ joined the group";
 "notifications.groups.multipleChanges" = "📋 %d new updates to review";
@@ -5137,6 +5138,7 @@
 
 /* D10 batch: result headline when some need decision */
 "settings.batchLeaveSomeNeedDecision" = "You've left some groups.";
+"settings.batchLeaveNoneLeft" = "You haven't left any groups.";
 
 /* D10 batch: stat label for groups left/deleted */
 "settings.batchLeaveStatLeft" = "Left";

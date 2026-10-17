@@ -2370,6 +2370,7 @@
 "notifications.groups.newExpense" = "🧾 %1$@さんが「%2$@」を追加 — あなたの負担は%3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@さんが支出を追加 — あなたの負担は%2$@";
 "notifications.groups.modifiedExpense" = "✏️ %1$@さんが「%2$@」を更新 — あなたの負担は%3$@";
+"notifications.groups.modifiedExpenseNoDesc" = "✏️ %1$@さんが支出を更新 — あなたの負担は%2$@";
 "notifications.groups.settlement" = "💸 %@さんがあなたに%@を支払いました";
 "notifications.groups.newMember" = "🙌 %@さんがグループに参加しました";
 "notifications.groups.multipleChanges" = "📋 新着%d件";
@@ -5143,6 +5144,7 @@
 
 /* D10 batch: result headline when some need decision */
 "settings.batchLeaveSomeNeedDecision" = "一部のグループから退出しました。";
+"settings.batchLeaveNoneLeft" = "どのグループからも退出していません。";
 
 /* D10 batch: stat label for groups left/deleted */
 "settings.batchLeaveStatLeft" = "退出済み";

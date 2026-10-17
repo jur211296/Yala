@@ -111,9 +111,10 @@ struct GroupMembersView: View {
                     openingBalanceToEdit = nil
                     showOpeningBalanceEditor = true
                 }
-                Button(L10n.Groups.OpeningBalance.approvalPromptSkip, role: .cancel) {
+                Button(L10n.Groups.OpeningBalance.approvalPromptSkip) {
                     openingBalancePrefillDebtor = nil
                 }
+                .accessibilityIdentifier("opening_balance_prompt_skip")
             } message: {
                 Text(L10n.Groups.OpeningBalance.approvalPromptBody)
             }
@@ -125,6 +126,8 @@ struct GroupMembersView: View {
                 Button(L10n.Groups.Member.remove, role: .destructive) {
                     removeMember()
                 }
+                Button(L10n.Common.cancel) { memberToRemove = nil }
+                    .accessibilityIdentifier("group_member_remove_cancel")
             } message: {
                 if memberToRemoveHasDebt {
                     Text(L10n.Groups.Member.removeWithDebtWarning)
@@ -138,7 +141,8 @@ struct GroupMembersView: View {
                 titleVisibility: .visible
             ) {
                 Button(L10n.Groups.Member.approve) { performApprove() }
-                Button(L10n.Common.cancel, role: .cancel) { pendingActionMember = nil }
+                Button(L10n.Common.cancel) { pendingActionMember = nil }
+                    .accessibilityIdentifier("group_member_approve_cancel")
             }
             .confirmationDialog(
                 pendingActionMember.map { L10n.Groups.Member.rejectConfirm($0.displayName) } ?? "",
@@ -146,7 +150,8 @@ struct GroupMembersView: View {
                 titleVisibility: .visible
             ) {
                 Button(L10n.Groups.Member.reject, role: .destructive) { performReject() }
-                Button(L10n.Common.cancel, role: .cancel) { pendingActionMember = nil }
+                Button(L10n.Common.cancel) { pendingActionMember = nil }
+                    .accessibilityIdentifier("group_member_reject_cancel")
             }
             .alert(L10n.Common.error, isPresented: $showPendingError) {
                 Button(L10n.Common.ok) {}
@@ -176,7 +181,9 @@ struct GroupMembersView: View {
     private var canActAsAdmin: Bool { viewModel.isCurrentUserAdmin && !group.isMigratedFrozen }
 
     private var membersSection: some View {
-        SectionBox(title: L10n.Groups.Settings.members) {
+        // Una vez por render y no por fila: con el canal backend encendido, la pregunta hace un fetch de la zona.
+        let offersRoleChange = GroupService.shared.offersRoleChange(in: group)
+        return SectionBox(title: L10n.Groups.Settings.members) {
             VStack(spacing: DS.Spacing.none) {
                 ForEach(viewModel.visibleMembers, id: \.id) { member in
                     GroupMemberRow(
@@ -192,6 +199,7 @@ struct GroupMembersView: View {
                         // justo la regresión que este parámetro venía a evitar.
                         isSelf: member.isCurrentUser
                             || member.id.uuidString == viewModel.currentMemberID,
+                        offersRoleChange: offersRoleChange,
                         onChangeRole: { changeRole(member) },
                         onRemove: {
                             memberToRemove = member
@@ -284,25 +292,21 @@ struct GroupMembersView: View {
     }
 
     private func performReject() {
-        runPendingMemberAction(label: "rejectMember", GroupService.shared.rejectMember)
-    }
-
-    private func runPendingMemberAction(
-        label: String,
-        _ action: (SplitMember, SplitGroup) throws -> Void
-    ) {
         guard let member = pendingActionMember else { return }
-        do {
-            try action(member, group)
-            viewModel.loadData()
-        } catch {
-            pendingErrorMessage = GroupActionErrorLogic.message(for: error)
-            showPendingError = true
-            #if DEBUG
-            print("GroupMembersView: \(label) failed: \(error)")
-            #endif
+        // `rejectMember` es `async` desde el lote 19: en un grupo del canal backend va al servidor (`remove_member`).
+        Task {
+            do {
+                try await GroupService.shared.rejectMember(member, in: group)
+                viewModel.loadData()
+            } catch {
+                pendingErrorMessage = GroupActionErrorLogic.message(for: error)
+                showPendingError = true
+                #if DEBUG
+                print("GroupMembersView: rejectMember failed: \(error)")
+                #endif
+            }
+            pendingActionMember = nil
         }
-        pendingActionMember = nil
     }
 
     // MARK: - Opening Balance Section

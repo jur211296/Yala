@@ -70,8 +70,8 @@ final class GroupService {
     /// `flag && group.isBackendGroup`, y con un `SplitGroup` DUPLICADO **mixto** en la zona el MISMO grupo se
     /// enrutaba por un canal u otro según qué fila tuviera el caller en la mano: los siete call-sites de esta
     /// función eligen entre «RPC server-first» y «CloudKit», y equivocarse hacia CloudKit produce un ÉXITO
-    /// LOCAL FALSO —`leaveGroup` no llama a `leave_group`, `approveMember`/`removeMember` no llaman a su RPC,
-    /// los dos guards defensivos de `rejectMember`/`changeRole` dejan de lanzar— con el usuario intacto
+    /// LOCAL FALSO —`leaveGroup` no llama a `leave_group`, `approveMember`/`removeMember`/`rejectMember` no llaman a
+    /// su RPC, el guard defensivo de `changeRole` deja de lanzar— con el usuario intacto
     /// server-side (y, en el caso del leave, todavía `is_group_writer`).
     ///
     /// El fetch degrada a la fila en mano si no hay contexto o si lanza: nunca peor que el criterio anterior.
@@ -429,11 +429,52 @@ final class GroupService {
         try transitionPendingMember(member, to: .active, in: group)
     }
 
-    /// admin rejects a pending member's request, marking them as rejected and enqueuing sync.
-    func rejectMember(_ member: SplitMember, in group: SplitGroup) throws {
-        // Guard defensivo (review G5-A): sin routing backend para reject — evitar falso éxito local.
-        guard !routesMembershipToBackend(group) else { throw GroupServiceError.backendActionUnavailable }
-        try transitionPendingMember(member, to: .rejected, in: group)
+    /// admin rejects a pending member's request, marking them as rejected.
+    ///
+    /// Grupo del canal backend: `remove_member` SERVER-FIRST, que deja `rejected` si el objetivo estaba pendiente
+    /// (golden «A rechaza» de `gateway/test/groups.goldens.test.ts`). Hasta el lote 19 de la auditoría UX esta rama
+    /// lanzaba `backendActionUnavailable` y «Rechazar» fallaba SIEMPRE en un grupo de la nube con «Vuelve a
+    /// intentarlo», que no arreglaba nada.
+    ///
+    /// **Lo que NO cubre, y es el residual de usar `remove_member`:** ese RPC acepta también a un miembro ACTIVO y lo
+    /// deja `removed`. Si otro admin (u otro dispositivo de este) aprobó la solicitud y este teléfono aún no lo ha
+    /// bajado, rechazar EXPULSA a quien ya estaba dentro. Las comprobaciones locales van antes del RPC y frenan lo que
+    /// este teléfono sabe (una fila que aquí ya no está pendiente), no lo que solo sabe el servidor. El cierre de
+    /// verdad es un `reject_member` que exija `pendingApproval` (ticket
+    /// `groups-reject-can-expel-a-member-approved-elsewhere`). Mientras tanto, el estado local sigue a la respuesta:
+    /// `removed` si el servidor dice que ya era miembro, no un `rejected` que nunca ocurrió. Quien sale así puede volver
+    /// a entrar con el enlace (el re-join lo deja otra vez pendiente).
+    func rejectMember(_ member: SplitMember, in group: SplitGroup) async throws {
+        var localOutcome: SplitMemberStatus = .rejected
+        if routesMembershipToBackend(group) {
+            try validatePendingTransition(member, in: group)
+            guard let memberKey = member.memberKey else { throw GroupServiceError.missingMemberKey }
+            let result = try await backendMembershipFactory().remove(
+                groupID: group.cloudKitZoneID, memberKey: memberKey)
+            localOutcome = Self.localStatusAfterRejectRPC(result.status)
+        }
+        try transitionPendingMember(member, to: localOutcome, in: group)
+    }
+
+    /// El estado local tras el `remove_member` de un rechazo: el que dice el servidor. `removed` solo si ya era miembro.
+    static func localStatusAfterRejectRPC(_ serverStatus: String) -> SplitMemberStatus {
+        serverStatus == "removed" ? .removed : .rejected
+    }
+
+    /// ¿Ofrece la app «Cambiar rol» en este grupo? No en uno del canal backend: el servidor no tiene cómo cambiar un
+    /// rol (`group_members` está congelado para UPDATE directo y no hay RPC), así que `changeRole` lanzaría siempre
+    /// `backendActionUnavailable`. Lote 19 de la auditoría UX: el botón estaba a la vista y fallaba siempre.
+    func offersRoleChange(in group: SplitGroup) -> Bool {
+        !routesMembershipToBackend(group)
+    }
+
+    /// Las comprobaciones de `transitionPendingMember`, sin escribir nada.
+    private func validatePendingTransition(_ member: SplitMember, in group: SplitGroup) throws {
+        let context = try requireContext()
+        try validateGroupIsWritable(group)
+        try requireCurrentUserAdmin(in: group, context: context)
+        guard member.groupZoneID == group.cloudKitZoneID else { throw GroupServiceError.memberNotInGroup }
+        guard member.isPendingApproval else { throw GroupServiceError.notPendingApproval }
     }
 
     private func transitionPendingMember(
@@ -1770,9 +1811,10 @@ enum GroupServiceError: LocalizedError {
             // — el materializador siempre lo setea). Reusa la copy genérica de acción fallida.
             return L10n.Groups.Errors.actionFailed
         case .backendActionUnavailable:
-            // Guard defensivo (review G5-A, lente CloudKit #3): reject/changeRole NO están ruteados al
-            // backend (no existe RPC de cambio de rol; el reject se ruteará junto al resto en G6) — sin
-            // este guard mutarían local sin sync, dando falsa sensación de éxito hasta que el pull revierta.
+            // Guard defensivo (review G5-A, lente CloudKit #3): changeRole NO está ruteado al backend (no existe
+            // RPC de cambio de rol) — sin este guard mutaría local sin sync, dando falsa sensación de éxito hasta
+            // que el pull revierta. Desde el lote 19 la UI no lo ofrece ahí (`offersRoleChange`), y el reject sí va
+            // al backend (`remove_member`).
             return L10n.Groups.Errors.actionFailed
         case .movedToBackend:
             return L10n.Groups.Errors.movedToBackend

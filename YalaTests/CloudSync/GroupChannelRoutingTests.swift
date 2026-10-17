@@ -239,4 +239,231 @@ struct GroupChannelRoutingTests {
         #expect(s.callCount == 0)                          // guard antes del RPC
         #expect(member.memberStatus == .pendingApproval)   // local INTACTO
     }
+
+    // MARK: - Lote 19 · Rechazar va al servidor; «Cambiar rol» no se ofrece donde no existe
+
+    /// Grupo del canal backend + flag ON → `rejectMember` va SERVER-FIRST por `remove_member` (que deja `rejected`
+    /// a un pendiente) y luego marca `.rejected` en local. Hasta el lote 19 lanzaba `backendActionUnavailable`.
+    @Test func rejectMember_backendGroup_flagOn_callsRemoveRPC_thenRejectsLocally() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        GroupService.shared.setContext(context)
+
+        let prevFactory = GroupService.shared.backendMembershipFactory
+        defer {
+            GroupService.shared.backendMembershipFactory = prevFactory
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let s = stub(#"{"group_id":"g","member_key":"mk-dani","status":"rejected"}"#)
+        GroupService.shared.backendMembershipFactory = { self.makeService(s) }
+
+        let group = SplitGroup(name: "Trip")
+        group.isOwner = true
+        group.isBackendGroup = true
+        context.insert(group)
+        let member = SplitMember(groupZoneID: group.cloudKitZoneID, displayName: "Dani",
+                                 cloudKitUserRecordID: "", role: "member", status: .pendingApproval)
+        member.memberKey = "mk-dani"
+        context.insert(member)
+        try context.save()
+
+        try await GroupService.shared.rejectMember(member, in: group)
+
+        #expect(s.callCount == 1)
+        #expect(s.lastRequest?.url?.lastPathComponent == "remove_member")
+        #expect(member.memberStatus == .rejected)
+        let body = try #require(s.lastRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["p_group_id"] as? String == group.cloudKitZoneID)
+        #expect(json["p_member_key"] as? String == "mk-dani")
+    }
+
+    /// Un miembro que aquí ya NO está pendiente no llega a la red: `remove_member` sobre un activo lo expulsaría.
+    @Test func rejectMember_backendGroup_memberNoLongerPending_throwsBeforeRPC() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        GroupService.shared.setContext(context)
+
+        let prevFactory = GroupService.shared.backendMembershipFactory
+        defer {
+            GroupService.shared.backendMembershipFactory = prevFactory
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let s = stub(#"{"group_id":"g","member_key":"mk-eva","status":"removed"}"#)
+        GroupService.shared.backendMembershipFactory = { self.makeService(s) }
+
+        let group = SplitGroup(name: "Trip")
+        group.isOwner = true
+        group.isBackendGroup = true
+        context.insert(group)
+        let member = SplitMember(groupZoneID: group.cloudKitZoneID, displayName: "Eva",
+                                 cloudKitUserRecordID: "", role: "member", status: .active)
+        member.memberKey = "mk-eva"
+        context.insert(member)
+        try context.save()
+
+        await #expect {
+            try await GroupService.shared.rejectMember(member, in: group)
+        } throws: { error in
+            if case GroupServiceError.notPendingApproval = error { return true }
+            return false
+        }
+        #expect(s.callCount == 0)                 // ni una petición
+        #expect(member.memberStatus == .active)   // local intacto
+    }
+
+    /// El resto de comprobaciones previas también frenan ANTES de la red: un miembro de OTRO grupo (el `member_key`
+    /// de un miembro nacido en el backend se repite en todos sus grupos) y quien no administra el grupo.
+    @Test func rejectMember_backendGroup_otherGroupOrNotAdmin_throwBeforeRPC() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        GroupService.shared.setContext(context)
+
+        let prevFactory = GroupService.shared.backendMembershipFactory
+        defer {
+            GroupService.shared.backendMembershipFactory = prevFactory
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let s = stub(#"{"group_id":"g","member_key":"mk","status":"rejected"}"#)
+        GroupService.shared.backendMembershipFactory = { self.makeService(s) }
+
+        let group = SplitGroup(name: "Trip")
+        group.isOwner = true
+        group.isBackendGroup = true
+        context.insert(group)
+        let other = SplitGroup(name: "Otro")
+        other.isBackendGroup = true
+        context.insert(other)
+        let elsewhere = SplitMember(groupZoneID: other.cloudKitZoneID, displayName: "Gabi",
+                                    cloudKitUserRecordID: "", role: "member", status: .pendingApproval)
+        elsewhere.memberKey = "mk-gabi"
+        context.insert(elsewhere)
+        try context.save()
+
+        await #expect {
+            try await GroupService.shared.rejectMember(elsewhere, in: group)
+        } throws: { error in
+            if case GroupServiceError.memberNotInGroup = error { return true }
+            return false
+        }
+
+        let notMine = SplitGroup(name: "Ajeno")
+        notMine.isOwner = false
+        notMine.isBackendGroup = true
+        context.insert(notMine)
+        let pending = SplitMember(groupZoneID: notMine.cloudKitZoneID, displayName: "Hugo",
+                                  cloudKitUserRecordID: "", role: "member", status: .pendingApproval)
+        pending.memberKey = "mk-hugo"
+        context.insert(pending)
+        try context.save()
+
+        await #expect {
+            try await GroupService.shared.rejectMember(pending, in: notMine)
+        } throws: { error in
+            if case GroupServiceError.adminRequired = error { return true }
+            return false
+        }
+
+        #expect(s.callCount == 0)
+        #expect(elsewhere.memberStatus == .pendingApproval)
+        #expect(pending.memberStatus == .pendingApproval)
+    }
+
+    /// Si el servidor ya lo tenía como miembro (lo aprobaron en otro sitio), `remove_member` lo deja `removed`:
+    /// el estado local sigue a la respuesta y no apunta un `rejected` que nunca ocurrió.
+    @Test func rejectMember_backendGroup_serverSaysRemoved_localFollowsTheServer() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        GroupService.shared.setContext(context)
+
+        let prevFactory = GroupService.shared.backendMembershipFactory
+        defer {
+            GroupService.shared.backendMembershipFactory = prevFactory
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = true
+
+        let s = stub(#"{"group_id":"g","member_key":"mk-ines","status":"removed"}"#)
+        GroupService.shared.backendMembershipFactory = { self.makeService(s) }
+
+        let group = SplitGroup(name: "Trip")
+        group.isOwner = true
+        group.isBackendGroup = true
+        context.insert(group)
+        let member = SplitMember(groupZoneID: group.cloudKitZoneID, displayName: "Inés",
+                                 cloudKitUserRecordID: "", role: "member", status: .pendingApproval)
+        member.memberKey = "mk-ines"
+        context.insert(member)
+        try context.save()
+
+        try await GroupService.shared.rejectMember(member, in: group)
+
+        #expect(s.callCount == 1)
+        #expect(member.memberStatus == .removed)
+    }
+
+    @Test func localStatusAfterRejectRPC_followsTheServer() {
+        #expect(GroupService.localStatusAfterRejectRPC("rejected") == .rejected)
+        #expect(GroupService.localStatusAfterRejectRPC("removed") == .removed)
+        #expect(GroupService.localStatusAfterRejectRPC("algo-nuevo") == .rejected)
+    }
+
+    /// Flag OFF → `rejectMember` no toca la red (camino CloudKit de siempre) y marca `.rejected` en local.
+    @Test func rejectMember_flagOff_doesNotCallRPC() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        GroupService.shared.setContext(context)
+
+        let prevFactory = GroupService.shared.backendMembershipFactory
+        defer {
+            GroupService.shared.backendMembershipFactory = prevFactory
+            CloudSyncFlags._testResetGroupsBackendEnabledOverride()
+        }
+        CloudSyncFlags.groupsBackendEnabled = false
+
+        let s = stub(#"{"group_id":"g","member_key":"mk","status":"rejected"}"#)
+        GroupService.shared.backendMembershipFactory = { self.makeService(s) }
+
+        let group = SplitGroup(name: "Trip")
+        group.isOwner = true
+        group.isBackendGroup = true
+        context.insert(group)
+        let member = SplitMember(groupZoneID: group.cloudKitZoneID, displayName: "Fede",
+                                 cloudKitUserRecordID: "", role: "member", status: .pendingApproval)
+        member.memberKey = "mk-fede"
+        context.insert(member)
+        try context.save()
+
+        try await GroupService.shared.rejectMember(member, in: group)
+
+        #expect(s.callCount == 0)
+        #expect(member.memberStatus == .rejected)
+    }
+
+    /// «Cambiar rol» solo se ofrece donde `changeRole` puede funcionar: no en un grupo del canal backend.
+    @Test func offersRoleChange_onlyOutsideTheBackendChannel() throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        GroupService.shared.setContext(context)
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+
+        let backend = SplitGroup(name: "Nube")
+        backend.isBackendGroup = true
+        context.insert(backend)
+        let legacy = SplitGroup(name: "Local")
+        context.insert(legacy)
+        try context.save()
+
+        CloudSyncFlags.groupsBackendEnabled = true
+        #expect(GroupService.shared.offersRoleChange(in: backend) == false)
+        #expect(GroupService.shared.offersRoleChange(in: legacy) == true)
+        CloudSyncFlags.groupsBackendEnabled = false
+        #expect(GroupService.shared.offersRoleChange(in: backend) == true)
+    }
 }

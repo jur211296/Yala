@@ -134,7 +134,9 @@ struct GroupsAssociationSection: View {
                     .accessibilityIdentifier("storage_groups_detach_keep")
                 Button(L10n.Storage.Groups.detachRemove, role: .destructive) { detach(.remove) }
                     .accessibilityIdentifier("storage_groups_detach_remove")
-                Button(L10n.Common.cancel, role: .cancel) {}
+                // Sin `role: .cancel`: con él, el diálogo (globo anclado en iOS 26) no pinta la salida de no hacer
+                // nada (medido en el lote 19 de la auditoría UX; molde del lote 13).
+                Button(L10n.Common.cancel) {}
                     .accessibilityIdentifier("storage_groups_detach_cancel")
             } message: {
                 Text(L10n.Storage.Groups.detachBody)

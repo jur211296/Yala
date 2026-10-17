@@ -117,4 +117,29 @@ final class GroupMembersAdminUITests: XCTestCase {
             app.buttons["group_member_actions_Ana"].exists,
             "La fila de la dueña ofrece acciones de administración: `isGroupOwner` debe seguir protegiéndola.")
     }
+
+    /// Lote 19 de la auditoría UX: la confirmación de rechazar enseña «Cancelar». Con `role: .cancel` el diálogo
+    /// —un globo anclado en iOS 26— no la pintaba, y la única salida sin rechazar era tocar fuera.
+    ///
+    /// El botón sin rol propaga su identificador (con rol no lo hace), así que su existencia ES la prueba de que
+    /// la salida se ve. Tocarlo cierra el diálogo y deja la solicitud como estaba.
+    func test_rejectConfirmation_showsAVisibleCancel_thatKeepsTheRequest() {
+        let app = launchToMembers()
+        let reject = app.buttons["group_member_reject_Carla"]
+        XCTAssertTrue(reject.waitForExistence(timeout: 10), "No se ofrece rechazar la solicitud de Carla.")
+        reject.tap()
+
+        let cancel = app.buttons.matching(identifier: "group_member_reject_cancel").firstMatch
+        XCTAssertTrue(
+            cancel.waitForExistence(timeout: 5),
+            "La confirmación de rechazar no enseña «Cancelar»: solo se sale tocando fuera.")
+        cancel.tap()
+
+        XCTAssertTrue(
+            cancel.waitForNonExistence(timeout: 5),
+            "«Cancelar» no cerró la confirmación.")
+        XCTAssertTrue(
+            app.buttons["group_member_approve_Carla"].waitForExistence(timeout: 5),
+            "Tras cancelar, la solicitud de Carla debería seguir pendiente.")
+    }
 }

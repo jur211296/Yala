@@ -142,10 +142,16 @@ struct GroupBatchLeaveView: View {
     /// Titular del resultado. La parada del usuario manda sobre las otras dos ramas: anunciar "saliste de tus
     /// grupos" tras un «Detener» a mitad sería copy fabricado.
     private var headline: String {
-        if tracker.wasStopped { return L10n.Settings.batchLeaveStopped }
-        return tracker.needsDecision.isEmpty
-            ? L10n.Settings.batchLeaveAllDone
-            : L10n.Settings.batchLeaveSomeNeedDecision
+        switch GroupBatchLeaveLogic.resultHeadline(
+            wasStopped: tracker.wasStopped,
+            leftOrTransferred: tracker.leftCount + tracker.transferredCount,
+            needsDecision: tracker.needsDecision.count
+        ) {
+        case .stopped: return L10n.Settings.batchLeaveStopped
+        case .allDone: return L10n.Settings.batchLeaveAllDone
+        case .someNeedDecision: return L10n.Settings.batchLeaveSomeNeedDecision
+        case .noneLeft: return L10n.Settings.batchLeaveNoneLeft
+        }
     }
 
     private func statRow(label: String, count: Int) -> some View {

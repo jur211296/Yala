@@ -239,6 +239,8 @@ struct GroupSettingsView: View {
                 Button(L10n.Groups.Settings.leaveGroup, role: .destructive) {
                     Task { await leaveGroup() }
                 }
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("group_settings_leave_cancel")
             } message: {
                 if hasOutstandingBalance {
                     Text(L10n.Groups.Settings.leaveGroupWithDebtWarning)
@@ -254,6 +256,8 @@ struct GroupSettingsView: View {
                 Button(L10n.Groups.Settings.archive, role: .destructive) {
                     performArchiveToggle(isArchiving: true)
                 }
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("group_settings_archive_cancel")
             } message: {
                 if hasOutstandingDebt {
                     Text(L10n.Groups.Settings.archiveWithDebtWarning)
@@ -279,12 +283,12 @@ struct GroupSettingsView: View {
             // con `TransactionSuccessView` como víctima de una alerta de invitación). Por eso «quitar»
             // NO vive aquí: tiene su propia fila, más abajo, con su confirmación.
             .alert(L10n.Groups.Budget.title, isPresented: $showBudgetEditor) {
-                TextField(group.currencyCode, text: $budgetInput)
+                TextField(appPreferences.currencyDisplayFormat.label(for: group.currencyCode), text: $budgetInput)
                     .keyboardType(.decimalPad)
                 Button(L10n.Action.save) { saveBudgetLimitFromInput() }
                 Button(L10n.Common.cancel, role: .cancel) {}
             } message: {
-                Text(L10n.Groups.Budget.hint(group.currencyCode))
+                Text(L10n.Groups.Budget.hint(appPreferences.currencyDisplayFormat.label(for: group.currencyCode)))
             }
             .confirmationDialog(
                 L10n.Groups.Budget.removeConfirm,
@@ -292,7 +296,8 @@ struct GroupSettingsView: View {
                 titleVisibility: .visible
             ) {
                 Button(L10n.Groups.Budget.remove, role: .destructive) { applyBudgetLimit(nil) }
-                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("group_budget_remove_cancel")
             }
             .confirmationDialog(
                 L10n.Groups.Settings.deleteGroupConfirm,
@@ -302,7 +307,8 @@ struct GroupSettingsView: View {
                 Button(L10n.Action.delete, role: .destructive) {
                     Task { await performSoftDelete() }
                 }
-                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("group_settings_delete_cancel")
             } message: {
                 Text(L10n.Groups.Settings.deleteGroupFinalConfirm)
             }
@@ -314,7 +320,8 @@ struct GroupSettingsView: View {
                 Button(L10n.Groups.Settings.transferAndLeave, role: .destructive) {
                     Task { await transferAndLeave() }
                 }
-                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("group_settings_transfer_cancel")
             } message: {
                 // El nombre del heredero es el punto del diálogo. Si por lo que sea no se pudo
                 // resolver, se dice el hecho sin nombre en vez de callarlo: nombrar a quien no toca
@@ -553,7 +560,7 @@ struct GroupSettingsView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Text(L10n.Groups.Budget.hint(group.currencyCode))
+                    Text(L10n.Groups.Budget.hint(appPreferences.currencyDisplayFormat.label(for: group.currencyCode)))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
 
@@ -1133,7 +1140,7 @@ struct GroupSettingsView: View {
             )
             viewModel.loadData()
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = GroupActionErrorLogic.message(for: error)
             showActionError = true
         }
     }
@@ -1162,7 +1169,7 @@ struct GroupSettingsView: View {
                 dismiss()
             }
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = GroupActionErrorLogic.message(for: error)
             showActionError = true
         }
     }
@@ -1238,7 +1245,7 @@ struct GroupSettingsView: View {
             )
             viewModel.loadData()
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = GroupActionErrorLogic.message(for: error)
             showActionError = true
         }
     }
@@ -1256,7 +1263,7 @@ struct GroupSettingsView: View {
             )
             viewModel.loadData()
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = GroupActionErrorLogic.message(for: error)
             showActionError = true
         }
     }
