@@ -6995,3 +6995,75 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "未完了：%d件";
+
+/* Account form (new account): why Save is off until a balance is typed (UX 2.2 L7-1) */
+"account.form.balanceRequiredHint" = "保存するには残高（または0）を入力してください";
+
+/* Account type chips: what the General type means (UX 2.2 L7-3) */
+"account.type.generalHint" = "お金をまとめて管理、分けずに";
+
+/* Edit balance screen: section title (UX 2.2 L7-6) */
+"account.balanceEdit.sectionTitle" = "残高";
+
+/* Edit balance: the balance Yala computes from the records (struck through when the user types another) (UX 2.2 L7-6) */
+"account.balanceEdit.yalaSays" = "Yalaの計算";
+
+/* Edit balance: the question above the amount field (UX 2.2 L7-6) */
+"account.balanceEdit.question" = "今日の本当の残高はいくらですか？";
+
+/* Edit balance: hint under the question (UX 2.2 L7-6) */
+"account.balanceEdit.questionHint" = "銀行アプリを見るか現金を数えて、今日の残高を入力してください。";
+
+/* Edit balance: label of the computed difference (typed − Yala) (UX 2.2 L7-6) */
+"account.balanceEdit.difference" = "差額";
+
+/* Edit balance: the typed balance matches Yala's (UX 2.2 L7-6) */
+"account.balanceEdit.matches" = "Yalaの計算と一致しています。修正は不要です。";
+
+/* Edit balance: title of the two ways to fix the difference (UX 2.2 L7-6) */
+"account.balanceEdit.howTitle" = "どう修正しますか？";
+
+/* Edit balance: option 1 title — add an adjustment record (UX 2.2 L7-6) */
+"account.balanceEdit.byEntryTitle" = "調整の記録を追加";
+
+/* Edit balance: option 1 — what it does and when to use it (UX 2.2 L7-6) */
+"account.balanceEdit.byEntryDesc" = "差額を、選んだ日付の調整の記録として追加します。記録し忘れた支出や収入があるときに使います。";
+
+/* Edit balance: option 2 title — change the starting balance (UX 2.2 L7-6) */
+"account.balanceEdit.initialTitle" = "開始残高を修正";
+
+/* Edit balance: option 2 — what it does and when to use it (UX 2.2 L7-6) */
+"account.balanceEdit.initialDesc" = "記録は追加せず、口座の開始残高を変えます。最初から開始残高が間違っていたときに使います。";
+
+/* Edit balance: option 2 — starting balance before → after. %1$@ old, %2$@ new (UX 2.2 L7-6) */
+"account.balanceEdit.initialChange" = "開始残高：%1$@ → %2$@";
+
+/* Edit balance: footer — the balance the account will have after saving. %1$@ account name, %2$@ amount (UX 2.2 L7-6) */
+"account.balanceEdit.result" = "保存すると「%1$@」は%2$@になります。";
+
+/* Currency change alert: the converted records include the opening balance (UX 2.2 L7-7) */
+"account.currencyChange.includesInitialBalance" = "開始残高も含まれます。";
+
+/* Currency change alert: balance before and after. %1$@ before (old currency), %2$@ after (≈ new currency) (UX 2.2 L7-7) */
+"account.currencyChange.balanceLine" = "残高は%1$@から%2$@になります。";
+
+/* After creating an account in another currency: offer to show it on the Panel. %@ = code (UX 2.2 L7-8) */
+"account.secondaryCurrency.addTitle" = "%@をパネルに表示しますか？";
+
+/* Offer to show a new currency on the Panel. %1$@ new currency code, %2$@ main currency code, %3$@ Profile, %4$@ settings row name (UX 2.2 L7-8) */
+"account.secondaryCurrency.addMessage" = "%1$@の口座を追加しました。1 %1$@が%2$@でいくらかをパネルに表示しますか？%3$@ > %4$@で変更できます。";
+
+/* Offer to show a new currency on the Panel: accept button (UX 2.2 L7-8) */
+"account.secondaryCurrency.addAccept" = "パネルに表示";
+
+/* The Panel already shows two currencies: offer to swap one for the new one (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceTitle" = "パネルにはすでに2つの通貨が表示されています";
+
+/* Swap offer. %1$@ and %2$@ current secondary codes, %3$@ new code (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceMessage" = "パネルには%1$@と%2$@の価値が表示されています（2つまで）。どちらかを%3$@に替えますか？";
+
+/* Swap button. %1$@ old code, %2$@ new code (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceButton" = "%1$@を%2$@に替える";
+
+/* Swap offer: keep the two current currencies (UX 2.2 L7-8) */
+"account.secondaryCurrency.keep" = "このままにする";

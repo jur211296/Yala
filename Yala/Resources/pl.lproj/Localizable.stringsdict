@@ -653,13 +653,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Przeliczyć %d transakcję?</string>
+			<string>Przeliczyć %d wpis?</string>
 			<key>few</key>
-			<string>Przeliczyć %d transakcje?</string>
+			<string>Przeliczyć %d wpisy?</string>
 			<key>many</key>
-			<string>Przeliczyć %d transakcji?</string>
+			<string>Przeliczyć %d wpisów?</string>
 			<key>other</key>
-			<string>Przeliczyć %d transakcji?</string>
+			<string>Przeliczyć %d wpisu?</string>
 		</dict>
 	</dict>
 	<key>storage.sync.needsSignIn</key>

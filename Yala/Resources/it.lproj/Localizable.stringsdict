@@ -525,9 +525,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Convertire %d movimento?</string>
+			<string>Convertire %d registrazione?</string>
 			<key>other</key>
-			<string>Convertire %d movimenti?</string>
+			<string>Convertire %d registrazioni?</string>
 		</dict>
 	</dict>
 	<key>storage.sync.needsSignIn</key>

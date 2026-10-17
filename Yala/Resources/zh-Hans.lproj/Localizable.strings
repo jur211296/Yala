@@ -6995,3 +6995,75 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "仍待处理：%d";
+
+/* Account form (new account): why Save is off until a balance is typed (UX 2.2 L7-1) */
+"account.form.balanceRequiredHint" = "输入余额（或 0）后即可保存";
+
+/* Account type chips: what the General type means (UX 2.2 L7-3) */
+"account.type.generalHint" = "所有钱放在一起，不分开";
+
+/* Edit balance screen: section title (UX 2.2 L7-6) */
+"account.balanceEdit.sectionTitle" = "你的余额";
+
+/* Edit balance: the balance Yala computes from the records (struck through when the user types another) (UX 2.2 L7-6) */
+"account.balanceEdit.yalaSays" = "Yala 计算的";
+
+/* Edit balance: the question above the amount field (UX 2.2 L7-6) */
+"account.balanceEdit.question" = "你今天实际有多少？";
+
+/* Edit balance: hint under the question (UX 2.2 L7-6) */
+"account.balanceEdit.questionHint" = "看看银行 App 或数一数现金，输入你今天有多少。";
+
+/* Edit balance: label of the computed difference (typed − Yala) (UX 2.2 L7-6) */
+"account.balanceEdit.difference" = "差额";
+
+/* Edit balance: the typed balance matches Yala's (UX 2.2 L7-6) */
+"account.balanceEdit.matches" = "与 Yala 计算的一致，无需更正。";
+
+/* Edit balance: title of the two ways to fix the difference (UX 2.2 L7-6) */
+"account.balanceEdit.howTitle" = "我们怎么更正？";
+
+/* Edit balance: option 1 title — add an adjustment record (UX 2.2 L7-6) */
+"account.balanceEdit.byEntryTitle" = "添加一条调整记录";
+
+/* Edit balance: option 1 — what it does and when to use it (UX 2.2 L7-6) */
+"account.balanceEdit.byEntryDesc" = "Yala 会在你选择的日期把差额记为一条调整记录。适合有支出或收入忘了记的情况。";
+
+/* Edit balance: option 2 title — change the starting balance (UX 2.2 L7-6) */
+"account.balanceEdit.initialTitle" = "更正初始余额";
+
+/* Edit balance: option 2 — what it does and when to use it (UX 2.2 L7-6) */
+"account.balanceEdit.initialDesc" = "不添加记录，直接修改账户的初始金额。适合初始余额一开始就填错的情况。";
+
+/* Edit balance: option 2 — starting balance before → after. %1$@ old, %2$@ new (UX 2.2 L7-6) */
+"account.balanceEdit.initialChange" = "初始余额：%1$@ → %2$@";
+
+/* Edit balance: footer — the balance the account will have after saving. %1$@ account name, %2$@ amount (UX 2.2 L7-6) */
+"account.balanceEdit.result" = "保存后，“%1$@”的余额为 %2$@。";
+
+/* Currency change alert: the converted records include the opening balance (UX 2.2 L7-7) */
+"account.currencyChange.includesInitialBalance" = "其中包括你的初始余额。";
+
+/* Currency change alert: balance before and after. %1$@ before (old currency), %2$@ after (≈ new currency) (UX 2.2 L7-7) */
+"account.currencyChange.balanceLine" = "你的余额将从 %1$@ 变为 %2$@。";
+
+/* After creating an account in another currency: offer to show it on the Panel. %@ = code (UX 2.2 L7-8) */
+"account.secondaryCurrency.addTitle" = "在面板上显示 %@？";
+
+/* Offer to show a new currency on the Panel. %1$@ new currency code, %2$@ main currency code, %3$@ Profile, %4$@ settings row name (UX 2.2 L7-8) */
+"account.secondaryCurrency.addMessage" = "你添加了一个 %1$@ 账户。要在面板上查看 1 %1$@ 值多少 %2$@ 吗？可以在「%3$@ > %4$@」中更改。";
+
+/* Offer to show a new currency on the Panel: accept button (UX 2.2 L7-8) */
+"account.secondaryCurrency.addAccept" = "在面板上显示";
+
+/* The Panel already shows two currencies: offer to swap one for the new one (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceTitle" = "面板上已经显示两种货币";
+
+/* Swap offer. %1$@ and %2$@ current secondary codes, %3$@ new code (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceMessage" = "面板显示 %1$@ 和 %2$@ 的汇率，最多两种。要把其中一种换成 %3$@ 吗？";
+
+/* Swap button. %1$@ old code, %2$@ new code (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceButton" = "把 %1$@ 换成 %2$@";
+
+/* Swap offer: keep the two current currencies (UX 2.2 L7-8) */
+"account.secondaryCurrency.keep" = "保持不变";

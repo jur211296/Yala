@@ -6983,3 +6983,75 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "Ainda pendentes: %d";
+
+/* Account form (new account): why Save is off until a balance is typed (UX 2.2 L7-1) */
+"account.form.balanceRequiredHint" = "Digite seu saldo (ou 0) para salvar";
+
+/* Account type chips: what the General type means (UX 2.2 L7-3) */
+"account.type.generalHint" = "Todo o seu dinheiro junto, sem separar";
+
+/* Edit balance screen: section title (UX 2.2 L7-6) */
+"account.balanceEdit.sectionTitle" = "Seu saldo";
+
+/* Edit balance: the balance Yala computes from the records (struck through when the user types another) (UX 2.2 L7-6) */
+"account.balanceEdit.yalaSays" = "Segundo o Yala";
+
+/* Edit balance: the question above the amount field (UX 2.2 L7-6) */
+"account.balanceEdit.question" = "Quanto você tem de verdade hoje?";
+
+/* Edit balance: hint under the question (UX 2.2 L7-6) */
+"account.balanceEdit.questionHint" = "Olhe o app do banco ou conte seu dinheiro e digite o que você tem hoje.";
+
+/* Edit balance: label of the computed difference (typed − Yala) (UX 2.2 L7-6) */
+"account.balanceEdit.difference" = "Diferença";
+
+/* Edit balance: the typed balance matches Yala's (UX 2.2 L7-6) */
+"account.balanceEdit.matches" = "Bate com o que o Yala diz: não há nada para corrigir.";
+
+/* Edit balance: title of the two ways to fix the difference (UX 2.2 L7-6) */
+"account.balanceEdit.howTitle" = "Como corrigimos?";
+
+/* Edit balance: option 1 title — add an adjustment record (UX 2.2 L7-6) */
+"account.balanceEdit.byEntryTitle" = "Com um registro de ajuste";
+
+/* Edit balance: option 1 — what it does and when to use it (UX 2.2 L7-6) */
+"account.balanceEdit.byEntryDesc" = "O Yala registra a diferença como um ajuste na data que você escolher. Use se gastou ou recebeu algo sem registrar.";
+
+/* Edit balance: option 2 title — change the starting balance (UX 2.2 L7-6) */
+"account.balanceEdit.initialTitle" = "Corrigindo o saldo de partida";
+
+/* Edit balance: option 2 — what it does and when to use it (UX 2.2 L7-6) */
+"account.balanceEdit.initialDesc" = "Mudamos com quanto a conta começou, sem adicionar registros. Use se o saldo de partida estava errado desde o início.";
+
+/* Edit balance: option 2 — starting balance before → after. %1$@ old, %2$@ new (UX 2.2 L7-6) */
+"account.balanceEdit.initialChange" = "Saldo de partida: %1$@ → %2$@";
+
+/* Edit balance: footer — the balance the account will have after saving. %1$@ account name, %2$@ amount (UX 2.2 L7-6) */
+"account.balanceEdit.result" = "Ao salvar, “%1$@” fica em %2$@.";
+
+/* Currency change alert: the converted records include the opening balance (UX 2.2 L7-7) */
+"account.currencyChange.includesInitialBalance" = "Inclui seu saldo inicial.";
+
+/* Currency change alert: balance before and after. %1$@ before (old currency), %2$@ after (≈ new currency) (UX 2.2 L7-7) */
+"account.currencyChange.balanceLine" = "Seu saldo vai passar de %1$@ para %2$@.";
+
+/* After creating an account in another currency: offer to show it on the Panel. %@ = code (UX 2.2 L7-8) */
+"account.secondaryCurrency.addTitle" = "Ver %@ no seu Painel?";
+
+/* Offer to show a new currency on the Panel. %1$@ new currency code, %2$@ main currency code, %3$@ Profile, %4$@ settings row name (UX 2.2 L7-8) */
+"account.secondaryCurrency.addMessage" = "Você adicionou uma conta em %1$@. Quer ver no seu Painel quanto vale 1 %1$@ em %2$@? Dá para mudar em %3$@ > %4$@.";
+
+/* Offer to show a new currency on the Panel: accept button (UX 2.2 L7-8) */
+"account.secondaryCurrency.addAccept" = "Ver no Painel";
+
+/* The Panel already shows two currencies: offer to swap one for the new one (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceTitle" = "Seu Painel já mostra duas moedas";
+
+/* Swap offer. %1$@ and %2$@ current secondary codes, %3$@ new code (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceMessage" = "Seu Painel mostra quanto valem %1$@ e %2$@, e cabem duas. Trocar uma por %3$@?";
+
+/* Swap button. %1$@ old code, %2$@ new code (UX 2.2 L7-8) */
+"account.secondaryCurrency.replaceButton" = "Trocar %1$@ por %2$@";
+
+/* Swap offer: keep the two current currencies (UX 2.2 L7-8) */
+"account.secondaryCurrency.keep" = "Deixar como está";

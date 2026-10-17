@@ -465,7 +465,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>换算 %d 条记录？</string>
+			<string>要换算 %d 条记录吗？</string>
 		</dict>
 	</dict>
 	<key>storage.sync.needsSignIn</key>
