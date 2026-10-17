@@ -720,9 +720,23 @@ la tienda de prueba de Apple (`SKTestSession`): `xcodebuild` + `simctl` no aplic
 - 19.13 no ofrece ninguna acción. 19.14: según su ticket, el banner ya no tiene quién lo encienda.
 
 **Tickets abiertos del lote:** `group-presence-predicates-disagree-on-archived-and-hidden`,
-`groups-create-approve-remove-show-a-raw-rpc-error`, `qa/session-exits-one-verb-per-session`,
+~~`groups-create-approve-remove-show-a-raw-rpc-error`~~ (cerrado; su resto, B4 del lote 19), `qa/session-exits-one-verb-per-session`,
 `groups-signout-reentry-banner-has-no-producer`, `detach-purge-failed-copy-says-groups-remain-after-a-cursor-only-failure`,
 `groups-only-session-storage-screen-says-data-lives-in-icloud`, `groups-settlement-reminder-stale-clock`.
+
+**Medido en el lote 19 (2026-10-16):**
+- «Cambiar rol» no es «sin confirmación»: en un grupo de la nube fallaba siempre, porque el servidor no tiene forma de
+  cambiar un rol. Ya no se ofrece ahí. «Rechazar» también fallaba siempre: ahora va al servidor por `remove_member`.
+- El «Quitar» de 19.2 se llama «Eliminar miembro». La tarjeta de solicitud rechazada de 19.6 vive en la lista de
+  Grupos, no en los ajustes del grupo.
+- Diez confirmaciones del lote salían como globo sin «Cancelar» (el `role: .cancel` no se pinta). Arreglado.
+- «Eliminar grupo» se bloquea por céntimos de redondeo: en `grupos-saldado` la lista dice «Están a mano» y Beto queda en
+  $ 0.02 (L19-10).
+- Un grupo archivado no lo dice en su detalle, y su deuda sale del total «Te deben» de la lista (L19-9).
+- Salir de varios grupos empieza sin confirmar, desde un botón relleno de la hoja de «Vaciar datos» (L19-12).
+
+**Hecho (lote 19, 2026-10-16):** siete bugs arreglados y dieciocho mejoras a decisión de Jürgen; informe en
+`~/Claude/entregas/Yala--auditoria-ux-2-2-lote-19-grupos-iii/`.
 
 ---
 
