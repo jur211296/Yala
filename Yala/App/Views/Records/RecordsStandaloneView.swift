@@ -208,9 +208,13 @@ struct RecordsStandaloneView: View {
     @ViewBuilder
     private var detailColumn: some View {
         if let record = openRecord {
-            TransactionDetailSheet(transaction: record, presentation: .column) {
-                recordsViewModel.editOpenRecord(record)
-            }
+            TransactionDetailSheet(
+                transaction: record,
+                presentation: .column,
+                onEdit: { recordsViewModel.editOpenRecord(record) },
+                onDuplicate: { recordsViewModel.duplicateRecord(record) },
+                onDelete: { recordsViewModel.deleteOpenRecord(record, context: modelContext) }
+            )
             .announcesShownInDetailColumn()
             .id(record.persistentModelID)
         } else {
@@ -269,9 +273,16 @@ struct RecordsStandaloneView: View {
                         }
                     }
 
-                    // Selection action bar (with animation)
-                    if recordsViewModel.isSelectionMode && !recordsViewModel.selectedRecordIDs.isEmpty {
-                        selectionActionBar
+                    // Modo selección: qué hacer y, con algo elegido, Eliminar y Editar (L8-12).
+                    if recordsViewModel.isSelectionMode {
+                        RecordsSelectionBar(
+                            selectedCount: recordsViewModel.selectedRecordIDs.count,
+                            onDelete: {
+                                recordsViewModel.prepareBulkDelete(context: modelContext)
+                                showDeleteConfirmation = true
+                            },
+                            onEdit: handleEditAction
+                        )
                     }
                 }
             }
@@ -293,6 +304,13 @@ struct RecordsStandaloneView: View {
 
     @ToolbarContentBuilder
     private var normalModeToolbar: some ToolbarContent {
+        // «Seleccionar» a la vista, no solo dentro de «···» (L8-12).
+        ToolbarItem(placement: .topBarTrailing) {
+            RecordsSelectToolbarButton(viewModel: recordsViewModel)
+        }
+
+        ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
         ToolbarItem(placement: .topBarTrailing) {
             RecordsOverflowMenu(viewModel: recordsViewModel)
         }
@@ -326,62 +344,6 @@ struct RecordsStandaloneView: View {
                 }
             }
         }
-    }
-
-    // MARK: - New Record FAB
-
-    @ViewBuilder
-
-    // MARK: - Selection Action Bar
-
-    private var selectionActionBar: some View {
-        VStack {
-            Spacer()
-
-            HStack(spacing: DS.Spacing.xl) {
-                // Delete button
-                Button(role: .destructive) {
-                    DS.Haptic.warning()
-                    recordsViewModel.prepareBulkDelete(context: modelContext)
-                    showDeleteConfirmation = true
-                } label: {
-                    Image(systemName: "trash")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(DS.Semantic.errorForeground)
-                        .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
-                }
-                .accessibilityLabel(L10n.Action.delete)
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                // Selection count
-                Text(L10n.Records.selectedCount(recordsViewModel.selectedRecordIDs.count))
-                    .font(DS.Typography.headline)
-                    .contentTransition(.numericText())
-
-                Spacer()
-
-                // Edit button
-                Button {
-                    DS.Haptic.selection()
-                    handleEditAction()
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(DS.Typography.title)
-                        .foregroundStyle(theme.accent)
-                        .frame(width: DS.Button.actionSize, height: DS.Button.actionSize)
-                }
-                .accessibilityLabel(L10n.Action.edit)
-                .buttonStyle(.plain)
-            }
-            .padding(.vertical, DS.Spacing.sm)
-            .padding(.horizontal, DS.Spacing.lg)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.bottom, DS.Spacing.md)
-        }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     // MARK: - Actions
@@ -533,35 +495,30 @@ private struct RecordsStandaloneSheets: ViewModifier {
                     if recordsViewModel.consumePendingEditAfterDetail() {
                         recordsViewModel.showEditTransaction = true
                     } else {
+                        // Eliminar desde el detalle: con la hoja ya cerrada (L8-4).
+                        _ = recordsViewModel.consumePendingDeleteAfterDetail(context: modelContext)
                         recordsViewModel.editingTransaction = nil
                         reloadAndRecalculate()
                     }
                 }
             ) {
                 if let transaction = recordsViewModel.editingTransaction {
-                    TransactionDetailSheet(transaction: transaction) {
-                        recordsViewModel.requestEditFromDetail()
-                    }
+                    TransactionDetailSheet(
+                        transaction: transaction,
+                        onEdit: { recordsViewModel.requestEditFromDetail() },
+                        onDuplicate: { recordsViewModel.requestDuplicateFromDetail() },
+                        onDelete: { recordsViewModel.requestDeleteFromDetail(transaction) }
+                    )
                 }
             }
-            .confirmationDialog(
-                recordsViewModel.bulkDeleteDialog.titleText,
+            // Alerta centrada y con el registro nombrado, como el resto de borrados (L8-7).
+            .modifier(RecordsBulkDeleteAlert(
                 isPresented: $showDeleteConfirmation,
-                titleVisibility: .visible
+                viewModel: recordsViewModel
             ) {
-                // Solo con algo que borrar: si todo lo elegido viene de un grupo, el aviso explica dónde se borra.
-                if recordsViewModel.bulkDeleteDialog.offersDelete {
-                    Button(L10n.Action.delete, role: .destructive) {
-                        recordsViewModel.deleteSelected(context: modelContext)
-                        reloadAndRecalculate()
-                    }
-                    Button(L10n.Action.cancel, role: .cancel) {}
-                } else {
-                    Button(L10n.Common.understood, role: .cancel) {}
-                }
-            } message: {
-                Text(recordsViewModel.bulkDeleteDialog.messageText)
-            }
+                recordsViewModel.deleteSelected(context: modelContext)
+                reloadAndRecalculate()
+            })
             .sheet(isPresented: $showBulkEditSheet) {
                 BulkEditSheet(
                     viewModel: recordsViewModel,

@@ -241,10 +241,19 @@ struct NewTransactionView: View {
                     Image(systemName: "info.circle.fill")
                         .font(DS.Typography.body)
                         .foregroundStyle(.thAccent)
-                    Text(message)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.leading)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                        Text(message)
+                            .font(DS.Typography.body)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
+                        // Duplicar, Eliminar y Recurrente ya no salen en lo que viene de un grupo: se dice dónde se
+                        // borra en vez de dejar dos botones grises que no responden (auditoría UX 2.2, L8-6).
+                        Text(L10n.UXL8.deleteFromGroupHint)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                            .accessibilityIdentifier("new_transaction_group_delete_hint")
+                    }
                 }
                 Button {
                     handleBridgedCTA(hasPendingDraft: hasPendingDraft)
@@ -393,10 +402,7 @@ struct NewTransactionView: View {
             .opacity(duplicateAnimationVisible ? 1.0 : 0.0)
             .dismissKeyboardOnTap()
             .yalaScreenBackground(.subtle)
-            .navigationTitle(
-                isEditingSavedRecord
-                    ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
-            )
+            .navigationTitle(formTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -535,8 +541,9 @@ struct NewTransactionView: View {
                     isAmountFieldFocused = false
                 }
             }
+            // La misma pregunta que el menú de la fila y el detalle: nombra el registro (L8-7).
             .alert(
-                L10n.Alert.confirmDelete,
+                deleteConfirmationTitle,
                 isPresented: $viewModel.showDeleteConfirmation
             ) {
                 Button(L10n.Action.cancel, role: .cancel) {}
@@ -544,7 +551,7 @@ struct NewTransactionView: View {
                     deleteTransaction()
                 }
             } message: {
-                Text(L10n.Alert.deleteWarning)
+                Text(deleteConfirmationMessage)
             }
             .alert(
                 L10n.Validation.futureDateTitle,
@@ -610,6 +617,22 @@ struct NewTransactionView: View {
                 await viewModel.loadExchangeRate(context: modelContext)
             }
         }
+    }
+
+    /// «Editar registro», «Nuevo registro» o, tras Duplicar, «Duplicar registro»: que el título diga que es una copia
+    /// (L8-8). Antes la copia se titulaba «Nuevo registro».
+    private var formTitle: String {
+        if isDuplicating { return L10n.UXL8.duplicateTitle }
+        return isEditingSavedRecord ? L10n.Transaction.editTransaction : L10n.Transaction.newTransaction
+    }
+
+    private var deleteConfirmationTitle: String {
+        guard let transaction = transactionToEdit else { return L10n.Alert.confirmDelete }
+        return RecordDeleteConfirmationText.title(for: transaction, preferences: appPreferences)
+    }
+
+    private var deleteConfirmationMessage: String {
+        transactionToEdit.map { RecordDeleteConfirmationText.message(for: $0) } ?? L10n.Common.cannotUndo
     }
 
     // MARK: - Transaction Type Selector
@@ -886,28 +909,29 @@ struct NewTransactionView: View {
             // Duplicar y Eliminar solo mientras se edita el registro guardado. Tras «Duplicar» el formulario ya es un
             // registro NUEVO sin guardar, pero `transactionToEdit` sigue apuntando al original: Eliminar borraba el
             // original que se acababa de duplicar (auditoría UX 2.2, lote 8).
-            if isEditingSavedRecord {
+            //
+            // Y nunca en lo que viene de un grupo (`isBridgedReadOnly`, que incluye el Caso A): duplicarlo dejaría una
+            // copia huérfana sin `splitExpenseID` y borrarlo lo devolvería como borrador al siguiente sync. Antes salían
+            // al 40 % y sin responder; ahora no se ofrecen y el aviso de arriba dice dónde se borra (L8-6). Un huérfano
+            // (el gasto del grupo ya no existe) no cuenta como de grupo y sí los ofrece: es su salida.
+            if isEditingSavedRecord && !isBridgedReadOnly {
                 quickActionButton(
                     icon: "doc.on.doc",
                     label: L10n.Action.duplicate
                 ) {
                     duplicateTransaction()
                 }
-                .disabled(isBridgedCasoA)  // M6: duplicar TX bridgeada generaría TX huérfana sin splitExpenseID
-                .opacity(isBridgedCasoA ? 0.4 : 1.0)
                 .accessibilityIdentifier("new_transaction_duplicate_action")
             }
 
             // Delete (only in edit mode)
-            if isEditingSavedRecord {
+            if isEditingSavedRecord && !isBridgedReadOnly {
                 quickActionButton(
                     icon: "trash",
                     label: L10n.Action.delete
                 ) {
                     viewModel.showDeleteConfirmation = true
                 }
-                .disabled(isBridgedCasoA)  // M6: delete reaparece como draft via próximo sync. Bloqueamos.
-                .opacity(isBridgedCasoA ? 0.4 : 1.0)
                 .accessibilityIdentifier("new_transaction_delete_action")
             }
 
@@ -935,7 +959,9 @@ struct NewTransactionView: View {
             // editor recibía «transfer» con la cuenta vacía (la de una transferencia va en origen/destino), así
             // que al guardar dejaba un pago planificado que no era ni una cosa ni la otra junto a la
             // transferencia de hoy. Auditoría UX 2.2, lote 2, B7. Mismo criterio que «Calcular».
-            if !viewModel.isTransfer {
+            //
+            // Tampoco en lo que viene de un grupo: abría un pago planificado a partir de un gasto compartido (L8-6).
+            if !viewModel.isTransfer && !isBridgedReadOnly {
                 quickActionButton(
                     icon: "repeat",
                     label: L10n.Action.recurring
@@ -1709,10 +1735,13 @@ struct NewTransactionView: View {
                 duplicateAnimationVisible = true
             }
 
-            // Show feedback and focus amount
-            showToast(L10n.Action.duplicated)
+            // Aviso. El aviso dice qué pasó, fecha incluida (L8-8): antes «Duplicado - guarda
+            // para crear nueva», y la fecha pasaba a hoy sin decirlo.
+            showToast(L10n.UXL8.duplicateReady, duration: .seconds(4))
+            // Sin foco en el monto: el teclado tapaba «Guardar» y, con él, este aviso (medido en el simulador el
+            // 17-oct). La copia se revisa y se guarda; si hay que cambiar el monto, se toca.
             isNoteFieldFocused = false
-            isAmountFieldFocused = true
+            isAmountFieldFocused = false
         }
     }
 
@@ -1786,13 +1815,17 @@ struct NewTransactionView: View {
         showTransactionSuccess()
     }
 
-    private func showToast(_ message: String) {
+    private func showToast(_ message: String, duration: Duration = .seconds(2)) {
         savedToastMessage = message
         dsWithAnimation(reduceMotion) {
             showSavedToast = true
         }
         Task {
-            try? await Task.sleep(for: .seconds(2))
+            do {
+                try await Task.sleep(for: duration)
+            } catch {
+                return  // Cancelada: el aviso se queda hasta el próximo.
+            }
             dsWithAnimation(reduceMotion) {
                 showSavedToast = false
             }

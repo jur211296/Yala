@@ -18,6 +18,9 @@ struct PanelFilterControlBar: View {
     let viewModel: PanelViewModel
     let sessionState: SessionState
     @Binding var showCustomPeriodPicker: Bool
+    /// Tocar una cápsula abre la hoja de Filtros del Panel (UX 2.2 · L8-17). La de la fecha no: esa la pone tocar la
+    /// gráfica y no se elige en Filtros.
+    var onOpenFilters: (() -> Void)? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Namespace para morphing de los filter chips (iOS 26 GlassEffectContainer + glassEffectID).
@@ -85,6 +88,7 @@ struct PanelFilterControlBar: View {
                                 onClear: { viewModel.selectedAccountID = nil }
                             )
                             .excludeMode(viewModel.isExcludeMode)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.account", in: chipNamespace)
                         }
 
@@ -124,6 +128,7 @@ struct PanelFilterControlBar: View {
                                 }
                             )
                             .excludeMode(viewModel.isExcludeMode)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.category", in: chipNamespace)
                         } else if !isAllSubsSelected && !selectedSubsByID.isEmpty {
                             let parentCategories = Set(
@@ -142,6 +147,7 @@ struct PanelFilterControlBar: View {
                                     }
                                 )
                                 .excludeMode(viewModel.isExcludeMode)
+                                .opensFilters(onOpenFilters)
                                 .glassEffectID("chip.category", in: chipNamespace)
                             }
                         }
@@ -164,6 +170,7 @@ struct PanelFilterControlBar: View {
                                     }
                                 )
                                 .excludeMode(viewModel.isExcludeMode)
+                                .opensFilters(onOpenFilters)
                                 .glassEffectID("chip.subcategory", in: chipNamespace)
                             }
                         }
@@ -177,6 +184,7 @@ struct PanelFilterControlBar: View {
                                 }
                             )
                             .excludeMode(viewModel.isExcludeMode)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.need", in: chipNamespace)
                         }
 
@@ -191,6 +199,7 @@ struct PanelFilterControlBar: View {
                                     }
                                 }
                             )
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.nature", in: chipNamespace)
                         }
 
@@ -209,6 +218,7 @@ struct PanelFilterControlBar: View {
                                     }
                                 )
                                 .excludeMode(viewModel.isExcludeMode)
+                                .opensFilters(onOpenFilters)
                                 .glassEffectID("chip.tag.\(tagID.hashValue)", in: chipNamespace)
                             }
                         }
@@ -225,6 +235,7 @@ struct PanelFilterControlBar: View {
                                 }
                             )
                             .excludeMode(viewModel.isExcludeMode)
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.currency.\(currency.rawValue)", in: chipNamespace)
                         }
 
@@ -239,6 +250,7 @@ struct PanelFilterControlBar: View {
                                     }
                                 }
                             )
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.amount", in: chipNamespace)
                         }
 
@@ -253,6 +265,7 @@ struct PanelFilterControlBar: View {
                                     }
                                 }
                             )
+                            .opensFilters(onOpenFilters)
                             .glassEffectID("chip.note", in: chipNamespace)
                         }
 

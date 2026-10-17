@@ -14,6 +14,9 @@ struct FilterSectionHeader: View {
     let icon: String
     let title: String
     let status: String
+    /// Filtros de Registros dice el estado entero («Todas las cuentas», «Ninguna oculta») y va sin paréntesis
+    /// (UX 2.2 · L8-16). Exportar y Presupuestos siguen con «(Todas)».
+    var parenthesizesStatus: Bool = true
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -26,7 +29,7 @@ struct FilterSectionHeader: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
 
-            Text("(\(status))")
+            Text(parenthesizesStatus ? "(\(status))" : status)
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.secondary)
         }

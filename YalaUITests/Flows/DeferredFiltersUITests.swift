@@ -45,8 +45,11 @@ final class DeferredFiltersUITests: XCTestCase {
         noteField.tap()
         noteField.typeText("QA descartar")
 
-        // Cerrar con la X (descarta — no commitea al ViewModel).
+        // Cerrar con la X: con cambios pregunta (UX 2.2 · L8-16) y «Descartar» no commitea al ViewModel.
         app.buttons["filters_close_button"].tap()
+        let discardAlert = app.alerts.firstMatch
+        XCTAssertTrue(discardAlert.waitForExistence(timeout: 5), "La X con cambios no preguntó «¿Descartar los filtros?».")
+        discardAlert.buttons["Descartar"].firstMatch.tap()
 
         // Reabrir: el campo de nota no debe conservar el texto descartado.
         XCTAssertTrue(app.recordsOverflowMenu.waitForExistence(timeout: 5), "No volvió a Registros tras descartar.")

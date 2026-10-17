@@ -23,6 +23,7 @@ struct RecordRowView: View {
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.tagCatalog) private var tagCatalog
+    @Environment(\.groupNameCatalog) private var groupNameCatalog
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -57,7 +58,7 @@ struct RecordRowView: View {
                         // Line 2: Category • Account (Compact)
                         let categoryName =
                             record.subcategory?.name ?? record.category?.name ?? L10n.Common.uncategorized
-                        let accountName = record.account?.name ?? ""
+                        let accountName = displayedAccountName ?? ""
 
                         Text("\(categoryName) • \(accountName)")
                             .font(DS.Typography.caption)
@@ -71,8 +72,8 @@ struct RecordRowView: View {
                             .lineLimit(conceptLineLimit)
 
                         // Line 2: Account name
-                        if let account = record.account {
-                            Text(account.name)
+                        if let accountName = displayedAccountName {
+                            Text(accountName)
                                 .font(DS.Typography.caption)
                                 .foregroundStyle(.tertiary)
                                 .lineLimit(1)
@@ -99,15 +100,17 @@ struct RecordRowView: View {
 
                     // Nature indicator + split badge
                     HStack(spacing: DS.Spacing.xs) {
-                        if record.splitType != nil {
+                        if let groupName = groupNameForRealLeg {
+                            groupBadge(groupName)
+                        } else if record.splitType != nil {
                             Image(systemName: "percent")
                                 .font(DS.Typography.chipIcon)
                                 .padding(.horizontal, DS.Chip.paddingV)
                                 .padding(.vertical, DS.Spacing.xxs)
                                 .background(Capsule().fill(Color.secondary.opacity(0.1)))
                         }
-                        if let subcategory = record.subcategory {
-                            needIndicator(for: subcategory.need)
+                        if record.subcategory != nil, showsNeedPill {
+                            needIndicator(for: record.effectiveNeed)
                         }
                     }
                 }
@@ -234,6 +237,45 @@ struct RecordRowView: View {
         }
     }
 
+    // MARK: - Grupo (L8-5)
+
+    /// Nombre del grupo del que viene el registro, si se conoce (`GroupNameCatalogProvider`).
+    private var groupName: String? {
+        guard record.splitExpenseID != nil || record.splitSettlementID != nil,
+              let zone = record.splitGroupZoneID
+        else { return nil }
+        return groupNameCatalog[zone]
+    }
+
+    /// La cuenta que se nombra en la fila. La pata que vive en la cuenta de sistema de Grupos («Grupos PEN») nombra
+    /// su grupo: esa cuenta virtual no le dice nada a quien mira la lista.
+    private var displayedAccountName: String? {
+        if record.account?.isSystemAccount == true, let groupName { return groupName }
+        return record.account?.name
+    }
+
+    /// En la pata de tu cuenta real el grupo va en la cápsula de la derecha, donde iba una «%» que no lo nombraba: así
+    /// las dos filas del mismo gasto dicen el mismo nombre.
+    private var groupNameForRealLeg: String? {
+        guard record.account?.isSystemAccount == false else { return nil }
+        return groupName
+    }
+
+    private func groupBadge(_ name: String) -> some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Image(systemName: "person.2.fill")
+                .font(DS.Typography.chipIcon)
+                .accessibilityHidden(true)
+            Text(name)
+                .font(DS.Typography.labelTiny)
+                .lineLimit(1)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, DS.Chip.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Capsule().fill(Color.secondary.opacity(0.1)))
+    }
+
     // MARK: - Nature Indicator
 
     private func needIndicator(for need: SubcategoryNeed) -> some View {
@@ -265,9 +307,28 @@ struct RecordRowView: View {
         appPreferences.currency(record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
     }
 
+    private var isIncome: Bool {
+        record.category?.isIncome ?? (record.amount >= 0)
+    }
+
+    /// Ingreso en su color, gasto en el del texto, y transferencias y ajustes de saldo en gris (L8-3).
     private var amountColor: Color {
-        let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-        return Color.amountTint(isIncome: isIncome)
+        switch RecordRowPresentationLogic.amountStyle(
+            isBalanceAdjustment: record.balanceAdjustmentType != nil, isIncome: isIncome
+        ) {
+        case .income: return Color.amountTint(isIncome: true)
+        case .expense: return Color.amountTint(isIncome: false)
+        case .neutral: return Color.secondary
+        }
+    }
+
+    /// La necesidad solo en los gastos (L8-3).
+    private var showsNeedPill: Bool {
+        RecordRowPresentationLogic.showsNeedPill(
+            isBalanceAdjustment: record.balanceAdjustmentType != nil,
+            isIncome: isIncome,
+            subcategoryIsSystem: record.subcategory?.isAnySystem ?? false
+        )
     }
 }
 

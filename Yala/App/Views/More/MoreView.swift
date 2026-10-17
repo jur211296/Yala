@@ -11,7 +11,7 @@
 
 import SwiftUI
 
-/// Secciones reordenables del dashboard "Más" (Panel es la card hero fija aparte).
+/// Secciones reordenables del dashboard "Más" (Panel y Registros son las cards hero fijas aparte).
 enum MoreSectionKind: String, CaseIterable, Identifiable {
     case statistics
     case planning
@@ -132,6 +132,10 @@ struct MoreView: View {
     private var dashboardContent: some View {
         heroPanelCard
 
+        // Registros, junto a Panel: la lista de movimientos es lo que más se mira y antes vivía al fondo, en
+        // «Más herramientas» (auditoría UX 2.2, L8-1, opción B).
+        heroRecordsCard
+
         ForEach(orderedSectionKinds) { kind in
             sectionView(kind)
         }
@@ -139,17 +143,47 @@ struct MoreView: View {
 
     /// Card destacada de Panel (full-width, layout horizontal).
     private var heroPanelCard: some View {
-        Button {
+        heroCard(
+            icon: ConfigurableTab.panel.iconName,
+            title: L10n.Tab.panel,
+            subtitle: L10n.More.Subtitle.panel,
+            tint: iconColor(.electricIndigo),
+            identifier: "more_card_panel"
+        ) {
             RouterEntryGate.shared.submit(.navigate(.panel))
-        } label: {
+        }
+    }
+
+    /// Registros, con la misma forma que Panel y justo debajo (L8-1).
+    private var heroRecordsCard: some View {
+        heroCard(
+            icon: ConfigurableTab.records.iconName,
+            title: ConfigurableTab.records.displayName,
+            subtitle: L10n.More.Subtitle.records,
+            tint: iconColor(.yellow),
+            identifier: "more_card_records"
+        ) {
+            RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
+        }
+    }
+
+    private func heroCard(
+        icon: String,
+        title: String,
+        subtitle: String,
+        tint: Color,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                AccentIconBadge(systemName: ConfigurableTab.panel.iconName, font: DS.Typography.headline, tint: iconColor(.electricIndigo))
+                AccentIconBadge(systemName: icon, font: DS.Typography.headline, tint: tint)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.Tab.panel)
+                    Text(title)
                         .font(DS.Typography.subheadlineEmphasized)
                         .foregroundStyle(.primary)
-                    Text(L10n.More.Subtitle.panel)
+                    Text(subtitle)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -167,7 +201,7 @@ struct MoreView: View {
         }
         .buttonStyle(.plain)
         .contentShape(Rectangle())
-        .accessibilityIdentifier("more_card_panel")
+        .accessibilityIdentifier(identifier)
         .accessibilityElement(children: .combine)
     }
 
@@ -240,10 +274,8 @@ struct MoreView: View {
             }
             return reports
         case .tools:
+            // Registros ya no va aquí: sube junto a Panel (`heroRecordsCard`, L8-1).
             return [
-                NavItem(id: "records", icon: ConfigurableTab.records.iconName, title: ConfigurableTab.records.displayName, subtitle: L10n.More.Subtitle.records, iconColor: iconColor(.yellow)) {
-                    RouterEntryGate.shared.submit(.navigate(.recordsStandalone))
-                },
                 NavItem(id: "groups", icon: ConfigurableTab.groups.iconName, title: ConfigurableTab.groups.displayName, subtitle: L10n.More.Subtitle.groups, iconColor: iconColor(.hotPink)) {
                     RouterEntryGate.shared.submit(.navigate(.groups))
                 },

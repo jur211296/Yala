@@ -1292,5 +1292,205 @@
 			<string>… i %d więcej</string>
 		</dict>
 	</dict>
+	<key>records.l8b.duplicates.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d możliwy duplikat</string>
+			<key>few</key>
+			<string>%d możliwe duplikaty</string>
+			<key>many</key>
+			<string>%d możliwych duplikatów</string>
+			<key>other</key>
+			<string>%d możliwego duplikatu</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d grupie</string>
+			<key>few</key>
+			<string>%d grupach</string>
+			<key>many</key>
+			<string>%d grupach</string>
+			<key>other</key>
+			<string>%d grupach</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groupSize</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d taki sam wpis</string>
+			<key>few</key>
+			<string>%d takie same wpisy</string>
+			<key>many</key>
+			<string>%d takich samych wpisów</string>
+			<key>other</key>
+			<string>%d takiego samego wpisu</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.removeTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Usunąć %d powtórzenie?</string>
+			<key>few</key>
+			<string>Usunąć %d powtórzenia?</string>
+			<key>many</key>
+			<string>Usunąć %d powtórzeń?</string>
+			<key>other</key>
+			<string>Usunąć %d powtórzenia?</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.keptShared</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d pochodzi z Grup i zostaje: usuń go tam.</string>
+			<key>few</key>
+			<string>%d pochodzą z Grup i zostają: usuń je tam.</string>
+			<key>many</key>
+			<string>%d pochodzi z Grup i zostaje: usuń je tam.</string>
+			<key>other</key>
+			<string>%d pochodzi z Grup i zostaje: usuń je tam.</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Edytuj %d wpis</string>
+			<key>few</key>
+			<string>Edytuj %d wpisy</string>
+			<key>many</key>
+			<string>Edytuj %d wpisów</string>
+			<key>other</key>
+			<string>Edytuj %d wpisu</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d konto</string>
+			<key>few</key>
+			<string>%d różne konta</string>
+			<key>many</key>
+			<string>%d różnych kont</string>
+			<key>other</key>
+			<string>%d różnego konta</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctSubcategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d podkategoria</string>
+			<key>few</key>
+			<string>%d różne podkategorie</string>
+			<key>many</key>
+			<string>%d różnych podkategorii</string>
+			<key>other</key>
+			<string>%d różnej podkategorii</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.summaryTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zmienisz w %d wpisie:</string>
+			<key>few</key>
+			<string>Zmienisz w %d wpisach:</string>
+			<key>many</key>
+			<string>Zmienisz w %d wpisach:</string>
+			<key>other</key>
+			<string>Zmienisz w %d wpisu:</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.apply</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zastosuj do %d wpisu</string>
+			<key>few</key>
+			<string>Zastosuj do %d wpisów</string>
+			<key>many</key>
+			<string>Zastosuj do %d wpisów</string>
+			<key>other</key>
+			<string>Zastosuj do %d wpisu</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

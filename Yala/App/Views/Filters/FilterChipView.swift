@@ -23,25 +23,37 @@ struct FilterChipView: View {
     let text: String
     var indicator: FilterChipIndicator = .none
     var isExcludeMode: Bool = false
+    /// Tocar la cápsula (fuera de la X) abre la hoja de Filtros del host (UX 2.2 · L8-17). `nil`: no hace nada, como
+    /// antes; la X sigue quitando el filtro con su propia área de toque.
+    var onOpen: (() -> Void)? = nil
     let onClear: () -> Void
+
+    /// Lo que dice la cápsula: «Sin Ahorros USD» si se está ocultando. Un «−» de 9 pt no decía «excluido» y
+    /// «Ahorros USD» bajo «Filtros aplicados» se leía como «solo Ahorros USD» (L8-17).
+    static func displayText(_ text: String, isExcluded: Bool) -> String {
+        isExcluded ? L10n.UXL8C.Chip.excluded(text) : text
+    }
+
+    private var displayText: String { Self.displayText(text, isExcluded: isExcludeMode) }
 
     var body: some View {
         HStack(spacing: DS.Chip.spacing) {
-            // Exclude mode indicator
-            if isExcludeMode {
-                Image(systemName: "minus.circle.fill")
-                    .font(DS.Typography.chipIconOnly)
-                    .foregroundStyle(DS.Semantic.errorForeground)
-                    .accessibilityHidden(true)
+            if let onOpen {
+                Button(action: onOpen) {
+                    chipLabel
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(displayText)
+                .accessibilityValue(isExcludeMode ? L10n.UXL8C.Chip.excludedValue : "")
+                .accessibilityHint(L10n.UXL8C.Chip.openHint)
+                .accessibilityIdentifier("applied_filter_chip")
+            } else {
+                chipLabel
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(displayText)
+                    .accessibilityValue(isExcludeMode ? L10n.UXL8C.Chip.excludedValue : "")
             }
-
-            // Indicator (icon or color dot)
-            indicatorView
-
-            Text(text)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
 
             Button {
                 dsWithAnimation(reduceMotion) {
@@ -57,8 +69,36 @@ struct FilterChipView: View {
         }
         .padding(.horizontal, DS.Chip.paddingH)
         .padding(.vertical, DS.Chip.paddingV)
+        // Lo oculto lleva contorno rojo: el texto sigue en `.primary`, que sí se lee sobre el cristal. Va ANTES del
+        // `glassEffect`, como contenido: colgado después, el cristal lo tapaba y no se veía (medido en el simulador).
+        .overlay {
+            if isExcludeMode {
+                Capsule()
+                    .strokeBorder(DS.Semantic.errorForeground, lineWidth: 1.5)
+                    .accessibilityHidden(true)
+            }
+        }
         .glassEffect(.regular.interactive(), in: .capsule)
         .pointerHighlight(cornerRadius: nil)
+    }
+
+    private var chipLabel: some View {
+        HStack(spacing: DS.Chip.spacing) {
+            // Indicator (icon or color dot)
+            indicatorView
+
+            Text(displayText)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+    }
+
+    /// Fluent API: tocar la cápsula abre Filtros.
+    func opensFilters(_ action: (() -> Void)?) -> FilterChipView {
+        var copy = self
+        copy.onOpen = action
+        return copy
     }
 
     /// Fluent API to set exclude mode on any chip

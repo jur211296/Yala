@@ -33,15 +33,21 @@ struct RecordsOverflowMenu: View {
                 Toggle(isOn: $viewModel.duplicateModeActive) {
                     Label(L10n.Records.Duplicates.menuTitle, systemImage: "doc.on.doc")
                 }
+                .accessibilityIdentifier("records_duplicates_toggle")
 
                 Menu {
                     Toggle(L10n.Common.amount, isOn: $viewModel.duplicateCriteria.amount)
+                        .accessibilityIdentifier("records_duplicates_criterion_amount")
                     Toggle(L10n.Transaction.note, isOn: $viewModel.duplicateCriteria.note)
+                        .accessibilityIdentifier("records_duplicates_criterion_note")
                     Toggle(L10n.Transaction.subcategory, isOn: $viewModel.duplicateCriteria.subcategory)
+                        .accessibilityIdentifier("records_duplicates_criterion_subcategory")
                     Toggle(L10n.Common.date, isOn: $viewModel.duplicateCriteria.date)
+                        .accessibilityIdentifier("records_duplicates_criterion_date")
                 } label: {
                     Label(L10n.Records.Duplicates.matchBy, systemImage: "slider.horizontal.3")
                 }
+                .accessibilityIdentifier("records_duplicates_match_by")
             }
         } label: {
             Image(systemName: "ellipsis.circle")

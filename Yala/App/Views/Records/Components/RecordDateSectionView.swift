@@ -18,7 +18,17 @@ struct RecordDateSectionView: View {
         return f
     }()
 
+    /// Buscar recorre todos los años: ahí un día de otro año lleva el año («14 de octubre de 2025»). Registros va
+    /// por períodos y no lo necesita (UX 2.2 · L8-14).
+    private static let sectionDateWithYearFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = AppLocale.current
+        f.setLocalizedDateFormatFromTemplate("d MMMM y")
+        return f
+    }()
+
     let date: Date
+    var includesYear: Bool = false
 
     var body: some View {
         HStack {
@@ -33,7 +43,7 @@ struct RecordDateSectionView: View {
 
     /// Format: "12 December" or "12 de diciembre" depending on locale
     private var formattedDate: String {
-        Self.sectionDateFormatter.string(from: date)
+        (includesYear ? Self.sectionDateWithYearFormatter : Self.sectionDateFormatter).string(from: date)
     }
 }
 

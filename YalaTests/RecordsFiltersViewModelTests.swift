@@ -20,7 +20,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedAccountsText_none_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedAccountsText(selectedAccounts: [])
-        #expect(result == L10n.Filters.allFeminine)
+        #expect(result == L10n.UXL8C.Filters.allAccounts)
     }
 
     // MARK: - selectedTagsText
@@ -28,7 +28,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedTagsText_none_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedTagsText(selectedTags: [])
-        #expect(result == L10n.Filters.allFeminine)
+        #expect(result == L10n.UXL8C.Filters.allTags)
     }
 
     // MARK: - selectedCategoriesText
@@ -36,7 +36,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedCategoriesText_empty_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedCategoriesText(selectedSubcategories: [])
-        #expect(result == L10n.Filters.allFeminine)
+        #expect(result == L10n.UXL8C.Filters.allCategories)
     }
 
     // MARK: - Exclude Mode: Empty Selection
@@ -44,19 +44,19 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedAccountsText_empty_excludeMode_returnsNothingExcluded() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedAccountsText(selectedAccounts: [], isExcludeMode: true)
-        #expect(result == L10n.Filters.nothingExcluded)
+        #expect(result == L10n.UXL8C.Filters.noneHiddenAccounts)
     }
 
     @MainActor @Test func selectedCategoriesText_empty_excludeMode_returnsNothingExcluded() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedCategoriesText(selectedSubcategories: [], isExcludeMode: true)
-        #expect(result == L10n.Filters.nothingExcluded)
+        #expect(result == L10n.UXL8C.Filters.noneHiddenCategories)
     }
 
     @MainActor @Test func selectedTagsText_empty_excludeMode_returnsNothingExcluded() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedTagsText(selectedTags: [], isExcludeMode: true)
-        #expect(result == L10n.Filters.nothingExcluded)
+        #expect(result == L10n.UXL8C.Filters.noneHiddenTags)
     }
 
     // NOTE: Tests for allSelected and partial selection removed.
