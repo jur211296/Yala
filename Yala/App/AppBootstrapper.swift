@@ -129,7 +129,9 @@ final class AppBootstrapper {
         //      rechaza lo que la app escribe) a `cashFlowLine`. En cada arranque, idempotente: ver
         //      `CashFlowOverrideLineMigration`. Va aquí por lo mismo que el wipe: cuanto antes, menos tiempo con un
         //      registro que iCloud rechaza en la cola.
-        CashFlowOverrideLineMigration.migrateIfNeeded(in: context)
+        //      Solo los grupos (línea + mes) que traen legado: el fundido de lo que llega por iCloud va en el 16.4.9,
+        //      detrás de la puerta del import.
+        CashFlowOverrideLineMigration.migrateIfNeeded(in: context, scope: .groupsWithLegacy)
 
         // 0.0-bis. EL EJE 1, backfilleado una sola vez (ADR 2026-09-09 «Sesiones — dos ejes»).
         //
@@ -520,6 +522,19 @@ final class AppBootstrapper {
                 return
             }
             TransferPairReconcileService.reconcileTransferPairs(in: context)
+        }
+
+        // 16.4.9. Ajustes de un mes del flujo de caja duplicados por iCloud (dos teléfonos que apuntaron el mismo mes):
+        //      se queda uno, el mismo en todos los teléfonos. Detrás de la puerta porque los duplicados llegan
+        //      importados, y guardar con el import en curso es el crash de `BootSaveGateLogic`. Los lectores ya
+        //      enseñan el superviviente mientras tanto (ticket
+        //      `cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two`).
+        Task { @MainActor in
+            guard await awaitPersonalStoreReady() else {
+                SaveBreadcrumb.deferred("AppBootstrapper.cashFlowOverrideDuplicates", "import not quiescent")
+                return
+            }
+            CashFlowOverrideLineMigration.migrateIfNeeded(in: context, scope: .all)
         }
 
         // 16.5. Retry bridge operations that failed in a previous launch

@@ -11,8 +11,8 @@ recoge lo que entró después (#515 a #527) y saca de la tanda lo que ya cerrast
   Ninguna falló.
 - **Pasan a 2.2:** 2 cards.
 - **Se quedan para tu iPhone:** 19 pruebas en 4 bloques. **Sin iPhone:** 6. **Para aprobar con capturas:** 2 pantallas.
-- **Tiempo total estimado: unas 7 h 15 min** (iPhone 6 h, sin iPhone 1 h 10 min, capturas 5 min). Lo que bloquea el
-  lanzamiento suma **3 h 50 min**.
+- **Tiempo total estimado: unas 7 h 20 min** (iPhone 6 h 5 min, sin iPhone 1 h 10 min, capturas 5 min). Lo que bloquea el
+  lanzamiento suma **3 h 55 min**.
 
 Los ids de card van sin el prefijo `tablero-`. Cada prueba dice qué la retiene: §4 es «solo en un iPhone real» y §5 es
 «tu visto bueno».
@@ -48,7 +48,7 @@ Si una falla, 2.1 no sale: se pierden datos, un usuario nuevo no puede entrar o 
 | 10 | C · D2 · Actualizar encima no cierra la sesión | `previous-person-cloud-session-survives-…` | 10 |
 | 11 | C · D3 · «Vengo por un grupo» con datos de iCloud | `groups-entry-on-a-mirrored-store-…` (2 tickets) | 40 |
 | 12 | D · E1 · Unirse a un grupo con dos iPhone | `validar-en-testflight-unirse-a-un-grupo-e1ah` | 30 |
-| 13 | D · ly22 · Los ajustes del flujo de caja viajan | `los-ajustes-de-un-mes-del-flujo-de-caja-ly22` | 25 |
+| 13 | D · ly22 · Los ajustes del flujo de caja viajan | `los-ajustes-de-un-mes-del-flujo-de-caja-ly22` | 30 |
 
 **Orden:** el bloque E primero (no pide iPhone, y el esquema tiene que estar antes del TestFlight 17). Luego los bloques
 A, B, C y D.
@@ -224,17 +224,23 @@ ly22 y E3 piden el **mismo Apple ID** en los dos y van seguidas. E2 pide la mism
 dos cuentas distintas. Todo con el TestFlight 17: un build de Xcode da 401 contra producción. Las cuatro son §4 (dos
 dispositivos físicos).
 
-### D · ly22 — Los ajustes de un mes del flujo de caja viajan al otro iPhone · 25 min · **bloquea**
+### D · ly22 — Los ajustes de un mes del flujo de caja viajan al otro iPhone · 30 min · **bloquea**
 Card `los-ajustes-de-un-mes-del-flujo-de-caja-ly22`, ticket `personal-cloudkit-cashflow-override-line-declared-as-reference`
 (#523). Con E · esquema ya hecho. La migración la fijan los tests; falta el viaje real por iCloud. De paso, prueba
-también las Novedades de 2.1 (card `novedades-de-2-1-en-la-app-h4hj`, §4 actualizar encima).
+también las Novedades de 2.1 (card `novedades-de-2-1-en-la-app-h4hj`, §4 actualizar encima) y los dos residuales del
+flujo de caja (tickets `cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two` y
+`cashflow-override-synced-to-an-old-version-stays-invisible-after-updating`, pasos 1b, 3b y 4).
 1. iPhone A, todavía con **Yala 2.0.4 de la App Store**: pestaña «Más» › «Flujo de caja», toca la celda de un mes de una
-   línea, pon 1.111 y «Guardar ajuste». Si no ves «Flujo de caja», apaga «Solo gastos» en Personalización.
-2. Instala el TestFlight 17 encima en A, y también en B.
+   línea (mes X), pon 1.111 y «Guardar ajuste». Si no ves «Flujo de caja», apaga «Solo gastos» en Personalización.
+   1b. Otro mes de la MISMA línea (mes Y): en A pon 111; en B, también con 2.0.4, pon 222 en ese mismo mes.
+2. Instala el TestFlight 17 encima **solo en A**.
 3. Abre A → sale «Mira lo nuevo en Yala» con «Grupos», «Anotar nunca fue tan fácil» y «Tus datos, tus reglas». Lee el
    texto en español y toca «Continuar». Cierra Yala del todo y reábrela → la hoja no vuelve.
-4. Abre B › «Más» › «Flujo de caja» → en uno o dos minutos (o al reabrir) ese mes enseña 1.111. **Si no llega, no
-   publiques:** el build no arregla los ajustes que ya había.
+   3b. En A, ajusta un tercer mes (mes Z) a 555. Deja B abierto, todavía con 2.0.4, dos minutos.
+4. Instala el TestFlight 17 en B y abre «Más» › «Flujo de caja» (en uno o dos minutos, o al reabrir):
+   - El mes X enseña 1.111. **Si no llega, no publiques:** el build no arregla los ajustes que ya había.
+   - El mes Y enseña el MISMO importe en A y en B (111 o 222, da igual cuál), y el mismo tras cerrar y reabrir cada uno.
+   - El mes Z enseña 555. Si no, no bloquea (no se pierde nada), pero apúntalo.
 5. En A, ajusta otro mes a 1.234 › en B aparece. En B cámbialo a 2.000 › en A aparece.
 
 ### D · E3 — Un ajuste viaja al otro iPhone · 15 min

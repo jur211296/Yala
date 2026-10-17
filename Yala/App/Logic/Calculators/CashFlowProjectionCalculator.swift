@@ -308,7 +308,7 @@ struct CashFlowProjectionCalculator {
         calendar: Calendar
     ) -> CashFlowLineResult {
 
-        let override = line.monthOverrides?.first { $0.monthKey == monthKey }
+        let override = line.monthOverride(for: monthKey)
         let isOverride = override != nil
 
         let plannedAmount: Double
@@ -645,7 +645,7 @@ struct CashFlowProjectionCalculator {
     ) -> [CashFlowLine] {
         // Pre-compute amounts once per line (O(n)) to avoid redundant calls during sort
         let amounts: [UUID: Double] = Dictionary(uniqueKeysWithValues: lines.map { line in
-            let amt = line.monthOverrides?.first(where: { $0.monthKey == monthKey })?.amount
+            let amt = line.monthOverride(for: monthKey)?.amount
                 ?? estimatePlanned(
                     line: line, monthDate: monthDate, index: index,
                     currencyCode: currencyCode, converter: converter, calendar: calendar

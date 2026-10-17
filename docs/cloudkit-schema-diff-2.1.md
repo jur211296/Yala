@@ -328,6 +328,14 @@ dos de `.dev` los mismos con `--container-id iCloud.com.jurgenschmidt.yala.dev` 
 4. **Obligatorio, es lo que prueba la migración:** antes de instalar la build nueva en A, apunta en A (con la versión
    de la App Store) un ajuste de otro mes. Instala la build nueva en A y en B, abre A una vez, y comprueba que ese
    ajuste aparece en B. Si no aparece, la build no arregla los ajustes que ya había: no la publiques.
+5. **Un ajuste que llega a la versión vieja.** Con A en la build nueva y B todavía en la de la App Store, ajusta en A
+   un mes de una línea (por ejemplo 555). Espera dos minutos con B abierto. Instala la build nueva en B y abre
+   Flujo de caja: el mes tiene que enseñar 555. Si no lo enseña, apúntalo en el ticket
+   `cashflow-override-synced-to-an-old-version-stays-invisible-after-updating`: no bloquea la publicación (no se
+   pierde nada) pero hay que arreglarlo.
+6. **El mismo mes en los dos.** Con los dos en la versión de la App Store, apunta el mismo mes de la misma línea en A
+   (111) y en B (222). Instala la build nueva en los dos y abre Flujo de caja en cada uno, dos veces. Los dos tienen
+   que enseñar el mismo importe, y el mismo en cada apertura. Cuál de los dos gana no importa.
 
 Si el paso 2 no llega, mira primero el paso C: sin el campo en Production el ajuste se queda en A sin aviso.
 
@@ -336,10 +344,14 @@ Si el paso 2 no llega, mira primero el paso C: sin el campo en Production el aju
 Medido: mientras un teléfono siga con la versión de la App Store, ese teléfono sigue escribiendo `CD_line` y su
 subida a iCloud sigue atascada como hoy, hasta que actualice. No empeora nada.
 
-[Inferido, sin medir] Mientras uno de los dos teléfonos siga con una versión anterior, los ajustes que le lleguen del otro no tienen
-dónde guardarse (esa versión no conoce el campo nuevo) y no se ven. Al actualizarlo, el espejo no vuelve a bajar
-lo que ya bajó, así que esos ajustes siguen sin verse ahí hasta que alguien los edite. Ticket:
+Mientras uno de los dos teléfonos siga con una versión anterior, los ajustes que le lleguen del otro no tienen
+dónde guardarse (esa versión no conoce el campo nuevo) y no se ven. La app no los borra nunca. [Medido en el binario
+de Core Data, no en un aparato] Al actualizar, el espejo detecta el modelo nuevo y vuelve a bajar la zona, así que el
+ajuste debería aparecer. Lo confirma el paso 5 del QA de dos iPhone. Ticket:
 `cashflow-override-synced-to-an-old-version-stays-invisible-after-updating`.
+
+Si los dos teléfonos apuntaron el mismo mes, los dos acaban con el mismo ajuste: el de menor `id`. Ticket:
+`cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two`.
 
 ## Para el siguiente campo nuevo
 
