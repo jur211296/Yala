@@ -21,7 +21,7 @@
 "widget.gallery.budgets" = "Budżety";
 "widget.gallery.budgets.desc" = "Postęp twoich budżetów";
 "widget.gallery.latestRecords" = "Ostatnie wpisy";
-"widget.gallery.latestRecords.desc" = "Twoje najnowsze transakcje";
+"widget.gallery.latestRecords.desc" = "Twoje najnowsze wpisy";
 "widget.gallery.expense" = "Wydatki";
 "widget.gallery.expense.desc" = "Łączne wydatki w okresie";
 "widget.gallery.categoriesPie" = "Kategorie (kołowy)";
@@ -63,7 +63,7 @@
 "widget.intent.scheduledPayments.title" = "Nadchodzące płatności";
 "widget.intent.scheduledPayments.desc" = "Pokazuje nadchodzące zaplanowane płatności";
 "widget.intent.latestRecords.title" = "Ostatnie wpisy";
-"widget.intent.latestRecords.desc" = "Pokazuje twoje najnowsze transakcje";
+"widget.intent.latestRecords.desc" = "Pokazuje twoje najnowsze wpisy";
 "widget.intent.accessoryBalance.title" = "Saldo";
 "widget.intent.accessoryBalance.desc" = "Saldo okresu";
 "widget.intent.accessoryExpense.title" = "Wydatki";

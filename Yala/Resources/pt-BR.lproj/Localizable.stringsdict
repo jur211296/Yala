@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Esta categoria tem uma subcategoria com %d transação. Para eliminá-la, primeiro elimine ou transfira essa transação da sua subcategoria.</string>
+			<string>Esta categoria tem uma subcategoria com %d registro. Para excluí-la, primeiro exclua esse registro ou mova-o para outra subcategoria.</string>
 			<key>other</key>
-			<string>Esta categoria tem subcategorias com %d transacoes. Para elimina-la, primeiro elimine ou transfira as transacoes de cada subcategoria.</string>
+			<string>Esta categoria tem subcategorias com %d registros. Para excluí-la, primeiro exclua esses registros ou mova-os para outra subcategoria.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d transação será eliminada permanentemente. Esta ação não pode ser desfeita.</string>
+			<string>%d registro será excluído permanentemente. Esta ação não pode ser desfeita.</string>
 			<key>other</key>
-			<string>%d transacoes serao eliminadas permanentemente. Esta acao nao pode ser desfeita.</string>
+			<string>%d registros serão excluídos permanentemente. Esta ação não pode ser desfeita.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Há %1$d transação em "%2$@". Escolha o que fazer com ela antes de eliminar.</string>
+			<string>Há %1$d registro em "%2$@". Escolha o que fazer com ele antes de excluir.</string>
 			<key>other</key>
-			<string>Há %1$d transações em "%2$@". Escolha o que fazer com elas antes de eliminar.</string>
+			<string>Há %1$d registros em "%2$@". Escolha o que fazer com eles antes de excluir.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>

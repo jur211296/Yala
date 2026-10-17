@@ -248,6 +248,8 @@ Cambios guardados: "Cambios guardados"
 | "Error crítico" / "Fallo grave" | Genera ansiedad innecesaria |
 | "Estimado usuario" | Frío y corporativo |
 | "Transacción" (excepto contextos técnicos) | Usar "gasto" o "ingreso" |
+| "Transacción" / "movimiento" para lo que la persona apunta | Es un "registro" (la pestaña «Registros»), o "gasto"/"ingreso" si se sabe cuál |
+| "Divisa" | Siempre "moneda": "moneda principal", "monedas secundarias" |
 
 ---
 

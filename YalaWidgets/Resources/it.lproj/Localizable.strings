@@ -21,7 +21,7 @@
 "widget.gallery.budgets" = "Budget";
 "widget.gallery.budgets.desc" = "Il tuo progresso del budget";
 "widget.gallery.latestRecords" = "Ultimi registri";
-"widget.gallery.latestRecords.desc" = "Le tue transazioni più recenti";
+"widget.gallery.latestRecords.desc" = "Le tue registrazioni più recenti";
 "widget.gallery.expense" = "Spese";
 "widget.gallery.expense.desc" = "Le tue spese totali per il periodo";
 "widget.gallery.categoriesPie" = "Categorie (Torta)";
@@ -63,7 +63,7 @@
 "widget.intent.scheduledPayments.title" = "Pagamenti in arrivo";
 "widget.intent.scheduledPayments.desc" = "Mostra i tuoi prossimi pagamenti pianificati";
 "widget.intent.latestRecords.title" = "Ultimi registri";
-"widget.intent.latestRecords.desc" = "Mostra le tue transazioni più recenti";
+"widget.intent.latestRecords.desc" = "Mostra le tue registrazioni più recenti";
 "widget.intent.accessoryBalance.title" = "Saldo";
 "widget.intent.accessoryBalance.desc" = "Saldo del periodo";
 "widget.intent.accessoryExpense.title" = "Spese";

@@ -13,9 +13,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Das Konto hat %d Datensatz. Er wird nicht gelöscht: Er bleibt in Datensätze, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
+			<string>Das Konto hat %d Eintrag. Er wird nicht gelöscht: Er bleibt in Einträge, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
 			<key>other</key>
-			<string>Das Konto hat %d Datensätze. Sie werden nicht gelöscht: Sie bleiben in Datensätze, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
+			<string>Das Konto hat %d Einträge. Sie werden nicht gelöscht: Sie bleiben in Einträge, ohne Konto. Wenn du das Konto nur nicht mehr sehen willst, archiviere es. Das kann nicht rückgängig gemacht werden.</string>
 		</dict>
 	</dict>
 	<key>category.cannotDeleteMessage</key>
@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Diese Kategorie hat eine Unterkategorie mit %d Transaktion. Um sie zu löschen, lösche oder übertrage zuerst diese Transaktion aus ihrer Unterkategorie.</string>
+			<string>Diese Kategorie hat eine Unterkategorie mit %d Eintrag. Um sie zu löschen, lösche oder verschiebe zuerst diesen Eintrag aus ihrer Unterkategorie.</string>
 			<key>other</key>
-			<string>Diese Kategorie hat Unterkategorien mit %d Transaktionen. Um sie zu löschen, lösche oder übertrage zuerst die Transaktionen aus jeder Unterkategorie.</string>
+			<string>Diese Kategorie hat Unterkategorien mit %d Einträgen. Um sie zu löschen, lösche oder verschiebe zuerst die Einträge aus jeder Unterkategorie.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d Transaktion wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</string>
+			<string>%d Eintrag wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</string>
 			<key>other</key>
-			<string>%d Transaktionen werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</string>
+			<string>%d Einträge werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Es gibt %1$d Transaktion in "%2$@". Wähle, was vor dem Löschen mit ihr geschehen soll.</string>
+			<string>Es gibt %1$d Eintrag in "%2$@". Wähle, was vor dem Löschen mit ihm geschehen soll.</string>
 			<key>other</key>
-			<string>Es gibt %1$d Transaktionen in "%2$@". Wähle, was mit ihnen vor dem Löschen geschehen soll.</string>
+			<string>Es gibt %1$d Einträge in "%2$@". Wähle, was mit ihnen vor dem Löschen geschehen soll.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>

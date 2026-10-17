@@ -27,7 +27,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>此类别的子类别中有 %d 笔交易。要删除它,请先从每个子类别中删除或转移这些交易。</string>
+			<string>此类别的子类别中有 %d 条记录。要删除它,请先从每个子类别中删除或转移这些记录。</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -41,7 +41,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d 笔交易将被永久删除。此操作无法撤销。</string>
+			<string>%d 条记录将被永久删除。此操作无法撤销。</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -55,7 +55,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>「%2$@」中有 %1$d 笔交易。删除前请决定如何处理它们。</string>
+			<string>「%2$@」中有 %1$d 条记录。删除前请决定如何处理它们。</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>

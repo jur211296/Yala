@@ -272,7 +272,7 @@
 // MARK: - Empty States
 
 "empty.noData" = "Noch keine Daten vorhanden";
-"empty.noTransactions" = "Noch keine Transaktionen";
+"empty.noTransactions" = "Noch keine Einträge";
 "empty.noFavorites" = "Noch keine Favoriten";
 "empty.noTags" = "Noch keine Tags";
 "empty.noAccounts" = "Noch keine Konten";
@@ -284,8 +284,8 @@
 
 // MARK: - Transaction
 
-"transaction.new" = "Neue Transaktion";
-"transaction.edit" = "Transaktion bearbeiten";
+"transaction.new" = "Neuer Eintrag";
+"transaction.edit" = "Eintrag bearbeiten";
 "transaction.type" = "Typ";
 "transaction.amount" = "Betrag";
 "transaction.note" = "Notiz";
@@ -357,14 +357,14 @@
 
 // MARK: - Import
 
-"import.title" = "Transaktionen importieren";
+"import.title" = "Einträge importieren";
 "import.selectFile" = "Datei auswählen";
 "import.importing" = "Importiere...";
 "import.downloadTemplate" = "Vorlage herunterladen";
 "import.createCategories" = "Neue Kategorien erstellen";
 "import.continue" = "Fortfahren";
 "import.noAccountsAvailable" = "Keine Konten verfügbar";
-"import.createAccountFirst" = "Erstelle mindestens ein Konto, bevor du Transaktionen importierst.";
+"import.createAccountFirst" = "Erstelle mindestens ein Konto, bevor du Einträge importierst.";
 "import.completed" = "Import abgeschlossen";
 "import.error" = "Importfehler";
 "import.templateGenerated" = "Vorlage erstellt";
@@ -374,14 +374,14 @@
 "import.categoriesDescription" = "Wenn die Datei nicht vorhandene Kategorien enthält, werden diese automatisch erstellt.";
 "import.selectAccount" = "Konto auswählen";
 "import.fileUrlError" = "Die URL der ausgewählten Datei konnte nicht abgerufen werden.";
-"import.createAccountBeforeImport" = "Erstelle mindestens ein Konto, bevor du Transaktionen importierst.";
+"import.createAccountBeforeImport" = "Erstelle mindestens ein Konto, bevor du Einträge importierst.";
 
 // Multi-currency import
 "import.multiCurrencyDetected" = "Mehrere Währungen erkannt";
 "import.assignAccountPerCurrency" = "Weise jeder in der Datei gefundenen Währung ein Konto zu.";
 "import.selectAccountForCurrency" = "Konto auswählen";
 "import.currenciesDetected" = "%d Währungen erkannt";
-"import.recordsImportedMultiCurrency" = "%d Datensätze in %d Währungen importiert.";
+"import.recordsImportedMultiCurrency" = "%d Einträge in %d Währungen importiert.";
 "import.noAccountsForCurrency" = "Keine Konten in %@. Erstelle zuerst ein Konto in dieser Währung.";
 "import.noCurrenciesDetected" = "Keine gültigen Währungen in der Datei erkannt.";
 "import.importAction" = "Importieren";
@@ -409,7 +409,7 @@
 "favorites.namePlaceholder" = "Name des Favoriten";
 "favorites.notConfigured" = "Nicht konfiguriert";
 "favorites.descriptionPlaceholder" = "Beschreibung (optional)";
-"favorites.saveDescription" = "Speichere diese Zahlung als Favorit, um ähnliche Ausgaben schneller zu erfassen. Du findest sie unter ⭐ oben rechts beim Erstellen oder Bearbeiten einer Transaktion. Du kannst sie jederzeit in den Favoriten in deinem Profil bearbeiten.";
+"favorites.saveDescription" = "Speichere diese Zahlung als Favorit, um ähnliche Ausgaben schneller zu erfassen. Du findest sie unter ⭐ oben rechts beim Erstellen oder Bearbeiten eines Eintrags. Du kannst sie jederzeit in den Favoriten in deinem Profil bearbeiten.";
 
 // MARK: - Scheduled
 
@@ -423,7 +423,7 @@
 "scheduled.skip.overdue.title" = "Überfälliges Ereignis überspringen";
 "scheduled.status.skipped" = "Übersprungen";
 "scheduled.status.paid" = "Bezahlt";
-"scheduled.unlink" = "Transaktion trennen";
+"scheduled.unlink" = "Eintrag trennen";
 "scheduled.status.overdue" = "Überfällig";
 "scheduled.draftCreatedTitle" = "Du hast ausstehende Zahlungen!";
 "scheduled.draftCreatedMessage" = "%d geplante Zahlungen wurden zu deinem Posteingang hinzugefügt. Schau sie dir an, wenn du bereit bist.";
@@ -663,13 +663,13 @@
 "export.column.tags" = "Tags";
 "export.column.note" = "Notiz";
 "export.column.date.description" = "Datum im Format yyyy-MM-dd.";
-"export.column.amount.description" = "Transaktionsbetrag mit 2 Dezimalstellen.";
+"export.column.amount.description" = "Betrag des Eintrags mit 2 Dezimalstellen.";
 "export.column.currency.description" = "Währungscode (PEN, USD, EUR).";
 "export.column.account.description" = "Name des zugehörigen Kontos.";
-"export.column.category.description" = "Hauptkategorie der Transaktion.";
+"export.column.category.description" = "Hauptkategorie des Eintrags.";
 "export.column.subcategory.description" = "Spezifische Unterkategorie.";
 "export.column.tags.description" = "Zugehörige Tags, getrennt durch ';'.";
-"export.column.note.description" = "Freitextnotiz zur Transaktion.";
+"export.column.note.description" = "Freitextnotiz zum Eintrag.";
 "common.next" = "Weiter";
 "settings.versionInfo" = "Version %1$@ (Build %2$@)";
 "tab.panel" = "Übersicht";
@@ -677,7 +677,7 @@
 "tab.planning" = "Planung";
 "tab.more" = "Mehr";
 "tab.search" = "Suchen";
-"tab.records" = "Datensätze";
+"tab.records" = "Einträge";
 "tab.reports" = "Berichte";
 "tab.groups" = "Gruppen";
 "report.title" = "Finanzberichte";
@@ -726,7 +726,7 @@
 "panel.liveAnchorEducation.title" = "Ihr Saldo heute";
 "panel.liveAnchorEducation.heroFormat" = "Sie haben heute %@";
 "panel.liveAnchorEducation.bodyLineOneFormat" = "Das ist, was Ihr Geld gerade wert ist, wenn Sie alles in %@ umtauschen würden.";
-"panel.liveAnchorEducation.bodyLineTwoFormat" = "Wenn wir stattdessen jede Bewegung zum Wert des Tages addieren würden, an dem sie geschah, wären es %@.";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "Wenn wir stattdessen jeden Eintrag zum Wert des Tages addieren würden, an dem er geschah, wären es %@.";
 "panel.liveAnchorEducation.bodyLineThree" = "Warum der Unterschied? Sie haben Geld in anderen Währungen, und diese Währungen sind heute unterschiedlich viel wert.";
 "panel.liveAnchorEducation.todayQuestion" = "Ihr Saldo heute";
 "panel.liveAnchorEducation.whyQuestion" = "Warum dieser Betrag?";
@@ -749,7 +749,7 @@
 "panel.fxPnL.sheetIntroFormat" = "Wir vergleichen, was dein Geld in anderen Währungen heute in %@ wert ist, mit dem Wert bei Eingang auf deinen Konten. Die Differenz ist das, was der Wechselkurs dir gegeben oder genommen hat, ganz ohne dein Zutun.";
 "panel.fxPnL.rowRatesFormat" = "Eingang zu %1$@ · heute zu %2$@";
 "panel.fxPnL.rowValueTodayFormat" = "= %@";
-"panel.fxPnL.averageNote" = "Der Eingangskurs ist ein Durchschnitt all deiner Bewegungen in dieser Währung, nicht der Kurs jedes einzelnen Kaufs.";
+"panel.fxPnL.averageNote" = "Der Eingangskurs ist ein Durchschnitt all deiner Einträge in dieser Währung, nicht der Kurs jedes einzelnen Kaufs.";
 "panel.fxPnL.estimatedRateNote" = "Eine Umrechnung nutzte einen Kurs, der nicht der von heute war. Diese Zahlen sind daher ungefähr.";
 
 "widget.today" = "Heute";
@@ -806,8 +806,8 @@
 "widget.topSubcategories" = "Top Unterkategorien";
 "widget.subcategories" = "Unterkategorien";
 "widget.noExpensesPeriod" = "Du hast noch keine Ausgaben in diesem Zeitraum.";
-"widget.noExpensesDescriptionCategories" = "Wenn du Transaktionen erfasst, siehst du hier deine Hauptkategorien.";
-"widget.noExpensesDescriptionSubcategories" = "Wenn du Transaktionen erfasst, siehst du hier deine Hauptunterkategorien.";
+"widget.noExpensesDescriptionCategories" = "Wenn du Einträge erfasst, siehst du hier deine Hauptkategorien.";
+"widget.noExpensesDescriptionSubcategories" = "Wenn du Einträge erfasst, siehst du hier deine Hauptunterkategorien.";
 "widget.of" = "von %@";
 "widget.ofTotal" = "vom Gesamt";
 "widget.ofExpense" = "der Ausgaben";
@@ -825,7 +825,7 @@
 "widget.selectCurrencies" = "Wähle bis zu 2 Währungen zum Vergleich mit %@";
 "widget.currenciesToCompare" = "Zu vergleichende Währungen";
 "widget.noRecordsForFilters" = "Noch keine Einträge für diesen Zeitraum und diese Filter";
-"widget.recordsWillAppear" = "Wenn du Transaktionen erfasst, erscheinen sie hier.";
+"widget.recordsWillAppear" = "Wenn du Einträge erfasst, erscheinen sie hier.";
 "widget.total" = "Gesamt";
 "widget.average" = "Durchschnitt";
 
@@ -929,7 +929,7 @@
 "cashFlowPlan.cellDetailOf" = "von";
 "cashFlowPlan.cellDetailRemaining" = "Dir bleiben noch %@";
 "cashFlowPlan.cellDetailPendingIncome" = "Noch %@ zu erhalten";
-"cashFlowPlan.cellDetailRecentTransactions" = "Letzte Transaktionen";
+"cashFlowPlan.cellDetailRecentTransactions" = "Letzte Einträge";
 "cashFlowPlan.cellDetailSpent" = "Ausgegeben";
 "cashFlowPlan.cellDetailEarned" = "Erhalten";
 "cashFlowPlan.cellDetailMore" = "mehr";
@@ -1036,7 +1036,7 @@
 "comparison.yearShort" = "J-1";
 
 "statistics.noRecordsFiltered" = "Keine Einträge mit den angewandten Filtern gefunden.";
-"statistics.noRecordsDescription" = "Wenn du Transaktionen erfasst, erscheinen sie hier.";
+"statistics.noRecordsDescription" = "Wenn du Einträge erfasst, erscheinen sie hier.";
 "statistics.periodComparison" = "Vergleich mit vorherigem Zeitraum";
 "statistics.vsPreviousPeriod" = "vs Vorheriger Zeitraum";
 "statistics.vsPreviousYear" = "vs Vorjahr";
@@ -1164,7 +1164,7 @@
 "common.lastUpdate" = "Letzte Aktualisierung:";
 
 "common.archived" = "Archiviert";
-"empty.tagsDescription" = "Erstelle Tags, um deine Transaktionen flexibel zu organisieren.";
+"empty.tagsDescription" = "Erstelle Tags, um deine Einträge flexibel zu organisieren.";
 "empty.categoriesDescription" = "Erstelle Kategorien, um deine Einnahmen und Ausgaben zu klassifizieren.";
 "empty.accountsDescription" = "Erstelle Konten, um deine Finanzen nach Bank, Bargeld oder anderem zu organisieren.";
 
@@ -1184,7 +1184,7 @@
 "settings.firstWeekdayDescription" = "Lege fest, welcher Tag als Wochenbeginn gilt für Filter wie 'Diese Woche'.";
 "settings.sunday" = "Sonntag";
 "settings.monday" = "Montag";
-"settings.resetDataDescription" = "Dieser Vorgang löscht dauerhaft deine Konten, Transaktionen, Budgets, Wechselkurse, Kategorien und alle anderen mit deinem Yala-Profil verbundenen Daten. Nach dem Löschen kehrt die App in einen Anfangszustand zurück.";
+"settings.resetDataDescription" = "Dieser Vorgang löscht dauerhaft deine Konten, Einträge, Budgets, Wechselkurse, Kategorien und alle anderen mit deinem Yala-Profil verbundenen Daten. Nach dem Löschen kehrt die App in einen Anfangszustand zurück.";
 "settings.deleteDataConfirmation" = "Deine Daten löschen?";
 "settings.delete" = "Löschen";
 "settings.cancel" = "Abbrechen";
@@ -1209,7 +1209,7 @@
 "transaction.account" = "Konto";
 "tag.newTag" = "Neuer Tag";
 "tag.editTag" = "Tag bearbeiten";
-"tag.createFirstDescription" = "Erstelle deinen ersten Tag, um deine Transaktionen zu organisieren";
+"tag.createFirstDescription" = "Erstelle deinen ersten Tag, um deine Einträge zu organisieren";
 "tag.deleteConfirmation" = "Tag löschen?";
 "tag.namePlaceholder" = "Name (max. 20)";
 "tag.color" = "Farbe";
@@ -1385,17 +1385,17 @@
 "subcategory.deleteConfirmTitle" = "Unterkategorie löschen?";
 "subcategory.deleteConfirmMessage" = "Diese Aktion kann nicht rückgängig gemacht werden.";
 "subcategory.cannotDeleteTitle" = "Löschen nicht möglich";
-"subcategory.cannotDeleteMessage" = "Diese Unterkategorie hat %d zugeordnete Transaktionen. Übertrage die Transaktionen in eine andere Unterkategorie, bevor du sie löschst.";
-"subcategory.transferTitle" = "Transaktionen übertragen";
-"subcategory.transferHeader" = "Diese Unterkategorie hat Transaktionen";
+"subcategory.cannotDeleteMessage" = "Diese Unterkategorie hat %d Einträge. Verschiebe sie in eine andere Unterkategorie, bevor du sie löschst.";
+"subcategory.transferTitle" = "Einträge verschieben";
+"subcategory.transferHeader" = "Diese Unterkategorie hat Einträge";
 "subcategory.transferToSpecific" = "In andere Unterkategorie übertragen";
-"subcategory.transferToSpecificDesc" = "Wähle eine Ziel-Unterkategorie zum Verschieben der Transaktionen";
+"subcategory.transferToSpecificDesc" = "Wähle eine Ziel-Unterkategorie zum Verschieben der Einträge";
 "subcategory.transferToUnassigned" = "Nach Nicht zugewiesen verschieben";
-"subcategory.transferToUnassignedDesc" = "Die Transaktionen werden in die Unterkategorie \"Nicht zugewiesen\" unter Sonstige verschoben";
-"subcategory.deleteTransactions" = "Transaktionen löschen";
-"subcategory.deleteTransactionsDesc" = "Alle Transaktionen werden dauerhaft gelöscht";
+"subcategory.transferToUnassignedDesc" = "Die Einträge werden in die Unterkategorie \"Nicht zugewiesen\" unter Sonstige verschoben";
+"subcategory.deleteTransactions" = "Einträge löschen";
+"subcategory.deleteTransactionsDesc" = "Alle Einträge werden dauerhaft gelöscht";
 "subcategory.selectDestination" = "Ziel auswählen";
-"subcategory.deleteTransactionsConfirmTitle" = "Transaktionen löschen?";
+"subcategory.deleteTransactionsConfirmTitle" = "Einträge löschen?";
 "subcategory.deleteTransactionsConfirm" = "Löschen";
 "subcategory.details" = "Unterkategorie-Details";
 "subcategory.namePlaceholder" = "Name der Unterkategorie";
@@ -1469,7 +1469,7 @@
 "validation.selectSubcategory" = "Wähle eine Unterkategorie";
 "validation.completeFieldsFirst" = "Betrag, Konto und Kategorie zuerst ausfüllen";
 "validation.futureDateTitle" = "Zukünftiges Datum nicht erlaubt";
-"validation.futureDateMessage" = "Du kannst keine Transaktionen mit einem zukünftigen Datum erfassen. Verwende geplante Zahlungen für wiederkehrende Ausgaben.";
+"validation.futureDateMessage" = "Du kannst keine Einträge mit einem zukünftigen Datum erfassen. Verwende geplante Zahlungen für wiederkehrende Ausgaben.";
 
 // MARK: - Transfer
 
@@ -1521,7 +1521,7 @@
 "scheduled.editor.options" = "Optionen";
 "scheduled.editor.name.placeholder" = "Zahlungsname";
 "scheduled.editor.note.placeholder" = "Ausgabenbeschreibung (optional)";
-"scheduled.editor.type" = "Transaktionstyp";
+"scheduled.editor.type" = "Eintragstyp";
 "scheduled.editor.payment.category" = "Zahlungskategorie";
 "scheduled.editor.classification" = "Klassifizierung";
 "scheduled.editor.account" = "Konto";
@@ -1610,7 +1610,7 @@
 // Common (if not already present)
 "common.disabled" = "Deaktiviert";
 "filters.none" = "Keine";
-"filters.transaction.type" = "Transaktionstyp";
+"filters.transaction.type" = "Eintragstyp";
 "filters.clear" = "Löschen";
 "action.close" = "Schließen";
 
@@ -1673,7 +1673,7 @@
 "accessibility.subscriptionToggle" = "Als Abonnement markieren";
 "accessibility.skipSync" = "Warten überspringen und Einrichtung fortsetzen";
 "accessibility.tabLimitReached" = "Tab-Limit erreicht";
-"accessibility.noTransactionsToExport" = "Keine Transaktionen zum Exportieren";
+"accessibility.noTransactionsToExport" = "Keine Einträge zum Exportieren";
 "accessibility.editAccount" = "Konto bearbeiten";
 "accessibility.pageIndicator %d %d" = "Seite %1$d von %2$d";
 "accessibility.accountRow %@ %@" = "Konto %@, Währung %@";
@@ -1708,7 +1708,7 @@
 "accessibility.newPayment" = "Neue geplante Zahlung";
 "accessibility.importingHint" = "Import läuft";
 "accessibility.fillRequiredFields" = "Alle Pflichtfelder ausfüllen";
-"accessibility.noTransactions" = "Keine Transaktionen verfügbar";
+"accessibility.noTransactions" = "Keine Einträge verfügbar";
 "accessibility.selectDraftsFirst" = "Wähle zuerst mindestens einen Entwurf";
 "accessibility.proFeature" = "Pro-Abo erforderlich";
 "accessibility.noActiveAccounts" = "Keine aktiven Konten verfügbar";
@@ -1730,7 +1730,7 @@
 "settings.averageLine.totalDescription" = "Eine horizontale Linie mit dem Gesamtdurchschnitt.";
 "settings.averageLine.segmentedDescription" = "Segmente nach Zeitraum mit prozentualer Veränderung.";
 "settings.decimalPlaces" = "Dezimalstellen";
-"settings.decimalPlacesDescription" = "Gilt nur für Summen und Grafiken. Einzelne Datensätze zeigen immer 2 Dezimalstellen.";
+"settings.decimalPlacesDescription" = "Gilt nur für Summen und Grafiken. Einzelne Einträge zeigen immer 2 Dezimalstellen.";
 "settings.decimalsNone" = "Keine Dezimalstellen";
 "settings.decimalsOne" = "1 Dezimalstelle";
 "settings.decimalsTwo" = "2 Dezimalstellen";
@@ -1764,7 +1764,7 @@
 "widget.hint.tagsPie" = "Verteilung der Ausgaben nach zugewiesenen Tags.";
 "widget.hint.needTrend" = "Klassifiziert Ihre Ausgaben als wesentlich, prioritär oder optional.";
 "widget.hint.cashFlow" = "Vergleichen Sie Ihre Einnahmen und Ausgaben, um den Nettofluss zu sehen.";
-"widget.hint.recentRecords" = "Ihre letzten Transaktionen.";
+"widget.hint.recentRecords" = "Deine letzten Einträge.";
 "widget.hint.budgets" = "Status Ihrer aktiven Budgets.";
 "widget.hint.exchangeRate" = "Aktualisierte Wechselkurse für Ihre bevorzugte Währung.";
 "widget.hint.scheduledPayments" = "Bevorstehende geplante Zahlungen und Abonnements.";
@@ -1951,9 +1951,9 @@
 "onboarding.tutorialsSettingsHint" = "Du findest sie jederzeit in den Einstellungen";
 
 // MARK: - Bulk Edit
-"bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Transaktionen aktualisiert.";
-"bulkEdit.editCount" = "%d Transaktionen bearbeiten";
-"bulkEdit.successMessage" = "Transaktionen erfolgreich aktualisiert";
+"bulkEdit.currencyWarning" = "Beim Kontowechsel wird die Währung der ausgewählten Einträge aktualisiert.";
+"bulkEdit.editCount" = "%d Einträge bearbeiten";
+"bulkEdit.successMessage" = "Einträge aktualisiert";
 "bulkEdit.cannotEditTransferSubcategory" = "Die Unterkategorie von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
 "bulkEdit.cannotEditTransferAccount" = "Das Konto von Überweisungen kann nicht geändert werden. Bearbeite jede einzeln.";
 "bulkEdit.cannotEditTransferAmountCrossCurrency" = "Beträge von Überweisungen zwischen verschiedenen Währungen können nicht gemeinsam bearbeitet werden. Bearbeite sie einzeln, um den Wechselkurs zu erhalten.";
@@ -2010,8 +2010,8 @@
 "inbox.status.rejected" = "verworfen";
 "inbox.status.approved" = "gespeichert";
 "inbox.status.pending" = "ausstehend";
-"inbox.subtitleMultiplePending" = "%d Transaktionen warten, Schritt für Schritt.";
-"inbox.subtitleOnePending" = "Eine Transaktion wartet, prüfen Sie sie, wenn Sie können.";
+"inbox.subtitleMultiplePending" = "%d Einträge warten, Schritt für Schritt.";
+"inbox.subtitleOnePending" = "Ein Eintrag wartet, prüf ihn, wenn du Zeit hast.";
 "inbox.subtitleAllDone" = "Posteingang leer, super gemacht.";
 "inbox.newTag" = "Neu";
 "inbox.noArchived" = "Keine archivierten Entwürfe";
@@ -2056,13 +2056,13 @@
 // MARK: - Image Input
 "image.title" = "Bild";
 "image.selectTitle" = "Wählen Sie ein Bild";
-"image.selectSubtitle" = "Scannen Sie Bank-Screenshots oder Quittungen, um automatisch Transaktionen zu erstellen.";
+"image.selectSubtitle" = "Scanne Bank-Screenshots oder Quittungen, um automatisch Einträge zu erstellen.";
 "image.selectButton" = "Bild auswählen";
 "image.processing" = "Verarbeitung...";
 "image.processingSubtitle" = "Daten aus Bild extrahieren";
 "image.errorTitle" = "Fehler";
 "image.errorLoad" = "Bild konnte nicht geladen werden";
-"image.errorNoData" = "Keine Transaktionen im Bild erkannt";
+"image.errorNoData" = "Keine Einträge im Bild erkannt";
 "image.errorUnrecognized" = "Nicht erkannter Bildtyp";
 "image.errorGeneric" = "Fehler beim Verarbeiten des Bildes";
 "image.errorPhotoPermission" = "Fotoberechtigung verweigert. Aktivieren Sie sie in den Einstellungen.";
@@ -2071,10 +2071,10 @@
 "image.errorNoApiKey" = "Verbindung zum Bilddienst fehlgeschlagen. Versuchen Sie es später erneut.";
 "image.errorNoConnection" = "Keine Internetverbindung. Sie benötigen eine Verbindung zur Bildanalyse.";
 "image.openSettings" = "Einstellungen öffnen";
-"image.transactionDetected" = "Transaktion erkannt";
-"image.transactionsDetectedCount" = "Transaktionen erkannt";
+"image.transactionDetected" = "Eintrag erkannt";
+"image.transactionsDetectedCount" = "Einträge erkannt";
 "image.reviewDraft" = "Überprüfen";
-"image.transactionsDetected" = "Transaktionen erkannt";
+"image.transactionsDetected" = "Einträge erkannt";
 "image.goToInbox" = "Zum Posteingang";
 "image.transactionsDetectedMessage" = "Ich habe %d Einträge gefunden. Du kannst sie im Eingang prüfen und speichern.";
 "image.analyzingIn" = "Analyse in %d...";
@@ -2176,7 +2176,7 @@
 "tipkit.pro.voiceInput.title" = "Spracheingabe";
 "tipkit.pro.voiceInput.message" = "Jetzt kannst du deine Ausgaben diktieren. Sprich einfach und Yala erfasst sie für dich.";
 "tipkit.pro.imageInput.title" = "Erfassung mit Foto oder Datei";
-"tipkit.pro.imageInput.message" = "Häng ein Foto von einem Beleg oder einer Rechnung an und Yala extrahiert eine oder mehrere Transaktionen für dich.";
+"tipkit.pro.imageInput.message" = "Häng ein Foto von einem Beleg oder einer Rechnung an und Yala erstellt einen oder mehrere Einträge für dich.";
 "tipkit.pro.smartInsights.title" = "Intelligente Zusammenfassung";
 "tipkit.pro.smartInsights.message" = "Aktiviere das, damit Yala KI-gestützte Beobachtungen zu deinen Finanzen erstellt.";
 "tipkit.pro.premiumIcons.title" = "Exklusive Icons";
@@ -2709,7 +2709,7 @@
 "tutorials.inboxApproval.step2.title" = "Erfasse mehrere auf einmal";
 "tutorials.inboxApproval.step3.title" = "Verwalte deinen Posteingang";
 "tutorials.inboxApproval.completion.title" = "Posteingang gemeistert!";
-"tutorials.inboxApproval.completion.desc" = "Deine Transaktionen im Posteingang haben kein Ablaufdatum, du kannst sie genehmigen oder ablehnen, wann immer du möchtest. Entwürfe beeinflussen deine Summen erst, wenn du sie genehmigst.";
+"tutorials.inboxApproval.completion.desc" = "Deine Einträge im Posteingang haben kein Ablaufdatum, du kannst sie genehmigen oder ablehnen, wann immer du möchtest. Entwürfe beeinflussen deine Summen erst, wenn du sie genehmigst.";
 
 // 12. applePay (4 steps)
 "tutorials.applePay.title" = "Mit Apple Pay erfassen";
@@ -2745,7 +2745,7 @@
 "tutorials.createScheduledPayments.step2.desc" = "Wähle den Tag der Zahlung und die Häufigkeit. Wähle, wann die erste Zahlung sein wird, und aktiviere Benachrichtigungen, wenn du am selben Tag oder Tage vorher benachrichtigt werden möchtest.";
 "tutorials.createScheduledPayments.step3.desc" = "Vergiss nicht, den Abo-Schalter zu aktivieren, wenn es sich um ein wiederkehrendes Abo handelt.";
 "tutorials.createScheduledPayments.step4.desc" = "Wenn du auf eine geplante Zahlung tippst, kannst du die zukünftigen Zahlungen, die bereits getätigten sehen und sie jederzeit bearbeiten.";
-"tutorials.createFavorites.step0.desc" = "Gehe zum Bildschirm für neue Transaktionen und tippe auf den Stern oben, um einen neuen Favoriten zu erstellen.";
+"tutorials.createFavorites.step0.desc" = "Gehe zum Bildschirm für neue Einträge und tippe auf den Stern oben, um einen neuen Favoriten zu erstellen.";
 "tutorials.createFavorites.step1.desc" = "Fülle die Felder aus, die du vorausfüllen möchtest. Beim nächsten Mal tippst du einfach auf den Favoriten und siehst, wie sich alle Felder automatisch ausfüllen.";
 "tutorials.editPanel.step0.desc" = "Gehe zum Hauptbildschirm, wo du deine Ausgabenübersicht mit allen verfügbaren Widgets siehst.";
 "tutorials.editPanel.step1.desc" = "Du kannst ändern, welche Widgets angezeigt werden und in welcher Reihenfolge, indem du auf die Anpassungsschaltfläche im Panel tippst.";
@@ -2756,9 +2756,9 @@
 "tutorials.panelFiltering.step3.desc" = "Die Filter breiten sich gleichermaßen auf alle Ansichten aus, sodass du alle Arten von Metriken für alles sehen kannst, was du filtern möchtest.";
 "tutorials.panelFiltering.step4.desc" = "In einigen Ansichten hast du auch einen Filterbereich oben, damit du nach Belieben filterst oder alle mit einer einzigen Schaltfläche entfernst.";
 "tutorials.inboxApproval.step0.desc" = "Wenn du Yala Pro-Nutzer bist und eine Erfassung per Sprache oder Bild machst, wirst du automatisch zum Entwurf weitergeleitet. Das Gleiche gilt, wenn du den Kurzbefehl „Apple-Pay-Zahlung erfassen“ verwendet hast.";
-"tutorials.inboxApproval.step1.desc" = "Fülle einfach die Pflichtfelder aus und genehmige. Die Transaktion wird normal erstellt.";
-"tutorials.inboxApproval.step2.desc" = "Du kannst auch Sprach- oder Bilderfassungen mit mehreren Transaktionen durchführen. Es wird dir mitgeteilt, wie viele Entwürfe erstellt wurden, und dich zum Posteingang führen, um sie zu überprüfen.";
-"tutorials.inboxApproval.step3.desc" = "In deinem Posteingang kannst du Transaktionen genehmigen, Später genehmigen auswählen, um sie später zu sehen, oder sie direkt ablehnen.";
+"tutorials.inboxApproval.step1.desc" = "Fülle einfach die Pflichtfelder aus und genehmige. Der Eintrag wird normal erstellt.";
+"tutorials.inboxApproval.step2.desc" = "Du kannst auch mehrere Einträge auf einmal per Sprache oder Foto erfassen. Es wird dir mitgeteilt, wie viele Entwürfe erstellt wurden, und dich zum Posteingang führen, um sie zu überprüfen.";
+"tutorials.inboxApproval.step3.desc" = "In deinem Posteingang kannst du Einträge genehmigen, Später genehmigen auswählen, um sie später zu sehen, oder sie direkt ablehnen.";
 "tutorials.applePay.step0.desc" = "Öffne die Kurzbefehle-App und gehe zum Bereich Automationen.";
 "tutorials.applePay.step1.desc" = "Tippe auf Neue Automation, wähle die Wallet-Option, wähle die Karten aus, die du verwenden möchtest, und wähle Sofort ausführen.";
 "tutorials.applePay.step2.desc" = "Wähle Neuen Kurzbefehl erstellen und suche ganz unten nach Yala. Wähle in Yala den Kurzbefehl „Apple-Pay-Zahlung erfassen“.";
@@ -2852,7 +2852,7 @@
 "aiConsent.processingTitle" = "Yala erfasst es für dich";
 "aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst (OpenAI) gesendet. Es wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.insightsTitle" = "Intelligenter Überblick";
-"aiConsent.insightsMessage" = "Diese Funktion sendet eine Zusammenfassung deiner Finanzen an OpenAI – Summen und Trends nach Kategorie, Budgets und wiederkehrende Zahlungen –, um deine Analyse zu erstellen.\n\nDein vollständiger Transaktionsverlauf wird nicht gesendet. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
+"aiConsent.insightsMessage" = "Diese Funktion sendet eine Zusammenfassung deiner Finanzen an OpenAI – Summen und Trends nach Kategorie, Budgets und wiederkehrende Zahlungen –, um deine Analyse zu erstellen.\n\nDein vollständiger Verlauf an Einträgen wird nicht gesendet. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
 "aiConsent.inlineHintProcessing" = "Deine Sprach- und Bilddaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
@@ -2862,7 +2862,7 @@
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Künstliche Intelligenz";
 "insights.aiToggle" = "Smarter Überblick";
-"insights.aiCaption" = "OpenAI analysiert deine aggregierten Daten, um personalisierte Analysen zu erstellen. Es werden keine einzelnen Transaktionen gesendet.";
+"insights.aiCaption" = "OpenAI analysiert deine aggregierten Daten, um personalisierte Analysen zu erstellen. Es werden keine einzelnen Einträge gesendet.";
 "insights.metricsSection" = "Metriken";
 "insights.chartsSection" = "Diagramme";
 "insights.analysisSection" = "Analyse";
@@ -3182,7 +3182,7 @@
 "devseed.stepBudgets" = "Budgets erstellen...";
 "devseed.stepScheduledPayments" = "Geplante Zahlungen erstellen...";
 "devseed.stepSavingBase" = "Basisentitäten speichern...";
-"devseed.stepTransactions" = "Transaktionen generieren...";
+"devseed.stepTransactions" = "Einträge werden generiert...";
 "devseed.stepInitialBalances" = "Anfangssalden einrichten...";
 "devseed.stepSaving" = "Speichern...";
 "devseed.stepDone" = "Fertig!";
@@ -3599,7 +3599,7 @@
 /* Panel Polish #2 — CashFlow: pregunta '¿Qué es el balance?' (común a S/M/L) */
 "panel.widgetInfo.cashFlow.balanceQ" = "Warum stimmt der Gesamtfluss nicht mit meinem Kontostand überein?";
 /* Panel Polish #2 — CashFlow: respuesta a '¿Qué es el balance?' */
-"panel.widgetInfo.cashFlow.balanceA" = "Jede Bewegung im Cashflow wird zum Wechselkurs des Tages erfasst, an dem sie erfolgte. Dein Kontostand zeigt, was du heute zum aktuellen Kurs hast. Wenn du Konten in verschiedenen Währungen hast, ist die Differenz ein nicht realisierter Wechselkursgewinn oder -verlust.";
+"panel.widgetInfo.cashFlow.balanceA" = "Jeder Eintrag im Cashflow wird zum Wechselkurs des Tages erfasst, an dem er erfolgte. Dein Kontostand zeigt, was du heute zum aktuellen Kurs hast. Wenn du Konten in verschiedenen Währungen hast, ist die Differenz ein nicht realisierter Wechselkursgewinn oder -verlust.";
 /* Panel Polish #2 — Trend S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.trend.smallWhatQ" = "Was siehst du?";
 
@@ -3844,7 +3844,7 @@
 "panel.widgetInfo.recentRecords.title" = "Letzte Einträge";
 
 /* Panel Polish #2 — Chip 1 RecentRecords (entidad) */
-"panel.widgetInfo.recentRecords.chip1" = "Bewegungen";
+"panel.widgetInfo.recentRecords.chip1" = "Einträge";
 
 /* Panel Polish #2 — Chip 2 RecentRecords (período) */
 "panel.widgetInfo.recentRecords.chip2" = "Aktueller Zeitraum";
@@ -3853,7 +3853,7 @@
 "panel.widgetInfo.recentRecords.whatQ" = "Was siehst du?";
 
 /* Panel Polish #2 — RecentRecords: respuesta */
-"panel.widgetInfo.recentRecords.whatA" = "Die fünf neuesten Buchungen des aktuellen Zeitraums: Einnahmen, Ausgaben oder Umbuchungen. Jede Zeile zeigt den Betrag (Einnahmen und Ausgaben in unterschiedlichen Farben), die zugeordnete Kategorie oder Unterkategorie und, falls vorhanden, die Bedarfsklassifizierung (essenziell, prioritär oder optional).";
+"panel.widgetInfo.recentRecords.whatA" = "Die fünf neuesten Einträge des aktuellen Zeitraums: Einnahmen, Ausgaben oder Umbuchungen. Jede Zeile zeigt den Betrag (Einnahmen und Ausgaben in unterschiedlichen Farben), die zugeordnete Kategorie oder Unterkategorie und, falls vorhanden, die Bedarfsklassifizierung (essenziell, prioritär oder optional).";
 
 /* Panel Polish #2 — Title sheet pedagógico ScheduledPayments */
 "panel.widgetInfo.scheduledPayments.title" = "Geplante Zahlungen";
@@ -3913,7 +3913,7 @@
 "panel.widgetInfo.budgets.howQ" = "Wie interagiere ich?";
 
 /* Panel Polish #2 — Budgets: respuesta a 'cómo interactúo' (compartida S/M/L) */
-"panel.widgetInfo.budgets.howA" = "Tippe auf ein Budget, um den Rest des Panels nach den Transaktionen seiner Kategorie oder seines Tags zu filtern. Tippe erneut, um den Filter zu entfernen.";
+"panel.widgetInfo.budgets.howA" = "Tippe auf ein Budget, um den Rest des Panels nach den Einträgen seiner Kategorie oder seines Tags zu filtern. Tippe erneut, um den Filter zu entfernen.";
 
 /* Panel Polish #2 — Title sheet pedagógico ExchangeRate */
 "panel.widgetInfo.exchangeRate.title" = "Wechselkurs";
@@ -3957,39 +3957,39 @@
 /* Panel Polish #2 — WeekdayBar L: respuesta */
 "panel.widgetInfo.weekdayBar.largeWhatA" = "Wie viel du im aktuellen Zeitraum an jedem Wochentag durchschnittlich ausgibst. Über jedem Balken mit Ausgaben siehst du den genauen Betrag.";
 "panel.widgetInfo.trend.fxMatchQ" = "Warum stimmt der letzte Punkt eventuell nicht mit meinem Gesamtkontostand überein?";
-"panel.widgetInfo.trend.fxMatchA" = "Der letzte Punkt spiegelt deinen Kontostand zum aktuellen Wechselkurs wider. Vorhergehende Punkte verwenden den Kurs vom jeweiligen Tag der Bewegung. Die Differenz ist ein Wechselkursgewinn oder -verlust — nur sichtbar bei Konten in verschiedenen Währungen.";
+"panel.widgetInfo.trend.fxMatchA" = "Der letzte Punkt spiegelt deinen Kontostand zum aktuellen Wechselkurs wider. Vorhergehende Punkte verwenden den Kurs vom jeweiligen Tag des Eintrags. Die Differenz ist ein Wechselkursgewinn oder -verlust — nur sichtbar bei Konten in verschiedenen Währungen.";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "Wie wirkt sich der Wechselkurs auf meinen Kontostand aus?";
-"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala berechnet deinen Kontostand in der bevorzugten Währung mit dem aktuellen Wechselkurs auf den Saldo jedes Kontos. Wenn sich der Kurs ändert und du keine Bewegungen machst, kann dein Kontostand trotzdem steigen oder fallen.";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala berechnet deinen Kontostand in deiner Hauptwährung mit dem aktuellen Wechselkurs auf den Saldo jedes Kontos. Wenn sich der Kurs ändert und du keine Einträge machst, kann dein Kontostand trotzdem steigen oder fallen.";
 
 // MARK: - A0-Bridge Settings & Filters
 "settings.sectionGroups" = "Gruppen";
-"settings.sectionGroupsHint" = "Legen Sie fest, wie Yala Ihre Gruppenkonten und -transaktionen mit Ihren persönlichen Daten kombiniert.";
+"settings.sectionGroupsHint" = "Lege fest, wie Yala deine Gruppenkonten und -einträge mit deinen persönlichen Daten kombiniert.";
 "settings.includeGroupsInPanelTotal" = "Gruppen im Gesamtsaldo einbeziehen";
-"settings.includeGroupTransactionsInStats" = "Gruppentransaktionen in Statistiken einbeziehen";
+"settings.includeGroupTransactionsInStats" = "Gruppeneinträge in Statistiken einbeziehen";
 "filters.sectionShared" = "Geteilt";
-"filters.includeGroupTransactions" = "Gruppentransaktionen einbeziehen";
-"filters.includeGroupTransactionsHint" = "Wenn aktiviert, erscheinen die durch geteilte Ausgaben generierten Bewegungen in Ihrer Liste.";
+"filters.includeGroupTransactions" = "Gruppeneinträge einbeziehen";
+"filters.includeGroupTransactionsHint" = "Wenn aktiviert, erscheinen die durch geteilte Ausgaben erstellten Einträge in deiner Liste.";
 
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "Diese Ausgabe hat spätere Abrechnungen. Löschen oder bereinigen Sie zuerst die Abrechnungen, bevor Sie sie entfernen.";
-"groups.bridge.editFromGroup" = "Diese Transaktion synchronisiert mit einer Gruppe. Bearbeiten Sie sie in der geteilten Ausgabe.";
+"groups.bridge.editFromGroup" = "Dieser Eintrag synchronisiert mit einer Gruppe. Bearbeite ihn in der geteilten Ausgabe.";
 "groups.bridge.assignFromInbox" = "Weisen Sie im Posteingang eine Unterkategorie zu, um sie abzuschließen.";
-"groups.bridge.editSettlementInGroup" = "Diese Transaktion stammt aus einer Abrechnung. Bearbeiten Sie sie in der Gruppe.";
+"groups.bridge.editSettlementInGroup" = "Dieser Eintrag stammt aus einer Abrechnung. Bearbeite ihn in der Gruppe.";
 "groups.bridge.editPartialBanner" = "Diese Ausgabe stammt aus der Gruppe. Sie können Konto, Kategorie und Tags bearbeiten. Betrag und Datum werden mit der Gruppe synchronisiert.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ hat diese Ausgabe in %2$@ erfasst. Wählen Sie ein Konto, um sie in Ihren Aufzeichnungen zu führen.";
 "groups.bridge.draftReasonCurrencyChanged" = "Die Währung der Ausgabe in %@ wurde geändert. Wählen Sie ein Konto, um Ihren Anteil zu erfassen.";
 "groups.card.moreDebts" = "+%d weitere";
 "inbox.groupExpenseAccountDraft.title" = "Konto zuweisen";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Quellkonto";
-"groups.bridge.activateTitle" = "Automatische Transaktionen aktivieren";
+"groups.bridge.activateTitle" = "Automatische Einträge aktivieren";
 "groups.bridge.activateBody" = "Ab jetzt erscheinen geteilte Ausgaben in Ihren persönlichen Konten. Frühere Ausgaben in Ihren Gruppen: %d. Was tun wir mit ihnen?";
 "groups.bridge.activateOptionFromNow" = "Ab jetzt starten";
 "groups.bridge.activateOptionFromNowHint" = "Nur neue Ausgaben werden reflektiert.";
 "groups.bridge.activateOptionImportAll" = "Gesamten Verlauf importieren";
 "groups.bridge.activateOptionImportAllHint" = "Auch frühere Ausgaben erscheinen in Ihren Konten (%d insgesamt).";
-"groups.bridge.activateImportRegenerationNote" = "Vorhandene generierte Transaktionen werden gemäß den aktuellen Regeln neu erstellt.";
-"groups.bridge.deactivateTitle" = "Automatische Transaktionen deaktivieren";
-"groups.bridge.deactivateBody" = "Sie haben %d von dieser Gruppe generierte Transaktionen. Wenn Sie sie löschen, wird Ihr Gruppensaldo angepasst.";
+"groups.bridge.activateImportRegenerationNote" = "Vorhandene erstellte Einträge werden gemäß den aktuellen Regeln neu erstellt.";
+"groups.bridge.deactivateTitle" = "Automatische Einträge deaktivieren";
+"groups.bridge.deactivateBody" = "Du hast %d von dieser Gruppe erstellte Einträge. Wenn du sie löschst, wird dein Gruppensaldo angepasst.";
 "groups.bridge.deactivateOptionDelete" = "Löschen";
 "groups.bridge.deactivateOptionKeep" = "Als Historie behalten";
 "groups.bridge.importing" = "Importiere %d Ausgaben…";
@@ -4009,7 +4009,7 @@
 "inbox.sourceGroupExpense" = "Geteilte Ausgabe";
 "inbox.sourceGroupSettlement" = "Abrechnung";
 "inbox.sourceManual" = "Manuell";
-"inbox.groupDraftCannotDelete" = "Diese Transaktion kann nur aus der Quellgruppe entfernt werden.";
+"inbox.groupDraftCannotDelete" = "Dieser Eintrag kann nur in seiner Gruppe entfernt werden.";
 
 /* A0-Bridge V2.0 — P0+P1 Sheets + Read-only-Banner (Sie) */
 "groups.settlement.fromAccount" = "Von welchem Konto?";
@@ -4283,11 +4283,11 @@
 
 // MARK: Bridge opt-out (F7 consolidation)
 "groups.bridge.optoutAlertTitle" = "Auch in dein persönliches Yala eintragen?";
-"groups.bridge.optoutAlertBody" = "Sie können eine persönliche Buchung in Ihrem Konto erstellen, um diese Ausgabe widerzuspiegeln, oder sie nur in der Gruppe behalten.";
+"groups.bridge.optoutAlertBody" = "Du kannst einen persönlichen Eintrag in deinem Konto erstellen, um diese Ausgabe widerzuspiegeln, oder sie nur in der Gruppe behalten.";
 "groups.bridge.optoutAlertYes" = "Ja, eintragen";
 "groups.bridge.optoutAlertNo" = "Nur in der Gruppe";
 "groups.bridge.deactivationSheetTitle" = "Persönliche Integration deaktivieren";
-"groups.bridge.deactivationSheetBody" = "Es gibt bereits automatisch erstellte Buchungen in Ihren Konten. Entscheiden Sie, was damit geschehen soll.";
+"groups.bridge.deactivationSheetBody" = "Es gibt bereits automatisch erstellte Einträge in deinen Konten. Entscheide, was damit geschehen soll.";
 "groups.bridge.deactivationOptionFreeze" = "Als Historie behalten";
 "groups.bridge.deactivationOptionDelete" = "Aus meinen Konten löschen";
 "groups.globalSettings.title" = "Gruppeneinstellungen";
@@ -4295,8 +4295,8 @@
 "groups.globalSettings.bridgeToggleLabel" = "Gruppenausgaben in meinen persönlichen Konten erfassen";
 "groups.globalSettings.bridgeCaption" = "Wenn aktiviert, wird jede Ausgabe, die Sie bezahlen oder begleichen, auch im gewählten persönlichen Konto erfasst. Ihr Saldo spiegelt die Realität wider.";
 "groups.globalSettings.visibilitySectionTitle" = "Sichtbarkeit";
-"groups.globalSettings.visibilityCaption" = "Steuern Sie, ob Gruppenbuchungen in Ihrem Panel, in Statistiken und im Bewegungsfeed angezeigt werden.";
-"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Gruppenbuchungen im Bewegungsfeed anzeigen";
+"groups.globalSettings.visibilityCaption" = "Lege fest, ob Gruppeneinträge in deinem Panel, in Statistiken und in Einträgen angezeigt werden.";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Gruppeneinträge in Einträgen anzeigen";
 "groups.settings.personalIntegrationSectionTitle" = "Persönliche Integration";
 "groups.settings.personalIntegrationToggleLabel" = "Ausgaben dieser Gruppe in meinen persönlichen Konten erfassen";
 "groups.settings.personalIntegrationHintInheritOn" = "Übernimmt Ihre allgemeine Einstellung (Aktiviert).";
@@ -4328,7 +4328,7 @@
 "more.subtitle.scheduledPayments" = "Was ansteht: Rechnungen und Abos";
 "more.subtitle.comparative" = "Vergleiche deine Zeiträume nebeneinander";
 "more.subtitle.cashFlow" = "Was reinkommt und was rausgeht";
-"more.subtitle.records" = "Alle deine Bewegungen an einem Ort";
+"more.subtitle.records" = "Alle deine Einträge an einem Ort";
 "more.subtitle.groups" = "Teile Ausgaben ganz unkompliziert";
 "more.subtitle.profile" = "Dein Konto und deine Einstellungen";
 "more.toolsSection" = "Weitere Funktionen";
@@ -4613,7 +4613,7 @@
 "storage.migrate.body" = "Erstelle ein Konto mit Apple oder Google und greife von jedem Gerät auf deine Daten zu – auch ohne iCloud.";
 "storage.migrate.button" = "Cloud aktivieren";
 "storage.migrate.previewButton" = "Anzeigen, was übertragen würde";
-"storage.migrate.previewResult" = "%1$d Transaktionen · %2$d Kategorien · %3$d Konten · %4$d Budgets";
+"storage.migrate.previewResult" = "%1$d Einträge · %2$d Kategorien · %3$d Konten · %4$d Budgets";
 "storage.adopt.title" = "Cloud auf diesem Gerät aktivieren";
 "storage.adopt.body" = "Dieses Konto hat deine Daten bereits in der Cloud. Aktivieren wir sie für dieses Gerät.";
 "storage.adopt.button" = "Auf diesem Gerät aktivieren";
@@ -5040,7 +5040,7 @@
 "settings.scopePersonalInICloud" = "Deine persönlichen Daten bleiben in iCloud";
 
 /* D4 Vaciar: fila dispositivo */
-"settings.wipeScopeDevice" = "Deine Konten, Transaktionen und Budgets werden gelöscht";
+"settings.wipeScopeDevice" = "Deine Konten, Einträge und Budgets werden gelöscht";
 
 /* D4 Vaciar (solo grupos 5a): fila dispositivo */
 "settings.wipeScopeDeviceGroupsOnly" = "Dein Profil und deine Einstellungen werden zurückgesetzt";
@@ -5316,7 +5316,7 @@
 "groups.settlement.deleteTitle" = "Diese Abrechnung löschen?";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
-"groups.settlement.deleteMessage" = "Die damit ausgeglichenen Salden sind wieder offen. Und falls dadurch eine Buchung in Ihren Konten entstanden ist, wird sie ebenfalls gelöscht.";
+"groups.settlement.deleteMessage" = "Die damit ausgeglichenen Salden sind wieder offen. Und falls dadurch ein Eintrag in deinen Konten entstanden ist, wird er ebenfalls gelöscht.";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
 "groups.settlement.deleteFailed" = "Die Abrechnung konnte nicht gelöscht werden. Versuchen Sie es erneut.";
@@ -5626,7 +5626,7 @@
 "account.currencyChange.blockedTitle" = "Die Währung kann nicht geändert werden";
 
 /* %@ = comma-separated list of reasons */
-"account.currencyChange.blockedMessage" = "Dieses Konto enthält Buchungen, deren Beträge an anderer Stelle in der App verwaltet werden: %@. Die Währung hier zu ändern würde sie inkonsistent machen.";
+"account.currencyChange.blockedMessage" = "Dieses Konto enthält Einträge, deren Beträge an anderer Stelle in der App verwaltet werden: %@. Die Währung hier zu ändern würde sie inkonsistent machen.";
 
 /* Lowercase, used inside a list */
 "account.currencyChange.blockedReasonTransfer" = "Überweisungen zwischen Konten";
@@ -5644,7 +5644,7 @@
 "account.currencyChange.confirmAction" = "Umrechnen";
 
 /* Progress overlay title */
-"account.currencyChange.progressTitle" = "Buchungen werden umgerechnet";
+"account.currencyChange.progressTitle" = "Einträge werden umgerechnet";
 
 /* Progress overlay subtitle */
 "account.currencyChange.progressSubtitle" = "Wechselkurs des jeweiligen Datums wird angewendet";
@@ -5881,7 +5881,7 @@
 "storage.groups.detachPurgeFailedBody" = "Deine Gruppen sind noch auf diesem iPhone und das Konto wurde nicht getrennt. Deine Wahl für die Einträge im Panel wurde bereits angewendet, und wir haben dich aus dem Konto abgemeldet. Versuch es noch mal, um es abzuschließen.";
 
 /* Aviso: el desasociar abortó porque no se pudo leer el puente */
-"storage.groups.detachBlockedBridge" = "Wir konnten die Bewegungen deiner Gruppen auf diesem iPhone nicht prüfen. Es wurde nichts getrennt. Versuch es noch mal.";
+"storage.groups.detachBlockedBridge" = "Wir konnten die Einträge deiner Gruppen auf diesem iPhone nicht prüfen. Es wurde nichts getrennt. Versuch es noch mal.";
 "storage.groups.detachBlockedSessionNotClosed" = "Wir konnten die Sitzung deines Gruppenkontos auf diesem iPhone nicht beenden. Es wurde nichts getrennt. Versuch es noch mal.";
 
 /* Botón cuando quedó un desasociar a medias */
@@ -5979,12 +5979,12 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "Dieses Telefon kann deine Daten nicht synchronisieren";
-"settings.signOutAttestMessage" = "Seit über einem Tag kommt dieses Telefon nicht durch die Sicherheitsprüfung, die unser Server verlangt. Änderungen, die nicht in deinem Konto in der Cloud angekommen sind: %d. Bevor du dich entscheidest, kannst du deine Transaktionen in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
-"settings.signOutAttestMessageUnknown" = "Seit über einem Tag kommt dieses Telefon nicht durch die Sicherheitsprüfung, die unser Server verlangt, und einige Änderungen sind nicht in deinem Konto in der Cloud angekommen. Bevor du dich entscheidest, kannst du deine Transaktionen in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
-"settings.signOutAttestExportButton" = "Meine Transaktionen exportieren";
+"settings.signOutAttestMessage" = "Seit über einem Tag kommt dieses Telefon nicht durch die Sicherheitsprüfung, die unser Server verlangt. Änderungen, die nicht in deinem Konto in der Cloud angekommen sind: %d. Bevor du dich entscheidest, kannst du deine Einträge in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutAttestMessageUnknown" = "Seit über einem Tag kommt dieses Telefon nicht durch die Sicherheitsprüfung, die unser Server verlangt, und einige Änderungen sind nicht in deinem Konto in der Cloud angekommen. Bevor du dich entscheidest, kannst du deine Einträge in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutAttestExportButton" = "Meine Einträge exportieren";
 "settings.signOutAttestLossButton" = "Abmelden und Änderungen verlieren";
 "settings.signOutAttestBlocked" = "Dieses Telefon kommt seit über einem Tag nicht durch die Sicherheitsprüfung, die unser Server verlangt, deshalb können deine Änderungen nicht in dein Konto in der Cloud hochgeladen werden.";
-"settings.signOutAttestExportEmpty" = "Du hast keine Transaktionen zum Exportieren.";
+"settings.signOutAttestExportEmpty" = "Du hast keine Einträge zum Exportieren.";
 "settings.signOutAttestExportFailed" = "Wir konnten die Datei nicht erstellen. Versuch es noch einmal.";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
@@ -6197,10 +6197,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "Die Gruppenänderungen, die den Server nicht erreicht haben, werden von diesem Telefon gelöscht. Niemand in der Gruppe wird sie sehen, und sie lassen sich nicht wiederherstellen.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "Deine Sitzung ist abgelaufen. Änderungen, die nicht in deinem Konto in der Cloud angekommen sind: %d. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier im Profil und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Transaktionen vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Deine Sitzung ist abgelaufen. Änderungen, die nicht in deinem Konto in der Cloud angekommen sind: %d. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier im Profil und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Einträge vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Deine Sitzung ist abgelaufen, und einige Änderungen sind nicht in deinem Konto in der Cloud angekommen. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier im Profil und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Transaktionen vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Deine Sitzung ist abgelaufen, und einige Änderungen sind nicht in deinem Konto in der Cloud angekommen. Um sie hochzuladen, öffne „Wo deine Daten liegen“ hier im Profil und tippe auf „Anmelden“. Wenn du dich nicht anmelden kannst, kannst du deine Einträge vorher in eine Datei exportieren. Wenn du dich jetzt abmeldest, gehen diese Änderungen verloren.";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Wähle einen Eintrag, um ihn hier zu sehen";
@@ -6300,16 +6300,16 @@
 "accountDetail.topCategories" = "Wohin es ging";
 
 /* Account detail sheet: section with latest records */
-"accountDetail.latest" = "Letzte Bewegungen";
+"accountDetail.latest" = "Letzte Einträge";
 
 /* Accessibility label of the balance chart; account name, period name */
 "accountDetail.chartLabel %@ %@" = "Saldo von %@ – %@";
 
 /* Account detail sheet: no records in the period */
-"accountDetail.empty" = "Keine Bewegungen in diesem Zeitraum";
+"accountDetail.empty" = "Keine Einträge in diesem Zeitraum";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Archiviert zählt dieses Konto nicht mehr zu deinen Summen und Statistiken, und seine Buchungen werden in „Datensätze“ ausgeblendet. Damit es weiter zählt, deaktiviere „Aus Statistiken ausschließen“.";
+"account.archiveExcludedNotice" = "Archiviert zählt dieses Konto nicht mehr zu deinen Summen und Statistiken, und seine Einträge werden in „Einträge“ ausgeblendet. Damit es weiter zählt, deaktiviere „Aus Statistiken ausschließen“.";
 
 
 /* Chat draft card (Yala IA) — redesign A */
@@ -6488,7 +6488,7 @@
 "inbox.groupSettlementAmountChange.rowDetail" = "%2$@ in %1$@ erfasst";
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
-"inbox.groupSettlementAmountChange.transactionGone" = "Dieser Hinweis lässt sich nicht mehr anwenden: Die Transaktion hat sich geändert oder ist nicht mehr in Ihren Konten.";
+"inbox.groupSettlementAmountChange.transactionGone" = "Dieser Hinweis lässt sich nicht mehr anwenden: Der Eintrag hat sich geändert oder ist nicht mehr in deinen Konten.";
 
 /* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
 "image.entry.failure.unreadableFile.title" = "Ich konnte diese Datei nicht öffnen";
@@ -6604,7 +6604,7 @@
 "onboarding.calc.creditCard.formula" = "Rahmen **%1$@**  −  Verfügbar **%2$@**";
 "onboarding.accountName.allTogether" = "Mein Geld %@";
 "account.deleteConfirmTitle" = "„%@“ löschen?";
-"account.deleteConfirmMessageEmpty" = "Das Konto hat keine Datensätze. Das kann nicht rückgängig gemacht werden.";
+"account.deleteConfirmMessageEmpty" = "Das Konto hat keine Einträge. Das kann nicht rückgängig gemacht werden.";
 
 // Auditoría UX 2.2 · lote 4 — variantes L4-1, L4-5 y L4-13
 "panel.voiceShort" = "Sprache";
@@ -6652,13 +6652,13 @@
 
 /* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
 "export.error.invalidDateRange" = "Diese Daten passen nicht: Das Startdatum muss vor dem Enddatum liegen.";
-"export.error.noTransactions" = "Keine Buchungen passen zu diesen Filtern. Versuche einen anderen Zeitraum oder entferne einen Filter.";
+"export.error.noTransactions" = "Keine Einträge passen zu diesen Filtern. Versuche einen anderen Zeitraum oder entferne einen Filter.";
 "export.error.fileWriteFailed" = "Wir konnten die Datei nicht erstellen. Versuche es erneut.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
 "account.removal.title" = "„%@“ löschen";
 "account.removal.intro" = "Bevor du es löschst, wähle, was mit seinem Inhalt passieren soll.";
-"account.removal.countRecords" = "Buchungen";
+"account.removal.countRecords" = "Einträge";
 "account.removal.countScheduled" = "Geplante Zahlungen";
 "account.removal.countFavorites" = "Favoritenzahlungen";
 "account.removal.countDrafts" = "Offen im Posteingang";
@@ -6666,19 +6666,19 @@
 "account.removal.moveTitle" = "In ein anderes Konto verschieben";
 "account.removal.moveSubtitle" = "Empfohlen. Dein Verlauf und dein Saldo bleiben erhalten.";
 "account.removal.noDestination" = "Du hast kein anderes Konto, in das du es verschieben kannst.";
-"account.removal.deleteTitle" = "Buchungen löschen";
+"account.removal.deleteTitle" = "Einträge löschen";
 "account.removal.deleteSubtitle" = "Sie werden endgültig gelöscht, zusammen mit dem Konto.";
-"account.removal.deleteBlockedGroups" = "Es enthält Buchungen aus deinen Gruppen: Sie können nur verschoben werden.";
+"account.removal.deleteBlockedGroups" = "Es enthält Einträge aus deinen Gruppen: Sie können nur verschoben werden.";
 "account.removal.destinationHeader" = "Verschieben nach";
-"account.removal.destinationBlockedCurrency" = "Nicht verfügbar: Es enthält Überweisungen oder Gruppenbuchungen, die nicht in diese Währung umgerechnet werden können.";
-"account.removal.convertNote" = "Alles in einer anderen Währung wird in %@ umgerechnet: Buchungen zum Wechselkurs ihres Datums, geplante und Favoritenzahlungen zum heutigen Kurs.";
+"account.removal.destinationBlockedCurrency" = "Nicht verfügbar: Es enthält Überweisungen oder Gruppeneinträge, die nicht in diese Währung umgerechnet werden können.";
+"account.removal.convertNote" = "Alles in einer anderen Währung wird in %@ umgerechnet: Einträge zum Wechselkurs ihres Datums, geplante und Favoritenzahlungen zum heutigen Kurs.";
 "account.removal.collapsedNote" = "Überweisungen zwischen „%1$@“ und „%2$@“ werden entfernt: Innerhalb eines Kontos bewegen sie kein Geld.";
-"account.removal.partnersNote" = "Überweisungen mit anderen Konten bleiben dort als normale Buchungen.";
+"account.removal.partnersNote" = "Überweisungen mit anderen Konten bleiben dort als normale Einträge.";
 "account.removal.plansNote" = "Geplante Zahlungen, Favoriten und offene Einträge im Posteingang bleiben ohne Konto: Du wählst eines, wenn du sie verwendest.";
 "account.removal.moveAction" = "Verschieben und Konto löschen";
 "account.removal.deleteAction" = "Löschen und Konto entfernen";
-"account.removal.confirmDeleteTitle" = "Buchungen löschen?";
-"account.removal.confirmDeleteCount" = "Zu löschende Buchungen";
+"account.removal.confirmDeleteTitle" = "Einträge löschen?";
+"account.removal.confirmDeleteCount" = "Zu löschende Einträge";
 "account.removal.confirmDeleteMessage" = "Sie werden endgültig gelöscht und das lässt sich nicht rückgängig machen. Das Konto wird ebenfalls gelöscht.";
 "account.removal.confirmDeleteAction" = "Ja, alles löschen";
 "account.removal.working" = "Konto wird gelöscht…";
@@ -6690,21 +6690,21 @@
 "account.removal.countBudgets" = "Budgets";
 "account.removal.budgetsMovedNote" = "Budgets, die dieses Konto verfolgt haben, verfolgen jetzt „%@“.";
 "account.removal.budgetsOnlyNote" = "Einige Budgets haben nur dieses Konto verfolgt: Ohne es verfolgen sie alle deine Konten.";
-"orphanedRecords.title" = "Buchungen ohne Konto";
+"orphanedRecords.title" = "Einträge ohne Konto";
 "orphanedRecords.bannerMessage" = "Sie haben ihr Konto verloren, als ein Konto gelöscht wurde, und zählen weder zu deinem Saldo noch zu deinen Ausgaben.";
 "orphanedRecords.bannerAction" = "Konto auswählen";
-"orphanedRecords.intro" = "Diese Buchungen haben ihr Konto verloren, als ein Konto gelöscht wurde. Solange sie keines haben, zählen sie weder zu deinem Saldo noch zu deinen Ausgaben. Wähle, auf welches Konto sie verschoben werden.";
+"orphanedRecords.intro" = "Diese Einträge haben ihr Konto verloren, als ein Konto gelöscht wurde. Solange sie keines haben, zählen sie weder zu deinem Saldo noch zu deinen Ausgaben. Wähle, auf welches Konto sie verschoben werden.";
 "orphanedRecords.listHeader" = "Welche es sind";
 "orphanedRecords.moreNote" = "Und %d weitere.";
 "orphanedRecords.noDestination" = "Erstelle ein Konto, um sie verschieben zu können.";
-"orphanedRecords.keptCurrencyNote" = "Überweisungen in einer anderen Währung werden unverändert übernommen, ohne Umrechnung, damit ihre Gegenbuchung weiter passt.";
+"orphanedRecords.keptCurrencyNote" = "Überweisungen in einer anderen Währung werden unverändert übernommen, ohne Umrechnung, damit ihre Gegenseite weiter passt.";
 "orphanedRecords.convertNote" = "Was in einer anderen Währung ist, wird zum Wechselkurs seines Datums in %@ umgerechnet.";
 "orphanedRecords.collapsedNote" = "Überweisungen, die innerhalb von „%@“ landen würden, werden entfernt: Innerhalb desselben Kontos bewegen sie kein Geld.";
 "orphanedRecords.moveAction" = "Nach „%@“ verschieben";
 "orphanedRecords.moveActionGeneric" = "Verschieben";
 "orphanedRecords.working" = "Wird verschoben…";
 "orphanedRecords.failedTitle" = "Nicht verschoben";
-"orphanedRecords.failedUnreadable" = "Wir konnten die Buchungen nicht lesen. Es wurde nichts geändert.";
+"orphanedRecords.failedUnreadable" = "Wir konnten die Einträge nicht lesen. Es wurde nichts geändert.";
 "orphanedRecords.failedChanged" = "Inzwischen hat sich etwas geändert. Prüfe es und versuche es erneut.";
 "orphanedRecords.untitled" = "Ohne Beschreibung";
 
@@ -6754,7 +6754,7 @@
 "panel.hero.flowCaption" = "Rein %1$@ − raus %2$@";
 
 /* Line under the panel hero when the period has no income or expenses yet */
-"panel.hero.noMovements" = "In diesem Zeitraum noch keine Bewegungen";
+"panel.hero.noMovements" = "In diesem Zeitraum noch keine Einträge";
 
 /* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
 "panel.hero.totalInAccounts" = "Du hast %@ auf deinen Konten";

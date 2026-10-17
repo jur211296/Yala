@@ -36,7 +36,7 @@
 "favorites.newTitle" = "New Favourite";
 "favorites.editTitle" = "Edit Favourite";
 "favorites.namePlaceholder" = "Favourite name";
-"favorites.saveDescription" = "Save this payment as a favourite to quickly record similar expenses in the future. You'll find it in the ⭐ at the top right when creating or editing any transaction. You can always edit it from Favourite Payments in your profile.";
+"favorites.saveDescription" = "Save this payment as a favourite to quickly record similar expenses in the future. You'll find it in the ⭐ at the top right when creating or editing any record. You can always edit it from Favourite Payments in your profile.";
 "settings.favorites" = "Favourite Payments";
 "settings.budgetsFavorites" = "Favourite Budgets";
 "settings.budgetsFavoritesInfo" = "Favourite budgets appear in the Budgets widget (3 in medium, 5 in large).";
@@ -52,10 +52,10 @@
 "cashFlowPlan.lineNameHint" = "You can customise it";
 "insights.activateAIBody" = "Enable and customise it in Profile > AI Features.";
 "settings.customizeAISummary" = "Customise AI Summary";
-"empty.tagsDescription" = "Create tags to organise your transactions flexibly.";
+"empty.tagsDescription" = "Create tags to organise your records flexibly.";
 "empty.accountsDescription" = "Create accounts to organise your finances by bank, cash, or others.";
 "settings.colorfulIconsDescription" = "Show coloured icons in the profile section, iOS Settings style.";
-"tag.createFirstDescription" = "Create your first tag to organise your transactions";
+"tag.createFirstDescription" = "Create your first tag to organise your records";
 "tag.color" = "Colour";
 "common.selectColor" = "Select a Colour";
 "common.useThisColor" = "Use This Colour";
@@ -94,11 +94,11 @@
 "tutorials.createTags.step1.desc" = "Customise your tag to your liking: give it a name, icon, and colour.";
 "tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Customise which accounts, categories, tags, and natures you want to track. Turn on notifications if you want alerts at certain thresholds.";
 "tutorials.createBudgets.step2.desc" = "You can add budgets to Favourites to display them in the Panel widget. Choose up to 3 in your preferred order.";
-"tutorials.createFavorites.step0.desc" = "Go to the new transaction screen and tap the star at the top to create a new favourite.";
+"tutorials.createFavorites.step0.desc" = "Go to the new record screen and tap the star at the top to create a new favourite.";
 "tutorials.createFavorites.step1.desc" = "Fill in the fields you want to be pre-filled. Next time, simply tap the favourite and watch all the fields fill in automatically.";
 "aiSettings.title" = "Customise AI";
 "aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service (OpenAI), only at that moment. It’s not used to train the AI.";
-"insights.aiCaption" = "OpenAI analyzes your aggregated data to generate personalised analysis. No individual transactions are sent.";
+"insights.aiCaption" = "OpenAI analyses your aggregated data to generate personalised analysis. No individual records are sent.";
 "whatsNew.v12.themes.description" = "Customise the app with new Minimalist and Translucent themes.";
 "setup.step1.title" = "Explore everything you can customise";
 "guide.accounts.title" = "Your money, organised";
@@ -107,27 +107,27 @@
 
 // MARK: - A0-Bridge Settings & Filters
 "settings.sectionGroups" = "Groups";
-"settings.sectionGroupsHint" = "Configure how Yala blends your group accounts and transactions with your personal data.";
+"settings.sectionGroupsHint" = "Configure how Yala blends your group accounts and records with your personal data.";
 "settings.includeGroupsInPanelTotal" = "Include groups in total balance";
-"settings.includeGroupTransactionsInStats" = "Include group transactions in stats";
+"settings.includeGroupTransactionsInStats" = "Include group records in stats";
 "filters.sectionShared" = "Shared";
-"filters.includeGroupTransactions" = "Include group transactions";
-"filters.includeGroupTransactionsHint" = "When on, transactions generated from shared expenses appear in your list.";
+"filters.includeGroupTransactions" = "Include group records";
+"filters.includeGroupTransactionsHint" = "When on, records created from shared expenses appear in your list.";
 
 // MARK: - A0-Bridge Bridge messages
 "groups.bridge.deleteExpenseBlocked" = "This expense has settlements after its date. Delete or reconcile the settlements first before removing it.";
-"groups.bridge.editFromGroup" = "This transaction syncs with a group. Edit it from the shared expense.";
+"groups.bridge.editFromGroup" = "This record syncs with a group. Edit it from the shared expense.";
 "groups.bridge.assignFromInbox" = "Assign a subcategory from your Inbox to finalize it.";
-"groups.bridge.editSettlementInGroup" = "This transaction comes from a settlement. Edit it from the group.";
-"groups.bridge.activateTitle" = "Enable automatic transactions";
+"groups.bridge.editSettlementInGroup" = "This record comes from a settlement. Edit it from the group.";
+"groups.bridge.activateTitle" = "Enable automatic records";
 "groups.bridge.activateBody" = "From now on, shared expenses will show up in your personal accounts. Previous expenses in your groups: %d. What should we do with them?";
 "groups.bridge.activateOptionFromNow" = "Start from now";
 "groups.bridge.activateOptionFromNowHint" = "Only new expenses will be reflected.";
 "groups.bridge.activateOptionImportAll" = "Import full history";
 "groups.bridge.activateOptionImportAllHint" = "Previous expenses will also show up in your accounts (%d in total).";
-"groups.bridge.activateImportRegenerationNote" = "Existing generated transactions will be regenerated under the current rules.";
-"groups.bridge.deactivateTitle" = "Disable automatic transactions";
-"groups.bridge.deactivateBody" = "You have %d transactions generated by this group. If you delete them, your groups balance will adjust.";
+"groups.bridge.activateImportRegenerationNote" = "Existing generated records will be regenerated under the current rules.";
+"groups.bridge.deactivateTitle" = "Disable automatic records";
+"groups.bridge.deactivateBody" = "You have %d records generated by this group. If you delete them, your groups balance will adjust.";
 "groups.bridge.deactivateOptionDelete" = "Delete them";
 "groups.bridge.deactivateOptionKeep" = "Keep as history";
 "groups.bridge.importing" = "Importing %d expenses…";
@@ -147,7 +147,7 @@
 "inbox.sourceGroupExpense" = "Shared expense";
 "inbox.sourceGroupSettlement" = "Settlement";
 "inbox.sourceManual" = "Manual";
-"inbox.groupDraftCannotDelete" = "This transaction can only be removed from the source group.";
+"inbox.groupDraftCannotDelete" = "This record can only be removed from its group.";
 
 /* A0-Bridge V2.0 — P0+P1 sheets + read-only banner */
 "groups.settlement.fromAccount" = "From which account?";
@@ -368,7 +368,7 @@
 "groups.bridge.alertTitle" = "Group sync issue";
 "groups.bridge.deactivationOptionDelete" = "Delete from my accounts";
 "groups.bridge.deactivationOptionFreeze" = "Keep as historical";
-"groups.bridge.deactivationSheetBody" = "You already have transactions created automatically in your accounts. Choose what to do with them.";
+"groups.bridge.deactivationSheetBody" = "You already have records created automatically in your accounts. Choose what to do with them.";
 "groups.bridge.deactivationSheetTitle" = "Disable personal integration";
 "groups.bridge.draftReasonCurrencyChanged" = "The currency of the expense in %@ changed. Choose an account to record your share.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registered this expense in %2$@. Choose an account to track it in your records.";
@@ -377,7 +377,7 @@
 "groups.bridge.errorNoAccounts" = "You don't have any accounts set up. Create one first.";
 "groups.bridge.errorTransaction" = "Your personal record for this expense will retry automatically.";
 "groups.bridge.errorTransactionUpdate" = "The change didn't reflect in your personal record. We'll retry.";
-"groups.bridge.optoutAlertBody" = "You can create a personal movement in your account to reflect this expense, or keep it only inside the group.";
+"groups.bridge.optoutAlertBody" = "You can create a personal record in your account to reflect this expense, or keep it only inside the group.";
 "groups.bridge.optoutAlertNo" = "Group only";
 "groups.bridge.optoutAlertTitle" = "Also log in your personal Yala?";
 "groups.bridge.optoutAlertYes" = "Yes, log it";
@@ -433,9 +433,9 @@
 "groups.globalSettings.bridgeCaption" = "When on, every expense you pay or settle is also logged in the personal account you choose. Your balance reflects reality.";
 "groups.globalSettings.bridgeSectionTitle" = "Personal Yala integration";
 "groups.globalSettings.bridgeToggleLabel" = "Log group expenses in my personal accounts";
-"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Include group transactions in Records feed";
+"groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Include group records in Records";
 "groups.globalSettings.title" = "Groups Settings";
-"groups.globalSettings.visibilityCaption" = "Control whether group transactions appear in your Panel, statistics and Records feed.";
+"groups.globalSettings.visibilityCaption" = "Choose whether group records appear in your Panel, Statistics and Records.";
 "groups.globalSettings.visibilitySectionTitle" = "Visibility";
 "groups.invite.goToGroup" = "Go to group";
 "groups.invite.joinButton" = "Join group";
@@ -669,8 +669,8 @@
 "accessibility.noData" = "No data";
 "accessibility.noDraftsToApprove" = "No drafts are ready to save";
 "accessibility.noInactiveBudgets" = "No inactive budgets to restore";
-"accessibility.noTransactions" = "No transactions available";
-"accessibility.noTransactionsToExport" = "No transactions to export";
+"accessibility.noTransactions" = "No records available";
+"accessibility.noTransactionsToExport" = "No records to export";
 "accessibility.pageIndicator %d %d" = "Page %1$d of %2$d";
 "accessibility.periodComparison" = "Period comparison chart";
 "accessibility.periodComparisonValue %d" = "Current vs previous period, %d data points";
@@ -794,7 +794,7 @@
 "aiConsent.inlineHintInsights" = "Your financial summary is sent to OpenAI for the analysis. It is not stored permanently.";
 "aiConsent.inlineHintMultiple" = "Multiple AI features use OpenAI to process your data. It is not stored permanently.";
 "aiConsent.inlineHintProcessing" = "Your voice and image data is processed with OpenAI. It is not stored permanently.";
-"aiConsent.insightsMessage" = "This feature sends OpenAI a summary of your finances —totals and trends by category, budgets, and recurring payments— to generate your analysis.\n\nYour full transaction history is not sent. OpenAI does not use this data to train its models.";
+"aiConsent.insightsMessage" = "This feature sends OpenAI a summary of your finances —totals and trends by category, budgets, and recurring payments— to generate your analysis.\n\nYour full record history is not sent. OpenAI does not use this data to train its models.";
 "aiConsent.insightsTitle" = "Smart Overview";
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.processingTitle" = "Yala records it for you";
@@ -894,10 +894,10 @@
 "budgets.title" = "Budgets";
 "bulkEdit.availableTags" = "Available to add";
 "bulkEdit.commonTags" = "In all selected";
-"bulkEdit.currencyWarning" = "Changing the account will update the currency of selected transactions.";
-"bulkEdit.editCount" = "Edit %d transactions";
+"bulkEdit.currencyWarning" = "Changing the account will update the currency of the selected records.";
+"bulkEdit.editCount" = "Edit %d records";
 "bulkEdit.partialTags" = "In some selected";
-"bulkEdit.successMessage" = "Transactions updated successfully";
+"bulkEdit.successMessage" = "Records updated";
 "cashFlow.expense" = "Expenses";
 "cashFlow.income" = "Income";
 "cashFlow.net" = "Net";
@@ -938,7 +938,7 @@
 "cashFlowPlan.cellDetailNote" = "Note (optional)";
 "cashFlowPlan.cellDetailOf" = "of";
 "cashFlowPlan.cellDetailOverrideActive" = "Amount manually adjusted";
-"cashFlowPlan.cellDetailRecentTransactions" = "Recent transactions";
+"cashFlowPlan.cellDetailRecentTransactions" = "Recent records";
 "cashFlowPlan.cellDetailRemaining" = "You have %@ left";
 "cashFlowPlan.cellDetailPendingIncome" = "%@ still to receive";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Save adjustment";
@@ -1446,7 +1446,7 @@
 "devseed.stepSavingBase" = "Saving base entities...";
 "devseed.stepScheduledPayments" = "Creating scheduled payments...";
 "devseed.stepTags" = "Creating tags...";
-"devseed.stepTransactions" = "Generating transactions...";
+"devseed.stepTransactions" = "Generating records...";
 "devseed.tagFixed" = "Fixed";
 "devseed.tagShared" = "Shared";
 "devseed.tagUrgent" = "Urgent";
@@ -1461,7 +1461,7 @@
 "empty.noExpenses" = "You don't have any expenses recorded yet";
 "empty.noSubcategories" = "No subcategories yet";
 "empty.noTags" = "You don't have any tags yet";
-"empty.noTransactions" = "Your transactions will appear here";
+"empty.noTransactions" = "Your records will appear here";
 "exchangeRate.loadError" = "We couldn't get the exchange rate. Try again in a moment.";
 "exchangeRate.noSecondaryCurrenciesHint" = "You can select secondary currencies in";
 "exchangeRate.noSecondaryCurrenciesPath" = "Profile > Currency & exchange";
@@ -1479,15 +1479,15 @@
 "export.column.account" = "Account";
 "export.column.account.description" = "Associated account name.";
 "export.column.amount" = "Amount";
-"export.column.amount.description" = "Transaction amount with 2 decimals.";
+"export.column.amount.description" = "Record amount with 2 decimals.";
 "export.column.category" = "Category";
-"export.column.category.description" = "Main transaction category.";
+"export.column.category.description" = "Main category of the record.";
 "export.column.currency" = "Currency";
 "export.column.currency.description" = "Currency code (PEN, USD, EUR).";
 "export.column.date" = "Date";
 "export.column.date.description" = "Date in yyyy-MM-dd format.";
 "export.column.note" = "Note";
-"export.column.note.description" = "Free-form note for the transaction.";
+"export.column.note.description" = "Free-form note for the record.";
 "export.column.splitPortion" = "Portion";
 "export.column.splitPortion.description" = "Portion description";
 "export.column.splitTotal" = "Original total";
@@ -1596,7 +1596,7 @@
 "filters.selectTags" = "Select tags";
 "filters.selectedCount" = "%d selected";
 "filters.title" = "Filters";
-"filters.transaction.type" = "Transaction type";
+"filters.transaction.type" = "Record type";
 "filters.type" = "Type";
 "grouping.day" = "Day";
 "grouping.month" = "Month";
@@ -1708,7 +1708,7 @@
 "image.errorGeneric" = "Error processing image";
 "image.errorLoad" = "Could not load image";
 "image.errorNoApiKey" = "Could not connect to image service. Try again later.";
-"image.errorNoData" = "No transactions detected in image";
+"image.errorNoData" = "No records found in the image";
 "image.errorPhotoPermission" = "Photo permission denied. Enable it in Settings.";
 "image.errorSaveFailed" = "Could not save draft. Try again.";
 "image.errorTitle" = "Error";
@@ -1730,20 +1730,20 @@
 "image.processingSubtitle" = "Extracting data from image";
 "image.reviewDraft" = "Review";
 "image.selectButton" = "Select image";
-"image.selectSubtitle" = "Scan bank screenshots or receipts to create transactions automatically.";
+"image.selectSubtitle" = "Scan bank screenshots or receipts to create records automatically.";
 "image.selectTitle" = "Select an image";
 "image.title" = "Image";
-"image.transactionDetected" = "transaction detected";
-"image.transactionsDetected" = "Transactions detected";
-"image.transactionsDetectedCount" = "transactions detected";
+"image.transactionDetected" = "record detected";
+"image.transactionsDetected" = "Records detected";
+"image.transactionsDetectedCount" = "records detected";
 "image.transactionsDetectedMessage" = "I found %d records. You can review and save them in the Inbox.";
 "image.youCanUpload" = "You can upload:";
 "import.assignAccountPerCurrency" = "Assign an account for each currency found in the file.";
 "import.categoriesDescription" = "If the file includes categories that don't exist, they will be created automatically.";
 "import.completed" = "Import completed";
 "import.continue" = "Continue";
-"import.createAccountBeforeImport" = "Create at least one account before importing transactions.";
-"import.createAccountFirst" = "Create at least one account before importing transactions.";
+"import.createAccountBeforeImport" = "Create at least one account before importing records.";
+"import.createAccountFirst" = "Create at least one account before importing records.";
 "import.createCategories" = "Create new categories";
 "import.currenciesDetected" = "%d currencies detected";
 "import.downloadTemplate" = "Download template";
@@ -1763,7 +1763,7 @@
 "import.templateDescription" = "The template has an example row for each subcategory: replace them with yours before importing.";
 "import.templateGenerated" = "Template generated";
 "import.templateGeneratedMessage" = "You'll find it where you saved it (for example, in Files). Open it with Numbers or Excel, replace the example rows with yours, and come back here to import it.";
-"import.title" = "Import Transactions";
+"import.title" = "Import Records";
 "inbox.alert.message.mixed.automations" = "%d automatic records";
 "inbox.alert.message.mixed.scheduled" = "%d payments";
 "inbox.alert.message.mixed.subscriptions" = "%d subscriptions";
@@ -1831,8 +1831,8 @@
 "inbox.sourceSubscription" = "Subscription";
 "inbox.sourceVoice" = "Voice";
 "inbox.subtitleAllDone" = "Inbox at zero, great job.";
-"inbox.subtitleMultiplePending" = "%d transactions waiting, step by step.";
-"inbox.subtitleOnePending" = "One transaction waiting, review when you can.";
+"inbox.subtitleMultiplePending" = "%d records waiting, step by step.";
+"inbox.subtitleOnePending" = "One record waiting, review it when you can.";
 "inbox.title" = "Inbox";
 "inbox.transactionCreated" = "record saved";
 "inbox.transactionsCreated" = "records saved";
@@ -2246,7 +2246,7 @@
 "panel.insightMenuRegenerate" = "Regenerate";
 "panel.liveAnchorEducation.bodyLineOneFormat" = "That's what your money is worth right now if you converted it all to %@.";
 "panel.liveAnchorEducation.bodyLineThree" = "Why the difference? You have money in other currencies, and those currencies are worth differently today.";
-"panel.liveAnchorEducation.bodyLineTwoFormat" = "If we added each transaction at the rate it had on the day it happened, it would be %@.";
+"panel.liveAnchorEducation.bodyLineTwoFormat" = "If we added each record at the rate it had on the day it happened, it would be %@.";
 "panel.liveAnchorEducation.breakdownRowConvertedFormat" = "%@ today";
 "panel.liveAnchorEducation.breakdownToggle" = "See by currency";
 "panel.liveAnchorEducation.coachMessage" = "When you have money in other currencies, its value changes day by day. Tap me to find out what's going on.";
@@ -2270,7 +2270,7 @@
 "panel.fxPnL.sheetIntroFormat" = "We compare what your money in other currencies is worth today in %@ with what it was worth when it came into your accounts. The difference is what the exchange rate gave you or took from you, without you doing anything.";
 "panel.fxPnL.rowRatesFormat" = "Came in at %1$@ · today at %2$@";
 "panel.fxPnL.rowValueTodayFormat" = "= %@";
-"panel.fxPnL.averageNote" = "The entry rate is an average of all your movements in that currency, not the rate of each individual purchase.";
+"panel.fxPnL.averageNote" = "The entry rate is an average of all your records in that currency, not the rate of each individual purchase.";
 "panel.fxPnL.estimatedRateNote" = "Some conversion used a rate that wasn't today's, so these figures are approximate.";
 
 "panel.panorama.collapse" = "Collapse your finances";
@@ -2314,7 +2314,7 @@
 "panel.widgetInfo.budgets.chip1" = "Favorites";
 "panel.widgetInfo.budgets.chip2" = "Current period";
 "panel.widgetInfo.budgets.chip3" = "You can tap it";
-"panel.widgetInfo.budgets.howA" = "Tap a budget to filter the rest of the Panel by its category's or tag's transactions. Tap it again to clear the filter.";
+"panel.widgetInfo.budgets.howA" = "Tap a budget to filter the rest of the Panel by its category's or tag's records. Tap it again to clear the filter.";
 "panel.widgetInfo.budgets.howQ" = "How do I interact?";
 "panel.widgetInfo.budgets.regularWhatA" = "Your favorite budgets with the period's progress: how much you've spent, how much is left of the limit and the status (on track, tight or exceeded). The star in the header opens the screen where you choose which ones to mark as favorites.";
 "panel.widgetInfo.budgets.regularWhatQ" = "What are you seeing?";
@@ -2348,7 +2348,7 @@
 "panel.widgetInfo.categoriesPie.smallWhatA" = "How your spending is split across categories in the active period. The bubbles highlight the categories with the highest share.";
 "panel.widgetInfo.categoriesPie.smallWhatQ" = "What are you seeing?";
 "panel.widgetInfo.categoriesPie.title" = "Distribution by category";
-"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calculates your balance in your preferred currency using the current exchange rate on each account's balance. So if the rate changes and you make no transactions, your balance can still go up or down.";
+"panel.widgetInfo.exchangeRate.balanceImpactA" = "Yala calculates your balance in your main currency using the current exchange rate on each account's balance. So if the rate changes and you add no records, your balance can still go up or down.";
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "How does the exchange rate affect my balance?";
 "panel.widgetInfo.exchangeRate.chip1" = "Multi-currency";
 "panel.widgetInfo.exchangeRate.chip2" = "Current rates";
@@ -2381,10 +2381,10 @@
 "panel.widgetInfo.periodComparison.title" = "Period comparison";
 "panel.widgetInfo.periodComparison.whatA" = "Your current period's balance, income or expenses side by side with the previous period. Helps you see at a glance if the trend is improving.";
 "panel.widgetInfo.periodComparison.whatQ" = "What are you seeing?";
-"panel.widgetInfo.recentRecords.chip1" = "Movements";
+"panel.widgetInfo.recentRecords.chip1" = "Records";
 "panel.widgetInfo.recentRecords.chip2" = "Current period";
 "panel.widgetInfo.recentRecords.title" = "Latest records";
-"panel.widgetInfo.recentRecords.whatA" = "The five most recent movements in the active period: income, expenses or transfers. Each row shows the amount (income and expenses in different colors), the linked category or subcategory and, when applicable, the need classification (essential, priority or optional).";
+"panel.widgetInfo.recentRecords.whatA" = "The five most recent records in the active period: income, expenses or transfers. Each row shows the amount (income and expenses in different colours), the linked category or subcategory and, when applicable, the need classification (essential, priority or optional).";
 "panel.widgetInfo.recentRecords.whatQ" = "What are you seeing?";
 "panel.widgetInfo.sankey.chip1" = "Flow";
 "panel.widgetInfo.sankey.chip2" = "By need";
@@ -2451,7 +2451,7 @@
 "panel.widgetInfo.topSubcategories.title" = "Top subcategories";
 "panel.widgetInfo.trend.chip1" = "You can tap it";
 "panel.widgetInfo.trend.chip2" = "Follows the chosen period";
-"panel.widgetInfo.trend.fxMatchA" = "The last point reflects your balance at the current exchange rate. Previous points use the rate from each transaction's date. The gap is FX gain or loss — only visible if you have accounts in different currencies.";
+"panel.widgetInfo.trend.fxMatchA" = "The last point reflects your balance at the current exchange rate. Previous points use the rate from each record's date. The gap is FX gain or loss — only visible if you have accounts in different currencies.";
 "panel.widgetInfo.trend.fxMatchQ" = "Why might the last point not match my total balance?";
 "panel.widgetInfo.trend.largeHowA" = "Press and hold the chart to see the value at each point. Switch between balance, income, and expenses using the header buttons.";
 "panel.widgetInfo.trend.largeHowQ" = "How do I interact with the chart?";
@@ -2598,7 +2598,7 @@
 "scheduled.editor.preview" = "Upcoming Dates";
 "scheduled.editor.recurrence" = "Recurrence";
 "scheduled.editor.subcategory" = "Subcategory";
-"scheduled.editor.type" = "Transaction type";
+"scheduled.editor.type" = "Record type";
 "scheduled.empty.message" = "Create reminders for your recurring payments and subscriptions";
 "scheduled.empty.settings.hint" = "Create recurring payments to remember your regular expenses and income.";
 "scheduled.empty.title" = "You don't have any scheduled payments yet";
@@ -2657,7 +2657,7 @@
 "scheduled.tab.all" = "All";
 "scheduled.tab.recurring" = "Recurring";
 "scheduled.tab.subscriptions" = "Subscriptions";
-"scheduled.unlink" = "Unlink Transaction";
+"scheduled.unlink" = "Unlink Record";
 "scheduled.variableAmount.badge" = "Estimated";
 "scheduled.variableAmount.helper" = "You can adjust the actual amount each time you approve it";
 "scheduled.variableAmount.toggle" = "Estimated amount";
@@ -2779,7 +2779,7 @@
 "settings.recommendedCurrencies" = "Recommended";
 "settings.resetAllData" = "Reset all your data";
 "settings.resetData" = "Reset Data";
-"settings.resetDataDescription" = "This operation will permanently delete your accounts, transactions, budgets, exchange rates, categories, and any other data associated with your Yala profile. After deletion, the app will return to a state similar to initial setup.";
+"settings.resetDataDescription" = "This operation will permanently delete your accounts, records, budgets, exchange rates, categories, and any other data associated with your Yala profile. After deletion, the app will return to a state similar to initial setup.";
 "settings.scheduled.payments" = "Recurring payments";
 "settings.secondaryCurrencies" = "Secondary Currencies";
 "settings.secondaryCurrenciesHint" = "Select up to 2 currencies to compare with your preferred currency in the exchange rate widget.";
@@ -2965,7 +2965,7 @@
 "statistics.noDataToShow" = "No data to show yet";
 "statistics.noExpensesInPeriod" = "No expenses in the selected period";
 "statistics.noRecords" = "No records";
-"statistics.noRecordsDescription" = "When you add transactions, they will appear here.";
+"statistics.noRecordsDescription" = "When you add records, they will appear here.";
 "statistics.noRecordsFiltered" = "No records with these filters";
 "statistics.noSubcategoryData" = "No subcategory data";
 "statistics.ofExpense" = "of expense";
@@ -3009,8 +3009,8 @@
 "stats.insights.dailyAvgIn %@" = "per day in %@";
 "stats.insights.detailHeader" = "Your numbers";
 "stats.insights.modeDetail" = "Detail";
-"stats.insights.motivationalMany %d" = "%d transactions · Keep it up";
-"stats.insights.motivationalOne" = "1 transaction · Great start";
+"stats.insights.motivationalMany %d" = "%d records · Keep it up";
+"stats.insights.motivationalOne" = "1 record · Great start";
 "stats.insights.need.dailyFormat %@" = "≈ %@/day";
 "stats.records.motivationalMany %d" = "%d records · Keep it up";
 "stats.records.motivationalOne" = "1 record · Great start";
@@ -3055,7 +3055,7 @@
 "subcategory.balanceAdjustment" = "Balance adjustment";
 "subcategory.bars" = "Bars & social outings";
 "subcategory.beauty" = "Beauty & aesthetics";
-"subcategory.cannotDeleteMessage" = "This subcategory has %d transactions. Transfer the transactions to another subcategory before deleting.";
+"subcategory.cannotDeleteMessage" = "This subcategory has %d records. Move them to another subcategory before deleting it.";
 "subcategory.cannotDeleteTitle" = "Cannot Delete";
 "subcategory.clothing" = "Clothing & footwear";
 "subcategory.consulting" = "Consulting & paperwork";
@@ -3063,11 +3063,11 @@
 "subcategory.delete" = "Delete Subcategory";
 "subcategory.deleteConfirmMessage" = "This action cannot be undone";
 "subcategory.deleteConfirmTitle" = "Delete Subcategory?";
-"subcategory.deleteTransactions" = "Delete transactions";
+"subcategory.deleteTransactions" = "Delete records";
 "subcategory.deleteTransactionsConfirm" = "Delete";
 "subcategory.deleteTransactionsConfirmMessage" = "%d transactions will be permanently deleted. This action cannot be undone.";
-"subcategory.deleteTransactionsConfirmTitle" = "Delete transactions?";
-"subcategory.deleteTransactionsDesc" = "All transactions will be permanently deleted";
+"subcategory.deleteTransactionsConfirmTitle" = "Delete records?";
+"subcategory.deleteTransactionsDesc" = "All records will be permanently deleted";
 "subcategory.delivery" = "Delivery";
 "subcategory.details" = "Subcategory details";
 "subcategory.dividends" = "Interest & dividends";
@@ -3121,12 +3121,12 @@
 "subcategory.taxes" = "Taxes";
 "subcategory.tech" = "Tech & accessories";
 "subcategory.transferDescription" = "There are %1$d transactions in \"%2$@\". Choose what to do with them before deleting.";
-"subcategory.transferHeader" = "This subcategory has transactions";
-"subcategory.transferTitle" = "Transfer Transactions";
+"subcategory.transferHeader" = "This subcategory has records";
+"subcategory.transferTitle" = "Move Records";
 "subcategory.transferToSpecific" = "Transfer to another subcategory";
-"subcategory.transferToSpecificDesc" = "Select a destination subcategory to move the transactions";
+"subcategory.transferToSpecificDesc" = "Select a destination subcategory to move the records";
 "subcategory.transferToUnassigned" = "Move to Unassigned";
-"subcategory.transferToUnassignedDesc" = "Transactions will be moved to the \"Unassigned\" subcategory in Others";
+"subcategory.transferToUnassignedDesc" = "Records will be moved to the \"Unassigned\" subcategory in Others";
 "subcategory.travel" = "Travel & vacations";
 "subcategory.unassigned" = "Unassigned";
 "subcategory.utilities" = "Utilities";
@@ -3240,7 +3240,7 @@
 "tipkit.pro.aiSummary.message" = "Generate a smart summary of your finances with one tap. Useful observations, instantly.";
 "tipkit.pro.aiSummary.title" = "Your AI summary";
 "tipkit.pro.chatFab.title" = "Your financial assistant";
-"tipkit.pro.imageInput.message" = "Attach a photo of any receipt or invoice and Yala extracts one or more transactions for you.";
+"tipkit.pro.imageInput.message" = "Attach a photo of any receipt or invoice and Yala extracts one or more records for you.";
 "tipkit.pro.imageInput.title" = "Add with a photo or file";
 "tipkit.pro.premiumIcons.title" = "Exclusive icons";
 "tipkit.pro.proThemes.title" = "Premium themes";
@@ -3283,14 +3283,14 @@
 "transaction.descriptionHint" = "Use @ account, ! category, # tag";
 "transaction.destination" = "Destination";
 "transaction.destinationAccount" = "Destination Account";
-"transaction.edit" = "Edit Transaction";
-"transaction.editTransaction" = "Edit Transaction";
+"transaction.edit" = "Edit Record";
+"transaction.editTransaction" = "Edit Record";
 "transaction.exchangeRate" = "Exchange rate";
 "transaction.exchangeRateMissingForDay" = "No exchange rate for that day";
 "transaction.expense" = "Expenses";
 "transaction.income" = "Income";
-"transaction.new" = "New Transaction";
-"transaction.newTransaction" = "New Transaction";
+"transaction.new" = "New Record";
+"transaction.newTransaction" = "New Record";
 "transaction.note" = "Note";
 "transaction.notePlaceholder" = "Write a note";
 "transaction.origin" = "Origin";
@@ -3421,17 +3421,17 @@
 "tutorials.importData.step1.desc" = "You can import CSV or Excel as many times as you want following the default template, which you can download right there. If there's data in various currencies, it will ask you to select the accounts for each one.";
 "tutorials.importData.step1.title" = "Import your file";
 "tutorials.importData.title" = "Import data";
-"tutorials.inboxApproval.completion.desc" = "Your transactions in the inbox don't have an expiration date, you can approve or reject them whenever you want. Drafts don't affect your totals until you approve them.";
+"tutorials.inboxApproval.completion.desc" = "Your records in the inbox don't have an expiration date, you can approve or reject them whenever you want. Drafts don't affect your totals until you approve them.";
 "tutorials.inboxApproval.completion.title" = "Inbox mastered!";
 "tutorials.inboxApproval.intro.desc" = "Review and approve automatic expenses from Apple Pay, voice, or camera.";
 "tutorials.inboxApproval.intro.title" = "Your smart inbox";
 "tutorials.inboxApproval.step0.desc" = "If you're a Yala Pro user, when you make a record by voice or image, it will automatically take you to the draft. The same if you used the “Record Apple Pay payment” shortcut.";
 "tutorials.inboxApproval.step0.title" = "Record by voice or image";
-"tutorials.inboxApproval.step1.desc" = "Simply fill in the required fields and approve. The transaction will be created normally.";
+"tutorials.inboxApproval.step1.desc" = "Simply fill in the required fields and approve. The record will be created normally.";
 "tutorials.inboxApproval.step1.title" = "Complete and approve";
-"tutorials.inboxApproval.step2.desc" = "You can also make voice or image records with multiple transactions. It will tell you how many drafts were created and guide you to the inbox to review them.";
+"tutorials.inboxApproval.step2.desc" = "You can also dictate or photograph several records at once. It will tell you how many drafts were created and guide you to the inbox to review them.";
 "tutorials.inboxApproval.step2.title" = "Record multiple at once";
-"tutorials.inboxApproval.step3.desc" = "In your inbox you can approve transactions, select Approve later to see them later, or reject them directly.";
+"tutorials.inboxApproval.step3.desc" = "In your inbox you can approve records, select Approve later to see them later, or reject them directly.";
 "tutorials.inboxApproval.step3.title" = "Manage your inbox";
 "tutorials.inboxApproval.title" = "Inbox";
 "tutorials.next" = "Next";
@@ -3459,7 +3459,7 @@
 "validation.accountsMustBeDifferent" = "Accounts must be different";
 "validation.completeFieldsFirst" = "Fill in amount, account, and category first";
 "validation.enterAmountGreaterThanZero" = "Enter an amount greater than 0";
-"validation.futureDateMessage" = "You can't record transactions with a future date. Use Scheduled Payments for recurring expenses.";
+"validation.futureDateMessage" = "You can't save records with a future date. Use Scheduled Payments for recurring expenses.";
 "validation.futureDateTitle" = "Future date not allowed";
 "validation.selectAccount" = "Select an account";
 "validation.selectDestinationAccount" = "Select a destination account";
@@ -3549,7 +3549,7 @@
 "widget.hint.exchangeRate" = "Updated exchange rates for your preferred currency.";
 "widget.hint.incomeAnalysis" = "Income breakdown by categories, subcategories and tags.";
 "widget.hint.needTrend" = "Classifies your expenses as essential, priority, or optional.";
-"widget.hint.recentRecords" = "Your most recent transactions.";
+"widget.hint.recentRecords" = "Your most recent records.";
 "widget.hint.scheduledPayments" = "Upcoming scheduled payments and subscriptions.";
 "widget.hint.spendingAnalysis" = "Spending breakdown by categories, subcategories, tags and expense type.";
 "widget.hint.subcategoriesPie" = "Percentage distribution of spending by subcategory.";
@@ -3560,8 +3560,8 @@
 "widget.list" = "List";
 "widget.main" = "Main";
 "widget.noDataForPeriod" = "No data yet for this period";
-"widget.noExpensesDescriptionCategories" = "Your top categories will appear here once you add transactions.";
-"widget.noExpensesDescriptionSubcategories" = "Your top subcategories will appear here once you add transactions.";
+"widget.noExpensesDescriptionCategories" = "Your top categories will appear here once you add records.";
+"widget.noExpensesDescriptionSubcategories" = "Your top subcategories will appear here once you add records.";
 "widget.noExpensesNeedPeriod" = "No expenses recorded by need for this period.";
 "widget.noExpensesPeriod" = "No expenses yet in this period.";
 "widget.noExpensesSubcategoriesPeriod" = "No subcategory expenses yet for this period.";
@@ -3570,7 +3570,7 @@
 "widget.ofExpense" = "of expense";
 "widget.ofTotal" = "of total";
 "widget.preferences.description" = "Choose what you want to see on your dashboard and in what order.";
-"widget.recordsWillAppear" = "When you add transactions, they will appear here.";
+"widget.recordsWillAppear" = "When you add records, they will appear here.";
 "widget.resetLayout" = "Reset to original layout";
 "widget.selectCurrencies" = "Select up to 2 currencies to compare with %@";
 "widget.sizeLabel" = "Size";
@@ -3895,7 +3895,7 @@
 "storage.migrate.body" = "Create an account with Apple or Google and reach your data from any device, even without iCloud.";
 "storage.migrate.button" = "Turn on the cloud";
 "storage.migrate.previewButton" = "See what would move";
-"storage.migrate.previewResult" = "%1$d transactions · %2$d categories · %3$d accounts · %4$d budgets";
+"storage.migrate.previewResult" = "%1$d records · %2$d categories · %3$d accounts · %4$d budgets";
 "storage.adopt.title" = "Turn on the cloud on this device";
 "storage.adopt.body" = "This account already has your data in the cloud. Let’s turn it on for this device.";
 "storage.adopt.button" = "Turn on for this device";
@@ -4323,7 +4323,7 @@
 "settings.scopePersonalInICloud" = "Your personal data stays in iCloud";
 
 /* D4 Vaciar: fila dispositivo */
-"settings.wipeScopeDevice" = "Your accounts, transactions and budgets are deleted";
+"settings.wipeScopeDevice" = "Your accounts, records and budgets are deleted";
 
 /* D4 Vaciar (solo grupos 5a): fila dispositivo */
 "settings.wipeScopeDeviceGroupsOnly" = "Your profile and preferences are reset";
@@ -4599,7 +4599,7 @@
 "groups.settlement.deleteTitle" = "Delete this settlement?";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
-"groups.settlement.deleteMessage" = "The balances it cleared will be pending again. And if it created a transaction in your accounts, that one goes too.";
+"groups.settlement.deleteMessage" = "The balances it cleared will be pending again. And if it created a record in your accounts, that one goes too.";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
 "groups.settlement.deleteFailed" = "We couldn't delete the settlement. Please try again.";
@@ -5266,12 +5266,12 @@
 
 /* Cerrar sesión en la nube sin App Attest con cambios personales sin subir (2026-09-15) */
 "settings.signOutAttestTitle" = "This phone can't sync your data";
-"settings.signOutAttestMessage" = "This phone has gone more than a day without passing the security check our server requires. Changes that didn't reach your account in the cloud: %d. Before you decide, you can export your transactions to a file. If you sign out now, those changes will be lost.";
-"settings.signOutAttestMessageUnknown" = "This phone has gone more than a day without passing the security check our server requires, and some changes didn't reach your account in the cloud. Before you decide, you can export your transactions to a file. If you sign out now, those changes will be lost.";
-"settings.signOutAttestExportButton" = "Export my transactions";
+"settings.signOutAttestMessage" = "This phone has gone more than a day without passing the security check our server requires. Changes that didn't reach your account in the cloud: %d. Before you decide, you can export your records to a file. If you sign out now, those changes will be lost.";
+"settings.signOutAttestMessageUnknown" = "This phone has gone more than a day without passing the security check our server requires, and some changes didn't reach your account in the cloud. Before you decide, you can export your records to a file. If you sign out now, those changes will be lost.";
+"settings.signOutAttestExportButton" = "Export my records";
 "settings.signOutAttestLossButton" = "Sign out and lose them";
 "settings.signOutAttestBlocked" = "This phone has gone more than a day without passing the security check our server requires, so your changes can't be uploaded to your account in the cloud.";
-"settings.signOutAttestExportEmpty" = "You don't have any transactions to export.";
+"settings.signOutAttestExportEmpty" = "You don't have any records to export.";
 "settings.signOutAttestExportFailed" = "We couldn't create the file. Please try again.";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
@@ -5485,10 +5485,10 @@
 "groups.freshStartPending.lossConfirmBodyNeutralUnknown" = "The group changes that didn't reach the server are erased from this phone. No one in the group will see them, and they can't be recovered.";
 
 /* Cerrar sesión en la nube con la sesión caducada; %d = cambios personales que se pierden */
-"settings.signOutCloudSessionExpiredPersonalLoss" = "Your session has expired. Changes that didn't reach your account in the cloud: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your transactions to a file before you decide. If you sign out now, those changes will be lost.";
+"settings.signOutCloudSessionExpiredPersonalLoss" = "Your session has expired. Changes that didn't reach your account in the cloud: %d. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your records to a file before you decide. If you sign out now, those changes will be lost.";
 
 /* Cerrar sesión en la nube con la sesión caducada, sin cifra */
-"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Your session has expired and some changes didn't reach your account in the cloud. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your transactions to a file before you decide. If you sign out now, those changes will be lost.";
+"settings.signOutCloudSessionExpiredPersonalLossUnknown" = "Your session has expired and some changes didn't reach your account in the cloud. To upload them, open “Where your data lives”, here in Profile, and tap “Sign in”. If you can't sign in, you can export your records to a file before you decide. If you sign out now, those changes will be lost.";
 
 /* iPad/ventana ancha: columna de detalle vacía en Registros */
 "records.detailPlaceholder" = "Choose a record to see it here";
@@ -5597,7 +5597,7 @@
 "accountDetail.empty" = "No activity in this period";
 
 /* Note under Archive toggle when archiving turned on Exclude from statistics */
-"account.archiveExcludedNotice" = "Once archived, this account stops counting towards your totals and statistics, and its transactions are hidden in Records. To keep it counting, turn off \"Exclude from statistics\".";
+"account.archiveExcludedNotice" = "Once archived, this account stops counting towards your totals and statistics, and its records are hidden in Records. To keep it counting, turn off \"Exclude from statistics\".";
 
 
 /* Chat draft card (Yala IA) — redesign A */
@@ -5776,7 +5776,7 @@
 "inbox.groupSettlementAmountChange.rowDetail" = "%2$@ recorded in %1$@";
 
 /* Error when the notice can no longer be applied: the transaction is gone, duplicated or in another currency */
-"inbox.groupSettlementAmountChange.transactionGone" = "This notice can no longer be applied: the transaction changed or is no longer in your accounts.";
+"inbox.groupSettlementAmountChange.transactionGone" = "This notice can no longer be applied: the record changed or is no longer in your accounts.";
 
 /* Image entry failure: a dropped or imported file (photo or PDF) could not be opened */
 "image.entry.failure.unreadableFile.title" = "I couldn’t open this file";
@@ -5947,13 +5947,13 @@
 
 /* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
 "export.error.invalidDateRange" = "Those dates don't work: the start date has to come before the end date.";
-"export.error.noTransactions" = "No transactions match these filters. Try another period or remove a filter.";
+"export.error.noTransactions" = "No records match these filters. Try another period or remove a filter.";
 "export.error.fileWriteFailed" = "We couldn't create the file. Please try again.";
 
 /* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
 "account.removal.title" = "Delete “%@”";
 "account.removal.intro" = "Before deleting it, choose what to do with what it holds.";
-"account.removal.countRecords" = "Transactions";
+"account.removal.countRecords" = "Records";
 "account.removal.countScheduled" = "Planned payments";
 "account.removal.countFavorites" = "Favourite payments";
 "account.removal.countDrafts" = "Pending in the inbox";
@@ -5961,19 +5961,19 @@
 "account.removal.moveTitle" = "Move it to another account";
 "account.removal.moveSubtitle" = "Recommended. Your history and your balance are kept.";
 "account.removal.noDestination" = "You don't have another account to move it to.";
-"account.removal.deleteTitle" = "Delete the transactions";
+"account.removal.deleteTitle" = "Delete the records";
 "account.removal.deleteSubtitle" = "They're deleted for good, along with the account.";
-"account.removal.deleteBlockedGroups" = "It has transactions from your groups: they can only be moved.";
+"account.removal.deleteBlockedGroups" = "It has records from your groups: they can only be moved.";
 "account.removal.destinationHeader" = "Move to";
-"account.removal.destinationBlockedCurrency" = "Not available: it has transfers or group transactions that can't be converted to this currency.";
-"account.removal.convertNote" = "Anything in another currency moves to %@: transactions at the exchange rate of their date; planned and favourite payments at today's rate.";
+"account.removal.destinationBlockedCurrency" = "Not available: it has transfers or group records that can't be converted to this currency.";
+"account.removal.convertNote" = "Anything in another currency moves to %@: records at the exchange rate of their date; planned and favourite payments at today's rate.";
 "account.removal.collapsedNote" = "Transfers between “%1$@” and “%2$@” are removed: within one account they don't move money.";
-"account.removal.partnersNote" = "Transfers with other accounts stay in those accounts as regular transactions.";
+"account.removal.partnersNote" = "Transfers with other accounts stay in those accounts as regular records.";
 "account.removal.plansNote" = "Planned payments, favourites and items pending in the inbox are left without an account: you'll choose one when you use them.";
 "account.removal.moveAction" = "Move and delete the account";
 "account.removal.deleteAction" = "Delete and remove the account";
-"account.removal.confirmDeleteTitle" = "Delete the transactions?";
-"account.removal.confirmDeleteCount" = "Transactions to delete";
+"account.removal.confirmDeleteTitle" = "Delete the records?";
+"account.removal.confirmDeleteCount" = "Records to delete";
 "account.removal.confirmDeleteMessage" = "They're deleted for good and this can't be undone. The account is deleted too.";
 "account.removal.confirmDeleteAction" = "Yes, delete everything";
 "account.removal.working" = "Deleting the account…";
@@ -5985,10 +5985,10 @@
 "account.removal.countBudgets" = "Budgets";
 "account.removal.budgetsMovedNote" = "Budgets that tracked this account will track “%@” instead.";
 "account.removal.budgetsOnlyNote" = "Some budgets only tracked this account: without it, they'll track all your accounts.";
-"orphanedRecords.title" = "Transactions without an account";
+"orphanedRecords.title" = "Records without an account";
 "orphanedRecords.bannerMessage" = "They lost their account when an account was deleted, so they don't count in your balance or your expenses.";
 "orphanedRecords.bannerAction" = "Choose where they go";
-"orphanedRecords.intro" = "These transactions lost their account when an account was deleted. Until they have one, they don't count in your balance or your expenses. Choose which account to move them to.";
+"orphanedRecords.intro" = "These records lost their account when an account was deleted. Until they have one, they don't count in your balance or your expenses. Choose which account to move them to.";
 "orphanedRecords.listHeader" = "Which ones";
 "orphanedRecords.moreNote" = "And %d more.";
 "orphanedRecords.noDestination" = "Create an account to be able to move them.";
@@ -5999,7 +5999,7 @@
 "orphanedRecords.moveActionGeneric" = "Move";
 "orphanedRecords.working" = "Moving…";
 "orphanedRecords.failedTitle" = "They weren't moved";
-"orphanedRecords.failedUnreadable" = "We couldn't read the transactions. Nothing was changed.";
+"orphanedRecords.failedUnreadable" = "We couldn't read the records. Nothing was changed.";
 "orphanedRecords.failedChanged" = "Something changed in the meantime. Check it and try again.";
 "orphanedRecords.untitled" = "No description";
 
@@ -6049,7 +6049,7 @@
 "panel.hero.flowCaption" = "In %1$@ − out %2$@";
 
 /* Line under the panel hero when the period has no income or expenses yet */
-"panel.hero.noMovements" = "No movements recorded in this period yet";
+"panel.hero.noMovements" = "No records in this period yet";
 
 /* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
 "panel.hero.totalInAccounts" = "You have %@ in your accounts";
