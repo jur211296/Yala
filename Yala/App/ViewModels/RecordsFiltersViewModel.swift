@@ -125,10 +125,10 @@ final class RecordsFiltersViewModel {
 
     func selectedAccountsText(selectedAccounts: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
         if selectedAccounts.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
         }
         if !isExcludeMode && selectedAccounts.count == activeAccounts.count {
-            return L10n.Filters.all
+            return L10n.Filters.allFeminine
         }
         return "\(selectedAccounts.count)/\(activeAccounts.count)"
     }
@@ -137,19 +137,19 @@ final class RecordsFiltersViewModel {
         let subCount = selectedSubcategories.count
 
         if subCount == 0 {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
         }
 
         let allIDs = Set(allSubcategories.map { $0.persistentModelID })
         if !isExcludeMode && selectedSubcategories == allIDs {
-            return L10n.Filters.all
+            return L10n.Filters.allFeminine
         }
 
         let selectedSubs = allSubcategories.filter {
             selectedSubcategories.contains($0.persistentModelID)
         }
         if selectedSubs.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
         }
 
         if let firstSub = selectedSubs.first {
@@ -161,15 +161,15 @@ final class RecordsFiltersViewModel {
             }
         }
 
-        return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+        return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
     }
 
     func selectedTagsText(selectedTags: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
         if selectedTags.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.all
+            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
         }
         if !isExcludeMode && selectedTags.count == activeTags.count {
-            return L10n.Filters.all
+            return L10n.Filters.allFeminine
         }
         return "\(selectedTags.count)/\(activeTags.count)"
     }

@@ -7,6 +7,7 @@
 //  tapado. Pure-logic, sin contexto ni singletons.
 //
 
+import Foundation
 import Testing
 @testable import Yala
 
@@ -168,6 +169,10 @@ struct PanelSheetStateActivePresentationTests {
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.accountDetail = AccountDetailPresentation(account: Account(
             name: "Sueldo", currencyCode: "PEN", colorHex: "#4F46E5", iconName: "banknote", type: "Efectivo"))
+        #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.recordDetail = PanelRecordPresentation(record: TransactionItem(date: Date(timeIntervalSince1970: 0), amount: -10, currencyCode: "PEN"))
+        #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.recordToEdit = PanelRecordPresentation(record: TransactionItem(date: Date(timeIntervalSince1970: 0), amount: -10, currencyCode: "PEN"))
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.showFilters = true
         #expect(s.hasActivePresentation)

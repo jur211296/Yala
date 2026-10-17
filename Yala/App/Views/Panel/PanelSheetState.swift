@@ -22,6 +22,12 @@ struct AccountDetailPresentation: Identifiable {
     let account: Account
 }
 
+/// Un registro abierto desde «Últimos registros» (UX 2.2 · L3-12): antes tocar una fila no hacía nada.
+struct PanelRecordPresentation: Identifiable {
+    let id = UUID()
+    let record: TransactionItem
+}
+
 /// Bundles all sheet-related state for PanelView.
 /// Owned as `@State` in PanelShell — SwiftUI tracks mutations internally,
 /// NOT through ObservationCenter, preventing the infinite render loop.
@@ -30,6 +36,12 @@ struct PanelSheetState {
     var isPresentingSettings = false
     var accountFormSheet: AccountFormSheet? = nil
     var accountDetail: AccountDetailPresentation? = nil
+    /// El detalle de un registro de «Últimos registros» y, si se toca Editar, el editor que lo sustituye al cerrarse
+    /// (el mismo reemplazo de hoja que Registros).
+    var recordDetail: PanelRecordPresentation? = nil
+    var recordToEdit: PanelRecordPresentation? = nil
+    /// Coordinación post-dismiss (no presenta nada): el registro cuyo editor sube al cerrarse su detalle.
+    var pendingEditRecord: TransactionItem? = nil
     /// Hoja de filtros (la misma de Estadísticas e Informes), desde la toolbar del Panel.
     var showFilters = false
     /// Which section's preferences sheet is currently presented (P20-03).
@@ -109,6 +121,8 @@ struct PanelSheetState {
         isPresentingSettings
             || accountFormSheet != nil
             || accountDetail != nil
+            || recordDetail != nil
+            || recordToEdit != nil
             || showFilters
             || sectionPrefsPresentation != nil
             || showSectionsConfig

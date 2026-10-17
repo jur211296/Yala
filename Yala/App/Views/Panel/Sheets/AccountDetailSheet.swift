@@ -8,6 +8,10 @@
 //  gasto, los últimos movimientos y filtrar el Panel por esta cuenta. «Editar» va en la barra y abre el formulario
 //  de cuenta encima de esta hoja.
 //
+//  UX 2.2 · L3-11 (opción B): la hoja se titula con el nombre de la cuenta, enseña la cuenta de su saldo en el período
+//  («saldo al empezar + entró − salió = saldo») en vez de dos cifras sueltas junto a un saldo de siempre, pone los
+//  valores de inicio y fin sobre la curva y sube «Filtrar por esta cuenta» bajo esa cuenta.
+//
 //  No asume ser hoja de pantalla completa: el contenido va a ancho legible, por si algún día vive en la columna de
 //  detalle de una lista en iPad. El tamaño lo decide la ventana (`yalaSheetDetents`).
 //
@@ -32,6 +36,7 @@ struct AccountDetailSheet: View {
     @State private var isEditing = false
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var summary: AccountDetailCalculator.Summary?
+    @State private var reconciliation: AccountDetailCalculator.Reconciliation?
 
     private var isStale: Bool {
         PanelAccountCardLogic.detailIsStale(
@@ -68,7 +73,8 @@ struct AccountDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     hero
-                    flowTiles
+                    balanceEquation
+                    filterButton
                     chart
                     if let summary {
                         detailSections(summary)
@@ -90,10 +96,11 @@ struct AccountDetailSheet: View {
                     .accessibilityIdentifier("account_detail_close")
                 }
                 ToolbarItem(placement: .principal) {
-                    Text(periodName)
+                    Text(account.name)
                         .font(DS.Typography.subheadlineEmphasized)
-                        .foregroundStyle(theme.secondaryText)
+                        .foregroundStyle(theme.primaryText)
                         .lineLimit(1)
+                        .accessibilityAddTraits(.isHeader)
                 }
                 if PanelAccountCardLogic.canEdit(isSystemAccount: account.isSystemAccount) {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -167,11 +174,11 @@ struct AccountDetailSheet: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(account.name)
-                    .font(DS.Typography.headline)
+                Text(verbatim: subtitle)
+                    .font(DS.Typography.subheadline)
                     .foregroundStyle(theme.primaryText)
                     .lineLimit(2)
-                Text(verbatim: subtitle + " · " + amountLabel)
+                Text(verbatim: amountLabel)
                     .font(DS.Typography.caption)
                     .foregroundStyle(theme.secondaryText)
                     .lineLimit(2)
@@ -187,36 +194,81 @@ struct AccountDetailSheet: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// En modo «solo gastos» no van: la cabecera ya dice lo gastado, y «Salió» cuenta además transferencias y ajustes,
-    /// así que al lado de «Gastado» se leía como otro número para lo mismo.
+    /// La cuenta del saldo en el período (UX 2.2 · L3-11). En modo «solo gastos» no va: la cabecera ya dice lo gastado,
+    /// y «Salió» cuenta además transferencias y ajustes, así que al lado de «Gastado» se leía como otro número para lo
+    /// mismo.
     @ViewBuilder
-    private var flowTiles: some View {
-        if let summary, !isExpensesOnlyMode {
-            HStack(spacing: DS.Spacing.sm) {
-                flowTile(title: L10n.AccountDetail.moneyIn, value: summary.moneyIn, tint: .color(Color.incomeAmount))
-                flowTile(title: L10n.AccountDetail.moneyOut, value: summary.moneyOut, tint: .color(theme.primaryText))
+    private var balanceEquation: some View {
+        if let reconciliation, !isExpensesOnlyMode {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.AccountDetail.equationTitle)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(theme.secondaryText)
+                equationRow(sign: nil, title: L10n.AccountDetail.balanceOn(dayLabel(openingDay)), value: reconciliation.opening, tint: .color(theme.primaryText))
+                equationRow(sign: "+", title: L10n.AccountDetail.moneyIn, value: reconciliation.moneyIn, tint: .color(Color.incomeAmount))
+                equationRow(sign: "−", title: L10n.AccountDetail.moneyOut, value: reconciliation.moneyOut, tint: .color(theme.primaryText))
+                Divider()
+                equationRow(sign: "=", title: closingLabel, value: reconciliation.closing, tint: .color(theme.primaryText), isTotal: true)
             }
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.sm)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(theme.card, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("account_detail_equation")
         }
     }
 
-    private func flowTile(title: String, value: Double, tint: AmountText.Tint) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-            Text(title)
-                .font(DS.Typography.caption)
+    private func equationRow(sign: String?, title: String, value: Double, tint: AmountText.Tint, isTotal: Bool = false) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            Text(verbatim: sign ?? " ")
+                .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(theme.secondaryText)
+                .frame(width: DS.Spacing.md, alignment: .center)
+                .accessibilityHidden(sign == nil)
+            Text(title)
+                .font(isTotal ? DS.Typography.subheadlineEmphasized : DS.Typography.subheadline)
+                .foregroundStyle(theme.primaryText)
+                .lineLimit(2)
+            Spacer(minLength: DS.Spacing.sm)
             AmountText(
                 value: value,
                 currencyCode: currencyCode,
-                font: DS.Typography.headline,
+                font: isTotal ? DS.Typography.headline : DS.Typography.subheadlineEmphasized,
                 secondaryFont: DS.Typography.caption,
                 tint: tint
             )
         }
-        .padding(.horizontal, DS.Spacing.md)
-        .padding(.vertical, DS.Spacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(theme.card, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
-        .accessibilityElement(children: .combine)
+    }
+
+    /// El día en que empieza la cuenta: el primero del período, o el del primer movimiento si la cuenta es posterior
+    /// (como la curva).
+    private var openingDay: Date {
+        summary?.series.first?.day ?? viewModel.panelDateInterval.start
+    }
+
+    /// «Saldo hoy» si el período llega a hoy; si ya terminó, «Saldo al 30 sep».
+    private var closingLabel: String {
+        let interval = viewModel.panelDateInterval
+        return interval.end >= Date.now ? L10n.AccountDetail.balanceToday : L10n.AccountDetail.balanceOn(dayLabel(interval.end))
+    }
+
+    private func dayLabel(_ date: Date) -> String {
+        Self.rowDateFormatter.string(from: date)
+    }
+
+    @ViewBuilder
+    private var filterButton: some View {
+        if PanelAccountCardLogic.showsFilterAction(
+            isSelected: viewModel.selectedAccountIDs.contains(account.persistentModelID),
+            isExcludeMode: viewModel.isExcludeMode
+        ) {
+            YalaSecondaryButton(L10n.Keyboard.filterByAccount, icon: "line.3.horizontal.decrease.circle") {
+                viewModel.selectedAccountID = account.persistentModelID
+                dismiss()
+            }
+            .accessibilityIdentifier("account_detail_filter")
+        }
     }
 
     @ViewBuilder
@@ -230,7 +282,27 @@ struct AccountDetailSheet: View {
                     .foregroundStyle(accountColor)
                     .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.monotone)
+                // Valor de inicio y fin sobre la curva (UX 2.2 · L3-11): sin escala era una línea sin cifras. Texto ya
+                // resuelto: dentro de una anotación no llega el entorno (`AmountText` tumbaría la app).
+                if point.day == summary.series.first?.day || point.day == summary.series.last?.day {
+                    PointMark(x: .value("Día", point.day), y: .value("Saldo", point.balance))
+                        .foregroundStyle(accountColor)
+                        .symbolSize(36)
+                        .annotation(
+                            position: .top,
+                            alignment: point.day == summary.series.first?.day ? .leading : .trailing,
+                            spacing: DS.Spacing.xxs
+                        ) {
+                            Text(appPreferences.currency(point.balance, currencyCode: currencyCode))
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(theme.secondaryText)
+                                .lineLimit(1)
+                                .fixedSize()
+                        }
+                }
             }
+            .chartYScale(domain: .automatic(includesZero: false))
+            .chartPlotStyle { plot in plot.padding(.top, DS.Spacing.lg) }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 3)) { _ in
                     // Con más de medio año en pantalla el día no ubica nada y dos «1 ene.» no se distinguen: mes y año.
@@ -285,17 +357,6 @@ struct AccountDetailSheet: View {
                     latestRow(entry)
                 }
             }
-        }
-
-        if PanelAccountCardLogic.showsFilterAction(
-            isSelected: viewModel.selectedAccountIDs.contains(account.persistentModelID),
-            isExcludeMode: viewModel.isExcludeMode
-        ) {
-            YalaSecondaryButton(L10n.Keyboard.filterByAccount, icon: "line.3.horizontal.decrease.circle") {
-                viewModel.selectedAccountID = account.persistentModelID
-                dismiss()
-            }
-            .accessibilityIdentifier("account_detail_filter")
         }
     }
 
@@ -427,6 +488,7 @@ struct AccountDetailSheet: View {
             )
         }
         summary = result
+        reconciliation = AccountDetailCalculator.reconciliation(entries: entries, interval: interval, calendar: calendar)
     }
 
     private static func title(for tx: TransactionItem) -> String {

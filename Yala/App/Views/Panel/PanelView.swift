@@ -39,6 +39,11 @@ struct PanelView: View {
 
     /// Nudge banner visibility (dormant/sporadic users)
     @State private var showNudgeBanner = false
+    /// El aviso que se está enseñando de la cola (UX 2.2 · L3-8). `nil` = el primero.
+    @State private var selectedNotice: PanelNotice?
+    /// La misma clave que lee `ContextualGuideBanner.panel()`: el Panel necesita saber si la guía sigue puesta para
+    /// contarla en «1 de N».
+    @AppStorage("guide.panel.dismissed") private var panelGuideDismissed = false
 
     @Environment(AppPreferences.self) private var appPreferences
 
@@ -447,6 +452,90 @@ struct PanelView: View {
         return (visible(.accounts), visible(.health))
     }
 
+    // MARK: - Avisos (UX 2.2 · L3-8)
+
+    /// Cada aviso con la MISMA condición con la que se pintaba suelto.
+    private var noticeFlags: PanelNoticeQueueLogic.Flags {
+        var flags = PanelNoticeQueueLogic.Flags()
+        flags.panelGuide = !UITestHooks.isActive && !panelGuideDismissed
+        flags.setupChecklist = !UITestHooks.isActive && SetupChecklistManager.shared.shouldShow
+        flags.updateAvailable = AppUpdateService.shared.shouldShowBanner && AppUpdateService.shared.latestVersion != nil
+        flags.proOffer = StoreKitManager.shared.isInTrial
+            || (!FeatureGateService.shared.isProUser && showPeriodicBanner)
+        flags.nudge = !UITestHooks.isActive && NudgeService.shared.currentNudge != nil && showNudgeBanner
+        flags.siriTip = !UITestHooks.isActive && appPreferences.showSiriTip && viewModel.transactions.count >= 5
+        return flags
+    }
+
+    @ViewBuilder
+    private func noticeView(_ notice: PanelNotice) -> some View {
+        switch notice {
+        case .panelGuide:
+            ContextualGuideBanner.panel()
+        case .setupChecklist:
+            SetupChecklistCard(
+                manager: SetupChecklistManager.shared,
+                onStepTapped: { step in handleSetupStep(step) }
+            )
+        case .updateAvailable:
+            if let updateVersion = AppUpdateService.shared.latestVersion {
+                UpdateAvailableBanner(
+                    version: updateVersion,
+                    appStoreURL: AppUpdateService.shared.appStoreURL,
+                    onDismiss: { AppUpdateService.shared.dismissBanner() }
+                )
+            }
+        case .proOffer:
+            if StoreKitManager.shared.isInTrial {
+                TrialBanner(
+                    daysRemaining: StoreKitManager.shared.trialDaysRemaining
+                ) {
+                    sheets.subscriptionBannerSource = "trialBanner"
+                    sheets.showSubscriptionFromBanner = true
+                }
+            } else {
+                ProUpgradeBanner(
+                    onUpgrade: {
+                        sheets.subscriptionBannerSource = "periodicBanner"
+                        sheets.showSubscriptionFromBanner = true
+                    },
+                    onDismiss: {
+                        ProUpsellService.shared.recordDismissed()
+                        showPeriodicBanner = false
+                    }
+                )
+                .onAppear {
+                    ProUpsellService.shared.recordShown(source: "periodicBanner")
+                }
+            }
+        case .nudge:
+            if let nudge = NudgeService.shared.currentNudge {
+                GroupNudgeBanner(
+                    nudge: nudge,
+                    message: NudgeService.shared.currentNudgeMessage ?? "",
+                    onAction: {
+                        NudgeService.shared.recordInteracted(nudge)
+                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                        handleNudgeAction(nudge)
+                    },
+                    onDismiss: {
+                        NudgeService.shared.recordDismissed(nudge)
+                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                    },
+                    onAutoDismiss: {
+                        NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
+                        withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
+                    }
+                )
+            }
+        case .siriTip:
+            SiriTipCard(isVisible: Binding(
+                get: { appPreferences.showSiriTip },
+                set: { appPreferences.showSiriTip = $0 }
+            ))
+        }
+    }
+
     /// La cabecera del Panel. En compacta, la pila de siempre. En ancha, una banda de dos columnas —saldo y acciones
     /// a la izquierda, «Tus finanzas» a la derecha— con los avisos debajo: en horizontal la cabecera se comía un tercio
     /// de la pantalla (ticket `ipad-and-duo-panel-and-statistics-use-the-width`). Los mismos hijos en los dos casos,
@@ -491,6 +580,8 @@ struct PanelView: View {
 
                         PanelQuickActionsRow(
                             canCreateRecords: viewModel.canUseVoiceInput,
+                            hasAccounts: viewModel.accounts.contains { !$0.isArchived },
+                            onCreateFirstAccount: { sheets.accountFormSheet = AccountFormSheet(account: nil) },
                             isVoiceLocked: isVoiceLocked,
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
@@ -508,78 +599,14 @@ struct PanelView: View {
                             sheets.showOrphanedRecords = true
                         }
 
-                        if !UITestHooks.isActive, appPreferences.showSiriTip, viewModel.transactions.count >= 5 {
-                            SiriTipCard(isVisible: Binding(
-                                get: { appPreferences.showSiriTip },
-                                set: { appPreferences.showSiriTip = $0 }
-                            ))
+                        // Los avisos, de uno en uno con «1 de N» (UX 2.2 · L3-8): apilados empujaban las cuentas a dos
+                        // pantallas. El orden lo decide `PanelNoticeQueueLogic`; cada aviso conserva su condición.
+                        PanelNoticeCarousel(
+                            notices: PanelNoticeQueueLogic.visible(noticeFlags),
+                            selected: $selectedNotice
+                        ) { notice in
+                            noticeView(notice)
                         }
-
-                        // Update available banner (all users)
-                        if AppUpdateService.shared.shouldShowBanner,
-                           let updateVersion = AppUpdateService.shared.latestVersion {
-                            UpdateAvailableBanner(
-                                version: updateVersion,
-                                appStoreURL: AppUpdateService.shared.appStoreURL,
-                                onDismiss: { AppUpdateService.shared.dismissBanner() }
-                            )
-                        }
-
-                        // Trial / periodic upgrade banner
-                        if StoreKitManager.shared.isInTrial {
-                            TrialBanner(
-                                daysRemaining: StoreKitManager.shared.trialDaysRemaining
-                            ) {
-                                sheets.subscriptionBannerSource = "trialBanner"
-                                sheets.showSubscriptionFromBanner = true
-                            }
-                        } else if !FeatureGateService.shared.isProUser && showPeriodicBanner {
-                            ProUpgradeBanner(
-                                onUpgrade: {
-                                    sheets.subscriptionBannerSource = "periodicBanner"
-                                    sheets.showSubscriptionFromBanner = true
-                                },
-                                onDismiss: {
-                                    ProUpsellService.shared.recordDismissed()
-                                    showPeriodicBanner = false
-                                }
-                            )
-                            .onAppear {
-                                ProUpsellService.shared.recordShown(source: "periodicBanner")
-                            }
-                        }
-
-                        // Nudge banner (dormant/sporadic users — only if no Pro upsell showing)
-                        if !UITestHooks.isActive, let nudge = NudgeService.shared.currentNudge, showNudgeBanner {
-                            GroupNudgeBanner(
-                                nudge: nudge,
-                                message: NudgeService.shared.currentNudgeMessage ?? "",
-                                onAction: {
-                                    NudgeService.shared.recordInteracted(nudge)
-                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                                    handleNudgeAction(nudge)
-                                },
-                                onDismiss: {
-                                    NudgeService.shared.recordDismissed(nudge)
-                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                                },
-                                onAutoDismiss: {
-                                    NudgeService.shared.recordDismissed(nudge, autoDismissed: true)
-                                    withAnimation(.easeOut(duration: 0.25)) { showNudgeBanner = false }
-                                }
-                            )
-                        }
-
-                        // Setup Checklist (persistent for new users)
-                        if !UITestHooks.isActive {
-                            SetupChecklistCard(
-                                manager: SetupChecklistManager.shared,
-                                onStepTapped: { step in handleSetupStep(step) }
-                            )
-                        }
-
-                        // Contextual guide for panel (first visit)
-                        ContextualGuideBanner.panel()
 
                         // Ganancia/pérdida cambiaria del saldo que el Panel suma. La condición vive
                         // DENTRO de la card, no aquí: con el `if` fuera, cruzar el umbral mientras
@@ -618,6 +645,10 @@ struct PanelView: View {
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }
                     .padding(.top, DS.Spacing.lg)
+                    // Tocar un registro de «Últimos registros» abre su detalle (UX 2.2 · L3-12).
+                    .environment(\.openPanelRecord, OpenPanelRecordAction { record in
+                        sheets.recordDetail = PanelRecordPresentation(record: record)
+                    })
                     // Al final del scroll están a la vista Yala IA y «+» (`showFloatingActions`): el último widget
                     // sube por encima de los dos.
                     .padding(.bottom, DS.Button.fabStackClearance(buttons: 2))

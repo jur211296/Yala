@@ -92,6 +92,9 @@ struct YalaSpark: View {
 
     var size: Size = .medium
     var animated: Bool = false
+    /// Relleno sólido, sin degradado ni punto de brillo (UX 2.2 · L4-12, regla de Jürgen: sin brillos). Por defecto
+    /// apagado: el resto de la app conserva la estrella de siempre hasta que el lote de Yala Pro lo decida.
+    var solid: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isAnimating = false
@@ -105,19 +108,24 @@ struct YalaSpark: View {
     var body: some View {
         ZStack {
             // Main spark shape
-            YalaSparkShape()
-                .fill(
-                    LinearGradient(
-                        colors: DS.Gradients.proBadge,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+            if solid {
+                YalaSparkShape()
+                    .fill(DS.Gradients.proBadge.first ?? Color.orange)
+            } else {
+                YalaSparkShape()
+                    .fill(
+                        LinearGradient(
+                            colors: DS.Gradients.proBadge,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
-                )
 
-            // Center glow accent
-            Circle()
-                .fill(Color.white.opacity(0.6))
-                .frame(width: size.dimension * 0.25, height: size.dimension * 0.25)
+                // Center glow accent
+                Circle()
+                    .fill(Color.white.opacity(0.6))
+                    .frame(width: size.dimension * 0.25, height: size.dimension * 0.25)
+            }
         }
         .frame(width: size.dimension, height: size.dimension)
         .rotationEffect(.degrees(isAnimating ? 15 : -15))

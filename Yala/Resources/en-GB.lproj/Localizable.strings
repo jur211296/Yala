@@ -98,7 +98,7 @@
 "tutorials.createFavorites.step0.desc" = "Go to the new transaction screen and tap the star at the top to create a new favourite.";
 "tutorials.createFavorites.step1.desc" = "Fill in the fields you want to be pre-filled. Next time, simply tap the favourite and watch all the fields fill in automatically.";
 "aiSettings.title" = "Customise AI";
-"aiConsent.processingMessage" = "These features use OpenAI to process your data:\n\n• Voice: your audio recording is transcribed\n• Images: the photo (receipt or screenshot) is analysed to extract the expense details\n\nOnly what you send at that moment is processed. OpenAI does not use this data to train its models.";
+"aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service (OpenAI), only at that moment. It’s not used to train the AI.";
 "insights.aiCaption" = "OpenAI analyzes your aggregated data to generate personalised analysis. No individual transactions are sent.";
 "whatsNew.v12.themes.description" = "Customise the app with new Minimalist and Translucent themes.";
 "setup.step1.title" = "Explore everything you can customise";
@@ -619,7 +619,7 @@
    ================================================================ */
 "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}" = "Record from Apple Pay the fields amount: ${amount} and merchant: ${merchant}";
 "accessibility.accountRow %@ %@" = "Account %@, currency %@";
-"accessibility.approveCompleteHint" = "To approve, complete account, amount, and category";
+"accessibility.approveCompleteHint" = "To save, fill in account, amount and category";
 "accessibility.authenticating" = "Authenticating";
 "accessibility.budgetRow %@ %d %@ %@" = "Budget %@, %d percent spent, %@ of %@";
 "accessibility.calendarDay %d" = "Day %d";
@@ -670,7 +670,7 @@
 "accessibility.nextPeriod" = "Next period";
 "accessibility.noActiveAccounts" = "No active accounts available";
 "accessibility.noData" = "No data";
-"accessibility.noDraftsToApprove" = "No drafts are ready to approve";
+"accessibility.noDraftsToApprove" = "No drafts are ready to save";
 "accessibility.noInactiveBudgets" = "No inactive budgets to restore";
 "accessibility.noTransactions" = "No transactions available";
 "accessibility.noTransactionsToExport" = "No transactions to export";
@@ -800,7 +800,7 @@
 "aiConsent.insightsMessage" = "This feature sends OpenAI a summary of your finances —totals and trends by category, budgets, and recurring payments— to generate your analysis.\n\nYour full transaction history is not sent. OpenAI does not use this data to train its models.";
 "aiConsent.insightsTitle" = "Smart Overview";
 "aiConsent.privacyPolicy" = "Privacy Policy";
-"aiConsent.processingTitle" = "Voice & Image Processing";
+"aiConsent.processingTitle" = "Yala records it for you";
 "aiPrivacy.chatRow" = "Pro Assistant";
 "aiPrivacy.footerHint" = "Your data is only sent when you use Insights, the Assistant or voice and image entries, and it reaches OpenAI through our server. We don't sell it or use it for advertising.";
 "aiPrivacy.insightsRow" = "Smart Insights";
@@ -1582,9 +1582,9 @@
 "filters.currency" = "Currency";
 "filters.datePrefix %@" = "Date: %@";
 "filters.deselectAll" = "Deselect all";
-"filters.excludeMode" = "Exclude";
+"filters.excludeMode" = "Hide";
 "filters.filterOptions" = "Filter options";
-"filters.includeMode" = "Include";
+"filters.includeMode" = "Show only";
 "filters.need" = "Need";
 "filters.noSubcategories" = "No subcategories";
 "filters.noTags" = "No tags";
@@ -1635,8 +1635,8 @@
 "guide.comparative.message" = "See if you spent more or less this month compared to last. Pink = spent more, purple = spent less.";
 "guide.comparative.title" = "Compare periods";
 "guide.favoritesManage.title" = "Your most frequent payments";
-"guide.inbox.message" = "When you have payments to confirm or automatic expenses, they appear here for you to review.";
-"guide.inbox.title" = "Pending for review";
+"guide.inbox.message" = "What Yala records for you (voice, photos, Apple Pay, Siri, payments falling due) waits here for you to review and save.";
+"guide.inbox.title" = "To review and save";
 "guide.insights.message" = "Based on your spending, Yala tells you useful things: your most expensive day, if you're spending more than usual, etc.";
 "guide.insights.title" = "Yala analyzes for you";
 "guide.panel.message" = "See at a glance how much you've spent and how much you have left. Tap + to add an expense.";
@@ -1745,7 +1745,7 @@
 "image.transactionDetected" = "transaction detected";
 "image.transactionsDetected" = "Transactions detected";
 "image.transactionsDetectedCount" = "transactions detected";
-"image.transactionsDetectedMessage" = "We detected %d transactions. You can review and approve them in the inbox.";
+"image.transactionsDetectedMessage" = "I found %d records. You can review and save them in the Inbox.";
 "image.youCanUpload" = "You can upload:";
 "import.assignAccountPerCurrency" = "Assign an account for each currency found in the file.";
 "import.categoriesDescription" = "If the file includes categories that don't exist, they will be created automatically.";
@@ -1782,19 +1782,19 @@
 "inbox.alert.title.mixed" = "New records in your inbox!";
 "inbox.alert.title.scheduled" = "You have pending payments!";
 "inbox.alert.title.subscriptions" = "Subscriptions to review!";
-"inbox.approve" = "Approve";
-"inbox.approveAll" = "Approve all";
-"inbox.approveNext" = "Approve next";
-"inbox.approveSuccess" = "Transaction created";
-"inbox.approveableCount" = "%1$d of %2$d ready to approve";
+"inbox.approve" = "Save";
+"inbox.approveAll" = "Save all";
+"inbox.approveNext" = "Save the next one";
+"inbox.approveSuccess" = "Record saved";
+"inbox.approveableCount" = "%1$d of %2$d ready to save";
 "inbox.archived" = "Archived";
 "inbox.backToInbox" = "Back to inbox";
 "inbox.bulkHint" = "Tap ✓ to pick several at once";
-"inbox.status.rejected" = "rejected";
-"inbox.status.approved" = "approved";
+"inbox.status.rejected" = "discarded";
+"inbox.status.approved" = "saved";
 "inbox.status.pending" = "pending";
-"inbox.cannotApprove" = "Cannot approve";
-"inbox.createAnyway" = "Create anyway";
+"inbox.cannotApprove" = "Can’t save";
+"inbox.createAnyway" = "Save anyway";
 "inbox.delete" = "Delete";
 "inbox.deleteConfirmMessage" = "Are you sure you want to delete %d drafts?";
 "inbox.deleteMessage" = "This action cannot be undone.";
@@ -1802,11 +1802,11 @@
 "inbox.discardChanges" = "Discard";
 "inbox.discardChangesMessage" = "You have unsaved changes that will be lost.";
 "inbox.discardChangesTitle" = "Discard changes?";
-"inbox.duplicateWarningMessage" = "A similar transaction already exists. Create anyway?";
+"inbox.duplicateWarningMessage" = "A similar record already exists. Save it anyway?";
 "inbox.duplicateWarningTitle" = "Possible duplicate";
 "inbox.editDraft" = "Edit draft";
-"inbox.errorArchivedAccount" = "This account is archived. Edit the draft and change the account to approve.";
-"inbox.errorFutureDate" = "Transactions with a future date cannot be approved";
+"inbox.errorArchivedAccount" = "This account is archived. Edit the draft and pick another account to save it.";
+"inbox.errorFutureDate" = "Records with a future date can’t be saved";
 "inbox.errorNoAccount" = "You must select an account";
 "inbox.errorNoAmount" = "You must specify an amount";
 "inbox.errorNoSubcategory" = "You must select a subcategory";
@@ -1819,15 +1819,15 @@
 "inbox.newTag" = "New";
 "inbox.noAmount" = "No amount";
 "inbox.noArchived" = "No archived drafts";
-"inbox.noArchivedDescription" = "Approved or rejected drafts will appear here.";
+"inbox.noArchivedDescription" = "What you saved or discarded shows up here.";
 "inbox.noDescription" = "No description";
 "inbox.noPending" = "No pending drafts";
-"inbox.noPendingDescription" = "New voice and image drafts will appear here.";
+"inbox.noPendingDescription" = "This is where what Yala records for you lands: voice, photos, Apple Pay, Siri and planned payments.";
 "inbox.pending" = "Pending";
 "inbox.pendingBadge" = "%d pending";
-"inbox.reject" = "Reject";
-"inbox.returnToPending" = "Return to pending";
-"inbox.saveLater" = "Approve later";
+"inbox.reject" = "Discard";
+"inbox.returnToPending" = "Back to pending";
+"inbox.saveLater" = "Leave for later";
 "inbox.selectedCount" = "%d selected";
 "inbox.sourceApplePay" = "Apple Pay";
 "inbox.sourceAutomation" = "Automation";
@@ -1843,8 +1843,8 @@
 "inbox.subtitleMultiplePending" = "%d transactions waiting, step by step.";
 "inbox.subtitleOnePending" = "One transaction waiting, review when you can.";
 "inbox.title" = "Inbox";
-"inbox.transactionCreated" = "transaction created";
-"inbox.transactionsCreated" = "transactions created";
+"inbox.transactionCreated" = "record saved";
+"inbox.transactionsCreated" = "records saved";
 "inbox.viewInRecords" = "View in records";
 "insights.activate" = "Activate";
 "insights.activateAITitle" = "Smart Overview available";
@@ -2243,7 +2243,7 @@
 "panel.health.total.headline.high" = "You're crushing it!";
 "panel.health.total.headline.low" = "Small steps, big changes";
 "panel.health.total.headline.mid" = "Great rhythm going";
-"panel.health.total.sheet.explanation" = "Combines three things: your budgets, your logging rhythm, and your commitments for the period. Each weighs differently and re-balances when any one doesn't apply.";
+"panel.health.total.sheet.explanation" = "Your score comes from three parts. Each weighs what it says next to it; if one has no data yet, the others share its weight.";
 "panel.health.total.sheet.title" = "Your financial health";
 "panel.health.voiceover.noData" = "no data";
 "panel.health.voiceover.score" = "%d out of 100";
@@ -2322,7 +2322,7 @@
 "panel.widgetInfo.addToPanel" = "Add to Panel";
 "panel.widgetInfo.budgets.chip1" = "Favorites";
 "panel.widgetInfo.budgets.chip2" = "Current period";
-"panel.widgetInfo.budgets.chip3" = "Interactive";
+"panel.widgetInfo.budgets.chip3" = "You can tap it";
 "panel.widgetInfo.budgets.howA" = "Tap a budget to filter the rest of the Panel by its category's or tag's transactions. Tap it again to clear the filter.";
 "panel.widgetInfo.budgets.howQ" = "How do I interact?";
 "panel.widgetInfo.budgets.regularWhatA" = "Your favorite budgets with the period's progress: how much you've spent, how much is left of the limit and the status (on track, tight or exceeded). The star in the header opens the screen where you choose which ones to mark as favorites.";
@@ -2334,8 +2334,8 @@
 "panel.widgetInfo.cashFlow.balanceQ" = "Why doesn't total flow match my balance?";
 "panel.widgetInfo.cashFlow.chip1" = "Income";
 "panel.widgetInfo.cashFlow.chip2" = "Expenses";
-"panel.widgetInfo.cashFlow.chip3" = "By period";
-"panel.widgetInfo.cashFlow.chip4" = "Interactive";
+"panel.widgetInfo.cashFlow.chip3" = "Follows the chosen period";
+"panel.widgetInfo.cashFlow.chip4" = "You can tap it";
 "panel.widgetInfo.cashFlow.largeHowA" = "Press and hold a bar to see the exact details of a specific point.";
 "panel.widgetInfo.cashFlow.largeHowQ" = "How do I interact with the chart?";
 "panel.widgetInfo.cashFlow.largeWhatA" = "How your income and expenses evolve throughout the period, grouped by day, week, or month based on the selected interval.";
@@ -2347,7 +2347,7 @@
 "panel.widgetInfo.cashFlow.title" = "Cash flow";
 "panel.widgetInfo.categoriesPie.chip1" = "Categories";
 "panel.widgetInfo.categoriesPie.chip2" = "Current period";
-"panel.widgetInfo.categoriesPie.chip3" = "Interactive";
+"panel.widgetInfo.categoriesPie.chip3" = "You can tap it";
 "panel.widgetInfo.categoriesPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to filter the rest of the Panel by that category. Long-press a bubble to see the full name.";
 "panel.widgetInfo.categoriesPie.largeHowQ" = "How do I interact with the chart?";
 "panel.widgetInfo.categoriesPie.largeWhatA" = "The donut shows how spending splits by category in the active period. The legend on the right lists each category with its percentage, from highest to lowest.";
@@ -2361,7 +2361,7 @@
 "panel.widgetInfo.exchangeRate.balanceImpactQ" = "How does the exchange rate affect my balance?";
 "panel.widgetInfo.exchangeRate.chip1" = "Multi-currency";
 "panel.widgetInfo.exchangeRate.chip2" = "Current rates";
-"panel.widgetInfo.exchangeRate.chip3" = "Interactive";
+"panel.widgetInfo.exchangeRate.chip3" = "You can tap it";
 "panel.widgetInfo.exchangeRate.howA" = "Slide your finger over the lines to see the exact rates on a specific date, with a tooltip per currency. Tap a chip in the bottom legend to isolate a single currency; tap it again to bring all of them back.";
 "panel.widgetInfo.exchangeRate.howQ" = "How do I interact with the chart?";
 "panel.widgetInfo.exchangeRate.title" = "Exchange rate";
@@ -2369,7 +2369,7 @@
 "panel.widgetInfo.exchangeRate.whatQ" = "What are you seeing?";
 "panel.widgetInfo.expensesByNeed.chip1" = "Needs";
 "panel.widgetInfo.expensesByNeed.chip2" = "Current period";
-"panel.widgetInfo.expensesByNeed.chip3" = "Interactive";
+"panel.widgetInfo.expensesByNeed.chip3" = "You can tap it";
 "panel.widgetInfo.expensesByNeed.largeHowA" = "Slide your finger over the bars to see the breakdown of a single point in time — how much was essential, priority, etc., with the total. Tap a legend chip to show only that need type and filter the Panel.";
 "panel.widgetInfo.expensesByNeed.largeHowQ" = "How do I interact with the chart?";
 "panel.widgetInfo.expensesByNeed.largeWhatA" = "Spending in the active period stacked by need type: essential, priority, optional and unclassified. Each bar on the horizontal axis is a day, week or month depending on the grouping, and the legend below shows the overall weight of each type.";
@@ -2384,7 +2384,7 @@
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "What are you seeing?";
 "panel.widgetInfo.expensesByNeed.title" = "Distribution by need";
 "panel.widgetInfo.periodComparison.chip1" = "Comparison";
-"panel.widgetInfo.periodComparison.chip2" = "By period";
+"panel.widgetInfo.periodComparison.chip2" = "Follows the chosen period";
 "panel.widgetInfo.periodComparison.howA" = "Tap M to compare against the previous month or Y for the previous year. Your choice also applies to variations across the rest of the Panel.";
 "panel.widgetInfo.periodComparison.howQ" = "What does it compare against?";
 "panel.widgetInfo.periodComparison.title" = "Period comparison";
@@ -2397,7 +2397,7 @@
 "panel.widgetInfo.recentRecords.whatQ" = "What are you seeing?";
 "panel.widgetInfo.sankey.chip1" = "Flow";
 "panel.widgetInfo.sankey.chip2" = "By need";
-"panel.widgetInfo.sankey.chip3" = "Interactive";
+"panel.widgetInfo.sankey.chip3" = "You can tap it";
 "panel.widgetInfo.sankey.howA" = "Tap a category, subcategory or flow branch to filter the rest of the Panel by that path. Tap again to clear the filter.";
 "panel.widgetInfo.sankey.howQ" = "How do I interact?";
 "panel.widgetInfo.sankey.title" = "Money flow";
@@ -2405,7 +2405,7 @@
 "panel.widgetInfo.sankey.whatQ" = "What are you seeing?";
 "panel.widgetInfo.scheduledPayments.chip1" = "Upcoming payments";
 "panel.widgetInfo.scheduledPayments.chip2" = "Current month";
-"panel.widgetInfo.scheduledPayments.chip3" = "Interactive";
+"panel.widgetInfo.scheduledPayments.chip3" = "You can tap it";
 "panel.widgetInfo.scheduledPayments.howQ" = "How do I interact?";
 "panel.widgetInfo.scheduledPayments.mediumHowA" = "Tap one of the icons in the filter above the widget to switch between all, recurring or subscriptions.";
 "panel.widgetInfo.scheduledPayments.mediumWhatA" = "The list of your upcoming payments for the month, each with its date, amount and status: pending, paid or skipped. The filter to the right of the title narrows to all, recurring or subscriptions.";
@@ -2415,7 +2415,7 @@
 "panel.widgetInfo.scheduledPayments.whatQ" = "What are you seeing?";
 "panel.widgetInfo.subcategoriesPie.chip1" = "Subcategories";
 "panel.widgetInfo.subcategoriesPie.chip2" = "Current period";
-"panel.widgetInfo.subcategoriesPie.chip3" = "Interactive";
+"panel.widgetInfo.subcategoriesPie.chip3" = "You can tap it";
 "panel.widgetInfo.subcategoriesPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to filter the rest of the Panel by that subcategory. Long-press a bubble to see the full name.";
 "panel.widgetInfo.subcategoriesPie.largeHowQ" = "How do I interact with the chart?";
 "panel.widgetInfo.subcategoriesPie.largeWhatA" = "The donut shows how spending splits by subcategory in the active period, up to nine plus a \"Remaining\" group if there are more. The legend on the right lists each one with its percentage.";
@@ -2427,7 +2427,7 @@
 "panel.widgetInfo.subcategoriesPie.title" = "Distribution by subcategory";
 "panel.widgetInfo.tagsPie.chip1" = "Tags";
 "panel.widgetInfo.tagsPie.chip2" = "Current period";
-"panel.widgetInfo.tagsPie.chip3" = "Interactive";
+"panel.widgetInfo.tagsPie.chip3" = "You can tap it";
 "panel.widgetInfo.tagsPie.largeHowA" = "Tap a donut slice, a bubble or a legend row to filter the rest of the Panel by that tag. Long-press a bubble to see the full name.";
 "panel.widgetInfo.tagsPie.largeHowQ" = "How do I interact with the chart?";
 "panel.widgetInfo.tagsPie.largeWhatA" = "The donut shows how spending splits by tag in the active period. The legend on the right lists each tag with its percentage, from highest to lowest.";
@@ -2439,7 +2439,7 @@
 "panel.widgetInfo.tagsPie.title" = "Distribution by tag";
 "panel.widgetInfo.topCategories.chip1" = "Categories";
 "panel.widgetInfo.topCategories.chip2" = "Current period";
-"panel.widgetInfo.topCategories.chip3" = "Interactive";
+"panel.widgetInfo.topCategories.chip3" = "You can tap it";
 "panel.widgetInfo.topCategories.howA" = "Tap a row to filter the rest of the Panel by that category. Tap it again to clear the filter.";
 "panel.widgetInfo.topCategories.howQ" = "How do I interact?";
 "panel.widgetInfo.topCategories.regularWhatA" = "Your top-spending categories in the active period, sorted from highest to lowest. Each row shows the amount, the percentage of the total and a bar comparing it to the top category.";
@@ -2449,7 +2449,7 @@
 "panel.widgetInfo.topCategories.title" = "Top categories";
 "panel.widgetInfo.topSubcategories.chip1" = "Subcategories";
 "panel.widgetInfo.topSubcategories.chip2" = "Current period";
-"panel.widgetInfo.topSubcategories.chip3" = "Interactive";
+"panel.widgetInfo.topSubcategories.chip3" = "You can tap it";
 "panel.widgetInfo.topSubcategories.howQ" = "How do I interact?";
 "panel.widgetInfo.topSubcategories.regularHowA" = "Tap a row to filter the rest of the Panel by that subcategory. Use the chips above to narrow the list to one category — or, if you already have a category filtered in another widget, the selector stays locked on that one.";
 "panel.widgetInfo.topSubcategories.regularWhatA" = "Your top-spending subcategories in the active period, sorted from highest to lowest. Each row shows the amount, the percentage within its category and of the total, and a bar comparing it to the top one.";
@@ -2458,8 +2458,8 @@
 "panel.widgetInfo.topSubcategories.smallWhatA" = "The two subcategories where you spent the most in the active period. If you have a category filtered in another widget, you'll only see its subcategories.";
 "panel.widgetInfo.topSubcategories.smallWhatQ" = "What are you seeing?";
 "panel.widgetInfo.topSubcategories.title" = "Top subcategories";
-"panel.widgetInfo.trend.chip1" = "Interactive";
-"panel.widgetInfo.trend.chip2" = "By period";
+"panel.widgetInfo.trend.chip1" = "You can tap it";
+"panel.widgetInfo.trend.chip2" = "Follows the chosen period";
 "panel.widgetInfo.trend.fxMatchA" = "The last point reflects your balance at the current exchange rate. Previous points use the rate from each transaction's date. The gap is FX gain or loss — only visible if you have accounts in different currencies.";
 "panel.widgetInfo.trend.fxMatchQ" = "Why might the last point not match my total balance?";
 "panel.widgetInfo.trend.largeHowA" = "Press and hold the chart to see the value at each point. Switch between balance, income, and expenses using the header buttons.";
@@ -2903,7 +2903,7 @@
 "shortcut.imageEntry.opening" = "Opening photo or file entry...";
 "shortcut.imageEntry.shortTitle" = "Photo or File";
 "shortcut.imageEntry.title" = "Record with photo or file";
-"shortcut.notification.body" = "A %@ of %@%@ has been recorded. Open the app to approve it.";
+"shortcut.notification.body" = "A %@ of %@%@ was noted. Open Yala to review and save it.";
 "shortcut.notification.expense" = "expense";
 "shortcut.notification.income" = "income";
 "shortcut.notification.title" = "New automatic record";
@@ -4834,7 +4834,7 @@
 "stats.hero.captionAccountsBalance" = "Account balance";
 
 /* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Net for the period";
+"stats.hero.captionNetPeriod" = "Balance for the period";
 
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Income for the period";
@@ -6086,3 +6086,195 @@
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Group expenses in another currency move as they are, without converting: the group sets their amount.";
+
+/* Panel hero label: income minus expenses of a named month. %@ = month name */
+"panel.hero.balanceOfMonth" = "%@ balance";
+
+/* Panel hero label when only expenses are shown. %@ = month name */
+"panel.hero.expensesOfMonth" = "%@ expenses";
+
+/* Panel hero label when only income is shown. %@ = month name */
+"panel.hero.incomeOfMonth" = "%@ income";
+
+/* Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses */
+"panel.hero.flowCaption" = "In %1$@ − out %2$@";
+
+/* Line under the panel hero when the period has no income or expenses yet */
+"panel.hero.noMovements" = "No movements recorded in this period yet";
+
+/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
+"panel.hero.totalInAccounts" = "You have %@ in your accounts";
+
+/* Small hint next to the panel hero label: tapping opens Statistics */
+"panel.hero.seeDetail" = "See details";
+
+/* Chip under the panel hero while the expenses-only filter is on */
+"panel.hero.onlyExpensesChip" = "Showing expenses only";
+
+/* Chip under the panel hero while the income-only filter is on */
+"panel.hero.onlyIncomeChip" = "Showing income only";
+
+/* VoiceOver label of the chip that removes the income/expense filter */
+"panel.hero.clearNatureFilter" = "Remove filter";
+
+/* Tag on the account card that is filtering the Panel */
+"panel.accounts.card.filtering" = "Filtering";
+
+/* Last chip in the Panel account chips row: adds an account */
+"panel.accounts.addChip" = "Add";
+
+/* Panel with no accounts: pink button that creates the first account */
+"panel.createFirstAccount" = "Create your first account";
+
+/* Line under the create-first-account button on the Panel */
+"panel.createFirstAccountHint" = "Tap here and we’ll help: it’s one step, then you can start recording.";
+
+/* Filters sheet: what the include mode does */
+"filters.includeModeExplanation" = "Only what you pick below is shown.";
+
+/* Filters sheet: what the exclude mode does */
+"filters.excludeModeExplanation" = "What you pick below is hidden; everything else is shown.";
+
+/* Filter status when nothing narrows a feminine noun list (accounts, categories, tags, currencies) */
+"filters.allFeminine" = "All";
+
+/* Panel sections config: what the accounts section shows */
+"panel.sectionsConfig.desc.accounts" = "Your accounts and their balances.";
+
+/* Panel sections config: what the financial health section shows */
+"panel.sectionsConfig.desc.health" = "A 0–100 score of how you’re doing, and what to improve.";
+
+/* Panel sections config: what the trends section shows */
+"panel.sectionsConfig.desc.trends" = "Charts of your balance, income and expenses over time.";
+
+/* Panel sections config: what the distribution section shows */
+"panel.sectionsConfig.desc.distribution" = "Where your money goes: by category, tag and need.";
+
+/* Panel sections config: what the planning section shows */
+"panel.sectionsConfig.desc.planning" = "Your budgets and upcoming planned payments.";
+
+/* Panel sections config: what the latest records section shows */
+"panel.sectionsConfig.desc.latestRecords" = "The latest things you recorded.";
+
+/* Panel sections config: what the tools section shows */
+"panel.sectionsConfig.desc.tools" = "The exchange rate of your currencies.";
+
+/* Widget help sheet: heading of the line with the user's own numbers */
+"panel.widgetInfo.yourData.title" = "With your numbers";
+
+/* Widget help, balance chart: what the user has today. %@ = amount */
+"panel.widgetInfo.yourData.trend" = "Today you have %@ in your accounts. The line shows how you got there, day by day.";
+
+/* Widget help, cash flow: income and expenses of the period. %1$@ = income, %2$@ = expenses */
+"panel.widgetInfo.yourData.cashFlow" = "This period %1$@ came in and %2$@ went out.";
+
+/* Widget help, spending breakdown: where the user spends most. %1$@ = category, %2$@ = amount */
+"panel.widgetInfo.yourData.topSpending" = "Where you spend the most: %1$@, with %2$@.";
+
+/* Widget help, tags: tag with most spending. %1$@ = tag, %2$@ = amount */
+"panel.widgetInfo.yourData.topTag" = "The tag with the most spending: %1$@, with %2$@.";
+
+/* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
+"panel.widgetInfo.yourData.scheduled" = "Planned payments this month: %1$@. Still to pay: %2$d.";
+
+/* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
+"panel.widgetInfo.yourData.weekday" = "The day you spend the most on average: %@.";
+
+/* Panel notices pager: which notice of how many. %1$d = position, %2$d = total */
+"panel.notices.position" = "Notice %1$d of %2$d";
+
+/* Panel notices pager: button that shows the next notice */
+"panel.notices.next" = "Show next";
+
+/* Account sheet, balance equation: balance on a date. %@ = date */
+"accountDetail.balanceOn" = "Balance on %@";
+
+/* Account sheet, balance equation: last line when the period runs until today */
+"accountDetail.balanceToday" = "Balance today";
+
+/* Account sheet: heading of the balance equation for the period */
+"accountDetail.equationTitle" = "How your balance adds up this period";
+
+/* Health budget sheet when budgets exist but none counts yet */
+"panel.health.budget.headline.startsNextMonth" = "Your budget starts counting next month";
+
+/* Health breakdown row: part name and its weight. %1$@ = name, %2$d = percent */
+"panel.health.part.title" = "%1$@ · weighs %2$d%%";
+
+/* Health breakdown: what the budgets part measures */
+"panel.health.part.budget" = "How you’re doing against your budget limits.";
+
+/* Health breakdown: what the rhythm part measures */
+"panel.health.part.activity" = "How many days in a row you go without recording. Up to 2 is fine.";
+
+/* Health breakdown: what the commitments part measures */
+"panel.health.part.bills" = "Whether your balance covers upcoming payments, and how much of your income they take.";
+
+/* Health breakdown: a part without data, so it does not count */
+"panel.health.part.notCounting" = "Not counting yet";
+
+/* Health: what would raise the score most (budgets) */
+"panel.health.improve.budget" = "To raise your score: check the budget you’re furthest over.";
+
+/* Health: what would raise the score most (rhythm) */
+"panel.health.improve.activity" = "To raise your score: record something at least every two days.";
+
+/* Health: what would raise the score most (commitments) */
+"panel.health.improve.bills" = "To raise your score: review your planned payments; they weigh a lot on your balance.";
+
+/* Health: all three parts are fine */
+"panel.health.improve.nothing" = "What already counts is doing well. Keep it up.";
+
+/* Health: the total never goes below this number. %d = floor */
+"panel.health.floorNote" = "The total score never goes below %d.";
+
+/* Live balance sheet: heading of the per-currency sum */
+"panel.liveAnchorEducation.sumTitle" = "The sum, currency by currency";
+
+/* Live balance sheet: why the balance moves on its own (second sentence) */
+"panel.liveAnchorEducation.bodyShortWhy" = "Your other currencies change value every day, so this balance moves even if you don’t record anything.";
+
+/* Balance chart: label of the dashed average line. %@ = short amount */
+"panel.trend.averageLabel" = "Average %@";
+
+/* Primary button of the voice/photo AI notice */
+"aiConsent.processingAccept" = "Turn on";
+
+/* Secondary button when voice/photo fails: open the manual entry form */
+"voice.enterManually" = "Enter it manually";
+
+/* Hint in the photo/file sheet on iPad: you can drop a receipt on the window */
+"image.entry.dropHint" = "You can also drag a receipt or PDF onto the Yala window.";
+
+/* Label shown while dragging a file over the window */
+"image.entry.dropToRead" = "Drop to read the receipt";
+
+/* Hint under the PDF password message: which password it usually is */
+"image.entry.passwordHint" = "Your bank set it: it’s usually your ID number or your date of birth. Check the email the PDF came with.";
+
+/* Pro gate for voice input: one example of what it does */
+"featureGate.voiceExample" = "Say “lunch 25 on the card” and it’s recorded, with its category and account.";
+
+/* Pro gate for photo input: one example of what it does */
+"featureGate.imageExample" = "Take a photo of the receipt and Yala records the amount, date and category.";
+
+/* Draft editor of a discarded draft: when it was discarded. %@ = short date */
+"inbox.draft.discardedOn" = "You discarded it on %@. It’s in Archived.";
+
+/* Fixed line under the Inbox title: what lands here */
+"inbox.explainer" = "This is what Yala recorded for you (voice, photos, Apple Pay, payments falling due). Review it and save it.";
+
+/* Inbox button above the list: save every ready draft at once. %d = count (2 or more) */
+"inbox.saveReady" = "Save the %d ready ones";
+
+/* Confirmation before saving every ready draft. %d = count */
+"inbox.saveReady.confirmTitle" = "Save the %d ready records?";
+
+/* Confirmation message before saving every ready draft */
+"inbox.saveReady.confirmMessage" = "The complete ones go to your records. Those missing something stay here.";
+
+/* Confirmation button: save them */
+"inbox.saveReady.confirmButton" = "Save";
+
+/* Bulk save success: how many drafts are still pending. %d = count */
+"inbox.stillPending" = "Still pending: %d";

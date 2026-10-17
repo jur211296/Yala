@@ -245,6 +245,55 @@ struct AccountDetailCalculatorTests {
         )
         #expect(series.map(\.balance) == [40, 40, 50])
     }
+
+    // MARK: - La cuenta del saldo (UX 2.2 · L3-11)
+
+    /// «Saldo al empezar + entró − salió = saldo al terminar»: lo de antes del período es el punto de partida, el saldo
+    /// inicial puesto dentro también, y entró/salió son los de las tarjetas de la ficha.
+    @Test func reconciliation_startsWithWhatCameBefore_andAddsUpToTheClosingBalance() {
+        let entries = [
+            Self.entry("septiembre", Self.day(30, month: 9), 500, category: "Sueldo", isIncome: true),
+            Self.entry("inicial", Self.day(1, 9), 1000, type: AccountDetailCalculator.initialBalanceType),
+            Self.entry("sueldo", Self.day(2), 3500, category: "Sueldo", isIncome: true),
+            Self.entry("super", Self.day(3), -480, category: "Super", isIncome: false),
+            Self.entry("noviembre", Self.day(2, month: 11), -70, category: "Super", isIncome: false),
+        ]
+        let r = AccountDetailCalculator.reconciliation(entries: entries, interval: Self.october, calendar: Self.calendar)
+        let s = AccountDetailCalculator.summary(
+            entries: entries, interval: Self.october, now: Self.day(20), calendar: Self.calendar
+        )
+        #expect(r.opening == 1500)
+        #expect(r.moneyIn == s.moneyIn)
+        #expect(r.moneyOut == s.moneyOut)
+        #expect(r.closing == 4520)
+    }
+
+    /// Un registro a medianoche exacta del día 1 es del período, no del saldo de partida (`DateInterval` cerrado).
+    @Test func reconciliation_midnightOfTheFirstDayIsInThePeriod() {
+        let entries = [Self.entry("medianoche", Self.day(1, 0), -100, category: "Super", isIncome: false)]
+        let r = AccountDetailCalculator.reconciliation(entries: entries, interval: Self.october, calendar: Self.calendar)
+        #expect(r.opening == 0)
+        #expect(r.moneyOut == 100)
+        #expect(r.closing == -100)
+    }
+
+    /// Un período en curso cierra en la medianoche de mañana. Lo fechado mañana a las 00:00 no es «Saldo hoy»; lo de
+    /// hoy a última hora, sí (revisión adversarial del 2026-10-17: entraba en la ecuación y no en la curva).
+    @Test func reconciliation_periodInProgress_leavesOutTomorrowsMidnight() {
+        let start = Self.day(1, 0)
+        let tomorrow = Self.day(18, 0)
+        let thisMonthSoFar = DateInterval(start: start, end: tomorrow)
+        let entries = [
+            Self.entry("hoy", Self.calendar.date(byAdding: .second, value: -1, to: tomorrow) ?? tomorrow, -10,
+                       category: "Super", isIncome: false),
+            Self.entry("mañana", tomorrow, -40, category: "Super", isIncome: false),
+        ]
+        let r = AccountDetailCalculator.reconciliation(
+            entries: entries, interval: thisMonthSoFar, calendar: Self.calendar
+        )
+        #expect(r.moneyOut == 10)
+        #expect(r.closing == -10)
+    }
 }
 
 // MARK: - Puente de la hoja de filtros

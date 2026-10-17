@@ -444,15 +444,19 @@ private struct PanelCashFlowSection: View {
 
 private struct PanelRecentRecordsSection: View {
     @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.openPanelRecord) private var openPanelRecord
     let viewModel: PanelViewModel
     let currencyCode: String
 
     var body: some View {
+        // Sin título propio (UX 2.2 · L3-12): la sección ya se llama «Últimos registros» justo encima.
         RecentRecordsWidget(
             records: viewModel.latestRecords,
             currencyCode: currencyCode,
             onShowMore: { viewModel.navigateToStatistics(.records, in: navigation) },
-            headerInfoButton: recentRecordsInfoButton
+            headerInfoButton: recentRecordsInfoButton,
+            showsTitle: false,
+            onOpenRecord: openPanelRecord.map { action in { action($0) } }
         )
     }
 

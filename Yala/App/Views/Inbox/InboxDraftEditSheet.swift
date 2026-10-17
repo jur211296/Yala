@@ -136,7 +136,7 @@ struct InboxDraftEditSheet: View {
 
     private var amountColor: Color {
         guard amount != nil else { return .secondary }
-        return isExpense ? Color.hotPink : Color.electricIndigo
+        return Color.amountTint(isIncome: !isExpense)
     }
 
     /// Next pending draft (excluding current one)
@@ -608,24 +608,7 @@ struct InboxDraftEditSheet: View {
         }
     }
 
-    private var sourceTypeName: String {
-        switch draft.sourceType {
-        case .voice: return L10n.Inbox.sourceVoice
-        case .receiptPhoto: return L10n.Inbox.sourceReceipt
-        case .screenshotList: return L10n.Inbox.sourceScreenshotList
-        case .screenshotSingle: return L10n.Inbox.sourceScreenshot
-        case .emailAlert: return L10n.Inbox.sourceEmail
-        case .scheduledPayment: return L10n.Inbox.sourceScheduledPayment
-        case .subscription: return L10n.Inbox.sourceSubscription
-        case .applePay: return L10n.Inbox.sourceApplePay
-        case .automation: return L10n.Inbox.sourceAutomation
-        case .siri: return L10n.Inbox.sourceSiri
-        case .groupExpense: return L10n.Inbox.sourceGroupExpense
-        case .groupSettlement: return L10n.Inbox.sourceGroupSettlement
-        case .manual: return L10n.Inbox.sourceManual
-        case .groupScheduledExpense: return L10n.Inbox.sourceGroupScheduledExpense
-        }
-    }
+    private var sourceTypeName: String { draft.sourceDisplayName }
 
     // MARK: - Bottom Chips
 
@@ -734,6 +717,16 @@ struct InboxDraftEditSheet: View {
 
     private var actionButtons: some View {
         VStack(spacing: DS.Spacing.sm) {
+            // Un borrador descartado dice que lo está y desde cuándo (UX 2.2 · L4-9): antes se abría con un solo
+            // «Aprobar» y nada decía que estaba en Archivados.
+            if initialStatus == .rejected {
+                Label(L10n.Inbox.discardedOn(Self.discardedDateFormatter.string(from: draft.updatedAt)), systemImage: "archivebox")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("inbox_discarded_on")
+            }
+
             // Validation message when not ready
             if let missingText = missingFieldsText {
                 Text(missingText)
@@ -759,6 +752,26 @@ struct InboxDraftEditSheet: View {
                             )
                     }
                     .buttonStyle(.plain)
+                }
+
+                // Descartado: «Volver a pendientes» junto a «Guardar» (UX 2.2 · L4-9). Guarda lo editado y lo devuelve
+                // a la lista de pendientes.
+                if initialStatus == .rejected {
+                    Button {
+                        returnToPending()
+                    } label: {
+                        Text(L10n.Inbox.returnToPending)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(theme.accent)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.lg)
+                            .background(
+                                Capsule()
+                                    .fill(theme.accent.opacity(0.12))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("inbox_return_to_pending_button")
                 }
 
                 // Approve button (primary)
@@ -1138,6 +1151,29 @@ struct InboxDraftEditSheet: View {
                 print("InboxDraftEditSheet: Error undoing discard: \(error)")
                 #endif
             }
+        }
+    }
+
+    /// Mes entero («17 de octubre»): la abreviatura termina en punto en español y con el punto de la frase salía
+    /// «17 oct.. Está» (medido en el simulador).
+    private static let discardedDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = AppLocale.current
+        formatter.setLocalizedDateFormatFromTemplate("dMMMM")
+        return formatter
+    }()
+
+    /// Devuelve el descartado a pendientes con lo editado (UX 2.2 · L4-9).
+    private func returnToPending() {
+        saveDraft()
+        draftService.setContext(modelContext)
+        do {
+            try draftService.returnToPending(draft)
+            dismiss()
+        } catch {
+            #if DEBUG
+            print("InboxDraftEditSheet: Error returning draft to pending: \(error)")
+            #endif
         }
     }
 

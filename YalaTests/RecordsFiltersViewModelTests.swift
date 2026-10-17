@@ -20,7 +20,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedAccountsText_none_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedAccountsText(selectedAccounts: [])
-        #expect(result == L10n.Filters.all)
+        #expect(result == L10n.Filters.allFeminine)
     }
 
     // MARK: - selectedTagsText
@@ -28,7 +28,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedTagsText_none_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedTagsText(selectedTags: [])
-        #expect(result == L10n.Filters.all)
+        #expect(result == L10n.Filters.allFeminine)
     }
 
     // MARK: - selectedCategoriesText
@@ -36,7 +36,7 @@ struct RecordsFiltersViewModelTests {
     @MainActor @Test func selectedCategoriesText_empty_returnsTodas() {
         let vm = RecordsFiltersViewModel()
         let result = vm.selectedCategoriesText(selectedSubcategories: [])
-        #expect(result == L10n.Filters.all)
+        #expect(result == L10n.Filters.allFeminine)
     }
 
     // MARK: - Exclude Mode: Empty Selection

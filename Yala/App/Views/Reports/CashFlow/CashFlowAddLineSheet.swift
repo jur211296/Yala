@@ -422,7 +422,7 @@ struct CashFlowAddFromExpensesView: View {
                 value: amount,
                 currencyCode: currencyCode,
                 font: DS.Typography.headline.weight(.semibold).monospacedDigit(),
-                tint: .color(isIncome ? Color.electricIndigo : Color.hotPink)
+                tint: .color(Color.amountTint(isIncome: isIncome))
             )
         }
         .padding(DS.Spacing.lg)

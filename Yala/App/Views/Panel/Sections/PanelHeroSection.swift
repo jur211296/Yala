@@ -29,7 +29,9 @@ struct PanelHeroSection: View {
                 customDateRange: sessionState.customDateRange,
                 onSelectPeriod: { sessionState.selectedPeriod = $0 },
                 onCustomPeriodTapped: { showCustomPeriodPicker = true },
-                periodSummary: viewModel.heroPeriodWidget
+                periodSummary: viewModel.heroPeriodWidget,
+                totalBalance: viewModel.accounts.isEmpty ? nil : viewModel.panelTotalBalance,
+                totalBalanceIsApproximate: viewModel.panelTotalBalanceIsApproximate
             )
             .contentShape(Rectangle())
             .onTapGesture {

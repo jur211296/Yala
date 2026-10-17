@@ -1,10 +1,10 @@
 ---
 id: panel-trend-chart-labels-overlap
-status: backlog
+status: qa
 area: panel
 priority: low
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-17
 source: auditoría UX 2.2, lote 3 (el Panel)
 ---
 
@@ -33,3 +33,13 @@ cambio transversal que necesita su propio barrido de capturas, fuera del alcance
 - [ ] Ninguna pareja de etiquetas del eje X se solapa con «Todo el tiempo», «Este año» y «Este mes».
 - [ ] «Hoy ⓘ» no tapa ninguna etiqueta del eje Y.
 - [ ] Capturas antes/después en el Panel y en Estadísticas › Tendencias.
+
+## Implementado (2026-10-17, encargo «implementar 2.2 · lotes 3 y 4», L3-17 opción B)
+
+- La penúltima fecha del eje X se quita si cae a menos del 12 % del tramo de la última
+  (`SmartAxisHelper.droppingCrowdedNeighbors`, función nueva: no cambia el anclaje compartido).
+- La píldora «Hoy ⓘ» no sale del área de dibujo: ya no tapa la etiqueta más alta de la escala.
+- Mismo `TrendChartView` en el Panel, Estadísticas › Tendencias y la gráfica de grupo.
+
+**QA:** «Todo el tiempo» con seed `realista` en el Panel y en Estadísticas › Tendencias: sin fechas pisadas y «Hoy»
+sin tapar la escala. Unit: `UXAudit22Lote3LogicTests` (axis_*).

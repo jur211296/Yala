@@ -711,9 +711,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d van %2$d klaar om goed te keuren</string>
+			<string>%1$d van %2$d klaar om op te slaan</string>
 			<key>other</key>
-			<string>%1$d van %2$d klaar om goed te keuren</string>
+			<string>%1$d van %2$d klaar om op te slaan</string>
 		</dict>
 	</dict>
 	<key>inbox.alert.message.scheduled</key>

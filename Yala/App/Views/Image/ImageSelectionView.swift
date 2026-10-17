@@ -25,6 +25,8 @@ import UniformTypeIdentifiers
 
 struct ImageSelectionView: View {
     @Environment(\.dismiss) private var dismiss
+    /// Soltar archivos sobre la ventana solo existe donde hay varias ventanas (iPad, iPhone Duo abierto).
+    @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows
     @Environment(\.modelContext) private var modelContext
     @Environment(SceneNavigation.self) private var navigation
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -68,6 +70,9 @@ struct ImageSelectionView: View {
     @State private var showFileImporter = false
     @State private var showCamera = false
     @State private var showUpgrade = false
+    /// «Apuntarlo a mano» (UX 2.2 · L4-3): cuando la foto o el archivo no se pueden leer, Nuevo registro sube encima y,
+    /// al cerrarse, se cierra también esta hoja.
+    @State private var showManualEntry = false
 
     /// Práctica guiada: recibos de ejemplo que se pueden leer sin tener uno a mano.
     var exampleImages: [UIImage]?
@@ -127,6 +132,9 @@ struct ImageSelectionView: View {
         }
         .sheet(isPresented: $showUpgrade) {
             UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+        }
+        .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
+            NewTransactionView()
         }
         .sheet(item: $detailDraft, onDismiss: afterDetails) { draft in
             InboxDraftEditSheet(draft: draft)
@@ -209,6 +217,14 @@ struct ImageSelectionView: View {
                 Text(L10n.Image.Entry.multipleHint)
                     .font(DS.Typography.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            // Donde se puede soltar un archivo sobre Yala (iPad, iPhone Duo abierto), se dice (UX 2.2 · L4-11).
+            if supportsMultipleWindows && !isSetupTrial {
+                Label(L10n.Image.Entry.dropHint, systemImage: "square.and.arrow.down")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("image_drop_hint")
             }
 
             Spacer(minLength: DS.Spacing.none)
@@ -324,6 +340,12 @@ struct ImageSelectionView: View {
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                // Qué contraseña es (UX 2.2 · L4-15): no la eligió la persona, la puso el banco.
+                Label(L10n.Image.Entry.passwordHint, systemImage: "lightbulb")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("image_password_hint")
             }
 
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -339,6 +361,8 @@ struct ImageSelectionView: View {
                             .fill(.thCard)
                     )
                     .accessibilityIdentifier("image_password_field")
+                    // El aviso de contraseña incorrecta se va al empezar a escribir otra (UX 2.2 · L4-15).
+                    .onChange(of: pdfPassword) { _, newValue in clearWrongPasswordIfTyping(newValue) }
                 if wrongPassword {
                     Text(L10n.Image.Entry.passwordWrong)
                         .font(DS.Typography.caption)
@@ -365,6 +389,11 @@ struct ImageSelectionView: View {
         .dismissKeyboardOnTap()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("image_password")
+    }
+
+    private func clearWrongPasswordIfTyping(_ newValue: String) {
+        guard case .password(wrongPassword: true) = phase, !newValue.isEmpty else { return }
+        phase = .password(wrongPassword: false)
     }
 
     // MARK: - Leyendo
@@ -650,11 +679,13 @@ struct ImageSelectionView: View {
             secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
             primaryButton(L10n.Image.openSettings, isEnabled: true, identifier: "image_open_settings", action: openSystemSettings)
         case .serviceUnavailable:
-            primaryButton(L10n.Action.close, isEnabled: true, identifier: "image_failure_close") { dismiss() }
+            secondaryButton(L10n.Action.close, identifier: "image_failure_close") { dismiss() }
+            primaryButton(L10n.Voice.enterManually, isEnabled: true, identifier: "image_enter_manually") { showManualEntry = true }
         case .trialUsedUp:
             secondaryButton(L10n.Action.close, identifier: "image_failure_close") { dismiss() }
             primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "image_trial_see_pro") { showUpgrade = true }
         case .noAmount, .unreadable, .unreadableFile:
+            secondaryButton(L10n.Voice.enterManually, identifier: "image_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: chooseAnother)
         case .noConnection, .generic, .saveFailed:
             if failure.retriesSamePhotos, !readingImages.isEmpty {

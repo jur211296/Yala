@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "承诺";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "你的财务健康";
-"panel.health.total.sheet.explanation" = "结合三个方面:你的预算、你的记录节奏以及你这个期间的承诺。每一项的权重不同,当某一项不适用时会重新平衡。";
+"panel.health.total.sheet.explanation" = "你的评分由三部分组成，每部分的权重写在旁边；某部分暂无数据时，其权重由其他部分分担。";
 "panel.health.total.headline.high" = "你做得太棒了!";
 "panel.health.total.headline.mid" = "节奏不错";
 "panel.health.total.headline.low" = "小步前进,大有改变";
@@ -218,8 +218,8 @@
 "filters.type" = "类型";
 "filters.need" = "需求";
 "filters.currency" = "货币";
-"filters.includeMode" = "包含";
-"filters.excludeMode" = "排除";
+"filters.includeMode" = "只显示";
+"filters.excludeMode" = "隐藏";
 "filters.nothingExcluded" = "无";
 "filters.datePrefix %@" = "日期:%@";
 
@@ -1665,7 +1665,7 @@
 "accessibility.currenciesCount %d" = "%d 种货币";
 "accessibility.cashFlowSummary %@ %@" = "收入 %@,支出 %@";
 "accessibility.selectAtLeastOneDraft" = "至少选择一个草稿";
-"accessibility.approveCompleteHint" = "要审批,请填写账户、金额和类别";
+"accessibility.approveCompleteHint" = "要保存，请填写账户、金额和类别";
 "accessibility.updatingExchangeRates" = "正在更新汇率";
 "accessibility.authenticating" = "正在认证";
 "accessibility.showMoreSubcategories" = "显示更多子类别";
@@ -1680,7 +1680,7 @@
 "accessibility.searchResultRow %@ %@ %@" = "%@,%@,%@";
 "accessibility.regeneratingInsights" = "正在生成洞察,请稍候";
 "accessibility.completeCalculation" = "填写各项值以计算结果";
-"accessibility.noDraftsToApprove" = "没有可审批的草稿";
+"accessibility.noDraftsToApprove" = "没有可保存的草稿";
 "accessibility.categoriesLocked" = "正在显示所选类别的子类别";
 "accessibility.systemMonochromeIcons" = "系统设置要求使用单色图标";
 "accessibility.maxCurrenciesSelected" = "已选择最多货币";
@@ -2006,22 +2006,22 @@
 "inbox.missingLabel" = "缺少数据";
 "inbox.needsAccount" = "选择账户";
 "inbox.needsSubcategory" = "选择子类别";
-"inbox.approve" = "审批";
+"inbox.approve" = "保存";
 "inbox.delete" = "删除";
 "inbox.noPending" = "没有待处理草稿";
-"inbox.noPendingDescription" = "新的语音和图片草稿将显示在这里。";
+"inbox.noPendingDescription" = "Yala 替你记下的内容会出现在这里：语音、照片、Apple Pay、Siri 和计划付款。";
 "inbox.bulkHint" = "点击 ✓ 可一次选择多个";
-"inbox.status.rejected" = "已拒绝";
-"inbox.status.approved" = "已批准";
+"inbox.status.rejected" = "已丢弃";
+"inbox.status.approved" = "已保存";
 "inbox.status.pending" = "待处理";
 "inbox.subtitleMultiplePending" = "%d 笔交易等待中,一步一步来。";
 "inbox.subtitleOnePending" = "一笔交易等待中,有空时查看一下。";
 "inbox.subtitleAllDone" = "收件箱已清空,做得很棒。";
 "inbox.newTag" = "新";
 "inbox.noArchived" = "没有已归档草稿";
-"inbox.noArchivedDescription" = "已审批或已拒绝的草稿将显示在这里。";
+"inbox.noArchivedDescription" = "你保存或丢弃的内容会显示在这里。";
 "inbox.editDraft" = "编辑草稿";
-"inbox.cannotApprove" = "无法审批";
+"inbox.cannotApprove" = "无法保存";
 "inbox.sourceVoice" = "语音";
 "inbox.sourceEmail" = "邮件";
 "inbox.sourceScreenshot" = "截图";
@@ -2035,25 +2035,25 @@
 "inbox.errorNoAccount" = "你必须选择一个账户";
 "inbox.errorNoAmount" = "你必须指定金额";
 "inbox.errorNoSubcategory" = "你必须选择一个子类别";
-"inbox.errorArchivedAccount" = "此账户已归档。请编辑草稿并更换账户后再审批。";
-"inbox.errorFutureDate" = "无法审批未来日期的交易";
+"inbox.errorArchivedAccount" = "此账户已归档。请编辑草稿并选择其他账户后再保存。";
+"inbox.errorFutureDate" = "无法保存未来日期的记录";
 "inbox.duplicateWarningTitle" = "可能重复";
-"inbox.duplicateWarningMessage" = "已存在类似交易。仍要创建吗?";
-"inbox.createAnyway" = "仍然创建";
-"inbox.saveLater" = "稍后审批";
+"inbox.duplicateWarningMessage" = "已存在类似记录。仍要保存吗？";
+"inbox.createAnyway" = "仍然保存";
+"inbox.saveLater" = "稍后处理";
 "inbox.deleteTitle" = "删除草稿";
 "inbox.deleteMessage" = "此操作无法撤销。";
-"inbox.reject" = "拒绝";
-"inbox.approveAll" = "全部审批";
-"inbox.returnToPending" = "返回待处理";
+"inbox.reject" = "丢弃";
+"inbox.approveAll" = "全部保存";
+"inbox.returnToPending" = "放回待处理";
 "inbox.discardChangesTitle" = "丢弃更改?";
 "inbox.discardChanges" = "丢弃";
 "inbox.keepEditing" = "继续编辑";
 "inbox.discardChangesMessage" = "你有未保存的更改将丢失。";
-"inbox.approveSuccess" = "交易已创建";
-"inbox.approveNext" = "审批下一个";
-"inbox.transactionCreated" = "笔交易已创建";
-"inbox.transactionsCreated" = "笔交易已创建";
+"inbox.approveSuccess" = "记录已保存";
+"inbox.approveNext" = "保存下一条";
+"inbox.transactionCreated" = "条记录已保存";
+"inbox.transactionsCreated" = "条记录已保存";
 "inbox.viewInRecords" = "在记录中查看";
 "inbox.backToInbox" = "返回收件箱";
 
@@ -2080,7 +2080,7 @@
 "image.reviewDraft" = "查看";
 "image.transactionsDetected" = "已检测到交易";
 "image.goToInbox" = "前往收件箱";
-"image.transactionsDetectedMessage" = "我们检测到 %d 笔交易。你可以在收件箱中查看并审批它们。";
+"image.transactionsDetectedMessage" = "找到 %d 条记录，可以在收件箱里检查并保存。";
 "image.analyzingIn" = "%d 秒后开始分析...";
 "image.imagesSelected" = "已选 %d 张图片";
 "image.youCanUpload" = "你可以上传:";
@@ -2531,7 +2531,7 @@
 "shortcut.notification.title" = "新自动记录";
 "shortcut.notification.expense" = "支出";
 "shortcut.notification.income" = "收入";
-"shortcut.notification.body" = "已记录一笔 %@%@ 的%@。打开应用以审批。";
+"shortcut.notification.body" = "已记下一笔 %@，金额 %@%@。打开 Yala 检查并保存。";
 
 // MARK: - Category Seeds
 
@@ -2868,8 +2868,8 @@
 "aiPrivacy.policyLink" = "隐私政策";
 
 // MARK: - AI Consent
-"aiConsent.processingTitle" = "语音和图片处理";
-"aiConsent.processingMessage" = "这些功能使用 OpenAI 处理你的数据：\n\n• 语音：你的录音会被转写\n• 图片：照片（收据或截图）会被分析以提取支出数据\n\n仅处理你当时发送的内容。OpenAI 不会使用这些数据来训练其模型。";
+"aiConsent.processingTitle" = "Yala 帮你记下来";
+"aiConsent.processingMessage" = "说出来或选一张收据照片，Yala 就会记下这笔支出。为此，音频或照片只会在当时发送给 AI 服务（OpenAI），不会用于训练 AI。";
 "aiConsent.insightsTitle" = "智能概览";
 "aiConsent.insightsMessage" = "此功能会向 OpenAI 发送你财务的摘要——按类别的总计和趋势、预算以及定期付款——以生成你的分析。\n\n不会发送你的完整交易历史。OpenAI 不会使用这些数据来训练其模型。";
 "aiConsent.accept" = "接受并启用";
@@ -3358,8 +3358,8 @@
 "guide.cashflow.message" = "Yala 根据你的收入和支出计算你的钱能否撑到月底。";
 "guide.insights.title" = "Yala 替你分析";
 "guide.insights.message" = "基于你的支出,Yala 告诉你有用的事:最贵的一天、是否花得比平时多等。";
-"guide.inbox.title" = "待审核";
-"guide.inbox.message" = "当你有需要确认的付款或自动支出时,它们会出现在这里供你查看。";
+"guide.inbox.title" = "待检查和保存";
+"guide.inbox.message" = "Yala 替你记下的内容（语音、照片、Apple Pay、Siri、到期付款）会在这里等你检查和保存。";
 "guide.budgetEditor.title" = "什么是预算?";
 "guide.budgetEditor.message" = "这是你为控制某项支出所设的上限。给它取名、设金额,选择适用的类别。你随时可以编辑或删除。";
 "guide.scheduledEditor.title" = "什么是计划付款?";
@@ -3620,16 +3620,16 @@
 "panel.widgetInfo.cashFlow.chip2" = "支出";
 
 /* Panel Polish #2 — Chip 3 CashFlow */
-"panel.widgetInfo.cashFlow.chip3" = "按期间";
+"panel.widgetInfo.cashFlow.chip3" = "跟随所选期间";
 
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "余额趋势";
 
 /* Panel Polish #2 — Chip 1 Trend */
-"panel.widgetInfo.trend.chip1" = "交互";
+"panel.widgetInfo.trend.chip1" = "可点按";
 
 /* Panel Polish #2 — Chip 2 Trend */
-"panel.widgetInfo.trend.chip2" = "按期间";
+"panel.widgetInfo.trend.chip2" = "跟随所选期间";
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3680,7 +3680,7 @@
 "panel.widgetInfo.trend.largeHowA" = "长按图表查看每个点的数值。使用标题栏的按钮在余额、收入和支出之间切换。";
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
-"panel.widgetInfo.cashFlow.chip4" = "可交互";
+"panel.widgetInfo.cashFlow.chip4" = "可点按";
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "按类别分布";
@@ -3692,7 +3692,7 @@
 "panel.widgetInfo.categoriesPie.chip2" = "当前周期";
 
 /* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
-"panel.widgetInfo.categoriesPie.chip3" = "可互动";
+"panel.widgetInfo.categoriesPie.chip3" = "可点按";
 
 /* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.smallWhatQ" = "你看到了什么?";
@@ -3728,7 +3728,7 @@
 "panel.widgetInfo.subcategoriesPie.chip2" = "当前周期";
 
 /* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
-"panel.widgetInfo.subcategoriesPie.chip3" = "可互动";
+"panel.widgetInfo.subcategoriesPie.chip3" = "可点按";
 
 /* Panel Polish #2 — SubcategoriesPie S: pregunta */
 "panel.widgetInfo.subcategoriesPie.smallWhatQ" = "你看到了什么?";
@@ -3764,7 +3764,7 @@
 "panel.widgetInfo.tagsPie.chip2" = "当前周期";
 
 /* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
-"panel.widgetInfo.tagsPie.chip3" = "可互动";
+"panel.widgetInfo.tagsPie.chip3" = "可点按";
 
 /* Panel Polish #2 — TagsPie S: pregunta */
 "panel.widgetInfo.tagsPie.smallWhatQ" = "你看到了什么?";
@@ -3800,7 +3800,7 @@
 "panel.widgetInfo.expensesByNeed.chip2" = "当前周期";
 
 /* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
-"panel.widgetInfo.expensesByNeed.chip3" = "可互动";
+"panel.widgetInfo.expensesByNeed.chip3" = "可点按";
 
 /* Panel Polish #2 — ExpensesByNeed S: pregunta */
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "你看到了什么?";
@@ -3848,7 +3848,7 @@
 "panel.widgetInfo.topCategories.chip2" = "当前周期";
 
 /* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
-"panel.widgetInfo.topCategories.chip3" = "可互动";
+"panel.widgetInfo.topCategories.chip3" = "可点按";
 
 /* Panel Polish #2 — TopCategories S: pregunta */
 "panel.widgetInfo.topCategories.smallWhatQ" = "你看到了什么?";
@@ -3878,7 +3878,7 @@
 "panel.widgetInfo.topSubcategories.chip2" = "当前周期";
 
 /* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
-"panel.widgetInfo.topSubcategories.chip3" = "可互动";
+"panel.widgetInfo.topSubcategories.chip3" = "可点按";
 
 /* Panel Polish #2 — TopSubcategories S: pregunta */
 "panel.widgetInfo.topSubcategories.smallWhatQ" = "你看到了什么?";
@@ -3926,7 +3926,7 @@
 "panel.widgetInfo.scheduledPayments.chip2" = "本月";
 
 /* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
-"panel.widgetInfo.scheduledPayments.chip3" = "可互动";
+"panel.widgetInfo.scheduledPayments.chip3" = "可点按";
 
 /* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
 "panel.widgetInfo.scheduledPayments.whatQ" = "你看到了什么?";
@@ -3956,7 +3956,7 @@
 "panel.widgetInfo.budgets.chip2" = "当前周期";
 
 /* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
-"panel.widgetInfo.budgets.chip3" = "可互动";
+"panel.widgetInfo.budgets.chip3" = "可点按";
 
 /* Panel Polish #2 — Budgets S: pregunta */
 "panel.widgetInfo.budgets.smallWhatQ" = "你看到了什么?";
@@ -3986,7 +3986,7 @@
 "panel.widgetInfo.exchangeRate.chip2" = "当前汇率";
 
 /* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
-"panel.widgetInfo.exchangeRate.chip3" = "可互动";
+"panel.widgetInfo.exchangeRate.chip3" = "可点按";
 
 /* Panel Polish #2 — ExchangeRate: pregunta */
 "panel.widgetInfo.exchangeRate.whatQ" = "你看到了什么?";
@@ -4319,7 +4319,7 @@
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期间对比";
 "panel.widgetInfo.periodComparison.chip1" = "对比";
-"panel.widgetInfo.periodComparison.chip2" = "按期间";
+"panel.widgetInfo.periodComparison.chip2" = "跟随所选期间";
 "panel.widgetInfo.periodComparison.whatQ" = "你看到的是什么？";
 "panel.widgetInfo.periodComparison.whatA" = "把你当前期间的余额、收入或支出与上一期间并排显示，让你一眼看出趋势是否在改善。";
 "panel.widgetInfo.periodComparison.howQ" = "在与什么对比？";
@@ -4327,7 +4327,7 @@
 "panel.widgetInfo.sankey.title" = "资金流向";
 "panel.widgetInfo.sankey.chip1" = "流向";
 "panel.widgetInfo.sankey.chip2" = "按需求";
-"panel.widgetInfo.sankey.chip3" = "可互动";
+"panel.widgetInfo.sankey.chip3" = "可点按";
 "panel.widgetInfo.sankey.whatQ" = "你看到的是什么？";
 "panel.widgetInfo.sankey.whatA" = "你这段时间的资金路径：从哪里进来（收入），又流向哪里，按需求类型分组。色带越宽，金额越大。";
 "panel.widgetInfo.sankey.howQ" = "如何互动？";
@@ -5563,7 +5563,7 @@
 "stats.hero.captionAccountsBalance" = "账户余额";
 
 /* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "期间净额";
+"stats.hero.captionNetPeriod" = "期间收支";
 
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "期间收入";
@@ -6803,3 +6803,195 @@
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "其他货币的群组支出按原样移动，不做换算：金额由群组决定。";
+
+/* Panel hero label: income minus expenses of a named month. %@ = month name */
+"panel.hero.balanceOfMonth" = "%@收支";
+
+/* Panel hero label when only expenses are shown. %@ = month name */
+"panel.hero.expensesOfMonth" = "%@支出";
+
+/* Panel hero label when only income is shown. %@ = month name */
+"panel.hero.incomeOfMonth" = "%@收入";
+
+/* Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses */
+"panel.hero.flowCaption" = "收入 %1$@ − 支出 %2$@";
+
+/* Line under the panel hero when the period has no income or expenses yet */
+"panel.hero.noMovements" = "此期间还没有记录";
+
+/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
+"panel.hero.totalInAccounts" = "你的账户里有 %@";
+
+/* Small hint next to the panel hero label: tapping opens Statistics */
+"panel.hero.seeDetail" = "详情";
+
+/* Chip under the panel hero while the expenses-only filter is on */
+"panel.hero.onlyExpensesChip" = "仅显示支出";
+
+/* Chip under the panel hero while the income-only filter is on */
+"panel.hero.onlyIncomeChip" = "仅显示收入";
+
+/* VoiceOver label of the chip that removes the income/expense filter */
+"panel.hero.clearNatureFilter" = "移除筛选";
+
+/* Tag on the account card that is filtering the Panel */
+"panel.accounts.card.filtering" = "筛选中";
+
+/* Last chip in the Panel account chips row: adds an account */
+"panel.accounts.addChip" = "添加";
+
+/* Panel with no accounts: pink button that creates the first account */
+"panel.createFirstAccount" = "创建你的第一个账户";
+
+/* Line under the create-first-account button on the Panel */
+"panel.createFirstAccountHint" = "点这里，我们帮你：一步完成，然后就能记账。";
+
+/* Filters sheet: what the include mode does */
+"filters.includeModeExplanation" = "只显示你在下方选择的内容。";
+
+/* Filters sheet: what the exclude mode does */
+"filters.excludeModeExplanation" = "隐藏你在下方选择的内容，其余照常显示。";
+
+/* Filter status when nothing narrows a feminine noun list (accounts, categories, tags, currencies) */
+"filters.allFeminine" = "全部";
+
+/* Panel sections config: what the accounts section shows */
+"panel.sectionsConfig.desc.accounts" = "你的账户及其余额。";
+
+/* Panel sections config: what the financial health section shows */
+"panel.sectionsConfig.desc.health" = "0–100 分的财务评分，以及可以改进的地方。";
+
+/* Panel sections config: what the trends section shows */
+"panel.sectionsConfig.desc.trends" = "余额、收入和支出随时间变化的图表。";
+
+/* Panel sections config: what the distribution section shows */
+"panel.sectionsConfig.desc.distribution" = "钱花在哪：按类别、标签和需求。";
+
+/* Panel sections config: what the planning section shows */
+"panel.sectionsConfig.desc.planning" = "你的预算和即将到来的计划付款。";
+
+/* Panel sections config: what the latest records section shows */
+"panel.sectionsConfig.desc.latestRecords" = "你最近记的账。";
+
+/* Panel sections config: what the tools section shows */
+"panel.sectionsConfig.desc.tools" = "你的货币汇率。";
+
+/* Widget help sheet: heading of the line with the user's own numbers */
+"panel.widgetInfo.yourData.title" = "你的数据";
+
+/* Widget help, balance chart: what the user has today. %@ = amount */
+"panel.widgetInfo.yourData.trend" = "你今天的账户里有 %@。这条线显示了每天是怎么变到这个数的。";
+
+/* Widget help, cash flow: income and expenses of the period. %1$@ = income, %2$@ = expenses */
+"panel.widgetInfo.yourData.cashFlow" = "本期间收入 %1$@，支出 %2$@。";
+
+/* Widget help, spending breakdown: where the user spends most. %1$@ = category, %2$@ = amount */
+"panel.widgetInfo.yourData.topSpending" = "花得最多的是：%1$@，共 %2$@。";
+
+/* Widget help, tags: tag with most spending. %1$@ = tag, %2$@ = amount */
+"panel.widgetInfo.yourData.topTag" = "支出最多的标签：%1$@，共 %2$@。";
+
+/* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
+"panel.widgetInfo.yourData.scheduled" = "本月计划付款：%1$@。待付：%2$d 笔。";
+
+/* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
+"panel.widgetInfo.yourData.weekday" = "平均花费最多的一天：%@。";
+
+/* Panel notices pager: which notice of how many. %1$d = position, %2$d = total */
+"panel.notices.position" = "提示 %1$d / %2$d";
+
+/* Panel notices pager: button that shows the next notice */
+"panel.notices.next" = "下一条";
+
+/* Account sheet, balance equation: balance on a date. %@ = date */
+"accountDetail.balanceOn" = "%@ 余额";
+
+/* Account sheet, balance equation: last line when the period runs until today */
+"accountDetail.balanceToday" = "今天的余额";
+
+/* Account sheet: heading of the balance equation for the period */
+"accountDetail.equationTitle" = "本期间余额的构成";
+
+/* Health budget sheet when budgets exist but none counts yet */
+"panel.health.budget.headline.startsNextMonth" = "你的预算从下个月开始计入";
+
+/* Health breakdown row: part name and its weight. %1$@ = name, %2$d = percent */
+"panel.health.part.title" = "%1$@ · 权重 %2$d%%";
+
+/* Health breakdown: what the budgets part measures */
+"panel.health.part.budget" = "你在各项预算额度内的情况。";
+
+/* Health breakdown: what the rhythm part measures */
+"panel.health.part.activity" = "连续多少天没有记账。2 天以内没问题。";
+
+/* Health breakdown: what the commitments part measures */
+"panel.health.part.bills" = "你的余额能否覆盖即将到来的付款，以及这些付款占你收入的比例。";
+
+/* Health breakdown: a part without data, so it does not count */
+"panel.health.part.notCounting" = "暂不计入";
+
+/* Health: what would raise the score most (budgets) */
+"panel.health.improve.budget" = "想提高评分：看看超支最多的那项预算。";
+
+/* Health: what would raise the score most (rhythm) */
+"panel.health.improve.activity" = "想提高评分：至少每两天记一笔。";
+
+/* Health: what would raise the score most (commitments) */
+"panel.health.improve.bills" = "想提高评分：检查你的计划付款，它们对余额压力较大。";
+
+/* Health: all three parts are fine */
+"panel.health.improve.nothing" = "已计分的部分都不错，继续保持。";
+
+/* Health: the total never goes below this number. %d = floor */
+"panel.health.floorNote" = "总分不会低于 %d。";
+
+/* Live balance sheet: heading of the per-currency sum */
+"panel.liveAnchorEducation.sumTitle" = "逐个币种相加";
+
+/* Live balance sheet: why the balance moves on its own (second sentence) */
+"panel.liveAnchorEducation.bodyShortWhy" = "你的其他币种每天都在变值，所以即使不记账，这个余额也会变动。";
+
+/* Balance chart: label of the dashed average line. %@ = short amount */
+"panel.trend.averageLabel" = "平均 %@";
+
+/* Primary button of the voice/photo AI notice */
+"aiConsent.processingAccept" = "开启";
+
+/* Secondary button when voice/photo fails: open the manual entry form */
+"voice.enterManually" = "手动记录";
+
+/* Hint in the photo/file sheet on iPad: you can drop a receipt on the window */
+"image.entry.dropHint" = "也可以把收据或 PDF 拖到 Yala 窗口里。";
+
+/* Label shown while dragging a file over the window */
+"image.entry.dropToRead" = "松开以读取收据";
+
+/* Hint under the PDF password message: which password it usually is */
+"image.entry.passwordHint" = "密码由银行设置：通常是你的证件号码或出生日期。可在发送这份 PDF 的邮件里查看。";
+
+/* Pro gate for voice input: one example of what it does */
+"featureGate.voiceExample" = "说一句“午饭 25 刷卡”，就会连同类别和账户一起记下来。";
+
+/* Pro gate for photo input: one example of what it does */
+"featureGate.imageExample" = "给收据拍张照，Yala 就会记下金额、日期和类别。";
+
+/* Draft editor of a discarded draft: when it was discarded. %@ = short date */
+"inbox.draft.discardedOn" = "你在 %@ 丢弃了它，它在“已归档”里。";
+
+/* Fixed line under the Inbox title: what lands here */
+"inbox.explainer" = "这里是 Yala 替你记下的内容（语音、照片、Apple Pay、到期付款）。检查一下再保存。";
+
+/* Inbox button above the list: save every ready draft at once. %d = count (2 or more) */
+"inbox.saveReady" = "保存 %d 条已就绪的";
+
+/* Confirmation before saving every ready draft. %d = count */
+"inbox.saveReady.confirmTitle" = "保存 %d 条已就绪的记录？";
+
+/* Confirmation message before saving every ready draft */
+"inbox.saveReady.confirmMessage" = "信息完整的会移到你的记录里，缺少信息的会留在这里。";
+
+/* Confirmation button: save them */
+"inbox.saveReady.confirmButton" = "保存";
+
+/* Bulk save success: how many drafts are still pending. %d = count */
+"inbox.stillPending" = "仍待处理：%d";

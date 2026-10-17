@@ -48,6 +48,11 @@ struct TrendChartView: View {
     @State private var draggingDate: Date?  // For transient drag state
     @State private var pulseAnimate = false
     @State private var showEducationSheet = false
+    /// Ancho de la píldora «Hoy»: con él se mantiene dentro del área de dibujo y no tapa la escala de la derecha
+    /// (UX 2.2 · L3-17).
+    @State private var todayPillWidth: CGFloat = 0
+    /// Ancho de la gráfica: con él se sabe cuánto ocupa cada etiqueta del eje X y cuáles se pisarían (UX 2.2 · L3-17).
+    @State private var chartWidth: CGFloat = 0
 
     /// La hoja «Tu saldo hoy» explica la diferencia por tipo de cambio; sin saldo en otra moneda no
     /// hay ninguna y ni la píldora ni el punto la abren.
@@ -320,6 +325,7 @@ struct TrendChartView: View {
             L10n.Accessibility.dataPoints(trendPoints.count))
         .compactChartAxes(compact: compact)
         .frame(height: chartHeight)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chartWidth = $0 }
         .onAppear {
             if !reduceMotion { pulseAnimate = true }
         }
@@ -332,7 +338,6 @@ struct TrendChartView: View {
                 BalanceLiveAnchorEducationSheet(
                     liveAnchorValue: anchor.value,
                     liveAnchorIsApproximate: liveAnchorIsApproximate,
-                    historicalValue: rawPoints.last?.value,
                     nativeBalances: breakdown,
                     preferredCurrencyCode: currencyCode
                 )
@@ -354,10 +359,14 @@ struct TrendChartView: View {
                let xPos = proxy.position(forX: today)
             {
                 let frame = geo[plotFrame]
-                let absoluteX = xPos + frame.origin.x
+                // La píldora no sale del área de dibujo: con «hoy» pegado al borde derecho, la mitad caía sobre la
+                // etiqueta más alta de la escala («Hoy ⓘ 00K», UX 2.2 · L3-17).
+                let halfWidth = todayPillWidth / 2
+                let absoluteX = min(max(xPos + frame.origin.x, frame.minX + halfWidth), frame.maxX - halfWidth)
                 let absoluteY = frame.origin.y + DS.Spacing.md
 
                 TodayHintGlassPill(action: explainsCurrencyDifference ? { showEducationSheet = true } : nil)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { todayPillWidth = $0 }
                     .position(x: absoluteX, y: absoluteY)
             }
         }
@@ -488,9 +497,17 @@ struct TrendChartView: View {
 
         guard let firstDate = trendPoints.first?.date,
               let lastDate = trendPoints.last?.date else { return rawDates }
-        return SmartAxisHelper.deduplicatedAxisDates(
+        let deduplicated = SmartAxisHelper.deduplicatedAxisDates(
             rawDates, firstDate: firstDate, lastDate: lastDate,
             forceGrouping: grouping.forceAxisGrouping)
+        // Con «Todo el tiempo» la penúltima fecha caía pegada a la última y se pisaban («abr 26oct 26», UX 2.2 · L3-17).
+        // Lo que ocupa una etiqueta sale de su texto más largo (~7,5 pt por carácter a `labelTiny`, medido: «abr 26» son
+        // 45 pt) y del ancho del área de dibujo: el medido menos la escala de la derecha (~44 pt).
+        guard chartWidth > 0 else { return deduplicated }
+        let longest = deduplicated.map { smartAxisLabel(for: $0).count }.max() ?? 0
+        let plotWidth = max(1, Double(chartWidth) - (compact ? 0 : 44))
+        let fraction = min(0.5, Double(longest) * 7.5 / plotWidth)
+        return SmartAxisHelper.droppingCrowdedNeighbors(deduplicated, labelWidthFraction: fraction)
     }
 
     /// Format axis label based on data span (include year if multiple years)
@@ -619,7 +636,8 @@ struct TrendChartView: View {
                 .foregroundStyle(.thSecondaryText.opacity(0.5))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
                 .annotation(position: .top, alignment: .leading) {
-                    Text(formatK(avg))
+                    // Con su nombre: sola, «99K» no decía qué era la línea discontinua (UX 2.2 · L3-17).
+                    Text(L10n.Panel.trendAverageLabel(formatK(avg)))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.thSecondaryText)
                 }

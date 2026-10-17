@@ -38,11 +38,12 @@ struct InboxPluralsTests {
         #expect(format("inbox.alert.message.mixed.automations", "es-419", 1) == "1 registro automático")
     }
 
-    /// Dos argumentos: el plural lo decide el PRIMERO (los listos), no el total.
+    /// Dos argumentos: el plural lo decide el PRIMERO (los listos), no el total. Con el verbo de la app, «guardar», y
+    /// no «aprobar» (UX 2.2 · L4-4).
     @Test func approveableCount_pluralFollowsTheReadyCount() {
-        #expect(format("inbox.approveableCount", "es-419", 1, 3) == "1 de 3 listo para aprobar")
-        #expect(format("inbox.approveableCount", "es-419", 2, 3) == "2 de 3 listos para aprobar")
-        #expect(format("inbox.approveableCount", "fr", 1, 3) == "1 sur 3 prêt à approuver")
+        #expect(format("inbox.approveableCount", "es-419", 1, 3) == "1 de 3 listo para guardar")
+        #expect(format("inbox.approveableCount", "es-419", 2, 3) == "2 de 3 listos para guardar")
+        #expect(format("inbox.approveableCount", "fr", 1, 3) == "1 sur 3 prêt à enregistrer")
     }
 
     /// El alias `es` es copia de `es-419`: lo que ve quien tiene el iPhone en «Español» a secas.
@@ -83,8 +84,9 @@ struct InboxPluralsTests {
         }
         let read = { (key: String) in bundle.localizedString(forKey: key, value: "__FALTA__", table: nil) }
         #expect(read("inbox.status.pending") == "pendiente")
-        #expect(read("inbox.status.approved") == "aprobado")
-        #expect(read("inbox.status.rejected") == "rechazado")
+        // «guardado» y «descartado»: los verbos que la persona ve en los botones (UX 2.2 · L4-4).
+        #expect(read("inbox.status.approved") == "guardado")
+        #expect(read("inbox.status.rejected") == "descartado")
         for status in [DraftStatus.pending, .approved, .rejected] {
             #expect(!L10n.Inbox.status(status).hasPrefix("inbox."), "Clave cruda para \(status)")
         }

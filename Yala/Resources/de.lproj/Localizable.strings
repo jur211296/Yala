@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "Verpflichtungen";
 // Detail sheet — Gesamt
 "panel.health.total.sheet.title" = "Deine finanzielle Gesundheit";
-"panel.health.total.sheet.explanation" = "Kombiniert drei Dinge: deine Budgets, deinen Erfassungsrhythmus und deine Verpflichtungen im Zeitraum. Jeder gewichtet anders und gleicht sich aus, wenn einer nicht zutrifft.";
+"panel.health.total.sheet.explanation" = "Deine Note setzt sich aus drei Teilen zusammen. Jeder zählt so viel, wie daneben steht; hat einer noch keine Daten, teilen die anderen sein Gewicht.";
 "panel.health.total.headline.high" = "Du machst das super!";
 "panel.health.total.headline.mid" = "Guter Rhythmus";
 "panel.health.total.headline.low" = "Kleine Schritte, große Wirkung";
@@ -216,8 +216,8 @@
 "filters.type" = "Typ";
 "filters.need" = "Bedarf";
 "filters.currency" = "Währung";
-"filters.includeMode" = "Einschließen";
-"filters.excludeMode" = "Ausschließen";
+"filters.includeMode" = "Nur zeigen";
+"filters.excludeMode" = "Ausblenden";
 "filters.nothingExcluded" = "Keine";
 "filters.datePrefix %@" = "Datum: %@";
 
@@ -1666,7 +1666,7 @@
 "accessibility.currenciesCount %d" = "%d Währungen";
 "accessibility.cashFlowSummary %@ %@" = "Einnahmen %@, Ausgaben %@";
 "accessibility.selectAtLeastOneDraft" = "Wähle mindestens einen Entwurf aus";
-"accessibility.approveCompleteHint" = "Zum Genehmigen: Konto, Betrag und Kategorie ausfüllen";
+"accessibility.approveCompleteHint" = "Zum Speichern Konto, Betrag und Kategorie ergänzen";
 "accessibility.updatingExchangeRates" = "Wechselkurse werden aktualisiert";
 "accessibility.authenticating" = "Authentifizierung läuft";
 "accessibility.showMoreSubcategories" = "Mehr Unterkategorien anzeigen";
@@ -1681,7 +1681,7 @@
 "accessibility.searchResultRow %@ %@ %@" = "%@, %@, %@";
 "accessibility.regeneratingInsights" = "Erkenntnisse werden generiert, bitte warten";
 "accessibility.completeCalculation" = "Vervollständige die Werte, um das Ergebnis zu berechnen";
-"accessibility.noDraftsToApprove" = "Keine Entwürfe zum Genehmigen bereit";
+"accessibility.noDraftsToApprove" = "Keine Entwürfe bereit zum Speichern";
 "accessibility.categoriesLocked" = "Zeigt Unterkategorien der ausgewählten Kategorie";
 "accessibility.systemMonochromeIcons" = "Systemeinstellung erfordert einfarbige Symbole";
 "accessibility.maxCurrenciesSelected" = "Maximale Anzahl an Währungen ausgewählt";
@@ -2002,22 +2002,22 @@
 "inbox.missingLabel" = "Fehlende Daten";
 "inbox.needsAccount" = "Konto auswählen";
 "inbox.needsSubcategory" = "Unterkategorie auswählen";
-"inbox.approve" = "Genehmigen";
+"inbox.approve" = "Speichern";
 "inbox.delete" = "Löschen";
 "inbox.noPending" = "Keine ausstehenden Entwürfe";
-"inbox.noPendingDescription" = "Neue Sprach- und Bildentwürfe werden hier angezeigt.";
+"inbox.noPendingDescription" = "Hier landet, was Yala für dich erfasst: Sprache, Fotos, Apple Pay, Siri und geplante Zahlungen.";
 "inbox.bulkHint" = "Tippe auf ✓, um mehrere auszuwählen";
-"inbox.status.rejected" = "abgelehnt";
-"inbox.status.approved" = "genehmigt";
+"inbox.status.rejected" = "verworfen";
+"inbox.status.approved" = "gespeichert";
 "inbox.status.pending" = "ausstehend";
 "inbox.subtitleMultiplePending" = "%d Transaktionen warten, Schritt für Schritt.";
 "inbox.subtitleOnePending" = "Eine Transaktion wartet, prüfen Sie sie, wenn Sie können.";
 "inbox.subtitleAllDone" = "Posteingang leer, super gemacht.";
 "inbox.newTag" = "Neu";
 "inbox.noArchived" = "Keine archivierten Entwürfe";
-"inbox.noArchivedDescription" = "Genehmigte oder abgelehnte Entwürfe werden hier angezeigt.";
+"inbox.noArchivedDescription" = "Was du gespeichert oder verworfen hast, erscheint hier.";
 "inbox.editDraft" = "Entwurf bearbeiten";
-"inbox.cannotApprove" = "Kann nicht genehmigt werden";
+"inbox.cannotApprove" = "Speichern nicht möglich";
 "inbox.sourceVoice" = "Sprache";
 "inbox.sourceEmail" = "E-Mail";
 "inbox.sourceScreenshot" = "Bildschirmfoto";
@@ -2031,25 +2031,25 @@
 "inbox.errorNoAccount" = "Select account";
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
-"inbox.errorArchivedAccount" = "Dieses Konto ist archiviert. Bearbeite den Entwurf und ändere das Konto, um zu genehmigen.";
-"inbox.errorFutureDate" = "Transaktionen mit zukünftigem Datum können nicht genehmigt werden";
+"inbox.errorArchivedAccount" = "Dieses Konto ist archiviert. Bearbeite den Entwurf und wähle ein anderes Konto, um ihn zu speichern.";
+"inbox.errorFutureDate" = "Einträge mit einem Datum in der Zukunft können nicht gespeichert werden";
 "inbox.duplicateWarningTitle" = "Mögliches Duplikat";
-"inbox.duplicateWarningMessage" = "Es gibt schon eine ähnliche Transaktion. Trotzdem erstellen?";
-"inbox.createAnyway" = "Trotzdem erstellen";
-"inbox.saveLater" = "Später genehmigen";
+"inbox.duplicateWarningMessage" = "Es gibt schon einen ähnlichen Eintrag. Trotzdem speichern?";
+"inbox.createAnyway" = "Trotzdem speichern";
+"inbox.saveLater" = "Für später lassen";
 "inbox.deleteTitle" = "Entwurf löschen";
 "inbox.deleteMessage" = "Diese Aktion kann nicht rückgängig gemacht werden.";
-"inbox.reject" = "Ablehnen";
-"inbox.approveAll" = "Alle genehmigen";
-"inbox.returnToPending" = "Zu ausstehend zurückkehren";
+"inbox.reject" = "Verwerfen";
+"inbox.approveAll" = "Alle speichern";
+"inbox.returnToPending" = "Zurück zu offen";
 "inbox.discardChangesTitle" = "Änderungen verwerfen?";
 "inbox.discardChanges" = "Verwerfen";
 "inbox.keepEditing" = "Weiter bearbeiten";
 "inbox.discardChangesMessage" = "Nicht gespeicherte Änderungen gehen verloren.";
-"inbox.approveSuccess" = "Transaktion erstellt";
-"inbox.approveNext" = "Nächste genehmigen";
-"inbox.transactionCreated" = "Transaktion erstellt";
-"inbox.transactionsCreated" = "Transaktionen erstellt";
+"inbox.approveSuccess" = "Eintrag gespeichert";
+"inbox.approveNext" = "Nächsten speichern";
+"inbox.transactionCreated" = "Eintrag gespeichert";
+"inbox.transactionsCreated" = "Einträge gespeichert";
 "inbox.viewInRecords" = "In Aufzeichnungen anzeigen";
 "inbox.backToInbox" = "Zurück zum Posteingang";
 
@@ -2076,7 +2076,7 @@
 "image.reviewDraft" = "Überprüfen";
 "image.transactionsDetected" = "Transaktionen erkannt";
 "image.goToInbox" = "Zum Posteingang";
-"image.transactionsDetectedMessage" = "Wir haben %d Transaktionen erkannt. Du kannst sie im Posteingang überprüfen und genehmigen.";
+"image.transactionsDetectedMessage" = "Ich habe %d Einträge gefunden. Du kannst sie im Eingang prüfen und speichern.";
 "image.analyzingIn" = "Analyse in %d...";
 "image.imagesSelected" = "%d Bilder ausgewählt";
 "image.youCanUpload" = "Du kannst hochladen:";
@@ -2527,7 +2527,7 @@
 "shortcut.notification.title" = "Neuer automatischer Eintrag";
 "shortcut.notification.expense" = "Ausgabe";
 "shortcut.notification.income" = "Einnahme";
-"shortcut.notification.body" = "Eine %@ von %@%@ wurde erfasst. Öffne die App, um sie zu bestätigen.";
+"shortcut.notification.body" = "Ein %@ über %@%@ wurde notiert. Öffne Yala, um es zu prüfen und zu speichern.";
 
 // MARK: - Category Seeds
 
@@ -2864,8 +2864,8 @@
 "aiPrivacy.policyLink" = "Datenschutzrichtlinie";
 
 // MARK: - AI Consent
-"aiConsent.processingTitle" = "Sprach- und Bildverarbeitung";
-"aiConsent.processingMessage" = "Diese Funktionen nutzen OpenAI, um deine Daten zu verarbeiten:\n\n• Sprache: deine Audioaufnahme wird transkribiert\n• Bilder: das Foto (Beleg oder Screenshot) wird analysiert, um die Ausgabendaten zu extrahieren\n\nVerarbeitet wird nur, was du in diesem Moment sendest. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
+"aiConsent.processingTitle" = "Yala erfasst es für dich";
+"aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst (OpenAI) gesendet. Es wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.insightsTitle" = "Intelligenter Überblick";
 "aiConsent.insightsMessage" = "Diese Funktion sendet eine Zusammenfassung deiner Finanzen an OpenAI – Summen und Trends nach Kategorie, Budgets und wiederkehrende Zahlungen –, um deine Analyse zu erstellen.\n\nDein vollständiger Transaktionsverlauf wird nicht gesendet. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
@@ -3347,8 +3347,8 @@
 "guide.cashflow.message" = "Yala berechnet, ob dein Geld bis zum Monatsende reicht, basierend auf Einnahmen und Ausgaben.";
 "guide.insights.title" = "Yala analysiert für dich";
 "guide.insights.message" = "Basierend auf deinen Ausgaben sagt dir Yala Nützliches: dein teuerster Tag, ob du mehr als üblich ausgibst usw.";
-"guide.inbox.title" = "Ausstehende Prüfungen";
-"guide.inbox.message" = "Wenn du Zahlungen bestätigen musst oder automatische Ausgaben hast, erscheinen sie hier.";
+"guide.inbox.title" = "Zum Prüfen und Speichern";
+"guide.inbox.message" = "Was Yala für dich erfasst (Sprache, Fotos, Apple Pay, Siri, fällige Zahlungen), wartet hier, bis du es prüfst und speicherst.";
 "guide.budgetEditor.title" = "Was ist ein Budget?";
 "guide.budgetEditor.message" = "Ein Limit, das du festlegst, um deine Ausgaben zu kontrollieren. Gib ihm einen Namen, einen Betrag und wähle die Kategorien. Du kannst es jederzeit bearbeiten oder löschen.";
 "guide.scheduledEditor.title" = "Was ist eine geplante Zahlung?";
@@ -3609,16 +3609,16 @@
 "panel.widgetInfo.cashFlow.chip2" = "Ausgaben";
 
 /* Panel Polish #2 — Chip 3 CashFlow */
-"panel.widgetInfo.cashFlow.chip3" = "Pro Zeitraum";
+"panel.widgetInfo.cashFlow.chip3" = "Folgt dem gewählten Zeitraum";
 
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "Saldoentwicklung";
 
 /* Panel Polish #2 — Chip 1 Trend */
-"panel.widgetInfo.trend.chip1" = "Interaktiv";
+"panel.widgetInfo.trend.chip1" = "Antippbar";
 
 /* Panel Polish #2 — Chip 2 Trend */
-"panel.widgetInfo.trend.chip2" = "Pro Zeitraum";
+"panel.widgetInfo.trend.chip2" = "Folgt dem gewählten Zeitraum";
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3669,7 +3669,7 @@
 "panel.widgetInfo.trend.largeHowA" = "Halte den Finger auf dem Diagramm, um den Wert an jedem Punkt zu sehen. Wechsle zwischen Saldo, Einnahmen und Ausgaben mit den Schaltflächen in der Kopfzeile.";
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
-"panel.widgetInfo.cashFlow.chip4" = "Interaktiv";
+"panel.widgetInfo.cashFlow.chip4" = "Antippbar";
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "Verteilung nach Kategorie";
@@ -3681,7 +3681,7 @@
 "panel.widgetInfo.categoriesPie.chip2" = "Aktueller Zeitraum";
 
 /* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
-"panel.widgetInfo.categoriesPie.chip3" = "Interaktiv";
+"panel.widgetInfo.categoriesPie.chip3" = "Antippbar";
 
 /* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.smallWhatQ" = "Was siehst du?";
@@ -3717,7 +3717,7 @@
 "panel.widgetInfo.subcategoriesPie.chip2" = "Aktueller Zeitraum";
 
 /* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
-"panel.widgetInfo.subcategoriesPie.chip3" = "Interaktiv";
+"panel.widgetInfo.subcategoriesPie.chip3" = "Antippbar";
 
 /* Panel Polish #2 — SubcategoriesPie S: pregunta */
 "panel.widgetInfo.subcategoriesPie.smallWhatQ" = "Was siehst du?";
@@ -3753,7 +3753,7 @@
 "panel.widgetInfo.tagsPie.chip2" = "Aktueller Zeitraum";
 
 /* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
-"panel.widgetInfo.tagsPie.chip3" = "Interaktiv";
+"panel.widgetInfo.tagsPie.chip3" = "Antippbar";
 
 /* Panel Polish #2 — TagsPie S: pregunta */
 "panel.widgetInfo.tagsPie.smallWhatQ" = "Was siehst du?";
@@ -3789,7 +3789,7 @@
 "panel.widgetInfo.expensesByNeed.chip2" = "Aktueller Zeitraum";
 
 /* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
-"panel.widgetInfo.expensesByNeed.chip3" = "Interaktiv";
+"panel.widgetInfo.expensesByNeed.chip3" = "Antippbar";
 
 /* Panel Polish #2 — ExpensesByNeed S: pregunta */
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "Was siehst du?";
@@ -3837,7 +3837,7 @@
 "panel.widgetInfo.topCategories.chip2" = "Aktueller Zeitraum";
 
 /* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
-"panel.widgetInfo.topCategories.chip3" = "Interaktiv";
+"panel.widgetInfo.topCategories.chip3" = "Antippbar";
 
 /* Panel Polish #2 — TopCategories S: pregunta */
 "panel.widgetInfo.topCategories.smallWhatQ" = "Was siehst du?";
@@ -3867,7 +3867,7 @@
 "panel.widgetInfo.topSubcategories.chip2" = "Aktueller Zeitraum";
 
 /* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
-"panel.widgetInfo.topSubcategories.chip3" = "Interaktiv";
+"panel.widgetInfo.topSubcategories.chip3" = "Antippbar";
 
 /* Panel Polish #2 — TopSubcategories S: pregunta */
 "panel.widgetInfo.topSubcategories.smallWhatQ" = "Was siehst du?";
@@ -3915,7 +3915,7 @@
 "panel.widgetInfo.scheduledPayments.chip2" = "Aktueller Monat";
 
 /* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
-"panel.widgetInfo.scheduledPayments.chip3" = "Interaktiv";
+"panel.widgetInfo.scheduledPayments.chip3" = "Antippbar";
 
 /* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
 "panel.widgetInfo.scheduledPayments.whatQ" = "Was siehst du?";
@@ -3945,7 +3945,7 @@
 "panel.widgetInfo.budgets.chip2" = "Aktueller Zeitraum";
 
 /* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
-"panel.widgetInfo.budgets.chip3" = "Interaktiv";
+"panel.widgetInfo.budgets.chip3" = "Antippbar";
 
 /* Panel Polish #2 — Budgets S: pregunta */
 "panel.widgetInfo.budgets.smallWhatQ" = "Was siehst du?";
@@ -3975,7 +3975,7 @@
 "panel.widgetInfo.exchangeRate.chip2" = "Aktuelle Kurse";
 
 /* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
-"panel.widgetInfo.exchangeRate.chip3" = "Interaktiv";
+"panel.widgetInfo.exchangeRate.chip3" = "Antippbar";
 
 /* Panel Polish #2 — ExchangeRate: pregunta */
 "panel.widgetInfo.exchangeRate.whatQ" = "Was siehst du?";
@@ -4287,7 +4287,7 @@
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "Zeitraum-Vergleich";
 "panel.widgetInfo.periodComparison.chip1" = "Vergleich";
-"panel.widgetInfo.periodComparison.chip2" = "Nach Zeitraum";
+"panel.widgetInfo.periodComparison.chip2" = "Folgt dem gewählten Zeitraum";
 "panel.widgetInfo.periodComparison.whatQ" = "Was sehen Sie hier?";
 "panel.widgetInfo.periodComparison.whatA" = "Saldo, Einnahmen oder Ausgaben Ihres aktuellen Zeitraums neben dem vorherigen Zeitraum. So erkennen Sie auf einen Blick, ob sich Ihr Trend verbessert.";
 "panel.widgetInfo.periodComparison.howQ" = "Womit wird verglichen?";
@@ -4295,7 +4295,7 @@
 "panel.widgetInfo.sankey.title" = "Geldfluss";
 "panel.widgetInfo.sankey.chip1" = "Fluss";
 "panel.widgetInfo.sankey.chip2" = "Nach Bedarf";
-"panel.widgetInfo.sankey.chip3" = "Interaktiv";
+"panel.widgetInfo.sankey.chip3" = "Antippbar";
 "panel.widgetInfo.sankey.whatQ" = "Was sehen Sie hier?";
 "panel.widgetInfo.sankey.whatA" = "Der Weg Ihres Geldes im Zeitraum: woher es kommt (Einnahmen) und wohin es geht, gruppiert nach Bedarfsart. Je breiter das Band, desto größer die Bewegung.";
 "panel.widgetInfo.sankey.howQ" = "Wie interagiere ich?";
@@ -5551,7 +5551,7 @@
 "stats.hero.captionAccountsBalance" = "Kontostand";
 
 /* Stats hero caption: the figure is income minus expenses for the period (flow) */
-"stats.hero.captionNetPeriod" = "Netto im Zeitraum";
+"stats.hero.captionNetPeriod" = "Bilanz im Zeitraum";
 
 /* Stats hero caption: the figure is only the income side for the period */
 "stats.hero.captionIncomePeriod" = "Einnahmen im Zeitraum";
@@ -6791,3 +6791,195 @@
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "Gruppenausgaben in einer anderen Währung bleiben unverändert und werden nicht umgerechnet: Ihren Betrag bestimmt die Gruppe.";
+
+/* Panel hero label: income minus expenses of a named month. %@ = month name */
+"panel.hero.balanceOfMonth" = "Bilanz %@";
+
+/* Panel hero label when only expenses are shown. %@ = month name */
+"panel.hero.expensesOfMonth" = "Ausgaben %@";
+
+/* Panel hero label when only income is shown. %@ = month name */
+"panel.hero.incomeOfMonth" = "Einnahmen %@";
+
+/* Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses */
+"panel.hero.flowCaption" = "Rein %1$@ − raus %2$@";
+
+/* Line under the panel hero when the period has no income or expenses yet */
+"panel.hero.noMovements" = "In diesem Zeitraum noch keine Bewegungen";
+
+/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
+"panel.hero.totalInAccounts" = "Du hast %@ auf deinen Konten";
+
+/* Small hint next to the panel hero label: tapping opens Statistics */
+"panel.hero.seeDetail" = "Details";
+
+/* Chip under the panel hero while the expenses-only filter is on */
+"panel.hero.onlyExpensesChip" = "Nur Ausgaben";
+
+/* Chip under the panel hero while the income-only filter is on */
+"panel.hero.onlyIncomeChip" = "Nur Einnahmen";
+
+/* VoiceOver label of the chip that removes the income/expense filter */
+"panel.hero.clearNatureFilter" = "Filter entfernen";
+
+/* Tag on the account card that is filtering the Panel */
+"panel.accounts.card.filtering" = "Filter aktiv";
+
+/* Last chip in the Panel account chips row: adds an account */
+"panel.accounts.addChip" = "Hinzufügen";
+
+/* Panel with no accounts: pink button that creates the first account */
+"panel.createFirstAccount" = "Erstes Konto anlegen";
+
+/* Line under the create-first-account button on the Panel */
+"panel.createFirstAccountHint" = "Tippe hier, wir helfen dir: ein Schritt, dann kannst du loslegen.";
+
+/* Filters sheet: what the include mode does */
+"filters.includeModeExplanation" = "Es wird nur angezeigt, was du unten auswählst.";
+
+/* Filters sheet: what the exclude mode does */
+"filters.excludeModeExplanation" = "Was du unten auswählst, wird ausgeblendet; der Rest bleibt sichtbar.";
+
+/* Filter status when nothing narrows a feminine noun list (accounts, categories, tags, currencies) */
+"filters.allFeminine" = "Alle";
+
+/* Panel sections config: what the accounts section shows */
+"panel.sectionsConfig.desc.accounts" = "Deine Konten mit ihrem Saldo.";
+
+/* Panel sections config: what the financial health section shows */
+"panel.sectionsConfig.desc.health" = "Eine Note von 0 bis 100, wie es läuft, und was du verbessern kannst.";
+
+/* Panel sections config: what the trends section shows */
+"panel.sectionsConfig.desc.trends" = "Diagramme zu Saldo, Einnahmen und Ausgaben im Zeitverlauf.";
+
+/* Panel sections config: what the distribution section shows */
+"panel.sectionsConfig.desc.distribution" = "Wohin dein Geld geht: nach Kategorie, Tag und Bedarf.";
+
+/* Panel sections config: what the planning section shows */
+"panel.sectionsConfig.desc.planning" = "Deine Budgets und die nächsten geplanten Zahlungen.";
+
+/* Panel sections config: what the latest records section shows */
+"panel.sectionsConfig.desc.latestRecords" = "Was du zuletzt erfasst hast.";
+
+/* Panel sections config: what the tools section shows */
+"panel.sectionsConfig.desc.tools" = "Der Wechselkurs deiner Währungen.";
+
+/* Widget help sheet: heading of the line with the user's own numbers */
+"panel.widgetInfo.yourData.title" = "Mit deinen Zahlen";
+
+/* Widget help, balance chart: what the user has today. %@ = amount */
+"panel.widgetInfo.yourData.trend" = "Heute hast du %@ auf deinen Konten. Die Linie zeigt, wie du Tag für Tag dahin gekommen bist.";
+
+/* Widget help, cash flow: income and expenses of the period. %1$@ = income, %2$@ = expenses */
+"panel.widgetInfo.yourData.cashFlow" = "In diesem Zeitraum kamen %1$@ rein und %2$@ gingen raus.";
+
+/* Widget help, spending breakdown: where the user spends most. %1$@ = category, %2$@ = amount */
+"panel.widgetInfo.yourData.topSpending" = "Am meisten gibst du hier aus: %1$@, mit %2$@.";
+
+/* Widget help, tags: tag with most spending. %1$@ = tag, %2$@ = amount */
+"panel.widgetInfo.yourData.topTag" = "Tag mit den meisten Ausgaben: %1$@, mit %2$@.";
+
+/* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
+"panel.widgetInfo.yourData.scheduled" = "Geplante Zahlungen diesen Monat: %1$@. Noch offen: %2$d.";
+
+/* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
+"panel.widgetInfo.yourData.weekday" = "Tag mit den höchsten Ausgaben im Schnitt: %@.";
+
+/* Panel notices pager: which notice of how many. %1$d = position, %2$d = total */
+"panel.notices.position" = "Hinweis %1$d von %2$d";
+
+/* Panel notices pager: button that shows the next notice */
+"panel.notices.next" = "Nächster";
+
+/* Account sheet, balance equation: balance on a date. %@ = date */
+"accountDetail.balanceOn" = "Saldo am %@";
+
+/* Account sheet, balance equation: last line when the period runs until today */
+"accountDetail.balanceToday" = "Saldo heute";
+
+/* Account sheet: heading of the balance equation for the period */
+"accountDetail.equationTitle" = "So setzt sich dein Saldo in diesem Zeitraum zusammen";
+
+/* Health budget sheet when budgets exist but none counts yet */
+"panel.health.budget.headline.startsNextMonth" = "Dein Budget zählt ab nächstem Monat";
+
+/* Health breakdown row: part name and its weight. %1$@ = name, %2$d = percent */
+"panel.health.part.title" = "%1$@ · zählt %2$d %%";
+
+/* Health breakdown: what the budgets part measures */
+"panel.health.part.budget" = "Wie du mit den Grenzen deiner Budgets zurechtkommst.";
+
+/* Health breakdown: what the rhythm part measures */
+"panel.health.part.activity" = "Wie viele Tage am Stück du nichts erfasst. Bis zu 2 sind okay.";
+
+/* Health breakdown: what the commitments part measures */
+"panel.health.part.bills" = "Ob dein Saldo die anstehenden Zahlungen deckt und wie viel deines Einkommens sie verbrauchen.";
+
+/* Health breakdown: a part without data, so it does not count */
+"panel.health.part.notCounting" = "Zählt noch nicht";
+
+/* Health: what would raise the score most (budgets) */
+"panel.health.improve.budget" = "Für eine bessere Note: Sieh dir das Budget an, das du am meisten überschreitest.";
+
+/* Health: what would raise the score most (rhythm) */
+"panel.health.improve.activity" = "Für eine bessere Note: Erfasse mindestens alle zwei Tage etwas.";
+
+/* Health: what would raise the score most (commitments) */
+"panel.health.improve.bills" = "Für eine bessere Note: Prüfe deine geplanten Zahlungen; sie belasten deinen Saldo stark.";
+
+/* Health: all three parts are fine */
+"panel.health.improve.nothing" = "Was schon zählt, läuft gut. Weiter so.";
+
+/* Health: the total never goes below this number. %d = floor */
+"panel.health.floorNote" = "Die Gesamtnote fällt nie unter %d.";
+
+/* Live balance sheet: heading of the per-currency sum */
+"panel.liveAnchorEducation.sumTitle" = "Die Summe, Währung für Währung";
+
+/* Live balance sheet: why the balance moves on its own (second sentence) */
+"panel.liveAnchorEducation.bodyShortWhy" = "Deine anderen Währungen ändern täglich ihren Wert, daher bewegt sich dieser Saldo, auch wenn du nichts erfasst.";
+
+/* Balance chart: label of the dashed average line. %@ = short amount */
+"panel.trend.averageLabel" = "Durchschnitt %@";
+
+/* Primary button of the voice/photo AI notice */
+"aiConsent.processingAccept" = "Aktivieren";
+
+/* Secondary button when voice/photo fails: open the manual entry form */
+"voice.enterManually" = "Selbst eintragen";
+
+/* Hint in the photo/file sheet on iPad: you can drop a receipt on the window */
+"image.entry.dropHint" = "Du kannst auch einen Beleg oder ein PDF ins Yala-Fenster ziehen.";
+
+/* Label shown while dragging a file over the window */
+"image.entry.dropToRead" = "Loslassen, um den Beleg zu lesen";
+
+/* Hint under the PDF password message: which password it usually is */
+"image.entry.passwordHint" = "Deine Bank hat es festgelegt: meist deine Ausweisnummer oder dein Geburtsdatum. Sieh in der E-Mail nach, mit der das PDF kam.";
+
+/* Pro gate for voice input: one example of what it does */
+"featureGate.voiceExample" = "Sag „Mittagessen 25 mit der Karte“ und es ist erfasst, mit Kategorie und Konto.";
+
+/* Pro gate for photo input: one example of what it does */
+"featureGate.imageExample" = "Fotografiere den Beleg und Yala erfasst Betrag, Datum und Kategorie.";
+
+/* Draft editor of a discarded draft: when it was discarded. %@ = short date */
+"inbox.draft.discardedOn" = "Du hast es am %@ verworfen. Es liegt im Archiv.";
+
+/* Fixed line under the Inbox title: what lands here */
+"inbox.explainer" = "Hier landet, was Yala für dich erfasst hat (Sprache, Fotos, Apple Pay, fällige Zahlungen). Prüfe es und speichere es.";
+
+/* Inbox button above the list: save every ready draft at once. %d = count (2 or more) */
+"inbox.saveReady" = "Die %d fertigen speichern";
+
+/* Confirmation before saving every ready draft. %d = count */
+"inbox.saveReady.confirmTitle" = "Die %d fertigen Einträge speichern?";
+
+/* Confirmation message before saving every ready draft */
+"inbox.saveReady.confirmMessage" = "Die vollständigen kommen zu deinen Einträgen. Was noch etwas braucht, bleibt hier.";
+
+/* Confirmation button: save them */
+"inbox.saveReady.confirmButton" = "Speichern";
+
+/* Bulk save success: how many drafts are still pending. %d = count */
+"inbox.stillPending" = "Noch offen: %d";

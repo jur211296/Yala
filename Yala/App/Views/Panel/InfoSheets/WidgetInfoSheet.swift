@@ -2,9 +2,10 @@
 //  WidgetInfoSheet.swift
 //  Yala
 //
-//  Sheet pedagógica para widgets del Panel. El draft de tamaño se aplica al
-//  ViewModel SOLO si el usuario confirma con el check del toolbar; cerrar
-//  con X o gesto descarta el draft sin persistir.
+//  Sheet pedagógica para widgets del Panel. Solo explica (UX 2.2 · L3-7, opción B): el selector de tamaño y su
+//  botón de guardar salieron de aquí —quien venía a entender acababa cambiando el widget— y el tamaño se cambia en
+//  el menú de cuadrícula de la sección (`PanelSectionPreferencesSheet`). Arriba, una línea con los números de la
+//  persona cuando el widget tiene un dato que contar.
 //
 
 import SwiftUI
@@ -19,15 +20,14 @@ struct WidgetInfoSheet<Preview: View>: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AppPreferences.self) private var appPreferences
-    @State private var draftSize: WidgetSize = .small
-    @State private var initialSize: WidgetSize = .small
-    @State private var didLoadInitialSize = false
+    /// El tamaño con el que el widget está hoy en el Panel: la vista previa lo enseña así.
+    @State private var shownSize: WidgetSize = .small
     @State private var contentWidth: CGFloat = 0
 
     private var content: WidgetInfoContent { .content(for: kind) }
     private var widgetType: WidgetType? { kind.widgetType }
-    /// El flujo completo (segmented + preview + save) solo aplica cuando el
-    /// kind mapea a un WidgetType del Panel y se pasó un viewModel.
+    /// La vista previa y la línea con sus números solo aplican cuando el kind mapea a un WidgetType del Panel y se
+    /// pasó un viewModel.
     private var isInPanel: Bool { viewModel != nil && widgetType != nil }
 
     var body: some View {
@@ -35,8 +35,10 @@ struct WidgetInfoSheet<Preview: View>: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
                     if isInPanel {
-                        sizeSegmented
                         previewBox
+                    }
+                    if let personalLine {
+                        yourDataBlock(personalLine)
                     }
                     chipsRow
                     sectionsBlock
@@ -63,56 +65,23 @@ struct WidgetInfoSheet<Preview: View>: View {
                     }
                     .accessibilityIdentifier("widget_info_close")
                 }
-                if isInPanel {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        YalaSaveButton(
-                            action: {
-                                persistDraftToViewModel()
-                                dismiss()
-                            },
-                            isDisabled: draftSize == initialSize
-                        )
-                    }
-                }
             }
         }
-        // Panel necesita `.large` (segmented + preview). Fuera (chips + Q&A) entra en `.medium`.
+        // Panel necesita `.large` (preview). Fuera (chips + Q&A) entra en `.medium`.
         .presentationDetents(isInPanel ? [.large] : [.medium])
         .presentationDragIndicator(.visible)
         .task(id: kind) {
-            // Capturar el tamaño actual del VM al montar (o si el sheet se reusa
-            // con otro kind). Los cambios del segmented mutan `draftSize`
-            // localmente y solo se persisten si el usuario confirma con el check.
-            // Fuera del Panel (viewModel == nil o kind sin widgetType), no hay
-            // tamaño que cargar.
+            // La vista previa enseña el widget con el tamaño que tiene hoy en el Panel. Fuera del Panel
+            // (viewModel == nil o kind sin widgetType), no hay tamaño que cargar.
             guard let viewModel, let widgetType else { return }
-            let current = viewModel.widgetSize(widgetType)
-            draftSize = current
-            initialSize = current
-            didLoadInitialSize = true
+            shownSize = viewModel.widgetSize(widgetType)
         }
+        // Sin nada que guardar, la hoja siempre está «limpia»: una foto compartida puede cerrarla.
         .modifier(PanelWidgetInfoSharedPhotoClose(
             isInPanelWindow: viewModel != nil,
-            isClean: draftSize == initialSize,
+            isClean: true,
             dismiss: { dismiss() }
         ))
-    }
-
-    @ViewBuilder
-    private var sizeSegmented: some View {
-        if let widgetType {
-            let supported = widgetType.supportedSizes
-            if supported.count > 1 {
-                Picker(selection: $draftSize) {
-                    ForEach(supported, id: \.self) { size in
-                        Text(sizeLabel(size)).tag(size)
-                    }
-                } label: {
-                    EmptyView()
-                }
-                .pickerStyle(.segmented)
-            }
-        }
     }
 
     /// Small se renderiza al ~50% del ancho disponible para emular la
@@ -121,10 +90,10 @@ struct WidgetInfoSheet<Preview: View>: View {
     /// no acepta gestos" — sin esto, taps filtrarían el Panel real por debajo.
     @ViewBuilder
     private var previewBox: some View {
-        let isSmall = draftSize == .small
+        let isSmall = shownSize == .small
         let smallWidth = max(0, contentWidth * 0.5)
         ZStack {
-            previewContent(draftSize)
+            previewContent(shownSize)
                 .environment(\.isWidgetPreviewMode, true)
                 .environment(appPreferences)
                 .frame(width: isSmall && smallWidth > 0 ? smallWidth : nil)
@@ -137,7 +106,7 @@ struct WidgetInfoSheet<Preview: View>: View {
     @ViewBuilder
     private var chipsRow: some View {
         FlowLayout(spacing: DS.Spacing.sm) {
-            ForEach(content.chips(draftSize)) { chip in
+            ForEach(content.chips(shownSize)) { chip in
                 WidgetInfoChipView(chip: chip)
             }
         }
@@ -146,7 +115,7 @@ struct WidgetInfoSheet<Preview: View>: View {
     @ViewBuilder
     private var sectionsBlock: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            ForEach(content.sections(draftSize)) { section in
+            ForEach(content.sections(shownSize)) { section in
                 VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(section.question)
                         .font(DS.Typography.headline)
@@ -162,17 +131,69 @@ struct WidgetInfoSheet<Preview: View>: View {
         }
     }
 
-    private func sizeLabel(_ size: WidgetSize) -> String {
-        switch size {
-        case .small:  return L10n.Panel.WidgetSize.small
-        case .medium: return L10n.Panel.WidgetSize.medium
-        case .large:  return L10n.Panel.WidgetSize.large
+    // MARK: - Con tus datos (UX 2.2 · L3-7, opción B)
+
+    private func yourDataBlock(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(L10n.Panel.WidgetInfo.YourData.title)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+            Text(text)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("widget_info_your_data")
     }
 
-    private func persistDraftToViewModel() {
-        guard didLoadInitialSize, let viewModel, let widgetType else { return }
-        viewModel.setWidgetSize(widgetType, size: draftSize)
+    /// Lo que el widget dice HOY con los datos de la persona, o `nil` si no hay un dato que contar (sin movimientos,
+    /// o un widget cuya ayuda genérica ya basta).
+    private var personalLine: String? {
+        guard let viewModel, isInPanel else { return nil }
+        let currency = viewModel.defaultCurrencyCode
+        // La marca de aproximado viaja con el número, como en el resto del Panel.
+        func money(_ value: Double, isEstimate: Bool = false) -> String {
+            appPreferences.currency(value, currencyCode: currency, isEstimate: isEstimate)
+        }
+        switch kind {
+        case .trend:
+            guard !viewModel.accounts.isEmpty else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.trend(
+                money(viewModel.panelTotalBalance, isEstimate: viewModel.panelTotalBalanceIsApproximate)
+            )
+        case .cashFlow:
+            let period = viewModel.heroPeriodWidget
+            guard period.income != 0 || period.expense != 0 else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.cashFlow(
+                income: money(period.income, isEstimate: period.incomeApproximate),
+                expense: money(period.expense, isEstimate: period.expenseApproximate)
+            )
+        case .categoriesPie, .topCategories:
+            guard let top = viewModel.categoriesWidget.topSpendingCategories.first, top.amount != 0 else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.topSpending(name: top.category.name, amount: money(abs(top.amount)))
+        case .subcategoriesPie, .topSubcategories:
+            guard let top = viewModel.subcategoriesWidget.topSubcategories.first, top.amount != 0 else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.topSpending(name: top.subcategoryName, amount: money(abs(top.amount)))
+        case .tagsPie:
+            guard let top = viewModel.tagsWidget.topTags.first, top.amount != 0 else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.topTag(name: top.tag.name, amount: money(abs(top.amount)))
+        case .scheduledPayments:
+            let data = viewModel.scheduledPaymentsWidget
+            guard data.activeCount > 0 else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.scheduled(total: money(data.monthlyTotal), pending: data.pendingCount)
+        case .weekdayBar:
+            guard let top = viewModel.weekdayWidget.weekdaySpending.max(by: { $0.average < $1.average }),
+                  top.average > 0 else { return nil }
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.locale = AppLocale.current
+            let symbols = calendar.weekdaySymbols
+            guard (1...symbols.count).contains(top.weekday) else { return nil }
+            return L10n.Panel.WidgetInfo.YourData.weekday(symbols[top.weekday - 1])
+        case .budgets, .recentRecords, .exchangeRate, .expensesByNeed, .periodComparison, .sankey:
+            return nil
+        }
     }
 }
 

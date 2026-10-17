@@ -260,6 +260,10 @@ enum L10n {
     enum PanelAccountCard {
         static var balance: String { ls("panel.accounts.card.balance", comment: "Label above the amount on a Panel account card") }
         static var toPay: String { ls("panel.accounts.card.toPay", comment: "Label above the amount on a credit card account with debt") }
+        /// Etiqueta de la tarjeta (y del chip) de la cuenta que filtra el Panel (UX 2.2 · L3-16).
+        static var filtering: String { ls("panel.accounts.card.filtering", comment: "Tag on the account card that is filtering the Panel") }
+        /// Chip «Agregar» al final de la fila de cuentas de «Tus finanzas» (UX 2.2 · L3-9, variante 3).
+        static var addChip: String { ls("panel.accounts.addChip", comment: "Last chip in the Panel account chips row: adds an account") }
         static func spentInPeriod(_ period: String) -> String {
             String(format: ls("panel.accounts.card.spentInPeriod %@", comment: "Label above the amount in expenses-only mode"), period)
         }
@@ -275,6 +279,12 @@ enum L10n {
         static func chartLabel(account: String, period: String) -> String {
             String(format: ls("accountDetail.chartLabel %@ %@", comment: "Accessibility label of the balance chart"), account, period)
         }
+        // UX 2.2 · L3-11: la cuenta del saldo en la ficha.
+        static func balanceOn(_ date: String) -> String {
+            String(format: ls("accountDetail.balanceOn", comment: "Account sheet, balance equation: balance on a date. %@ = date"), date)
+        }
+        static var balanceToday: String { ls("accountDetail.balanceToday", comment: "Account sheet, balance equation: last line when the period runs until today") }
+        static var equationTitle: String { ls("accountDetail.equationTitle", comment: "Account sheet: heading of the balance equation for the period") }
     }
 
     /// Varias ventanas (iPad, iPhone Duo abierto): fase 4 del carril adaptativo.
@@ -361,6 +371,28 @@ enum L10n {
         // MARK: - Panel Polish #2 — Widget Info Sheets (sheet pedagógica)
 
         enum WidgetInfo {
+            /// «Con tus datos»: la línea del «?» con los números de la persona (UX 2.2 · L3-7, opción B).
+            enum YourData {
+                static var title: String { ls("panel.widgetInfo.yourData.title", comment: "Widget help sheet: heading of the line with the user's own numbers") }
+                static func trend(_ total: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.trend", comment: "Widget help, balance chart: what the user has today. %@ = amount"), total)
+                }
+                static func cashFlow(income: String, expense: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.cashFlow", comment: "Widget help, cash flow: income and expenses of the period. %1$@ = income, %2$@ = expenses"), income, expense)
+                }
+                static func topSpending(name: String, amount: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.topSpending", comment: "Widget help, spending breakdown: where the user spends most. %1$@ = category, %2$@ = amount"), name, amount)
+                }
+                static func topTag(name: String, amount: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.topTag", comment: "Widget help, tags: tag with most spending. %1$@ = tag, %2$@ = amount"), name, amount)
+                }
+                static func scheduled(total: String, pending: Int) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.scheduled", comment: "Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count"), total, pending)
+                }
+                static func weekday(_ day: String) -> String {
+                    String(format: ls("panel.widgetInfo.yourData.weekday", comment: "Widget help, weekday chart: the day with the highest average spending. %@ = weekday name"), day)
+                }
+            }
             static var addToPanel: String {
                 ls("panel.widgetInfo.addToPanel", comment: "Panel Polish #2 — CTA en sheet pedagógica para restaurar widget oculto")
             }
@@ -704,6 +736,14 @@ enum L10n {
             static var title: String { ls("panel.sectionsConfig.title", comment: "Panel sections config sheet title") }
             static var footer: String { ls("panel.sectionsConfig.footer", comment: "Footer hint in Panel sections config") }
             static var emptySection: String { ls("panel.sectionsConfig.emptySection", comment: "Subtitle shown when every widget in a section is individually hidden") }
+            // UX 2.2 · L3-6: qué hay en cada sección.
+            static var descAccounts: String { ls("panel.sectionsConfig.desc.accounts", comment: "Panel sections config: what the accounts section shows") }
+            static var descHealth: String { ls("panel.sectionsConfig.desc.health", comment: "Panel sections config: what the financial health section shows") }
+            static var descTrends: String { ls("panel.sectionsConfig.desc.trends", comment: "Panel sections config: what the trends section shows") }
+            static var descDistribution: String { ls("panel.sectionsConfig.desc.distribution", comment: "Panel sections config: what the distribution section shows") }
+            static var descPlanning: String { ls("panel.sectionsConfig.desc.planning", comment: "Panel sections config: what the planning section shows") }
+            static var descLatestRecords: String { ls("panel.sectionsConfig.desc.latestRecords", comment: "Panel sections config: what the latest records section shows") }
+            static var descTools: String { ls("panel.sectionsConfig.desc.tools", comment: "Panel sections config: what the tools section shows") }
             static func restoreWidgets(_ name: String) -> String {
                 String(format: ls("panel.sectionsConfig.restoreWidgets %@", comment: "Button/accessibility label to restore all widgets of a section"), name)
             }
@@ -782,6 +822,25 @@ enum L10n {
             }
             static var budgetCTACreate: String {
                 ls("panel.health.budget.cta.create", comment: "CTA label: Create first budget")
+            }
+            // UX 2.2 · L3-13: con presupuestos creados este mes, la nota de presupuestos aún no cuenta.
+            static var budgetHeadlineStartsNextMonth: String {
+                ls("panel.health.budget.headline.startsNextMonth", comment: "Health budget sheet when budgets exist but none counts yet")
+            }
+            // UX 2.2 · L3-14: de dónde sale la nota.
+            static func partTitle(_ name: String, weight: Int) -> String {
+                String(format: ls("panel.health.part.title", comment: "Health breakdown row: part name and its weight. %1$@ = name, %2$d = percent"), name, weight)
+            }
+            static var partBudget: String { ls("panel.health.part.budget", comment: "Health breakdown: what the budgets part measures") }
+            static var partActivity: String { ls("panel.health.part.activity", comment: "Health breakdown: what the rhythm part measures") }
+            static var partBills: String { ls("panel.health.part.bills", comment: "Health breakdown: what the commitments part measures") }
+            static var partNotCounting: String { ls("panel.health.part.notCounting", comment: "Health breakdown: a part without data, so it does not count") }
+            static var improveBudget: String { ls("panel.health.improve.budget", comment: "Health: what would raise the score most (budgets)") }
+            static var improveActivity: String { ls("panel.health.improve.activity", comment: "Health: what would raise the score most (rhythm)") }
+            static var improveBills: String { ls("panel.health.improve.bills", comment: "Health: what would raise the score most (commitments)") }
+            static var improveNothing: String { ls("panel.health.improve.nothing", comment: "Health: all three parts are fine") }
+            static func floorNote(_ floor: Int) -> String {
+                String(format: ls("panel.health.floorNote", comment: "Health: the total never goes below this number. %d = floor"), floor)
             }
 
             // MARK: Detail sheet — Activity.
@@ -872,6 +931,38 @@ enum L10n {
             static var availableLabel: String {
                 ls("panel.hero.availableLabel", comment: "Hero — available amount label, composed with period display name")
             }
+
+            // UX 2.2 · L3-1/L3-2/L3-3: el rótulo dice qué mide la cifra y una línea dice de dónde sale.
+            static func balanceOfMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.balanceOfMonth", comment: "Panel hero label: income minus expenses of a named month. %@ = month name"), month)
+            }
+            static func expensesOfMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.expensesOfMonth", comment: "Panel hero label when only expenses are shown. %@ = month name"), month)
+            }
+            static func incomeOfMonth(_ month: String) -> String {
+                String(format: ls("panel.hero.incomeOfMonth", comment: "Panel hero label when only income is shown. %@ = month name"), month)
+            }
+            static func flowCaption(income: String, expense: String) -> String {
+                String(format: ls("panel.hero.flowCaption", comment: "Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses"), income, expense)
+            }
+            static var noMovements: String {
+                ls("panel.hero.noMovements", comment: "Line under the panel hero when the period has no income or expenses yet")
+            }
+            static func totalInAccounts(_ amount: String) -> String {
+                String(format: ls("panel.hero.totalInAccounts", comment: "Second line under the panel hero with no movements: the money in the accounts. %@ = amount"), amount)
+            }
+            static var seeDetail: String {
+                ls("panel.hero.seeDetail", comment: "Small hint next to the panel hero label: tapping opens Statistics")
+            }
+            static var onlyExpensesChip: String {
+                ls("panel.hero.onlyExpensesChip", comment: "Chip under the panel hero while the expenses-only filter is on")
+            }
+            static var onlyIncomeChip: String {
+                ls("panel.hero.onlyIncomeChip", comment: "Chip under the panel hero while the income-only filter is on")
+            }
+            static var clearNatureFilter: String {
+                ls("panel.hero.clearNatureFilter", comment: "VoiceOver label of the chip that removes the income/expense filter")
+            }
         }
         static var totalBalance: String {
             ls("panel.totalBalance", comment: "Total balance label")
@@ -885,6 +976,20 @@ enum L10n {
         /// Píldora de IA en la fila de acciones del Panel. Clave propia y no la
         /// de `cashFlowPlan`: misma palabra hoy, pero acoplar dos pantallas por
         /// un literal es cómo acaban cambiando juntas sin querer.
+        /// Nombre de la línea discontinua de la gráfica de saldo (UX 2.2 · L3-17). %@ = cifra corta («99K»).
+        static func trendAverageLabel(_ value: String) -> String {
+            String(format: ls("panel.trend.averageLabel", comment: "Balance chart: label of the dashed average line. %@ = short amount"), value)
+        }
+        /// La cola de avisos del Panel (UX 2.2 · L3-8).
+        enum Notices {
+            static func position(_ index: Int, _ total: Int) -> String {
+                String(format: ls("panel.notices.position", comment: "Panel notices pager: which notice of how many. %1$d = position, %2$d = total"), index, total)
+            }
+            static var next: String { ls("panel.notices.next", comment: "Panel notices pager: button that shows the next notice") }
+        }
+        /// Botón rosa del Panel sin cuentas, en lugar de la fila de acciones apagada (UX 2.2 · L3-10).
+        static var createFirstAccount: String { ls("panel.createFirstAccount", comment: "Panel with no accounts: pink button that creates the first account") }
+        static var createFirstAccountHint: String { ls("panel.createFirstAccountHint", comment: "Line under the create-first-account button on the Panel") }
         static var aiPill: String { ls("panel.aiPill", comment: "Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale)") }
 
         /// Palabra bajo el icono de voz y de foto en la fila de acciones del Panel (UX 2.2 · L4-1). Corta a
@@ -1007,6 +1112,9 @@ enum L10n {
             static var breakdownToggle: String {
                 ls("panel.liveAnchorEducation.breakdownToggle", comment: "Section header above the per-currency rows: 'By currency'")
             }
+            /// UX 2.2 · L3-15: título de la suma moneda por moneda, y la segunda frase de la explicación corta.
+            static var sumTitle: String { ls("panel.liveAnchorEducation.sumTitle", comment: "Live balance sheet: heading of the per-currency sum") }
+            static var bodyShortWhy: String { ls("panel.liveAnchorEducation.bodyShortWhy", comment: "Live balance sheet: why the balance moves on its own (second sentence)") }
             static func breakdownRowConvertedFormat(_ converted: String) -> String {
                 String(format: ls("panel.liveAnchorEducation.breakdownRowConvertedFormat", comment: "Per-row conversion suffix, e.g. '≈ S/ 1,140 hoy'"), converted)
             }
@@ -1687,6 +1795,8 @@ enum L10n {
     enum Filters {
         static var title: String { ls("filters.title", comment: "") }
         static var all: String { ls("filters.all", comment: "") }
+        /// «Todas» para cuentas, categorías, etiquetas y monedas (UX 2.2 · L3-5): en español salía «Categorías (Todos)».
+        static var allFeminine: String { ls("filters.allFeminine", comment: "Filter status when nothing narrows a feminine noun list (accounts, categories, tags, currencies)") }
         static var allAccounts: String { ls("filters.allAccounts", comment: "") }
         static var allCategories: String { ls("filters.allCategories", comment: "") }
         static var clearFilters: String { ls("filters.clearFilters", comment: "") }
@@ -1747,6 +1857,8 @@ enum L10n {
         static var currency: String { ls("filters.currency", comment: "") }
         static var includeMode: String { ls("filters.includeMode", comment: "") }
         static var excludeMode: String { ls("filters.excludeMode", comment: "") }
+        static var includeModeExplanation: String { ls("filters.includeModeExplanation", comment: "Filters sheet: what the include mode does") }
+        static var excludeModeExplanation: String { ls("filters.excludeModeExplanation", comment: "Filters sheet: what the exclude mode does") }
         static var nothingExcluded: String { ls("filters.nothingExcluded", comment: "") }
         static func datePrefix(_ date: String) -> String { String(format: ls("filters.datePrefix %@", comment: ""), date) }
     }
@@ -2911,6 +3023,9 @@ enum L10n {
     enum AIConsent {
         static var processingTitle: String { ls("aiConsent.processingTitle", comment: "") }
         static var processingMessage: String { ls("aiConsent.processingMessage", comment: "") }
+        /// Botón principal del aviso de voz y foto (UX 2.2 · L4-2). Propio: el «Aceptar y activar» lo comparten el chat y
+        /// el resumen inteligente.
+        static var processingAccept: String { ls("aiConsent.processingAccept", comment: "Primary button of the voice/photo AI notice") }
         static var insightsTitle: String { ls("aiConsent.insightsTitle", comment: "") }
         static var insightsMessage: String { ls("aiConsent.insightsMessage", comment: "") }
         static var accept: String { ls("aiConsent.accept", comment: "") }
@@ -6730,6 +6845,25 @@ enum L10n {
         /// Aviso tras descartar desde el editor, con su botón para deshacerlo.
         static var movedToArchived: String { ls("inbox.draft.movedToArchived", comment: "Toast after discarding a draft") }
         static var undoDiscard: String { ls("inbox.draft.undo", comment: "Toast button — undo the discard") }
+        /// Editor de un descartado: «Lo descartaste el 13 oct.» (UX 2.2 · L4-9).
+        static func discardedOn(_ date: String) -> String {
+            String(format: ls("inbox.draft.discardedOn", comment: "Draft editor of a discarded draft: when it was discarded. %@ = short date"), date)
+        }
+        /// La frase fija bajo el título de la Bandeja (UX 2.2 · L4-8).
+        static var explainer: String { ls("inbox.explainer", comment: "Fixed line under the Inbox title: what lands here") }
+        /// «Guardar los N listos» (UX 2.2 · L4-7).
+        static func saveReady(_ count: Int) -> String {
+            String(format: ls("inbox.saveReady", comment: "Inbox button above the list: save every ready draft at once. %d = count (2 or more)"), count)
+        }
+        static func saveReadyConfirmTitle(_ count: Int) -> String {
+            String(format: ls("inbox.saveReady.confirmTitle", comment: "Confirmation before saving every ready draft. %d = count"), count)
+        }
+        static var saveReadyConfirmMessage: String { ls("inbox.saveReady.confirmMessage", comment: "Confirmation message before saving every ready draft") }
+        static var saveReadyConfirmButton: String { ls("inbox.saveReady.confirmButton", comment: "Confirmation button: save them") }
+        /// En la pantalla final, lo que no se guardó y por qué (UX 2.2 · L4-7).
+        static func stillPending(_ count: Int) -> String {
+            String(format: ls("inbox.stillPending", comment: "Bulk save success: how many drafts are still pending. %d = count"), count)
+        }
         /// Bajo «N transacciones creadas»: «S/ 60.50 en total» (UX 2.2 · L4-13).
         static func bulkSuccessTotal(_ amount: String) -> String {
             String(format: ls("inbox.bulkSuccess.total", comment: "Bulk approve success — total saved, e.g. «S/ 60.50 en total»"), amount)
@@ -6816,15 +6950,6 @@ enum L10n {
 
         static func pendingBadge(_ count: Int) -> String {
             String(format: ls("inbox.pendingBadge", comment: ""), count)
-        }
-        static var subtitleAllDone: String {
-            ls("inbox.subtitleAllDone", comment: "")
-        }
-        static var subtitleOnePending: String {
-            ls("inbox.subtitleOnePending", comment: "")
-        }
-        static func subtitleMultiplePending(_ count: Int) -> String {
-            String(format: ls("inbox.subtitleMultiplePending", comment: ""), count)
         }
     }
 
@@ -6928,6 +7053,8 @@ enum L10n {
         static var failureNoVoiceTitle: String { ls("voice.failure.noVoice.title", comment: "") }
         static var failureNoVoiceMessage: String { ls("voice.failure.noVoice.message", comment: "") }
         static var failureNoAmountTitle: String { ls("voice.failure.noAmount.title", comment: "") }
+        /// Salida a mano cuando la voz o la foto no pueden (UX 2.2 · L4-3).
+        static var enterManually: String { ls("voice.enterManually", comment: "Secondary button when voice/photo fails: open the manual entry form") }
         static var failureNoAmountMessage: String { ls("voice.failure.noAmount.message", comment: "") }
         static var failureGenericTitle: String { ls("voice.failure.generic.title", comment: "") }
         static var failureGenericMessage: String { ls("voice.failure.generic.message", comment: "") }
@@ -7074,6 +7201,11 @@ enum L10n {
                     : String(format: ls("image.entry.photoFailedMany", comment: ""), count)
             }
             static var otherPhoto: String { ls("image.entry.otherPhoto", comment: "") }
+            /// Qué contraseña pide un PDF del banco (UX 2.2 · L4-15).
+            static var passwordHint: String { ls("image.entry.passwordHint", comment: "Hint under the PDF password message: which password it usually is") }
+            /// iPad: soltar un recibo (UX 2.2 · L4-11).
+            static var dropHint: String { ls("image.entry.dropHint", comment: "Hint in the photo/file sheet on iPad: you can drop a receipt on the window") }
+            static var dropToRead: String { ls("image.entry.dropToRead", comment: "Label shown while dragging a file over the window") }
             static var cancelReading: String { ls("image.entry.cancelReading", comment: "") }
             static var failureNoAmountTitle: String { ls("image.entry.failure.noAmount.title", comment: "") }
             static var failureNoAmountMessage: String { ls("image.entry.failure.noAmount.message", comment: "") }

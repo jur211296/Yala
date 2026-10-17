@@ -68,7 +68,7 @@ struct InboxDraftRowView: View {
 
     /// La etiqueta de siempre y, en el aviso de importe cambiado, su segunda línea: sin ella VoiceOver no dice qué cambió.
     private var accessibilityText: String {
-        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status))
+        let base = L10n.Accessibility.draftRow(draft.note.isEmpty ? L10n.Inbox.noDescription : draft.note, draft.amount.map { appPreferences.currency($0, currencyCode: currencyCode) } ?? L10n.Inbox.noAmount, L10n.Inbox.status(draft.status)) + ", " + draft.sourceDisplayName
         guard let detail = settlementAmountChangeDetail(accountName: draft.displayAccountName ?? "") else { return base }
         return "\(base), \(detail)"
     }
@@ -116,6 +116,26 @@ struct InboxDraftRowView: View {
                 tagsRow(resolvedTags)
             }
         }
+
+        originLabel
+    }
+
+    /// De dónde llegó el borrador (UX 2.2 · L4-8): «¿de dónde salió esto?» es lo primero que se pregunta ante un gasto
+    /// que no se apuntó a mano. Antes solo la fila incompleta enseñaba su origen, y solo con un icono.
+    private var originLabel: some View {
+        HStack(spacing: DS.Spacing.xxs) {
+            Image(systemName: draft.sourceIcon)
+                .font(DS.Typography.captionSmall)
+                .accessibilityHidden(true)
+            Text(draft.sourceDisplayName)
+                .font(DS.Typography.captionSmall)
+                .lineLimit(1)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Capsule().fill(Color.secondary.opacity(0.12)))
+        .accessibilityIdentifier("inbox_draft_origin")
     }
 
     /// Segunda línea del aviso de importe cambiado pendiente: la cuenta de la transacción y lo que tiene ahora, leídos por
@@ -157,6 +177,8 @@ struct InboxDraftRowView: View {
             missingFieldsRow
         }
 
+        originLabel
+
         // Line 3: Date
         Text(formattedDate)
             .font(DS.Typography.caption)
@@ -172,7 +194,7 @@ struct InboxDraftRowView: View {
                     value: amount,
                     currencyCode: currencyCode,
                     font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    tint: .color(amount >= 0 ? Color.electricIndigo : Color.hotPink),
+                    tint: .color(Color.amountTint(isIncome: amount >= 0)),
                     forceFullPrecision: true
                 )
             } else {
@@ -383,16 +405,7 @@ struct InboxDraftRowView: View {
     }
 
     private func localizedFieldName(_ field: String) -> String {
-        switch field {
-        case "account":
-            return L10n.Inbox.needsAccount
-        case "subcategory":
-            return L10n.Inbox.needsSubcategory
-        case "amount":
-            return L10n.Inbox.noAmount
-        default:
-            return field
-        }
+        InboxDraft.localizedMissingField(field)
     }
 
     // MARK: - Helpers

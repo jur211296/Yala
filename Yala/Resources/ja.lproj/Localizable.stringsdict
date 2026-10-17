@@ -619,7 +619,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%1$d/%2$d件が承認可能</string>
+			<string>%1$d/%2$d件を保存できます</string>
 		</dict>
 	</dict>
 	<key>inbox.alert.message.scheduled</key>

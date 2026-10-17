@@ -26,6 +26,10 @@ struct PanelQuickActionsRow: View {
     /// Gate de "ya hay una cuenta creada". Con `false` el Panel no ofrece
     /// registrar nada, igual que `FABStackView` cae a su estado deshabilitado.
     let canCreateRecords: Bool
+    /// Sin ninguna cuenta activa, la fila apagada se sustituye por la salida (UX 2.2 · L3-10, variante 2): un botón
+    /// rosa relleno «Crea tu primera cuenta». Con cuentas pero sin subcategorías visibles la fila sigue apagada.
+    var hasAccounts: Bool = true
+    var onCreateFirstAccount: () -> Void = {}
     let isVoiceLocked: Bool
     let isImageLocked: Bool
     let isChatLocked: Bool
@@ -45,6 +49,51 @@ struct PanelQuickActionsRow: View {
     private static let pillHeight: CGFloat = 44
 
     var body: some View {
+        if hasAccounts {
+            actionsRow
+        } else {
+            createFirstAccount
+        }
+    }
+
+    // MARK: - Sin cuentas (UX 2.2 · L3-10)
+
+    /// Es el paso donde la persona se atasca: antes veía la fila en gris sin ninguna explicación y «Nueva cuenta»
+    /// solo aparecía al desplegar «Tus finanzas». Relleno rosa de marca (`emphasisPinkFill`, AA con blanco), sin
+    /// degradado ni brillo, y una línea de invitación debajo.
+    private var createFirstAccount: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Button(action: onCreateFirstAccount) {
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "creditcard.fill")
+                        .font(DS.Typography.label)
+                        .accessibilityHidden(true)
+                    Text(L10n.Panel.createFirstAccount)
+                        .font(DS.Typography.label)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .foregroundStyle(Color.white)
+                .padding(.horizontal, DS.Spacing.lg)
+                .frame(minHeight: Self.pillHeight)
+                .background(Capsule().fill(Color.emphasisPinkFill))
+                .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(L10n.Panel.createFirstAccountHint)
+            .accessibilityIdentifier("panel_create_first_account")
+
+            Text(L10n.Panel.createFirstAccountHint)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityHidden(true)
+        }
+    }
+
+    // MARK: - Fila de acciones
+
+    private var actionsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
                 pill(

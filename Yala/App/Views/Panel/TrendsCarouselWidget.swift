@@ -89,8 +89,7 @@ struct TrendsCarouselWidget: View {
                 AmountText(
                     value: trendTotalForCurrentMetric,
                     currencyCode: currencyCode,
-                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption,
-                    forceSign: viewModel.trendType == .balance
+                    font: DS.Typography.headline, secondaryFont: DS.Typography.caption
                 )
 
                 TrendChartView(
@@ -133,8 +132,7 @@ struct TrendsCarouselWidget: View {
                         AmountText(
                             value: currentKPIValue,
                             currencyCode: currencyCode,
-                            font: DS.Typography.title,
-                            forceSign: viewModel.trendType == .balance
+                            font: DS.Typography.title
                         )
 
                         // Variation chip right of the "vs" label.

@@ -48,6 +48,13 @@ struct InboxView: View {
     // Archived account alert
     @State private var showArchivedAccountAlert = false
 
+    // «Guardar los N listos» (UX 2.2 · L4-7): confirmación y pantalla final.
+    @State private var showSaveReadyConfirmation = false
+    @State private var showSaveReadySuccess = false
+    @State private var saveReadyCount = 0
+    @State private var saveReadySummary = InboxBulkApproveSummaryLogic.Summary(total: nil, currencyCode: nil, accountName: nil)
+    @State private var saveReadyLeftover: String?
+
     // Group conversion flow (draft personal de gasto → SplitExpense de grupo). Approach A: el
     // edit sheet cierra y notifica; InboxView rutea. Un solo sheet activo a la vez (delays).
     @State private var pendingConversion: PendingConversion?
@@ -227,6 +234,14 @@ struct InboxView: View {
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.top, DS.Spacing.sm)
                         .padding(.bottom, DS.Spacing.md)
+
+                    // Lo común —guardar lo que ya está listo— a un toque (UX 2.2 · L4-7). Antes eran cuatro: ✓,
+                    // Seleccionar todo, Editar y Aprobar.
+                    if !isSelectionMode && selectedFilter == .pending && readyDrafts.count >= 2 {
+                        saveReadyButton
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.bottom, DS.Spacing.sm)
+                    }
 
                     // Bulk action hint (shown when 2+ pending drafts and not in selection mode).
                     // Sin contador: el badge del mini-hero ya transmite la cantidad.
@@ -501,6 +516,24 @@ struct InboxView: View {
             } message: {
                 Text(L10n.Inbox.errorArchivedAccount)
             }
+            .modifier(InboxSaveReadyPresentations(
+                showConfirmation: $showSaveReadyConfirmation,
+                showSuccess: $showSaveReadySuccess,
+                count: saveReadyCount,
+                confirmCount: readyDrafts.count,
+                summary: saveReadySummary,
+                leftover: saveReadyLeftover,
+                onConfirm: saveReadyDrafts,
+                onViewRecords: {
+                    showSaveReadySuccess = false
+                    onNavigateToRecords?()
+                    dismiss()
+                },
+                onBackToInbox: {
+                    showSaveReadySuccess = false
+                    dismissIfNoPendingDrafts()
+                }
+            ))
             .safeAreaInset(edge: .bottom) {
                 if isSelectionMode {
                     selectionBar
@@ -595,9 +628,12 @@ struct InboxView: View {
                         .padding(.vertical, DS.Spacing.xxs)
                         .background(Capsule().fill(theme.accent.opacity(0.15)))
                 }
-                Text(heroSubtitleText)
+                // Qué es la Bandeja, siempre (UX 2.2 · L4-8): antes «2 transacciones esperando, paso a paso».
+                Text(L10n.Inbox.explainer)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("inbox_explainer")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.lg)
@@ -612,19 +648,11 @@ struct InboxView: View {
         viewModel.countForFilter(.pending)
     }
 
-    private var heroSubtitleText: String {
-        switch InboxHeroSubtitleLogic.subtitle(pendingCount: pendingCount) {
-        case .allDone:                  return L10n.Inbox.subtitleAllDone
-        case .onePending:               return L10n.Inbox.subtitleOnePending
-        case .multiplePending(let n):   return L10n.Inbox.subtitleMultiplePending(n)
-        }
-    }
-
     private var heroAccessibilityLabel: String {
         if pendingCount > 0 {
-            return "\(L10n.Inbox.pendingBadge(pendingCount)). \(heroSubtitleText)"
+            return "\(L10n.Inbox.pendingBadge(pendingCount)). \(L10n.Inbox.explainer)"
         }
-        return heroSubtitleText
+        return L10n.Inbox.explainer
     }
 
     // MARK: - Filter Chips
@@ -732,7 +760,10 @@ struct InboxView: View {
         .listRowSeparator(.hidden)
         .listRowInsets(EdgeInsets(top: DS.Spacing.xs, leading: DS.Spacing.lg, bottom: DS.Spacing.xs, trailing: DS.Spacing.lg))
         // «Quitar de aquí» no va con deslizamiento completo: no tiene «deshacer», y un gesto largo accidental lo escondería.
-        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && (selectedFilter == .pending || draft.status == .rejected)
+        // Deslizar del todo DESCARTA (va a Archivados, se puede deshacer); borrar para siempre es la segunda acción y
+        // pide un toque a propósito (UX 2.2 · L4-6). En Archivados no hay deslizamiento completo: ahí la única acción
+        // es borrar para siempre.
+        .swipeActions(edge: .trailing, allowsFullSwipe: !isSelectionMode && selectedFilter == .pending
                       && !viewModel.canHideHere(draft)) {
             if !isSelectionMode {
                 if selectedFilter == .pending && viewModel.canHideHere(draft) {
@@ -747,8 +778,16 @@ struct InboxView: View {
                     .accessibilityHint(L10n.Inbox.hideHereHint)
                     .accessibilityIdentifier("inbox_hide_here")
                 } else if selectedFilter == .pending {
-                    // Pending: Delete + Reject. El aviso de importe cambiado no se borra (`DraftService.deleteDraft`):
-                    // rechazarlo es «dejarla como está».
+                    // Pending: Descartar (primera: la del deslizamiento completo) + Eliminar. El aviso de importe
+                    // cambiado no se borra (`DraftService.deleteDraft`): descartarlo es «dejarla como está».
+                    Button {
+                        rejectDraft(draft)
+                    } label: {
+                        Label(L10n.Inbox.reject, systemImage: "archivebox")
+                    }
+                    .tint(DS.Semantic.warningForeground)
+                    .accessibilityIdentifier("inbox_swipe_reject")
+
                     if !draft.isSettlementAmountChangeNotice {
                         Button {
                             deleteDraftPermanently(draft)
@@ -756,15 +795,8 @@ struct InboxView: View {
                             Label(L10n.Inbox.delete, systemImage: "trash")
                         }
                         .tint(DS.Semantic.errorForeground)
+                        .accessibilityIdentifier("inbox_swipe_delete")
                     }
-
-                    Button {
-                        rejectDraft(draft)
-                    } label: {
-                        Label(L10n.Inbox.reject, systemImage: "xmark.circle")
-                    }
-                    .tint(DS.Semantic.warningForeground)
-                    .accessibilityIdentifier("inbox_swipe_reject")
                 } else if draft.status == .rejected && !draft.isSettlementAmountChangeNotice {
                     // Archived (rejected only): Delete
                     Button {
@@ -821,9 +853,86 @@ struct InboxView: View {
 
     // MARK: - Actions
 
+    /// Descartar deslizando dice a dónde fue y deja deshacerlo (UX 2.2 · L4-6), con el mismo aviso que el editor.
     private func rejectDraft(_ draft: InboxDraft) {
-        removeDraftWithAnimation(draft, hapticStyle: .light) { service, d in
+        removeDraftWithAnimation(draft, hapticStyle: .light, onPersisted: { showDiscardedNotice(for: draft) }) { service, d in
             try service.rejectDraft(d)
+        }
+    }
+
+    private func showDiscardedNotice(for draft: InboxDraft) {
+        let draftService = draftService
+        let context = modelContext
+        let viewModel = viewModel
+        DraftDiscardUndoNotice.show {
+            guard !draft.isDeleted, draft.status == .rejected else { return }
+            draftService.setContext(context)
+            do {
+                try draftService.returnToPending(draft)
+            } catch {
+                #if DEBUG
+                print("InboxView: Error undoing discard: \(error)")
+                #endif
+            }
+            viewModel.loadData()
+        }
+    }
+
+    // MARK: - Guardar los listos (UX 2.2 · L4-7)
+
+    private var readyDrafts: [InboxDraft] {
+        InboxSaveReadyLogic.ready(viewModel.filteredDrafts(for: .pending))
+    }
+
+    private var saveReadyButton: some View {
+        Button {
+            showSaveReadyConfirmation = true
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                Image(systemName: "checkmark.circle.fill")
+                    .accessibilityHidden(true)
+                Text(L10n.Inbox.saveReady(readyDrafts.count))
+            }
+            .font(DS.Typography.headline)
+            .foregroundStyle(Color.white)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.vertical, DS.Spacing.xs)
+            .background(Capsule().fill(Color.selectedIndigoFill))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("inbox_save_ready")
+    }
+
+    private func saveReadyDrafts() {
+        let ready = readyDrafts
+        guard !ready.isEmpty else { return }
+        if ready.contains(where: { $0.account?.isArchived == true }) {
+            showArchivedAccountAlert = true
+            return
+        }
+        draftService.setContext(modelContext)
+        do {
+            let transactions = try draftService.bulkApprove(ready, currencyConverter: currencyConverter)
+            viewModel.loadData()
+            saveReadyCount = transactions.count
+            saveReadySummary = InboxBulkApproveSummaryLogic.summary(
+                of: transactions.map {
+                    .init(amount: $0.amount, currencyCode: $0.currencyCode, accountName: $0.account?.name)
+                }
+            )
+            saveReadyLeftover = InboxSaveReadyLogic.leftoverLine(viewModel.filteredDrafts(for: .pending))
+            guard !transactions.isEmpty else { return }
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            // La alerta de confirmación se está cerrando: la hoja de éxito espera a que termine (mismo anchor).
+            Task {
+                do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
+                showSaveReadySuccess = true
+            }
+        } catch {
+            #if DEBUG
+            print("InboxView: Error saving ready drafts: \(error)")
+            #endif
         }
     }
 
@@ -850,6 +959,7 @@ struct InboxView: View {
     private func removeDraftWithAnimation(
         _ draft: InboxDraft,
         hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle,
+        onPersisted: (() -> Void)? = nil,
         persist: @escaping (DraftService, InboxDraft) throws -> Void
     ) {
         UIImpactFeedbackGenerator(style: hapticStyle).impactOccurred()
@@ -865,6 +975,7 @@ struct InboxView: View {
             draftService.setContext(modelContext)
             do {
                 try persist(draftService, draft)
+                onPersisted?()
             } catch {
                 #if DEBUG
                 print("InboxView: Error persisting draft removal: \(error)")
@@ -986,4 +1097,39 @@ struct InboxView: View {
     InboxView()
         .modelContainer(for: InboxDraft.self, inMemory: true)
         .previewAppPreferences()
+}
+
+// MARK: - Guardar los listos: confirmación y pantalla final (UX 2.2 · L4-7)
+
+/// Aparte del cuerpo de `InboxView`, que ya está al límite de lo que el compilador del CI tipa.
+private struct InboxSaveReadyPresentations: ViewModifier {
+    @Binding var showConfirmation: Bool
+    @Binding var showSuccess: Bool
+    let count: Int
+    let confirmCount: Int
+    let summary: InboxBulkApproveSummaryLogic.Summary
+    let leftover: String?
+    let onConfirm: () -> Void
+    let onViewRecords: () -> Void
+    let onBackToInbox: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.Inbox.saveReadyConfirmTitle(confirmCount), isPresented: $showConfirmation) {
+                Button(L10n.Inbox.saveReadyConfirmButton) { onConfirm() }
+                    .accessibilityIdentifier("inbox_save_ready_confirm")
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Inbox.saveReadyConfirmMessage)
+            }
+            .sheet(isPresented: $showSuccess) {
+                InboxBulkApproveSuccessView(
+                    approvedCount: count,
+                    summary: summary,
+                    leftoverLine: leftover,
+                    onViewRecords: onViewRecords,
+                    onBackToInbox: onBackToInbox
+                )
+            }
+    }
 }

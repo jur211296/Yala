@@ -160,6 +160,9 @@ final class FeatureGateService {
 
 extension L10n {
     enum FeatureGate {
+        /// Qué hace la función, con un ejemplo, en la puerta Pro (UX 2.2 · L4-12).
+        static var voiceExample: String { NSLocalizedString("featureGate.voiceExample", comment: "Pro gate for voice input: one example of what it does") }
+        static var imageExample: String { NSLocalizedString("featureGate.imageExample", comment: "Pro gate for photo input: one example of what it does") }
         // Feature names
         static var accounts: String {
             NSLocalizedString("featureGate.accounts", comment: "Accounts feature name")

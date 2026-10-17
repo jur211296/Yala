@@ -70,7 +70,7 @@
 "panel.health.subScore.bills" = "コミットメント";
 // Detail sheet — Total
 "panel.health.total.sheet.title" = "金融の健全性";
-"panel.health.total.sheet.explanation" = "3つの要素を組み合わせています：予算、記録のリズム、期間内のコミットメント。それぞれの重みは異なり、適用されないものがあると再調整されます。";
+"panel.health.total.sheet.explanation" = "スコアは3つの要素から決まります。各要素の比重は横に表示。データがない要素の比重は他の要素で分け合います。";
 "panel.health.total.headline.high" = "絶好調です！";
 "panel.health.total.headline.mid" = "いいリズムですね";
 "panel.health.total.headline.low" = "小さな一歩から始めましょう";
@@ -218,8 +218,8 @@
 "filters.type" = "種別";
 "filters.need" = "性質";
 "filters.currency" = "通貨";
-"filters.includeMode" = "含める";
-"filters.excludeMode" = "除外";
+"filters.includeMode" = "選んだものだけ";
+"filters.excludeMode" = "非表示";
 "filters.nothingExcluded" = "なし";
 "filters.datePrefix %@" = "日付: %@";
 
@@ -1665,7 +1665,7 @@
 "accessibility.currenciesCount %d" = "通貨%d種類";
 "accessibility.cashFlowSummary %@ %@" = "収入%@、支出%@";
 "accessibility.selectAtLeastOneDraft" = "少なくとも1件のドラフトを選択してください";
-"accessibility.approveCompleteHint" = "承認するには口座、金額、カテゴリーを入力してください";
+"accessibility.approveCompleteHint" = "保存するには口座・金額・カテゴリを入力してください";
 "accessibility.updatingExchangeRates" = "為替レートを更新中";
 "accessibility.authenticating" = "認証中";
 "accessibility.showMoreSubcategories" = "サブカテゴリーをさらに表示";
@@ -1680,7 +1680,7 @@
 "accessibility.searchResultRow %@ %@ %@" = "%@、%@、%@";
 "accessibility.regeneratingInsights" = "インサイトを生成中、お待ちください";
 "accessibility.completeCalculation" = "結果を計算するには値を入力してください";
-"accessibility.noDraftsToApprove" = "承認できるドラフトはありません";
+"accessibility.noDraftsToApprove" = "保存できるドラフトはありません";
 "accessibility.categoriesLocked" = "選択したカテゴリーのサブカテゴリーを表示中";
 "accessibility.systemMonochromeIcons" = "システム設定によりモノクロアイコンになっています";
 "accessibility.maxCurrenciesSelected" = "通貨の選択上限に達しました";
@@ -2006,22 +2006,22 @@
 "inbox.missingLabel" = "未入力データ";
 "inbox.needsAccount" = "口座を選択";
 "inbox.needsSubcategory" = "サブカテゴリーを選択";
-"inbox.approve" = "承認";
+"inbox.approve" = "保存";
 "inbox.delete" = "削除";
 "inbox.noPending" = "保留中のドラフトはありません";
-"inbox.noPendingDescription" = "新しい音声や画像のドラフトはここに表示されます。";
+"inbox.noPendingDescription" = "Yalaが代わりに記録したもの（音声・写真・Apple Pay・Siri・予定支払い）がここに届きます。";
 "inbox.bulkHint" = "✓をタップすると複数選択できます";
-"inbox.status.rejected" = "却下済み";
-"inbox.status.approved" = "承認済み";
+"inbox.status.rejected" = "破棄済み";
+"inbox.status.approved" = "保存済み";
 "inbox.status.pending" = "保留中";
 "inbox.subtitleMultiplePending" = "%d件の取引が待機中、一歩ずつ進めましょう。";
 "inbox.subtitleOnePending" = "1件の取引が待機中、お時間のあるときに確認してください。";
 "inbox.subtitleAllDone" = "受信箱はゼロです、お疲れさまでした。";
 "inbox.newTag" = "新規";
 "inbox.noArchived" = "アーカイブ済みのドラフトはありません";
-"inbox.noArchivedDescription" = "承認・却下したドラフトはここに表示されます。";
+"inbox.noArchivedDescription" = "保存・破棄したものがここに表示されます。";
 "inbox.editDraft" = "ドラフトを編集";
-"inbox.cannotApprove" = "承認できません";
+"inbox.cannotApprove" = "保存できません";
 "inbox.sourceVoice" = "音声";
 "inbox.sourceEmail" = "メール";
 "inbox.sourceScreenshot" = "スクリーンショット";
@@ -2035,25 +2035,25 @@
 "inbox.errorNoAccount" = "口座を選択してください";
 "inbox.errorNoAmount" = "金額を入力してください";
 "inbox.errorNoSubcategory" = "サブカテゴリーを選択してください";
-"inbox.errorArchivedAccount" = "この口座はアーカイブされています。ドラフトを編集して口座を変更すると承認できます。";
-"inbox.errorFutureDate" = "未来の日付の取引は承認できません";
+"inbox.errorArchivedAccount" = "この口座はアーカイブ済みです。ドラフトを編集して別の口座を選ぶと保存できます。";
+"inbox.errorFutureDate" = "未来の日付の記録は保存できません";
 "inbox.duplicateWarningTitle" = "重複の可能性があります";
-"inbox.duplicateWarningMessage" = "似た取引がすでに存在します。それでも作成しますか？";
-"inbox.createAnyway" = "それでも作成";
-"inbox.saveLater" = "あとで承認";
+"inbox.duplicateWarningMessage" = "似た記録がすでにあります。それでも保存しますか？";
+"inbox.createAnyway" = "それでも保存";
+"inbox.saveLater" = "あとで";
 "inbox.deleteTitle" = "ドラフトを削除";
 "inbox.deleteMessage" = "この操作は取り消せません。";
-"inbox.reject" = "却下";
-"inbox.approveAll" = "すべて承認";
+"inbox.reject" = "破棄";
+"inbox.approveAll" = "すべて保存";
 "inbox.returnToPending" = "保留に戻す";
 "inbox.discardChangesTitle" = "変更を破棄しますか？";
 "inbox.discardChanges" = "破棄";
 "inbox.keepEditing" = "編集を続ける";
 "inbox.discardChangesMessage" = "保存されていない変更が失われます。";
-"inbox.approveSuccess" = "取引を作成しました";
-"inbox.approveNext" = "次を承認";
-"inbox.transactionCreated" = "件の取引を作成";
-"inbox.transactionsCreated" = "件の取引を作成";
+"inbox.approveSuccess" = "記録を保存しました";
+"inbox.approveNext" = "次を保存";
+"inbox.transactionCreated" = "件の記録を保存";
+"inbox.transactionsCreated" = "件の記録を保存";
 "inbox.viewInRecords" = "記録で表示";
 "inbox.backToInbox" = "受信箱に戻る";
 
@@ -2080,7 +2080,7 @@
 "image.reviewDraft" = "確認";
 "image.transactionsDetected" = "取引を検出しました";
 "image.goToInbox" = "受信箱へ";
-"image.transactionsDetectedMessage" = "%d件の取引を検出しました。受信箱で確認・承認できます。";
+"image.transactionsDetectedMessage" = "%d件の記録が見つかりました。受信トレイで確認して保存できます。";
 "image.analyzingIn" = "%d秒後に分析...";
 "image.imagesSelected" = "%d枚の画像を選択中";
 "image.youCanUpload" = "アップロード可能なもの:";
@@ -2531,7 +2531,7 @@
 "shortcut.notification.title" = "新しい自動記録";
 "shortcut.notification.expense" = "支出";
 "shortcut.notification.income" = "収入";
-"shortcut.notification.body" = "%2$@%3$@の%1$@が記録されました。アプリを開いて承認してください。";
+"shortcut.notification.body" = "%@（%@%@）を記録しました。Yalaを開いて確認・保存してください。";
 
 // MARK: - Category Seeds
 
@@ -2868,8 +2868,8 @@
 "aiPrivacy.policyLink" = "プライバシーポリシー";
 
 // MARK: - AI Consent
-"aiConsent.processingTitle" = "音声・画像の処理";
-"aiConsent.processingMessage" = "これらの機能はOpenAIを使ってデータを処理します：\n\n• 音声：録音した音声を文字起こしします\n• 画像：写真（レシートやスクリーンショット）を分析して支出データを抽出します\n\nその時に送信した内容のみが処理されます。OpenAIはこのデータをモデルの学習に使用しません。";
+"aiConsent.processingTitle" = "Yalaが代わりに記録します";
+"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービス（OpenAI）に送ります。AIの学習には使われません。";
 "aiConsent.insightsTitle" = "スマート概要";
 "aiConsent.insightsMessage" = "この機能は家計の概要（カテゴリ別の合計と推移、予算、定期的な支払い）をOpenAIに送信して分析を生成します。\n\n取引履歴の全体は送信されません。OpenAIはこのデータをモデルの学習に使用しません。";
 "aiConsent.accept" = "同意して有効化";
@@ -3358,8 +3358,8 @@
 "guide.cashflow.message" = "Yalaが収入と支出をもとに、月末までお金がもつかを計算します。";
 "guide.insights.title" = "Yalaが分析します";
 "guide.insights.message" = "支出に基づいて、Yalaが役立つ情報をお伝えします: 一番使った日、いつもより多く使っているかなど。";
-"guide.inbox.title" = "確認待ち";
-"guide.inbox.message" = "確認すべき支払いや自動支出があると、ここに表示されて確認できます。";
+"guide.inbox.title" = "確認して保存";
+"guide.inbox.message" = "Yalaが記録したもの（音声・写真・Apple Pay・Siri・期日の支払い）は、ここで確認して保存するまで待機します。";
 "guide.budgetEditor.title" = "予算とは？";
 "guide.budgetEditor.message" = "何かに使う金額を管理するために設定する上限です。名前、金額、適用するカテゴリーを設定。いつでも編集・削除できます。";
 "guide.scheduledEditor.title" = "予定支払いとは？";
@@ -3620,16 +3620,16 @@
 "panel.widgetInfo.cashFlow.chip2" = "支出";
 
 /* Panel Polish #2 — Chip 3 CashFlow */
-"panel.widgetInfo.cashFlow.chip3" = "期間別";
+"panel.widgetInfo.cashFlow.chip3" = "選んだ期間に連動";
 
 /* Panel Polish #2 — Title sheet pedagógico Trend */
 "panel.widgetInfo.trend.title" = "残高の推移";
 
 /* Panel Polish #2 — Chip 1 Trend */
-"panel.widgetInfo.trend.chip1" = "インタラクティブ";
+"panel.widgetInfo.trend.chip1" = "タップできます";
 
 /* Panel Polish #2 — Chip 2 Trend */
-"panel.widgetInfo.trend.chip2" = "期間別";
+"panel.widgetInfo.trend.chip2" = "選んだ期間に連動";
 
 // MARK: Panel Polish #2 — Widget Info Sheets Q&A (cashFlow + trend pilots)
 
@@ -3680,7 +3680,7 @@
 "panel.widgetInfo.trend.largeHowA" = "グラフを長押しすると、各ポイントの値が表示されます。ヘッダーのボタンで収支・収入・支出を切り替えられます。";
 
 /* Panel Polish #2 — Chip 4 CashFlow (Interactiva — solo en large) */
-"panel.widgetInfo.cashFlow.chip4" = "インタラクティブ";
+"panel.widgetInfo.cashFlow.chip4" = "タップできます";
 
 /* Panel Polish #2 — Title sheet pedagógico CategoriesPie */
 "panel.widgetInfo.categoriesPie.title" = "カテゴリー別の内訳";
@@ -3692,7 +3692,7 @@
 "panel.widgetInfo.categoriesPie.chip2" = "現在の期間";
 
 /* Panel Polish #2 — Chip 3 CategoriesPie (Interactiva) */
-"panel.widgetInfo.categoriesPie.chip3" = "インタラクティブ";
+"panel.widgetInfo.categoriesPie.chip3" = "タップできます";
 
 /* Panel Polish #2 — CategoriesPie S: pregunta '¿Qué estás viendo?' */
 "panel.widgetInfo.categoriesPie.smallWhatQ" = "何が表示されていますか?";
@@ -3728,7 +3728,7 @@
 "panel.widgetInfo.subcategoriesPie.chip2" = "現在の期間";
 
 /* Panel Polish #2 — Chip 3 SubcategoriesPie (Interactiva) */
-"panel.widgetInfo.subcategoriesPie.chip3" = "インタラクティブ";
+"panel.widgetInfo.subcategoriesPie.chip3" = "タップできます";
 
 /* Panel Polish #2 — SubcategoriesPie S: pregunta */
 "panel.widgetInfo.subcategoriesPie.smallWhatQ" = "何が表示されていますか?";
@@ -3764,7 +3764,7 @@
 "panel.widgetInfo.tagsPie.chip2" = "現在の期間";
 
 /* Panel Polish #2 — Chip 3 TagsPie (Interactiva) */
-"panel.widgetInfo.tagsPie.chip3" = "インタラクティブ";
+"panel.widgetInfo.tagsPie.chip3" = "タップできます";
 
 /* Panel Polish #2 — TagsPie S: pregunta */
 "panel.widgetInfo.tagsPie.smallWhatQ" = "何が表示されていますか?";
@@ -3800,7 +3800,7 @@
 "panel.widgetInfo.expensesByNeed.chip2" = "現在の期間";
 
 /* Panel Polish #2 — Chip 3 ExpensesByNeed (Interactiva) */
-"panel.widgetInfo.expensesByNeed.chip3" = "インタラクティブ";
+"panel.widgetInfo.expensesByNeed.chip3" = "タップできます";
 
 /* Panel Polish #2 — ExpensesByNeed S: pregunta */
 "panel.widgetInfo.expensesByNeed.smallWhatQ" = "何が表示されていますか?";
@@ -3848,7 +3848,7 @@
 "panel.widgetInfo.topCategories.chip2" = "現在の期間";
 
 /* Panel Polish #2 — Chip 3 TopCategories (Interactiva) */
-"panel.widgetInfo.topCategories.chip3" = "インタラクティブ";
+"panel.widgetInfo.topCategories.chip3" = "タップできます";
 
 /* Panel Polish #2 — TopCategories S: pregunta */
 "panel.widgetInfo.topCategories.smallWhatQ" = "何が表示されていますか?";
@@ -3878,7 +3878,7 @@
 "panel.widgetInfo.topSubcategories.chip2" = "現在の期間";
 
 /* Panel Polish #2 — Chip 3 TopSubcategories (Interactiva) */
-"panel.widgetInfo.topSubcategories.chip3" = "インタラクティブ";
+"panel.widgetInfo.topSubcategories.chip3" = "タップできます";
 
 /* Panel Polish #2 — TopSubcategories S: pregunta */
 "panel.widgetInfo.topSubcategories.smallWhatQ" = "何が表示されていますか?";
@@ -3926,7 +3926,7 @@
 "panel.widgetInfo.scheduledPayments.chip2" = "今月";
 
 /* Panel Polish #2 — Chip 3 ScheduledPayments (Interactiva) */
-"panel.widgetInfo.scheduledPayments.chip3" = "インタラクティブ";
+"panel.widgetInfo.scheduledPayments.chip3" = "タップできます";
 
 /* Panel Polish #2 — ScheduledPayments: pregunta '¿Qué estás viendo?' (compartida S/M) */
 "panel.widgetInfo.scheduledPayments.whatQ" = "何が表示されていますか?";
@@ -3956,7 +3956,7 @@
 "panel.widgetInfo.budgets.chip2" = "現在の期間";
 
 /* Panel Polish #2 — Chip 3 Budgets (Interactiva) */
-"panel.widgetInfo.budgets.chip3" = "インタラクティブ";
+"panel.widgetInfo.budgets.chip3" = "タップできます";
 
 /* Panel Polish #2 — Budgets S: pregunta */
 "panel.widgetInfo.budgets.smallWhatQ" = "何が表示されていますか?";
@@ -3986,7 +3986,7 @@
 "panel.widgetInfo.exchangeRate.chip2" = "現在のレート";
 
 /* Panel Polish #2 — Chip 3 ExchangeRate (Interactiva) */
-"panel.widgetInfo.exchangeRate.chip3" = "インタラクティブ";
+"panel.widgetInfo.exchangeRate.chip3" = "タップできます";
 
 /* Panel Polish #2 — ExchangeRate: pregunta */
 "panel.widgetInfo.exchangeRate.whatQ" = "何が表示されていますか?";
@@ -4319,7 +4319,7 @@
 // MARK: - Stats WidgetInfo (periodComparison, sankey) — added 2026-05-18
 "panel.widgetInfo.periodComparison.title" = "期間の比較";
 "panel.widgetInfo.periodComparison.chip1" = "比較";
-"panel.widgetInfo.periodComparison.chip2" = "期間別";
+"panel.widgetInfo.periodComparison.chip2" = "選んだ期間に連動";
 "panel.widgetInfo.periodComparison.whatQ" = "ここに表示されているのは何ですか？";
 "panel.widgetInfo.periodComparison.whatA" = "現在の期間の残高・収入・支出を、前の期間と並べて表示しています。傾向が改善しているかどうかが一目で分かります。";
 "panel.widgetInfo.periodComparison.howQ" = "何と比較していますか？";
@@ -4327,7 +4327,7 @@
 "panel.widgetInfo.sankey.title" = "お金の流れ";
 "panel.widgetInfo.sankey.chip1" = "流れ";
 "panel.widgetInfo.sankey.chip2" = "必要度別";
-"panel.widgetInfo.sankey.chip3" = "インタラクティブ";
+"panel.widgetInfo.sankey.chip3" = "タップできます";
 "panel.widgetInfo.sankey.whatQ" = "ここに表示されているのは何ですか？";
 "panel.widgetInfo.sankey.whatA" = "期間中のお金の経路です。どこから入って（収入）、どこへ向かうかを必要度別にまとめています。帯が太いほど大きな金額です。";
 "panel.widgetInfo.sankey.howQ" = "どう操作しますか？";
@@ -6803,3 +6803,195 @@
 
 /* Note in the 'records without account' sheet when group records keep their currency */
 "orphanedRecords.groupKeptCurrencyNote" = "別の通貨のグループの支出は換算せずそのまま移動します。金額はグループが決めます。";
+
+/* Panel hero label: income minus expenses of a named month. %@ = month name */
+"panel.hero.balanceOfMonth" = "%@の収支";
+
+/* Panel hero label when only expenses are shown. %@ = month name */
+"panel.hero.expensesOfMonth" = "%@の支出";
+
+/* Panel hero label when only income is shown. %@ = month name */
+"panel.hero.incomeOfMonth" = "%@の収入";
+
+/* Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses */
+"panel.hero.flowCaption" = "入金 %1$@ − 出金 %2$@";
+
+/* Line under the panel hero when the period has no income or expenses yet */
+"panel.hero.noMovements" = "この期間の記録はまだありません";
+
+/* Second line under the panel hero with no movements: the money in the accounts. %@ = amount */
+"panel.hero.totalInAccounts" = "口座に%@あります";
+
+/* Small hint next to the panel hero label: tapping opens Statistics */
+"panel.hero.seeDetail" = "詳細";
+
+/* Chip under the panel hero while the expenses-only filter is on */
+"panel.hero.onlyExpensesChip" = "支出のみ表示中";
+
+/* Chip under the panel hero while the income-only filter is on */
+"panel.hero.onlyIncomeChip" = "収入のみ表示中";
+
+/* VoiceOver label of the chip that removes the income/expense filter */
+"panel.hero.clearNatureFilter" = "フィルタを解除";
+
+/* Tag on the account card that is filtering the Panel */
+"panel.accounts.card.filtering" = "絞り込み中";
+
+/* Last chip in the Panel account chips row: adds an account */
+"panel.accounts.addChip" = "追加";
+
+/* Panel with no accounts: pink button that creates the first account */
+"panel.createFirstAccount" = "最初の口座を作成";
+
+/* Line under the create-first-account button on the Panel */
+"panel.createFirstAccountHint" = "ここをタップ。1ステップで記録を始められます。";
+
+/* Filters sheet: what the include mode does */
+"filters.includeModeExplanation" = "下で選んだものだけを表示します。";
+
+/* Filters sheet: what the exclude mode does */
+"filters.excludeModeExplanation" = "下で選んだものを隠し、それ以外を表示します。";
+
+/* Filter status when nothing narrows a feminine noun list (accounts, categories, tags, currencies) */
+"filters.allFeminine" = "すべて";
+
+/* Panel sections config: what the accounts section shows */
+"panel.sectionsConfig.desc.accounts" = "口座とその残高。";
+
+/* Panel sections config: what the financial health section shows */
+"panel.sectionsConfig.desc.health" = "0〜100の家計スコアと改善のヒント。";
+
+/* Panel sections config: what the trends section shows */
+"panel.sectionsConfig.desc.trends" = "残高・収入・支出の推移グラフ。";
+
+/* Panel sections config: what the distribution section shows */
+"panel.sectionsConfig.desc.distribution" = "お金の行き先：カテゴリ・タグ・必要度別。";
+
+/* Panel sections config: what the planning section shows */
+"panel.sectionsConfig.desc.planning" = "予算と今後の予定支払い。";
+
+/* Panel sections config: what the latest records section shows */
+"panel.sectionsConfig.desc.latestRecords" = "最近の記録。";
+
+/* Panel sections config: what the tools section shows */
+"panel.sectionsConfig.desc.tools" = "通貨の為替レート。";
+
+/* Widget help sheet: heading of the line with the user's own numbers */
+"panel.widgetInfo.yourData.title" = "あなたのデータでは";
+
+/* Widget help, balance chart: what the user has today. %@ = amount */
+"panel.widgetInfo.yourData.trend" = "今日の口座残高は%@です。線は日ごとの推移を示します。";
+
+/* Widget help, cash flow: income and expenses of the period. %1$@ = income, %2$@ = expenses */
+"panel.widgetInfo.yourData.cashFlow" = "この期間の入金は%1$@、出金は%2$@です。";
+
+/* Widget help, spending breakdown: where the user spends most. %1$@ = category, %2$@ = amount */
+"panel.widgetInfo.yourData.topSpending" = "いちばん多い支出：%1$@（%2$@）。";
+
+/* Widget help, tags: tag with most spending. %1$@ = tag, %2$@ = amount */
+"panel.widgetInfo.yourData.topTag" = "支出が最も多いタグ：%1$@（%2$@）。";
+
+/* Widget help, planned payments: total this month and how many are still to pay. %1$@ = amount, %2$d = count */
+"panel.widgetInfo.yourData.scheduled" = "今月の予定支払い：%1$@。未払い：%2$d件。";
+
+/* Widget help, weekday chart: the day with the highest average spending. %@ = weekday name */
+"panel.widgetInfo.yourData.weekday" = "平均支出が最も多い曜日：%@。";
+
+/* Panel notices pager: which notice of how many. %1$d = position, %2$d = total */
+"panel.notices.position" = "お知らせ %1$d / %2$d";
+
+/* Panel notices pager: button that shows the next notice */
+"panel.notices.next" = "次へ";
+
+/* Account sheet, balance equation: balance on a date. %@ = date */
+"accountDetail.balanceOn" = "%@の残高";
+
+/* Account sheet, balance equation: last line when the period runs until today */
+"accountDetail.balanceToday" = "今日の残高";
+
+/* Account sheet: heading of the balance equation for the period */
+"accountDetail.equationTitle" = "この期間の残高の内訳";
+
+/* Health budget sheet when budgets exist but none counts yet */
+"panel.health.budget.headline.startsNextMonth" = "予算は来月から反映されます";
+
+/* Health breakdown row: part name and its weight. %1$@ = name, %2$d = percent */
+"panel.health.part.title" = "%1$@・比重 %2$d%%";
+
+/* Health breakdown: what the budgets part measures */
+"panel.health.part.budget" = "予算の上限に対する状況。";
+
+/* Health breakdown: what the rhythm part measures */
+"panel.health.part.activity" = "記録しない日が何日続いたか。2日までは問題なし。";
+
+/* Health breakdown: what the commitments part measures */
+"panel.health.part.bills" = "残高で今後の支払いをまかなえるか、収入のうちどれだけが支払いに回るか。";
+
+/* Health breakdown: a part without data, so it does not count */
+"panel.health.part.notCounting" = "まだ対象外";
+
+/* Health: what would raise the score most (budgets) */
+"panel.health.improve.budget" = "スコアを上げるには：いちばん超えている予算を見直しましょう。";
+
+/* Health: what would raise the score most (rhythm) */
+"panel.health.improve.activity" = "スコアを上げるには：少なくとも2日に1回は記録しましょう。";
+
+/* Health: what would raise the score most (commitments) */
+"panel.health.improve.bills" = "スコアを上げるには：予定支払いを見直しましょう。残高への負担が大きいです。";
+
+/* Health: all three parts are fine */
+"panel.health.improve.nothing" = "評価に入っている項目は順調です。この調子で。";
+
+/* Health: the total never goes below this number. %d = floor */
+"panel.health.floorNote" = "総合スコアは%d未満にはなりません。";
+
+/* Live balance sheet: heading of the per-currency sum */
+"panel.liveAnchorEducation.sumTitle" = "通貨ごとの合計";
+
+/* Live balance sheet: why the balance moves on its own (second sentence) */
+"panel.liveAnchorEducation.bodyShortWhy" = "他の通貨の価値は毎日変わるため、記録しなくてもこの残高は動きます。";
+
+/* Balance chart: label of the dashed average line. %@ = short amount */
+"panel.trend.averageLabel" = "平均 %@";
+
+/* Primary button of the voice/photo AI notice */
+"aiConsent.processingAccept" = "オンにする";
+
+/* Secondary button when voice/photo fails: open the manual entry form */
+"voice.enterManually" = "手入力する";
+
+/* Hint in the photo/file sheet on iPad: you can drop a receipt on the window */
+"image.entry.dropHint" = "レシートやPDFをYalaのウインドウにドラッグすることもできます。";
+
+/* Label shown while dragging a file over the window */
+"image.entry.dropToRead" = "ドロップしてレシートを読み取る";
+
+/* Hint under the PDF password message: which password it usually is */
+"image.entry.passwordHint" = "パスワードは銀行が設定したものです。多くは身分証の番号や生年月日です。PDFが届いたメールを確認してください。";
+
+/* Pro gate for voice input: one example of what it does */
+"featureGate.voiceExample" = "「ランチ 25 カードで」と話すだけで、カテゴリと口座つきで記録されます。";
+
+/* Pro gate for photo input: one example of what it does */
+"featureGate.imageExample" = "レシートを撮るだけで、金額・日付・カテゴリをYalaが記録します。";
+
+/* Draft editor of a discarded draft: when it was discarded. %@ = short date */
+"inbox.draft.discardedOn" = "%@に破棄しました。アーカイブにあります。";
+
+/* Fixed line under the Inbox title: what lands here */
+"inbox.explainer" = "Yalaが代わりに記録したもの（音声・写真・Apple Pay・期日の支払い）が届きます。確認して保存しましょう。";
+
+/* Inbox button above the list: save every ready draft at once. %d = count (2 or more) */
+"inbox.saveReady" = "準備できた%d件を保存";
+
+/* Confirmation before saving every ready draft. %d = count */
+"inbox.saveReady.confirmTitle" = "準備できた%d件を保存しますか？";
+
+/* Confirmation message before saving every ready draft */
+"inbox.saveReady.confirmMessage" = "入力がそろった分は記録に移ります。足りないものはここに残ります。";
+
+/* Confirmation button: save them */
+"inbox.saveReady.confirmButton" = "保存";
+
+/* Bulk save success: how many drafts are still pending. %d = count */
+"inbox.stillPending" = "未完了：%d件";

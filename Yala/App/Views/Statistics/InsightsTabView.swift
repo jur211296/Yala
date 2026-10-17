@@ -452,7 +452,8 @@ struct InsightsTabView: View {
                 score: score,
                 sessionState: sessionState,
                 subtitle: trendsViewModel.detailPeriod.displayName,
-                hideHeader: true
+                hideHeader: true,
+                hasBudgets: budgets.contains { $0.isActive }
             )
         }
     }
