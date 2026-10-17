@@ -705,7 +705,7 @@ enum EntityApplyMap {
             "amount": Apply.moneyReq(\.amount),
             "note": Apply.stringReq(\.note),
             "line_ref": ColumnApplier { m, v, ctx in
-                m.line = try resolveRef(v, entity: "cashflow_overrides", column: "line_ref",
+                m.cashFlowLine = try resolveRef(v, entity: "cashflow_overrides", column: "line_ref",
                                     rowSyncID: m.id, context: ctx) {
                     try findCashFlowLine(byID: $0, context: ctx)
                 }
@@ -937,7 +937,7 @@ enum EntityApplyMap {
         case (cashFlowOverride.table, "line_ref"):
             guard let row = try findCashFlowOverride(byID: dangler.rowSyncID, context: context) else { return .rowGone }
             guard let t = try findCashFlowLine(byID: target, context: context) else { return .targetMissing }
-            row.line = t
+            row.cashFlowLine = t
             return .resolved
         default:
             // Combinación desconocida (drift futuro) → tratar como obsoleto para no acumular basura.

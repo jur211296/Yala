@@ -3,7 +3,7 @@ id: cloud-tx-epoch-orphan-relations
 status: qa
 priority: medium
 created: 2026-07-17
-updated: 2026-10-08
+updated: 2026-10-15
 source: YalaWiki/Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md
 ---
 
@@ -171,3 +171,7 @@ Espera larga:
 
 Si algún movimiento pierde la cuenta o la subcategoría: anota cuál, si la Consola mostró `danglingRef` y si en
 Ajustes › Cuentas aparece la cuenta duplicada. Con `danglingRef` es el applier; sin él y sin duplicado, es el espejo.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (A · C4): lo que falta medir es CloudKit real; el código ya lo cubre `ReverseEpochTxRelationsTests` con control rojo. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

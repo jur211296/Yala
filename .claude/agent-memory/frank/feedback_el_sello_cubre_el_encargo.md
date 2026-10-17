@@ -19,3 +19,7 @@ va con `<<'EOF'`.
 código no cambie: si el diff del commit intermedio es solo `.md`, re-sellar es legítimo (la huella es HEAD + contenido).
 (2) Un `git mv` deja el movimiento STAGED: el `git commit` del encargo se lo llevó. Antes de un commit parcial,
 `git status --porcelain` y `git reset` de lo que no toca.
+
+**2026-10-16 (#524):** lo mismo al partir el CÓDIGO en varios commits: el primero mueve HEAD y el hook bloquea el
+segundo. Si la suma de los commits es exactamente el árbol que pasó el gate, re-sellar entre commits es legítimo;
+si tocaste algo entre medias, no: vuelve a `/gate`.

@@ -2,7 +2,7 @@
 id: groups-consent-door-spec
 status: qa
 created: 2026-08-11
-updated: 2026-09-23
+updated: 2026-10-15
 source: YalaWiki/Backlog/modo-nube/qa_MODO-NUBE-SPEC-CONSENT-GRUPOS.md
 ---
 
@@ -1255,3 +1255,7 @@ esa carrera.
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el paso del consentimiento y el SELECT en staging del bloque C (una sola fila, y no vuelve a salir).
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (A · C6): necesita un inicio de sesión real y mirar la fila en staging; los flags del simulador no escriben ninguna. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

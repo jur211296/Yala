@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "image"
 created: 2026-10-04
-updated: 2026-10-04
+updated: 2026-10-15
 qa-status: needs-testing
 source: encargo 2026-10-04-mejorar-el-registro-por-imagen-de-punta-a-punta · tablero tablero-mejorar-el-registro-por-imagen-de-punta-g5wl
 ---
@@ -96,3 +96,7 @@ usuario y con salida; color del tema.
 - `ImageOCRService` / `ImageClassifier` solo los usan tests: no son parte del flujo.
 - Cámara y Archivo son entradas nuevas (`fileImporter` para PDF, reusando el render de la página 1 de
   `ReceiptDropHandler`). El modelo y el proveedor de visión no cambian.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone solo por la cámara (B · cámara): permiso, foto real y cámara denegada. Pasaron en el simulador, con lectura real de staging: Fotos con tres recibos y «Guardar 3» (el disponible bajó S/ 96,50), PDF por Archivo, el fallo de lectura con Reintentar y compartir sin Pro, que pide Pro. «Sin conexión» lo fija `ImageEntryFlowLogicTests`. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b1-*` y `g5wl-*`, también para tu visto bueno. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

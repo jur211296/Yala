@@ -54,6 +54,10 @@ struct ContentView: View {
     @State private var positiveToast: String?
     @State private var toastDismissTask: Task<Void, Never>?
     @State private var wipeGraceTask: Task<Void, Never>?
+    /// **Cuándo cayeron las filas** que arrancaron la gracia en curso. Lo apunta la caída (`.startGrace`) y NO el
+    /// re-armado del drenaje: el techo de la espera al primer import (`RemoteWipeGraceLogic.firstImportCeilingSeconds`)
+    /// se cuenta desde la caída, o cada re-armado lo estrenaría.
+    @State private var remoteWipeDropAt: Date = .now
     @State private var remoteWipeTask: Task<Void, Never>?
     /// **Red VISUAL del aviso de vaciado remoto, no su condición.** El blocker de la matriz es
     /// `remoteWipeNoticePending` (abajo); este flag es sólo el `isPresented` del `.alert`, y la red de
@@ -61,6 +65,13 @@ struct ContentView: View {
     /// `showSignOutRelaunchCover`, y por el mismo motivo: si la matriz colgara de este flag, el toggle
     /// del reintento la abriría durante 50 ms y el router montaría otra cosa justo debajo del aviso.
     @State private var showRemoteWipeAlert: Bool = false
+    /// **La otra cara de la misma red visual: el aviso de «iCloud no está disponible en este iPhone».** Sale en
+    /// lugar del de borrado cuando los datos faltan porque iCloud no está (Drive apagado, sin sesión de iCloud), y
+    /// comparte con él la cola, la condición viva y la red de presentación: solo cambia qué `.alert` se monta. Lo
+    /// elige el drenaje (`remoteWipeNoticeKind`) y lo enciende el mismo `mountRemoteWipeAlert()`.
+    @State private var showICloudUnavailableAlert: Bool = false
+    /// Qué aviso monta el drenaje. Lo decide `RemoteWipeGraceLogic.noticeDecision` con lo de AHORA.
+    @State private var remoteWipeNoticeKind: RemoteWipeGraceLogic.Notice = .dataRemoved
     /// **La CONDICIÓN VIVA del aviso de vaciado remoto: hay un aviso pedido y sin contestar.** Es lo que
     /// entra a `ShellReadinessState` y lo que la red de presentación vigila. Lo enciende el drenaje de
     /// `.presentRemoteWipeNotice`; lo apagan las dos ramas del alert —las dos, que un `.alert` no tiene
@@ -354,96 +365,8 @@ struct ContentView: View {
             case .absorbDeliberateDrop:
                 cancelWipeGrace()
             case .startGrace:
-                // Data disappeared — debounce 5s before acting (transient CloudKit gap)
-                wipeGraceTask?.cancel()
-                wipeGraceTask = Task {
-                    do {
-                        try await Task.sleep(for: .seconds(5))
-                        // **El aviso afirma «TUS datos fueron eliminados de iCloud», y en una sesión que no
-                        // obedece la señal del Apple ID el «tus» de esa frase señala a otra persona.** El
-                        // iCloud del que habla es el del Apple ID del teléfono, y esta sesión no guarda ahí
-                        // los suyos — por eso no obedece la señal, y por eso el aviso tampoco es para ella.
-                        // Su botón, además, es el camino GENÉRICO de degradación (`hasCompletedOnboarding =
-                        // false` más el borrado de dos centinelas de semilla): sin `isWipingData`, sin
-                        // aterrizaje elegido y sin toast, expulsa al onboarding a quien no lo pidió.
-                        // Decisión de Jürgen (2026-09-14): en esa celda no se enseña nada.
-                        //
-                        // **QUIÉN LLEGA AQUÍ DE VERDAD, medido el 2026-09-14 — y NO es el caso que da nombre
-                        // al ticket.** El ticket lo atribuía al espejo de CloudKit de un teléfono prestado, y
-                        // esa celda hoy no lo ejercita por los dos lados: un solo-grupos dado de alta desde el
-                        // 2026-09-10 monta `.neutralNoMirror` (`SwiftDataConfiguration.shouldMountNeutralDurable`),
-                        // así que no hay espejo que le baje las filas; y uno anterior a esa fecha sí tiene
-                        // espejo, pero el backfill del eje le escribe `hasPrivateSession = true`
-                        // (`PrivateSessionMark.backfillIfNeeded`), así que este guard NO lo calla. Lo que sí
-                        // llega, en producción y hoy:
-                        //
-                        //  · **El aviso AUTO-INFLIGIDO tras «Vaciar datos» en una sesión solo-grupos**, que era
-                        //    el caso común. En solo-grupos `applyWipeLanding(.groupsShell)` REPONE
-                        //    `hasCompletedOnboarding`, así que el guard de arriba no cerraba y la gracia
-                        //    arrancaba. Hasta el 2026-09-30 esta línea era lo único que lo callaba; desde
-                        //    entonces la caída se absorbe antes (`settleSignalsAfterDeliberateWipe`, ticket
-                        //    `wipe-data-does-not-cancel-the-remote-wipe-grace`) y la gracia ya no nace.
-                        //  · La ventana entre que una sesión solo-grupos nace y su neutro entra en vigor (la
-                        //    marca del mount actúa en el arranque SIGUIENTE; la del eje, ya), y la simétrica
-                        //    entre desarmar ese neutro y el relanzamiento.
-                        //
-                        // La celda del teléfono prestado la cierra el EJE, no esta línea. Su ticket
-                        // —`remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`— se cerró el
-                        // 2026-09-14 MIDIENDO que esa población es cero: cero altas solo-grupos en la
-                        // telemetría de producción (90 días, cubren entera la vida del camino) y cero
-                        // identidades en el backend de Grupos. El desglose vive en
-                        // `PrivateSessionMark.backfillIfNeeded`.
-                        //
-                        // **El mismo predicado que el borrado, a propósito** (`wipeSignalObeyedByThisSession`,
-                        // tercera superficie del eje). Las tres responden «¿los datos de este teléfono son
-                        // los del Apple ID?» y el signo de su error coincide: hacia `true` se afirma algo
-                        // falso sobre datos ajenos, hacia `false` solo se calla. Por eso la entrada es
-                        // `confirmedPrivateSession()` —marca ausente ⇒ `false`— y no `hasPrivateSession()`.
-                        // Un predicado propio del aviso divergiría del que gobierna el borrado en el commit
-                        // siguiente, y la divergencia sería silenciosa.
-                        //
-                        // **Se lee AQUÍ y no al arrancar la gracia**: el aviso afirma un hecho sobre AHORA,
-                        // y este es el único punto de todo `Yala/` que PIDE ese aviso. (El literal de esa
-                        // línea no se cita en esta prosa a propósito: el escáner que fija que es único
-                        // cuenta sobre el target de producción, y citarlo aquí haría que documentarlo lo
-                        // rompiera.) No sustituye a `!showFullModeActivation`, que se evalúa en la transición
-                        // e impide que la tarea NAZCA: si la activación se completa dentro de estos 5 s, el
-                        // eje ya dice `true` y solo aquel término lo tapa. Los dos alcances son distintos.
-                        //
-                        // **Y se vuelve a leer en el DRENAJE, que es donde el aviso se enciende.** No es
-                        // una duplicación por si acaso: el intent no es transitorio y puede esperar en cola
-                        // a través de un background entero —bajo un cover del Welcome, bajo el sheet de la
-                        // activación—, así que entre esta lectura y la pantalla puede mediar un cambio de
-                        // sesión. Las dos lecturas responden a preguntas distintas: aquí, si el aviso llega
-                        // a PEDIRSE; allí, si todavía es verdad cuando toca enseñarlo.
-                        //
-                        // **Lo que se calla de más, y está aceptado.** El aviso tiene otra causa legítima
-                        // —un hueco transitorio de CloudKit—, y en esta celda también se calla. Lo que
-                        // pierde esa persona es información: los datos vuelven cuando vuelven, y el botón
-                        // que se va con él era el peor de los dos caminos. En solo-grupos, además, la shell
-                        // es `.groupsFocused`, así que las pantallas que se vacían ni siquiera están montadas.
-                        // El otro residual, éste por el término `storageMode`: una sesión privada dentro de la
-                        // ventana del cutover deja de ver el aviso en la única celda donde era verdad
-                        // (`storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal`). Hoy sin población —el
-                        // Modo Nube está DARK y `.cloud` solo lo escribe el cutover— pero se enciende con él.
-                        let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
-                            confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
-                            storageMode: CloudSyncFlags.storageMode)
-                        guard sessionObeysWipeSignal else { return }
-                        // Data still gone after 5s — ask user. **Por la COLA y no encendiendo el `@State`
-                        // desde aquí** (2026-09-14, `remote-wipe-alert-skips-the-router`): quien enciende
-                        // es esta tarea de fondo, y a los cinco segundos el anchor de `ContentView` puede
-                        // estar presentando cualquier otra cosa. Un `.alert` encendido ahí DESMONTA lo que
-                        // hubiera debajo —traza del 2026-09-03 en `ShellDataAlertsModifier`— y encima puede
-                        // no llegar a montar, dejando el flag en `true` y la matriz de readiness bloqueada
-                        // para el resto de la sesión. Por la cola, el aviso espera a que el anchor esté
-                        // libre; es la regla (3) de Presentaciones y el molde de su vecino
-                        // `.presentLateICloudMirrorNotice`.
-                        RouterEntryGate.shared.submit(.presentRemoteWipeNotice)
-                    } catch {
-                        // Cancelled — data reappeared
-                    }
-                }
+                remoteWipeDropAt = .now
+                startRemoteWipeGrace()
             case .cancelGrace:
                 // Data reappeared — cancel pending wipe grace
                 cancelWipeGrace()
@@ -458,11 +381,153 @@ struct ContentView: View {
         }
     }
 
+    /// **La gracia de cinco segundos del aviso de vaciado remoto.** La arranca la caída de `hasPersonalData`
+    /// (`.startGrace`) y la RE-ARMA el drenaje cuando, al ir a enseñar el aviso, encuentra una importación de iCloud
+    /// en marcha (ticket `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`).
+    @MainActor
+    private func startRemoteWipeGrace() {
+        // Data disappeared — debounce 5s before acting (transient CloudKit gap)
+        wipeGraceTask?.cancel()
+        wipeGraceTask = Task {
+            do {
+                try await Task.sleep(for: .seconds(5))
+                // **Y una importación en marcha retiene la decisión** (2026-10-15). Con iCloud Drive
+                // encendido de nuevo, el espejo vacía y reimporta, y el aviso salía con las filas a medio
+                // volver. No se calla sin más: un vaciado remoto de verdad también llega como importación,
+                // así que se espera a que se asiente y lo que haya entonces decide. Va ANTES de leer el
+                // eje, para que el eje siga leyéndose tras la última espera.
+                try await waitWhileAnImportCouldStillBringTheRowsBack()
+                // **El aviso afirma «TUS datos fueron eliminados de iCloud», y en una sesión que no
+                // obedece la señal del Apple ID el «tus» de esa frase señala a otra persona.** El
+                // iCloud del que habla es el del Apple ID del teléfono, y esta sesión no guarda ahí
+                // los suyos — por eso no obedece la señal, y por eso el aviso tampoco es para ella.
+                // Su botón, además, es el camino GENÉRICO de degradación (`hasCompletedOnboarding =
+                // false` más el borrado de dos centinelas de semilla): sin `isWipingData`, sin
+                // aterrizaje elegido y sin toast, expulsa al onboarding a quien no lo pidió.
+                // Decisión de Jürgen (2026-09-14): en esa celda no se enseña nada.
+                //
+                // **QUIÉN LLEGA AQUÍ DE VERDAD, medido el 2026-09-14 — y NO es el caso que da nombre
+                // al ticket.** El ticket lo atribuía al espejo de CloudKit de un teléfono prestado, y
+                // esa celda hoy no lo ejercita por los dos lados: un solo-grupos dado de alta desde el
+                // 2026-09-10 monta `.neutralNoMirror` (`SwiftDataConfiguration.shouldMountNeutralDurable`),
+                // así que no hay espejo que le baje las filas; y uno anterior a esa fecha sí tiene
+                // espejo, pero el backfill del eje le escribe `hasPrivateSession = true`
+                // (`PrivateSessionMark.backfillIfNeeded`), así que este guard NO lo calla. Lo que sí
+                // llega, en producción y hoy:
+                //
+                //  · **El aviso AUTO-INFLIGIDO tras «Vaciar datos» en una sesión solo-grupos**, que era
+                //    el caso común. En solo-grupos `applyWipeLanding(.groupsShell)` REPONE
+                //    `hasCompletedOnboarding`, así que el guard de arriba no cerraba y la gracia
+                //    arrancaba. Hasta el 2026-09-30 esta línea era lo único que lo callaba; desde
+                //    entonces la caída se absorbe antes (`settleSignalsAfterDeliberateWipe`, ticket
+                //    `wipe-data-does-not-cancel-the-remote-wipe-grace`) y la gracia ya no nace.
+                //  · La ventana entre que una sesión solo-grupos nace y su neutro entra en vigor (la
+                //    marca del mount actúa en el arranque SIGUIENTE; la del eje, ya), y la simétrica
+                //    entre desarmar ese neutro y el relanzamiento.
+                //
+                // La celda del teléfono prestado la cierra el EJE, no esta línea. Su ticket
+                // —`remote-wipe-axis-misses-groups-only-installs-before-the-mount-mark`— se cerró el
+                // 2026-09-14 MIDIENDO que esa población es cero: cero altas solo-grupos en la
+                // telemetría de producción (90 días, cubren entera la vida del camino) y cero
+                // identidades en el backend de Grupos. El desglose vive en
+                // `PrivateSessionMark.backfillIfNeeded`.
+                //
+                // **El mismo predicado que el borrado, a propósito** (`wipeSignalObeyedByThisSession`,
+                // tercera superficie del eje). Las tres responden «¿los datos de este teléfono son
+                // los del Apple ID?» y el signo de su error coincide: hacia `true` se afirma algo
+                // falso sobre datos ajenos, hacia `false` solo se calla. Por eso la entrada es
+                // `confirmedPrivateSession()` —marca ausente ⇒ `false`— y no `hasPrivateSession()`.
+                // Un predicado propio del aviso divergiría del que gobierna el borrado en el commit
+                // siguiente, y la divergencia sería silenciosa.
+                //
+                // **Se lee AQUÍ y no al arrancar la gracia**: el aviso afirma un hecho sobre AHORA,
+                // y este es el único punto de todo `Yala/` que PIDE ese aviso. (El literal de esa
+                // línea no se cita en esta prosa a propósito: el escáner que fija que es único
+                // cuenta sobre el target de producción, y citarlo aquí haría que documentarlo lo
+                // rompiera.) No sustituye a `!showFullModeActivation`, que se evalúa en la transición
+                // e impide que la tarea NAZCA: si la activación se completa dentro de estos 5 s, el
+                // eje ya dice `true` y solo aquel término lo tapa. Los dos alcances son distintos.
+                //
+                // **Y se vuelve a leer en el DRENAJE, que es donde el aviso se enciende.** No es
+                // una duplicación por si acaso: el intent no es transitorio y puede esperar en cola
+                // a través de un background entero —bajo un cover del Welcome, bajo el sheet de la
+                // activación—, así que entre esta lectura y la pantalla puede mediar un cambio de
+                // sesión. Las dos lecturas responden a preguntas distintas: aquí, si el aviso llega
+                // a PEDIRSE; allí, si todavía es verdad cuando toca enseñarlo.
+                //
+                // **Lo que se calla de más, y está aceptado.** El aviso tiene otra causa legítima
+                // —un hueco transitorio de CloudKit—, y en esta celda también se calla. Lo que
+                // pierde esa persona es información: los datos vuelven cuando vuelven, y el botón
+                // que se va con él era el peor de los dos caminos. En solo-grupos, además, la shell
+                // es `.groupsFocused`, así que las pantallas que se vacían ni siquiera están montadas.
+                // El otro residual, éste por el término `storageMode`: una sesión privada dentro de la
+                // ventana del cutover deja de ver el aviso en la única celda donde era verdad
+                // (`storage-mode-is-a-proxy-for-the-mirror-in-the-wipe-signal`). Hoy sin población —el
+                // Modo Nube está DARK y `.cloud` solo lo escribe el cutover— pero se enciende con él.
+                let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+                    confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+                    storageMode: CloudSyncFlags.storageMode)
+                guard sessionObeysWipeSignal else { return }
+                // Data still gone after 5s — ask user. **Por la COLA y no encendiendo el `@State`
+                // desde aquí** (2026-09-14, `remote-wipe-alert-skips-the-router`): quien enciende
+                // es esta tarea de fondo, y a los cinco segundos el anchor de `ContentView` puede
+                // estar presentando cualquier otra cosa. Un `.alert` encendido ahí DESMONTA lo que
+                // hubiera debajo —traza del 2026-09-03 en `ShellDataAlertsModifier`— y encima puede
+                // no llegar a montar, dejando el flag en `true` y la matriz de readiness bloqueada
+                // para el resto de la sesión. Por la cola, el aviso espera a que el anchor esté
+                // libre; es la regla (3) de Presentaciones y el molde de su vecino
+                // `.presentLateICloudMirrorNotice`.
+                RouterEntryGate.shared.submit(.presentRemoteWipeNotice)
+            } catch {
+                // Cancelled — data reappeared
+            }
+        }
+    }
+
+    /// **Qué aviso toca AHORA, o si hay que esperar**, con lo que `iCloudSyncService` sabe en este instante. Un
+    /// solo sitio para la gracia y el drenaje: las dos preguntas tienen que contestarse con las mismas entradas.
+    @MainActor
+    private func currentRemoteWipeNoticeDecision() -> RemoteWipeGraceLogic.NoticeDecision {
+        let sync = iCloudSyncService.shared
+        return RemoteWipeGraceLogic.noticeDecision(
+            iCloudTokenPresent: sync.isAccountAvailable,
+            mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated,
+            firstImportCompleted: sync.hasCompletedFirstImport,
+            isImporting: sync.status.isImporting,
+            lastImportActivityAt: sync.lastImportActivityAt,
+            droppedAt: remoteWipeDropAt,
+            now: .now)
+    }
+
+    /// Duerme de segundo en segundo mientras una importación de iCloud pueda estar devolviendo las filas, y en cada
+    /// vuelta RE-MIDE las filas en vivo. **El re-medido no es por si acaso** (review del 15-oct): `hasPersonalData`
+    /// solo se recalcula con un bump de `dataVersion`, y un import de CloudKit no lo da hasta que algo lo pide (una
+    /// vista que aparece, volver a primer plano). Con la persona quieta en el Panel mientras vuelven sus 34 filas, la
+    /// señal seguía en `false` y la gracia pedía el aviso de borrado sobre unos datos que ya estaban. Si han vuelto,
+    /// la escritura dispara el `.cancelGrace` de la subida y esta espera sale sin pedir nada.
+    @MainActor
+    private func waitWhileAnImportCouldStillBringTheRowsBack() async throws {
+        while true {
+            remeasurePersonalData()
+            if hasPersonalData { throw CancellationError() }
+            guard currentRemoteWipeNoticeDecision() == .waitForImport else { return }
+            try await Task.sleep(for: .seconds(1))
+        }
+    }
+
+    /// `hasPersonalData` con la medida de AHORA. Solo escribe si cambia, para no despertar el `onChange` de balde.
+    @MainActor
+    private func remeasurePersonalData() {
+        let measured = checkHasPersonalData()
+        if measured != hasPersonalData { hasPersonalData = measured }
+    }
+
     /// Tramo 2: las presentaciones del anchor — covers, sheets y los siete `ViewModifier` del shell.
     private func shellPresentations(_ base: some View) -> some View {
         base
         .modifier(ShellDataAlertsModifier(
             showRemoteWipeAlert: $showRemoteWipeAlert,
+            showICloudUnavailableAlert: $showICloudUnavailableAlert,
             showICloudRestartAlert: $showICloudRestartAlert,
             showFreshStartWipeAlert: $showFreshStartWipeAlert,
             showFreshStartWipeFailedAlert: $showFreshStartWipeFailedAlert,
@@ -1215,6 +1280,15 @@ struct ContentView: View {
             }
             return
         }
+        // **Lo que el manejador encienda tapa la cola en ESTA vuelta, no en la del `onChange` que lo observa.** El aviso
+        // de vaciado remoto, el de bandeja o la oferta suben su condición viva aquí abajo, pero la matriz solo se
+        // entera por `ReadinessGateObservers`, y `drainNext` acaba de subir la `revision`: medido el 2026-10-13 en el CI
+        // (iOS 26.5), el `onChange(of: revision)` corría ANTES que el observador, con el router aún «listo», y drenaba
+        // la oferta encima del aviso — 8 de ~60 arranques. Una de las dos presentaciones del anchor se perdía: o el aviso
+        // no salía, o la oferta quedaba retenida para siempre tras contestarlo (ticket
+        // `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`). `updateContentViewReadiness` bloquea en
+        // el acto y libera una vuelta después, así que esto no añade ningún drenaje.
+        defer { updateContentViewReadiness() }
         switch intent {
         case .showInboxAlert(let notif):
             activeInboxNotification = notif
@@ -1674,14 +1748,27 @@ struct ContentView: View {
     ///  · **El eje de sesión.** El «tus» del aviso señala a los datos del Apple ID de este teléfono, y
     ///    eso sólo es cierto en una sesión privada con su iCloud detrás. Misma lectura estricta que el
     ///    borrado, por el mismo motivo (ver el docblock del predicado).
+    ///
+    /// **Y una cuarta, que decide QUÉ aviso y si toca ya** (2026-10-15, `RemoteWipeGraceLogic.noticeDecision`): con
+    /// iCloud no disponible las filas faltan porque iOS vació la copia local, no porque nadie las borrara, y el aviso
+    /// es otro, sin «Empezar de cero»; con una importación en marcha no se enseña nada todavía y se re-arma la
+    /// gracia, que vuelve a pedirlo cuando se asiente. Va DETRÁS de los tres guards: esos dicen si hay aviso, ésta
+    /// cuál.
     @MainActor
     private func presentRemoteWipeNoticeIfStillTrue() {
+        // Medida VIVA y no la señal: ver `waitWhileAnImportCouldStillBringTheRowsBack`.
+        remeasurePersonalData()
         guard !hasPersonalData else { return }
         guard hasCompletedOnboarding else { return }
         let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
             confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
             storageMode: CloudSyncFlags.storageMode)
         guard sessionObeysWipeSignal else { return }
+        guard case .present(let notice) = currentRemoteWipeNoticeDecision() else {
+            startRemoteWipeGrace()
+            return
+        }
+        remoteWipeNoticeKind = notice
         remoteWipeNoticePending = true
         mountRemoteWipeAlert()
         armRemoteWipeNoticePresentationNet()
@@ -1693,12 +1780,18 @@ struct ContentView: View {
     /// monta nunca, que es exactamente «UIKit descartó la presentación». Un seam solo en el drenaje no
     /// llegaría al desarme: el primer reintento montaría el aviso y la red acabaría en `.satisfied`
     /// (ticket `presentation-net-desarm-has-no-automated-net`).
+    ///
+    /// **Monta el `.alert` del aviso que eligió el drenaje** (`remoteWipeNoticeKind`), y solo ése: los dos cuelgan
+    /// del mismo anchor y nunca se encienden a la vez. Las salidas apagan siempre los dos flags.
     @MainActor
     private func mountRemoteWipeAlert() {
         #if DEBUG
         guard !UITestHooks.remoteWipeNoticeNeverMounts else { return }
         #endif
-        showRemoteWipeAlert = true
+        switch remoteWipeNoticeKind {
+        case .dataRemoved: showRemoteWipeAlert = true
+        case .iCloudUnavailable: showICloudUnavailableAlert = true
+        }
     }
 
     /// **Verificación de presentación EFECTIVA del aviso, y su desarme.** Un `.alert` que se enciende
@@ -1759,6 +1852,7 @@ struct ContentView: View {
                     // El toggle necesita un runloop turn: en la misma transaction SwiftUI lo colapsa a
                     // un no-op y no re-presentaría nunca.
                     showRemoteWipeAlert = false
+                    showICloudUnavailableAlert = false
                     try? await Task.sleep(for: RelaunchNetLogic.toggleGap)
                     // **El guard mira la CONDICIÓN VIVA, no solo la cancelación**, y esa ventana de 50 ms
                     // es real: si la persona contesta el aviso justo entre las dos mitades del toggle, sus
@@ -1771,6 +1865,7 @@ struct ContentView: View {
                 case .exhausted:
                     remoteWipeNoticePending = false
                     showRemoteWipeAlert = false
+                    showICloudUnavailableAlert = false
                     MetricsService.canary(.remoteWipeNoticeNotPresented)
                     return
                 }
@@ -1800,6 +1895,7 @@ struct ContentView: View {
     private func startFreshAfterRemoteWipeNotice() {
         remoteWipeNoticePending = false
         showRemoteWipeAlert = false
+        showICloudUnavailableAlert = false
         // Las filas ya se fueron por el espejo y aquí no corre ningún borrado de `DataWipeService`: sin esto, el widget,
         // Siri y los recordatorios programados seguían enseñando los datos del dueño (ver `RemoteWipeSharedSurfaces`).
         RemoteWipeSharedSurfaces.purgeAfterMirrorWipe()
@@ -1834,6 +1930,7 @@ struct ContentView: View {
     private func dismissRemoteWipeNotice() {
         remoteWipeNoticePending = false
         showRemoteWipeAlert = false
+        showICloudUnavailableAlert = false
         // La red se auto-termina al ver la condición viva apagada (`verdict` → `.standDown`), pero se
         // cancela explícitamente: que el desarme dependa de que nadie toque el orden del `switch` es una
         // garantía que un refactor puede romper sin enterarse.
@@ -1879,6 +1976,7 @@ struct ContentView: View {
         cancelWipeGrace()
         remoteWipeNoticePending = false
         showRemoteWipeAlert = false
+        showICloudUnavailableAlert = false
 
         performLocalWipeForRemoteSync(skipOnboarding: onboardingAlreadyDone,
                                       signaledAt: Date(timeIntervalSince1970: remoteWipe))
@@ -1966,8 +2064,10 @@ struct ContentView: View {
     /// Nil otherwise. Used to enqueue `.presentWhatsNew` router intent.
     private func whatsNewDataIfPending() -> (features: [WhatsNewFeature], version: String)? {
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-        guard !currentVersion.isEmpty, currentVersion != lastSeenAppVersion,
-              let features = WhatsNewConfig.features(for: currentVersion) else { return nil }
+        let features = WhatsNewConfig.features(for: currentVersion)
+        guard WhatsNewLaunchLogic.shouldPresent(
+            currentVersion: currentVersion, lastSeenVersion: lastSeenAppVersion, hasFeatures: features != nil
+        ), let features else { return nil }
         return (features: features, version: currentVersion)
     }
 
@@ -2003,6 +2103,16 @@ struct ContentView: View {
         // un único dominio y el cableado se conserva porque la forma sigue siendo la correcta.)
         GroupBackendInviteEntryHandler.hasCompletedPersonalOnboardingProvider = {
             UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)
+        }
+
+        // Novedades solo al ACTUALIZAR: un dispositivo que arranca sin el onboarding hecho estrena Yala en esta
+        // versión, así que se da por vista ya. Va antes de la rama de invitación porque un alta por invitación
+        // también es una instalación nueva. Ver `WhatsNewLaunchLogic`.
+        if let version = WhatsNewLaunchLogic.versionToMarkSeenAtLaunch(
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            currentVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        ) {
+            lastSeenAppVersion = version
         }
 
         // GC-08: If group invite onboarding is pending, skip normal flow entirely.
@@ -2740,6 +2850,7 @@ struct ContentView: View {
 /// `fullScreenCover` (sin frame "azul vacío" entre ambos). El alert
 /// "Detectamos tu cuenta" vive dentro del `WelcomeFlowContainer`.
 private struct WelcomeFlowModifier: ViewModifier {
+    @Environment(\.modelContext) private var modelContext
     @Binding var showWelcomeFlow: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
     @Binding var showOnboarding: Bool
@@ -3089,7 +3200,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         showWelcomeCloudSignIn = false
                         showOnboarding = true
                     },
-                    onEnterGroupsOnly: { offersFullActivation in
+                    onEnterGroupsOnly: { offersFullActivation, sessionOpenedHere in
                         // Paso 8 · la oferta viaja hasta que la sesión solo-grupos quede montada.
                         offersFullActivationAfterGroupsEntry = offersFullActivation
                         // **Bloque [I]** · el backend dijo que esta cuenta solo lleva grupos, así que no
@@ -3123,6 +3234,13 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // baja en el boot siguiente.
                         StorageModePersistence.clearGroupsOnlyWipeArm()
                         GroupsSignOutBannerMarker.clear()
+                        // Los grupos que el canal baje desde aquí son de quien acaba de entrar: si deja el alta a
+                        // medias y vuelve a «Es mi primera vez → privado», la puerta no los trata como de otra persona
+                        // (ticket `groups-entry-left-half-done-reaches-the-private-gate-with-group-rows`). Solo con la
+                        // sesión abierta en este intento: una del llavero puede ser de la persona anterior.
+                        if sessionOpenedHere {
+                            LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
+                        }
                         welcomeFlowInitialStep = .groupsGate(purpose: .createGroup)
                         showWelcomeFlow = true
                         showWelcomeCloudSignIn = false

@@ -55,10 +55,10 @@
 //     tx.account?.isSystemAccount == false { delete }`) es la INVERSA EXACTA del barredor —se lleva el
 //     dinero real y se queda el fantasma—, o sea el peor de los cinco resultados. Un source-scan prohíbe
 //     esos cuatro símbolos en este fichero (`LegacyGroupsRetirementWiringTests`).
-//   - **`account == nil` se trata como REAL** (conservar), por `classifyForSoftDelete`, que es el
-//     clasificador COMPARTIDO. Hay que decirlo porque las dos mecánicas existentes discrepan justo ahí: el
-//     freeze inlinea el predicado con la polaridad invertida (`== false` en `GroupTransactionBridge:1405`)
-//     y conserva, y el barredor libera (`:283`). Ante la duda, preservar el rastro.
+//   - **`account == nil` lo decide la regla común `GroupLegKindLogic`** (desde el 2026-10-16): virtual probada se
+//     borra, real probada se suelta, y «no se sabe» no se toca —como hace el freeze, que solo suelta las de cuenta
+//     real—. Hasta ese día se trataba como REAL y se soltaba, y una virtual soltada así entraba en el aviso
+//     «Movimientos sin cuenta» como movible (ticket `orphaned-group-records-stay-out-of-the-notice`).
 //
 //  ── La fila `SplitGroup` se CONSERVA (oculta), jamás se borra ──────────────────────────────────────────
 //  Borrarla parece la limpieza obvia y es exactamente lo que ATRAPA el dinero: sin filas de la zona,
@@ -118,8 +118,20 @@ enum LegacyGroupsRetirement {
     struct TxShape: Equatable {
         /// La ZONA del puente no pertenece a ningún canal vivo (ANY-row, ver cabecera).
         let zoneIsLegacy: Bool
-        /// `tx.account?.isSystemAccount == true`. Un `account` ausente da `false` ⇒ se trata como REAL.
-        let accountIsSystem: Bool
+        /// Real, virtual o no se sabe (`GroupLegKindLogic`). Con cuenta lo decide la cuenta. Sin cuenta, hasta el
+        /// 2026-10-16 contaba como REAL y se soltaba; una virtual soltada así entraba en el aviso «Movimientos sin cuenta»
+        /// como movible (ticket `orphaned-group-records-stay-out-of-the-notice`). Con «no se sabe» no se toca.
+        let leg: GroupLegKindLogic.Kind
+
+        init(zoneIsLegacy: Bool, leg: GroupLegKindLogic.Kind) {
+            self.zoneIsLegacy = zoneIsLegacy
+            self.leg = leg
+        }
+
+        /// Fila CON cuenta: la cuenta decide.
+        init(zoneIsLegacy: Bool, accountIsSystem: Bool) {
+            self.init(zoneIsLegacy: zoneIsLegacy, leg: accountIsSystem ? .virtual : .real)
+        }
     }
 
     /// Decisión pura. `nil` = no se toca.
@@ -130,8 +142,9 @@ enum LegacyGroupsRetirement {
     /// clasificación.
     static func decide(_ shape: TxShape) -> Action? {
         guard shape.zoneIsLegacy else { return nil }
+        guard shape.leg != .unknown else { return nil }
         switch GroupTransactionBridge.classifyForSoftDelete(
-            transactionAccountIsSystem: shape.accountIsSystem
+            transactionAccountIsSystem: shape.leg == .virtual
         ) {
         case .releaseRealAccountTx: return .releasePointers
         case .preserveVirtualSystemTx: return .deleteVirtual
@@ -227,9 +240,10 @@ enum LegacyGroupsRetirement {
                 continue
             }
 
+            // Sin cuenta, la regla común. El grupo legacy se OCULTA, no se borra: sus gastos siguen aquí y cuentan.
+            let legEvidence = GroupLegEvidence.read(for: txs, context: context)
             let txActions: [(tx: TransactionItem, action: Action)] = txs.compactMap { tx in
-                let shape = TxShape(
-                    zoneIsLegacy: true, accountIsSystem: tx.account?.isSystemAccount == true)
+                let shape = TxShape(zoneIsLegacy: true, leg: legEvidence.kind(of: tx))
                 guard let action = decide(shape) else { return nil }
                 return (tx, action)
             }

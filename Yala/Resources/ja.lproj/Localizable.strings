@@ -1399,7 +1399,6 @@
 "subcategory.namePlaceholder" = "サブカテゴリー名";
 "subcategory.unassigned" = "未割り当て";
 
-"account.deleteBalanceError" = "残高が0でないため、この口座は削除できません。削除する前に残高を0に調整してください。";
 "account.type.general" = "一般";
 "account.type.cash" = "現金";
 "account.type.current" = "普通預金";
@@ -3216,6 +3215,56 @@
 "devseed.stepDeleting" = "データを削除中...";
 "devseed.stepReloading" = "データを再読み込み中...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "リスボン旅行";
+"devseed.ficha.groupWeekend" = "ポルトの週末";
+"devseed.ficha.memberYou" = "あなた";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "宿泊";
+"devseed.ficha.expenseTour" = "ガイドツアー";
+"devseed.ficha.expenseGroupDinner" = "みんなで夕食";
+"devseed.ficha.expenseAirportTaxi" = "空港タクシー";
+"devseed.ficha.expenseLocalMeal" = "シーフードディナー";
+"devseed.ficha.expenseMuseum" = "美術館チケット";
+"devseed.ficha.expenseTransport" = "交通費";
+"devseed.ficha.expenseGroceries" = "食料品";
+"devseed.ficha.expenseSouvenirs" = "お土産";
+"devseed.ficha.expenseWeekendStay" = "ポルトのホテル";
+"devseed.ficha.expenseWeekendMeal" = "ワインテイスティング";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "旅行 %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "空港までのタクシーに45、スーパーで120.50使った";
+"uitestDemo.chat.draftNoteTaxi" = "空港までのタクシー";
+"uitestDemo.chat.draftNoteGroceries" = "スーパーの買い物";
+"uitestDemo.chat.suggestionSplit" = "住居と個人の支出はどう分かれていますか？";
+"uitestDemo.chat.suggestionMonth" = "今月のレストランとデリバリーの支出は？";
+"uitestDemo.chat.suggestionBudget" = "外食の予算は足りましたか？";
+"uitestDemo.chat.pizzaNote" = "ピザ";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "ランチ25、カードで";
+"uitestDemo.voice.lunchNote" = "ランチ";
+"uitestDemo.voice.twoTranscript" = "タクシー12とコーヒー8、カードで";
+"uitestDemo.voice.taxiNote" = "タクシー";
+"uitestDemo.voice.coffeeNote" = "コーヒー";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "ビストロ・ブルードア";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "タクシー";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "%ldページ";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "はじめに";
@@ -4132,7 +4181,7 @@
 "welcome.hero.cards.budgets.title" = "予算と目標";
 "welcome.hero.cards.budgets.body" = "限度を決めて、守る。";
 "welcome.hero.cards.multiAndCurrencies.title" = "複数口座と通貨";
-"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、48以上の通貨。";
+"welcome.hero.cards.multiAndCurrencies.body" = "カード、現金、50以上の通貨。";
 "welcome.hero.cards.import.title" = "履歴をインポート";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel。完了。";
 "welcome.hero.cards.icloud.title" = "プライベートiCloud";
@@ -4160,12 +4209,12 @@
 "yalaAI.onboarding.progressLabel" = "ステップ %1$d / %2$d";
 "yalaAI.onboarding.step1.title" = "Yala AIをご紹介します";
 "yalaAI.onboarding.step1.subtitle" = "あなたの家計のパートナーです。";
-"yalaAI.onboarding.step1.demoScenario1User" = "ランチに1,200円使いました。";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。1,200円のランチを記録しました。";
+"yalaAI.onboarding.step1.demoScenario1User" = "ランチに%@使いました。";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "完了しました。%@のランチを記録しました。";
 "yalaAI.onboarding.step1.demoScenario2User" = "今月のコーヒーにいくら使いましたか？";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは4,500円です ☕ — 4月より12%減ですが、いつもの平均より800円多めです。";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "今月のコーヒーは%1$@です ☕ 4月より12%%減ですが、いつもの平均より%2$@多めです。";
 "yalaAI.onboarding.step1.demoScenario3User" = "アドバイスは？";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 デリバリーが先月より20%増えています。いつものペースに戻すと月8,000円、年間で約96,000円の節約になります。";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 デリバリーが先月より20%%増えています。いつものペースに戻すと月%1$@、年間で%2$@の節約になります。";
 "yalaAI.onboarding.step1.demoAmountLabel" = "ランチ";
 "yalaAI.onboarding.step1.a11yLabel" = "Yala AIが支出を記録するチャットの例";
 "yalaAI.onboarding.step2.title" = "できることはこちら";
@@ -4191,11 +4240,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "毎月、より多く節約できるようサポートします。";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "ずれがあればお知らせし、見落としを防ぎます。";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "今月の支出は収入でカバーできています。良いペースです。";
-"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%減らすと、月3,000円の節約になります。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%%減らすと、月%@の節約になります。";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "注意：デリバリーのペースが先月より速くなっています。";
 "yalaAI.onboarding.step5.title" = "準備完了！";
 "yalaAI.onboarding.step5.subtitle" = "いつでもYalaに必要なことを伝えてください。";
-"yalaAI.onboarding.step5.tip" = "💡 例：「500円のコーヒーを記録して」「今日いくら使った？」";
+"yalaAI.onboarding.step5.tip" = "💡 例：「%@のコーヒーを記録して」「今日いくら使った？」";
 "yalaAI.onboarding.step5.cta" = "チャットを始める";
 
 // MARK: - Stats Records polish
@@ -4411,6 +4460,14 @@
 "whatsNew.v20.ai.description" = "AI を搭載したあなたの家計アシスタント。お金について質問したり、支出の記録を頼んだり、今月の分かりやすい分析を受け取れます。お金に詳しい友だちのように、メッセージひとつですぐそばに。";
 "whatsNew.v20.redesign.title" = "全面リニューアル";
 "whatsNew.v20.redesign.description" = "Yala を隅々まで一新しました。新しいウィジェット、各画面のより見やすいサマリー、そしてアプリ全体に iOS の新しい Liquid Glass デザインを採用。さらに多くの不具合を修正し、すべてがより快適になりました。";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "グループ";
+"whatsNew.v21.groups.description" = "好きな人と費用をシェア。リンクで招待して一緒に記録すれば、誰が誰にいくら払うかは Yala が計算します。面倒な計算も、気まずさもありません。";
+"whatsNew.v21.logging.title" = "記録がこんなに簡単に";
+"whatsNew.v21.logging.description" = "話しかけても、写真を撮っても、友だちにメッセージするように書いても大丈夫。Yala が使った内容を理解して記録するので、家計の管理はほんの数秒です。";
+"whatsNew.v21.data.title" = "あなたのデータは、あなたのルールで";
+"whatsNew.v21.data.description" = "情報の保存先はあなたが選べます。プライベートな iCloud か、Yala のクラウドか。すべてのデバイスで使えます。さらに、新しくなったホームと、iPad での Yala のフルスクリーン表示も。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4907,6 +4964,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Googleアカウントで作成した場合の、クラウド上のYalaアカウントです。";
+"welcome.existing.usedOnThisDeviceNote" = "このiPhoneで使った方法";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "クラウドアカウントを作成したときと同じGoogleアカウントを使ってください。";
@@ -6659,3 +6717,89 @@
 "export.error.invalidDateRange" = "日付が正しくありません。開始日は終了日より前にしてください。";
 "export.error.noTransactions" = "この条件に合う取引はありません。期間を変えるか、フィルタを外してください。";
 "export.error.fileWriteFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "「%@」を削除";
+"account.removal.intro" = "削除する前に、中身をどうするか選んでください。";
+"account.removal.countRecords" = "取引";
+"account.removal.countScheduled" = "予定の支払い";
+"account.removal.countFavorites" = "お気に入りの支払い";
+"account.removal.countDrafts" = "受信トレイの保留中";
+"account.removal.choiceHeader" = "中身の扱い";
+"account.removal.moveTitle" = "別の口座に移動する";
+"account.removal.moveSubtitle" = "おすすめ。履歴と残高はそのまま残ります。";
+"account.removal.noDestination" = "移動先にできる口座がほかにありません。";
+"account.removal.deleteTitle" = "取引を削除する";
+"account.removal.deleteSubtitle" = "口座とともに完全に削除されます。";
+"account.removal.deleteBlockedGroups" = "グループの取引が含まれています。移動のみ可能です。";
+"account.removal.destinationHeader" = "移動先";
+"account.removal.destinationBlockedCurrency" = "利用不可：この通貨に換算できない振替やグループの取引が含まれています。";
+"account.removal.convertNote" = "別の通貨のものは%@に換算されます。取引は各日付の為替レートで、予定の支払いとお気に入りは本日のレートで換算されます。";
+"account.removal.collapsedNote" = "「%1$@」と「%2$@」の間の振替は削除されます。同じ口座内ではお金が動かないためです。";
+"account.removal.partnersNote" = "ほかの口座との振替は、その口座に通常の取引として残ります。";
+"account.removal.plansNote" = "予定の支払い、お気に入り、受信トレイの保留中の項目は口座なしになります。使うときに口座を選んでください。";
+"account.removal.moveAction" = "移動して口座を削除";
+"account.removal.deleteAction" = "取引と口座を削除";
+"account.removal.confirmDeleteTitle" = "取引を削除しますか？";
+"account.removal.confirmDeleteCount" = "削除される取引";
+"account.removal.confirmDeleteMessage" = "完全に削除され、元に戻せません。口座も削除されます。";
+"account.removal.confirmDeleteAction" = "はい、すべて削除";
+"account.removal.working" = "口座を削除しています…";
+"account.removal.failedTitle" = "口座は削除されませんでした";
+"account.removal.failedUnreadable" = "この口座の中身を読み込めませんでした。何も変更されていません。";
+"account.removal.failedChanged" = "その間に口座で変更がありました。確認してもう一度お試しください。";
+"account.removal.failedRates" = "換算用の為替レートを取得できませんでした。何も移動されていません。接続してからもう一度お試しください。";
+"account.removal.noAllowedDestination" = "ほかの口座は別の通貨で、この口座には換算できない振替やグループの項目があります。";
+"account.removal.countBudgets" = "予算";
+"account.removal.budgetsMovedNote" = "この口座を対象にしていた予算は「%@」を対象にします。";
+"account.removal.budgetsOnlyNote" = "この口座だけを対象にしていた予算があります。口座がなくなると、すべての口座が対象になります。";
+"orphanedRecords.title" = "口座のない取引";
+"orphanedRecords.bannerMessage" = "口座を削除したときに口座がなくなり、残高にも支出にも含まれていません。";
+"orphanedRecords.bannerAction" = "移動先の口座を選ぶ";
+"orphanedRecords.intro" = "口座を削除したときに、これらの取引は口座がなくなりました。口座がない間は、残高にも支出にも含まれません。移動先の口座を選んでください。";
+"orphanedRecords.listHeader" = "対象の取引";
+"orphanedRecords.moreNote" = "ほか%d件。";
+"orphanedRecords.noDestination" = "移動するには口座を作成してください。";
+"orphanedRecords.keptCurrencyNote" = "別の通貨の振替は換算せずにそのまま移動します。相手側の金額と合ったままにするためです。";
+"orphanedRecords.convertNote" = "別の通貨のものは、その日付の為替レートで%@に換算されます。";
+"orphanedRecords.collapsedNote" = "「%@」の中で完結してしまう振替は削除されます：同じ口座内ではお金は動かないためです。";
+"orphanedRecords.moveAction" = "「%@」に移動";
+"orphanedRecords.moveActionGeneric" = "移動";
+"orphanedRecords.working" = "移動中…";
+"orphanedRecords.failedTitle" = "移動できませんでした";
+"orphanedRecords.failedUnreadable" = "取引を読み込めませんでした。何も変更されていません。";
+"orphanedRecords.failedChanged" = "その間に変更がありました。確認してもう一度お試しください。";
+"orphanedRecords.untitled" = "説明なし";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "このデバイスではiCloudを利用できません";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "YalaはデータをあなたのiCloudに保存していますが、今は読み込めません。iCloudが再び利用できるようになると、そこにあるデータがまた表示されます。設定のiCloudで確認できます。";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "iCloud を確認しています…";
+"storage.revert.prior.title" = "iCloud にすでに Yala のデータがあります";
+"storage.revert.prior.body" = "この端末の iCloud に、アカウントにない Yala のデータがあります：%@。追加すると、あなたのデータと一緒に表示されます。追加せずに始めると、iCloud から削除されます。";
+"storage.revert.prior.bodyNoCount" = "この端末の iCloud に、アカウントにない Yala のデータがあります。追加すると、あなたのデータと一緒に表示されます。追加せずに始めると、iCloud から削除されます。";
+"storage.revert.prior.groupRecords" = "グループの記録 %d 件";
+"storage.revert.prior.groupsNote" = "グループの記録は、グループなしで届くことがあります。";
+"storage.revert.prior.merge" = "自分のデータに追加";
+"storage.revert.prior.discard" = "追加せずに始める";
+"storage.revert.prior.discardConfirmTitle" = "iCloud から削除しますか？";
+"storage.revert.prior.discardConfirmBody" = "iCloud と、この Apple ID で iCloud を使っているデバイスから削除されます。コピーは残らず、復元できません。その後、iCloud への切り替えが始まります。";
+"storage.revert.prior.discardConfirm" = "削除して iCloud に戻る";
+"storage.revert.prior.checkFailedTitle" = "iCloud を確認できませんでした";
+"storage.revert.prior.checkFailedBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。接続の問題かもしれません。もう一度お試しください。";
+"storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
+"storage.revert.prior.noAccountTitle" = "この iPhone で iCloud にサインインしてください";
+"storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この iPhone は iCloud にサインインしていません。iPhone の設定からサインインして、もう一度お試しください。";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "この端末で非表示";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "この端末でのみ非表示にします。グループが届くと再び表示されます。";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "別の通貨のグループの支出は換算せずそのまま移動します。金額はグループが決めます。";

@@ -93,9 +93,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Eliminar %d registro?</string>
+			<string>Excluir %d registro?</string>
 			<key>other</key>
-			<string>Eliminar %d registros?</string>
+			<string>Excluir %d registros?</string>
 		</dict>
 	</dict>
 	<key>filters.subcategoriesSelectedCount</key>

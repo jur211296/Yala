@@ -480,15 +480,15 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
             """)
     }
 
-    /// La contrapartida del scan de arriba: los DOS sitios donde leer el flag de la fila es lo
-    /// correcto, porque el importe que los acompaña **no** lleva ajuste de bridge. Sin esto, el
-    /// arreglo de este ticket invita a cablear el accessor también aquí, y ahí sí cambiaría el
-    /// número que se muestra.
+    /// La contrapartida del scan de arriba: el saldo del período del widget **no** lleva ajuste de
+    /// bridge, así que no pide la magnitud al ajuste. Sin esto, el arreglo de este ticket invita a
+    /// cablear el accessor también aquí, y ahí sí cambiaría el número que se muestra.
     ///
-    /// Desde `widgets-sum-stored-amounts-from-other-preferred-currencies` el saldo resuelve con
-    /// `CashFlowCalculator.resolvedAmount` y `adjustment: .none`: en la rama de la misma divisa su
-    /// magnitud dudosa ES el flag de la fila; en la de reconversión, la calidad de esa conversión.
-    @Test("El saldo histórico y la fila del widget resuelven la fila entera, sin ajuste")
+    /// Desde `panel-balance-chart-contradicts-its-own-figure` (2026-10-16) ese saldo sigue la regla
+    /// de la curva de la app —la fila ENTERA en su divisa nativa, el saldo por divisa valorado al
+    /// cierre con la tasa de ese día (`BalanceValuation`)— y su magnitud dudosa es la calidad de esa
+    /// conversión. Antes resolvía cada fila con `resolvedAmount` y `adjustment: .none`.
+    @Test("El saldo del período del widget suma la fila entera, valorada al cierre, sin ajuste")
     func unadjustedSurfacesKeepTheRowFlag() throws {
         let cache = try Self.code("Yala/Services/WidgetDataCache.swift")
 
@@ -496,18 +496,17 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
             cache, from: "if let allTx = allTransactionsForBalance {",
             to: "let topCategories = buildTopCategories("
         )
-        #expect(saldo.contains("balanceAmount(tx, currencyCode: currencyCode, converter: converter)"), """
-            El saldo histórico suma la fila ENTERA —los saldos reflejan montos reales, no «mi
-            parte»—, así que su marca es la de la fila. Cablear aquí el accessor del ajuste
-            emparejaría una magnitud neteada con un importe sin netear.
+        #expect(saldo.contains("LiveBalanceCalculator.addNative(tx, to: &native)"), """
+            El saldo del período suma la fila ENTERA —los saldos reflejan montos reales, no «mi
+            parte»—, en su divisa nativa: la regla del saldo vivo.
             """)
-        let helper = try Self.scope(
-            cache, from: "private static func balanceAmount(",
-            to: "private static func getPaymentDisplayProperties("
-        )
-        #expect(helper.contains("tx, currencyCode: currencyCode, adjustment: .none, converter: converter"), """
-            `balanceAmount` tiene que resolver con `adjustment: .none`: con el ajuste, el saldo
-            contaría «mi parte» de los gastos de grupo y no lo que salió de la cuenta.
+        #expect(saldo.contains("let converted = valuation.value(native, at: closing)"), """
+            Y se valora al cierre del período con `BalanceValuation`: la tasa de ese día, o la regla del saldo vivo si
+            el período llega a hoy.
+            """)
+        #expect(saldo.contains("balanceApproximateMagnitude = (converted.approximateMagnitude as NSDecimalNumber).doubleValue"))
+        #expect(!saldo.contains("adjustment"), """
+            Cablear aquí el ajuste emparejaría una magnitud neteada con un importe sin netear.
             """)
 
         // La fila de `WidgetTransaction` también lleva su flag crudo, y eso ya lo fija

@@ -66,6 +66,11 @@ struct PanelSheetsModifier: ViewModifier {
                     onAccountChanged: { viewModel.reloadAndRecalculate() }
                 )
             }
+            .sheet(isPresented: $sheets.showOrphanedRecords, onDismiss: {
+                viewModel.reloadAndRecalculate()
+            }) {
+                OrphanedRecordsSheet(onMoved: { viewModel.reloadAndRecalculate() })
+            }
             .sheet(isPresented: $sheets.showFilters) {
                 RecordsFiltersView(recordsViewModel: panelFilters)
             }

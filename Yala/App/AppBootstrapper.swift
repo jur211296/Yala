@@ -125,6 +125,12 @@ final class AppBootstrapper {
         //      Pérdida acotada a config local de Cash Flow (feature Pro nueva que nunca sincronizó).
         CashFlowWipeService.wipeCashFlowDataIfNeeded(in: context)
 
+        // 0.0-cashflow. Los ajustes de un mes pasan de `CashFlowOverride.line` (campo REFERENCE en Production, que
+        //      rechaza lo que la app escribe) a `cashFlowLine`. En cada arranque, idempotente: ver
+        //      `CashFlowOverrideLineMigration`. Va aquí por lo mismo que el wipe: cuanto antes, menos tiempo con un
+        //      registro que iCloud rechaza en la cola.
+        CashFlowOverrideLineMigration.migrateIfNeeded(in: context)
+
         // 0.0-bis. EL EJE 1, backfilleado una sola vez (ADR 2026-09-09 «Sesiones — dos ejes»).
         //
         // Quien ya tiene el onboarding hecho y todavía no tiene marca es el parque existente: se le
@@ -955,9 +961,19 @@ final class AppBootstrapper {
         }
         // El What's New de la versión corriente se marca visto en todo arranque
         // uitest: con contenido publicado para la versión (WhatsNewConfig), el sheet
-        // intercepta el primer tap de cualquier XCUITest post-onboarding.
-        let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-        UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
+        // intercepta el primer tap de cualquier XCUITest post-onboarding. Salvo que el
+        // test pida otro estado con `-uitest-last-seen-version` (ver `UITestHooks`).
+        switch UITestHooks.lastSeenAppVersionOverride {
+        case "keep":
+            break
+        case "none":
+            UserDefaults.standard.removeObject(forKey: "lastSeenAppVersion")
+        case let version?:
+            UserDefaults.standard.set(version, forKey: "lastSeenAppVersion")
+        case nil:
+            let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+            UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
+        }
 
         // Adopción del dominio Grupos dada por hecha en uitest: los XCUITests prueban la
         // funcionalidad de Grupos, no el acto de adoptarla, y con el sello del handover puesto un
@@ -996,6 +1012,16 @@ final class AppBootstrapper {
         if UITestHooks.fakeICloudAvailable {
             iCloudSyncService.shared._uiTestSimulateAvailableAccount()
         }
+        // **«¿Espeja este arranque?» contesta la verdad del host de test: no.** El store `YalaModel-UITest` monta con
+        // `cloudKitDatabase: .none`, pero sale de `personalConfiguration` ANTES de capturar la decisión del mount, así
+        // que `personalStoreMountedDecision` se queda en `.iCloudMirror` y `mirrorWillSync()` decía `true` en toda
+        // corrida. Con eso los borrados del Welcome esperaban un import de iCloud que aquí no puede llegar —sin cuenta,
+        // `waitForImportQuiescence` sale `false` al instante— y devolvían `importNotQuiescent`: «Borrar todo y
+        // continuar» con cambios de grupos acababa en «No pudimos borrar todo» en vez de en la oferta de perderlos
+        // (ticket `fresh-start-after-adopt-exit-with-group-changes-ends-in-device-wipe-failed`). Es la regla «El
+        // testigo del mount MIENTE en los hosts de test» de `swiftdata-cloudkit.md`: el default va en la verdad del
+        // host, no en una inversión. Con `-uitest-fake-icloud` también: fingir la cuenta no hace que este store espeje.
+        ICloudPersonalCorpusProbe.mirrorWillSync = { false }
         #endif
 
         // Deep link en cold launch (PRE-init): `-uitest-deeplink-url <url>` entra por

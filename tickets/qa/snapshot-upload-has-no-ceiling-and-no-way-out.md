@@ -4,7 +4,7 @@ status: qa
 priority: very-high
 area: "modo-nube, migración"
 created: 2026-09-22
-updated: 2026-09-23
+updated: 2026-10-15
 source: "review adversarial de `verify-reads-a-failed-local-fetch-as-an-empty-outbox` (2026-09-22), lente de consumidores"
 ---
 
@@ -206,3 +206,7 @@ comprueba en el teléfono es la cancelación y que nada se rompe:
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con el guion del bloque D (modo avión al 55 % y «Cancelar la activación»).
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para el iPhone, con el guion reducido de la tanda (C1): solo una migración completa con muchos movimientos, para ver que el techo no salta en una subida larga real. El modo avión al 55 % y «Cancelar la activación» los fijan `MigrationRunnerTests` §14 y §14-bis y `SnapshotUploadCeilingLogicTests`; en el simulador no hay sesión real ni iCloud.

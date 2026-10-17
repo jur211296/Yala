@@ -203,7 +203,10 @@ struct NewTransactionView: View {
             predicate: #Predicate { $0.splitExpenseID == splitID && $0.subcategory == nil }
         )
         do {
-            cachedPendingGroupDraft = try modelContext.fetch(descriptor).first
+            // Sin los quitados de la Bandeja en este teléfono: si no, el banner mandaría a la Bandeja a buscar un
+            // borrador que ahí ya no sale (`InboxGroupDraftsHiddenHere`).
+            cachedPendingGroupDraft = InboxGroupDraftsHiddenHere.visible(
+                try modelContext.fetch(descriptor), context: modelContext).first
         } catch {
             #if DEBUG
             print("NewTransactionView: pending group draft fetch failed: \(error)")

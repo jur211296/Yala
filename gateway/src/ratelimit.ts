@@ -2,7 +2,7 @@ import type { Env } from "./env";
 import type { SessionClaims } from "./attest/session";
 import { jsonError } from "./errors";
 import { type Category, limitsFor } from "./policy";
-import type { CheckRequest, QuotaTicket, RateLimitResult, RefundRequest } from "./rate_limiter";
+import type { CheckRequest, ForgetRequest, QuotaTicket, RateLimitResult, RefundRequest } from "./rate_limiter";
 
 /**
  * Aplica entitlement + rate-limit a un request ya autenticado.
@@ -25,6 +25,28 @@ export interface GateOutcome {
 
 function limiter(env: Env, claims: SessionClaims) {
   return env.RATE_LIMITER.get(env.RATE_LIMITER.idFromName(claims.keyId));
+}
+
+/**
+ * El cubo de cuota de una CUENTA: el que usan las rutas que solo exigen el JWT de usuario (`requireUser`) y las
+ * estrictas cuando no llega sesión de attest. Es el único contador ligado a la cuenta; el de la clave de App Attest
+ * es del dispositivo (ver `forgetAccountQuota`).
+ */
+export function accountQuotaBucket(sub: string): string {
+  return `sub:${sub}`;
+}
+
+/**
+ * Borrado de cuenta: olvida el contador de la CUENTA. El del dispositivo (cubo = keyId de App Attest) se conserva a
+ * propósito: no lleva nada de la cuenta, sigue sirviendo a ese teléfono (IA, tipos de cambio) y es el que guarda el
+ * cupo de prueba de la IA, que no se repone nunca; borrarlo con la cuenta lo repondría con cada alta y baja.
+ */
+export async function forgetAccountQuota(env: Env, sub: string): Promise<void> {
+  const body: ForgetRequest = { op: "forget" };
+  await limiter(env, { keyId: accountQuotaBucket(sub), tier: "free" }).fetch("https://ratelimiter/forget", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export async function gateAIRequest(

@@ -74,6 +74,23 @@ enum DevSeedProfile: String {
     /// `.fichaMX`. Una sola persona para todas las capturas, así que las cifras cuadran entre pantallas. Ver
     /// `relabelPersonalDataToMXN`.
     case fichaMXVida = "ficha-mx-vida"
+    /// Capturas y vídeo de la ficha de la App Store en el idioma de la app: la vida personal de `.realista` en la divisa
+    /// preferida (`-defaultCurrencyCode`) y los grupos de la ficha. Las cifras que citan los textos salen con el reloj
+    /// en el 13-oct-2026 (lo pone el molde de `ficha-app-store/`). Ver `DevSeedFicha` y `DevSeedGroups.createFicha`.
+    case ficha
+    /// Eliminar una cuenta con movimientos: «Efectivo QA» (dos gastos en soles), «Banco QA» (soles) y «Dólares QA»
+    /// (vacía). Sin nada más, para que el diálogo de eliminar enseñe cifras exactas. Ver `DevSeedAccountRemoval`.
+    case cuentaConMovimientos = "cuenta-con-movimientos"
+    /// El estado que dejaba eliminar una cuenta antes de la 2.1: el mismo corpus de `.cuentaConMovimientos` con
+    /// «Efectivo QA» eliminada a pelo, así que sus dos gastos se quedan sin cuenta (`.nullify`). Ver
+    /// `DevSeedAccountRemoval.createOrphaned`.
+    case movimientosSinCuenta = "movimientos-sin-cuenta"
+    /// Un gasto de grupo en la Bandeja cuyo grupo no está en este teléfono, como lo deja «Sumarlos a mis datos» al
+    /// volver a iCloud. Ver `DevSeedGroupRowsWithoutGroup.createForeignGroupDraft`.
+    case gastoDeGrupoSinSuGrupo = "gasto-de-grupo-sin-su-grupo"
+    /// `.movimientosSinCuenta` más la pata real de una cena de grupo pagada desde «Efectivo QA». Ver
+    /// `DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount`.
+    case pataDeGrupoSinCuenta = "pata-de-grupo-sin-cuenta"
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -82,9 +99,10 @@ enum DevSeedProfile: String {
     var daysBack: Int {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
-             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX: return 7
+             .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
+             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta: return 7
         case .fichaMXVida: return 365
-        case .realista: return 730
+        case .realista, .ficha: return 730
         case .pesado: return 3650
         }
     }
@@ -93,7 +111,7 @@ enum DevSeedProfile: String {
     var seedsGroups: Bool {
         self == .grupos || self == .gruposInvitado || self == .gruposSaldado || self == .soloGrupos
             || self == .gruposSinFlag || self == .gruposPendiente || self == .soloGruposTrasAviso
-            || self == .fichaMX || self == .fichaMXVida
+            || self == .fichaMX || self == .fichaMXVida || self == .ficha
     }
 
     /// Si siembra vida personal (cuentas, transacciones, presupuestos, tags, pagos, drafts).
@@ -124,6 +142,43 @@ final class DevSeedService {
         // más arriba, en `applyUITestSeed`.
         if profile == .deadPointer {
             seedDeadPointerFixtures(in: context)
+            return
+        }
+        if profile == .gastoDeGrupoSinSuGrupo {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            DevSeedGroupRowsWithoutGroup.createForeignGroupDraft(in: context)
+            do { try context.save() } catch {
+                print("DevSeedService: gasto-de-grupo-sin-su-grupo save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
+        if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
+            // simulador el proveedor de tasas no contesta.
+            var rng = SeededRandom(seed: 42)
+            let end = Date.now
+            let start = Calendar.current.date(byAdding: .day, value: -7, to: end) ?? end
+            DevSeedExchangeRates.create(startDate: start, endDate: end, rng: &rng, in: context)
+            if profile == .movimientosSinCuenta {
+                DevSeedAccountRemoval.createOrphaned(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .pataDeGrupoSinCuenta {
+                DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount(
+                    subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else {
+                DevSeedAccountRemoval.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            }
+            do { try context.save() } catch {
+                print("DevSeedService: cuenta-con-movimientos save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
             return
         }
         if profile == .sinRegistros {
@@ -241,6 +296,11 @@ final class DevSeedService {
         if profile == .fichaMXVida {
             relabelPersonalDataToMXN(in: context)
         }
+        // La ficha de la App Store en la divisa preferida (dólares en inglés, reales en portugués de Brasil). También
+        // antes de los grupos, que ya nacen en esa divisa.
+        if profile == .ficha {
+            DevSeedFicha.adaptPersonalData(in: context, mainCurrency: CurrencyDefaults.currentPreferred)
+        }
 
         // Step 10: Grupos (perfiles .grupos / .gruposInvitado / .gruposSaldado / .soloGrupos) — grupo local
         // para QA del tab Grupos
@@ -252,6 +312,7 @@ final class DevSeedService {
             case .gruposPendiente: DevSeedGroups.createAsPendingMember(in: context)
             case .gruposSaldado:  DevSeedGroups.createSettled(in: context)
             case .fichaMX, .fichaMXVida: DevSeedGroups.createFichaMX(in: context)
+            case .ficha:          DevSeedGroups.createFicha(in: context, mainCurrency: CurrencyDefaults.currentPreferred)
             default:              DevSeedGroups.create(in: context)
             }
         }

@@ -97,6 +97,10 @@ Production: el arreglo es de código (otro nombre para la relación). Ticket nue
 `personal-cloudkit-cashflow-override-line-declared-as-reference`. El test lo tolera solo con ese tipo
 exacto (`knownTypeMismatches`) para no ocultar nada más.
 
+**Confirmado el 2026-10-12 y arreglado en código el 2026-10-16**: la relación pasó a un campo nuevo,
+`CD_cashFlowLine`, **desplegado a Production en los dos contenedores el 2026-10-16**: sección [«El campo nuevo
+de los ajustes del flujo de caja»](#el-campo-nuevo-de-los-ajustes-del-flujo-de-caja-desplegado-el-2026-10-16).
+
 ### Sobran (no se tocan)
 
 `CD_Budget.CD_month`, `CD_Budget.CD_year`, `CD_ScheduledPayment.CD_natureOverride`,
@@ -220,6 +224,122 @@ xcodebuild test -project Yala.xcodeproj -scheme "Yala Dev" \
 ```
 
 Verde = el export real cubre todo lo que la app escribe. Commitea los cuatro `.ckdb` exportados.
+
+## El campo nuevo de los ajustes del flujo de caja (desplegado el 2026-10-16)
+
+Fecha: 2026-10-16 · Ticket: `personal-cloudkit-cashflow-override-line-declared-as-reference` · **Lo despliega
+Jürgen.** Ninguna sesión despliega esquema a Production.
+
+**Hecho el 2026-10-16** en `iCloud.com.jurgenschmidt.yala` y `iCloud.com.jurgenschmidt.yala.dev`. El export de
+la consola de los cuatro entornos trae `CD_cashFlowLine STRING`, coincide byte a byte con los `.ckdb` del repo y
+`PersonalCloudKitSchemaParityTests` pasa contra él. Los pasos de abajo quedan como registro.
+
+### Qué cambia
+
+| Contenedor | Record type | Campo nuevo | Tipo | Qué se hace |
+|---|---|---|---|---|
+| `iCloud.com.jurgenschmidt.yala` (scheme `Yala`, App Store y TestFlight) | `CD_CashFlowOverride` | `CD_cashFlowLine` | STRING | **Añadir** en Development y desplegar a Production |
+| `iCloud.com.jurgenschmidt.yala.dev` (scheme `Yala Dev`) | `CD_CashFlowOverride` | `CD_cashFlowLine` | STRING | Lo mismo |
+
+Solo una alta. `CD_line` (REFERENCE en producción, STRING en `.dev`) **se queda** donde está: la app deja de
+escribirlo y no se borra ni se cambia nada.
+
+Por qué: con `CD_line` en REFERENCE, Production rechaza todo ajuste de un mes que la app sube (la app escribe
+STRING), y desde 1.2.6 sabemos que ese rechazo atasca también el resto de la subida a iCloud
+(`Yala/Services/CashFlowWipeService.swift`). La build nueva escribe el ajuste en `CD_cashFlowLine` y vacía el
+campo viejo; los ajustes que ya hay en cada teléfono se pasan solos al abrir la app
+(`CashFlowOverrideLineMigration`).
+
+### El orden, y no tiene excepción
+
+1. Desplegar el esquema (pasos A a D) **en los dos contenedores**.
+2. Verificar con un export que Production tiene el campo (paso C).
+3. **Solo entonces** subir a TestFlight o a la App Store la primera build con este cambio.
+
+Si la build llega antes que el esquema, Production rechaza también `CD_cashFlowLine` (un campo que no conoce) y
+los ajustes siguen sin sincronizar, igual que hoy. No rompe nada que no esté ya roto, pero la build no arregla
+nada hasta el despliegue.
+
+### A · Añadir el campo en Development
+
+Antes, el token de `cktool` (paso 0 de la guía de arriba) y una copia de lo que hay:
+
+```
+xcrun cktool export-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment development --output-file /tmp/yala-development-antes.ckdb
+```
+
+Si el export ya trae `CD_cashFlowLine` (lo crea solo un build Debug de esta rama que guarde un ajuste contra
+Development), salta al paso B.
+
+**Por la consola (recomendado, solo añade):** CloudKit Console → `iCloud.com.jurgenschmidt.yala` →
+**Development** → **Schema** → **Record Types** → `CD_CashFlowOverride` → **+** (añadir campo) → nombre
+`CD_cashFlowLine`, tipo **String** → **Save**. Sin índices: el espejo no los necesita.
+
+**O con `cktool`:** abre `/tmp/yala-development-antes.ckdb`, añade dentro de `RECORD TYPE CD_CashFlowOverride`
+la línea `CD_cashFlowLine STRING,` (debajo de `CD_amount`), y:
+
+```
+xcrun cktool validate-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment development --file /tmp/yala-development-antes.ckdb
+xcrun cktool import-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment development --file /tmp/yala-development-antes.ckdb
+```
+
+Importa el export que acabas de sacar con la línea añadida, **no** `Cloudkit Schemas/yala-development.ckdb`:
+`import-schema` sustituye Development entero y el fichero del repo puede no ser idéntico a lo vivo.
+
+### B · Desplegar a Production
+
+CloudKit Console → `iCloud.com.jurgenschmidt.yala` → **Schema** → **Deploy Schema Changes…** con Development
+seleccionado. La lista tiene que ser **solo de altas**, y entre ellas «Add field `CD_cashFlowLine` to
+`CD_CashFlowOverride`». Si aparece cualquier «Remove» o «Change», **cancela**. **Deploy**.
+
+### C · Verificar con un export
+
+```
+xcrun cktool export-schema --team-id 3WKFFVD66J --container-id iCloud.com.jurgenschmidt.yala \
+  --environment production --output-file /tmp/yala-production-despues.ckdb
+awk '/RECORD TYPE CD_CashFlowOverride/,/\);/' /tmp/yala-production-despues.ckdb | grep -E 'CD_cashFlowLine|CD_line'
+```
+
+Tienen que salir **las dos** líneas: `CD_cashFlowLine STRING` (el campo nuevo) y `CD_line REFERENCE` (el viejo,
+intacto). Si falta `CD_cashFlowLine`, el despliegue no entró: no subas la build.
+
+### D · Lo mismo en `.dev`
+
+Pasos A, B y C con `--container-id iCloud.com.jurgenschmidt.yala.dev`. Allí `CD_line` es STRING y seguirá
+siéndolo; lo que se verifica es que esté `CD_cashFlowLine STRING`.
+
+### E · Dejar el repo fiel
+
+Exporta los cuatro entornos sobre `Cloudkit Schemas/yala-production.ckdb`, `yala-development.ckdb`,
+`yala_dev-production.ckdb` y `yala_dev-development.ckdb`: los comandos del paso 1 de la guía de arriba, y para los
+dos de `.dev` los mismos con `--container-id iCloud.com.jurgenschmidt.yala.dev` y esos ficheros (paso 5). Corre
+`PersonalCloudKitSchemaParityTests` (paso 6) y commitea. Si el test sigue verde, el export real cubre el campo.
+
+### F · Comprobar la sync en dos iPhone (tras el despliegue y con la build nueva en los dos)
+
+1. iPhone A: pestaña **Más → Flujo de caja** (con «Solo gastos» apagado: si no, no sale), toca la celda de un mes de una línea y ajusta el importe
+   (por ejemplo 1.234). Guarda.
+2. iPhone B, con el mismo Apple ID: abre **Flujo de caja**. En uno o dos minutos (o al cerrar y abrir Yala) el mes
+   enseña 1.234 con la marca de ajuste.
+3. En B cámbialo a 2.000 y comprueba que A lo ve.
+4. **Obligatorio, es lo que prueba la migración:** antes de instalar la build nueva en A, apunta en A (con la versión
+   de la App Store) un ajuste de otro mes. Instala la build nueva en A y en B, abre A una vez, y comprueba que ese
+   ajuste aparece en B. Si no aparece, la build no arregla los ajustes que ya había: no la publiques.
+
+Si el paso 2 no llega, mira primero el paso C: sin el campo en Production el ajuste se queda en A sin aviso.
+
+### Lo que no cubre
+
+Medido: mientras un teléfono siga con la versión de la App Store, ese teléfono sigue escribiendo `CD_line` y su
+subida a iCloud sigue atascada como hoy, hasta que actualice. No empeora nada.
+
+[Inferido, sin medir] Mientras uno de los dos teléfonos siga con una versión anterior, los ajustes que le lleguen del otro no tienen
+dónde guardarse (esa versión no conoce el campo nuevo) y no se ven. Al actualizarlo, el espejo no vuelve a bajar
+lo que ya bajó, así que esos ajustes siguen sin verse ahí hasta que alguien los edite. Ticket:
+`cashflow-override-synced-to-an-old-version-stays-invisible-after-updating`.
 
 ## Para el siguiente campo nuevo
 

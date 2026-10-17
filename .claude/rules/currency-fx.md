@@ -10,6 +10,8 @@ paths:
   - "Yala/App/Logic/Calculators/CashFlowCalculator.swift"
   - "Yala/App/Logic/Calculators/HeroBucketsCalculator.swift"
   - "Yala/App/Logic/Calculators/LiveBalanceCalculator.swift"
+  - "Yala/App/Logic/Calculators/BalanceValuation.swift"
+  - "Yala/Services/TrendDataProcessor.swift"
 ---
 # Divisas · tasas · la marca de aproximado
 
@@ -85,6 +87,26 @@ avisos de informe y `InsightsCalculator`—, con un test por calculador en
 `StatisticsCalculatorsZeroConvertedTests`. Ninguno de esos siete pinta «≈»: la marca sigue siendo de
 los totales que pasan por `resolvedAmount`. En `mcp/`, `buscar_movimientos` enseña `null` en
 `importe_en_divisa_preferida` cuando la conversión no se escribió.
+
+## Un SALDO en el tiempo vale lo que había en cada divisa, por la tasa de esa fecha (2026-10-16)
+
+Decisión de Jürgen («cada día a su tipo de cambio», ticket `panel-balance-chart-contradicts-its-own-figure`): un
+saldo a una fecha es el saldo NATIVO de cada divisa ese día × la tasa de ESA fecha; hoy, la regla del saldo vivo
+(`LiveBalanceCalculator.convertAtLatestRate`). Todo lo que dibuje o enseñe un saldo pasado pasa por
+`BalanceValuation`: la curva agregada (`TrendDataProcessor.fillBalanceBuckets`), la curva por cuenta de
+Estadísticas, el hero de un periodo cerrado y el saldo y la curva del widget de inicio. Tres cosas que no se tocan
+sin reabrirlo:
+
+- **No sumes cada fila a su tipo (`resolvedAmount`) para un saldo.** Es la regla de los FLUJOS (gasto, ingreso), y
+  para un saldo no da ningún valor: con una cuenta en dólares la curva del Panel acababa en ~201K con la cifra en
+  179K. El punto de hoy sale de la regla del saldo vivo, no de la tasa del día: así iguala la cifra por construcción.
+- **Las tasas de muchas fechas se piden en bloque** (`CurrencyConverting.rateFactors`): una curva de «Todo» pide una
+  por día. `CurrencyConverter` la lee con una consulta y aplica la misma escalera que `resolveRates`; si tocas una,
+  toca la otra (`CurrencyConverterDailyFactorsTests` compara las dos rutas). Un conformer que envuelva al converter
+  (`SnapshotMemoizedConverter`) reenvía `rateFactors`, o el default lo vuelve una consulta por fecha.
+- **La tasa de un día se lee a su mediodía local** (`BalanceValuation.rateDay`): las filas se indexan por fecha UTC
+  y la medianoche local cae en el día anterior en zonas al este de Greenwich. Un periodo cerrado se valora a su
+  CIERRE, no a su último movimiento.
 
 ## Reabrir una fila para que el reparador la recalcule NO es neutro
 

@@ -600,9 +600,13 @@ enum GroupsAssociationDetach {
         var draftsDeleted = 0
         var conservedExpenses = 0
         var conservedSettlements = 0
+        /// Filas sin cuenta que no se pudieron clasificar y se dejaron tal cual (`GroupLegKindLogic.Kind.unknown`).
+        /// Cuentan para no vaciar el desenlace: sin ellas, un desasociar con solo esas filas salía antes de escribir el
+        /// libro de conservados que las protege al re-asociar.
+        var leftUntouched = 0
 
         var isEmpty: Bool {
-            released == 0 && deleted == 0 && draftsConverted == 0 && draftsDeleted == 0
+            released == 0 && deleted == 0 && draftsConverted == 0 && draftsDeleted == 0 && leftUntouched == 0
         }
     }
 
@@ -716,8 +720,11 @@ enum GroupsAssociationDetach {
         // enlace, y su ausencia no probaría nada. Se quitan de los mapas al final.
         var conservedThroughDraft: Set<String> = []
 
+        // Sin cuenta, la fila se clasifica con la regla común (`GroupLegKindLogic`). Aquí los gastos todavía existen —se
+        // purgan DESPUÉS de este método—, así que la evidencia del gasto cuenta.
+        let legEvidence = GroupLegEvidence.read(for: txs, context: context)
         for tx in txs {
-            switch action(for: tx, choice: choice) {
+            switch action(leg: legEvidence.kind(of: tx), choice: choice) {
             case .releasePointers:
                 if let expenseID = tx.splitExpenseID {
                     conservedExpenses.insert(expenseID)
@@ -734,6 +741,21 @@ enum GroupsAssociationDetach {
             case .delete:
                 context.delete(tx)
                 outcome.deleted += 1
+            case .leaveUntouched:
+                // Sin cuenta y sin poder probar qué es: no se suelta (si fuera una virtual, entraría en el aviso
+                // «Movimientos sin cuenta» como movible) ni se borra (puede ser dinero real). **Pero entra en el libro de
+                // conservados**, como las que se sueltan: si la persona re-asocia esta cuenta, el puente no ve una fila
+                // sin cuenta (`bridgeExpense` busca las patas por su cuenta) y crearía otra al lado; el libro lo frena
+                // mientras esta siga en el teléfono (review adversarial del 2026-10-16).
+                if let expenseID = tx.splitExpenseID {
+                    conservedExpenses.insert(expenseID)
+                    expenseMovementRows[expenseID, default: []].append(tx)
+                }
+                if let settlementID = tx.splitSettlementID {
+                    conservedSettlements.insert(settlementID)
+                    settlementMovementRows[settlementID, default: []].append(tx)
+                }
+                outcome.leftUntouched += 1
             }
         }
 
@@ -851,6 +873,8 @@ enum GroupsAssociationDetach {
     enum Action: Equatable {
         case releasePointers
         case delete
+        /// Fila sin cuenta que no se puede clasificar (`GroupLegKindLogic.Kind.unknown`): no se toca.
+        case leaveUntouched
     }
 
     /// Qué le pasa a UNA transacción puenteada.
@@ -861,12 +885,21 @@ enum GroupsAssociationDetach {
     /// hace la retirada de legacy: resolver «real vs espejo» con una regla propia es el anti-patrón que
     /// este subsistema lleva media docena de arreglos persiguiendo. Lo que cambia respecto del freeze son
     /// las ACCIONES, no la clasificación.
-    static func action(for tx: TransactionItem, choice: BridgedRowsChoice) -> Action {
-        action(choice: choice, accountIsSystem: tx.account?.isSystemAccount == true)
+    ///
+    /// **Sin cuenta, la clase la da `GroupLegKindLogic`** (2026-10-16, ticket
+    /// `orphaned-group-records-stay-out-of-the-notice`). Hasta ese día una fila sin cuenta contaba como REAL y se soltaba:
+    /// si era una virtual cuya cuenta de sistema no estaba, quedaba sin cuenta y sin puntero, entraba en el aviso
+    /// «Movimientos sin cuenta» y moverla la convertía en un gasto real contado dos veces. Con «no se sabe», `.keep` no la
+    /// toca; `.remove` la borra igual que a las demás.
+    static func action(leg: GroupLegKindLogic.Kind, choice: BridgedRowsChoice) -> Action {
+        switch leg {
+        case .real: return action(choice: choice, accountIsSystem: false)
+        case .virtual: return action(choice: choice, accountIsSystem: true)
+        case .unknown: return choice == .keep ? .leaveUntouched : .delete
+        }
     }
 
-    /// Forma pura, para fijar la tabla sin `ModelContext`. `account == nil` cuenta como REAL (conservar):
-    /// ante la duda, preservar el rastro.
+    /// Forma pura para una fila CON cuenta, para fijar la tabla sin `ModelContext`.
     static func action(choice: BridgedRowsChoice, accountIsSystem: Bool) -> Action {
         guard choice == .keep else { return .delete }
         switch GroupTransactionBridge.classifyForSoftDelete(transactionAccountIsSystem: accountIsSystem) {

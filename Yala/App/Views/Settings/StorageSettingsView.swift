@@ -56,6 +56,19 @@ struct StorageSettingsView: View {
     @State private var confirmMigrate2 = false
     @State private var confirmRevert1 = false
     @State private var confirmRevert2 = false
+    /// Lo que el iCloud del teléfono sumaría a la vuelta, si la pregunta encontró algo
+    /// (`CloudMigrationController.checkICloudBeforeReverse`). Copiado para presentarlo: el aviso no se queda sin cifras si
+    /// la tarjeta se repinta.
+    @State private var revertPriorData: ICloudForeignCorpus?
+    @State private var showRevertPriorData = false
+    /// «Empezar sin ellos» pide su propio «¿seguro?»: borra de iCloud y no tiene vuelta.
+    @State private var confirmDiscardPriorData = false
+    /// La pregunta a iCloud no contestó, o no hay iCloud al que preguntar: la vuelta no empieza y se ofrece reintentar.
+    /// `revertNeedsICloud` elige el texto.
+    @State private var showRevertCheckFailed = false
+    @State private var revertNeedsICloud = false
+    /// La persona eligió «Sumarlos a mis datos» y el «¿seguro?» de siempre es el de esa vuelta. Lo baja cada toque del botón.
+    @State private var revertMergesPriorData = false
     /// Confirmación de «Cancelar y seguir en la nube» en la espera de la vuelta a iCloud. Un solo diálogo, colgado
     /// del propio botón: no encadena con los de `StorageConfirmations`.
     @State private var confirmCancelReverse = false
@@ -168,7 +181,16 @@ struct StorageSettingsView: View {
             confirmMigrate1: $confirmMigrate1, confirmMigrate2: $confirmMigrate2,
             confirmRevert1: $confirmRevert1, confirmRevert2: $confirmRevert2,
             onMigrate: proceedToSignInStep,
-            onRevert: { Task { await controller?.startReverse() } }))
+            onRevert: startConfirmedReverse))
+        .modifier(StorageRevertPriorDataDialogs(
+            priorData: revertPriorData,
+            showPriorData: $showRevertPriorData,
+            confirmDiscard: $confirmDiscardPriorData,
+            showCheckFailed: $showRevertCheckFailed,
+            needsICloud: revertNeedsICloud,
+            onMerge: chooseMergingPriorData,
+            onDiscard: { Task { await controller?.startReverseDiscardingICloudPriorData() } },
+            onRetryCheck: retryRevertCheck))
         .alert(L10n.Storage.Errors.title, isPresented: $showError, presenting: controller?.lastError) { _ in
             Button(L10n.Common.ok, role: .cancel) { controller?.lastError = nil }
         } message: { message in
@@ -481,18 +503,27 @@ struct StorageSettingsView: View {
 
             if eligibility == .eligible {
                 Button {
-                    confirmRevert1 = true
+                    Task { await beginRevert() }
                 } label: {
-                    Text(L10n.Storage.Revert.button)
-                        .font(DS.Typography.body.weight(.medium))
-                        .foregroundStyle(DS.Semantic.warningForeground)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, DS.Spacing.sm)
-                        .contentShape(Rectangle())
+                    Group {
+                        if controller.isCheckingICloudBeforeReverse {
+                            HStack(spacing: DS.Spacing.sm) {
+                                ProgressView()
+                                Text(L10n.Storage.Revert.Prior.checking)
+                            }
+                        } else {
+                            Text(L10n.Storage.Revert.button)
+                        }
+                    }
+                    .font(DS.Typography.body.weight(.medium))
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.bordered)
                 .tint(DS.Semantic.warningForeground)
-                .disabled(controller.isWorking)
+                .disabled(controller.isWorking || controller.isCheckingICloudBeforeReverse)
                 .accessibilityIdentifier("storage_revert_button")
             } else {
                 Text(L10n.Storage.Revert.ineligible)
@@ -502,6 +533,69 @@ struct StorageSettingsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .storageCardStyle()
+    }
+
+    // MARK: - Volver a iCloud: pregunta previa
+
+    /// El toque de «Volver a iCloud»: antes de las confirmaciones, pregunta a iCloud qué sumaría la vuelta (ticket
+    /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`). Nada ajeno → las confirmaciones de siempre; algo
+    /// ajeno → el aviso con la elección; sin respuesta → no empieza.
+    private func beginRevert() async {
+        guard let controller else { return }
+        revertMergesPriorData = false
+        // Un flag que se quedó en `true` porque UIKit no llegó a presentar su diálogo dejaría el botón sin respuesta: cada
+        // toque lo volvería a poner en `true`, que no cambia nada. Cada toque empieza con los tres abajo.
+        confirmRevert1 = false
+        showRevertPriorData = false
+        showRevertCheckFailed = false
+        switch await controller.checkICloudBeforeReverse() {
+        case nil:
+            return
+        case .proceed:
+            confirmRevert1 = true
+        case .ask(let corpus):
+            revertPriorData = corpus
+            showRevertPriorData = true
+        case .cannotCheck:
+            revertNeedsICloud = false
+            showRevertCheckFailed = true
+        case .needsICloud:
+            revertNeedsICloud = true
+            showRevertCheckFailed = true
+        }
+    }
+
+    /// «Reintentar» de la alerta. **Espera a que la alerta se cierre** antes de volver a preguntar: una respuesta rápida
+    /// (sin red, sin iCloud) volvería a presentar desde el mismo anchor mientras la alerta aún se desmonta, y UIKit puede
+    /// descartar esa segunda presentación.
+    private func retryRevertCheck() {
+        Task {
+            do {
+                try await Task.sleep(for: .milliseconds(400))
+            } catch {
+                return  // Cancelada: la pantalla se fue y no hay nada que reintentar.
+            }
+            await beginRevert()
+        }
+    }
+
+    /// «Sumarlos a mis datos» lleva al «¿seguro?» de siempre, que es el que empieza la vuelta.
+    private func chooseMergingPriorData() {
+        revertMergesPriorData = true
+        confirmRevert2 = true
+    }
+
+    /// El «Sí, volver a iCloud» del «¿seguro?»: la vuelta de siempre, o la que suma lo ajeno si la persona lo eligió.
+    private func startConfirmedReverse() {
+        let merging = revertMergesPriorData
+        revertMergesPriorData = false
+        Task {
+            if merging {
+                await controller?.startReverseMergingICloudPriorData()
+            } else {
+                await controller?.startReverse()
+            }
+        }
     }
 
     // MARK: - Sync status (banner S11)
@@ -1175,6 +1269,7 @@ private struct StorageConfirmations: ViewModifier {
             .confirmationDialog(L10n.Storage.Confirm.revertTitle,
                                 isPresented: $confirmRevert1, titleVisibility: .visible) {
                 Button(L10n.Storage.Confirm.revertContinue, role: .destructive) { confirmRevert2 = true }
+                    .accessibilityIdentifier("storage_revert_continue")
                 Button(L10n.Common.cancel) {}
             } message: {
                 Text(L10n.Storage.Confirm.revertBody)
@@ -1182,9 +1277,61 @@ private struct StorageConfirmations: ViewModifier {
             .confirmationDialog(L10n.Storage.Confirm.revert2Title,
                                 isPresented: $confirmRevert2, titleVisibility: .visible) {
                 Button(L10n.Storage.Confirm.revert2Confirm, role: .destructive) { onRevert() }
+                    .accessibilityIdentifier("storage_revert_confirm")
                 Button(L10n.Common.cancel) {}
             } message: {
                 Text(L10n.Storage.Confirm.revert2Body)
+            }
+    }
+}
+
+// MARK: - Datos previos en iCloud antes de volver
+
+/// Los avisos de la pregunta previa a «Volver a iCloud». Cuelgan de la RAÍZ, como `StorageConfirmations`: un
+/// `.confirmationDialog` colgado del botón no pinta su «Cancelar» en iOS 26, y aquí no hacer nada es una de las salidas.
+/// Tres modificadores, el tope que el compilador del CI aguanta por `ViewModifier`.
+private struct StorageRevertPriorDataDialogs: ViewModifier {
+    let priorData: ICloudForeignCorpus?
+    @Binding var showPriorData: Bool
+    @Binding var confirmDiscard: Bool
+    @Binding var showCheckFailed: Bool
+    let needsICloud: Bool
+    let onMerge: () -> Void
+    let onDiscard: () -> Void
+    let onRetryCheck: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .confirmationDialog(L10n.Storage.Revert.Prior.title,
+                                isPresented: $showPriorData, titleVisibility: .visible) {
+                Button(L10n.Storage.Revert.Prior.merge) { onMerge() }
+                    .accessibilityIdentifier("storage_revert_prior_merge")
+                Button(L10n.Storage.Revert.Prior.discard, role: .destructive) { confirmDiscard = true }
+                    .accessibilityIdentifier("storage_revert_prior_discard")
+                // «Ahora no» visible y sin rol: es una decisión sobre datos, y en este estilo iOS no pinta el `.cancel`
+                // (medido en el simulador, como el diálogo del borrado pendiente).
+                Button(L10n.Storage.PendingICloudWipe.wait) {}
+                    .accessibilityIdentifier("storage_revert_prior_wait")
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(priorData.map { ReverseICloudPriorDataLogic.message($0) } ?? L10n.Storage.Revert.Prior.bodyNoCount)
+            }
+            .confirmationDialog(L10n.Storage.Revert.Prior.discardConfirmTitle,
+                                isPresented: $confirmDiscard, titleVisibility: .visible) {
+                Button(L10n.Storage.Revert.Prior.discardConfirm, role: .destructive) { onDiscard() }
+                    .accessibilityIdentifier("storage_revert_prior_discard_confirm")
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Storage.Revert.Prior.discardConfirmBody)
+            }
+            // Título y mensaje cambian con el motivo; los botones van literales (regla del `actions` de un `.alert`).
+            .alert(needsICloud ? L10n.Storage.Revert.Prior.noAccountTitle : L10n.Storage.Revert.Prior.checkFailedTitle,
+                   isPresented: $showCheckFailed) {
+                Button(L10n.Action.retry) { onRetryCheck() }
+                    .accessibilityIdentifier("storage_revert_prior_retry")
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(needsICloud ? L10n.Storage.Revert.Prior.noAccountBody : L10n.Storage.Revert.Prior.checkFailedBody)
             }
     }
 }

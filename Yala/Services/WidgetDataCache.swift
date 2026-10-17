@@ -621,19 +621,6 @@ enum WidgetDataCache {
         )
     }
 
-    /// Lo que una fila suma al SALDO, en `currencyCode`, con su magnitud dudosa: la regla de la curva
-    /// de saldo de la app (`TrendDataProcessor.balanceAmount`, fila entera con `adjustment: .none`).
-    /// Existe aparte porque aquella devuelve solo el valor, y el saldo del widget lleva marca «≈».
-    private static func balanceAmount(
-        _ tx: TransactionItem,
-        currencyCode: String,
-        converter: CurrencyConverting
-    ) -> (value: Double, approximateMagnitude: Double) {
-        CashFlowCalculator.resolvedAmount(
-            tx, currencyCode: currencyCode, adjustment: .none, converter: converter
-        )
-    }
-
     /// Extracts display properties (icon, color) from a budget based on its subcategories
     /// Extracts display properties (icon, color) from a scheduled payment
     private static func getPaymentDisplayProperties(payment: ScheduledPayment) -> (icon: String, color: String) {
@@ -659,15 +646,17 @@ enum WidgetDataCache {
     ) -> WidgetTrendData {
         let calendar = Calendar.current
 
-        // Group transactions by day (amount already has correct sign). La curva se recorre hacia
-        // atrás desde `totalBalance`, que ya está en la divisa vigente: cada día tiene que restar en
-        // esa misma divisa.
-        var transactionsByDay: [Date: Double] = [:]
-        for tx in transactions {
+        // Lo que cambió cada día, en divisa NATIVA. Cada punto es el saldo al cierre de su día (o de su semana o
+        // mes) valorado con el tipo de cambio de esa fecha, la regla de la curva de la app (`BalanceValuation`,
+        // `panel-balance-chart-contradicts-its-own-figure`). El punto de hoy es `totalBalance`, el saldo vivo.
+        var nativeByDay: [Date: [String: Decimal]] = [:]
+        var totalNative: [String: Decimal] = [:]
+        // Solo las filas con cuenta, como el saldo vivo (`liveBalanceBreakdown` salta las que no tienen): si no, el punto
+        // de hoy —que es ese saldo— y los de antes contarían filas distintas y la curva pintaría un escalón en hoy.
+        for tx in transactions where tx.account != nil {
             let day = calendar.startOfDay(for: tx.date)
-            transactionsByDay[day, default: 0] += TrendDataProcessor.balanceAmount(
-                tx, currencyCode: currencyCode, converter: converter
-            )
+            LiveBalanceCalculator.addNative(tx, to: &nativeByDay[day, default: [:]])
+            LiveBalanceCalculator.addNative(tx, to: &totalNative)
         }
 
         // Find the earliest transaction date to avoid showing flat line before data exists
@@ -679,114 +668,70 @@ enum WidgetDataCache {
             daysOfData = 0
         }
 
-        // Build daily points (limited to days with actual data, max 90)
         let dailyDays = min(daysOfData + 1, 90)  // +1 to include the first transaction day
-        let dailyPoints = buildDailyTrend(
-            transactionsByDay: transactionsByDay,
-            totalBalance: totalBalance,
-            days: dailyDays,
+        let weeklyPeriods = min((daysOfData / 7) + 1, 104)
+        let monthlyPeriods = min((daysOfData / 30) + 1, 120)
+
+        let dailyClosings = dailyTrendClosings(days: dailyDays, calendar: calendar)
+        let weeklyClosings = aggregatedTrendClosings(periods: weeklyPeriods, component: .weekOfYear, calendar: calendar)
+        let monthlyClosings = aggregatedTrendClosings(periods: monthlyPeriods, component: .month, calendar: calendar)
+        let valuation = BalanceValuation(
+            currencies: Set(totalNative.keys),
+            to: currencyCode,
+            closingDates: (dailyClosings + weeklyClosings + monthlyClosings).map(\.closing),
+            converter: converter,
             calendar: calendar
         )
 
-        // Build weekly points (limited to weeks with actual data, max 104)
-        let weeksOfData = (daysOfData / 7) + 1
-        let weeklyPeriods = min(weeksOfData, 104)
-        let weeklyPoints = buildAggregatedTrend(
-            transactionsByDay: transactionsByDay,
-            totalBalance: totalBalance,
-            periods: weeklyPeriods,
-            component: .weekOfYear,
-            calendar: calendar
-        )
-
-        // Build monthly points (limited to months with actual data, max 120)
-        let monthsOfData = (daysOfData / 30) + 1
-        let monthlyPeriods = min(monthsOfData, 120)
-        let monthlyPoints = buildAggregatedTrend(
-            transactionsByDay: transactionsByDay,
-            totalBalance: totalBalance,
-            periods: monthlyPeriods,
-            component: .month,
-            calendar: calendar
-        )
-
-        return WidgetTrendData(
-            dailyPoints: dailyPoints,
-            weeklyPoints: weeklyPoints,
-            monthlyPoints: monthlyPoints
-        )
-    }
-
-    /// Build daily trend points going backwards from current balance
-    private static func buildDailyTrend(
-        transactionsByDay: [Date: Double],
-        totalBalance: Double,
-        days: Int,
-        calendar: Calendar
-    ) -> [WidgetTrendPoint] {
-        var trendPoints: [WidgetTrendPoint] = []
-        var runningBalance = totalBalance
-
-        for daysAgo in 0..<days {
-            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date.now) else { continue }
-            let day = calendar.startOfDay(for: date)
-
-            trendPoints.append(WidgetTrendPoint(date: day, balance: runningBalance))
-
-            if let dayChange = transactionsByDay[day] {
-                runningBalance -= dayChange
-            }
+        func points(_ closings: [(date: Date, closing: Date)]) -> [WidgetTrendPoint] {
+            closings.map { entry in
+                // El primero es hoy: el saldo vivo tal cual, que es el número que pinta el widget al lado.
+                if entry.closing >= calendar.startOfDay(for: Date.now) {
+                    return WidgetTrendPoint(date: entry.date, balance: totalBalance)
+                }
+                var native = totalNative
+                for (day, delta) in nativeByDay where day > entry.closing {
+                    for (code, amount) in delta { native[code, default: 0] -= amount }
+                }
+                return WidgetTrendPoint(date: entry.date, balance: valuation.doubleValue(native, at: entry.closing))
+            }.reversed()
         }
 
-        return trendPoints.reversed()
+        return WidgetTrendData(
+            dailyPoints: points(dailyClosings),
+            weeklyPoints: points(weeklyClosings),
+            monthlyPoints: points(monthlyClosings)
+        )
     }
 
-    /// Build aggregated trend points (weekly or monthly) going backwards
-    private static func buildAggregatedTrend(
-        transactionsByDay: [Date: Double],
-        totalBalance: Double,
-        periods: Int,
-        component: Calendar.Component,
-        calendar: Calendar
-    ) -> [WidgetTrendPoint] {
-        var trendPoints: [WidgetTrendPoint] = []
-        var runningBalance = totalBalance
-        let today = Date.now
+    /// Los días de la curva diaria, de hoy hacia atrás: cada punto lleva la fecha del día y cierra al final de él.
+    private static func dailyTrendClosings(days: Int, calendar: Calendar) -> [(date: Date, closing: Date)] {
+        (0..<days).compactMap { daysAgo in
+            guard let date = calendar.date(byAdding: .day, value: -daysAgo, to: Date.now) else { return nil }
+            let day = calendar.startOfDay(for: date)
+            let next = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+            return (day, min(next.addingTimeInterval(-1), Date.now))
+        }
+    }
 
-        // Get the start of current period
-        var currentPeriodStart: Date
+    /// Las semanas o meses de la curva, del actual hacia atrás: cada punto lleva la fecha de inicio del periodo y
+    /// cierra al final de él (el actual, ahora).
+    private static func aggregatedTrendClosings(
+        periods: Int, component: Calendar.Component, calendar: Calendar
+    ) -> [(date: Date, closing: Date)] {
+        let today = Date.now
+        let currentPeriodStart: Date
         if component == .weekOfYear {
             currentPeriodStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)) ?? today
         } else {
             currentPeriodStart = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
         }
-
-        for periodIndex in 0..<periods {
-            guard let periodStart = calendar.date(byAdding: component, value: -periodIndex, to: currentPeriodStart) else { continue }
-
-            // Calculate period end
-            let periodEnd: Date
-            if let nextPeriod = calendar.date(byAdding: component, value: 1, to: periodStart) {
-                periodEnd = nextPeriod
-            } else {
-                continue
-            }
-
-            // For the first period, use current balance
-            // For subsequent periods, subtract all transactions in the period
-            trendPoints.append(WidgetTrendPoint(date: periodStart, balance: runningBalance))
-
-            // Sum all transactions in this period
-            var periodChange: Double = 0
-            for (day, amount) in transactionsByDay {
-                if day >= periodStart && day < periodEnd {
-                    periodChange += amount
-                }
-            }
-            runningBalance -= periodChange
+        return (0..<periods).compactMap { periodIndex in
+            guard let periodStart = calendar.date(byAdding: component, value: -periodIndex, to: currentPeriodStart),
+                  let periodEnd = calendar.date(byAdding: component, value: 1, to: periodStart)
+            else { return nil }
+            return (periodStart, min(periodEnd.addingTimeInterval(-1), today))
         }
-
-        return trendPoints.reversed()
     }
 
     private static func saveSnapshot(_ snapshot: WidgetDataSnapshot) {
@@ -866,20 +811,27 @@ enum WidgetDataCache {
 
         // Calculate historical balance at end of period
         // This is the sum of ALL transactions up to periodEnd (not just period transactions)
-        // Matches TrendDataProcessor.fillBalanceBuckets logic (también en la divisa: la fila guardada
-        // con otra divisa principal se reconvierte, como en esa curva desde
-        // `trends-aggregators-sum-stored-amounts-from-other-preferred-currencies`)
+        // Matches TrendDataProcessor.fillBalanceBuckets logic: la fila ENTERA en su divisa nativa, y el saldo por
+        // divisa valorado al cierre del período con el tipo de cambio de ese día —o, si el período llega a hoy,
+        // con la regla del saldo vivo— (`BalanceValuation`). Así el saldo de un período en el widget es el último
+        // punto de la curva de la app (ticket `panel-balance-chart-contradicts-its-own-figure`).
         var periodBalance: Double = 0
         // Numerador en MAGNITUDES aunque el saldo sea una resta: los errores de dos conversiones
         // distintas no se cancelan entre sí. El denominador, en cambio, es el saldo mismo — ver el
         // comentario del `return`.
         var balanceApproximateMagnitude: Double = 0
         if let allTx = allTransactionsForBalance {
+            var native: [String: Decimal] = [:]
             for tx in allTx where tx.date < periodEnd {
-                let resolved = balanceAmount(tx, currencyCode: currencyCode, converter: converter)
-                periodBalance += resolved.value
-                balanceApproximateMagnitude += resolved.approximateMagnitude
+                LiveBalanceCalculator.addNative(tx, to: &native)
             }
+            let closing = min(periodEnd, Date.now)
+            let valuation = BalanceValuation(
+                currencies: Set(native.keys), to: currencyCode, closingDates: [closing], converter: converter
+            )
+            let converted = valuation.value(native, at: closing)
+            periodBalance = (converted.total as NSDecimalNumber).doubleValue
+            balanceApproximateMagnitude = (converted.approximateMagnitude as NSDecimalNumber).doubleValue
         }
 
         // Build top categories (expenses only, top 20 for Large widgets)
@@ -1172,5 +1124,11 @@ private final class SnapshotMemoizedConverter: CurrencyConverting {
         -> (amount: Decimal, quality: RateQuality)
     {
         base.convertCheckedWithLatestRate(amount, from: from, to: to)
+    }
+
+    /// Al converter de base, que las lee en bloque: la curva del widget pide la tasa de ~300 días, y el default del
+    /// protocolo las pediría una a una.
+    func rateFactors(for codes: Set<String>, to: String, on dates: [Date]) -> [Date: [String: RateFactor]] {
+        base.rateFactors(for: codes, to: to, on: dates)
     }
 }

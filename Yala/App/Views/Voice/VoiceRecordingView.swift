@@ -583,6 +583,9 @@ struct VoiceRecordingView: View {
             let uniqueDrafts = DraftDeduplicationService.deduplicate(newDrafts: newDrafts, existingDrafts: existingDrafts)
             // Si todos parecen duplicados, son los propios (SwiftData pudo insertarlos ya).
             let created = uniqueDrafts.isEmpty ? newDrafts : uniqueDrafts
+            #if DEBUG
+            if UITestHooks.voiceResult != nil { assignUITestDemoAccount(to: created) }
+            #endif
             for draft in created {
                 modelContext.insert(draft)
             }
@@ -657,16 +660,38 @@ struct VoiceRecordingView: View {
                 tagHints: [], currencyHint: currency, confidence: confidence
             )
         }
+        // En el idioma de la app: en español, el texto de siempre (el que leen los XCUITest).
+        let lunch = L10n.UITestDemo.Voice.lunchTranscript
         switch profile {
         case "incomplete":
-            return ("Almuerzo 25 con la tarjeta", [expense("Almuerzo", 25, subcategory: nil)])
+            return (lunch, [expense(L10n.UITestDemo.Voice.lunchNote, 25, subcategory: nil)])
         case "two":
             return (
-                "Taxi 12 y café 8 con la tarjeta",
-                [expense("Taxi", 12, subcategory: subcategory), expense("Café", 8, subcategory: subcategory)]
+                L10n.UITestDemo.Voice.twoTranscript,
+                [
+                    expense(L10n.UITestDemo.Voice.taxiNote, 12, subcategory: subcategory),
+                    expense(L10n.UITestDemo.Voice.coffeeNote, 8, subcategory: subcategory),
+                ]
             )
         default:
-            return ("Almuerzo 25 con la tarjeta", [expense("Almuerzo", 25, subcategory: subcategory)])
+            return (lunch, [expense(L10n.UITestDemo.Voice.lunchNote, 25, subcategory: subcategory)])
+        }
+    }
+
+    /// Con varias cuentas en la divisa (la semilla `ficha`) la regla real no elige; la demo dice «on my card».
+    private func assignUITestDemoAccount(to drafts: [InboxDraft]) {
+        guard drafts.contains(where: { $0.account == nil }), let currency = fetchFirstActiveAccountCurrency() else { return }
+        let accounts: [Account]
+        do {
+            accounts = try modelContext.fetch(FetchDescriptor<Account>())
+        } catch {
+            print("VoiceRecordingView: Error fetching accounts for the UI-test seam: \(error)")
+            return
+        }
+        guard let account = UITestDemoAccountLogic.account(for: .voice, among: accounts, currencyCode: currency) else { return }
+        for draft in drafts where draft.account == nil {
+            draft.account = account
+            draft.needsUserInput.removeAll { $0 == DraftInputRequirement.account }
         }
     }
 

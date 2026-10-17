@@ -1401,7 +1401,6 @@
 "subcategory.namePlaceholder" = "Name der Unterkategorie";
 "subcategory.unassigned" = "Nicht zugewiesen";
 
-"account.deleteBalanceError" = "Du kannst dieses Konto nicht löschen, da es einen Saldo ungleich null hat. Passe den Saldo auf 0 an, bevor du es löschst.";
 "account.type.general" = "Allgemein";
 "account.type.cash" = "Bargeld";
 "account.type.current" = "Girokonto";
@@ -3205,6 +3204,56 @@
 "devseed.stepDeleting" = "Daten löschen...";
 "devseed.stepReloading" = "Daten neu laden...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "Lissabon-Reise";
+"devseed.ficha.groupWeekend" = "Wochenende in Porto";
+"devseed.ficha.memberYou" = "Du";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "Unterkunft";
+"devseed.ficha.expenseTour" = "Stadtführung";
+"devseed.ficha.expenseGroupDinner" = "Gruppenessen";
+"devseed.ficha.expenseAirportTaxi" = "Taxi zum Flughafen";
+"devseed.ficha.expenseLocalMeal" = "Fischessen";
+"devseed.ficha.expenseMuseum" = "Museumstickets";
+"devseed.ficha.expenseTransport" = "Nahverkehr";
+"devseed.ficha.expenseGroceries" = "Einkauf";
+"devseed.ficha.expenseSouvenirs" = "Souvenirs";
+"devseed.ficha.expenseWeekendStay" = "Hotel in Porto";
+"devseed.ficha.expenseWeekendMeal" = "Weinprobe";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "Reise %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "45 fürs Taxi zum Flughafen und 120,50 im Supermarkt ausgegeben";
+"uitestDemo.chat.draftNoteTaxi" = "Taxi zum Flughafen";
+"uitestDemo.chat.draftNoteGroceries" = "Supermarkt";
+"uitestDemo.chat.suggestionSplit" = "Wie verteilen sich meine Ausgaben für Wohnen und Persönliches?";
+"uitestDemo.chat.suggestionMonth" = "Wie viel habe ich diesen Monat für Restaurants und Lieferdienste ausgegeben?";
+"uitestDemo.chat.suggestionBudget" = "Hat mein Budget fürs Auswärtsessen gereicht?";
+"uitestDemo.chat.pizzaNote" = "Pizza";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "Mittagessen 25 mit Karte";
+"uitestDemo.voice.lunchNote" = "Mittagessen";
+"uitestDemo.voice.twoTranscript" = "Taxi 12 und Kaffee 8 mit Karte";
+"uitestDemo.voice.taxiNote" = "Taxi";
+"uitestDemo.voice.coffeeNote" = "Kaffee";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "Restaurant Zum Goldenen Löffel";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "Taxi";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "Seite %ld";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "Erste Schritte";
@@ -4100,7 +4149,7 @@
 "welcome.hero.cards.budgets.title" = "Budgets und Ziele";
 "welcome.hero.cards.budgets.body" = "Grenzen setzen. Einhalten.";
 "welcome.hero.cards.multiAndCurrencies.title" = "Konten und Währungen";
-"welcome.hero.cards.multiAndCurrencies.body" = "Karten, Bargeld, 48+ Währungen.";
+"welcome.hero.cards.multiAndCurrencies.body" = "Karten, Bargeld, 50+ Währungen.";
 "welcome.hero.cards.import.title" = "Historie importieren";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Fertig.";
 "welcome.hero.cards.icloud.title" = "Privates iCloud";
@@ -4128,12 +4177,12 @@
 "yalaAI.onboarding.progressLabel" = "Schritt %1$d von %2$d";
 "yalaAI.onboarding.step1.title" = "Das ist Yala KI";
 "yalaAI.onboarding.step1.subtitle" = "Ihre rechte Hand bei den Finanzen.";
-"yalaAI.onboarding.step1.demoScenario1User" = "12 € fürs Mittagessen ausgegeben.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Erledigt! Ihr Mittagessen über 12 € ist gespeichert.";
+"yalaAI.onboarding.step1.demoScenario1User" = "%@ fürs Mittagessen ausgegeben.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Erledigt! Ihr Mittagessen über %@ ist gespeichert.";
 "yalaAI.onboarding.step1.demoScenario2User" = "Wie viel für Kaffee diesen Monat?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "Bisher 35 € für Kaffee diesen Monat ☕ — 12 % weniger als im April, aber 6 € über Ihrem Durchschnitt.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Bisher %1$@ für Kaffee diesen Monat ☕, 12 %% weniger als im April, aber %2$@ über Ihrem Durchschnitt.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Ein Tipp?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Ihr Lieferdienst liegt 20 % über dem Vormonat. Zurück zum üblichen Tempo: 60 € Ersparnis pro Monat — fast 720 € im Jahr.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Ihr Lieferdienst liegt 20 %% über dem Vormonat. Zurück zum üblichen Tempo: %1$@ Ersparnis pro Monat, also %2$@ im Jahr.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Mittagessen";
 "yalaAI.onboarding.step1.a11yLabel" = "Beispielchat mit Yala KI: Eine Ausgabe wird erfasst";
 "yalaAI.onboarding.step2.title" = "Das können Sie hier tun";
@@ -4159,11 +4208,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Hilft Ihnen, jeden Monat mehr zurückzulegen.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Warnt bei jeder Abweichung, damit nichts schiefgeht.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Ihre Einnahmen decken die Ausgaben des Monats. Guter Rhythmus.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "10% weniger im Restaurant: 30 € Ersparnis pro Monat.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "10%% weniger im Restaurant: %@ Ersparnis pro Monat.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Achtung: Sie sind beim Lieferdienst schneller als letzten Monat.";
 "yalaAI.onboarding.step5.title" = "Alles bereit!";
 "yalaAI.onboarding.step5.subtitle" = "Sagen Sie Yala jederzeit, was Sie brauchen.";
-"yalaAI.onboarding.step5.tip" = "💡 Versuchen Sie: \"Erfasse einen Kaffee für 5 Euro\" oder \"Wie viel habe ich heute ausgegeben?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Versuchen Sie: \"Erfasse einen Kaffee für %@\" oder \"Wie viel habe ich heute ausgegeben?\"";
 "yalaAI.onboarding.step5.cta" = "Chat starten";
 
 // MARK: - Stats Records polish
@@ -4399,6 +4448,14 @@
 "whatsNew.v20.ai.description" = "Dein Finanzassistent mit künstlicher Intelligenz. Stelle ihm Fragen zu deinem Geld, lass ihn deine Ausgaben erfassen und erhalte klare Auswertungen deines Monats. Wie ein Freund, der sich mit Finanzen auskennt – nur eine Nachricht entfernt.";
 "whatsNew.v20.redesign.title" = "Komplett neu gestaltet";
 "whatsNew.v20.redesign.description" = "Wir haben Yala von Grund auf neu gestaltet: neue Widgets, übersichtlichere Zusammenfassungen in jedem Bereich und das neue Liquid-Glass-Design von iOS in der ganzen App. Außerdem haben wir viele Fehler behoben, damit sich alles flüssiger anfühlt.";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "Gruppen";
+"whatsNew.v21.groups.description" = "Teile Ausgaben, mit wem du willst. Lade per Link ein, tragt gemeinsam ein, und Yala rechnet aus, wer wem was schuldet. Ohne Rechnerei und ohne unangenehme Momente.";
+"whatsNew.v21.logging.title" = "Erfassen war noch nie so einfach";
+"whatsNew.v21.logging.description" = "Sprich mit Yala, mach ein Foto oder schreib wie mit einem Freund. Yala versteht, was du ausgegeben hast, und trägt es für dich ein – so behältst du deine Finanzen in Sekunden im Blick.";
+"whatsNew.v21.data.title" = "Deine Daten, deine Regeln";
+"whatsNew.v21.data.description" = "Du entscheidest, wo deine Daten liegen: in deiner privaten iCloud oder in der Yala-Cloud, damit du sie auf all deinen Geräten hast. Dazu eine neu gestaltete Übersicht und Yala im Vollbild auf deinem iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs.";
@@ -4895,6 +4952,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Dein Yala-Konto in der Cloud, wenn du es mit deinem Google-Konto erstellt hast.";
+"welcome.existing.usedOnThisDeviceNote" = "Die du auf diesem iPhone verwendet hast";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Verwende dasselbe Google-Konto, mit dem du dein Cloud-Konto erstellt hast.";
@@ -6647,3 +6705,89 @@
 "export.error.invalidDateRange" = "Diese Daten passen nicht: Das Startdatum muss vor dem Enddatum liegen.";
 "export.error.noTransactions" = "Keine Buchungen passen zu diesen Filtern. Versuche einen anderen Zeitraum oder entferne einen Filter.";
 "export.error.fileWriteFailed" = "Wir konnten die Datei nicht erstellen. Versuche es erneut.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "„%@“ löschen";
+"account.removal.intro" = "Bevor du es löschst, wähle, was mit seinem Inhalt passieren soll.";
+"account.removal.countRecords" = "Buchungen";
+"account.removal.countScheduled" = "Geplante Zahlungen";
+"account.removal.countFavorites" = "Favoritenzahlungen";
+"account.removal.countDrafts" = "Offen im Posteingang";
+"account.removal.choiceHeader" = "Was soll damit passieren";
+"account.removal.moveTitle" = "In ein anderes Konto verschieben";
+"account.removal.moveSubtitle" = "Empfohlen. Dein Verlauf und dein Saldo bleiben erhalten.";
+"account.removal.noDestination" = "Du hast kein anderes Konto, in das du es verschieben kannst.";
+"account.removal.deleteTitle" = "Buchungen löschen";
+"account.removal.deleteSubtitle" = "Sie werden endgültig gelöscht, zusammen mit dem Konto.";
+"account.removal.deleteBlockedGroups" = "Es enthält Buchungen aus deinen Gruppen: Sie können nur verschoben werden.";
+"account.removal.destinationHeader" = "Verschieben nach";
+"account.removal.destinationBlockedCurrency" = "Nicht verfügbar: Es enthält Überweisungen oder Gruppenbuchungen, die nicht in diese Währung umgerechnet werden können.";
+"account.removal.convertNote" = "Alles in einer anderen Währung wird in %@ umgerechnet: Buchungen zum Wechselkurs ihres Datums, geplante und Favoritenzahlungen zum heutigen Kurs.";
+"account.removal.collapsedNote" = "Überweisungen zwischen „%1$@“ und „%2$@“ werden entfernt: Innerhalb eines Kontos bewegen sie kein Geld.";
+"account.removal.partnersNote" = "Überweisungen mit anderen Konten bleiben dort als normale Buchungen.";
+"account.removal.plansNote" = "Geplante Zahlungen, Favoriten und offene Einträge im Posteingang bleiben ohne Konto: Du wählst eines, wenn du sie verwendest.";
+"account.removal.moveAction" = "Verschieben und Konto löschen";
+"account.removal.deleteAction" = "Löschen und Konto entfernen";
+"account.removal.confirmDeleteTitle" = "Buchungen löschen?";
+"account.removal.confirmDeleteCount" = "Zu löschende Buchungen";
+"account.removal.confirmDeleteMessage" = "Sie werden endgültig gelöscht und das lässt sich nicht rückgängig machen. Das Konto wird ebenfalls gelöscht.";
+"account.removal.confirmDeleteAction" = "Ja, alles löschen";
+"account.removal.working" = "Konto wird gelöscht…";
+"account.removal.failedTitle" = "Das Konto wurde nicht gelöscht";
+"account.removal.failedUnreadable" = "Wir konnten den Inhalt dieses Kontos nicht lesen. Es wurde nichts geändert.";
+"account.removal.failedChanged" = "Am Konto hat sich in der Zwischenzeit etwas geändert. Prüfe es und versuche es erneut.";
+"account.removal.failedRates" = "Wir konnten die Wechselkurse für die Umrechnung nicht abrufen. Es wurde nichts verschoben: Versuche es mit Internetverbindung erneut.";
+"account.removal.noAllowedDestination" = "Deine anderen Konten sind in einer anderen Währung, und hier gibt es Überweisungen oder Gruppeneinträge, die nicht umgerechnet werden können.";
+"account.removal.countBudgets" = "Budgets";
+"account.removal.budgetsMovedNote" = "Budgets, die dieses Konto verfolgt haben, verfolgen jetzt „%@“.";
+"account.removal.budgetsOnlyNote" = "Einige Budgets haben nur dieses Konto verfolgt: Ohne es verfolgen sie alle deine Konten.";
+"orphanedRecords.title" = "Buchungen ohne Konto";
+"orphanedRecords.bannerMessage" = "Sie haben ihr Konto verloren, als ein Konto gelöscht wurde, und zählen weder zu deinem Saldo noch zu deinen Ausgaben.";
+"orphanedRecords.bannerAction" = "Konto auswählen";
+"orphanedRecords.intro" = "Diese Buchungen haben ihr Konto verloren, als ein Konto gelöscht wurde. Solange sie keines haben, zählen sie weder zu deinem Saldo noch zu deinen Ausgaben. Wähle, auf welches Konto sie verschoben werden.";
+"orphanedRecords.listHeader" = "Welche es sind";
+"orphanedRecords.moreNote" = "Und %d weitere.";
+"orphanedRecords.noDestination" = "Erstelle ein Konto, um sie verschieben zu können.";
+"orphanedRecords.keptCurrencyNote" = "Überweisungen in einer anderen Währung werden unverändert übernommen, ohne Umrechnung, damit ihre Gegenbuchung weiter passt.";
+"orphanedRecords.convertNote" = "Was in einer anderen Währung ist, wird zum Wechselkurs seines Datums in %@ umgerechnet.";
+"orphanedRecords.collapsedNote" = "Überweisungen, die innerhalb von „%@“ landen würden, werden entfernt: Innerhalb desselben Kontos bewegen sie kein Geld.";
+"orphanedRecords.moveAction" = "Nach „%@“ verschieben";
+"orphanedRecords.moveActionGeneric" = "Verschieben";
+"orphanedRecords.working" = "Wird verschoben…";
+"orphanedRecords.failedTitle" = "Nicht verschoben";
+"orphanedRecords.failedUnreadable" = "Wir konnten die Buchungen nicht lesen. Es wurde nichts geändert.";
+"orphanedRecords.failedChanged" = "Inzwischen hat sich etwas geändert. Prüfe es und versuche es erneut.";
+"orphanedRecords.untitled" = "Ohne Beschreibung";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud ist auf diesem Gerät nicht verfügbar";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala speichert deine Daten in deiner iCloud und kann sie gerade nicht lesen. Sobald iCloud wieder verfügbar ist, erscheint wieder, was dort liegt. Du kannst das in den Einstellungen unter iCloud prüfen.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Deine iCloud wird geprüft…";
+"storage.revert.prior.title" = "In deiner iCloud liegen schon Yala-Daten";
+"storage.revert.prior.body" = "In der iCloud dieses Telefons liegen Yala-Daten, die nicht in deinem Konto sind: %@. Wenn du sie hinzufügst, erscheinen sie neben deinen. Wenn du ohne sie startest, werden sie aus deiner iCloud gelöscht.";
+"storage.revert.prior.bodyNoCount" = "In der iCloud dieses Telefons liegen Yala-Daten, die nicht in deinem Konto sind. Wenn du sie hinzufügst, erscheinen sie neben deinen. Wenn du ohne sie startest, werden sie aus deiner iCloud gelöscht.";
+"storage.revert.prior.groupRecords" = "%d Gruppeneinträge";
+"storage.revert.prior.groupsNote" = "Gruppeneinträge kommen eventuell ohne ihre Gruppe an.";
+"storage.revert.prior.merge" = "Zu meinen Daten hinzufügen";
+"storage.revert.prior.discard" = "Ohne sie starten";
+"storage.revert.prior.discardConfirmTitle" = "Aus deiner iCloud löschen?";
+"storage.revert.prior.discardConfirmBody" = "Sie werden aus deiner iCloud und von den Geräten gelöscht, die sie mit dieser Apple-ID nutzen. Es bleibt keine Kopie, und wir können sie nicht wiederherstellen. Danach beginnt die Rückkehr zu iCloud.";
+"storage.revert.prior.discardConfirm" = "Löschen und zu iCloud zurück";
+"storage.revert.prior.checkFailedTitle" = "Wir konnten deine iCloud nicht prüfen";
+"storage.revert.prior.checkFailedBody" = "Vor der Rückkehr prüfen wir, ob deine iCloud schon Yala-Daten hat, damit wir sie nicht ungefragt mischen. Vielleicht liegt’s an der Verbindung: Versuch es noch einmal.";
+"storage.revert.prior.wipeFailed" = "Wir konnten die alten Daten nicht vollständig aus deiner iCloud löschen und haben die Rückkehr nicht gestartet: Du bist weiter in der Cloud. Prüf deine Verbindung und versuch es noch einmal.";
+"storage.revert.prior.noAccountTitle" = "Melde dich auf diesem iPhone bei iCloud an";
+"storage.revert.prior.noAccountBody" = "Vor der Rückkehr prüfen wir, was in deiner iCloud liegt, und dieses iPhone ist nicht bei iCloud angemeldet. Melde dich in den iPhone-Einstellungen an und versuch es noch einmal.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Hier entfernen";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Entfernt ihn nur auf diesem Telefon. Kommt seine Gruppe an, erscheint er wieder.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Gruppenausgaben in einer anderen Währung bleiben unverändert und werden nicht umgerechnet: Ihren Betrag bestimmt die Gruppe.";

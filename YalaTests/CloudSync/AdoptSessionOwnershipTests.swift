@@ -373,7 +373,9 @@ struct AdoptSessionOwnershipWiringTests {
     /// La pantalla sabe si firmó ella: solo tras un `signIn` que no lanzó.
     @Test func welcome_marksTheSessionItSignedIn() throws {
         let ensure = Self.lines(try Self.body(of: "private func ensureSignedIn() async -> Bool {", in: Self.welcomePath))
-        let signIn = try #require(ensure.firstIndex(of: "try await CloudAuthService.shared.signIn(with: provider)"))
+        // vb1f: el inicio de sesión lleva además la credencial de Google reusable; lo que se fija aquí no cambia.
+        let signIn = try #require(ensure.firstIndex(
+            of: "try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable)"))
         #expect(ensure[signIn + 1] == "sessionOpenedHere = true")
         #expect(ensure[signIn + 2] == "return true")
         let code = try Self.source(Self.welcomePath)

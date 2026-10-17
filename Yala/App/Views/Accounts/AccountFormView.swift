@@ -22,6 +22,12 @@ struct AccountFormView: View {
     /// «Eliminar cuenta» pregunta antes de borrar (ticket `deleting-an-account-asks-nothing`).
     @State private var showDeleteConfirmation: Bool = false
     @State private var calcFieldState = BalanceCalculatorFieldState()
+    /// La hoja «¿Qué hacemos con lo que hay dentro?» de eliminar una cuenta con movimientos: la cuenta, con su
+    /// nombre y su divisa leídos al tocar «Eliminar» (la hoja se sigue pintando con la cuenta ya eliminada).
+    @State private var removalTarget: AccountRemovalTarget?
+    /// La hoja eliminó la cuenta: al cerrarse, se cierra también el formulario (en su `onDismiss`, no
+    /// mientras la hoja sigue montada — dos `dismiss` a la vez dejan presentaciones colgadas).
+    @State private var accountWasRemoved: Bool = false
     @FocusState private var focusedField: Field?
     /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
     @State private var selectedDetent: PresentationDetent = .medium
@@ -165,6 +171,12 @@ struct AccountFormView: View {
         }
         .yalaSheetDetents(sheetDetents, selection: $selectedDetent)
         .presentationDragIndicator(.visible)
+        .modifier(AccountRemovalPresentation(
+            target: $removalTarget,
+            accountWasRemoved: $accountWasRemoved,
+            deleteAccount: removeAccount,
+            onDismissed: removalSheetDismissed
+        ))
         .alert(
             L10n.Account.deleteError,
             isPresented: $viewModel.isShowingDeleteError,
@@ -763,7 +775,7 @@ struct AccountFormView: View {
                     SubsectionDivider()
 
                     Button(role: .destructive) {
-                        showDeleteConfirmation = true
+                        requestDelete()
                     } label: {
                         HStack {
                             Spacer()
@@ -880,12 +892,52 @@ struct AccountFormView: View {
 
     // MARK: - Eliminación de cuenta
 
+    /// El toque en «Eliminar cuenta». Con algo dentro abre directamente la hoja de mover o borrar, que ya
+    /// pregunta y dice qué pasa con cada cosa; vacía, pide la confirmación corta (`AccountDeleteConfirmation`).
+    /// Merge 2.1 → 2.2 (2026-10-17): la alerta del lote 7 decía que los registros «quedan en Registros, sin
+    /// cuenta», y con la hoja de 2.1 eso ya no pasa nunca; delante de la hoja habría sido una segunda pregunta
+    /// que contradice a la primera.
+    private func requestDelete() {
+        guard let account = viewModel.accountToEdit else { return }
+        do {
+            let inventory = try AccountRemovalService.inventory(of: account, context: modelContext)
+            if inventory.shape.needsQuestion {
+                accountWasRemoved = false
+                removalTarget = AccountRemovalTarget(
+                    account: account, name: account.name, currencyCode: account.currencyCode)
+            } else {
+                showDeleteConfirmation = true
+            }
+        } catch {
+            #if DEBUG
+            print("AccountFormView: Error reading account inventory: \(error)")
+            #endif
+            viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
+            viewModel.isShowingDeleteError = true
+        }
+    }
+
+    /// Con algo dentro (movimientos, programados, favoritos o borradores pendientes) pregunta qué hacer con ello;
+    /// vacía, se elimina como siempre. Card `tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst`.
+    ///
+    /// Lo que cuelga se LEE del store (`AccountRemovalService.inventory`), no de las relaciones inversas, y un
+    /// fallo al leer no se toma por «vacía»: se avisa y no se elimina nada.
     private func handleDeleteTapped() {
         guard let account = viewModel.accountToEdit else { return }
         deletionService.setContext(modelContext)
         do {
+            let inventory = try AccountRemovalService.inventory(of: account, context: modelContext)
+            if inventory.shape.needsQuestion {
+                accountWasRemoved = false
+                removalTarget = AccountRemovalTarget(
+                    account: account, name: account.name, currencyCode: account.currencyCode)
+                return
+            }
             try deletionService.deleteAccount(account)
             dismiss()
+        } catch AccountRemovalService.Failure.unreadable {
+            viewModel.deleteErrorMessage = L10n.Account.Removal.failedUnreadable
+            viewModel.isShowingDeleteError = true
         } catch {
             #if DEBUG
             print("AccountFormView: Error deleting account: \(error)")
@@ -894,18 +946,66 @@ struct AccountFormView: View {
             viewModel.isShowingDeleteError = true
         }
     }
+
+    /// Elimina la cuenta y guarda todo lo que la hoja dejó en el contexto (`EntityDeletionService.deleteAccount`).
+    /// Antes suelta las filas que el formulario tenía cargadas: sigue montado mientras la hoja se cierra, y su
+    /// `body` no debe leer filas ya borradas.
+    private func removeAccount(_ account: Account) throws {
+        viewModel.releaseLoadedRows()
+        deletionService.setContext(modelContext)
+        try deletionService.deleteAccount(account)
+    }
+
+    /// La hoja se cerró. Si eliminó la cuenta, se cierra también el formulario; si no (cancelar, o un error que
+    /// deshizo todo), el formulario vuelve a leer sus filas, que soltó antes de guardar.
+    private func removalSheetDismissed() {
+        if accountWasRemoved {
+            accountWasRemoved = false
+            dismiss()
+        } else {
+            viewModel.loadTransactions()
+            viewModel.loadPlans()
+        }
+    }
+}
+
+// MARK: - Hoja de eliminar con algo dentro
+
+/// La cuenta que se va a eliminar, con lo que la hoja necesita leído ANTES de eliminarla.
+struct AccountRemovalTarget: Identifiable {
+    let account: Account
+    let name: String
+    let currencyCode: String
+    var id: PersistentIdentifier { account.persistentModelID }
+}
+
+/// Presenta `AccountRemovalSheet` desde el formulario. Va en su propio modificador: la cadena del `body` ya es
+/// larga y el compilador del CI (Xcode 26.6) deja de tiparla con un modificador más (`swiftui-ds.md`).
+private struct AccountRemovalPresentation: ViewModifier {
+    @Binding var target: AccountRemovalTarget?
+    @Binding var accountWasRemoved: Bool
+    let deleteAccount: (Account) throws -> Void
+    let onDismissed: () -> Void
+
+    func body(content: Content) -> some View {
+        content.sheet(item: $target, onDismiss: onDismissed) { target in
+            AccountRemovalSheet(
+                account: target.account, name: target.name, currencyCode: target.currencyCode,
+                deleteAccount: deleteAccount
+            ) { accountWasRemoved = true }
+        }
+    }
 }
 
 // MARK: - Confirmación de borrado
 
-/// La alerta de «Eliminar cuenta»: dice cuántos registros tiene la cuenta y qué les pasa.
+/// La alerta de «Eliminar cuenta» para una cuenta VACÍA (`requestDelete`). Con algo dentro la pregunta es la hoja
+/// de mover o borrar, así que aquí `recordCount` llega a 0 y la rama con registros no se alcanza desde la app.
 ///
 /// Va en un modificador propio y no en la cadena del `body`, que ya lleva siete alertas: el compilador del CI
 /// (Xcode 26.6) se rinde antes con cadenas largas (`swiftui-ds.md`). Los botones van con texto fijo: el
 /// builder de `actions` de un `.alert` no admite etiquetas que dependan del estado.
 ///
-/// Lo que dice es lo que pasa, medido: `Account.transactions` es `.nullify`, así que los registros se quedan
-/// sin cuenta, y `RecordsViewModel` los sigue listando (`guard let account = tx.account else { return true }`).
 struct AccountDeleteConfirmation: ViewModifier {
     @Binding var isPresented: Bool
     let accountName: String

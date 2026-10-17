@@ -13,14 +13,15 @@ enum WhatsNewConfig {
     /// Retorna features para la versión, o nil si no hay novedades (ej: hotfix).
     /// Compara solo major.minor — "1.2.1" se evalúa como "1.2".
     static func features(for version: String) -> [WhatsNewFeature]? {
-        let majorMinor = extractMajorMinor(version)
-        switch majorMinor {
+        switch WhatsNewLaunchLogic.majorMinor(version) {
         case "1.1":
             return version1_1
         case "1.2":
             return version1_2
         case "2.0":
             return version2_0
+        case "2.1":
+            return version2_1
         default:
             return nil
         }
@@ -110,12 +111,27 @@ enum WhatsNewConfig {
         ),
     ]
 
-    // MARK: - Helpers
+    // MARK: - Version 2.1
 
-    /// Extracts "major.minor" from a version string, e.g. "1.2.1" → "1.2"
-    private static func extractMajorMinor(_ version: String) -> String {
-        let parts = version.split(separator: ".")
-        guard parts.count >= 2 else { return version }
-        return "\(parts[0]).\(parts[1])"
-    }
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
+    private static let version2_1: [WhatsNewFeature] = [
+        WhatsNewFeature(
+            icon: "person.2.fill",
+            iconColor: .green,
+            title: L10n.WhatsNew.v21GroupsTitle,
+            description: L10n.WhatsNew.v21GroupsDescription
+        ),
+        WhatsNewFeature(
+            icon: "mic.fill",
+            iconColor: .orange,
+            title: L10n.WhatsNew.v21LoggingTitle,
+            description: L10n.WhatsNew.v21LoggingDescription
+        ),
+        WhatsNewFeature(
+            icon: "lock.fill",
+            iconColor: .blue,
+            title: L10n.WhatsNew.v21DataTitle,
+            description: L10n.WhatsNew.v21DataDescription
+        ),
+    ]
 }

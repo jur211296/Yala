@@ -110,17 +110,18 @@ final class AccountsCrudUITests: XCTestCase {
     /// primer toque y cerraba la hoja. Los botones van por su etiqueta y no por posición: con textos largos
     /// iOS los apila y pone Cancelar abajo, así que el índice cambia según el idioma. `launchForUITest` fija
     /// el idioma a `es`, y una alerta no deja pasar `accessibilityIdentifier` a sus botones.
+    /// Desde el merge 2.1 → 2.2 (2026-10-17) la alerta es solo para una cuenta VACÍA: con movimientos pregunta la
+    /// hoja de mover o borrar (`AccountRemovalUITests`). Por eso usa «Dólares QA», la vacía de `cuenta-con-movimientos`.
     func test_deleteAccount_asksFirst_cancelKeepsIt_confirmDeletesIt() {
         let app = XCUIApplication()
-        app.launchForUITest()
+        app.launchForUITest(seed: "cuenta-con-movimientos")
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         app.openProfile()
         app.openSettingsSection("profile_accounts")
 
-        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'accounts_row_'")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 5), "El seed no dejó ninguna cuenta en la lista.")
-        let rowID = row.identifier
+        let rowID = "accounts_row_Dólares QA"
+        XCTAssertTrue(app.buttons[rowID].waitForExistence(timeout: 5), "El seed no dejó «Dólares QA».")
 
         openDeleteAlert(app: app, rowID: rowID)
         let alert = app.alerts.firstMatch

@@ -1399,7 +1399,6 @@
 "subcategory.namePlaceholder" = "子类别名称";
 "subcategory.unassigned" = "未分配";
 
-"account.deleteBalanceError" = "无法删除此账户,因为它的余额不为零。请将余额调为 0 后再删除。";
 "account.type.general" = "通用";
 "account.type.cash" = "现金";
 "account.type.current" = "活期账户";
@@ -3216,6 +3215,56 @@
 "devseed.stepDeleting" = "正在删除数据...";
 "devseed.stepReloading" = "正在重新加载数据...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "里斯本之旅";
+"devseed.ficha.groupWeekend" = "波尔图周末";
+"devseed.ficha.memberYou" = "你";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "住宿";
+"devseed.ficha.expenseTour" = "导览游";
+"devseed.ficha.expenseGroupDinner" = "聚餐";
+"devseed.ficha.expenseAirportTaxi" = "机场出租车";
+"devseed.ficha.expenseLocalMeal" = "海鲜晚餐";
+"devseed.ficha.expenseMuseum" = "博物馆门票";
+"devseed.ficha.expenseTransport" = "交通";
+"devseed.ficha.expenseGroceries" = "买菜";
+"devseed.ficha.expenseSouvenirs" = "纪念品";
+"devseed.ficha.expenseWeekendStay" = "波尔图酒店";
+"devseed.ficha.expenseWeekendMeal" = "品酒";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "旅行 %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "打车去机场花了45，超市花了120.50";
+"uitestDemo.chat.draftNoteTaxi" = "去机场的出租车";
+"uitestDemo.chat.draftNoteGroceries" = "超市购物";
+"uitestDemo.chat.suggestionSplit" = "我在住房和个人上的支出是怎么分布的？";
+"uitestDemo.chat.suggestionMonth" = "这个月我在餐厅和外卖上花了多少？";
+"uitestDemo.chat.suggestionBudget" = "我的外出就餐预算够用吗？";
+"uitestDemo.chat.pizzaNote" = "披萨";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "午饭25，刷卡";
+"uitestDemo.voice.lunchNote" = "午饭";
+"uitestDemo.voice.twoTranscript" = "打车12，咖啡8，刷卡";
+"uitestDemo.voice.taxiNote" = "出租车";
+"uitestDemo.voice.coffeeNote" = "咖啡";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "蓝门小馆";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "出租车";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "第%ld页";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "入门";
@@ -4132,7 +4181,7 @@
 "welcome.hero.cards.budgets.title" = "预算与目标";
 "welcome.hero.cards.budgets.body" = "设定上限,照做不误。";
 "welcome.hero.cards.multiAndCurrencies.title" = "多账户多币种";
-"welcome.hero.cards.multiAndCurrencies.body" = "银行卡、现金、48+ 种货币。";
+"welcome.hero.cards.multiAndCurrencies.body" = "银行卡、现金、50+ 种货币。";
 "welcome.hero.cards.import.title" = "导入你的历史";
 "welcome.hero.cards.import.body" = "PDF、CSV、Excel,一键搞定。";
 "welcome.hero.cards.icloud.title" = "私享 iCloud";
@@ -4160,12 +4209,12 @@
 "yalaAI.onboarding.progressLabel" = "第 %1$d 步，共 %2$d 步";
 "yalaAI.onboarding.step1.title" = "向你介绍 Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "你的财务好帮手。";
-"yalaAI.onboarding.step1.demoScenario1User" = "午餐花了 12 元。";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "搞定！已记录你 12 元的午餐。";
+"yalaAI.onboarding.step1.demoScenario1User" = "午餐花了 %@。";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "搞定！已记录你 %@ 的午餐。";
 "yalaAI.onboarding.step1.demoScenario2User" = "本月咖啡花了多少？";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "本月咖啡花了 320 元 ☕ — 比 4 月少 12%，不过比你平时的平均高出 50 元。";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "本月咖啡花了 %1$@ ☕，比 4 月少 12%%，不过比你平时的平均高出 %2$@。";
 "yalaAI.onboarding.step1.demoScenario3User" = "有什么建议吗？";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 你的外卖比上月高出 20%。回到平时的节奏每月可省 600 元 — 一年差不多 7,200 元。";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 你的外卖比上月高出 20%%。回到平时的节奏每月可省 %1$@，一年就是 %2$@。";
 "yalaAI.onboarding.step1.demoAmountLabel" = "午餐";
 "yalaAI.onboarding.step1.a11yLabel" = "Yala AI 记录支出的聊天示例";
 "yalaAI.onboarding.step2.title" = "你可以这样做";
@@ -4191,11 +4240,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "帮你削减开支，每月多攒一些。";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "任何偏差都会提醒你，避免被动。";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "本月收入足以覆盖支出。节奏不错。";
-"yalaAI.onboarding.step4.focusSaverQuote" = "餐饮开支减少 10%，每月可省 80 元。";
+"yalaAI.onboarding.step4.focusSaverQuote" = "餐饮开支减少 10%%，每月可省 %@。";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "注意：本月外卖花费比上月更快。";
 "yalaAI.onboarding.step5.title" = "全部就绪！";
 "yalaAI.onboarding.step5.subtitle" = "随时告诉 Yala 你需要什么。";
-"yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 5 元的咖啡\" 或 \"今天我花了多少？\"";
+"yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 %@ 的咖啡\" 或 \"今天我花了多少？\"";
 "yalaAI.onboarding.step5.cta" = "开始聊天";
 
 // MARK: - Stats Records polish
@@ -4411,6 +4460,14 @@
 "whatsNew.v20.ai.description" = "你的 AI 财务助手。向它询问你的财务状况，让它帮你记账，获取清晰的本月分析。就像一位懂理财的朋友，一条消息即可触达。";
 "whatsNew.v20.redesign.title" = "全新设计";
 "whatsNew.v20.redesign.description" = "我们对 Yala 进行了彻底重新设计：全新小组件、每个板块更清晰的摘要，以及贯穿整个应用的 iOS 全新 Liquid Glass 质感。此外，我们还修复了大量问题，让一切更顺滑。";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "群组";
+"whatsNew.v21.groups.description" = "和任何人分摊支出。通过链接邀请，一起记账，Yala 自动算出谁欠谁多少。不用算账，也不尴尬。";
+"whatsNew.v21.logging.title" = "记账从未如此简单";
+"whatsNew.v21.logging.description" = "对它说话、拍张照片，或者像跟朋友聊天一样打字。Yala 能听懂你花了什么，并帮你记下来，管好账只需几秒。";
+"whatsNew.v21.data.title" = "你的数据，你做主";
+"whatsNew.v21.data.description" = "信息存在哪里由你决定：你的私人 iCloud，或 Yala 云端，让它在你的所有设备上随时可用。此外，还有全新的首页，以及在 iPad 上全屏使用 Yala。";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4907,6 +4964,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "云端的 Yala 账户（如果你是用 Google 账号创建的）。";
+"welcome.existing.usedOnThisDeviceNote" = "你在这台 iPhone 上用过的方式";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "请使用创建云端账户时的同一个 Google 账号。";
@@ -6659,3 +6717,89 @@
 "export.error.invalidDateRange" = "日期无效：开始日期必须早于结束日期。";
 "export.error.noTransactions" = "没有符合这些筛选条件的交易。试试其他时间段，或移除某个筛选条件。";
 "export.error.fileWriteFailed" = "无法创建文件，请重试。";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "删除“%@”";
+"account.removal.intro" = "删除前，请选择如何处理其中的内容。";
+"account.removal.countRecords" = "交易";
+"account.removal.countScheduled" = "计划付款";
+"account.removal.countFavorites" = "收藏付款";
+"account.removal.countDrafts" = "收件箱中待处理";
+"account.removal.choiceHeader" = "如何处理";
+"account.removal.moveTitle" = "移到另一个账户";
+"account.removal.moveSubtitle" = "推荐。你的历史记录和余额都会保留。";
+"account.removal.noDestination" = "你没有其他可以移入的账户。";
+"account.removal.deleteTitle" = "删除交易";
+"account.removal.deleteSubtitle" = "它们会连同账户一起被永久删除。";
+"account.removal.deleteBlockedGroups" = "其中包含你群组的交易：只能移动。";
+"account.removal.destinationHeader" = "移到";
+"account.removal.destinationBlockedCurrency" = "不可用：其中有无法换算为此币种的转账或群组交易。";
+"account.removal.convertNote" = "其他币种的内容将换算为%@：交易按各自日期的汇率，计划付款和收藏付款按今天的汇率。";
+"account.removal.collapsedNote" = "“%1$@”与“%2$@”之间的转账将被移除：在同一个账户内它们不会移动资金。";
+"account.removal.partnersNote" = "与其他账户之间的转账会作为普通交易留在那些账户中。";
+"account.removal.plansNote" = "计划付款、收藏和收件箱中待处理的项目将没有账户：使用时再选择账户。";
+"account.removal.moveAction" = "移动并删除账户";
+"account.removal.deleteAction" = "删除交易和账户";
+"account.removal.confirmDeleteTitle" = "删除这些交易？";
+"account.removal.confirmDeleteCount" = "将删除的交易";
+"account.removal.confirmDeleteMessage" = "它们会被永久删除且无法撤销。账户也会被删除。";
+"account.removal.confirmDeleteAction" = "是，全部删除";
+"account.removal.working" = "正在删除账户…";
+"account.removal.failedTitle" = "账户未删除";
+"account.removal.failedUnreadable" = "无法读取此账户中的内容。未做任何更改。";
+"account.removal.failedChanged" = "在此期间账户发生了变化。请检查后重试。";
+"account.removal.failedRates" = "无法获取用于换算的汇率。未移动任何内容：请联网后重试。";
+"account.removal.noAllowedDestination" = "你的其他账户是另一种币种，而此账户中有无法换算的转账或群组项目。";
+"account.removal.countBudgets" = "预算";
+"account.removal.budgetsMovedNote" = "原本跟踪此账户的预算将改为跟踪“%@”。";
+"account.removal.budgetsOnlyNote" = "有些预算只跟踪此账户：删除后，它们将跟踪你的所有账户。";
+"orphanedRecords.title" = "没有账户的交易";
+"orphanedRecords.bannerMessage" = "删除某个账户时它们失去了账户，因此不计入你的余额和支出。";
+"orphanedRecords.bannerAction" = "选择账户";
+"orphanedRecords.intro" = "删除某个账户时，这些交易失去了账户。在有账户之前，它们不计入你的余额和支出。请选择要移入的账户。";
+"orphanedRecords.listHeader" = "具体是哪些";
+"orphanedRecords.moreNote" = "还有 %d 笔。";
+"orphanedRecords.noDestination" = "先创建一个账户才能移动它们。";
+"orphanedRecords.keptCurrencyNote" = "其他货币的转账按原样移动、不换算，这样另一端仍然对得上。";
+"orphanedRecords.convertNote" = "其他货币的交易会按其日期的汇率换算为 %@。";
+"orphanedRecords.collapsedNote" = "会落在「%@」内部的转账会被移除：在同一账户内转账不会移动资金。";
+"orphanedRecords.moveAction" = "移到「%@」";
+"orphanedRecords.moveActionGeneric" = "移动";
+"orphanedRecords.working" = "正在移动…";
+"orphanedRecords.failedTitle" = "未能移动";
+"orphanedRecords.failedUnreadable" = "无法读取这些交易。未做任何更改。";
+"orphanedRecords.failedChanged" = "这期间有内容发生了变化。请检查后重试。";
+"orphanedRecords.untitled" = "无描述";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "此设备上的 iCloud 不可用";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala 将你的数据保存在你的 iCloud 中,目前无法读取。iCloud 恢复可用后,其中的内容会重新显示。你可以在「设置」中的 iCloud 里查看。";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "正在检查你的 iCloud…";
+"storage.revert.prior.title" = "你的 iCloud 里已经有 Yala 数据";
+"storage.revert.prior.body" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据：%@。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.bodyNoCount" = "这部手机的 iCloud 里有不在你账户中的 Yala 数据。如果合并，它们会显示在你的数据旁边。如果不带它们开始，它们会从你的 iCloud 中删除。";
+"storage.revert.prior.groupRecords" = "%d 条群组记录";
+"storage.revert.prior.groupsNote" = "群组记录可能会在没有所属群组的情况下出现。";
+"storage.revert.prior.merge" = "合并到我的数据";
+"storage.revert.prior.discard" = "不带它们开始";
+"storage.revert.prior.discardConfirmTitle" = "要从你的 iCloud 中删除吗？";
+"storage.revert.prior.discardConfirmBody" = "它们会从你的 iCloud 以及使用此 Apple ID 的设备上删除。不会保留副本，我们也无法恢复。之后会开始返回 iCloud。";
+"storage.revert.prior.discardConfirm" = "删除并返回 iCloud";
+"storage.revert.prior.checkFailedTitle" = "无法检查你的 iCloud";
+"storage.revert.prior.checkFailedBody" = "返回之前，我们会检查你的 iCloud 里是否已有 Yala 数据，以免在不告诉你的情况下混在一起。可能是网络问题：请再试一次。";
+"storage.revert.prior.wipeFailed" = "我们没能从你的 iCloud 中删除完以前的数据，所以没有开始返回：你仍在使用云端。请检查网络后再试一次。";
+"storage.revert.prior.noAccountTitle" = "请在这部 iPhone 上登录 iCloud";
+"storage.revert.prior.noAccountBody" = "返回之前，我们会检查你的 iCloud 里有什么，但这部 iPhone 没有登录 iCloud。请在 iPhone 的“设置”中登录后再试一次。";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "在此移除";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "仅在这部手机上移除。如果它的群组到达，会重新显示。";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "其他货币的群组支出按原样移动，不做换算：金额由群组决定。";
