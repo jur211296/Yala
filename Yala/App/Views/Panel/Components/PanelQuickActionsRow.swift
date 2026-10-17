@@ -111,22 +111,26 @@ struct PanelQuickActionsRow: View {
                 // cuarta píldora cortada contra el borde en un iPhone 17 Pro EN
                 // ESPAÑOL —y el alemán es más largo—. Debajo, la palabra no ensancha
                 // el botón más que el icono con su margen.
-                pill(
-                    text: nil,
-                    caption: L10n.Panel.voiceShort,
-                    icon: "waveform",
-                    isLocked: isVoiceLocked,
-                    identifier: "panel_action_voice",
-                    action: onVoiceTap
-                )
-                pill(
-                    text: nil,
-                    caption: L10n.Panel.photoShort,
-                    icon: "photo",
-                    isLocked: isImageLocked,
-                    identifier: "panel_action_image",
-                    action: onImageTap
-                )
+                // Voz y Foto van juntas en un ancla: el tour Pro las señala a la vez (UX 2.2 · L5-12).
+                HStack(spacing: DS.Spacing.sm) {
+                    pill(
+                        text: nil,
+                        caption: L10n.Panel.voiceShort,
+                        icon: "waveform",
+                        isLocked: isVoiceLocked,
+                        identifier: "panel_action_voice",
+                        action: onVoiceTap
+                    )
+                    pill(
+                        text: nil,
+                        caption: L10n.Panel.photoShort,
+                        icon: "photo",
+                        isLocked: isImageLocked,
+                        identifier: "panel_action_image",
+                        action: onImageTap
+                    )
+                }
+                .coachMarkAnchor(ProTourSteps.panelVoiceImageAnchor)
                 if isChatVisible {
                     // Dorado como el FAB de IA (`DS.Gradients.proBadge`), y con
                     // texto: es la única de las tres asistidas que se anuncia,
@@ -141,6 +145,7 @@ struct PanelQuickActionsRow: View {
                         identifier: "panel_action_ai",
                         action: onChatTap
                     )
+                    .coachMarkAnchor(ProTourSteps.panelAssistantAnchor)
                 }
             }
         }

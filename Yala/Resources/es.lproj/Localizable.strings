@@ -2150,29 +2150,17 @@
 "tipkit.next" = "Siguiente";
 "tipkit.done" = "Listo";
 "tipkit.comparison.title" = "Compara y aprende";
-"tipkit.comparison.message" = "Compara contra el periodo anterior o el año pasado para ver cómo vas.";
+"tipkit.comparison.message" = "%1$@ compara con el periodo anterior; %2$@, con el mismo periodo del año pasado.";
 
 // Grupo D: Tour de Settings
-"tipkit.settingsAppIcon.title" = "Tu ícono";
-"tipkit.settingsAppIcon.message" = "Cambia el ícono de la app para darle tu toque personal.";
-"tipkit.settingsTheme.title" = "Tu tema";
-"tipkit.settingsTheme.message" = "Elige entre clásico, minimalista o translúcido para tu estilo.";
 "tipkit.settings.accounts.title" = "Tus cuentas";
-"tipkit.settings.accounts.message" = "Agrega y organiza tus cuentas bancarias, efectivo y más.";
-"tipkit.settings.categories.title" = "Categorías";
-"tipkit.settings.categories.message" = "Personaliza las categorías para clasificar tus gastos e ingresos.";
-"tipkit.settings.tags.title" = "Etiquetas";
-"tipkit.settings.tags.message" = "Crea etiquetas para agrupar gastos por proyecto, viaje o lo que necesites.";
-"tipkit.settings.budgets.title" = "Presupuestos";
-"tipkit.settings.budgets.message" = "Define límites de gasto y recibe alertas cuando te acerques.";
-"tipkit.settings.planned.title" = "Pagos planificados";
-"tipkit.settings.planned.message" = "Programa pagos recurrentes para que Yala te recuerde a tiempo.";
+"tipkit.settings.accounts.message" = "Agrega tus cuentas y corrige su saldo si no cuadra.";
 "tipkit.settings.personalization.title" = "Personalización";
 "tipkit.settings.personalization.message" = "Ajusta el idioma, moneda y apariencia para que Yala se sienta tuya.";
 "tipkit.settings.tutorials.title" = "Tutoriales";
 "tipkit.settings.tutorials.message" = "Guías paso a paso para sacarle el máximo provecho a Yala.";
 "tipkit.cfSetup.banner.title" = "Tu plan a medida";
-"tipkit.cfSetup.banner.message" = "Revisamos tus últimos meses y te armamos un plan. Ajusta lo que quieras.";
+"tipkit.cfSetup.banner.message" = "Te proponemos un plan con lo que ya apuntaste. Ajusta lo que quieras.";
 "tipkit.cfSetup.line.title" = "Tus ingresos y gastos";
 "tipkit.cfSetup.line.message" = "Cada línea es algo que ganas o pagas cada mes. Toca ✓ para incluirlo en tu plan.";
 "tipkit.cfSetup.starting.title" = "Saldo inicial";
@@ -2197,10 +2185,7 @@
 "tipkit.pro.premiumIcons.message" = "Elige entre iconos premium para personalizar tu app.";
 "tipkit.pro.proThemes.title" = "Temas premium";
 "tipkit.pro.proThemes.message" = "Descubre temas de color exclusivos que le dan tu toque personal a Yala.";
-"tipkit.pro.fab.title" = "Nuevas formas de registrar";
-"tipkit.pro.fab.message" = "Toca aquí para registrar por voz, imagen o de forma manual. Ahora tienes las tres opciones.";
 "tipkit.pro.chatFab.title" = "Tu asistente financiero";
-"tipkit.pro.chatFab.message" = "Pregúntale a Yala sobre tus gastos, presupuestos y más.";
 "tipkit.pro.aiSummary.title" = "Tu resumen con IA";
 "tipkit.pro.aiSummary.message" = "Genera un resumen inteligente de tus finanzas con un toque. Observaciones útiles, al instante.";
 "tipkit.aiCharts.pro.title" = "Observaciones con IA";
@@ -2259,7 +2244,7 @@
 "tutorials.createRecord.title" = "Registrar un gasto";
 "tutorials.createRecord.intro.title" = "Registro manual";
 "tutorials.createRecord.intro.desc" = "Cada gasto que registras te ayuda a entender mejor tus finanzas.";
-"tutorials.createRecord.step0.title" = "Toca el botón +";
+"tutorials.createRecord.step0.title" = "Toca Nuevo registro";
 "tutorials.createRecord.step1.title" = "Elige el tipo de registro";
 "tutorials.createRecord.step2.title" = "Completa los campos";
 "tutorials.createRecord.step3.title" = "Usa atajos rápidos";
@@ -2359,7 +2344,7 @@
 "tutorials.createCategories.step3.desc" = "Personaliza a tu gusto el icono y color de tu categoría cuando quieras.";
 "tutorials.createTags.step0.desc" = "En tu perfil, selecciona la sección de Etiquetas y crea una nueva etiqueta.";
 "tutorials.createTags.step1.desc" = "Personaliza a tu gusto la etiqueta: ponle nombre, icono y color.";
-"tutorials.createRecord.step0.desc" = "En el panel, toca el botón +. Si eres usuario Yala Pro, selecciona Manual.";
+"tutorials.createRecord.step0.desc" = "En el Panel, toca Nuevo registro. Para dictar o leer un recibo, toca Voz o Foto.";
 "tutorials.createRecord.step1.desc" = "Puedes registrar gastos, ingresos e inclusive transferencias entre cuentas. Los tipos de cambio se calculan automáticamente en tiempo real.";
 "tutorials.createRecord.step2.desc" = "Completa los campos obligatorios: monto, cuenta y subcategoría. También puedes agregar una descripción y las etiquetas que quieras.";
 "tutorials.createRecord.step3.desc" = "Usa los atajos rápidos: @ para cuenta, ! para categoría y # para etiqueta. Empieza a escribir para afinar la búsqueda dentro de cada atajo.";
@@ -2404,7 +2389,7 @@
 "faq.whatIsYala.q" = "¿Qué es Yala?";
 "faq.whatIsYala.a" = "Yala es tu app de finanzas personales. Te ayuda a registrar gastos e ingresos, organizar tu dinero por categorías y etiquetas, crear presupuestos y ver reportes claros de cómo va tu economía.";
 "faq.howToRecord.q" = "¿Cómo registro un gasto?";
-"faq.howToRecord.a" = "Toca el botón + en la pantalla principal. Puedes escribir el monto manualmente, dictar por voz o escanear un recibo con la cámara. Yala completa los detalles por ti.";
+"faq.howToRecord.a" = "En el Panel, toca Nuevo registro para escribir el monto, o Voz o Foto para dictarlo o leer un recibo. Yala completa los detalles por ti.";
 "faq.multiCurrency.q" = "¿Puedo usar varias monedas?";
 "faq.multiCurrency.a" = "Sí. Yala soporta 7 monedas (PEN, USD, EUR, MXN, COP, BRL, GBP). Configura tu moneda principal y agrega divisas secundarias en Ajustes > Moneda.";
 "faq.changeCategory.q" = "¿Cómo cambio la categoría de un gasto?";
@@ -2655,7 +2640,7 @@
 "featureGate.imageInput" = "Registro con foto o archivo";
 "featureGate.premiumIcons" = "Iconos premium";
 "featureGate.proThemes" = "Temas Pro";
-"featureGate.smartInsightsAI" = "Insights inteligentes con IA";
+"featureGate.smartInsightsAI" = "Análisis con IA";
 "featureGate.cashFlowAdvanced" = "Flujo de caja avanzado";
 
 // Titles
@@ -3113,7 +3098,7 @@
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "Estás creando un gran hábito. Con Yala Pro puedes dictar tus gastos con la voz.";
-"milestone.message50" = "¡Impresionante! Con Insights AI puedes descubrir patrones ocultos en tus gastos.";
+"milestone.message50" = "¡Impresionante! Con el análisis con IA descubres patrones en tus gastos.";
 "milestone.message100" = "Eres un experto en finanzas. Desbloquea la experiencia completa con Yala Pro.";
 "milestone.notNow" = "Ahora no";
 "milestone.unlimitedAccounts" = "Cuentas ilimitadas";
@@ -3267,19 +3252,17 @@
 "setup.complete.subtitle" = "Completaste todos los pasos. Yala está lista para ti.";
 "setup.step.completed" = "Completado";
 "setup.step.tapToStart" = "Toca para comenzar";
-"setup.step.locked" = "Paso bloqueado. Completa los pasos anteriores primero.";
 "setup.nextStep" = "Siguiente paso: %@";
 
 "setup.step1.title" = "Conoce todo lo que puedes personalizar";
 "setup.step2.title" = "Registra tu primer gasto";
 "setup.step3.title" = "Pon tu primer presupuesto";
 "setup.step4.title" = "Agrega un pago que se repite";
-"setup.step5.title" = "Descubre qué más puede hacer Yala";
 
 "setup.practice.title" = "¡Listo! Creaste tu primer %@";
 "setup.practice.message" = "Si solo fue de prueba, puedes eliminarlo sin problema.";
-"setup.practice.keep" = "Conservar";
-"setup.practice.delete" = "Era de prueba";
+"setup.practice.keep" = "Guardarlo";
+"setup.practice.delete" = "Borrarlo, era de prueba";
 "setup.practice.type.expense" = "gasto";
 "setup.practice.type.budget" = "presupuesto";
 "setup.practice.type.scheduled" = "pago planificado";
@@ -3296,41 +3279,14 @@
 "setup.imageTrial.useThisImage" = "Usar esta imagen";
 
 // Setup Personalize
-"setup.personalize.navTitle" = "Personaliza tu Yala";
-"setup.personalize.title" = "Haz tuyo a Yala";
-"setup.personalize.subtitle" = "Dale tu toque personal. Cambia el tema, el ícono o cómo se ven tus widgets.";
-"setup.personalize.personalizeAll" = "Personaliza todo";
-"setup.personalize.personalizeAllSubtitle" = "Nombre, foto, formato de moneda y más";
-"setup.personalize.appIcon" = "Cambia tu ícono";
-"setup.personalize.appIconSubtitle" = "Elige entre varios diseños para la app";
-"setup.personalize.theme" = "Cambia tu tema";
-"setup.personalize.themeSubtitle" = "Clásico, minimalista o translúcido";
 
 // Setup Discover
-"setup.discover.navTitle" = "Descubre Yala";
-"setup.discover.title" = "Yala puede hacer mucho más";
-"setup.discover.subtitleFree" = "Esto es lo que puedes hacer — y lo que podrías desbloquear.";
-"setup.discover.subtitlePro" = "Aprovecha todo el poder de tu plan Pro.";
-"setup.discover.youCanAlready" = "Ya puedes";
-"setup.discover.proFeatures" = "Aprovecha tu Pro";
-"setup.discover.withPro" = "Con Yala Pro";
-"setup.discover.tryFree" = "Probar gratis 30 días";
-"setup.discover.done" = "¡Entendido!";
-"setup.discover.feature.manualEntry" = "Registrar gastos e ingresos";
-"setup.discover.feature.statistics" = "Ver tus estadísticas y tendencias";
-"setup.discover.feature.budgets" = "Crear presupuestos por categoría";
-"setup.discover.feature.scheduledPayments" = "Programar pagos recurrentes";
-"setup.discover.feature.notifications" = "Recibir alertas y recordatorios";
-"setup.discover.feature.aiInsights" = "Análisis inteligente con IA";
-"setup.discover.feature.voice" = "Registrar gastos con tu voz";
-"setup.discover.feature.imageCapture" = "Escanear tickets con la cámara";
-"setup.discover.feature.unlimitedBudgets" = "Presupuestos y cuentas ilimitados";
 
 // MARK: - Contextual Guides
 
 "contextualGuide.dismiss" = "Entendido";
 "guide.panel.title" = "Este es tu resumen";
-"guide.panel.message" = "Aquí ves de un vistazo cuánto has gastado y cuánto te queda. Toca el botón + para agregar un gasto.";
+"guide.panel.message" = "Aquí ves de un vistazo cuánto has gastado y cuánto te queda. Toca Nuevo registro para apuntar un gasto.";
 "guide.trends.title" = "¿Cómo van tus gastos?";
 "guide.trends.message" = "Esta gráfica muestra si estás gastando más o menos que antes. Si la línea sube, estás gastando más.";
 "guide.categories.title" = "¿En qué se va tu dinero?";
@@ -3344,19 +3300,13 @@
 "guide.accounts.title" = "Tu dinero organizado";
 "guide.accounts.message" = "Cada cuenta representa dónde tienes tu dinero: efectivo, banco, tarjeta. Puedes crear varias para llevar el control de cada una.";
 "guide.transaction.title" = "Registra un gasto o ingreso";
-"guide.transaction.message" = "Solo pon el monto y una categoría. Todo lo demás es opcional. Mientras más registres, mejor entenderás tus gastos.";
+"guide.transaction.message" = "Pon el monto, la cuenta y en qué fue. Lo demás es opcional.";
 "guide.comparative.title" = "Compara períodos";
 "guide.comparative.message" = "Mira si este mes gastaste más o menos que el anterior. Rosa = gastaste más, morado = gastaste menos.";
-"guide.cashflow.title" = "¿Te va a alcanzar?";
-"guide.cashflow.message" = "Yala calcula si tu dinero te alcanza hasta fin de mes según lo que ganas y gastas.";
 "guide.insights.title" = "Yala analiza por ti";
 "guide.insights.message" = "Basado en tus gastos, Yala te dice cosas útiles: tu día más caro, si estás gastando más de lo normal, etc.";
 "guide.inbox.title" = "Por revisar y guardar";
 "guide.inbox.message" = "Lo que Yala apunta por ti (voz, fotos, Apple Pay, Siri, pagos que vencen) espera aquí a que lo revises y lo guardes.";
-"guide.budgetEditor.title" = "¿Qué es un presupuesto?";
-"guide.budgetEditor.message" = "Es un límite que tú defines para controlar cuánto gastas en algo. Ponle un nombre, un monto y elige a qué categorías aplica. Podrás editarlo o eliminarlo cuando quieras.";
-"guide.scheduledEditor.title" = "¿Qué es un pago planificado?";
-"guide.scheduledEditor.message" = "Es un gasto que se repite: alquiler, Netflix, internet... Yala te lo recuerda antes de cada pago. Podrás editarlo o eliminarlo cuando quieras.";
 "guide.budgetFilter.title" = "¿Qué cubre este presupuesto?";
 "guide.budgetFilter.allExpenses" = "Todos tus gastos";
 "guide.budgetFilter.prefix" = "Los gastos";
@@ -7009,3 +6959,33 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "Quedan pendientes: %d";
+
+/* UX 2.2 · lote 5: primeros días, guías y tips */
+"setup.step5.title.trial" = "Prueba Yala Pro gratis 30 días";
+"setup.step5.title.knowPro" = "Conoce Yala Pro";
+"setup.step5.title.alreadyPro" = "Ya tienes Yala Pro";
+"setup.step.skipped" = "Lo saltaste. Toca para probarlo";
+"setup.step.tryAgain" = "Probar";
+"setup.complete.basics.title" = "Ya conoces lo básico de Yala";
+"setup.complete.basics.subtitle" = "Cuando quieras, prueba la voz o la foto con los botones de arriba del Panel.";
+"setup.nextStepLabel" = "Siguiente paso";
+"setup.start" = "Empezar";
+"setup.showAllSteps" = "Ver los %d pasos";
+"setup.hideAllSteps" = "Ocultar los pasos";
+"contextualGuide.label" = "GUÍA";
+"tipkit.stepProgress" = "%1$d de %2$d";
+"tipkit.pro.quickEntry.title" = "Ya puedes dictar y leer recibos";
+"tipkit.pro.quickEntry.message" = "Toca Voz para dictar un gasto o Foto para leer un recibo. Yala lo apunta por ti.";
+"tipkit.pro.quickAI.message" = "Toca IA y pregúntale a Yala por tus gastos, presupuestos y más.";
+"milestone.nextGoal" = "Siguiente meta: %d registros";
+"notificationPrimer.scheduled.title" = "¿Te avisamos antes de cada pago?";
+"notificationPrimer.scheduled.benefit" = "Un aviso antes de que venza cada pago planificado, para que no se te pase.";
+"notificationPrimer.budget.title" = "¿Te avisamos cuando te acerques al límite?";
+"notificationPrimer.budget.benefit" = "Te avisamos al llegar a los porcentajes que elegiste. Sin este permiso, la alerta no te llega.";
+"whatsNew.v22.panel.title" = "Un Panel más claro";
+"whatsNew.v22.panel.description" = "La cifra grande dice qué mide, tus cuentas se ven de un vistazo y los avisos salen de uno en uno.";
+"whatsNew.v22.inbox.title" = "Voz, foto y Bandeja";
+"whatsNew.v22.inbox.description" = "Lo que dictas o fotografías llega a la Bandeja diciendo de dónde vino, y puedes guardar de una vez todo lo que está listo.";
+"whatsNew.v22.firstSteps.title" = "Primeros pasos a tu ritmo";
+"whatsNew.v22.firstSteps.description" = "Empieza por lo que te interese: ningún paso está bloqueado, y las guías van al grano.";
+"settings.whatsNew" = "Novedades";

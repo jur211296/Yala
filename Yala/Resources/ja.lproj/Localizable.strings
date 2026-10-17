@@ -2152,29 +2152,17 @@
 "tipkit.next" = "次へ";
 "tipkit.done" = "完了";
 "tipkit.comparison.title" = "比較して理解する";
-"tipkit.comparison.message" = "前期間や前年と比較して、状況を把握しましょう。";
+"tipkit.comparison.message" = "%1$@は前の期間と、%2$@は前年の同じ期間と比べます。";
 
 // Group D: Settings Tour
-"tipkit.settingsAppIcon.title" = "アイコン";
-"tipkit.settingsAppIcon.message" = "アプリのアイコンを変えて、自分らしい仕上げに。";
-"tipkit.settingsTheme.title" = "テーマ";
-"tipkit.settingsTheme.message" = "クラシック、ミニマル、半透明から好みのスタイルを選択。";
 "tipkit.settings.accounts.title" = "口座";
-"tipkit.settings.accounts.message" = "銀行口座、現金などを追加して整理。";
-"tipkit.settings.categories.title" = "カテゴリー";
-"tipkit.settings.categories.message" = "カテゴリーをカスタマイズして支出と収入を分類。";
-"tipkit.settings.tags.title" = "タグ";
-"tipkit.settings.tags.message" = "プロジェクト、旅行など好きな単位で支出をまとめるタグを作成。";
-"tipkit.settings.budgets.title" = "予算";
-"tipkit.settings.budgets.message" = "支出の上限を設定し、近づいたら通知。";
-"tipkit.settings.planned.title" = "予定支払い";
-"tipkit.settings.planned.message" = "定期的な支払いをスケジュールすれば、Yalaが時間通りにお知らせ。";
+"tipkit.settings.accounts.message" = "口座を追加し、残高が合わないときはここで直せます。";
 "tipkit.settings.personalization.title" = "パーソナライズ";
 "tipkit.settings.personalization.message" = "言語、通貨、外観を調整して自分らしいYalaに。";
 "tipkit.settings.tutorials.title" = "チュートリアル";
 "tipkit.settings.tutorials.message" = "Yalaを最大限に活用するためのステップバイステップガイド。";
 "tipkit.cfSetup.banner.title" = "あなた専用に作成";
-"tipkit.cfSetup.banner.message" = "最近の数ヶ月を分析して計画を作成しました。お好みで調整してください。";
+"tipkit.cfSetup.banner.message" = "これまでの記録をもとに計画を提案します。お好みで調整してください。";
 "tipkit.cfSetup.line.title" = "収入と支出";
 "tipkit.cfSetup.line.message" = "各項目は毎月稼ぐ・支払うものです。✓をタップして計画に含めましょう。";
 "tipkit.cfSetup.starting.title" = "初期残高";
@@ -2199,10 +2187,7 @@
 "tipkit.pro.premiumIcons.message" = "プレミアムアイコンからアプリを自分仕様に。";
 "tipkit.pro.proThemes.title" = "プレミアムテーマ";
 "tipkit.pro.proThemes.message" = "Yalaに自分らしい彩りを加える限定カラーテーマを発見。";
-"tipkit.pro.fab.title" = "新しい記録方法";
-"tipkit.pro.fab.message" = "ここをタップして音声、画像、手動で記録できます。3つの選択肢が揃いました。";
 "tipkit.pro.chatFab.title" = "金融アシスタント";
-"tipkit.pro.chatFab.message" = "支出、予算などをYalaに聞いてみましょう。";
 "tipkit.pro.aiSummary.title" = "AIサマリー";
 "tipkit.pro.aiSummary.message" = "1タップで資産状況のスマートサマリーを生成。役立つインサイトをすぐに。";
 "tipkit.aiCharts.pro.title" = "AIインサイト";
@@ -2218,7 +2203,7 @@
 "faq.whatIsYala.q" = "Yalaとは？";
 "faq.whatIsYala.a" = "Yalaは個人向けの資産管理アプリです。支出と収入の追跡、カテゴリーやタグでの整理、予算作成、明確なレポートでお金の状況を把握できます。";
 "faq.howToRecord.q" = "支出はどう記録する？";
-"faq.howToRecord.a" = "メイン画面の+ボタンをタップ。金額を手入力する、音声で口述する、カメラでレシートを読み取るなどの方法があります。Yalaが詳細を埋めてくれます。";
+"faq.howToRecord.a" = "ホームで「新規記録」をタップして金額を入力するか、「音声」か「写真」で口述やレシートの読み取りができます。詳細はYalaが埋めてくれます。";
 "faq.multiCurrency.q" = "複数通貨は使える？";
 "faq.multiCurrency.a" = "はい。Yalaは7通貨(PEN、USD、EUR、MXN、COP、BRL、GBP)に対応。設定 > 通貨でメイン通貨を設定し、副通貨を追加できます。";
 "faq.changeCategory.q" = "支出のカテゴリーはどう変更する？";
@@ -2469,7 +2454,7 @@
 "featureGate.imageInput" = "写真・ファイル入力";
 "featureGate.premiumIcons" = "プレミアムアイコン";
 "featureGate.proThemes" = "Proテーマ";
-"featureGate.smartInsightsAI" = "スマートインサイトAI";
+"featureGate.smartInsightsAI" = "AI分析";
 "featureGate.cashFlowAdvanced" = "高度なキャッシュフロー";
 
 // Titles
@@ -2663,7 +2648,7 @@
 "tutorials.createRecord.title" = "支出を記録";
 "tutorials.createRecord.intro.title" = "手動記録";
 "tutorials.createRecord.intro.desc" = "支出を記録するほど、自分の資産状況がより理解できます。";
-"tutorials.createRecord.step0.title" = "+ボタンをタップ";
+"tutorials.createRecord.step0.title" = "「新規記録」をタップ";
 "tutorials.createRecord.step1.title" = "記録の種類を選択";
 "tutorials.createRecord.step2.title" = "項目を入力";
 "tutorials.createRecord.step3.title" = "クイックショートカットを使う";
@@ -2763,7 +2748,7 @@
 "tutorials.createCategories.step3.desc" = "カテゴリーのアイコンと色をいつでも好みにカスタマイズできます。";
 "tutorials.createTags.step0.desc" = "プロフィールでタグセクションを選び、新規タグを作成します。";
 "tutorials.createTags.step1.desc" = "タグを好みにカスタマイズ: 名前、アイコン、色を設定します。";
-"tutorials.createRecord.step0.desc" = "パネルで+ボタンをタップ。Yala Proユーザーの場合は手動を選択してください。";
+"tutorials.createRecord.step0.desc" = "ホームで「新規記録」をタップ。音声入力やレシートの読み取りは「音声」か「写真」から。";
 "tutorials.createRecord.step1.desc" = "支出、収入、口座間振替を記録できます。為替レートはリアルタイムで自動計算されます。";
 "tutorials.createRecord.step2.desc" = "必須項目を入力: 金額、口座、サブカテゴリー。説明やタグも追加できます。";
 "tutorials.createRecord.step3.desc" = "クイックショートカット: @で口座、!でカテゴリー、#でタグ。各ショートカット内で入力すると検索が絞り込まれます。";
@@ -3122,7 +3107,7 @@
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "良い習慣ができてきました。Yala Proなら音声で支出を口述できます。";
-"milestone.message50" = "素晴らしい！AIインサイトで支出に隠れたパターンを発見できます。";
+"milestone.message50" = "素晴らしい！AI分析で支出のパターンが見えてきます。";
 "milestone.message100" = "あなたは資産管理のプロですね。Yala Proで全機能を解放しましょう。";
 "milestone.notNow" = "あとで";
 "milestone.unlimitedAccounts" = "無制限の口座";
@@ -3276,19 +3261,17 @@
 "setup.complete.subtitle" = "すべてのステップが完了しました。Yalaを使う準備ができました。";
 "setup.step.completed" = "完了";
 "setup.step.tapToStart" = "タップして開始";
-"setup.step.locked" = "ロック中のステップです。先に前のステップを完了してください。";
 "setup.nextStep" = "次のステップ: %@";
 
 "setup.step1.title" = "カスタマイズできる項目を見る";
 "setup.step2.title" = "最初の支出を記録";
 "setup.step3.title" = "最初の予算を設定";
 "setup.step4.title" = "定期支払いを追加";
-"setup.step5.title" = "Yalaの他の機能を発見";
 
 "setup.practice.title" = "完了！最初の%@を作成しました";
 "setup.practice.message" = "練習用なら、問題なく削除できます。";
 "setup.practice.keep" = "残す";
-"setup.practice.delete" = "練習用でした";
+"setup.practice.delete" = "削除する（練習用でした）";
 "setup.practice.type.expense" = "支出";
 "setup.practice.type.budget" = "予算";
 "setup.practice.type.scheduled" = "予定支払い";
@@ -3304,40 +3287,13 @@
 "setup.imageTrial.exampleList" = "取引一覧";
 "setup.imageTrial.useThisImage" = "この画像を使う";
 
-"setup.personalize.navTitle" = "Yalaをパーソナライズ";
-"setup.personalize.title" = "自分仕様にする";
-"setup.personalize.subtitle" = "あなたの個性を加えましょう。テーマ、アイコン、ウィジェットの見た目を変更できます。";
-"setup.personalize.personalizeAll" = "すべてパーソナライズ";
-"setup.personalize.personalizeAllSubtitle" = "名前、写真、通貨形式など";
-"setup.personalize.appIcon" = "アイコンを変える";
-"setup.personalize.appIconSubtitle" = "複数のアプリデザインから選択";
-"setup.personalize.theme" = "テーマを変える";
-"setup.personalize.themeSubtitle" = "クラシック、ミニマル、半透明";
 
-"setup.discover.navTitle" = "Yalaを発見";
-"setup.discover.title" = "Yalaはもっと多くのことができます";
-"setup.discover.subtitleFree" = "今できることと、解放できる機能を紹介します。";
-"setup.discover.subtitlePro" = "Proプランを最大限に活用しましょう。";
-"setup.discover.youCanAlready" = "今すぐできること";
-"setup.discover.proFeatures" = "Proを活用";
-"setup.discover.withPro" = "Yala Proで";
-"setup.discover.tryFree" = "30日間無料で試す";
-"setup.discover.done" = "了解！";
-"setup.discover.feature.manualEntry" = "支出と収入を記録";
-"setup.discover.feature.statistics" = "統計と推移を見る";
-"setup.discover.feature.budgets" = "カテゴリー別の予算を作成";
-"setup.discover.feature.scheduledPayments" = "定期支払いをスケジュール";
-"setup.discover.feature.notifications" = "アラートとリマインダー";
-"setup.discover.feature.aiInsights" = "スマートAI分析";
-"setup.discover.feature.voice" = "音声で支出を記録";
-"setup.discover.feature.imageCapture" = "カメラでレシートを読み取り";
-"setup.discover.feature.unlimitedBudgets" = "無制限の予算と口座";
 
 // MARK: - Contextual Guides
 
 "contextualGuide.dismiss" = "了解";
 "guide.panel.title" = "ここがあなたの概要です";
-"guide.panel.message" = "支出と残金がひと目で分かります。+をタップすると支出を追加できます。";
+"guide.panel.message" = "支出と残金がひと目で分かります。「新規記録」をタップすると支出を追加できます。";
 "guide.trends.title" = "支出の調子はどうですか？";
 "guide.trends.message" = "このグラフは以前より使っているか少ないかを示します。線が上がっていれば支出が増えています。";
 "guide.categories.title" = "お金はどこに使っていますか？";
@@ -3351,19 +3307,13 @@
 "guide.accounts.title" = "整理されたお金";
 "guide.accounts.message" = "口座はお金を保管している場所(現金、銀行、カード)を表します。複数作成して個別に管理できます。";
 "guide.transaction.title" = "支出や収入を記録";
-"guide.transaction.message" = "金額とカテゴリーを入力するだけ。それ以外は任意です。記録するほど支出が把握しやすくなります。";
+"guide.transaction.message" = "金額、口座、何に使ったかを入力します。それ以外は任意です。";
 "guide.comparative.title" = "期間を比較";
 "guide.comparative.message" = "今月と先月でどちらが多く使ったか確認できます。ピンク=多く使った、紫=少なく使った。";
-"guide.cashflow.title" = "今月もちますか？";
-"guide.cashflow.message" = "Yalaが収入と支出をもとに、月末までお金がもつかを計算します。";
 "guide.insights.title" = "Yalaが分析します";
 "guide.insights.message" = "支出に基づいて、Yalaが役立つ情報をお伝えします: 一番使った日、いつもより多く使っているかなど。";
 "guide.inbox.title" = "確認して保存";
 "guide.inbox.message" = "Yalaが記録したもの（音声・写真・Apple Pay・Siri・期日の支払い）は、ここで確認して保存するまで待機します。";
-"guide.budgetEditor.title" = "予算とは？";
-"guide.budgetEditor.message" = "何かに使う金額を管理するために設定する上限です。名前、金額、適用するカテゴリーを設定。いつでも編集・削除できます。";
-"guide.scheduledEditor.title" = "予定支払いとは？";
-"guide.scheduledEditor.message" = "家賃、Netflix、インターネットなど繰り返しの支出です。Yalaが各支払い前にお知らせします。いつでも編集・削除できます。";
 "guide.budgetFilter.title" = "この予算の対象は？";
 "guide.budgetFilter.allExpenses" = "すべての支出";
 "guide.budgetFilter.prefix" = "支出";
@@ -6995,3 +6945,33 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "未完了：%d件";
+
+/* UX 2.2 · lote 5: primeros días, guías y tips */
+"setup.step5.title.trial" = "Yala Proを30日間無料で試す";
+"setup.step5.title.knowPro" = "Yala Proを見る";
+"setup.step5.title.alreadyPro" = "Yala Proをご利用中です";
+"setup.step.skipped" = "スキップしました。タップして試せます";
+"setup.step.tryAgain" = "試す";
+"setup.complete.basics.title" = "Yalaの基本はばっちりです";
+"setup.complete.basics.subtitle" = "音声や写真は、ホーム上部のボタンからいつでも試せます。";
+"setup.nextStepLabel" = "次のステップ";
+"setup.start" = "始める";
+"setup.showAllSteps" = "全%dステップを見る";
+"setup.hideAllSteps" = "ステップを隠す";
+"contextualGuide.label" = "ガイド";
+"tipkit.stepProgress" = "%1$d/%2$d";
+"tipkit.pro.quickEntry.title" = "音声入力とレシートの読み取りが使えます";
+"tipkit.pro.quickEntry.message" = "「音声」で支出を話すか、「写真」でレシートを読み取れます。記録はYalaにおまかせ。";
+"tipkit.pro.quickAI.message" = "「AI」をタップして、支出や予算についてYalaに質問しましょう。";
+"milestone.nextGoal" = "次の目標：%d件の記録";
+"notificationPrimer.scheduled.title" = "支払いの前にお知らせしましょうか？";
+"notificationPrimer.scheduled.benefit" = "予定した支払いの期日前にお知らせするので、払い忘れを防げます。";
+"notificationPrimer.budget.title" = "上限に近づいたらお知らせしましょうか？";
+"notificationPrimer.budget.benefit" = "選んだ割合に達したらお知らせします。この許可がないと、通知は届きません。";
+"whatsNew.v22.panel.title" = "見やすくなったホーム";
+"whatsNew.v22.panel.description" = "大きな数字が何を表すか分かり、口座はひと目で確認でき、お知らせは一つずつ表示されます。";
+"whatsNew.v22.inbox.title" = "音声・写真・受信箱";
+"whatsNew.v22.inbox.description" = "音声や写真で取り込んだものは、出どころ付きで受信箱に届きます。準備できたものはまとめて保存できます。";
+"whatsNew.v22.firstSteps.title" = "自分のペースで「はじめに」";
+"whatsNew.v22.firstSteps.description" = "興味のあることから始められます。ロックされたステップはなく、ガイドも要点だけ。";
+"settings.whatsNew" = "新機能";

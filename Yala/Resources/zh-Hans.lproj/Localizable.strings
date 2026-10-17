@@ -2152,29 +2152,17 @@
 "tipkit.next" = "下一步";
 "tipkit.done" = "完成";
 "tipkit.comparison.title" = "对比并学习";
-"tipkit.comparison.message" = "与上一时段或去年对比,看看你的状态。";
+"tipkit.comparison.message" = "%1$@ 与上一时段对比；%2$@ 与去年同期对比。";
 
 // Group D: Settings Tour
-"tipkit.settingsAppIcon.title" = "你的图标";
-"tipkit.settingsAppIcon.message" = "更换应用图标,加点个人风格。";
-"tipkit.settingsTheme.title" = "你的主题";
-"tipkit.settingsTheme.message" = "在经典、极简或半透明中选择你的风格。";
 "tipkit.settings.accounts.title" = "你的账户";
-"tipkit.settings.accounts.message" = "添加和整理你的银行账户、现金等。";
-"tipkit.settings.categories.title" = "类别";
-"tipkit.settings.categories.message" = "自定义类别来分类你的支出和收入。";
-"tipkit.settings.tags.title" = "标签";
-"tipkit.settings.tags.message" = "创建标签按项目、旅行或任何你需要的方式分组支出。";
-"tipkit.settings.budgets.title" = "预算";
-"tipkit.settings.budgets.message" = "设定支出上限,在接近时获得提醒。";
-"tipkit.settings.planned.title" = "计划付款";
-"tipkit.settings.planned.message" = "安排周期付款,Yala 会按时提醒你。";
+"tipkit.settings.accounts.message" = "添加账户，余额对不上时可在这里修正。";
 "tipkit.settings.personalization.title" = "个性化";
 "tipkit.settings.personalization.message" = "调整语言、货币和外观,让 Yala 像你的。";
 "tipkit.settings.tutorials.title" = "教程";
 "tipkit.settings.tutorials.message" = "一步步的指南,帮你最大化 Yala。";
 "tipkit.cfSetup.banner.title" = "为你定制";
-"tipkit.cfSetup.banner.message" = "我们看了你最近几个月并搭好了计划。随意调整。";
+"tipkit.cfSetup.banner.message" = "我们根据你已记录的内容给出计划。随意调整。";
 "tipkit.cfSetup.line.title" = "你的收入与支出";
 "tipkit.cfSetup.line.message" = "每行是你每月赚或付的项目。点击 ✓ 把它纳入计划。";
 "tipkit.cfSetup.starting.title" = "起始余额";
@@ -2199,10 +2187,7 @@
 "tipkit.pro.premiumIcons.message" = "从高级图标中选一个,个性化你的应用。";
 "tipkit.pro.proThemes.title" = "高级主题";
 "tipkit.pro.proThemes.message" = "发现专属配色主题,让 Yala 充满你的个人风格。";
-"tipkit.pro.fab.title" = "新的记录方式";
-"tipkit.pro.fab.message" = "点击此处通过语音、图片或手动记录。三种方式任你选。";
 "tipkit.pro.chatFab.title" = "你的财务助理";
-"tipkit.pro.chatFab.message" = "向 Yala 询问你的支出、预算等。";
 "tipkit.pro.aiSummary.title" = "你的 AI 摘要";
 "tipkit.pro.aiSummary.message" = "一键生成你财务的智能摘要。立即获得有用的观察。";
 "tipkit.aiCharts.pro.title" = "AI 观察";
@@ -2218,7 +2203,7 @@
 "faq.whatIsYala.q" = "什么是 Yala?";
 "faq.whatIsYala.a" = "Yala 是你的个人理财应用。它帮你跟踪支出和收入、按类别和标签整理钱、创建预算,并清晰看到财务状况。";
 "faq.howToRecord.q" = "我怎么记录一笔支出?";
-"faq.howToRecord.a" = "点击主屏幕的 + 按钮。你可以手动输入金额、用语音口述或用相机扫描收据。Yala 会替你填好详情。";
+"faq.howToRecord.a" = "在首页点按“新记录”输入金额，或点按“语音”“照片”口述或识别收据。Yala 会替你填好详情。";
 "faq.multiCurrency.q" = "我可以使用多种货币吗?";
 "faq.multiCurrency.a" = "可以。Yala 支持 7 种货币 (PEN、USD、EUR、MXN、COP、BRL、GBP)。在「设置 > 货币」中设置主货币并添加次要货币。";
 "faq.changeCategory.q" = "我怎么更改一笔支出的类别?";
@@ -2469,7 +2454,7 @@
 "featureGate.imageInput" = "照片或文件输入";
 "featureGate.premiumIcons" = "高级图标";
 "featureGate.proThemes" = "Pro 主题";
-"featureGate.smartInsightsAI" = "智能 AI 洞察";
+"featureGate.smartInsightsAI" = "AI 分析";
 "featureGate.cashFlowAdvanced" = "高级现金流";
 
 // Titles
@@ -2663,7 +2648,7 @@
 "tutorials.createRecord.title" = "记录一笔支出";
 "tutorials.createRecord.intro.title" = "手动记录";
 "tutorials.createRecord.intro.desc" = "你记录的每一笔支出都让你更了解自己的财务。";
-"tutorials.createRecord.step0.title" = "点击 + 按钮";
+"tutorials.createRecord.step0.title" = "点按“新记录”";
 "tutorials.createRecord.step1.title" = "选择记录类型";
 "tutorials.createRecord.step2.title" = "填写各字段";
 "tutorials.createRecord.step3.title" = "使用快捷键";
@@ -2763,7 +2748,7 @@
 "tutorials.createCategories.step3.desc" = "随时按你喜好自定义类别的图标和颜色。";
 "tutorials.createTags.step0.desc" = "在你的个人资料中,选择「标签」版块然后创建一个新标签。";
 "tutorials.createTags.step1.desc" = "按你的喜好自定义标签:取名字、图标和颜色。";
-"tutorials.createRecord.step0.desc" = "在面板上点击 + 按钮。如果你是 Yala Pro 用户,选择「手动」。";
+"tutorials.createRecord.step0.desc" = "在首页点按“新记录”。要口述或识别收据，点按“语音”或“照片”。";
 "tutorials.createRecord.step1.desc" = "你可以记录支出、收入,甚至账户间转账。汇率会实时自动计算。";
 "tutorials.createRecord.step2.desc" = "填写必填字段:金额、账户、子类别。你也可以添加描述和任意标签。";
 "tutorials.createRecord.step3.desc" = "使用快捷键:@ 是账户、! 是类别、# 是标签。开始输入即可在每个快捷范围内细化搜索。";
@@ -3122,7 +3107,7 @@
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "你正在养成好习惯。用 Yala Pro 你可以语音口述支出。";
-"milestone.message50" = "了不起!用 AI 洞察你可以发现支出中隐藏的规律。";
+"milestone.message50" = "了不起！用 AI 分析发现你的支出规律。";
 "milestone.message100" = "你是理财高手。用 Yala Pro 解锁全部体验。";
 "milestone.notNow" = "暂时不用";
 "milestone.unlimitedAccounts" = "无限账户";
@@ -3276,19 +3261,17 @@
 "setup.complete.subtitle" = "你完成了所有步骤。Yala 已为你准备好。";
 "setup.step.completed" = "已完成";
 "setup.step.tapToStart" = "点击开始";
-"setup.step.locked" = "步骤已锁定。请先完成前面的步骤。";
 "setup.nextStep" = "下一步:%@";
 
 "setup.step1.title" = "探索你可以自定义的全部内容";
 "setup.step2.title" = "记录你的第一笔支出";
 "setup.step3.title" = "设置你的第一个预算";
 "setup.step4.title" = "添加一笔周期付款";
-"setup.step5.title" = "发现 Yala 还能做什么";
 
 "setup.practice.title" = "完成!你创建了你的第一个%@";
 "setup.practice.message" = "如果只是练习,你可以放心删除。";
 "setup.practice.keep" = "保留";
-"setup.practice.delete" = "只是练习";
+"setup.practice.delete" = "删除，只是练习";
 "setup.practice.type.expense" = "支出";
 "setup.practice.type.budget" = "预算";
 "setup.practice.type.scheduled" = "计划付款";
@@ -3304,40 +3287,13 @@
 "setup.imageTrial.exampleList" = "交易";
 "setup.imageTrial.useThisImage" = "使用这张图片";
 
-"setup.personalize.navTitle" = "个性化你的 Yala";
-"setup.personalize.title" = "让它属于你";
-"setup.personalize.subtitle" = "加点个人风格。更换主题、图标或小组件外观。";
-"setup.personalize.personalizeAll" = "全面个性化";
-"setup.personalize.personalizeAllSubtitle" = "名字、照片、货币格式等";
-"setup.personalize.appIcon" = "更换图标";
-"setup.personalize.appIconSubtitle" = "从多种应用设计中挑选";
-"setup.personalize.theme" = "更换主题";
-"setup.personalize.themeSubtitle" = "经典、极简或半透明";
 
-"setup.discover.navTitle" = "发现 Yala";
-"setup.discover.title" = "Yala 还能做更多";
-"setup.discover.subtitleFree" = "这是你能做的 — 以及你可以解锁的。";
-"setup.discover.subtitlePro" = "充分利用你的 Pro 计划。";
-"setup.discover.youCanAlready" = "你已经可以";
-"setup.discover.proFeatures" = "用上 Pro";
-"setup.discover.withPro" = "拥有 Yala Pro";
-"setup.discover.tryFree" = "免费试用 30 天";
-"setup.discover.done" = "明白了!";
-"setup.discover.feature.manualEntry" = "记录支出和收入";
-"setup.discover.feature.statistics" = "查看你的统计和趋势";
-"setup.discover.feature.budgets" = "按类别创建预算";
-"setup.discover.feature.scheduledPayments" = "安排周期付款";
-"setup.discover.feature.notifications" = "获取提醒和通知";
-"setup.discover.feature.aiInsights" = "智能 AI 分析";
-"setup.discover.feature.voice" = "用语音记录支出";
-"setup.discover.feature.imageCapture" = "用相机扫描收据";
-"setup.discover.feature.unlimitedBudgets" = "无限预算和账户";
 
 // MARK: - Contextual Guides
 
 "contextualGuide.dismiss" = "明白了";
 "guide.panel.title" = "这是你的概览";
-"guide.panel.message" = "一眼看清你花了多少、还剩多少。点击 + 添加支出。";
+"guide.panel.message" = "一眼看清你花了多少、还剩多少。点按“新记录”添加支出。";
 "guide.trends.title" = "你的支出怎么样?";
 "guide.trends.message" = "此图显示你比之前花得多还是少。如果线上升,说明你花得更多。";
 "guide.categories.title" = "你的钱花到哪去了?";
@@ -3351,19 +3307,13 @@
 "guide.accounts.title" = "你的钱,有条理";
 "guide.accounts.message" = "每个账户代表你存钱的地方:现金、银行、卡片。你可以创建多个分别跟踪。";
 "guide.transaction.title" = "记录支出或收入";
-"guide.transaction.message" = "只需输入金额和类别。其他都是可选的。记录得越多,你越了解自己的支出。";
+"guide.transaction.message" = "填写金额、账户和用途。其他都是可选的。";
 "guide.comparative.title" = "对比时段";
 "guide.comparative.message" = "看看本月比上月花得多还是少。粉色 = 花得多,紫色 = 花得少。";
-"guide.cashflow.title" = "你能撑到月底吗?";
-"guide.cashflow.message" = "Yala 根据你的收入和支出计算你的钱能否撑到月底。";
 "guide.insights.title" = "Yala 替你分析";
 "guide.insights.message" = "基于你的支出,Yala 告诉你有用的事:最贵的一天、是否花得比平时多等。";
 "guide.inbox.title" = "待检查和保存";
 "guide.inbox.message" = "Yala 替你记下的内容（语音、照片、Apple Pay、Siri、到期付款）会在这里等你检查和保存。";
-"guide.budgetEditor.title" = "什么是预算?";
-"guide.budgetEditor.message" = "这是你为控制某项支出所设的上限。给它取名、设金额,选择适用的类别。你随时可以编辑或删除。";
-"guide.scheduledEditor.title" = "什么是计划付款?";
-"guide.scheduledEditor.message" = "这是重复的支出:租金、Netflix、网络... Yala 会在每次付款前提醒你。你随时可以编辑或删除。";
 "guide.budgetFilter.title" = "此预算覆盖什么?";
 "guide.budgetFilter.allExpenses" = "你的全部支出";
 "guide.budgetFilter.prefix" = "支出";
@@ -6995,3 +6945,33 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "仍待处理：%d";
+
+/* UX 2.2 · lote 5: primeros días, guías y tips */
+"setup.step5.title.trial" = "免费试用 Yala Pro 30 天";
+"setup.step5.title.knowPro" = "了解 Yala Pro";
+"setup.step5.title.alreadyPro" = "你已拥有 Yala Pro";
+"setup.step.skipped" = "已跳过。点按即可试用";
+"setup.step.tryAgain" = "试试";
+"setup.complete.basics.title" = "你已掌握 Yala 的基础";
+"setup.complete.basics.subtitle" = "随时可以用首页顶部的按钮试试语音或照片。";
+"setup.nextStepLabel" = "下一步";
+"setup.start" = "开始";
+"setup.showAllSteps" = "查看全部 %d 个步骤";
+"setup.hideAllSteps" = "收起步骤";
+"contextualGuide.label" = "指南";
+"tipkit.stepProgress" = "第 %1$d/%2$d 步";
+"tipkit.pro.quickEntry.title" = "现在可以语音记账和识别收据了";
+"tipkit.pro.quickEntry.message" = "点按“语音”口述一笔支出，或点按“照片”识别收据。Yala 帮你记下来。";
+"tipkit.pro.quickAI.message" = "点按“AI”，向 Yala 询问你的支出、预算等。";
+"milestone.nextGoal" = "下一个目标：%d 条记录";
+"notificationPrimer.scheduled.title" = "要在每次付款前提醒你吗？";
+"notificationPrimer.scheduled.benefit" = "每笔计划付款到期前提醒你，不会错过。";
+"notificationPrimer.budget.title" = "接近上限时要提醒你吗？";
+"notificationPrimer.budget.benefit" = "达到你选的百分比时提醒你。没有这个权限，提醒就收不到。";
+"whatsNew.v22.panel.title" = "更清晰的首页";
+"whatsNew.v22.panel.description" = "大数字会说明它算的是什么，账户一眼就能看清，提示也一条一条地出现。";
+"whatsNew.v22.inbox.title" = "语音、照片和收件箱";
+"whatsNew.v22.inbox.description" = "你口述或拍下的内容会带着来源进入收件箱，准备好的可以一次全部保存。";
+"whatsNew.v22.firstSteps.title" = "按你的节奏入门";
+"whatsNew.v22.firstSteps.description" = "从你感兴趣的开始：没有锁定的步骤，指南也直奔主题。";
+"settings.whatsNew" = "新功能";

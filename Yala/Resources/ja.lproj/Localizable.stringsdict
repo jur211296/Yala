@@ -335,7 +335,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d 件の支出を記録しました！</string>
+			<string>%d件の記録！</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>

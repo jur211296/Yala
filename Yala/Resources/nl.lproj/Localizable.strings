@@ -2152,29 +2152,17 @@
 "tipkit.next" = "Volgende";
 "tipkit.done" = "Klaar";
 "tipkit.comparison.title" = "Vergelijk en leer";
-"tipkit.comparison.message" = "Vergelijk met de vorige periode of vorig jaar om te zien hoe je het doet.";
+"tipkit.comparison.message" = "%1$@ vergelijkt met de vorige periode; %2$@ met dezelfde periode vorig jaar.";
 
 // Group D: Settings Tour
-"tipkit.settingsAppIcon.title" = "Jouw icoon";
-"tipkit.settingsAppIcon.message" = "Wijzig het app-icoon en geef het je persoonlijke touch.";
-"tipkit.settingsTheme.title" = "Jouw thema";
-"tipkit.settingsTheme.message" = "Kies tussen klassiek, minimalistisch of doorschijnend in jouw stijl.";
 "tipkit.settings.accounts.title" = "Je rekeningen";
-"tipkit.settings.accounts.message" = "Voeg je bankrekeningen, cash en meer toe en organiseer ze.";
-"tipkit.settings.categories.title" = "Categorieën";
-"tipkit.settings.categories.message" = "Pas categorieën aan om je uitgaven en inkomsten te ordenen.";
-"tipkit.settings.tags.title" = "Labels";
-"tipkit.settings.tags.message" = "Maak labels om uitgaven per project, reis of wat je maar wilt te groeperen.";
-"tipkit.settings.budgets.title" = "Budgetten";
-"tipkit.settings.budgets.message" = "Stel uitgavengrenzen in en krijg een seintje als je in de buurt komt.";
-"tipkit.settings.planned.title" = "Geplande betalingen";
-"tipkit.settings.planned.message" = "Plan terugkerende betalingen zodat Yala je op tijd herinnert.";
+"tipkit.settings.accounts.message" = "Voeg je rekeningen toe en corrigeer het saldo als het niet klopt.";
 "tipkit.settings.personalization.title" = "Personalisatie";
 "tipkit.settings.personalization.message" = "Pas taal, valuta en uiterlijk aan zodat Yala echt jouw app voelt.";
 "tipkit.settings.tutorials.title" = "Tutorials";
 "tipkit.settings.tutorials.message" = "Stap-voor-stap-gidsen om het beste uit Yala te halen.";
 "tipkit.cfSetup.banner.title" = "Voor jou gemaakt";
-"tipkit.cfSetup.banner.message" = "We hebben je recente maanden bekeken en een plan opgesteld. Pas alles aan wat je wilt.";
+"tipkit.cfSetup.banner.message" = "We stellen een plan voor op basis van wat je al hebt geboekt. Pas aan wat je wilt.";
 "tipkit.cfSetup.line.title" = "Je inkomsten & uitgaven";
 "tipkit.cfSetup.line.message" = "Elke regel is iets wat je maandelijks verdient of betaalt. Tik op ✓ om hem in je plan op te nemen.";
 "tipkit.cfSetup.starting.title" = "Beginsaldo";
@@ -2199,10 +2187,7 @@
 "tipkit.pro.premiumIcons.message" = "Kies uit premium-iconen om je app te personaliseren.";
 "tipkit.pro.proThemes.title" = "Premium-thema's";
 "tipkit.pro.proThemes.message" = "Ontdek exclusieve kleurenthema's die Yala je persoonlijke touch geven.";
-"tipkit.pro.fab.title" = "Nieuwe manieren om te boeken";
-"tipkit.pro.fab.message" = "Tik hier om via spraak, afbeelding of handmatig te boeken. Nu heb je alle drie de opties.";
 "tipkit.pro.chatFab.title" = "Je financiële assistent";
-"tipkit.pro.chatFab.message" = "Vraag Yala over je uitgaven, budgetten en meer.";
 "tipkit.pro.aiSummary.title" = "Jouw AI-samenvatting";
 "tipkit.pro.aiSummary.message" = "Genereer met één tik een slimme samenvatting van je financiën. Nuttige observaties, direct.";
 "tipkit.aiCharts.pro.title" = "AI-observaties";
@@ -2218,7 +2203,7 @@
 "faq.whatIsYala.q" = "Wat is Yala?";
 "faq.whatIsYala.a" = "Yala is je app voor persoonlijke financiën. Hij helpt je uitgaven en inkomsten bijhouden, je geld ordenen op categorie en label, budgetten maken en duidelijke rapporten zien van hoe je financiën ervoor staan.";
 "faq.howToRecord.q" = "Hoe boek ik een uitgave?";
-"faq.howToRecord.a" = "Tik op de +-knop op het hoofdscherm. Je kunt het bedrag handmatig typen, dicteren met je stem of een bonnetje scannen met de camera. Yala vult de details voor je in.";
+"faq.howToRecord.a" = "Tik op Start op Nieuwe boeking om het bedrag in te typen, of op Spraak of Foto om het in te spreken of een bonnetje te lezen. Yala vult de details voor je in.";
 "faq.multiCurrency.q" = "Kan ik meerdere valuta's gebruiken?";
 "faq.multiCurrency.a" = "Ja. Yala ondersteunt 7 valuta's (PEN, USD, EUR, MXN, COP, BRL, GBP). Stel je hoofdvaluta in en voeg secundaire valuta's toe via Instellingen > Valuta.";
 "faq.changeCategory.q" = "Hoe wijzig ik de categorie van een uitgave?";
@@ -2469,7 +2454,7 @@
 "featureGate.imageInput" = "Foto- of bestandsinvoer";
 "featureGate.premiumIcons" = "Premium-iconen";
 "featureGate.proThemes" = "Pro-thema's";
-"featureGate.smartInsightsAI" = "Slimme AI-inzichten";
+"featureGate.smartInsightsAI" = "AI-analyse";
 "featureGate.cashFlowAdvanced" = "Geavanceerde kasstroom";
 
 // Titles
@@ -2663,7 +2648,7 @@
 "tutorials.createRecord.title" = "Een uitgave boeken";
 "tutorials.createRecord.intro.title" = "Handmatig boeken";
 "tutorials.createRecord.intro.desc" = "Elke uitgave die je boekt helpt je je financiën beter te begrijpen.";
-"tutorials.createRecord.step0.title" = "Tik op de +-knop";
+"tutorials.createRecord.step0.title" = "Tik op Nieuwe boeking";
 "tutorials.createRecord.step1.title" = "Kies het type boeking";
 "tutorials.createRecord.step2.title" = "Vul de velden in";
 "tutorials.createRecord.step3.title" = "Gebruik snelle shortcuts";
@@ -2763,7 +2748,7 @@
 "tutorials.createCategories.step3.desc" = "Pas het icoon en de kleur van je categorie aan zoals jij wilt, wanneer je maar wilt.";
 "tutorials.createTags.step0.desc" = "In je profiel kies je de sectie Labels en maak je een nieuw label aan.";
 "tutorials.createTags.step1.desc" = "Pas je label aan naar jouw smaak: geef het een naam, icoon en kleur.";
-"tutorials.createRecord.step0.desc" = "Tik op het paneel op de +-knop. Als je Yala Pro hebt, kies je Handmatig.";
+"tutorials.createRecord.step0.desc" = "Tik op Start op Nieuwe boeking. Om te dicteren of een bonnetje te lezen, tik je op Spraak of Foto.";
 "tutorials.createRecord.step1.desc" = "Je kunt uitgaven, inkomsten en zelfs overschrijvingen tussen rekeningen boeken. Wisselkoersen worden automatisch en in realtime berekend.";
 "tutorials.createRecord.step2.desc" = "Vul de verplichte velden in: bedrag, rekening en subcategorie. Je kunt ook een omschrijving en labels toevoegen.";
 "tutorials.createRecord.step3.desc" = "Gebruik snelle shortcuts: @ voor rekening, ! voor categorie en # voor label. Begin met typen om je zoekopdracht binnen elke shortcut te verfijnen.";
@@ -3122,7 +3107,7 @@
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "Je bouwt een geweldige gewoonte op. Met Yala Pro kun je uitgaven dicteren met je stem.";
-"milestone.message50" = "Indrukwekkend! Met AI-inzichten ontdek je verborgen patronen in je uitgaven.";
+"milestone.message50" = "Indrukwekkend! Met de AI-analyse ontdek je patronen in je uitgaven.";
 "milestone.message100" = "Je bent een financiële pro. Ontgrendel de volledige ervaring met Yala Pro.";
 "milestone.notNow" = "Nu niet";
 "milestone.unlimitedAccounts" = "Onbeperkt rekeningen";
@@ -3276,19 +3261,17 @@
 "setup.complete.subtitle" = "Je hebt alle stappen voltooid. Yala is klaar voor je.";
 "setup.step.completed" = "Voltooid";
 "setup.step.tapToStart" = "Tik om te starten";
-"setup.step.locked" = "Vergrendelde stap. Voltooi eerst eerdere stappen.";
 "setup.nextStep" = "Volgende stap: %@";
 
 "setup.step1.title" = "Ontdek alles wat je kunt aanpassen";
 "setup.step2.title" = "Boek je eerste uitgave";
 "setup.step3.title" = "Stel je eerste budget in";
 "setup.step4.title" = "Voeg een terugkerende betaling toe";
-"setup.step5.title" = "Ontdek wat Yala nog meer kan";
 
 "setup.practice.title" = "Klaar! Je hebt je eerste %@ aangemaakt";
 "setup.practice.message" = "Was het maar oefenen, dan kun je hem zonder problemen verwijderen.";
 "setup.practice.keep" = "Behouden";
-"setup.practice.delete" = "Het was oefenen";
+"setup.practice.delete" = "Verwijderen, het was oefenen";
 "setup.practice.type.expense" = "uitgave";
 "setup.practice.type.budget" = "budget";
 "setup.practice.type.scheduled" = "geplande betaling";
@@ -3304,40 +3287,13 @@
 "setup.imageTrial.exampleList" = "Transacties";
 "setup.imageTrial.useThisImage" = "Gebruik deze afbeelding";
 
-"setup.personalize.navTitle" = "Personaliseer je Yala";
-"setup.personalize.title" = "Maak het van jou";
-"setup.personalize.subtitle" = "Geef het je persoonlijke touch. Wijzig het thema, icoon of hoe je widgets eruitzien.";
-"setup.personalize.personalizeAll" = "Alles personaliseren";
-"setup.personalize.personalizeAllSubtitle" = "Naam, foto, valutaformaat en meer";
-"setup.personalize.appIcon" = "Verander je icoon";
-"setup.personalize.appIconSubtitle" = "Kies uit verschillende app-ontwerpen";
-"setup.personalize.theme" = "Verander je thema";
-"setup.personalize.themeSubtitle" = "Klassiek, minimalistisch of doorschijnend";
 
-"setup.discover.navTitle" = "Ontdek Yala";
-"setup.discover.title" = "Yala kan veel meer";
-"setup.discover.subtitleFree" = "Dit kun je doen — en dit kun je nog ontgrendelen.";
-"setup.discover.subtitlePro" = "Haal het beste uit je Pro-plan.";
-"setup.discover.youCanAlready" = "Je kunt al";
-"setup.discover.proFeatures" = "Profiteer van Pro";
-"setup.discover.withPro" = "Met Yala Pro";
-"setup.discover.tryFree" = "Probeer 30 dagen gratis";
-"setup.discover.done" = "Begrepen!";
-"setup.discover.feature.manualEntry" = "Uitgaven en inkomsten boeken";
-"setup.discover.feature.statistics" = "Bekijk je statistieken en trends";
-"setup.discover.feature.budgets" = "Maak budgetten per categorie";
-"setup.discover.feature.scheduledPayments" = "Plan terugkerende betalingen";
-"setup.discover.feature.notifications" = "Ontvang meldingen en herinneringen";
-"setup.discover.feature.aiInsights" = "Slimme AI-analyse";
-"setup.discover.feature.voice" = "Boek uitgaven met je stem";
-"setup.discover.feature.imageCapture" = "Scan bonnetjes met je camera";
-"setup.discover.feature.unlimitedBudgets" = "Onbeperkt budgetten en rekeningen";
 
 // MARK: - Contextual Guides
 
 "contextualGuide.dismiss" = "Begrepen";
 "guide.panel.title" = "Dit is je overzicht";
-"guide.panel.message" = "Zie in één oogopslag hoeveel je hebt uitgegeven en hoeveel je nog hebt. Tik op + om een uitgave toe te voegen.";
+"guide.panel.message" = "Zie in één oogopslag hoeveel je hebt uitgegeven en hoeveel je nog hebt. Tik op Nieuwe boeking om een uitgave toe te voegen.";
 "guide.trends.title" = "Hoe staat het met je uitgaven?";
 "guide.trends.message" = "Deze grafiek laat zien of je meer of minder uitgeeft dan eerder. Stijgt de lijn, dan geef je meer uit.";
 "guide.categories.title" = "Waar gaat je geld naartoe?";
@@ -3351,19 +3307,13 @@
 "guide.accounts.title" = "Je geld, geordend";
 "guide.accounts.message" = "Elke rekening staat voor de plek waar je geld bewaart: cash, bank, kaart. Je kunt er meerdere maken om elke apart bij te houden.";
 "guide.transaction.title" = "Boek een uitgave of inkomsten";
-"guide.transaction.message" = "Vul gewoon het bedrag en een categorie in. De rest is optioneel. Hoe meer je boekt, hoe beter je je uitgaven begrijpt.";
+"guide.transaction.message" = "Vul het bedrag, de rekening en waarvoor het was in. De rest is optioneel.";
 "guide.comparative.title" = "Periodes vergelijken";
 "guide.comparative.message" = "Zie of je deze maand meer of minder hebt uitgegeven dan vorige. Roze = meer, paars = minder.";
-"guide.cashflow.title" = "Red je het?";
-"guide.cashflow.message" = "Yala berekent of je geld tot het eind van de maand toereikend is op basis van je inkomsten en uitgaven.";
 "guide.insights.title" = "Yala analyseert voor je";
 "guide.insights.message" = "Op basis van je uitgaven vertelt Yala je nuttige dingen: je duurste dag, of je meer uitgeeft dan gewoonlijk, enz.";
 "guide.inbox.title" = "Te controleren en op te slaan";
 "guide.inbox.message" = "Wat Yala voor je vastlegt (spraak, foto’s, Apple Pay, Siri, vervallende betalingen) wacht hier tot je het controleert en opslaat.";
-"guide.budgetEditor.title" = "Wat is een budget?";
-"guide.budgetEditor.message" = "Het is een grens die je instelt om je uitgaven te beheren. Geef hem een naam, een bedrag en kies de categorieën waarop hij van toepassing is. Je kunt hem altijd bewerken of verwijderen.";
-"guide.scheduledEditor.title" = "Wat is een geplande betaling?";
-"guide.scheduledEditor.message" = "Het is een uitgave die zich herhaalt: huur, Netflix, internet... Yala herinnert je vóór elke betaling. Je kunt hem altijd bewerken of verwijderen.";
 "guide.budgetFilter.title" = "Wat dekt dit budget?";
 "guide.budgetFilter.allExpenses" = "Al je uitgaven";
 "guide.budgetFilter.prefix" = "Uitgaven";
@@ -6995,3 +6945,33 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "Nog open: %d";
+
+/* UX 2.2 · lote 5: primeros días, guías y tips */
+"setup.step5.title.trial" = "Probeer Yala Pro 30 dagen gratis";
+"setup.step5.title.knowPro" = "Ontdek Yala Pro";
+"setup.step5.title.alreadyPro" = "Je hebt Yala Pro al";
+"setup.step.skipped" = "Overgeslagen. Tik om het te proberen";
+"setup.step.tryAgain" = "Proberen";
+"setup.complete.basics.title" = "Je kent de basis van Yala";
+"setup.complete.basics.subtitle" = "Probeer spraak of foto wanneer je wilt met de knoppen bovenaan Start.";
+"setup.nextStepLabel" = "Volgende stap";
+"setup.start" = "Beginnen";
+"setup.showAllSteps" = "Alle %d stappen bekijken";
+"setup.hideAllSteps" = "Stappen verbergen";
+"contextualGuide.label" = "TIP";
+"tipkit.stepProgress" = "%1$d van %2$d";
+"tipkit.pro.quickEntry.title" = "Je kunt nu dicteren en bonnetjes laten lezen";
+"tipkit.pro.quickEntry.message" = "Tik op Spraak om een uitgave in te spreken of op Foto om een bonnetje te lezen. Yala boekt het voor je.";
+"tipkit.pro.quickAI.message" = "Tik op AI en vraag Yala naar je uitgaven, budgetten en meer.";
+"milestone.nextGoal" = "Volgend doel: %d boekingen";
+"notificationPrimer.scheduled.title" = "Zullen we je vóór elke betaling herinneren?";
+"notificationPrimer.scheduled.benefit" = "Een herinnering voordat een geplande betaling vervalt, zodat je niets mist.";
+"notificationPrimer.budget.title" = "Zullen we je waarschuwen als je de limiet nadert?";
+"notificationPrimer.budget.benefit" = "We laten het je weten als je de gekozen percentages bereikt. Zonder deze toestemming komt de waarschuwing niet aan.";
+"whatsNew.v22.panel.title" = "Een duidelijker Start";
+"whatsNew.v22.panel.description" = "Het grote getal zegt wat het meet, je rekeningen zie je in één oogopslag en meldingen komen één voor één.";
+"whatsNew.v22.inbox.title" = "Spraak, foto en inbox";
+"whatsNew.v22.inbox.description" = "Wat je inspreekt of fotografeert komt in je inbox met de bron erbij, en alles wat klaar is bewaar je in één keer.";
+"whatsNew.v22.firstSteps.title" = "Aan de slag op je eigen tempo";
+"whatsNew.v22.firstSteps.description" = "Begin met wat je interesseert: geen stap zit op slot, en de uitleg komt meteen ter zake.";
+"settings.whatsNew" = "Wat is er nieuw";

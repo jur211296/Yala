@@ -30,27 +30,34 @@ struct MilestoneUpgradeSheet: View {
             VStack(spacing: DS.Spacing.xxl) {
                 Spacer()
 
-                // Hero milestone number
-                ZStack {
-                    Circle()
-                        .fill(Color.orange.opacity(0.15))
-                        .frame(width: 140, height: 140)
-                        .blur(radius: 10)
+                // Hero: anillo de progreso hacia el siguiente hito (UX 2.2 · L5-13, variante 3). Sin degradado ni
+                // halo: el número va sólido y el anillo dice qué viene después.
+                VStack(spacing: DS.Spacing.sm) {
+                    ZStack {
+                        Circle()
+                            .stroke(Color.secondary.opacity(DS.Opacity.subtle), lineWidth: 12)
+                        Circle()
+                            .trim(from: 0, to: animateNumber ? progress.fraction : 0)
+                            .stroke(theme.accent, style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
 
-                    Text("\(milestone)")
-                        .font(.system(size: 64, weight: .bold, design: .rounded)) // A11Y-DT: decorative milestone number, fixed layout
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: DS.Gradients.proBadge,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .scaleEffect(animateNumber ? 1.0 : 0.5)
-                        .opacity(animateNumber ? 1.0 : 0)
+                        Text("\(milestone)")
+                            .font(.system(size: 56, weight: .bold, design: .rounded)) // A11Y-DT: decorative milestone number, fixed layout
+                            .foregroundStyle(.thPrimaryText)
+                            .scaleEffect(animateNumber ? 1.0 : 0.5)
+                            .opacity(animateNumber ? 1.0 : 0)
+                    }
+                    .frame(width: 140, height: 140)
+                    .accessibilityHidden(true)
+
+                    if let next = progress.nextMilestone {
+                        Text(L10n.Milestone.nextGoal(next))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.thSecondaryText)
+                    }
                 }
                 .onAppear {
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
                         animateNumber = true
                     }
                 }
@@ -151,6 +158,8 @@ struct MilestoneUpgradeSheet: View {
 
     // MARK: - Helpers
 
+    private var progress: MilestoneProgress { MilestoneProgress(milestone: milestone) }
+
     private var milestoneMessage: String {
         switch milestone {
         case 10:
@@ -188,6 +197,28 @@ extension L10n {
         static var unlimitedAccounts: String {
             NSLocalizedString("milestone.unlimitedAccounts", comment: "Unlimited accounts feature")
         }
+        /// «Siguiente meta: 50 registros» bajo el anillo (UX 2.2 · L5-13).
+        static func nextGoal(_ count: Int) -> String {
+            String(format: NSLocalizedString("milestone.nextGoal", comment: "Next milestone under the progress ring"), count)
+        }
+    }
+}
+
+/// Cuánto llena el anillo del hito y cuál es el siguiente (UX 2.2 · L5-13). Los hitos son los de `ProUpsellService`.
+nonisolated struct MilestoneProgress: Equatable {
+    static let milestones = [10, 50, 100]
+
+    let milestone: Int
+
+    /// El siguiente hito, o `nil` en el último.
+    var nextMilestone: Int? {
+        Self.milestones.first { $0 > milestone }
+    }
+
+    /// 10 de 50 → 0,2. En el último hito, lleno.
+    var fraction: CGFloat {
+        guard let next = nextMilestone, next > 0 else { return 1 }
+        return min(1, max(0, CGFloat(milestone) / CGFloat(next)))
     }
 }
 

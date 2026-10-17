@@ -335,7 +335,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>已记录 %d 笔支出！</string>
+			<string>%d 条记录！</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>

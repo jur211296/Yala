@@ -4714,6 +4714,8 @@ enum L10n {
         static var rateApp: String { ls("settings.rateApp", comment: "") }
         static var tutorials: String { ls("settings.tutorials", comment: "") }
         static var faq: String { ls("settings.faq", comment: "") }
+        /// Ajustes › Ayuda › Novedades: volver a ver la hoja de la versión (UX 2.2 · L5-15).
+        static var whatsNew: String { ls("settings.whatsNew", comment: "") }
         static var contact: String { ls("settings.contact", comment: "") }
         static var privacy: String { ls("settings.privacy", comment: "") }
         static var terms: String { ls("settings.terms", comment: "") }
@@ -7767,6 +7769,11 @@ enum L10n {
         static var accept: String { ls("notificationPrimer.accept", comment: "") }
         static var reject: String { ls("notificationPrimer.reject", comment: "") }
         static var hint: String { ls("notificationPrimer.hint", comment: "") }
+        // En contexto (UX 2.2 · L5-14)
+        static var scheduledTitle: String { ls("notificationPrimer.scheduled.title", comment: "Primer after the first planned payment") }
+        static var scheduledBenefit: String { ls("notificationPrimer.scheduled.benefit", comment: "Primer after the first planned payment") }
+        static var budgetTitle: String { ls("notificationPrimer.budget.title", comment: "Primer when a budget alert is turned on") }
+        static var budgetBenefit: String { ls("notificationPrimer.budget.benefit", comment: "Primer when a budget alert is turned on") }
     }
 
     // MARK: - What's New
@@ -7811,6 +7818,13 @@ enum L10n {
         static var v21LoggingDescription: String { ls("whatsNew.v21.logging.description", comment: "") }
         static var v21DataTitle: String { ls("whatsNew.v21.data.title", comment: "") }
         static var v21DataDescription: String { ls("whatsNew.v21.data.description", comment: "") }
+        // 2.2 (UX 2.2 · L5-15). Texto a revisar antes de publicar: ticket `whats-new-2-2-review-before-release`.
+        static var v22PanelTitle: String { ls("whatsNew.v22.panel.title", comment: "") }
+        static var v22PanelDescription: String { ls("whatsNew.v22.panel.description", comment: "") }
+        static var v22InboxTitle: String { ls("whatsNew.v22.inbox.title", comment: "") }
+        static var v22InboxDescription: String { ls("whatsNew.v22.inbox.description", comment: "") }
+        static var v22FirstStepsTitle: String { ls("whatsNew.v22.firstSteps.title", comment: "") }
+        static var v22FirstStepsDescription: String { ls("whatsNew.v22.firstSteps.description", comment: "") }
     }
 
     // MARK: - App Update
@@ -8514,9 +8528,16 @@ enum L10n {
         static var skip: String { ls("tipkit.skip", comment: "") }
         static var next: String { ls("tipkit.next", comment: "") }
         static var done: String { ls("tipkit.done", comment: "") }
+        /// «1 de 9» en la píldora de la guía sombreada (UX 2.2 · L5-10).
+        static func stepProgress(_ current: Int, _ total: Int) -> String {
+            String(format: ls("tipkit.stepProgress", comment: "Coach mark step N of M"), current, total)
+        }
         // TipKit standalone tips
         static var comparison: String { ls("tipkit.comparison.title", comment: "") }
-        static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
+        /// Dice qué es cada círculo del selector, con sus mismas etiquetas (UX 2.2 · L5-11).
+        static var comparisonMessage: String {
+            String(format: ls("tipkit.comparison.message", comment: "P-1 / A-1 explained"), L10n.Comparison.monthShort, L10n.Comparison.yearShort)
+        }
         // AI Charts tips
         static var aiChartsPro: String { ls("tipkit.aiCharts.pro.title", comment: "") }
         static var aiChartsProMessage: String { ls("tipkit.aiCharts.pro.message", comment: "") }
@@ -8525,20 +8546,8 @@ enum L10n {
         // Grupo D: Settings
         static var settingsAccounts: String { ls("tipkit.settings.accounts.title", comment: "") }
         static var settingsAccountsMessage: String { ls("tipkit.settings.accounts.message", comment: "") }
-        static var settingsCategories: String { ls("tipkit.settings.categories.title", comment: "") }
-        static var settingsCategoriesMessage: String { ls("tipkit.settings.categories.message", comment: "") }
-        static var settingsTags: String { ls("tipkit.settings.tags.title", comment: "") }
-        static var settingsTagsMessage: String { ls("tipkit.settings.tags.message", comment: "") }
-        static var settingsBudgets: String { ls("tipkit.settings.budgets.title", comment: "") }
-        static var settingsBudgetsMessage: String { ls("tipkit.settings.budgets.message", comment: "") }
-        static var settingsPlanned: String { ls("tipkit.settings.planned.title", comment: "") }
-        static var settingsPlannedMessage: String { ls("tipkit.settings.planned.message", comment: "") }
         static var settingsPersonalization: String { ls("tipkit.settings.personalization.title", comment: "") }
         static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
-        static var settingsAppIcon: String { ls("tipkit.settingsAppIcon.title", comment: "") }
-        static var settingsAppIconMessage: String { ls("tipkit.settingsAppIcon.message", comment: "") }
-        static var settingsTheme: String { ls("tipkit.settingsTheme.title", comment: "") }
-        static var settingsThemeMessage: String { ls("tipkit.settingsTheme.message", comment: "") }
         static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
         static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
         // Cash Flow Setup Tour
@@ -8569,10 +8578,10 @@ enum L10n {
         static var proPremiumIconsMessage: String { ls("tipkit.pro.premiumIcons.message", comment: "") }
         static var proProThemesTitle: String { ls("tipkit.pro.proThemes.title", comment: "") }
         static var proProThemesMessage: String { ls("tipkit.pro.proThemes.message", comment: "") }
-        static var proFabTitle: String { ls("tipkit.pro.fab.title", comment: "") }
-        static var proFabMessage: String { ls("tipkit.pro.fab.message", comment: "") }
+        static var proQuickEntryTitle: String { ls("tipkit.pro.quickEntry.title", comment: "") }
+        static var proQuickEntryMessage: String { ls("tipkit.pro.quickEntry.message", comment: "") }
         static var proChatFabTitle: String { ls("tipkit.pro.chatFab.title", comment: "") }
-        static var proChatFabMessage: String { ls("tipkit.pro.chatFab.message", comment: "") }
+        static var proQuickAIMessage: String { ls("tipkit.pro.quickAI.message", comment: "") }
         static var proAiSummaryTitle: String { ls("tipkit.pro.aiSummary.title", comment: "") }
         static var proAiSummaryMessage: String { ls("tipkit.pro.aiSummary.message", comment: "") }
     }

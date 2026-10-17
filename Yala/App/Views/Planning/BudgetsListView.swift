@@ -23,6 +23,8 @@ struct BudgetsListView: View {
     @State private var selectedSegment: Int = 1  // 0=Weekly, 1=Monthly, 2=Yearly, 3=Unique
     @State private var showPeriodSelector = false
     @State private var showUpgradeSheet = false
+    /// Sube al cerrarse el editor: es cuando se pregunta «¿era de prueba?» (UX 2.2 · L5-5).
+    @State private var budgetEditorClosedToken = 0
 
     private var activeBudgetsCount: Int {
         viewModel.activeBudgetsCount
@@ -90,7 +92,7 @@ struct BudgetsListView: View {
         }
         // `editingBudget`: `nil` crea (el FAB y el empty state lo ponen a `nil` antes); un presupuesto lo edita
         // (menú contextual de la fila, fase 3). Hasta entonces nadie lo leía y la hoja creaba siempre.
-        .sheet(isPresented: $viewModel.showBudgetEditor) {
+        .sheet(isPresented: $viewModel.showBudgetEditor, onDismiss: { budgetEditorClosedToken += 1 }) {
             BudgetEditorView(budget: viewModel.editingBudget)
                 .onDisappear {
                     viewModel.editingBudget = nil
@@ -109,6 +111,8 @@ struct BudgetsListView: View {
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .budgets, context: .limitReached)
         }
+        // «¿Era de prueba?» del primer presupuesto, al cerrar el editor y aquí mismo (UX 2.2 · L5-5).
+        .practiceCleanupPrompt(for: [.firstBudget], editorClosedToken: budgetEditorClosedToken) { refreshData() }
         .appliesPendingRemoteChanges(sessionState)
         .onAppear {
             viewModel.setContext(modelContext)

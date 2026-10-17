@@ -53,7 +53,7 @@ struct ProTourSkipWiringTests {
 
     @Test("cada fase del tour Pro omite el tour y termina su fase", arguments: [
         ("Yala/App/Views/Profile/ProfileView.swift", "ProTourSteps.profileSteps"),
-        ("Yala/App/Views/Panel/PanelView.swift", "ProTourSteps.panelSteps"),
+        ("Yala/App/Views/Panel/PanelView.swift", "ProTourSteps.panelSteps(includesAssistant: appPreferences.chatFABVisible)"),
         ("Yala/App/Views/Statistics/InsightsTabView.swift", "ProTourSteps.insightsSteps"),
     ])
     func phaseWiring(_ c: (file: String, steps: String)) throws {

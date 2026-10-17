@@ -2152,29 +2152,17 @@
 "tipkit.next" = "Next";
 "tipkit.done" = "Done";
 "tipkit.comparison.title" = "Compare and learn";
-"tipkit.comparison.message" = "Compare against the previous period or last year to see how you're doing.";
+"tipkit.comparison.message" = "%1$@ compares with the previous period; %2$@, with the same period last year.";
 
 // Group D: Settings Tour
-"tipkit.settingsAppIcon.title" = "Your icon";
-"tipkit.settingsAppIcon.message" = "Change the app icon to give it your personal touch.";
-"tipkit.settingsTheme.title" = "Your theme";
-"tipkit.settingsTheme.message" = "Choose between classic, minimalist, or translucent for your style.";
 "tipkit.settings.accounts.title" = "Your accounts";
-"tipkit.settings.accounts.message" = "Add and organize your bank accounts, cash, and more.";
-"tipkit.settings.categories.title" = "Categories";
-"tipkit.settings.categories.message" = "Customize categories to classify your expenses and income.";
-"tipkit.settings.tags.title" = "Tags";
-"tipkit.settings.tags.message" = "Create tags to group expenses by project, trip, or whatever you need.";
-"tipkit.settings.budgets.title" = "Budgets";
-"tipkit.settings.budgets.message" = "Set spending limits and get alerts when you're close.";
-"tipkit.settings.planned.title" = "Scheduled payments";
-"tipkit.settings.planned.message" = "Schedule recurring payments so Yala reminds you on time.";
+"tipkit.settings.accounts.message" = "Add your accounts and fix their balance if it doesn't match.";
 "tipkit.settings.personalization.title" = "Personalization";
 "tipkit.settings.personalization.message" = "Adjust language, currency, and appearance to make Yala feel yours.";
 "tipkit.settings.tutorials.title" = "Tutorials";
 "tipkit.settings.tutorials.message" = "Step-by-step guides to get the most out of Yala.";
 "tipkit.cfSetup.banner.title" = "Made for you";
-"tipkit.cfSetup.banner.message" = "We looked at your recent months and built a plan. Tweak anything you like.";
+"tipkit.cfSetup.banner.message" = "We suggest a plan based on what you've already logged. Tweak anything you like.";
 "tipkit.cfSetup.line.title" = "Your income & expenses";
 "tipkit.cfSetup.line.message" = "Each line is something you earn or pay monthly. Tap ✓ to include it in your plan.";
 "tipkit.cfSetup.starting.title" = "Starting balance";
@@ -2199,10 +2187,7 @@
 "tipkit.pro.premiumIcons.message" = "Choose from premium icons to personalize your app.";
 "tipkit.pro.proThemes.title" = "Premium themes";
 "tipkit.pro.proThemes.message" = "Discover exclusive color themes that give Yala your personal touch.";
-"tipkit.pro.fab.title" = "New ways to record";
-"tipkit.pro.fab.message" = "Tap here to record by voice, image, or manually. Now you have all three options.";
 "tipkit.pro.chatFab.title" = "Your financial assistant";
-"tipkit.pro.chatFab.message" = "Ask Yala about your spending, budgets, and more.";
 "tipkit.pro.aiSummary.title" = "Your AI summary";
 "tipkit.pro.aiSummary.message" = "Generate a smart summary of your finances with one tap. Useful observations, instantly.";
 "tipkit.aiCharts.pro.title" = "AI observations";
@@ -2218,7 +2203,7 @@
 "faq.whatIsYala.q" = "What is Yala?";
 "faq.whatIsYala.a" = "Yala is your personal finance app. It helps you track expenses and income, organize your money by categories and tags, create budgets, and see clear reports of how your finances are doing.";
 "faq.howToRecord.q" = "How do I record an expense?";
-"faq.howToRecord.a" = "Tap the + button on the main screen. You can type the amount manually, dictate by voice, or scan a receipt with the camera. Yala fills in the details for you.";
+"faq.howToRecord.a" = "On Home, tap New record to type the amount, or Voice or Photo to dictate it or read a receipt. Yala fills in the details for you.";
 "faq.multiCurrency.q" = "Can I use multiple currencies?";
 "faq.multiCurrency.a" = "Yes. Yala supports 7 currencies (PEN, USD, EUR, MXN, COP, BRL, GBP). Set your main currency and add secondary currencies in Settings > Currency.";
 "faq.changeCategory.q" = "How do I change an expense's category?";
@@ -2469,7 +2454,7 @@
 "featureGate.imageInput" = "Photo or file input";
 "featureGate.premiumIcons" = "Premium icons";
 "featureGate.proThemes" = "Pro Themes";
-"featureGate.smartInsightsAI" = "Smart Insights AI";
+"featureGate.smartInsightsAI" = "AI analysis";
 "featureGate.cashFlowAdvanced" = "Advanced Cash Flow";
 
 // Titles
@@ -2710,7 +2695,7 @@
 "tutorials.createRecord.title" = "Record an expense";
 "tutorials.createRecord.intro.title" = "Manual recording";
 "tutorials.createRecord.intro.desc" = "Every expense you record helps you understand your finances better.";
-"tutorials.createRecord.step0.title" = "Tap the + button";
+"tutorials.createRecord.step0.title" = "Tap New record";
 "tutorials.createRecord.step1.title" = "Choose the record type";
 "tutorials.createRecord.step2.title" = "Fill in the fields";
 "tutorials.createRecord.step3.title" = "Use quick shortcuts";
@@ -2810,7 +2795,7 @@
 "tutorials.createCategories.step3.desc" = "Customize your category's icon and color to your liking whenever you want.";
 "tutorials.createTags.step0.desc" = "In your profile, select the Tags section and create a new tag.";
 "tutorials.createTags.step1.desc" = "Customize your tag to your liking: give it a name, icon, and color.";
-"tutorials.createRecord.step0.desc" = "On the panel, tap the + button. If you're a Yala Pro user, select Manual.";
+"tutorials.createRecord.step0.desc" = "On Home, tap New record. To dictate or read a receipt, tap Voice or Photo.";
 "tutorials.createRecord.step1.desc" = "You can record expenses, income, and even transfers between accounts. Exchange rates are calculated automatically in real time.";
 "tutorials.createRecord.step2.desc" = "Fill in the required fields: amount, account, and subcategory. You can also add a description and any tags you want.";
 "tutorials.createRecord.step3.desc" = "Use quick shortcuts: @ for account, ! for category, and # for tag. Start typing to refine your search within each shortcut.";
@@ -3162,7 +3147,7 @@
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "You're building a great habit. With Yala Pro you can dictate expenses by voice.";
-"milestone.message50" = "Impressive! With AI Insights you can discover hidden patterns in your spending.";
+"milestone.message50" = "Impressive! With AI analysis you can spot patterns in your spending.";
 "milestone.message100" = "You're a finance pro. Unlock the full experience with Yala Pro.";
 "milestone.notNow" = "Not now";
 "milestone.unlimitedAccounts" = "Unlimited accounts";
@@ -3316,19 +3301,17 @@
 "setup.complete.subtitle" = "You completed all steps. Yala is ready for you.";
 "setup.step.completed" = "Completed";
 "setup.step.tapToStart" = "Tap to start";
-"setup.step.locked" = "Locked step. Complete earlier steps first.";
 "setup.nextStep" = "Next step: %@";
 
 "setup.step1.title" = "Explore everything you can customize";
 "setup.step2.title" = "Log your first expense";
 "setup.step3.title" = "Set your first budget";
 "setup.step4.title" = "Add a recurring payment";
-"setup.step5.title" = "Discover what else Yala can do";
 
 "setup.practice.title" = "Done! You created your first %@";
 "setup.practice.message" = "If it was just practice, you can delete it without any problem.";
 "setup.practice.keep" = "Keep it";
-"setup.practice.delete" = "It was practice";
+"setup.practice.delete" = "Delete it, it was practice";
 "setup.practice.type.expense" = "expense";
 "setup.practice.type.budget" = "budget";
 "setup.practice.type.scheduled" = "scheduled payment";
@@ -3344,40 +3327,13 @@
 "setup.imageTrial.exampleList" = "Transactions";
 "setup.imageTrial.useThisImage" = "Use this image";
 
-"setup.personalize.navTitle" = "Personalize your Yala";
-"setup.personalize.title" = "Make it yours";
-"setup.personalize.subtitle" = "Add your personal touch. Change the theme, icon, or how your widgets look.";
-"setup.personalize.personalizeAll" = "Personalize everything";
-"setup.personalize.personalizeAllSubtitle" = "Name, photo, currency format, and more";
-"setup.personalize.appIcon" = "Change your icon";
-"setup.personalize.appIconSubtitle" = "Pick from several app designs";
-"setup.personalize.theme" = "Change your theme";
-"setup.personalize.themeSubtitle" = "Classic, minimalist, or translucent";
 
-"setup.discover.navTitle" = "Discover Yala";
-"setup.discover.title" = "Yala can do much more";
-"setup.discover.subtitleFree" = "Here's what you can do — and what you could unlock.";
-"setup.discover.subtitlePro" = "Make the most of your Pro plan.";
-"setup.discover.youCanAlready" = "You can already";
-"setup.discover.proFeatures" = "Take advantage of Pro";
-"setup.discover.withPro" = "With Yala Pro";
-"setup.discover.tryFree" = "Try free for 30 days";
-"setup.discover.done" = "Got it!";
-"setup.discover.feature.manualEntry" = "Log expenses and income";
-"setup.discover.feature.statistics" = "See your statistics and trends";
-"setup.discover.feature.budgets" = "Create budgets by category";
-"setup.discover.feature.scheduledPayments" = "Schedule recurring payments";
-"setup.discover.feature.notifications" = "Get alerts and reminders";
-"setup.discover.feature.aiInsights" = "Smart AI analysis";
-"setup.discover.feature.voice" = "Log expenses with your voice";
-"setup.discover.feature.imageCapture" = "Scan receipts with your camera";
-"setup.discover.feature.unlimitedBudgets" = "Unlimited budgets and accounts";
 
 // MARK: - Contextual Guides
 
 "contextualGuide.dismiss" = "Got it";
 "guide.panel.title" = "This is your overview";
-"guide.panel.message" = "See at a glance how much you've spent and how much you have left. Tap + to add an expense.";
+"guide.panel.message" = "See at a glance how much you've spent and how much you have left. Tap New record to add an expense.";
 "guide.trends.title" = "How are your expenses doing?";
 "guide.trends.message" = "This chart shows if you're spending more or less than before. If the line goes up, you're spending more.";
 "guide.categories.title" = "Where does your money go?";
@@ -3391,19 +3347,13 @@
 "guide.accounts.title" = "Your money, organized";
 "guide.accounts.message" = "Each account represents where you keep your money: cash, bank, card. You can create several to track each one.";
 "guide.transaction.title" = "Log an expense or income";
-"guide.transaction.message" = "Just enter the amount and a category. Everything else is optional. The more you log, the better you'll understand your spending.";
+"guide.transaction.message" = "Enter the amount, the account and what it was for. Everything else is optional.";
 "guide.comparative.title" = "Compare periods";
 "guide.comparative.message" = "See if you spent more or less this month compared to last. Pink = spent more, purple = spent less.";
-"guide.cashflow.title" = "Will you make it?";
-"guide.cashflow.message" = "Yala calculates if your money will last until the end of the month based on your income and expenses.";
 "guide.insights.title" = "Yala analyzes for you";
 "guide.insights.message" = "Based on your spending, Yala tells you useful things: your most expensive day, if you're spending more than usual, etc.";
 "guide.inbox.title" = "To review and save";
 "guide.inbox.message" = "What Yala records for you (voice, photos, Apple Pay, Siri, payments falling due) waits here for you to review and save.";
-"guide.budgetEditor.title" = "What's a budget?";
-"guide.budgetEditor.message" = "It's a limit you set to control how much you spend on something. Give it a name, an amount, and choose which categories it applies to. You can edit or delete it anytime.";
-"guide.scheduledEditor.title" = "What's a scheduled payment?";
-"guide.scheduledEditor.message" = "It's an expense that repeats: rent, Netflix, internet... Yala reminds you before each payment. You can edit or delete it anytime.";
 "guide.budgetFilter.title" = "What does this budget cover?";
 "guide.budgetFilter.allExpenses" = "All your expenses";
 "guide.budgetFilter.prefix" = "Expenses";
@@ -6989,3 +6939,33 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "Still pending: %d";
+
+/* UX 2.2 · lote 5: primeros días, guías y tips */
+"setup.step5.title.trial" = "Try Yala Pro free for 30 days";
+"setup.step5.title.knowPro" = "See what Yala Pro adds";
+"setup.step5.title.alreadyPro" = "You already have Yala Pro";
+"setup.step.skipped" = "Skipped. Tap to try it";
+"setup.step.tryAgain" = "Try it";
+"setup.complete.basics.title" = "You know the basics of Yala";
+"setup.complete.basics.subtitle" = "Whenever you like, try voice or photo with the buttons at the top of Home.";
+"setup.nextStepLabel" = "Next step";
+"setup.start" = "Start";
+"setup.showAllSteps" = "See all %d steps";
+"setup.hideAllSteps" = "Hide the steps";
+"contextualGuide.label" = "GUIDE";
+"tipkit.stepProgress" = "%1$d of %2$d";
+"tipkit.pro.quickEntry.title" = "You can now dictate and read receipts";
+"tipkit.pro.quickEntry.message" = "Tap Voice to dictate an expense or Photo to read a receipt. Yala logs it for you.";
+"tipkit.pro.quickAI.message" = "Tap AI and ask Yala about your spending, budgets and more.";
+"milestone.nextGoal" = "Next goal: %d records";
+"notificationPrimer.scheduled.title" = "Want a reminder before each payment?";
+"notificationPrimer.scheduled.benefit" = "A reminder before each scheduled payment is due, so it doesn't slip by.";
+"notificationPrimer.budget.title" = "Want an alert when you're near the limit?";
+"notificationPrimer.budget.benefit" = "We'll let you know when you reach the percentages you chose. Without this permission, the alert can't reach you.";
+"whatsNew.v22.panel.title" = "A clearer Home";
+"whatsNew.v22.panel.description" = "The big number says what it measures, your accounts fit at a glance and notices show up one at a time.";
+"whatsNew.v22.inbox.title" = "Voice, photo and Inbox";
+"whatsNew.v22.inbox.description" = "What you dictate or photograph lands in your Inbox saying where it came from, and you can save everything that's ready in one go.";
+"whatsNew.v22.firstSteps.title" = "Getting started, your way";
+"whatsNew.v22.firstSteps.description" = "Start with whatever interests you: no step is locked, and the guides get straight to the point.";
+"settings.whatsNew" = "What's new";

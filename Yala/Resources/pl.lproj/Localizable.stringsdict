@@ -473,13 +473,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d wydatek zarejestrowany!</string>
+			<string>%d wpis!</string>
 			<key>few</key>
-			<string>%d wydatki zarejestrowane!</string>
+			<string>%d wpisy!</string>
 			<key>many</key>
-			<string>%d wydatków zarejestrowanych!</string>
+			<string>%d wpisów!</string>
 			<key>other</key>
-			<string>%d wydatku zarejestrowanych!</string>
+			<string>%d wpisu!</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>

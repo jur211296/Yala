@@ -381,9 +381,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d dépense enregistrée !</string>
+			<string>%d enregistrement !</string>
 			<key>other</key>
-			<string>%d dépenses enregistrées !</string>
+			<string>%d enregistrements !</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>
