@@ -228,7 +228,9 @@ final class AccountFormViewModel {
         let type: AccountType
         let accountNumber: String
         let isPositive: Bool
-        let balanceText: String
+        /// El importe ya interpretado, con «vacío» igual a cero: el campo arranca en «0.00» y se vacía al
+        /// enfocarlo, y eso no es un cambio que se pierda.
+        let balanceValue: Double
         let currency: CurrencyCode
         let mode: AdjustmentMode
         let adjustmentDate: Date
@@ -247,7 +249,7 @@ final class AccountFormViewModel {
             accountNumber: accountNumber.trimmingCharacters(in: .whitespacesAndNewlines),
             // Sin importe escrito, el signo solo no es un cambio que se pierda.
             isPositive: balanceText.isEmpty ? true : isPositive,
-            balanceText: balanceText, currency: selectedCurrency, mode: selectedAdjustmentMode,
+            balanceValue: ((parsedBalanceAmount ?? 0) * 100).rounded() / 100, currency: selectedCurrency, mode: selectedAdjustmentMode,
             adjustmentDate: adjustmentDate, colorHex: selectedColorHex,
             excludeFromStatistics: excludeFromStatistics, isArchived: isArchived,
             creditCardPaymentReminder: creditCardPaymentReminder, creditCardPaymentDay: creditCardPaymentDay
@@ -677,8 +679,17 @@ final class AccountFormViewModel {
 
         let trimmedAccountNumber = accountNumber.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Find the balance adjustment subcategory
-        let subcategory = InitialBalanceService.findBalanceAdjustmentSubcategory(context: context)
+        // La subcategoría «Ajustes de saldo», solo si hay un saldo que apuntar. Se busca en cualquier idioma y, si no
+        // existe, se crea: sin ella el saldo escrito no se guardaba y el formulario se cerraba igual, con la cuenta en
+        // otra cifra de la que la pantalla prometía («Al guardar, queda en…», review de UX 2.2 · L7-6). Si ni así
+        // aparece, no se cierra: se avisa.
+        let writesBalanceRow = parsedBalanceAmount != nil && (accountToEdit == nil || needsAdjustment)
+        let subcategory = writesBalanceRow
+            ? InitialBalanceService.ensureBalanceAdjustmentSubcategoryExists(context: context) : nil
+        if writesBalanceRow && subcategory == nil {
+            isShowingSaveError = true
+            return false
+        }
 
         if let account = accountToEdit {
             // Update account properties

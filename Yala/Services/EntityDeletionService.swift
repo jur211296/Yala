@@ -96,14 +96,6 @@ final class EntityDeletionService {
 
         let context = try requireContext()
 
-        // Los presupuestos que contaban alguna de estas subcategorías: el borrado anula la relación pero deja su
-        // UUID en el espejo CSV del presupuesto, igual que al borrar una subcategoría suelta (`deleteSubcategory`).
-        // Se capturan ANTES de borrar (auditoría UX 2.2, lote 7, L7-10: «Mover sus registros…» acaba aquí).
-        var affectedBudgets: [PersistentIdentifier: Budget] = [:]
-        for subcategory in subcategories {
-            for budget in subcategory.budgets ?? [] { affectedBudgets[budget.persistentModelID] = budget }
-        }
-
         // Delete subcategories first to avoid SwiftUI @Query conflicts
         for subcategory in subcategories {
             context.delete(subcategory)
@@ -114,7 +106,6 @@ final class EntityDeletionService {
 
         try context.save()
         context.processPendingChanges()
-        reencodeBudgetCSVMirrors(in: Array(affectedBudgets.values))
     }
 
     // MARK: - Subcategory Deletion

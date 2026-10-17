@@ -39,10 +39,10 @@ enum AccountBalanceCorrectionLogic {
         /// Las dos opciones dejan la cuenta en el saldo escrito: es lo que dice «Al guardar, … queda en».
         var resultingBalance: Double { target }
 
-        /// Por debajo de un céntimo no hay nada que corregir (el mismo umbral que el guardado).
-        var needsCorrection: Bool { abs(difference) > Self.threshold }
+        /// Por debajo de un céntimo no hay nada que corregir. Se compara en céntimos redondeados: en `Double`,
+        /// 1000,01 − 1000,00 da 0,00999… y un umbral de 0,01 lo daba por cuadrado según la magnitud.
+        var needsCorrection: Bool { abs((difference * 100).rounded()) >= 1 }
 
-        static let threshold = 0.01
     }
 
     /// - Parameters:

@@ -5,9 +5,8 @@
 //  Las cifras en vivo de lo que va llegando a este teléfono: cuentas, categorías, registros, presupuestos y grupos.
 //  Iconos y número, sin rótulos (el icono dice el tipo y VoiceOver lee la cifra con su plural).
 //
-//  Nació dentro de `RestoreProgressView` y se sacó aquí en la 2.2 (UX 2.2 · L6-13, opción B) para que la entrada a
-//  una cuenta de la nube enseñe lo MISMO mientras conecta: antes solo tenía una barra fina y «Esto puede tardar unos
-//  minutos», y quien esperaba creía que se había colgado.
+//  Nació dentro de `RestoreProgressView` y se sacó aquí en la 2.2 (UX 2.2 · L6-13) para enseñarla también al
+//  conectar con una cuenta de la nube. Se retiró de allí: el adopt no baja filas y las cifras no subían.
 //
 
 import SwiftData
@@ -50,26 +49,3 @@ struct RestoreLiveCountsRow: View {
 /// segundo mientras la pantalla está montada, igual que la espera de Restaurar. **Solo lee**: `fetchCount` sobre el
 /// contexto principal, sin escribir nada ni tocar la máquina de migración. El `.task` muere con la vista, así que no
 /// sigue contando con la pantalla desmontada (la lección de `RestoreProgressView.refreshTask`).
-struct AdoptLiveCountsView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Environment(AppPreferences.self) private var appPreferences
-
-    @State private var counts: ICloudAccountSummary?
-
-    var body: some View {
-        RestoreLiveCountsRow(counts: counts, foreground: .white.opacity(0.8))
-            .task {
-                while !Task.isCancelled {
-                    do {
-                        counts = try modelContext.iCloudAccountSummary(appPreferences: appPreferences)
-                    } catch {
-                        #if DEBUG
-                        print("AdoptLiveCountsView: Error: \(error)")
-                        #endif
-                    }
-                    do { try await Task.sleep(for: .seconds(1)) } catch { break }
-                }
-            }
-            .accessibilityIdentifier("welcome_cloud_adopt_live_counts")
-    }
-}

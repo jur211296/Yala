@@ -120,6 +120,10 @@ struct ImportIntroSheet: View {
 
     /// La importación esperando a que la persona la revise (L7-15): el archivo, a dónde va y qué entraría.
     @State private var pendingImport: PendingImport?
+    /// La vista previa que espera a que se cierre la hoja de elegir cuenta o monedas. Lanzada antes, con un archivo
+    /// pequeño la vista previa llega mientras la primera hoja aún se desmonta del mismo ancla, y UIKit no presenta
+    /// la segunda: no salía nada y no se importaba (review de UX 2.2 · L7-15).
+    @State private var previewAfterDismiss: PendingPreviewRequest?
 
     /// Callback to notify parent with import result. Parent handles display.
     let onImportCompleted: ((ImportResult) -> Void)?
@@ -191,29 +195,29 @@ struct ImportIntroSheet: View {
         }
         .disabled(isImporting)
         // Sheets & Alerts
-        .sheet(isPresented: $isShowingAccountPicker) {
+        .sheet(isPresented: $isShowingAccountPicker, onDismiss: runPreviewAfterDismiss) {
             ImportAccountPickerSheet(
                 accounts: filteredCurrencyForAccountPicker.map { accountsForCurrency($0) }
                     ?? activeAccounts,
                 selectedAccount: $selectedAccount
             ) { account in
                 selectedAccount = account
-                isShowingAccountPicker = false
-                // Import directly since file was already selected
+                // La vista previa sale cuando la hoja termine de cerrarse (`runPreviewAfterDismiss`).
                 if let url = selectedFileURL {
-                    performImport(from: url, into: account)
+                    previewAfterDismiss = .single(url, account)
                 }
+                isShowingAccountPicker = false
             }
         }
-        .sheet(isPresented: $isShowingCurrencyMapping) {
+        .sheet(isPresented: $isShowingCurrencyMapping, onDismiss: runPreviewAfterDismiss) {
             ImportCurrencyMappingSheet(
                 detectedCurrencies: detectedCurrencies,
                 accounts: activeAccounts
             ) { currencyAccountMap in
-                isShowingCurrencyMapping = false
                 if let url = selectedFileURL {
-                    performMultiCurrencyImport(from: url, with: currencyAccountMap)
+                    previewAfterDismiss = .multiCurrency(url, currencyAccountMap)
                 }
+                isShowingCurrencyMapping = false
             }
         }
         .fileImporter(
@@ -583,6 +587,20 @@ struct ImportIntroSheet: View {
         }
     }
     /// Antes de importar, la vista previa (L7-15): la importación de verdad en un contexto que no se guarda.
+    enum PendingPreviewRequest {
+        case single(URL, Account)
+        case multiCurrency(URL, [String: Account])
+    }
+
+    private func runPreviewAfterDismiss() {
+        guard let request = previewAfterDismiss else { return }
+        previewAfterDismiss = nil
+        switch request {
+        case .single(let url, let account): performImport(from: url, into: account)
+        case .multiCurrency(let url, let map): performMultiCurrencyImport(from: url, with: map)
+        }
+    }
+
     private func performImport(from url: URL, into account: Account) {
         requestPreview(of: url, target: .single(account))
     }

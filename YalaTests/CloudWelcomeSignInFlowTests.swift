@@ -364,8 +364,11 @@ struct WelcomeSignUpEnteredExistingAccountTests {
             let ready = try #require(table["welcome.bornCloud.readyTitle"], "\(locale)")
             #expect(!existing.isEmpty && !existing.contains("NEEDS_TRANSLATION"), "\(locale)")
             #expect(existing != ready, "\(locale): repite «\(ready)»")
-            if locale.hasPrefix("es") {
+            // UX 2.2 · L6-8: «has entrado» es peninsular; el español neutro y el voseo dicen «entraste».
+            if locale == "es-ES.lproj" {
                 #expect(existing == "Ya tenías una cuenta, has entrado en ella", "\(locale)")
+            } else if locale.hasPrefix("es") {
+                #expect(existing == "Ya tenías una cuenta y entraste en ella", "\(locale)")
             }
         }
     }

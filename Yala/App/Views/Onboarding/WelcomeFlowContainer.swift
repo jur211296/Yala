@@ -127,6 +127,9 @@ struct WelcomeFlowContainer: View {
     /// activación de Yala completo —que comparte la puerta— jamás debe borrar lo local.
     var performDeviceCorpusWipe: @MainActor () async -> String?
 
+    /// Desde qué pantalla se abrió Restaurar, para que su «Volver» vuelva allí (UX 2.2 · L6-11).
+    var onRestoreOrigin: (WelcomeFlowStep) -> Void
+
     @State private var step: WelcomeFlowStep = .hero
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -146,8 +149,10 @@ struct WelcomeFlowContainer: View {
         welcomeDeviceDataNow: @escaping @MainActor @Sendable () -> Bool,
         welcomeDeviceDataReading: @escaping @MainActor @Sendable () -> WelcomePrivateICloudGateLogic.DeviceDataReading,
         performICloudCorpusWipe: @escaping @MainActor () async -> String?,
-        performDeviceCorpusWipe: @escaping @MainActor () async -> String?
+        performDeviceCorpusWipe: @escaping @MainActor () async -> String?,
+        onRestoreOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in }
     ) {
+        self.onRestoreOrigin = onRestoreOrigin
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
         self.onSelectExistingOption = onSelectExistingOption
@@ -451,6 +456,7 @@ struct WelcomeFlowContainer: View {
         switch option {
         case .restoreICloud:
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+            onRestoreOrigin(WelcomeBackStepLogic.restoreOrigin(openedFrom: step))
             destination = .restoreICloud
         case .cloudSignIn, .googleSignIn: destination = .cloudSignIn
         }

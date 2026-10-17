@@ -53,6 +53,8 @@ struct ContentView: View {
     /// presentar el flow y con qué `initialStep`.
     @State private var showWelcomeFlow: Bool = false
     @State private var welcomeFlowInitialStep: WelcomeFlowStep = .hero
+    /// Desde dónde se abrió Restaurar en este proceso; `nil` si se abrió al arrancar (destino pendiente). UX 2.2 · L6-11.
+    @State private var welcomeRestoreOrigin: WelcomeFlowStep?
     /// Positive confirmation toast for reactive events (remote onboarding / restore).
     /// Replaces the noisy "Syncing…" banner. Nil when hidden.
     @State private var positiveToast: String?
@@ -595,6 +597,7 @@ struct ContentView: View {
         .modifier(WelcomeFlowModifier(
             showWelcomeFlow: $showWelcomeFlow,
             welcomeFlowInitialStep: $welcomeFlowInitialStep,
+            welcomeRestoreOrigin: $welcomeRestoreOrigin,
             showOnboarding: $showOnboarding,
             showWelcomeRestore: $showWelcomeRestore,
             showInviteRecovery: $showInviteRecovery,
@@ -1025,11 +1028,13 @@ struct ContentView: View {
                 }
             },
             onBack: {
-                // UX 2.2 · L6-11: «Volver» lleva a «¡Hola de nuevo!», que es de donde se vino, y no un nivel más
-                // arriba. Con bypass (una sola entrada visible) no hubo sub-chooser y el origen es el chooser.
-                returnToWelcomeChooser(dismissing: $showWelcomeRestore,
-                                       step: WelcomeBackStepLogic.existingBranchOrigin(
-                                        options: WelcomeFlowContainer.liveVisibleExistingOptions))
+                // UX 2.2 · L6-11: «Volver» lleva a la pantalla desde la que se abrió Restaurar («¡Hola de nuevo!», o
+                // el chooser si se vino de la puerta privada). Abierto al arrancar no hay origen apuntado: «¡Hola de
+                // nuevo!», o el chooser con bypass (una sola entrada visible, sin sub-chooser).
+                let back = welcomeRestoreOrigin ?? WelcomeBackStepLogic.existingBranchOrigin(
+                    options: WelcomeFlowContainer.liveVisibleExistingOptions)
+                welcomeRestoreOrigin = nil
+                returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: back)
             },
             onNeedsMirrorRelaunch: {
                 // UX 2.2 · L6-2: se entró a Restaurar SIN reabrir porque no había iCloud, y la persona acaba de
@@ -2890,6 +2895,7 @@ private struct WelcomeFlowModifier: ViewModifier {
     @Environment(\.modelContext) private var modelContext
     @Binding var showWelcomeFlow: Bool
     @Binding var welcomeFlowInitialStep: WelcomeFlowStep
+    @Binding var welcomeRestoreOrigin: WelcomeFlowStep?
     @Binding var showOnboarding: Bool
     @Binding var showWelcomeRestore: Bool
     @Binding var showInviteRecovery: Bool
@@ -3173,7 +3179,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                     // recibió, y quien eligió `.handover` fue el envoltorio que se lo pasó. Ponerle un
                     // scope aquí sería darle a este reenvío el derecho a contradecir al de arriba.
                     performICloudCorpusWipe: { await performICloudCorpusWipe() },
-                    performDeviceCorpusWipe: { await performDeviceCorpusWipe() }
+                    performDeviceCorpusWipe: { await performDeviceCorpusWipe() },
+                    onRestoreOrigin: { welcomeRestoreOrigin = $0 }
                 )
                 .environment(SessionState.shared)
             }

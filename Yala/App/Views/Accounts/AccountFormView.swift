@@ -543,8 +543,10 @@ struct AccountFormView: View {
                         Text(L10n.Account.adjustmentDate)
                             .font(DS.Typography.body)
                         Spacer()
+                        // Hasta hoy, como en «Editar el saldo»: un ajuste fechado mañana no cuenta en el saldo de hoy.
                         DateFieldButton(
                             date: $viewModel.adjustmentDate,
+                            maxDate: nil,
                             title: L10n.Account.adjustmentDate
                         )
                     }
@@ -928,7 +930,9 @@ struct AccountFormView: View {
     /// verdad hoy, la diferencia, cómo se corrige (las dos opciones de siempre, contadas en llano) y en
     /// cuánto queda la cuenta al guardar. El cálculo vive en `AccountBalanceCorrectionLogic`.
     private var balanceEditSection: some View {
-        let correction = viewModel.balanceCorrection
+        // Con un cambio de moneda pendiente el campo se vacía al guardar y el ajuste no se aplica: enseñar la
+        // diferencia o «queda en» prometería una cifra que no queda (review de L7-6). Solo el saldo de hoy.
+        let correction = viewModel.isCurrencyChangeRequested ? nil : viewModel.balanceCorrection
         let fixes = correction?.needsCorrection == true
         let currency = viewModel.balanceDisplayCurrency
         return VStack(spacing: DS.Spacing.xxl) {
@@ -1007,8 +1011,11 @@ struct AccountFormView: View {
                                 Text(L10n.Account.adjustmentDate)
                                     .font(DS.Typography.body)
                                 Spacer()
+                                // Hasta hoy: un ajuste fechado mañana no cuenta en el «Saldo hoy» de la ficha,
+                                // y «Al guardar, queda en» no sería verdad hoy.
                                 DateFieldButton(
                                     date: $viewModel.adjustmentDate,
+                                    maxDate: nil,
                                     title: L10n.Account.adjustmentDate
                                 )
                             }

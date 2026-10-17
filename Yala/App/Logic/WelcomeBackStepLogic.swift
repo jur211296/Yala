@@ -19,6 +19,14 @@ enum WelcomeBackStepLogic {
         WelcomeAccountChoiceLogic.bypass(options) == nil ? .existingChooser : .chooser
     }
 
+    /// A dónde vuelve «Volver» de Restaurar según la pantalla desde la que se abrió (review de UX 2.2 · L6-11): de
+    /// «¡Hola de nuevo!», allí; de cualquier otra —el bypass sin sub-chooser, o la puerta privada que encontró datos
+    /// en iCloud—, al chooser de primer nivel, que la persona sí vio. Antes, desde la puerta, caía en «¡Hola de
+    /// nuevo!», una pantalla que no había visto nunca.
+    static func restoreOrigin(openedFrom step: WelcomeFlowStep) -> WelcomeFlowStep {
+        step == .existingChooser ? .existingChooser : .chooser
+    }
+
     /// ¿Cancelar el consentimiento de la nube sale de la entrada entera? Solo cuando la entrada lo pidió (la abrió
     /// «¡Hola de nuevo!», donde el consentimiento es su primera pantalla) y la pantalla sigue en el intro — es decir,
     /// nada se ha firmado todavía. Con el flujo en marcha el consentimiento no se enseña, pero si una fase posterior

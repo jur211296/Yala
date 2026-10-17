@@ -156,6 +156,9 @@ struct WelcomeCloudSignInView: View {
     /// Bloque [I] · latch del auto-arranque en el consent (ver el `onAppear`). Sin él, cancelar el consent
     /// lo reabre en bucle: sus condiciones vuelven a cumplirse todas.
     @State private var didAutoOpenConsent = false
+    /// El primer consentimiento —el que abre la entrada desde «¡Hola de nuevo!»— devuelve allí al cancelarlo; se
+    /// gasta al cerrarlo, aceptado o no.
+    @State private var consentBackArmed = true
     /// Task del flujo/poll en vuelo — se cancela en onDisappear (el Task nace de un
     /// callback, NO de `.task`, así que el desmontaje no lo cancela solo).
     @State private var flowTask: Task<Void, Never>?
@@ -208,14 +211,18 @@ struct WelcomeCloudSignInView: View {
         .sheet(isPresented: $showConsent) {
             CloudConsentView(path: consentPath, persistsOnAccept: persistsConsentOnAccept, onAccept: {
                 showConsent = false
+                consentBackArmed = false
                 consentPendingPersistence = !persistsConsentOnAccept
                 launchFlow { await runFlowAfterConsent() }
             }, onCancel: {
                 showConsent = false
-                if WelcomeBackStepLogic.consentCancelReturnsBack(
-                    requested: cancelConsentGoesBack, isAtIntro: phase == .intro) {
-                    onBack()
-                }
+                // Solo el consentimiento que abrió la entrada (`consentBackArmed`, un solo uso): uno que se reabre
+                // después —«Crear cuenta con…» tras «No encontramos una cuenta», o otro método— deja el intro del
+                // alta, no salta a «¡Hola de nuevo!» (review de UX 2.2 · L6-3).
+                let goesBack = WelcomeBackStepLogic.consentCancelReturnsBack(
+                    requested: cancelConsentGoesBack && consentBackArmed, isAtIntro: phase == .intro)
+                consentBackArmed = false
+                if goesBack { onBack() }
             })
         }
         .onDisappear { flowTask?.cancel() }
@@ -822,9 +829,14 @@ struct WelcomeCloudSignInView: View {
             ProgressView(value: fraction)
                 .tint(.white)
                 .padding(.horizontal, DS.Spacing.xl)
-            // UX 2.2 · L6-13 (opción B): las mismas cifras en vivo que Restaurar, debajo de la barra. Conectar puede
-            // tardar minutos, y ver subir las cuentas y los registros es lo que dice que avanza.
-            AdoptLiveCountsView()
+            // UX 2.2 · L6-13. Decidido por la sesión: la opción B pedía las cifras en vivo de Restaurar, pero aquí no
+            // suben (el adopt no baja filas: las trae el primer pull, ya con esta pantalla desmontada; review del
+            // 2026-10-17). Lo que sí avanza es la barra, así que se dice en número: «45 %».
+            Text(fraction.formatted(.percent.precision(.fractionLength(0))))
+                .font(DS.Typography.subheadline.monospacedDigit())
+                .foregroundStyle(.white.opacity(0.8))
+                .contentTransition(.numericText())
+                .accessibilityIdentifier("welcome_cloud_adopt_percent")
             Text(L10n.Welcome.Cloud.adopting)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.white)

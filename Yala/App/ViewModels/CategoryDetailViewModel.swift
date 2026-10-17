@@ -75,7 +75,10 @@ final class CategoryDetailViewModel {
         // `isSystem` cubre las categorías sistema del bridge de grupos ("Grupos",
         // "Cobros de grupos"). Se preserva la protección legacy de "Otros" y de las
         // categorías de ingreso, que ya eran read-only por esta vía.
+        // Y, en cualquier idioma, la que guarda subcategorías de sistema (review de UX 2.2 · L7-10): «Otros» solo se
+        // reconocía por su nombre en español.
         category.isSystem || category.isIncome || category.name == "Otros"
+            || CategoryRecordsMoveService.holdsSystemSubcategories(category)
     }
 
     // MARK: - Init

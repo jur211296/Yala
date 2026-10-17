@@ -153,6 +153,11 @@ struct CategoriesSettingsListView: View {
                             .accessibilityIdentifier("categories_delete_\(category.name)")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
+                            // «Otros» e «Ingresos» guardan los ajustes de saldo y las transferencias: sin «−», pero
+                            // con su hueco, para que las filas sigan alineadas.
+                            .opacity(viewModel.canDelete(category) ? 1 : 0)
+                            .disabled(!viewModel.canDelete(category))
+                            .accessibilityHidden(!viewModel.canDelete(category))
                         }
 
                         NavigationLink {
@@ -206,6 +211,11 @@ struct CategoriesSettingsListView: View {
                             .accessibilityIdentifier("categories_delete_\(category.name)")
                             .padding(.leading, DS.Spacing.lg)
                             .padding(.trailing, DS.Spacing.sm)
+                            // «Otros» e «Ingresos» guardan los ajustes de saldo y las transferencias: sin «−», pero
+                            // con su hueco, para que las filas sigan alineadas.
+                            .opacity(viewModel.canDelete(category) ? 1 : 0)
+                            .disabled(!viewModel.canDelete(category))
+                            .accessibilityHidden(!viewModel.canDelete(category))
                         }
 
                         NavigationLink {

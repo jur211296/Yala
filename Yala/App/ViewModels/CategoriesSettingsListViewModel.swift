@@ -116,8 +116,15 @@ final class CategoriesSettingsListViewModel {
 
     // MARK: - Category Deletion
 
+    /// Se puede borrar (o vaciar moviendo sus registros) salvo las de sistema y las que guardan subcategorías de
+    /// sistema, como «Otros» con «Ajustes de saldo» (review de UX 2.2 · L7-10).
+    func canDelete(_ category: Category) -> Bool {
+        !category.isSystem && !CategoryRecordsMoveService.holdsSystemSubcategories(category)
+    }
+
     func handleCategoryDelete(_ category: Category) {
         guard modelContext != nil else { return }
+        guard canDelete(category) else { return }
 
         // Las categorías sistema no se borran (esta ruta usa context.delete directo,
         // sin pasar por EntityDeletionService). Defensa: el botón "−" tampoco se
@@ -165,7 +172,7 @@ final class CategoriesSettingsListViewModel {
     func confirmCategoryDeletion() {
         defer { categoryPendingDeletion = nil }
         guard let context = modelContext, let category = categoryPendingDeletion else { return }
-        guard !category.isSystem else { return }
+        guard canDelete(category) else { return }
         // Se vuelve a contar: entre la pregunta y el «sí» pudo llegar un registro por sync.
         let count = recordCount(of: category)
         guard count == 0 else {
