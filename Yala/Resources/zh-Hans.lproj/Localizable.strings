@@ -4628,7 +4628,6 @@
 "storage.revert.ineligible" = "目前无法从此设备返回 iCloud。";
 "storage.sync.title" = "同步";
 "storage.sync.upToDate" = "已全部同步";
-"storage.sync.needsSignIn" = "登录以上传 %d 项更改";
 "storage.sync.signInButton" = "登录";
 "storage.progress.migrating" = "正在启用云端…";
 "storage.progress.reverting" = "正在返回 iCloud…";
@@ -6655,3 +6654,8 @@
 "profile.icon.sun" = "太阳";
 "profile.icon.cloud" = "云朵";
 "profile.icon.drop" = "水滴";
+
+/* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
+"export.error.invalidDateRange" = "日期无效：开始日期必须早于结束日期。";
+"export.error.noTransactions" = "没有符合这些筛选条件的交易。试试其他时间段，或移除某个筛选条件。";
+"export.error.fileWriteFailed" = "无法创建文件，请重试。";

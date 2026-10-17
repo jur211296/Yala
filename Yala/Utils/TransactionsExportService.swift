@@ -47,14 +47,16 @@ enum TransactionsExportError: Error, LocalizedError {
     /// Error al escribir el archivo en disco.
     case fileWriteFailed(underlying: Error)
 
+    /// Lo que enseña el aviso del asistente (`ExportSummaryStepView`), en el idioma de la app. Hasta el lote 20 eran tres
+    /// literales en español en los 16 idiomas (ticket `export-errors-are-hardcoded-in-spanish`).
     var errorDescription: String? {
         switch self {
         case .invalidCustomDateRange:
-            return "El rango de fechas seleccionado no es válido."
+            return L10n.Export.errorInvalidDateRange
         case .noTransactionsToExport:
-            return "No se encontraron transacciones que cumplan los filtros seleccionados."
+            return L10n.Export.errorNoTransactions
         case .fileWriteFailed:
-            return "Ocurrió un problema al generar el archivo."
+            return L10n.Export.errorFileWriteFailed
         }
     }
 }

@@ -118,8 +118,10 @@ struct ExportSummaryStepView: View {
     private var filtersSummarySection: some View {
         SectionBox(title: L10n.Export.filtersSummary) {
             VStack(spacing: DS.Spacing.md) {
+                // B2 (lote 20): el rótulo nombra el filtro; «Todas las cuentas» es un VALOR, y salía al lado de
+                // «2 seleccionadas».
                 summaryRow(
-                    label: L10n.Filters.allAccounts,
+                    label: L10n.Settings.accounts,
                     value: accountsSummaryText
                 )
 
@@ -133,7 +135,7 @@ struct ExportSummaryStepView: View {
                 Divider()
 
                 summaryRow(
-                    label: L10n.Filters.allCategories,
+                    label: L10n.Settings.categories,
                     value: categoriesSummaryText
                 )
 
@@ -238,8 +240,10 @@ struct ExportSummaryStepView: View {
     }()
 
     private var periodSummaryText: String {
-        let from = exportFilters.dateFrom
-        let to = exportFilters.dateTo
+        // El intervalo que de verdad se exporta: un período en curso termina hoy, no mañana a medianoche.
+        let interval = exportFilters.effectiveDateInterval()
+        let from = interval.start
+        let to = interval.end
         return "\(Self.periodFormatter.string(from: from)) - \(Self.periodFormatter.string(from: to))"
     }
 

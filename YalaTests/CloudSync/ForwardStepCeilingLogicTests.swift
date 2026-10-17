@@ -409,7 +409,7 @@ struct ForwardStepCeilingLogicTests {
         for needle in ["YalaSecondaryButton(L10n.Storage.stopWaiting,", "confirmStopWaiting = true",
                        "isPresented: $confirmStopWaiting", "Button(L10n.Storage.Confirm.stopWaitingConfirm) {",
                        "Task { await controller.cancelMigration() }",
-                       "Button(L10n.Storage.Confirm.stopWaitingKeep, role: .cancel) {}",
+                       "Button(L10n.Storage.Confirm.stopWaitingKeep) {}",
                        "Text(L10n.Storage.Confirm.stopWaitingBody)"] {
             #expect(stop.contains(needle), "\(needle)")
         }

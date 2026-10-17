@@ -5946,3 +5946,8 @@
 "profile.icon.sun" = "Sol";
 "profile.icon.cloud" = "Nube";
 "profile.icon.drop" = "Gota";
+
+/* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
+"export.error.invalidDateRange" = "Las fechas no son válidas: la de inicio tiene que ser anterior a la de fin.";
+"export.error.noTransactions" = "No hay movimientos con estos filtros. Probá con otro período o sacá algún filtro.";
+"export.error.fileWriteFailed" = "No pudimos crear el archivo. Intentalo de nuevo.";

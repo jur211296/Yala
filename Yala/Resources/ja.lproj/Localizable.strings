@@ -4628,7 +4628,6 @@
 "storage.revert.ineligible" = "現在、この端末から iCloud に戻すことはできません。";
 "storage.sync.title" = "同期";
 "storage.sync.upToDate" = "すべて同期済み";
-"storage.sync.needsSignIn" = "サインインして %d件の変更をアップロード";
 "storage.sync.signInButton" = "サインイン";
 "storage.progress.migrating" = "クラウドを有効化しています…";
 "storage.progress.reverting" = "iCloud に戻しています…";
@@ -6655,3 +6654,8 @@
 "profile.icon.sun" = "太陽";
 "profile.icon.cloud" = "雲";
 "profile.icon.drop" = "しずく";
+
+/* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
+"export.error.invalidDateRange" = "日付が正しくありません。開始日は終了日より前にしてください。";
+"export.error.noTransactions" = "この条件に合う取引はありません。期間を変えるか、フィルタを外してください。";
+"export.error.fileWriteFailed" = "ファイルを作成できませんでした。もう一度お試しください。";

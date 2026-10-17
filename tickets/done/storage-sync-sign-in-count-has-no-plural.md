@@ -1,10 +1,10 @@
 ---
 id: storage-sync-sign-in-count-has-no-plural
-status: backlog
+status: done
 priority: very-low
 area: "l10n, ajustes, modo-nube"
 created: 2026-09-16
-updated: 2026-10-08
+updated: 2026-10-17
 source: "segunda review adversarial de `personal-sync-reads-an-offline-token-refresh-as-a-session-expiry` (2026-09-16)"
 ---
 
@@ -32,3 +32,7 @@ dice «Inicia sesión para subir 1 cambios».
 - `storage.sync.needsSignIn` sigue en `Localizable.strings` (es: «Inicia sesión para subir %d cambios», en: «Sign in to upload %d changes») y ninguna `.stringsdict` tiene la clave.
 
 Triage 2026-10-08: abierto · low → very-low · sigue sin plural, y es pulido de texto que no confunde sobre los datos.
+
+## Cerrado (2026-10-17, auditoría UX 2.2 · lote 20, B7, PR #534)
+
+`storage.sync.needsSignIn` pasa al `.stringsdict` de los 12 idiomas base (polaco con sus cuatro formas) y `L10n.Storage.Sync.needsSignIn` usa `localizedStringWithFormat`. Las variantes regionales conservan la forma plana, como el resto de plurales (`variants_haveAllKeys_fromParent`). Test: `ExportLote20Tests.needsSignIn_isPluralized`.

@@ -1,10 +1,10 @@
 ---
 id: export-errors-are-hardcoded-in-spanish
-status: backlog
+status: done
 priority: low
 area: "export, l10n"
 created: 2026-09-15
-updated: 2026-10-08
+updated: 2026-10-17
 source: "review adversarial de `cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes` (2026-09-15)"
 ---
 
@@ -39,3 +39,7 @@ filtros seleccionados.».
 - Sigue pendiente la decisión 1/2. Recomendación: la 1 (traducir los tres textos con `ls()`), que es lo mínimo y no cambia el asistente.
 
 Triage 2026-10-08: abierto · low → low · los tres errores siguen siendo literales en español; solo salen cuando la exportación falla.
+
+## Cerrado (2026-10-17, auditoría UX 2.2 · lote 20, B4, PR #534)
+
+Opción 1: los tres motivos salen del catálogo (`export.error.*`) en los 16 idiomas, con «movimientos» y qué hacer. `TransactionsExportError.errorDescription` lee `L10n.Export.error*`. Tests: `ExportLote20Tests` (las tres claves en los 16 idiomas y el error las usa).

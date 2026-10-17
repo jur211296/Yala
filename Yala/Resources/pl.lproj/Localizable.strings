@@ -4628,7 +4628,6 @@
 "storage.revert.ineligible" = "W tej chwili nie możesz wrócić do iCloud z tego urządzenia.";
 "storage.sync.title" = "Synchronizacja";
 "storage.sync.upToDate" = "Wszystko zsynchronizowane";
-"storage.sync.needsSignIn" = "Zaloguj się, aby wysłać %d zmian";
 "storage.sync.signInButton" = "Zaloguj się";
 "storage.progress.migrating" = "Włączanie chmury…";
 "storage.progress.reverting" = "Powrót do iCloud…";
@@ -6655,3 +6654,8 @@
 "profile.icon.sun" = "Słońce";
 "profile.icon.cloud" = "Chmura";
 "profile.icon.drop" = "Kropla";
+
+/* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
+"export.error.invalidDateRange" = "Te daty są nieprawidłowe: data początkowa musi być wcześniejsza niż końcowa.";
+"export.error.noTransactions" = "Żadna transakcja nie pasuje do tych filtrów. Wybierz inny okres lub usuń któryś filtr.";
+"export.error.fileWriteFailed" = "Nie udało się utworzyć pliku. Spróbuj ponownie.";

@@ -770,6 +770,14 @@ la tienda de prueba de Apple (`SKTestSession`): `xcodebuild` + `simctl` no aplic
 - En 20.13 el botón destructivo «Empezar de cero» va primero, en un aviso que la persona no provocó.
 - 20.7 está oculta en producción por un flag remoto.
 
+**Medido en el lote 20 (2026-10-17, simulador):**
+- 20.6: «Continuar» no llevaba a «Esto es definitivo» desde «Tu cuenta de Yala» (la alerta colgaba de la raíz de Ajustes, tapada): arreglado (B5, PR #534).
+- 20.7–20.9: las siete confirmaciones de «Dónde viven tus datos» salían sin «Cancelar»: arreglado (B6). Activar la nube son cuatro pantallas antes de entrar (consentimiento, «¿Activar?», «¿Seguro?», Apple/Google).
+- 20.2: «Exportar antes» abría con «Últimos 30 días»: ahora «Todo el tiempo» (B3).
+- 20.11: no hay «Reintentar» ni «Diagnosticar»: están apagados en el código (`isAutoRecoveryAvailable = false`), aunque el texto del atasco dice «Revisemos qué podemos hacer».
+- 20.4: en una sesión privada el cierre espera hasta 45 s antes de avisar; el aviso no ofrece exportar.
+- 20.7 solo sale en el simulador con App Attest fingido (`-uitest-fake-attest-support`); 20.9, 20.10, 20.12 y 20.16 no se alcanzan en el simulador (sin iCloud ni modo nube): por código.
+
 **Tickets abiertos del lote:** `export-errors-are-hardcoded-in-spanish`, `exportable-insights`,
 `settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist`, `sign-out-wipe-abort-in-icloud-says-nothing`,
 `groups-only-account-deletion-skips-export-wait`, `storage-sync-sign-in-count-has-no-plural`,
