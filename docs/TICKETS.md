@@ -155,10 +155,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | bulk-update-account-leaves-converted-amount-stale | done | tickets/done/bulk-update-account-leaves-converted-amount-stale.md |
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
-| cashflow-override-synced-to-an-old-version-stays-invisible-after-updating | backlog | tickets/backlog/cashflow-override-synced-to-an-old-version-stays-invisible-after-updating.md |
+| cashflow-override-synced-to-an-old-version-stays-invisible-after-updating | done | tickets/done/cashflow-override-synced-to-an-old-version-stays-invisible-after-updating.md |
 | cashflow-scheduled-line-ignores-payment-currency | done | tickets/done/cashflow-scheduled-line-ignores-payment-currency.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
-| cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two | backlog | tickets/backlog/cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two.md |
+| cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two | done | tickets/done/cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | done | tickets/done/changing-an-account-currency-orphans-its-whole-history.md |
 | chat-assistant-is-down | discarded | tickets/discarded/chat-assistant-is-down.md |
