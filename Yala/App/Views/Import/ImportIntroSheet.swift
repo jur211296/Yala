@@ -118,6 +118,9 @@ struct ImportIntroSheet: View {
     @State private var isShowingCurrencyMapping: Bool = false
     @State private var filteredCurrencyForAccountPicker: String?
 
+    /// La importación esperando a que la persona la revise (L7-15): el archivo, a dónde va y qué entraría.
+    @State private var pendingImport: PendingImport?
+
     /// Callback to notify parent with import result. Parent handles display.
     let onImportCompleted: ((ImportResult) -> Void)?
 
@@ -148,6 +151,7 @@ struct ImportIntroSheet: View {
                 ScrollView {
                     VStack(spacing: DS.Spacing.xxl) {
                         introSection
+                        columnsSection
                         templateSection
                         toggleSection
                     }
@@ -229,6 +233,11 @@ struct ImportIntroSheet: View {
                 if completed {
                     showTemplateAlert = true
                 }
+            }
+        }
+        .sheet(item: $pendingImport) { pending in
+            ImportPreviewSheet(preview: pending.preview) {
+                runImport(pending)
             }
         }
         .alert(L10n.Import.templateGenerated, isPresented: $showTemplateAlert) {
@@ -316,11 +325,71 @@ struct ImportIntroSheet: View {
             .padding(.vertical, DS.FormRow.paddingV)
             .solidCard(radius: DS.Radius.lg)
 
-            Text(L10n.Import.categoriesDescription)
+            // El pie dice lo que hace el interruptor TAL COMO ESTÁ: antes describía el encendido siempre (L7-16).
+            Text(allowCreatingNewCategories
+                ? L10n.UXL7.ImportScreen.createCategoriesOn
+                : L10n.UXL7.ImportScreen.createCategoriesOff)
             .font(Typography.label)
             .foregroundStyle(.thSecondaryText)
             .padding(.horizontal, DS.Spacing.xs)
+            .accessibilityIdentifier("import_create_categories_footer")
         }
+    }
+
+    /// «Tu archivo necesita estas columnas», con una fila de ejemplo (L7-16): quien trae su propio Excel solo
+    /// necesita ver la forma de una fila para no depender de la plantilla.
+    private var columnsSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text(L10n.UXL7.ImportScreen.columnsTitle)
+                .font(DS.Typography.bodyBold)
+                .foregroundStyle(.thPrimaryText)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                Grid(alignment: .leading, horizontalSpacing: DS.Spacing.md, verticalSpacing: DS.Spacing.xs) {
+                    GridRow {
+                        ForEach(Self.requiredColumns, id: \.self) { column in
+                            Text(column)
+                                .font(DS.Typography.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(Color.white)
+                                .padding(.horizontal, DS.Spacing.sm)
+                                .padding(.vertical, DS.Spacing.xxs)
+                                .background(Capsule().fill(Color.selectedIndigoFill))
+                        }
+                    }
+                    GridRow {
+                        ForEach(Array(Self.exampleRow.enumerated()), id: \.offset) { _, value in
+                            Text(value)
+                                .font(DS.Typography.caption)
+                                .monospacedDigit()
+                                .foregroundStyle(.thPrimaryText)
+                                .padding(.horizontal, DS.Spacing.sm)
+                        }
+                    }
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(L10n.UXL7.ImportScreen.columnsAccessibility(
+                Self.requiredColumns.joined(separator: ", ")))
+
+            Text(L10n.UXL7.ImportScreen.columnsHint)
+                .font(Typography.label)
+                .foregroundStyle(.thSecondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(radius: DS.Radius.lg)
+        .accessibilityIdentifier("import_columns_card")
+    }
+
+    /// Las columnas que el lector exige, con su nombre literal: el encabezado se compara tal cual.
+    private static let requiredColumns = ["date", "amount", "currency", "category", "subcategory"]
+
+    /// Una fila de ejemplo con la forma que entiende el lector (fecha ISO, gasto en negativo).
+    private static var exampleRow: [String] {
+        ["2026-10-14", "-50.00", CurrencyDefaults.currentPreferred, L10n.UXL7.ImportScreen.exampleCategory,
+         L10n.UXL7.ImportScreen.exampleSubcategory]
     }
 
     // MARK: - Actions
@@ -513,7 +582,68 @@ struct ImportIntroSheet: View {
             }
         }
     }
+    /// Antes de importar, la vista previa (L7-15): la importación de verdad en un contexto que no se guarda.
     private func performImport(from url: URL, into account: Account) {
+        requestPreview(of: url, target: .single(account))
+    }
+
+    private func performMultiCurrencyImport(from url: URL, with currencyAccountMap: [String: Account]) {
+        requestPreview(of: url, target: .multi(currencyAccountMap))
+    }
+
+    private func requestPreview(of url: URL, target: ImportPreviewService.Target) {
+        isImporting = true
+        let allowCreating = allowCreatingNewCategories
+        Task {
+            do {
+                let preview = try await ImportPreviewService.preview(
+                    of: url,
+                    target: target,
+                    allowCreatingNewCategories: allowCreating,
+                    container: modelContext.container
+                )
+                isImporting = false
+                pendingImport = PendingImport(url: url, target: target, preview: preview)
+            } catch {
+                #if DEBUG
+                print("ImportIntroSheet: Error preparing the preview: \(error)")
+                #endif
+                isImporting = false
+                finish(with: ImportResult(isSuccess: false, message: error.localizedDescription, count: 0))
+            }
+        }
+    }
+
+    /// La persona dijo «Importar» en la vista previa: se importa de verdad, saltando las filas malas.
+    private func runImport(_ pending: PendingImport) {
+        switch pending.target {
+        case .single(let account):
+            runSingleImport(from: pending.url, into: account)
+        case .multi(let map):
+            runMultiImport(from: pending.url, with: map)
+        }
+    }
+
+    /// Cierra la hoja y avisa a quien la abrió con el resultado.
+    private func finish(with result: ImportResult) {
+        dismiss()
+        Task {
+            try? await Task.sleep(for: .milliseconds(300))
+            self.onImportCompleted?(result)
+        }
+    }
+
+    /// «Importamos 69 registros.» y, si alguna fila no entró, cuántas y cuáles (L7-17).
+    private func outcomeMessage(importedLine: String, failures: [ImportError]) -> String {
+        ImportPreviewLogic.outcomeMessage(
+            importedLine: importedLine,
+            failures: failures.compactMap(\.errorDescription),
+            notImportedLine: { L10n.UXL7.ImportReview.notImported($0) },
+            moreLine: { L10n.UXL7.ImportReview.more($0) }
+        )
+    }
+
+    private func runSingleImport(from url: URL, into account: Account) {
         #if DEBUG
         print("🔵 [IMPORT] Starting import, setting isImporting = true")
         #endif
@@ -537,14 +667,16 @@ struct ImportIntroSheet: View {
                         from: url,
                         into: account,
                         in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
                     )
                 } else {
                     result = try await TransactionCSVImportService.importCSV(
                         from: url,
                         into: account,
                         in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
                     )
                 }
 
@@ -590,7 +722,8 @@ struct ImportIntroSheet: View {
                 // Create result and dismiss (keep button in "Importando" state until sheet closes)
                 let importResult = ImportResult(
                     isSuccess: true,
-                    message: L10n.Import.recordsImported(createdCount),
+                    message: outcomeMessage(
+                        importedLine: L10n.Import.recordsImported(createdCount), failures: result.failures),
                     count: createdCount
                 )
                 #if DEBUG
@@ -627,7 +760,7 @@ struct ImportIntroSheet: View {
 
     // MARK: - Multi-Currency Import
 
-    private func performMultiCurrencyImport(from url: URL, with currencyAccountMap: [String: Account]) {
+    private func runMultiImport(from url: URL, with currencyAccountMap: [String: Account]) {
         #if DEBUG
         print("🔵 [IMPORT-MULTI] Starting multi-currency import, setting isImporting = true")
         #endif
@@ -647,14 +780,16 @@ struct ImportIntroSheet: View {
                         from: url,
                         currencyAccountMap: currencyAccountMap,
                         in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
                     )
                 } else {
                     result = try await TransactionCSVImportService.importCSVMultiCurrency(
                         from: url,
                         currencyAccountMap: currencyAccountMap,
                         in: modelContext,
-                        allowCreatingNewCategories: allowCreatingNewCategories
+                        allowCreatingNewCategories: allowCreatingNewCategories,
+                        skippingInvalidRows: true
                     )
                 }
 
@@ -698,7 +833,9 @@ struct ImportIntroSheet: View {
                 // Create result with multi-currency message
                 let importResult = ImportResult(
                     isSuccess: true,
-                    message: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
+                    message: outcomeMessage(
+                        importedLine: L10n.Import.recordsImportedMultiCurrency(createdCount, currencyCount),
+                        failures: result.failures),
                     count: createdCount
                 )
                 #if DEBUG
@@ -730,6 +867,14 @@ struct ImportIntroSheet: View {
             }
         }
     }
+}
+
+/// Una importación revisada y a la espera de «Importar» (L7-15).
+struct PendingImport: Identifiable {
+    let id = UUID()
+    let url: URL
+    let target: ImportPreviewService.Target
+    let preview: ImportPreview
 }
 
 struct TemplateFile: Identifiable {

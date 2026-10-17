@@ -100,7 +100,8 @@ struct TagFormView: View {
                     deleteTag()
                 }
             } message: {
-                Text(L10n.Common.cannotUndo)
+                // Qué pasa con los registros que la llevan: se quedan, solo pierden la etiqueta (L7-13).
+                Text(L10n.UXL7.Tags.deleteMessage(viewModel.tagToEdit?.transactions?.count ?? 0))
             }
             .sheet(isPresented: $isPresentingIconPicker) {
                 IconColorPickerSheet(

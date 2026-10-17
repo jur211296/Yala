@@ -282,11 +282,19 @@ struct SubcategoryDetailView: View {
 
                     SubsectionDivider()
 
+                    // «Usar al registrar» y su pie, como la categoría (auditoría UX 2.2, lote 7, L7-11).
                     Toggle(isOn: $isVisible) {
-                        Text(L10n.Category.show)
+                        Text(L10n.UXL7.Categories.useWhenRecording)
                     }
-
                     .padding()
+
+                    Text(L10n.UXL7.Categories.useWhenRecordingFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.bottom)
                 }
             }
 

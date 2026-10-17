@@ -1547,7 +1547,7 @@
 "faq.whatIsPro.a" = "Yala Pro unlocks premium features like voice input, receipt scanning with camera, exclusive themes, and more. You can see all benefits in Settings > Subscription.";
 "faq.whatIsPro.q" = "What does Yala Pro include?";
 "faq.whatIsYala.q" = "What is Yala?";
-"favorites.createTemplate" = "Create recurring payment templates to record them faster.";
+"favorites.createTemplate" = "Save an expense you repeat (your coffee, a taxi) and record it with one tap.";
 "favorites.descriptionPlaceholder" = "Description (optional)";
 "favorites.notConfigured" = "Not configured";
 "featureGate.accounts" = "Accounts";
@@ -1760,7 +1760,7 @@
 "import.fileUrlError" = "We couldn't read that file. Try selecting it again.";
 "import.importAction" = "Import";
 "import.importing" = "Importing...";
-"import.introDescription" = "Add your financial transactions in bulk from a CSV or Excel file.";
+"import.introDescription" = "Bring your records in from a CSV or Excel file, like the spreadsheet where you already track your spending.";
 "import.multiCurrencyDetected" = "Multiple currencies detected";
 "import.noAccountsAvailable" = "No accounts available";
 "import.noAccountsForCurrency" = "No accounts in %@. Create an account in this currency first.";
@@ -1769,9 +1769,9 @@
 "import.selectAccount" = "Select an account";
 "import.selectAccountForCurrency" = "Select account";
 "import.selectFile" = "Select file";
-"import.templateDescription" = "Use our official template to ensure the correct format.";
+"import.templateDescription" = "The template has an example row for each subcategory: replace them with yours before importing.";
 "import.templateGenerated" = "Template generated";
-"import.templateGeneratedMessage" = "The template was generated successfully. You can now edit it and come back to this screen to import it.";
+"import.templateGeneratedMessage" = "You'll find it where you saved it (for example, in Files). Open it with Numbers or Excel, replace the example rows with yours, and come back here to import it.";
 "import.title" = "Import Transactions";
 "inbox.alert.message.mixed.automations" = "%d automatic records";
 "inbox.alert.message.mixed.scheduled" = "%d payments";
@@ -1947,16 +1947,16 @@
 "milestone.notNow" = "Not now";
 "milestone.unlimitedAccounts" = "Unlimited accounts";
 "need.essential" = "Essential";
-"need.essential.desc" = "Essential expenses, hard to cut.";
+"need.essential.desc" = "What you can't stop paying: rent, power, food.";
 "need.expensesByNeed" = "Expenses by Need";
 "need.incomeNotApplicable" = "Need classification only applies to expenses";
 "need.optional" = "Optional";
-"need.optional.desc" = "Discretionary or leisure expenses.";
+"need.optional.desc" = "Treats and splurges.";
 "need.priority" = "Priority";
-"need.priority.desc" = "Important but with some flexibility.";
+"need.priority.desc" = "Worth it, but you can adjust it.";
 "need.title" = "Spending need";
 "need.unclassified" = "Unclassified";
-"need.unclassified.desc" = "No specific nature tag.";
+"need.unclassified.desc" = "Not decided yet.";
 "notificationPrimer.accept" = "Enable notifications";
 "notificationPrimer.benefit1" = "Daily financial reports";
 "notificationPrimer.benefit2" = "Scheduled payment reminders";
@@ -6350,3 +6350,195 @@
 
 /* Swap offer: keep the two current currencies (UX 2.2 L7-8) */
 "account.secondaryCurrency.keep" = "Keep them as they are";
+
+/* Currency picker: section with the currently chosen currency, shown on top (UX 2.2 L7-9) */
+"currencyPicker.current" = "Current";
+
+/* Currency picker: search field prompt (UX 2.2 L7-9) */
+"currencyPicker.searchPrompt" = "Search by name or code";
+
+/* Currency picker: nothing matches the search. %@ = what was typed (UX 2.2 L7-9) */
+"currencyPicker.noResults" = "No currency matches “%@”.";
+
+/* Secondary currencies picker: the limit, before reaching it (UX 2.2 L7-9) */
+"currencyPicker.secondaryLimit" = "You can choose up to 2.";
+
+/* Secondary currencies picker: limit reached, why the rest are greyed out (UX 2.2 L7-9) */
+"currencyPicker.secondaryFull" = "You can choose 2. Remove one to pick another.";
+
+/* Category/subcategory toggle: whether it shows up when recording (UX 2.2 L7-11) */
+"category.useWhenRecording" = "Use when recording";
+
+/* Footer of the toggle: what turning it off does (UX 2.2 L7-11) */
+"category.useWhenRecording.footer" = "If you turn it off, it stops showing up when you record. Your records don't change.";
+
+/* Cannot-delete alert: hide the category instead (UX 2.2 L7-10) */
+"category.hideAction" = "Hide it";
+
+/* Cannot-delete alert: move all its records to another category (UX 2.2 L7-10) */
+"category.moveRecordsAction" = "Move its records…";
+
+/* Cannot-delete alert. %@ = «It has N records.» (UX 2.2 L7-10) */
+"category.cannotDelete.choiceMessage" = "%@ You can hide it: it stops showing up when you record and its history stays. Or move its records to another category and delete it.";
+
+/* Could not read how many records a category has: nothing is deleted (UX 2.2 L7-10) */
+"category.countFailed" = "We couldn't check whether it has records. Please try again.";
+
+/* Move records sheet: title (UX 2.2 L7-10) */
+"category.move.title" = "Move the records";
+
+/* Move records sheet: what to choose. %@ = category name (UX 2.2 L7-10) */
+"category.move.subtitle" = "Choose where the records of “%@” go. Then we delete it.";
+
+/* Move records sheet: no other category of the same kind (UX 2.2 L7-10) */
+"category.move.noDestinations" = "There's no other category to move them to. Create one first.";
+
+/* Move records confirmation: title. %@ = category name (UX 2.2 L7-10) */
+"category.move.confirmTitle" = "Move and delete “%@”?";
+
+/* Move records confirmation. %1$@ category, %2$@ «Category › Subcategory» destination, %3$@ «N records» (UX 2.2 L7-10) */
+"category.move.confirmMessage" = "Everything in “%1$@” moves to %2$@: %3$@, plus its planned payments and favourites. Then the category is deleted. This can't be undone.";
+
+/* Move records confirmation: destructive button (UX 2.2 L7-10) */
+"category.move.confirmAction" = "Move and delete";
+
+/* Moving the records failed (UX 2.2 L7-10) */
+"category.move.failed" = "We couldn't finish moving the records. Please try again.";
+
+/* Need selector: what it is for (UX 2.2 L7-12) */
+"need.explainer" = "It lets you see in Statistics how much you spend on essentials and how much on treats.";
+
+/* Delete tag: no record has it (UX 2.2 L7-13) */
+"tag.deleteConfirm.messageNone" = "No record uses it. This can't be undone.";
+
+/* Favorites empty state: create button (UX 2.2 L7-14) */
+"favorites.createAction" = "Create favourite";
+
+/* Favorite editor: delete button at the bottom (UX 2.2 L7-14) */
+"favorites.delete" = "Delete favourite";
+
+/* Favorite editor: delete confirmation title (UX 2.2 L7-14) */
+"favorites.deleteConfirm.title" = "Delete this favourite?";
+
+/* Favorite editor: delete confirmation message (UX 2.2 L7-14) */
+"favorites.deleteConfirm.message" = "Records you already made with it stay as they are. This can't be undone.";
+
+/* Import screen: card with the columns the file needs (UX 2.2 L7-16) */
+"import.columns.title" = "Your file needs these columns";
+
+/* Import screen: how to fill the columns (UX 2.2 L7-16) */
+"import.columns.hint" = "The first row has these names exactly. Expenses go with a minus sign. You can add tags and note columns at the end.";
+
+/* Import screen: VoiceOver label of the columns card. %@ = column names (UX 2.2 L7-16) */
+"import.columns.accessibility" = "Required columns: %@";
+
+/* Import screen: example category in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleCategory" = "Food";
+
+/* Import screen: example subcategory in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleSubcategory" = "Restaurant";
+
+/* Import toggle footer when ON (UX 2.2 L7-16) */
+"import.createCategories.on" = "If the file has categories you don't have, we create them when importing.";
+
+/* Import toggle footer when OFF (UX 2.2 L7-16) */
+"import.createCategories.off" = "Only rows with categories you already have get in. We show you the rest before importing.";
+
+/* Import preview: title (UX 2.2 L7-15) */
+"import.preview.title" = "Review before importing";
+
+/* Import preview. %1$@ «N records», %2$@ account name(s) (UX 2.2 L7-15) */
+"import.preview.summary" = "We'll import %1$@ into %2$@.";
+
+/* Import preview: date range. %1$@ first, %2$@ last (UX 2.2 L7-15) */
+"import.preview.range" = "From %1$@ to %2$@";
+
+/* Import preview: all rows on one day. %@ = date (UX 2.2 L7-15) */
+"import.preview.singleDay" = "All on %@";
+
+/* Import preview: total amount(s). %@ = amounts (UX 2.2 L7-15) */
+"import.preview.total" = "Total: %@";
+
+/* Import preview: nothing is saved until Import (UX 2.2 L7-15) */
+"import.preview.reviewHint" = "Nothing is saved until you tap Import. If you see the template's example rows, cancel and change them in the file.";
+
+/* Import preview: first rows section (UX 2.2 L7-15) */
+"import.preview.sampleHeader" = "First rows";
+
+/* Import preview: no row can be imported (UX 2.2 L7-15) */
+"import.preview.nothingToImport" = "No row can be imported. Check the file against what you see below and try again.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.fileExtension" = "Choose a .csv or .xlsx file.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.unreadable" = "We couldn't read the file. Open it in Numbers or Excel and save it again as CSV (UTF-8) or Excel.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.empty" = "The file has no rows to import.";
+
+/* Import error: the first row doesn't have the expected column names (UX 2.2 L7-17) */
+"import.error.header" = "The file's first row must have these columns, in this order: date, amount, currency, category and subcategory (optionally also tags and note).";
+
+/* Import error. %1$d row, %2$d expected columns, %3$d found (UX 2.2 L7-17) */
+"import.error.columnCount" = "Row %1$d: it has %3$d columns and should have %2$d.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.date" = "Row %1$d: we can't read the date “%2$@”. Write it like 2026-10-14 or 14/10/2026.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.amount" = "Row %1$d: “%2$@” isn't an amount. Write a number, with a minus sign for an expense: -50.00.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.currency" = "Row %1$d: we don't know the currency “%2$@”. Use its three-letter code, like PEN or USD.";
+
+/* Import error. %1$d row, %2$@ row currency, %3$@ account currency (UX 2.2 L7-17) */
+"import.error.currencyMismatch" = "Row %1$d: it's in %2$@, but the chosen account is in %3$@.";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptyCategory" = "Row %1$d: the category is missing.";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptySubcategory" = "Row %1$d: the subcategory is missing.";
+
+/* Import error. %1$d row, %2$@ category, %3$@ name of the «Create new categories» switch (UX 2.2 L7-17) */
+"import.error.unknownCategory" = "Row %1$d: it uses the category “%2$@”, which doesn't exist. Turn on “%3$@” or change it in the file.";
+
+/* Import error. %1$d row, %2$@ category, %3$@ subcategory, %4$@ name of the switch (UX 2.2 L7-17) */
+"import.error.unknownSubcategory" = "Row %1$d: the subcategory “%3$@” doesn't exist in “%2$@”. Turn on “%4$@” or change it in the file.";
+
+/* Import error. %1$d row, %2$@ currency code (UX 2.2 L7-17) */
+"import.error.missingAccount" = "Row %1$d: you didn't choose an account for %2$@.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxOpen" = "We couldn't open the Excel file. Save it again as .xlsx and try again.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxNoSheets" = "The Excel file has no sheets.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxRead" = "We couldn't read the sheet in the Excel file. Save it again as .xlsx and try again.";
+
+/* A number of records (UX 2.2 lote 7) */
+"records.count" = "%d records";
+
+/* Cannot-delete alert: how many records the category has (UX 2.2 L7-10) */
+"category.cannotDelete.records" = "It has %d records.";
+
+/* Delete tag: records keep, they only lose the tag (UX 2.2 L7-13) */
+"tag.deleteConfirm.message" = "It will be removed from %d records; the records aren't deleted. This can't be undone.";
+
+/* Import preview: rows that won't get in (UX 2.2 L7-17) */
+"import.preview.failuresHeader" = "%d rows won't be imported";
+
+/* Import: more failing rows not listed (UX 2.2 L7-17) */
+"import.preview.more" = "… and %d more";
+
+/* Import preview: future-dated rows left out (UX 2.2 L7-15) */
+"import.preview.futureIgnored" = "%d rows have a future date and are left out.";
+
+/* Import preview: confirm button (UX 2.2 L7-15) */
+"import.preview.importButton" = "Import %d records";
+
+/* Import result: rows that didn't get in, before the list (UX 2.2 L7-17) */
+"import.result.notImported" = "%d rows weren't imported:";

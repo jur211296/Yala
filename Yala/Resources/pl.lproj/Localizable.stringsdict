@@ -1132,5 +1132,165 @@
 			<string>Co %d roku</string>
 		</dict>
 	</dict>
+	<key>records.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d wpis</string>
+			<key>few</key>
+			<string>%d wpisy</string>
+			<key>many</key>
+			<string>%d wpisów</string>
+			<key>other</key>
+			<string>%d wpisu</string>
+		</dict>
+	</dict>
+	<key>category.cannotDelete.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ma %d wpis.</string>
+			<key>few</key>
+			<string>Ma %d wpisy.</string>
+			<key>many</key>
+			<string>Ma %d wpisów.</string>
+			<key>other</key>
+			<string>Ma %d wpisu.</string>
+		</dict>
+	</dict>
+	<key>tag.deleteConfirm.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zostanie usunięta z %d wpisu; wpis zostaje. Tego nie można cofnąć.</string>
+			<key>few</key>
+			<string>Zostanie usunięta z %d wpisów; wpisy zostają. Tego nie można cofnąć.</string>
+			<key>many</key>
+			<string>Zostanie usunięta z %d wpisów; wpisy zostają. Tego nie można cofnąć.</string>
+			<key>other</key>
+			<string>Zostanie usunięta z %d wpisu; wpisy zostają. Tego nie można cofnąć.</string>
+		</dict>
+	</dict>
+	<key>import.preview.failuresHeader</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d wiersz nie wejdzie</string>
+			<key>few</key>
+			<string>%d wiersze nie wejdą</string>
+			<key>many</key>
+			<string>%d wierszy nie wejdzie</string>
+			<key>other</key>
+			<string>%d wiersza nie wejdzie</string>
+		</dict>
+	</dict>
+	<key>import.preview.more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>… i %d więcej</string>
+			<key>few</key>
+			<string>… i %d więcej</string>
+			<key>many</key>
+			<string>… i %d więcej</string>
+			<key>other</key>
+			<string>… i %d więcej</string>
+		</dict>
+	</dict>
+	<key>import.preview.futureIgnored</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d wiersz ma przyszłą datę i zostaje pominięty.</string>
+			<key>few</key>
+			<string>%d wiersze mają przyszłą datę i zostają pominięte.</string>
+			<key>many</key>
+			<string>%d wierszy ma przyszłą datę i zostaje pominiętych.</string>
+			<key>other</key>
+			<string>%d wiersza ma przyszłą datę i zostaje pominięte.</string>
+		</dict>
+	</dict>
+	<key>import.preview.importButton</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Importuj %d wpis</string>
+			<key>few</key>
+			<string>Importuj %d wpisy</string>
+			<key>many</key>
+			<string>Importuj %d wpisów</string>
+			<key>other</key>
+			<string>Importuj %d wpisu</string>
+		</dict>
+	</dict>
+	<key>import.result.notImported</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d wiersz nie wszedł:</string>
+			<key>few</key>
+			<string>%d wiersze nie weszły:</string>
+			<key>many</key>
+			<string>%d wierszy nie weszło:</string>
+			<key>other</key>
+			<string>%d wiersza nie weszło:</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

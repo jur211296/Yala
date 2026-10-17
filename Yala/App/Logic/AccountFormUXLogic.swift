@@ -116,6 +116,34 @@ enum AccountCurrencyBalancePreviewLogic {
     }
 }
 
+// MARK: - L7-9 · Buscar una moneda
+
+/// El buscador del selector de moneda: por nombre («peso mexicano»), por código («MXN») o por cómo la escribe
+/// la gente («soles», «S/»). Sin tildes ni mayúsculas, porque nadie las teclea al buscar.
+enum CurrencySearchLogic {
+
+    static func matches(name: String, code: String, aliases: [String], query: String) -> Bool {
+        let needle = fold(query)
+        guard !needle.isEmpty else { return true }
+        if fold(code).contains(needle) || fold(name).contains(needle) { return true }
+        return aliases.contains { fold($0).contains(needle) }
+    }
+
+    /// Las monedas que casan con la búsqueda, en el orden en que llegan.
+    static func filter(_ currencies: [CurrencyCode], query: String) -> [CurrencyCode] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return currencies }
+        return currencies.filter {
+            matches(name: $0.localizedName, code: $0.rawValue, aliases: $0.aliases, query: trimmed)
+        }
+    }
+
+    static func fold(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+    }
+}
+
 // MARK: - L7-8 · Ver la moneda nueva en el Panel
 
 /// Qué se le ofrece a quien crea una cuenta en una moneda que no es la suya.

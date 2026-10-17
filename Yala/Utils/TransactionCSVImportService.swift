@@ -45,41 +45,53 @@ enum ImportError: LocalizedError {
     case unknownSubcategory(row: Int, categoryName: String, name: String)
     case missingAccountForCurrency(row: Int, currency: String)
 
+    /// La fila del archivo a la que se refiere el error, o `nil` si es del archivo entero. Solo los errores
+    /// con fila se pueden saltar al importar el resto (L7-17).
+    var rowNumber: Int? {
+        switch self {
+        case .invalidFileExtension, .unreadableFile, .emptyFile, .invalidHeader:
+            return nil
+        case .invalidColumnCount(let row, _, _), .invalidDate(let row, _), .invalidAmount(let row, _),
+            .invalidCurrency(let row, _), .currencyMismatchWithAccount(let row, _, _), .emptyCategory(let row),
+            .emptySubcategory(let row), .unknownCategory(let row, _), .unknownSubcategory(let row, _, _),
+            .missingAccountForCurrency(let row, _):
+            return row
+        }
+    }
+
+    /// En llano y traducido (auditoría UX 2.2, lote 7, L7-17): antes iba en español dentro del código, enseñaba
+    /// el encabezado crudo y hablaba de «la creación automática». Cada fila dice qué falla y cómo arreglarla.
     var errorDescription: String? {
+        typealias T = L10n.UXL7.ImportErrors
         switch self {
         case .invalidFileExtension:
-            return "El archivo debe tener extensión .csv o .xlsx."
+            return T.invalidFileExtension
         case .unreadableFile:
-            return "No se pudo leer el contenido del archivo CSV."
+            return T.unreadableFile
         case .emptyFile:
-            return "El archivo CSV está vacío."
-        case .invalidHeader(let found):
-            return "El encabezado del CSV no es válido. Se encontró: \(found)."
+            return T.emptyFile
+        case .invalidHeader:
+            return T.invalidHeader
         case .invalidColumnCount(let row, let expected, let found):
-            return
-                "Fila \(row): número de columnas incorrecto. Esperadas: \(expected), encontradas: \(found)."
+            return T.invalidColumnCount(row, expected, found)
         case .invalidDate(let row, let value):
-            return "Fila \(row): la fecha '\(value)' no tiene un formato soportado."
+            return T.invalidDate(row, value)
         case .invalidAmount(let row, let value):
-            return "Fila \(row): el monto '\(value)' no se pudo interpretar."
+            return T.invalidAmount(row, value)
         case .invalidCurrency(let row, let value):
-            return "Fila \(row): la moneda '\(value)' no es válida."
+            return T.invalidCurrency(row, value)
         case .currencyMismatchWithAccount(let row, let fileCurrency, let accountCurrency):
-            return
-                "Fila \(row): la moneda '\(fileCurrency)' no coincide con la moneda de la cuenta destino '\(accountCurrency)'."
+            return T.currencyMismatch(row, fileCurrency, accountCurrency)
         case .emptyCategory(let row):
-            return "Fila \(row): la categoría no puede estar vacía."
+            return T.emptyCategory(row)
         case .emptySubcategory(let row):
-            return "Fila \(row): la subcategoría no puede estar vacía."
+            return T.emptySubcategory(row)
         case .unknownCategory(let row, let name):
-            return
-                "Fila \(row): la categoría '\(name)' no existe y la creación automática está desactivada."
+            return T.unknownCategory(row, name)
         case .unknownSubcategory(let row, let categoryName, let name):
-            return
-                "Fila \(row): la subcategoría '\(name)' no existe dentro de la categoría '\(categoryName)' y la creación automática está desactivada."
+            return T.unknownSubcategory(row, categoryName, name)
         case .missingAccountForCurrency(let row, let currency):
-            return
-                "Fila \(row): no hay cuenta asignada para la moneda '\(currency)'."
+            return T.missingAccountForCurrency(row, currency)
         }
     }
 }
@@ -113,6 +125,9 @@ struct TransactionImportResult {
     let createdCount: Int
     let drafts: [ParsedTransactionDraft]
     let ignoredFutureDatesCount: Int
+    /// Las filas que no entraron, con su motivo, cuando la importación salta las malas en vez de parar en la
+    /// primera (auditoría UX 2.2, lote 7, L7-17). Vacío en el modo de siempre, que lanza.
+    var failures: [ImportError] = []
 }
 
 // MARK: - Servicio principal de importación
@@ -140,7 +155,8 @@ enum TransactionCSVImportService {
         from url: URL,
         into account: Account,
         in context: ModelContext,
-        allowCreatingNewCategories: Bool = true
+        allowCreatingNewCategories: Bool = true,
+        skippingInvalidRows: Bool = false
     ) async throws -> TransactionImportResult {
 
         let preferredCode = CurrencyDefaults.currentPreferred
@@ -155,7 +171,8 @@ enum TransactionCSVImportService {
             from: url,
             into: account,
             in: context,
-            allowCreatingNewCategories: allowCreatingNewCategories
+            allowCreatingNewCategories: allowCreatingNewCategories,
+            skippingInvalidRows: skippingInvalidRows
         ) { draft, context in
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
@@ -251,6 +268,7 @@ enum TransactionCSVImportService {
         into account: Account,
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
+        skippingInvalidRows: Bool = false,
         createTransaction: (ParsedTransactionDraft, ModelContext) throws -> Void
     ) async throws -> TransactionImportResult {
 
@@ -332,6 +350,7 @@ enum TransactionCSVImportService {
 
         var drafts: [ParsedTransactionDraft] = []
         drafts.reserveCapacity(lines.count)
+        var failures: [ImportError] = []
 
         // Normalizamos la moneda de la cuenta una sola vez.
         let normalizedAccountCurrency = normalizeCurrencyCode(account.currencyCode)
@@ -363,6 +382,8 @@ enum TransactionCSVImportService {
                 continue
             }
 
+            // Una fila mala no para el archivo entero si se pidió saltarlas (L7-17): se apunta y se sigue.
+            do {
             var columns = splitCSVFields(trimmedLine, delimiter: delimiter)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             // Una fila de solo comillas vacías (`"","",…`) es tan vacía como `,,,`.
@@ -547,6 +568,9 @@ enum TransactionCSVImportService {
             )
 
             drafts.append(draft)
+            } catch let error as ImportError where skippingInvalidRows && error.rowNumber != nil {
+                failures.append(error)
+            }
         }
 
         // Filter out future dates
@@ -571,7 +595,8 @@ enum TransactionCSVImportService {
         return TransactionImportResult(
             createdCount: validDrafts.count,
             drafts: validDrafts,
-            ignoredFutureDatesCount: ignoredFutureDatesCount
+            ignoredFutureDatesCount: ignoredFutureDatesCount,
+            failures: failures
         )
     }
 
@@ -1121,7 +1146,8 @@ enum TransactionCSVImportService {
         from url: URL,
         currencyAccountMap: [String: Account],
         in context: ModelContext,
-        allowCreatingNewCategories: Bool = true
+        allowCreatingNewCategories: Bool = true,
+        skippingInvalidRows: Bool = false
     ) async throws -> TransactionImportResult {
 
         let preferredCode = CurrencyDefaults.currentPreferred
@@ -1134,7 +1160,8 @@ enum TransactionCSVImportService {
             from: url,
             currencyAccountMap: currencyAccountMap,
             in: context,
-            allowCreatingNewCategories: allowCreatingNewCategories
+            allowCreatingNewCategories: allowCreatingNewCategories,
+            skippingInvalidRows: skippingInvalidRows
         ) { draft, account, context in
             let amountDouble = (draft.amount as NSDecimalNumber).doubleValue
 
@@ -1226,6 +1253,7 @@ enum TransactionCSVImportService {
         currencyAccountMap: [String: Account],
         in context: ModelContext,
         allowCreatingNewCategories: Bool = true,
+        skippingInvalidRows: Bool = false,
         createTransaction: (ParsedTransactionDraft, Account, ModelContext) throws -> Void
     ) async throws -> TransactionImportResult {
 
@@ -1293,6 +1321,7 @@ enum TransactionCSVImportService {
         // 6. Parsear y validar filas
         var drafts: [(ParsedTransactionDraft, Account)] = []
         drafts.reserveCapacity(lines.count)
+        var failures: [ImportError] = []
 
         for (index, line) in lines.enumerated() {
             let rowNumber = index + 2
@@ -1306,6 +1335,8 @@ enum TransactionCSVImportService {
                 .trimmingCharacters(in: .whitespaces)
             if contentWithoutDelimiters.isEmpty { continue }
 
+            // Una fila mala no para el archivo entero si se pidió saltarlas (L7-17).
+            do {
             var columns = splitCSVFields(trimmedLine, delimiter: delimiter)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             // Una fila de solo comillas vacías (`"","",…`) es tan vacía como `,,,`.
@@ -1454,6 +1485,9 @@ enum TransactionCSVImportService {
             )
 
             drafts.append((draft, account))
+            } catch let error as ImportError where skippingInvalidRows && error.rowNumber != nil {
+                failures.append(error)
+            }
         }
 
         // Filter out future dates
@@ -1470,7 +1504,8 @@ enum TransactionCSVImportService {
         return TransactionImportResult(
             createdCount: validDrafts.count,
             drafts: validDrafts.map { $0.0 },
-            ignoredFutureDatesCount: ignoredFutureDatesCount
+            ignoredFutureDatesCount: ignoredFutureDatesCount,
+            failures: failures
         )
     }
 
@@ -1491,7 +1526,8 @@ enum TransactionCSVImportService {
         from url: URL,
         into account: Account,
         in context: ModelContext,
-        allowCreatingNewCategories: Bool = true
+        allowCreatingNewCategories: Bool = true,
+        skippingInvalidRows: Bool = false
     ) async throws -> TransactionImportResult {
 
         // Validar extensión
@@ -1515,15 +1551,21 @@ enum TransactionCSVImportService {
         // 2. Validar y crear drafts
         var drafts: [ParsedTransactionDraft] = []
         drafts.reserveCapacity(rawRows.count)
+        var failures: [ImportError] = []
 
         for row in rawRows {
-            let draft = try validateAndCreateDraft(
-                from: row,
-                accountCurrency: normalizedAccountCurrency,
-                allowCreatingNewCategories: allowCreatingNewCategories,
-                context: context
-            )
-            drafts.append(draft)
+            do {
+                let draft = try validateAndCreateDraft(
+                    from: row,
+                    accountCurrency: normalizedAccountCurrency,
+                    allowCreatingNewCategories: allowCreatingNewCategories,
+                    context: context
+                )
+                drafts.append(draft)
+            } catch let error as ImportError where skippingInvalidRows && error.rowNumber != nil {
+                // Una fila mala no para el archivo entero si se pidió saltarlas (L7-17).
+                failures.append(error)
+            }
         }
 
         // Filter out future dates
@@ -1610,7 +1652,8 @@ enum TransactionCSVImportService {
         return TransactionImportResult(
             createdCount: validDrafts.count,
             drafts: validDrafts,
-            ignoredFutureDatesCount: ignoredFutureDatesCount
+            ignoredFutureDatesCount: ignoredFutureDatesCount,
+            failures: failures
         )
     }
 
@@ -1644,7 +1687,8 @@ enum TransactionCSVImportService {
         from url: URL,
         currencyAccountMap: [String: Account],
         in context: ModelContext,
-        allowCreatingNewCategories: Bool = true
+        allowCreatingNewCategories: Bool = true,
+        skippingInvalidRows: Bool = false
     ) async throws -> TransactionImportResult {
 
         // Validar extensión
@@ -1667,24 +1711,30 @@ enum TransactionCSVImportService {
         // 2. Validar y crear drafts con sus cuentas correspondientes
         var drafts: [(ParsedTransactionDraft, Account)] = []
         drafts.reserveCapacity(rawRows.count)
+        var failures: [ImportError] = []
 
         for row in rawRows {
-            let normalizedCurrency = normalizeCurrencyInput(row.currency)
+            // Una fila mala no para el archivo entero si se pidió saltarlas (L7-17).
+            do {
+                let normalizedCurrency = normalizeCurrencyInput(row.currency)
 
-            guard let account = currencyAccountMap[normalizedCurrency] else {
-                throw ImportError.missingAccountForCurrency(row: row.rowNumber, currency: normalizedCurrency)
+                guard let account = currencyAccountMap[normalizedCurrency] else {
+                    throw ImportError.missingAccountForCurrency(row: row.rowNumber, currency: normalizedCurrency)
+                }
+
+                let normalizedAccountCurrency = normalizeCurrencyCode(account.currencyCode)
+
+                let draft = try validateAndCreateDraft(
+                    from: row,
+                    accountCurrency: normalizedAccountCurrency,
+                    allowCreatingNewCategories: allowCreatingNewCategories,
+                    context: context
+                )
+
+                drafts.append((draft, account))
+            } catch let error as ImportError where skippingInvalidRows && error.rowNumber != nil {
+                failures.append(error)
             }
-
-            let normalizedAccountCurrency = normalizeCurrencyCode(account.currencyCode)
-
-            let draft = try validateAndCreateDraft(
-                from: row,
-                accountCurrency: normalizedAccountCurrency,
-                allowCreatingNewCategories: allowCreatingNewCategories,
-                context: context
-            )
-
-            drafts.append((draft, account))
         }
 
         // Filter out future dates
@@ -1773,7 +1823,8 @@ enum TransactionCSVImportService {
         return TransactionImportResult(
             createdCount: validDrafts.count,
             drafts: validDrafts.map { $0.0 },
-            ignoredFutureDatesCount: ignoredFutureDatesCount
+            ignoredFutureDatesCount: ignoredFutureDatesCount,
+            failures: failures
         )
     }
 

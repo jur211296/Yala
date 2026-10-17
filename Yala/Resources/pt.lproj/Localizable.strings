@@ -368,9 +368,9 @@
 "import.completed" = "Importação concluída";
 "import.error" = "Erro na importação";
 "import.templateGenerated" = "Modelo gerado";
-"import.templateGeneratedMessage" = "O modelo foi gerado com sucesso. Agora você pode editá-lo e voltar a esta tela para importá-lo.";
-"import.introDescription" = "Adicione suas transações financeiras em massa a partir de um arquivo CSV ou Excel.";
-"import.templateDescription" = "Use nosso modelo oficial para garantir o formato correto.";
+"import.templateGeneratedMessage" = "Você a encontra onde salvou (por exemplo, em Arquivos). Abra com o Numbers ou o Excel, troque as linhas de exemplo pelas suas e volte aqui para importar.";
+"import.introDescription" = "Traga seus registros de um arquivo CSV ou Excel, como a planilha onde você já anota seus gastos.";
+"import.templateDescription" = "O modelo traz uma linha de exemplo para cada subcategoria: troque pelas suas antes de importar.";
 "import.categoriesDescription" = "Se o arquivo incluir categorias que não existem, elas serão criadas automaticamente.";
 "import.selectAccount" = "Selecione uma conta";
 "import.fileUrlError" = "Não foi possível obter a URL do arquivo selecionado.";
@@ -403,7 +403,7 @@
 "favorites.new" = "Novo favorito";
 "favorites.edit" = "Editar favorito";
 "favorites.noFavorites" = "Sem favoritos";
-"favorites.createTemplate" = "Crie modelos de pagamentos recorrentes para registrá-los mais rápido.";
+"favorites.createTemplate" = "Salve uma despesa que você repete (seu café, o táxi) e registre com um toque.";
 "favorites.newTitle" = "Novo favorito";
 "favorites.editTitle" = "Editar favorito";
 "favorites.namePlaceholder" = "Nome do favorito";
@@ -1017,10 +1017,10 @@
 "need.priority" = "Prioritária";
 "need.optional" = "Opcional";
 "need.unclassified" = "Sem classificação";
-"need.essential.desc" = "Despesas imprescindíveis, difíceis de cortar.";
-"need.priority.desc" = "Importantes mas com alguma flexibilidade.";
-"need.optional.desc" = "Despesas discricionárias ou de lazer.";
-"need.unclassified.desc" = "Sem etiqueta de natureza específica.";
+"need.essential.desc" = "O que você não pode deixar de pagar: aluguel, luz, comida.";
+"need.priority.desc" = "Vale a pena, mas dá para ajustar.";
+"need.optional.desc" = "Mimos e vontades.";
+"need.unclassified.desc" = "Ainda não decidido.";
 
 
 "cashFlowViewType.total" = "Total";
@@ -7055,3 +7055,171 @@
 
 /* Swap offer: keep the two current currencies (UX 2.2 L7-8) */
 "account.secondaryCurrency.keep" = "Deixar como está";
+
+/* Currency picker: section with the currently chosen currency, shown on top (UX 2.2 L7-9) */
+"currencyPicker.current" = "A atual";
+
+/* Currency picker: search field prompt (UX 2.2 L7-9) */
+"currencyPicker.searchPrompt" = "Busque por nome ou código";
+
+/* Currency picker: nothing matches the search. %@ = what was typed (UX 2.2 L7-9) */
+"currencyPicker.noResults" = "Nenhuma moeda corresponde a “%@”.";
+
+/* Secondary currencies picker: the limit, before reaching it (UX 2.2 L7-9) */
+"currencyPicker.secondaryLimit" = "Você pode escolher até 2.";
+
+/* Secondary currencies picker: limit reached, why the rest are greyed out (UX 2.2 L7-9) */
+"currencyPicker.secondaryFull" = "Você pode escolher 2. Tire uma para escolher outra.";
+
+/* Category/subcategory toggle: whether it shows up when recording (UX 2.2 L7-11) */
+"category.useWhenRecording" = "Usar ao registrar";
+
+/* Footer of the toggle: what turning it off does (UX 2.2 L7-11) */
+"category.useWhenRecording.footer" = "Se você desligar, ela deixa de aparecer ao registrar. Seus registros não mudam.";
+
+/* Cannot-delete alert: hide the category instead (UX 2.2 L7-10) */
+"category.hideAction" = "Ocultar";
+
+/* Cannot-delete alert: move all its records to another category (UX 2.2 L7-10) */
+"category.moveRecordsAction" = "Mover os registros…";
+
+/* Cannot-delete alert. %@ = «It has N records.» (UX 2.2 L7-10) */
+"category.cannotDelete.choiceMessage" = "%@ Você pode ocultá-la: ela deixa de aparecer ao registrar e o histórico fica. Ou mover os registros para outra categoria e excluí-la.";
+
+/* Could not read how many records a category has: nothing is deleted (UX 2.2 L7-10) */
+"category.countFailed" = "Não conseguimos verificar se ela tem registros. Tente de novo.";
+
+/* Move records sheet: title (UX 2.2 L7-10) */
+"category.move.title" = "Mover os registros";
+
+/* Move records sheet: what to choose. %@ = category name (UX 2.2 L7-10) */
+"category.move.subtitle" = "Escolha para onde vão os registros de “%@”. Depois a excluímos.";
+
+/* Move records sheet: no other category of the same kind (UX 2.2 L7-10) */
+"category.move.noDestinations" = "Não há outra categoria para onde movê-los. Crie uma primeiro.";
+
+/* Move records confirmation: title. %@ = category name (UX 2.2 L7-10) */
+"category.move.confirmTitle" = "Mover e excluir “%@”?";
+
+/* Move records confirmation. %1$@ category, %2$@ «Category › Subcategory» destination, %3$@ «N records» (UX 2.2 L7-10) */
+"category.move.confirmMessage" = "Tudo de “%1$@” vai para %2$@: %3$@, e também os pagamentos planejados e favoritos. Depois a categoria é excluída. Não dá para desfazer.";
+
+/* Move records confirmation: destructive button (UX 2.2 L7-10) */
+"category.move.confirmAction" = "Mover e excluir";
+
+/* Moving the records failed (UX 2.2 L7-10) */
+"category.move.failed" = "Não conseguimos terminar de mover os registros. Tente de novo.";
+
+/* Need selector: what it is for (UX 2.2 L7-12) */
+"need.explainer" = "Serve para ver em Estatísticas quanto você gasta com o essencial e quanto com mimos.";
+
+/* Delete tag: no record has it (UX 2.2 L7-13) */
+"tag.deleteConfirm.messageNone" = "Nenhum registro a usa. Não dá para desfazer.";
+
+/* Favorites empty state: create button (UX 2.2 L7-14) */
+"favorites.createAction" = "Criar favorito";
+
+/* Favorite editor: delete button at the bottom (UX 2.2 L7-14) */
+"favorites.delete" = "Excluir favorito";
+
+/* Favorite editor: delete confirmation title (UX 2.2 L7-14) */
+"favorites.deleteConfirm.title" = "Excluir este favorito?";
+
+/* Favorite editor: delete confirmation message (UX 2.2 L7-14) */
+"favorites.deleteConfirm.message" = "Os registros que você já fez com ele não mudam. Não dá para desfazer.";
+
+/* Import screen: card with the columns the file needs (UX 2.2 L7-16) */
+"import.columns.title" = "Seu arquivo precisa destas colunas";
+
+/* Import screen: how to fill the columns (UX 2.2 L7-16) */
+"import.columns.hint" = "A primeira linha leva esses nomes exatamente assim. Despesas vão com sinal de menos. No fim você pode incluir as colunas tags e note.";
+
+/* Import screen: VoiceOver label of the columns card. %@ = column names (UX 2.2 L7-16) */
+"import.columns.accessibility" = "Colunas necessárias: %@";
+
+/* Import screen: example category in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleCategory" = "Comida";
+
+/* Import screen: example subcategory in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleSubcategory" = "Restaurante";
+
+/* Import toggle footer when ON (UX 2.2 L7-16) */
+"import.createCategories.on" = "Se o arquivo tiver categorias que você não tem, nós as criamos ao importar.";
+
+/* Import toggle footer when OFF (UX 2.2 L7-16) */
+"import.createCategories.off" = "Só entram as linhas com categorias que você já tem. As outras mostramos antes de importar.";
+
+/* Import preview: title (UX 2.2 L7-15) */
+"import.preview.title" = "Revise antes de importar";
+
+/* Import preview. %1$@ «N records», %2$@ account name(s) (UX 2.2 L7-15) */
+"import.preview.summary" = "Vamos importar %1$@ em %2$@.";
+
+/* Import preview: date range. %1$@ first, %2$@ last (UX 2.2 L7-15) */
+"import.preview.range" = "De %1$@ a %2$@";
+
+/* Import preview: all rows on one day. %@ = date (UX 2.2 L7-15) */
+"import.preview.singleDay" = "Todos de %@";
+
+/* Import preview: total amount(s). %@ = amounts (UX 2.2 L7-15) */
+"import.preview.total" = "Total: %@";
+
+/* Import preview: nothing is saved until Import (UX 2.2 L7-15) */
+"import.preview.reviewHint" = "Nada é salvo até você tocar em “Importar”. Se aparecerem as linhas de exemplo do modelo, cancele e troque-as no arquivo.";
+
+/* Import preview: first rows section (UX 2.2 L7-15) */
+"import.preview.sampleHeader" = "As primeiras linhas";
+
+/* Import preview: no row can be imported (UX 2.2 L7-15) */
+"import.preview.nothingToImport" = "Nenhuma linha pode ser importada. Revise o arquivo com o que aparece abaixo e tente de novo.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.fileExtension" = "Escolha um arquivo .csv ou .xlsx.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.unreadable" = "Não conseguimos ler o arquivo. Abra no Numbers ou no Excel e salve de novo como CSV (UTF-8) ou Excel.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.empty" = "O arquivo não tem linhas para importar.";
+
+/* Import error: the first row doesn't have the expected column names (UX 2.2 L7-17) */
+"import.error.header" = "A primeira linha do arquivo precisa ter estas colunas, nesta ordem: date, amount, currency, category e subcategory (se quiser, também tags e note).";
+
+/* Import error. %1$d row, %2$d expected columns, %3$d found (UX 2.2 L7-17) */
+"import.error.columnCount" = "Linha %1$d: tem %3$d colunas e deveriam ser %2$d.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.date" = "Linha %1$d: não entendemos a data “%2$@”. Escreva assim: 2026-10-14 ou 14/10/2026.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.amount" = "Linha %1$d: “%2$@” não é um valor. Escreva um número, com sinal de menos se for despesa: -50.00.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.currency" = "Linha %1$d: não conhecemos a moeda “%2$@”. Use o código de três letras, como PEN ou USD.";
+
+/* Import error. %1$d row, %2$@ row currency, %3$@ account currency (UX 2.2 L7-17) */
+"import.error.currencyMismatch" = "Linha %1$d: está em %2$@, mas a conta escolhida é em %3$@.";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptyCategory" = "Linha %1$d: falta a categoria.";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptySubcategory" = "Linha %1$d: falta a subcategoria.";
+
+/* Import error. %1$d row, %2$@ category, %3$@ name of the «Create new categories» switch (UX 2.2 L7-17) */
+"import.error.unknownCategory" = "Linha %1$d: usa a categoria “%2$@”, que não existe. Ative “%3$@” ou mude no arquivo.";
+
+/* Import error. %1$d row, %2$@ category, %3$@ subcategory, %4$@ name of the switch (UX 2.2 L7-17) */
+"import.error.unknownSubcategory" = "Linha %1$d: a subcategoria “%3$@” não existe em “%2$@”. Ative “%4$@” ou mude no arquivo.";
+
+/* Import error. %1$d row, %2$@ currency code (UX 2.2 L7-17) */
+"import.error.missingAccount" = "Linha %1$d: você não escolheu nenhuma conta para %2$@.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxOpen" = "Não conseguimos abrir o arquivo do Excel. Salve de novo como .xlsx e tente outra vez.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxNoSheets" = "O arquivo do Excel não tem nenhuma planilha.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxRead" = "Não conseguimos ler a planilha do arquivo do Excel. Salve de novo como .xlsx e tente outra vez.";

@@ -370,9 +370,9 @@
 "import.completed" = "导入完成";
 "import.error" = "导入时出现问题";
 "import.templateGenerated" = "模板已生成";
-"import.templateGeneratedMessage" = "模板已成功生成。你现在可以编辑它,然后回到此页面进行导入。";
-"import.introDescription" = "从 CSV 或 Excel 文件批量添加你的财务交易。";
-"import.templateDescription" = "使用我们的官方模板以确保格式正确。";
+"import.templateGeneratedMessage" = "它在你保存的位置（例如“文件”App）。用 Numbers 或 Excel 打开，把示例行换成你的数据，再回到这里导入。";
+"import.introDescription" = "从 CSV 或 Excel 文件导入记录，比如你记账用的表格。";
+"import.templateDescription" = "模板里每个子类别都有一行示例：导入前请换成你自己的数据。";
 "import.categoriesDescription" = "如果文件中包含不存在的类别,系统会自动创建。";
 "import.selectAccount" = "选择一个账户";
 "import.fileUrlError" = "无法读取该文件。请重新选择。";
@@ -405,7 +405,7 @@
 "favorites.new" = "新建收藏";
 "favorites.edit" = "编辑收藏";
 "favorites.noFavorites" = "你还没有任何收藏";
-"favorites.createTemplate" = "创建周期性付款模板,让记录更快。";
+"favorites.createTemplate" = "保存经常重复的支出（咖啡、打车），一键记录。";
 "favorites.newTitle" = "新建收藏";
 "favorites.editTitle" = "编辑收藏";
 "favorites.namePlaceholder" = "收藏名称";
@@ -1019,10 +1019,10 @@
 "need.priority" = "优先";
 "need.optional" = "可选";
 "need.unclassified" = "未分类";
-"need.essential.desc" = "必需的支出,难以削减。";
-"need.priority.desc" = "重要但有一定灵活性。";
-"need.optional.desc" = "可自行决定或休闲的支出。";
-"need.unclassified.desc" = "没有特定的需求标签。";
+"need.essential.desc" = "必须支付的：房租、电费、餐食。";
+"need.priority.desc" = "值得花，但可以调整。";
+"need.optional.desc" = "享受和小奢侈。";
+"need.unclassified.desc" = "尚未决定。";
 
 
 "cashFlowViewType.total" = "总计";
@@ -7067,3 +7067,171 @@
 
 /* Swap offer: keep the two current currencies (UX 2.2 L7-8) */
 "account.secondaryCurrency.keep" = "保持不变";
+
+/* Currency picker: section with the currently chosen currency, shown on top (UX 2.2 L7-9) */
+"currencyPicker.current" = "当前货币";
+
+/* Currency picker: search field prompt (UX 2.2 L7-9) */
+"currencyPicker.searchPrompt" = "按名称或代码搜索";
+
+/* Currency picker: nothing matches the search. %@ = what was typed (UX 2.2 L7-9) */
+"currencyPicker.noResults" = "没有与“%@”匹配的货币。";
+
+/* Secondary currencies picker: the limit, before reaching it (UX 2.2 L7-9) */
+"currencyPicker.secondaryLimit" = "最多可以选 2 种。";
+
+/* Secondary currencies picker: limit reached, why the rest are greyed out (UX 2.2 L7-9) */
+"currencyPicker.secondaryFull" = "最多选 2 种。去掉一种才能选别的。";
+
+/* Category/subcategory toggle: whether it shows up when recording (UX 2.2 L7-11) */
+"category.useWhenRecording" = "记录时使用";
+
+/* Footer of the toggle: what turning it off does (UX 2.2 L7-11) */
+"category.useWhenRecording.footer" = "关闭后，记录时不再显示。你的记录不会改变。";
+
+/* Cannot-delete alert: hide the category instead (UX 2.2 L7-10) */
+"category.hideAction" = "隐藏";
+
+/* Cannot-delete alert: move all its records to another category (UX 2.2 L7-10) */
+"category.moveRecordsAction" = "移动其记录…";
+
+/* Cannot-delete alert. %@ = «It has N records.» (UX 2.2 L7-10) */
+"category.cannotDelete.choiceMessage" = "%@ 你可以隐藏它：记录时不再显示，历史记录保留。也可以把它的记录移到其他类别，然后删除它。";
+
+/* Could not read how many records a category has: nothing is deleted (UX 2.2 L7-10) */
+"category.countFailed" = "无法确认它是否有记录，请重试。";
+
+/* Move records sheet: title (UX 2.2 L7-10) */
+"category.move.title" = "移动记录";
+
+/* Move records sheet: what to choose. %@ = category name (UX 2.2 L7-10) */
+"category.move.subtitle" = "选择“%@”的记录移到哪里，然后我们会删除它。";
+
+/* Move records sheet: no other category of the same kind (UX 2.2 L7-10) */
+"category.move.noDestinations" = "没有可移入的其他类别，请先创建一个。";
+
+/* Move records confirmation: title. %@ = category name (UX 2.2 L7-10) */
+"category.move.confirmTitle" = "移动并删除“%@”？";
+
+/* Move records confirmation. %1$@ category, %2$@ «Category › Subcategory» destination, %3$@ «N records» (UX 2.2 L7-10) */
+"category.move.confirmMessage" = "“%1$@”中的所有内容都会移到 %2$@：%3$@，以及计划付款和收藏。随后删除该类别。此操作无法撤销。";
+
+/* Move records confirmation: destructive button (UX 2.2 L7-10) */
+"category.move.confirmAction" = "移动并删除";
+
+/* Moving the records failed (UX 2.2 L7-10) */
+"category.move.failed" = "未能完成记录的移动，请重试。";
+
+/* Need selector: what it is for (UX 2.2 L7-12) */
+"need.explainer" = "用于在统计中查看你在必需品和享受类消费上各花了多少。";
+
+/* Delete tag: no record has it (UX 2.2 L7-13) */
+"tag.deleteConfirm.messageNone" = "没有记录使用该标签。此操作无法撤销。";
+
+/* Favorites empty state: create button (UX 2.2 L7-14) */
+"favorites.createAction" = "创建收藏";
+
+/* Favorite editor: delete button at the bottom (UX 2.2 L7-14) */
+"favorites.delete" = "删除收藏";
+
+/* Favorite editor: delete confirmation title (UX 2.2 L7-14) */
+"favorites.deleteConfirm.title" = "删除这个收藏？";
+
+/* Favorite editor: delete confirmation message (UX 2.2 L7-14) */
+"favorites.deleteConfirm.message" = "已用它创建的记录不会改变。此操作无法撤销。";
+
+/* Import screen: card with the columns the file needs (UX 2.2 L7-16) */
+"import.columns.title" = "你的文件需要这些列";
+
+/* Import screen: how to fill the columns (UX 2.2 L7-16) */
+"import.columns.hint" = "第一行写上这些列名，保持原样。支出用负号。末尾还可以加 tags 和 note 两列。";
+
+/* Import screen: VoiceOver label of the columns card. %@ = column names (UX 2.2 L7-16) */
+"import.columns.accessibility" = "必需的列：%@";
+
+/* Import screen: example category in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleCategory" = "餐饮";
+
+/* Import screen: example subcategory in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleSubcategory" = "餐厅";
+
+/* Import toggle footer when ON (UX 2.2 L7-16) */
+"import.createCategories.on" = "如果文件中有你没有的类别，导入时会自动创建。";
+
+/* Import toggle footer when OFF (UX 2.2 L7-16) */
+"import.createCategories.off" = "只导入你已有类别的行，其他行会在导入前列出给你看。";
+
+/* Import preview: title (UX 2.2 L7-15) */
+"import.preview.title" = "导入前请检查";
+
+/* Import preview. %1$@ «N records», %2$@ account name(s) (UX 2.2 L7-15) */
+"import.preview.summary" = "将把 %1$@ 导入到 %2$@。";
+
+/* Import preview: date range. %1$@ first, %2$@ last (UX 2.2 L7-15) */
+"import.preview.range" = "%1$@ 至 %2$@";
+
+/* Import preview: all rows on one day. %@ = date (UX 2.2 L7-15) */
+"import.preview.singleDay" = "全部为 %@";
+
+/* Import preview: total amount(s). %@ = amounts (UX 2.2 L7-15) */
+"import.preview.total" = "合计：%@";
+
+/* Import preview: nothing is saved until Import (UX 2.2 L7-15) */
+"import.preview.reviewHint" = "在你点击“导入”之前不会保存任何内容。如果看到模板里的示例行，请取消并在文件中修改。";
+
+/* Import preview: first rows section (UX 2.2 L7-15) */
+"import.preview.sampleHeader" = "前几行";
+
+/* Import preview: no row can be imported (UX 2.2 L7-15) */
+"import.preview.nothingToImport" = "没有可以导入的行。请根据下方提示检查文件后重试。";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.fileExtension" = "请选择 .csv 或 .xlsx 文件。";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.unreadable" = "无法读取该文件。请用 Numbers 或 Excel 打开，再另存为 CSV（UTF-8）或 Excel 格式。";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.empty" = "文件中没有可导入的行。";
+
+/* Import error: the first row doesn't have the expected column names (UX 2.2 L7-17) */
+"import.error.header" = "文件第一行必须按此顺序包含这些列：date、amount、currency、category 和 subcategory（也可加 tags 和 note）。";
+
+/* Import error. %1$d row, %2$d expected columns, %3$d found (UX 2.2 L7-17) */
+"import.error.columnCount" = "第 %1$d 行：有 %3$d 列，应为 %2$d 列。";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.date" = "第 %1$d 行：无法识别日期“%2$@”。请写成 2026-10-14 或 14/10/2026。";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.amount" = "第 %1$d 行：“%2$@”不是金额。请填数字，支出加负号，例如 -50.00。";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.currency" = "第 %1$d 行：无法识别货币“%2$@”。请用三位字母代码，例如 PEN 或 USD。";
+
+/* Import error. %1$d row, %2$@ row currency, %3$@ account currency (UX 2.2 L7-17) */
+"import.error.currencyMismatch" = "第 %1$d 行：币种为 %2$@，但所选账户是 %3$@。";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptyCategory" = "第 %1$d 行：缺少类别。";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptySubcategory" = "第 %1$d 行：缺少子类别。";
+
+/* Import error. %1$d row, %2$@ category, %3$@ name of the «Create new categories» switch (UX 2.2 L7-17) */
+"import.error.unknownCategory" = "第 %1$d 行：使用了不存在的类别“%2$@”。请打开“%3$@”，或在文件中修改。";
+
+/* Import error. %1$d row, %2$@ category, %3$@ subcategory, %4$@ name of the switch (UX 2.2 L7-17) */
+"import.error.unknownSubcategory" = "第 %1$d 行：子类别“%3$@”在“%2$@”中不存在。请打开“%4$@”，或在文件中修改。";
+
+/* Import error. %1$d row, %2$@ currency code (UX 2.2 L7-17) */
+"import.error.missingAccount" = "第 %1$d 行：没有为 %2$@ 选择账户。";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxOpen" = "无法打开该 Excel 文件。请重新另存为 .xlsx 后再试。";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxNoSheets" = "该 Excel 文件没有工作表。";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxRead" = "无法读取该 Excel 文件中的工作表。请重新另存为 .xlsx 后再试。";

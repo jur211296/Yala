@@ -370,9 +370,9 @@
 "import.completed" = "Importeren voltooid";
 "import.error" = "Er ging iets mis bij het importeren";
 "import.templateGenerated" = "Sjabloon aangemaakt";
-"import.templateGeneratedMessage" = "Het sjabloon is succesvol aangemaakt. Je kunt het nu bewerken en daarna terugkomen naar dit scherm om het te importeren.";
-"import.introDescription" = "Voeg je financiële transacties in bulk toe vanuit een CSV- of Excel-bestand.";
-"import.templateDescription" = "Gebruik ons officiële sjabloon zodat het formaat klopt.";
+"import.templateGeneratedMessage" = "Je vindt hem waar je hem bewaarde (bijvoorbeeld in Bestanden). Open hem met Numbers of Excel, vervang de voorbeeldrijen door je eigen en kom hier terug om te importeren.";
+"import.introDescription" = "Haal je boekingen uit een CSV- of Excel-bestand, bijvoorbeeld de spreadsheet waarin je je uitgaven al bijhoudt.";
+"import.templateDescription" = "De sjabloon heeft per subcategorie een voorbeeldrij: vervang ze door je eigen rijen voor het importeren.";
 "import.categoriesDescription" = "Als het bestand categorieën bevat die nog niet bestaan, worden ze automatisch aangemaakt.";
 "import.selectAccount" = "Selecteer een rekening";
 "import.fileUrlError" = "We konden dat bestand niet lezen. Probeer het opnieuw te selecteren.";
@@ -405,7 +405,7 @@
 "favorites.new" = "Nieuwe favoriet";
 "favorites.edit" = "Favoriet bewerken";
 "favorites.noFavorites" = "Je hebt nog geen favorieten";
-"favorites.createTemplate" = "Maak sjablonen voor terugkerende betalingen om ze sneller te boeken.";
+"favorites.createTemplate" = "Bewaar een uitgave die je vaak doet (je koffie, de taxi) en boek hem met één tik.";
 "favorites.newTitle" = "Nieuwe favoriet";
 "favorites.editTitle" = "Favoriet bewerken";
 "favorites.namePlaceholder" = "Naam van favoriet";
@@ -1019,10 +1019,10 @@
 "need.priority" = "Prioriteit";
 "need.optional" = "Optioneel";
 "need.unclassified" = "Niet ingedeeld";
-"need.essential.desc" = "Essentiële uitgaven, lastig om te schrappen.";
-"need.priority.desc" = "Belangrijk maar met enige flexibiliteit.";
-"need.optional.desc" = "Vrijetijds- of luxe-uitgaven.";
-"need.unclassified.desc" = "Geen specifieke aard.";
+"need.essential.desc" = "Wat je altijd moet betalen: huur, stroom, eten.";
+"need.priority.desc" = "Handig, maar je kunt het aanpassen.";
+"need.optional.desc" = "Extraatjes en verwennerij.";
+"need.unclassified.desc" = "Nog niet besloten.";
 
 
 "cashFlowViewType.total" = "Totaal";
@@ -7067,3 +7067,171 @@
 
 /* Swap offer: keep the two current currencies (UX 2.2 L7-8) */
 "account.secondaryCurrency.keep" = "Zo laten";
+
+/* Currency picker: section with the currently chosen currency, shown on top (UX 2.2 L7-9) */
+"currencyPicker.current" = "Huidige";
+
+/* Currency picker: search field prompt (UX 2.2 L7-9) */
+"currencyPicker.searchPrompt" = "Zoek op naam of code";
+
+/* Currency picker: nothing matches the search. %@ = what was typed (UX 2.2 L7-9) */
+"currencyPicker.noResults" = "Geen valuta komt overeen met ‘%@’.";
+
+/* Secondary currencies picker: the limit, before reaching it (UX 2.2 L7-9) */
+"currencyPicker.secondaryLimit" = "Je kunt er maximaal 2 kiezen.";
+
+/* Secondary currencies picker: limit reached, why the rest are greyed out (UX 2.2 L7-9) */
+"currencyPicker.secondaryFull" = "Je kunt er 2 kiezen. Haal er een weg om een andere te kiezen.";
+
+/* Category/subcategory toggle: whether it shows up when recording (UX 2.2 L7-11) */
+"category.useWhenRecording" = "Gebruiken bij boeken";
+
+/* Footer of the toggle: what turning it off does (UX 2.2 L7-11) */
+"category.useWhenRecording.footer" = "Zet je dit uit, dan verschijnt ze niet meer bij het boeken. Je boekingen blijven hetzelfde.";
+
+/* Cannot-delete alert: hide the category instead (UX 2.2 L7-10) */
+"category.hideAction" = "Verbergen";
+
+/* Cannot-delete alert: move all its records to another category (UX 2.2 L7-10) */
+"category.moveRecordsAction" = "Boekingen verplaatsen…";
+
+/* Cannot-delete alert. %@ = «It has N records.» (UX 2.2 L7-10) */
+"category.cannotDelete.choiceMessage" = "%@ Je kunt haar verbergen: ze verschijnt niet meer bij het boeken en de geschiedenis blijft. Of verplaats de boekingen naar een andere categorie en verwijder haar.";
+
+/* Could not read how many records a category has: nothing is deleted (UX 2.2 L7-10) */
+"category.countFailed" = "We konden niet controleren of ze boekingen heeft. Probeer het opnieuw.";
+
+/* Move records sheet: title (UX 2.2 L7-10) */
+"category.move.title" = "Boekingen verplaatsen";
+
+/* Move records sheet: what to choose. %@ = category name (UX 2.2 L7-10) */
+"category.move.subtitle" = "Kies waar de boekingen van ‘%@’ naartoe gaan. Daarna verwijderen we haar.";
+
+/* Move records sheet: no other category of the same kind (UX 2.2 L7-10) */
+"category.move.noDestinations" = "Er is geen andere categorie om ze naartoe te verplaatsen. Maak er eerst een.";
+
+/* Move records confirmation: title. %@ = category name (UX 2.2 L7-10) */
+"category.move.confirmTitle" = "‘%@’ verplaatsen en verwijderen?";
+
+/* Move records confirmation. %1$@ category, %2$@ «Category › Subcategory» destination, %3$@ «N records» (UX 2.2 L7-10) */
+"category.move.confirmMessage" = "Alles uit ‘%1$@’ gaat naar %2$@: %3$@, plus de geplande betalingen en favorieten. Daarna wordt de categorie verwijderd. Dit kan niet ongedaan worden gemaakt.";
+
+/* Move records confirmation: destructive button (UX 2.2 L7-10) */
+"category.move.confirmAction" = "Verplaatsen en verwijderen";
+
+/* Moving the records failed (UX 2.2 L7-10) */
+"category.move.failed" = "We konden de boekingen niet volledig verplaatsen. Probeer het opnieuw.";
+
+/* Need selector: what it is for (UX 2.2 L7-12) */
+"need.explainer" = "Zo zie je in Statistieken hoeveel je uitgeeft aan het noodzakelijke en hoeveel aan extraatjes.";
+
+/* Delete tag: no record has it (UX 2.2 L7-13) */
+"tag.deleteConfirm.messageNone" = "Geen enkele boeking heeft dit label. Dit kan niet ongedaan worden gemaakt.";
+
+/* Favorites empty state: create button (UX 2.2 L7-14) */
+"favorites.createAction" = "Favoriet maken";
+
+/* Favorite editor: delete button at the bottom (UX 2.2 L7-14) */
+"favorites.delete" = "Favoriet verwijderen";
+
+/* Favorite editor: delete confirmation title (UX 2.2 L7-14) */
+"favorites.deleteConfirm.title" = "Deze favoriet verwijderen?";
+
+/* Favorite editor: delete confirmation message (UX 2.2 L7-14) */
+"favorites.deleteConfirm.message" = "Boekingen die je er al mee maakte, blijven zoals ze zijn. Dit kan niet ongedaan worden gemaakt.";
+
+/* Import screen: card with the columns the file needs (UX 2.2 L7-16) */
+"import.columns.title" = "Je bestand heeft deze kolommen nodig";
+
+/* Import screen: how to fill the columns (UX 2.2 L7-16) */
+"import.columns.hint" = "De eerste rij bevat precies deze namen. Uitgaven krijgen een minteken. Aan het eind kun je de kolommen tags en note toevoegen.";
+
+/* Import screen: VoiceOver label of the columns card. %@ = column names (UX 2.2 L7-16) */
+"import.columns.accessibility" = "Vereiste kolommen: %@";
+
+/* Import screen: example category in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleCategory" = "Eten";
+
+/* Import screen: example subcategory in the sample row (UX 2.2 L7-16) */
+"import.columns.exampleSubcategory" = "Restaurant";
+
+/* Import toggle footer when ON (UX 2.2 L7-16) */
+"import.createCategories.on" = "Staan er categorieën in het bestand die je niet hebt, dan maken we die aan bij het importeren.";
+
+/* Import toggle footer when OFF (UX 2.2 L7-16) */
+"import.createCategories.off" = "Alleen rijen met categorieën die je al hebt, komen erin. De rest laten we je zien voor het importeren.";
+
+/* Import preview: title (UX 2.2 L7-15) */
+"import.preview.title" = "Controleer voor het importeren";
+
+/* Import preview. %1$@ «N records», %2$@ account name(s) (UX 2.2 L7-15) */
+"import.preview.summary" = "We importeren %1$@ in %2$@.";
+
+/* Import preview: date range. %1$@ first, %2$@ last (UX 2.2 L7-15) */
+"import.preview.range" = "Van %1$@ tot %2$@";
+
+/* Import preview: all rows on one day. %@ = date (UX 2.2 L7-15) */
+"import.preview.singleDay" = "Allemaal van %@";
+
+/* Import preview: total amount(s). %@ = amounts (UX 2.2 L7-15) */
+"import.preview.total" = "Totaal: %@";
+
+/* Import preview: nothing is saved until Import (UX 2.2 L7-15) */
+"import.preview.reviewHint" = "Er wordt niets opgeslagen tot je op ‘Importeren’ tikt. Zie je de voorbeeldrijen van de sjabloon, annuleer dan en pas ze aan in het bestand.";
+
+/* Import preview: first rows section (UX 2.2 L7-15) */
+"import.preview.sampleHeader" = "De eerste rijen";
+
+/* Import preview: no row can be imported (UX 2.2 L7-15) */
+"import.preview.nothingToImport" = "Geen enkele rij kan worden geïmporteerd. Controleer het bestand met wat je hieronder ziet en probeer het opnieuw.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.fileExtension" = "Kies een .csv- of .xlsx-bestand.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.unreadable" = "We konden het bestand niet lezen. Open het in Numbers of Excel en sla het opnieuw op als CSV (UTF-8) of Excel.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.empty" = "Het bestand heeft geen rijen om te importeren.";
+
+/* Import error: the first row doesn't have the expected column names (UX 2.2 L7-17) */
+"import.error.header" = "De eerste rij van het bestand moet deze kolommen hebben, in deze volgorde: date, amount, currency, category en subcategory (eventueel ook tags en note).";
+
+/* Import error. %1$d row, %2$d expected columns, %3$d found (UX 2.2 L7-17) */
+"import.error.columnCount" = "Rij %1$d: heeft %3$d kolommen in plaats van %2$d.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.date" = "Rij %1$d: we begrijpen de datum ‘%2$@’ niet. Schrijf hem zo: 2026-10-14 of 14/10/2026.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.amount" = "Rij %1$d: ‘%2$@’ is geen bedrag. Schrijf een getal, met een minteken bij een uitgave: -50.00.";
+
+/* Import error. %1$d row, %2$@ value (UX 2.2 L7-17) */
+"import.error.currency" = "Rij %1$d: de valuta ‘%2$@’ kennen we niet. Gebruik de code van drie letters, zoals PEN of USD.";
+
+/* Import error. %1$d row, %2$@ row currency, %3$@ account currency (UX 2.2 L7-17) */
+"import.error.currencyMismatch" = "Rij %1$d: staat in %2$@, maar de gekozen rekening is in %3$@.";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptyCategory" = "Rij %1$d: de categorie ontbreekt.";
+
+/* Import error. %1$d row (UX 2.2 L7-17) */
+"import.error.emptySubcategory" = "Rij %1$d: de subcategorie ontbreekt.";
+
+/* Import error. %1$d row, %2$@ category, %3$@ name of the «Create new categories» switch (UX 2.2 L7-17) */
+"import.error.unknownCategory" = "Rij %1$d: gebruikt de categorie ‘%2$@’, die niet bestaat. Zet ‘%3$@’ aan of pas het aan in het bestand.";
+
+/* Import error. %1$d row, %2$@ category, %3$@ subcategory, %4$@ name of the switch (UX 2.2 L7-17) */
+"import.error.unknownSubcategory" = "Rij %1$d: de subcategorie ‘%3$@’ bestaat niet in ‘%2$@’. Zet ‘%4$@’ aan of pas het aan in het bestand.";
+
+/* Import error. %1$d row, %2$@ currency code (UX 2.2 L7-17) */
+"import.error.missingAccount" = "Rij %1$d: je hebt geen rekening voor %2$@ gekozen.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxOpen" = "We konden het Excel-bestand niet openen. Sla het opnieuw op als .xlsx en probeer het nog eens.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxNoSheets" = "Het Excel-bestand heeft geen werkblad.";
+
+/* Import error (UX 2.2 L7-17) */
+"import.error.xlsxRead" = "We konden het werkblad van het Excel-bestand niet lezen. Sla het opnieuw op als .xlsx en probeer het nog eens.";

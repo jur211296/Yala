@@ -124,6 +124,20 @@ final class CategoryDetailViewModel {
         return service.transactionCount(forCategory: category)
     }
 
+    /// Los registros que impiden borrarla: los de la categoría y los de sus subcategorías (L7-10).
+    /// `nil` si no se pudo leer: «no pude contar» no puede tomarse por «está vacía».
+    func recordCountForDeletion() -> Int? {
+        guard let context = modelContext else { return nil }
+        do {
+            return try CategoryRecordsMoveService.recordCount(of: category, context: context)
+        } catch {
+            #if DEBUG
+            print("CategoryDetailViewModel: Error counting records: \(error)")
+            #endif
+            return nil
+        }
+    }
+
     func saveCategory() -> Bool {
         guard let context = modelContext else { return false }
 
