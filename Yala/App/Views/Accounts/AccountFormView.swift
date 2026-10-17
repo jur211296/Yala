@@ -489,6 +489,9 @@ struct AccountFormView: View {
             }
         }
         .padding()
+        // Dentro del label y tras el padding: sin esto el `Spacer` deja el centro de la fila muerto y solo
+        // respondían la bandera y el chevron (`swiftui-ds.md`, medido el 2026-10-17 con XCUITest).
+        .contentShape(Rectangle())
     }
 
     /// Los motivos del bloqueo, como lista legible. El orden lo fija el ViewModel para que el texto
@@ -524,6 +527,7 @@ struct AccountFormView: View {
                             .foregroundStyle(.tertiary)
                     }
                     .padding()
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 

@@ -73,7 +73,7 @@ struct AccountTypeChips: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityIdentifier("account_type_chip_\(type.rawValue)")
+        .accessibilityIdentifier("account_type_chip_\(String(describing: type))")
     }
 
     /// La frase de cada tipo: las del onboarding, y una propia para «General», que el onboarding no ofrece.

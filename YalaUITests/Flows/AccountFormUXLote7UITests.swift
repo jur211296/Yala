@@ -66,6 +66,30 @@ final class AccountFormUXLote7UITests: XCTestCase {
         )
     }
 
+    /// L7-9: el selector de moneda de una cuenta tiene buscador; escribir «mex» deja el peso mexicano y elegirlo
+    /// vuelve al formulario con esa moneda.
+    func test_newAccount_currencyPicker_searchesAndPicks() {
+        let app = XCUIApplication()
+        app.launchForUITest()
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        openNewAccountForm(app)
+
+        let link = app.buttons["account_currency_link"]
+        XCTAssertTrue(link.waitForExistence(timeout: 5), "No apareció la fila de la moneda.")
+        link.tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5), "El selector de moneda no se abrió, o no tiene buscador.")
+        search.tap()
+        search.typeText("mex")
+        let mxn = app.buttons["currency_selector_row_MXN"]
+        XCTAssertTrue(mxn.waitForExistence(timeout: 5), "Buscar «mex» no dejó el peso mexicano.")
+        XCTAssertFalse(app.buttons["currency_selector_row_EUR"].exists, "El buscador no filtró.")
+        mxn.tap()
+        XCTAssertTrue(app.textFields["account_name_field"].waitForExistence(timeout: 5), "Elegir no volvió al formulario.")
+        XCTAssertTrue(link.label.contains("MXN") || link.label.lowercased().contains("mexicano"),
+                      "El formulario no tomó la moneda elegida: \(link.label)")
+    }
+
     /// L7-5: con algo escrito, la X pregunta «¿Descartar cambios?»; «Seguir editando» deja el formulario y
     /// «Descartar» lo cierra sin guardar.
     func test_closingWithChanges_asksBeforeDiscarding() {
