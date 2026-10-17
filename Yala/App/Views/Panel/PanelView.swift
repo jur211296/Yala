@@ -644,7 +644,8 @@ struct PanelView: View {
                             showVariations: appPreferences.showVariations,
                             sectionPrefsPresentation: $sheets.sectionPrefsPresentation,
                             showBudgetFavoritesSettings: $sheets.showBudgetFavoritesSettings,
-                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker
+                            showCustomPeriodPicker: $sheets.showCustomPeriodPicker,
+                            onOpenFilters: { sheets.showFilters = true }
                         )
                         .padding(.top, panoramaVisible ? DS.Spacing.xxl - DS.Spacing.lg : 0)
                     }

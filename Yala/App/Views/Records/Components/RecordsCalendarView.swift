@@ -68,12 +68,15 @@ struct RecordsCalendarView: View {
         let layout = RecordsCalendarLayout.resolve(
             range: range, firstWeekday: appPreferences.firstWeekday.rawValue, calendar: calendar)
 
-        return Group {
+        return VStack(spacing: DS.Spacing.none) {
             switch layout {
             case .continuous(let weeks):
                 continuousCalendar(weeks: weeks, range: range, spending: spending)
             case .paged(let months):
                 pagedCalendar(months: months, spending: spending)
+            }
+            if !spending.incomeByDay.isEmpty {
+                incomeLegend
             }
         }
         .padding(DS.Spacing.md)
@@ -280,6 +283,8 @@ struct RecordsCalendarView: View {
                 dayCell(
                     date: date,
                     expense: spending.spendingByDay[date] ?? 0,
+                    income: spending.incomeByDay[date] ?? 0,
+                    hasRecords: spending.daysWithRecords.contains(date),
                     maxSpending: spending.maxSpending,
                     inRange: inRange(date)
                 )
@@ -287,11 +292,16 @@ struct RecordsCalendarView: View {
         }
     }
 
-    private func dayCell(date: Date, expense: Double, maxSpending: Double, inRange: Bool) -> some View {
+    private func dayCell(
+        date: Date, expense: Double, income: Double, hasRecords: Bool, maxSpending: Double, inRange: Bool
+    ) -> some View {
         let isToday = calendar.isDateInToday(date)
         let isSelected = selectedDay.map { calendar.isDate($0, inSameDayAs: date) } ?? false
         let dayNum = calendar.component(.day, from: date)
-        let hasExpense = expense > 0 && inRange
+        let hasExpense = expense >= RecordsCalendarDaySummaryLogic.minimumAmount && inRange
+        // L8-10: el día de cobro salía en blanco. Un punto índigo (relleno, no texto) marca que entró dinero; el
+        // importe lo dice el resumen del día al elegirlo.
+        let hasIncome = income >= RecordsCalendarDaySummaryLogic.minimumAmount && inRange
 
         return Button {
             dsWithAnimation(reduceMotion) {
@@ -311,6 +321,10 @@ struct RecordsCalendarView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                 }
+
+                if hasIncome {
+                    incomeDot(isSelected: isSelected)
+                }
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: 56, alignment: .top)
@@ -327,8 +341,40 @@ struct RecordsCalendarView: View {
         }
         .buttonStyle(.plain)
         .disabled(!inRange)
-        .accessibilityLabel(a11yLabel(date: date, expense: hasExpense ? expense : nil))
+        // Con gasto o ingreso, `records_calendar_day_active_<día>`: el XCUITest busca un día con resumen sin conocer
+        // las fechas del seed.
+        .accessibilityIdentifier(
+            "records_calendar_day_\(hasExpense || hasIncome ? "active_" : "")\(Self.dayKey(date, calendar: calendar))"
+        )
+        .accessibilityLabel(a11yLabel(
+            date: date,
+            expense: hasExpense ? expense : nil,
+            income: hasIncome ? income : nil,
+            hasRecords: hasRecords && inRange
+        ))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// Sobre el día elegido (relleno de acento) el índigo no se vería: ahí va en blanco, como el número.
+    private func incomeDot(isSelected: Bool) -> some View {
+        Circle()
+            .fill(isSelected ? Color.white : theme.accent)
+            .frame(width: DS.Chip.dotSize, height: DS.Chip.dotSize)
+            .accessibilityHidden(true)
+    }
+
+    /// Qué es el punto, dicho una vez debajo del calendario y solo si algún día lo lleva.
+    private var incomeLegend: some View {
+        HStack(spacing: DS.Spacing.xs) {
+            incomeDot(isSelected: false)
+            Text(L10n.UXL8B.calendarIncomeLegend)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+        }
+        .padding(.top, DS.Spacing.xs)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("records_calendar_income_legend")
     }
 
     @ViewBuilder
@@ -371,11 +417,26 @@ struct RecordsCalendarView: View {
             .capitalizingFirstLetter(locale: AppLocale.current)
     }
 
-    private func a11yLabel(date: Date, expense: Double?) -> String {
+    /// Clave estable del día para los ids de XCUITest (`records_calendar_day_2026-10-17`), sin depender del idioma.
+    static func dayKey(_ date: Date, calendar: Calendar) -> String {
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+
+    /// L8-10: el día de solo ingresos decía «Sin registros este día». Ahora dice lo mismo que el resumen del día
+    /// («Gastaste …, Entró …»), y «Sin registros» solo cuando el día no tiene ninguno.
+    private func a11yLabel(date: Date, expense: Double?, income: Double?, hasRecords: Bool) -> String {
         let dateStr = date.formatted(.dateTime.day().month(.wide).locale(AppLocale.current))
+        var parts: [String] = [dateStr]
         if let expense {
-            return "\(dateStr), \(appPreferences.currency(expense, currencyCode: currencyCode))"
+            parts.append(L10n.UXL8B.daySpent(appPreferences.currency(expense, currencyCode: currencyCode)))
         }
-        return "\(dateStr), \(L10n.Records.noRecordsThisDay)"
+        if let income {
+            parts.append(L10n.UXL8B.dayIncome(appPreferences.currency(income, currencyCode: currencyCode)))
+        }
+        if expense == nil && income == nil && !hasRecords {
+            parts.append(L10n.Records.noRecordsThisDay)
+        }
+        return parts.joined(separator: ", ")
     }
 }

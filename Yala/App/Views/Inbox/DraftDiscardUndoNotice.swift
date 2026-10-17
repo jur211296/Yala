@@ -32,12 +32,30 @@ enum DraftDiscardUndoNotice {
 
     /// Enseña el aviso en la ventana que está delante. `onUndo` corre al tocar «Deshacer» y el aviso se va.
     static func show(onUndo: @escaping @MainActor () -> Void) {
+        show(message: L10n.Inbox.movedToArchived, onUndo: onUndo)
+    }
+
+    /// El mismo aviso con otro texto e icono: Registros lo usa tras cambiar la subcategoría desde el menú de una fila
+    /// (auditoría UX 2.2, L8-9), que también cierra su hoja al elegir.
+    static func show(
+        message: String,
+        systemImage: String = "archivebox",
+        undoTitle: String? = nil,
+        noticeIdentifier: String = "draft_discard_notice",
+        undoIdentifier: String = "draft_discard_undo",
+        onUndo: @escaping @MainActor () -> Void
+    ) {
         hide()
         guard let scene = targetScene() else { return }
 
-        let message = L10n.Inbox.movedToArchived
         let host = UIHostingController(
-            rootView: DraftDiscardUndoToast(message: message) {
+            rootView: DraftDiscardUndoToast(
+                message: message,
+                systemImage: systemImage,
+                undoTitle: undoTitle ?? L10n.Inbox.undoDiscard,
+                noticeIdentifier: noticeIdentifier,
+                undoIdentifier: undoIdentifier
+            ) {
                 onUndo()
                 hide()
             }
@@ -93,11 +111,15 @@ enum DraftDiscardUndoNotice {
 /// El aviso: el mensaje y «Deshacer», en una cápsula de cristal.
 struct DraftDiscardUndoToast: View {
     let message: String
+    var systemImage: String = "archivebox"
+    var undoTitle: String = L10n.Inbox.undoDiscard
+    var noticeIdentifier: String = "draft_discard_notice"
+    var undoIdentifier: String = "draft_discard_undo"
     let onUndo: () -> Void
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "archivebox")
+            Image(systemName: systemImage)
                 .font(DS.Typography.label)
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
@@ -106,11 +128,11 @@ struct DraftDiscardUndoToast: View {
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: DS.Spacing.sm)
-            Button(L10n.Inbox.undoDiscard, action: onUndo)
+            Button(undoTitle, action: onUndo)
                 .font(DS.Typography.label.weight(.semibold))
                 .foregroundStyle(DS.Semantic.undoForeground)
                 .frame(minHeight: 44)
-                .accessibilityIdentifier("draft_discard_undo")
+                .accessibilityIdentifier(undoIdentifier)
         }
         .padding(.leading, DS.Spacing.lg)
         .padding(.trailing, DS.Spacing.md)
@@ -119,7 +141,7 @@ struct DraftDiscardUndoToast: View {
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.xs)
         .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("draft_discard_notice")
+        .accessibilityIdentifier(noticeIdentifier)
     }
 }
 

@@ -106,6 +106,16 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
         .animation(nil, value: animationValue)
     }
 
+    // MARK: - Abrir Filtros (UX 2.2 · L8-17)
+
+    /// Tocar una cápsula de «Filtros aplicados» abre la hoja de Filtros del host. Todos los hosts de esta barra
+    /// cuelgan su hoja de `showFiltersSheet` (`FiltersSheetPresenting`); uno que no lo haga deja la cápsula como
+    /// estaba, sin toque. El tipo de registro (Registros) no se elige en Filtros y su cápsula sigue igual.
+    private var openFilters: (() -> Void)? {
+        guard let presenter = viewModel as? FiltersSheetPresenting else { return nil }
+        return { presenter.showFiltersSheet = true }
+    }
+
     // MARK: - Chips Content (shared entre branches)
 
     @ViewBuilder
@@ -122,6 +132,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                     }
                 )
                 .excludeMode(viewModel.isExcludeMode)
+                .opensFilters(openFilters)
                 .glassEffectID("chip.account", in: chipNamespace)
             }
 
@@ -142,6 +153,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                     }
                 )
                 .excludeMode(viewModel.isExcludeMode)
+                .opensFilters(openFilters)
                 .glassEffectID("chip.category", in: chipNamespace)
             } else if !viewModel.selectedCategories.isEmpty {
                 let selectedCats = categories.filter { viewModel.selectedCategories.contains($0.persistentModelID) }
@@ -157,6 +169,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         }
                     )
                     .excludeMode(viewModel.isExcludeMode)
+                    .opensFilters(openFilters)
                     .glassEffectID("chip.category", in: chipNamespace)
                 }
             }
@@ -177,6 +190,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                     }
                 )
                 .excludeMode(viewModel.isExcludeMode)
+                .opensFilters(openFilters)
                 .glassEffectID("chip.subcategory", in: chipNamespace)
             }
 
@@ -192,6 +206,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                     }
                 )
                 .excludeMode(viewModel.isExcludeMode)
+                .opensFilters(openFilters)
                 .glassEffectID("chip.tag.\(chip.tagID.hashValue)", in: chipNamespace)
             }
 
@@ -205,6 +220,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                     }
                 )
                 .excludeMode(viewModel.isExcludeMode)
+                .opensFilters(openFilters)
                 .glassEffectID("chip.need.\(chipData.need.rawValue)", in: chipNamespace)
             }
 
@@ -220,6 +236,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
+                .opensFilters(openFilters)
                 .glassEffectID("chip.nature", in: chipNamespace)
             }
 
@@ -245,6 +262,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                     }
                 )
                 .excludeMode(viewModel.isExcludeMode)
+                .opensFilters(openFilters)
                 .glassEffectID("chip.currency.\(currency.rawValue)", in: chipNamespace)
             }
 
@@ -257,6 +275,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
+                .opensFilters(openFilters)
                 .glassEffectID("chip.amount", in: chipNamespace)
             }
 
@@ -269,6 +288,7 @@ struct FilterControlBar<VM: Filterable & Observable, PeriodView: View, TrailingC
                         onFilterChange?()
                     }
                 )
+                .opensFilters(openFilters)
                 .glassEffectID("chip.note", in: chipNamespace)
             }
 

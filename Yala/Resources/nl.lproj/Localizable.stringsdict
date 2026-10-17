@@ -1036,5 +1036,165 @@
 			<string>… en nog %d</string>
 		</dict>
 	</dict>
+	<key>records.l8b.duplicates.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d mogelijk duplicaat</string>
+			<key>other</key>
+			<string>%d mogelijke duplicaten</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groups</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d groep</string>
+			<key>other</key>
+			<string>%d groepen</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.groupSize</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d gelijke boeking</string>
+			<key>other</key>
+			<string>%d gelijke boekingen</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.removeTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d herhaling verwijderen?</string>
+			<key>other</key>
+			<string>%d herhalingen verwijderen?</string>
+		</dict>
+	</dict>
+	<key>records.l8b.duplicates.keptShared</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d komt uit Groepen en blijft: verwijder hem daar.</string>
+			<key>other</key>
+			<string>%d komen uit Groepen en blijven: verwijder ze daar.</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d boeking bewerken</string>
+			<key>other</key>
+			<string>%d boekingen bewerken</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctAccounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d rekening</string>
+			<key>other</key>
+			<string>%d verschillende rekeningen</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.distinctSubcategories</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d subcategorie</string>
+			<key>other</key>
+			<string>%d verschillende subcategorieën</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.summaryTitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je wijzigt in %d boeking:</string>
+			<key>other</key>
+			<string>Je wijzigt in %d boekingen:</string>
+		</dict>
+	</dict>
+	<key>records.l8b.bulk.apply</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Toepassen op %d boeking</string>
+			<key>other</key>
+			<string>Toepassen op %d boekingen</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

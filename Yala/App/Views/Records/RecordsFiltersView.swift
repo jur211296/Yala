@@ -42,6 +42,18 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     @State private var localIsExcludeMode: Bool = false
     @State private var hasSnapshotted = false
 
+    // MARK: - Preguntas antes de perder lo elegido (UX 2.2 · L8-16)
+
+    /// Lo que había al abrir la hoja (tras expandir categorías a subcategorías). La X y el gesto de cerrar preguntan
+    /// solo si lo elegido difiere de esto.
+    @State private var originalDraft: RecordsFiltersDraft?
+    @State private var showDiscardAlert = false
+    /// El segmento pinta esto, no `localIsExcludeMode`: cambiarlo con algo marcado pregunta antes de vaciar, y si la
+    /// persona cancela el segmento vuelve a su sitio sin haber borrado nada.
+    @State private var requestedExcludeMode = false
+    @State private var pendingExcludeMode: Bool?
+    @State private var showModeSwitchAlert = false
+
     // MARK: - Body
 
     var body: some View {
@@ -58,6 +70,18 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             .sheet(isPresented: $showCurrencySheet) {
                 currencySheetView
             }
+            .alert(L10n.UXL8C.Filters.discardTitle, isPresented: $showDiscardAlert) {
+                Button(L10n.UXL8C.Filters.keepChoosing, role: .cancel) {}
+                Button(L10n.UXL8C.Filters.discard, role: .destructive) { dismiss() }
+            } message: {
+                Text(L10n.UXL8C.Filters.discardMessage)
+            }
+            .alert(modeSwitchTitle, isPresented: $showModeSwitchAlert) {
+                Button(L10n.Action.cancel, role: .cancel) { cancelModeSwitch() }
+                Button(L10n.UXL8C.Filters.switchConfirm, role: .destructive) { confirmModeSwitch() }
+            } message: {
+                Text(L10n.UXL8C.Filters.switchMessage)
+            }
     }
 
     // MARK: - Main Content
@@ -70,7 +94,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                         // segmentos van cortos para que quepan en un iPhone pequeño y en alemán; la frase de debajo
                         // dice qué hace el que está puesto.
                         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                            Picker("", selection: $localIsExcludeMode) {
+                            Picker("", selection: $requestedExcludeMode) {
                                 Text(L10n.Filters.includeMode).tag(false)
                                 Text(L10n.Filters.excludeMode).tag(true)
                             }
@@ -82,6 +106,16 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .accessibilityIdentifier("filters_mode_explanation")
+
+                            // En «Ocultar» no está la fila Tipo, a propósito: ocultar los gastos es lo mismo que ver
+                            // solo los ingresos, y eso se elige en «Mostrar solo» (L8-16).
+                            if localIsExcludeMode && !sessionState.isExpensesOnlyMode {
+                                Text(L10n.UXL8C.Filters.typeLivesInShowOnly)
+                                    .font(DS.Typography.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("filters_type_hint")
+                            }
                         }
 
                         SectionBox(title: L10n.Filters.filterOptions) {
@@ -103,11 +137,11 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                                 needsContent
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 currencyContent
-                                // El monto necesita UNA moneda. Antes, sin ella, salía una nota que hablaba de un campo
-                                // que no se veía (UX 2.2 · L3-5); ahora la fila solo sale cuando se puede usar.
-                                if amountCurrencyCode != nil {
+                                // El monto necesita UNA moneda. Lleva su título, y sin moneda única dice qué hacer: la
+                                // sección de moneda está justo encima (L8-16; antes no salía, L3-5).
+                                if !filtersViewModel.currenciesWithTransactions.isEmpty {
                                     Divider().padding(.leading, DS.Spacing.lg)
-                                    amountContent
+                                    amountSection
                                 }
                                 Divider().padding(.leading, DS.Spacing.lg)
                                 noteContent
@@ -143,29 +177,17 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 if !hasSnapshotted {
                     snapshotFromViewModel()
                     expandCategoryFiltersToSubcategories()
+                    originalDraft = currentDraft
                     hasSnapshotted = true
                 }
             }
-            .onChange(of: localIsExcludeMode) { oldValue, newValue in
-                guard oldValue != newValue else { return }
-                localSelectedAccounts.removeAll()
-                localSelectedCategories.removeAll()
-                localSelectedSubcategories.removeAll()
-                localSelectedNeeds.removeAll()
-                localSelectedTags.removeAll()
-                localSelectedCurrencies.removeAll()
-                if sessionState.isExpensesOnlyMode {
-                    localSelectedTransactionNatures = [.expense]
-                } else {
-                    localSelectedTransactionNatures.removeAll()
-                }
-                localAmountCondition = .any
-                localSearchText = ""
-            }
+            .onChange(of: requestedExcludeMode) { _, newValue in handleModeRequest(newValue) }
+            // Arrastrar la hoja hacia abajo con cambios pregunta lo mismo que la X.
+            .onSheetDismissAttempt(isActive: hasChanges) { showDiscardAlert = true }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
-                        dismiss()
+                        requestClose()
                     }
                     .accessibilityIdentifier("filters_close_button")
                 }
@@ -191,7 +213,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             title: L10n.Settings.accounts,
             status: selectedAccountsText,
             items: filtersViewModel.activeAccounts,
-            showEmptyPlaceholder: false
+            showEmptyPlaceholder: false,
+            parenthesizesStatus: false
         ) { account in
             accountChip(account)
         }
@@ -234,7 +257,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 FilterSectionHeader(
                     icon: "tag",
                     title: L10n.Filters.categories,
-                    status: selectedCategoriesText
+                    status: selectedCategoriesText,
+                    parenthesizesStatus: false
                 )
 
                 Spacer()
@@ -287,7 +311,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             title: L10n.Settings.tags,
             status: selectedTagsText,
             items: filtersViewModel.activeTags,
-            showEmptyPlaceholder: true
+            showEmptyPlaceholder: true,
+            parenthesizesStatus: false
         ) { tag in
             tagChip(tag)
         }
@@ -335,7 +360,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             FilterSectionHeader(
                 icon: "arrow.up.arrow.down",
                 title: L10n.Filters.type,
-                status: selectedTransactionNaturesText
+                status: selectedTransactionNaturesText,
+                parenthesizesStatus: false
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
@@ -377,13 +403,14 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     }
 
     private var selectedTransactionNaturesText: String {
+        let all = RecordsFiltersSection.types.emptyStatus(isExcludeMode: false)
         if localSelectedTransactionNatures.isEmpty {
-            return L10n.Filters.all
+            return all
         }
         if localSelectedTransactionNatures.count == TransactionNature.allCases.count {
-            return L10n.Filters.all
+            return all
         }
-        return localSelectedTransactionNatures.first?.displayName ?? L10n.Filters.all
+        return localSelectedTransactionNatures.first?.displayName ?? all
     }
 
     // MARK: - Needs Content
@@ -394,7 +421,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             FilterSectionHeader(
                 icon: "chart.bar.fill",
                 title: L10n.Filters.need,
-                status: selectedNeedsText
+                status: selectedNeedsText,
+                parenthesizesStatus: false
             )
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.top, DS.Spacing.md)
@@ -439,7 +467,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
 
     private var selectedNeedsText: String {
         if localSelectedNeeds.isEmpty {
-            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allNeeds
+            return RecordsFiltersSection.needs.emptyStatus(isExcludeMode: localIsExcludeMode)
         }
         return "\(localSelectedNeeds.count)"
     }
@@ -453,7 +481,8 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 FilterSectionHeader(
                     icon: "arrow.triangle.2.circlepath",
                     title: L10n.Filters.currency,
-                    status: selectedCurrenciesText
+                    status: selectedCurrenciesText,
+                    parenthesizesStatus: false
                 )
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
@@ -501,20 +530,52 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         guard !filtersViewModel.currenciesWithTransactions.isEmpty else { return "" }
 
         if localSelectedCurrencies.isEmpty {
-            return localIsExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
+            return RecordsFiltersSection.currencies.emptyStatus(isExcludeMode: localIsExcludeMode)
         }
         if !localIsExcludeMode &&
            localSelectedCurrencies.count == filtersViewModel.currenciesWithTransactions.count {
-            return L10n.Filters.allFeminine
+            return RecordsFiltersSection.currencies.emptyStatus(isExcludeMode: false)
         }
         return "\(localSelectedCurrencies.count)/\(filtersViewModel.currenciesWithTransactions.count)"
     }
 
-    private var amountContent: some View {
-        AmountFilterView(
-            condition: $localAmountCondition,
-            currencyCode: amountCurrencyCode
-        )
+    /// Monto, con su título. Con una sola moneda, el selector; con varias y ninguna elegida, qué hacer.
+    private var amountSection: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.none) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "banknote")
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+                    .frame(width: DS.FormRow.iconWidth)
+                    .accessibilityHidden(true)
+
+                Text(L10n.UXL8C.Filters.amountTitle)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.primary)
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.md)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier("filters_amount_title")
+
+            if amountCurrencyCode != nil {
+                AmountFilterView(
+                    condition: $localAmountCondition,
+                    currencyCode: amountCurrencyCode
+                )
+            } else {
+                Text(L10n.UXL8C.Filters.amountNeedsOneCurrency)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, DS.Spacing.formIndent)
+                    .padding(.trailing, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+                    .padding(.bottom, DS.Spacing.md)
+                    .accessibilityIdentifier("filters_amount_needs_one_currency")
+            }
+        }
     }
 
     /// La moneda del filtro de monto: la elegida si hay una sola, o la única que tienen los registros. Con varias
@@ -690,6 +751,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         localAmountCondition = recordsViewModel.amountCondition
         localSearchText = recordsViewModel.searchText
         localIsExcludeMode = recordsViewModel.isExcludeMode
+        requestedExcludeMode = recordsViewModel.isExcludeMode
     }
 
     private func commitToViewModel() {
@@ -710,6 +772,85 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         }
     }
 
+    // MARK: - Draft (UX 2.2 · L8-16)
+
+    private var currentDraft: RecordsFiltersDraft {
+        RecordsFiltersDraft(
+            accounts: localSelectedAccounts,
+            categories: localSelectedCategories,
+            subcategories: localSelectedSubcategories,
+            tags: localSelectedTags,
+            needs: localSelectedNeeds,
+            transactionNatures: localSelectedTransactionNatures,
+            currencies: localSelectedCurrencies,
+            amountCondition: localAmountCondition,
+            noteText: localSearchText,
+            isExcludeMode: localIsExcludeMode
+        )
+    }
+
+    private var hasChanges: Bool {
+        RecordsFiltersDraftLogic.hasChanges(current: currentDraft, original: originalDraft)
+    }
+
+    /// La X: con cambios pregunta «¿Descartar los filtros?»; sin ellos, cierra.
+    private func requestClose() {
+        if hasChanges {
+            showDiscardAlert = true
+        } else {
+            dismiss()
+        }
+    }
+
+    private var modeSwitchTitle: String {
+        (pendingExcludeMode ?? !localIsExcludeMode)
+            ? L10n.UXL8C.Filters.switchToExcludeTitle
+            : L10n.UXL8C.Filters.switchToIncludeTitle
+    }
+
+    /// El segmento pidió otro modo. Sin nada que se pierda, cambia; con algo marcado, el segmento vuelve a su sitio
+    /// y pregunta. La vuelta del segmento entra otra vez aquí con el modo de siempre y no hace nada.
+    private func handleModeRequest(_ requested: Bool) {
+        guard requested != localIsExcludeMode else { return }
+        if RecordsFiltersDraftLogic.modeSwitchWouldClear(currentDraft, isExpensesOnlyMode: sessionState.isExpensesOnlyMode) {
+            pendingExcludeMode = requested
+            requestedExcludeMode = localIsExcludeMode
+            showModeSwitchAlert = true
+        } else {
+            applyModeSwitch(to: requested)
+        }
+    }
+
+    private func confirmModeSwitch() {
+        guard let target = pendingExcludeMode else { return }
+        pendingExcludeMode = nil
+        applyModeSwitch(to: target)
+    }
+
+    private func cancelModeSwitch() {
+        pendingExcludeMode = nil
+    }
+
+    /// Cambiar de modo vacía lo elegido: los mismos IDs significan «solo estos» o «todos menos estos».
+    /// Antes lo hacía un `onChange` del modo, que también corría al rehidratar la hoja en «Ocultar».
+    private func applyModeSwitch(to excludeMode: Bool) {
+        localSelectedAccounts.removeAll()
+        localSelectedCategories.removeAll()
+        localSelectedSubcategories.removeAll()
+        localSelectedNeeds.removeAll()
+        localSelectedTags.removeAll()
+        localSelectedCurrencies.removeAll()
+        if sessionState.isExpensesOnlyMode {
+            localSelectedTransactionNatures = [.expense]
+        } else {
+            localSelectedTransactionNatures.removeAll()
+        }
+        localAmountCondition = .any
+        localSearchText = ""
+        localIsExcludeMode = excludeMode
+        requestedExcludeMode = excludeMode
+    }
+
     private func clearLocalFilters() {
         localSelectedAccounts.removeAll()
         localSelectedCategories.removeAll()
@@ -722,6 +863,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
         }
         localSelectedTags.removeAll()
         localIsExcludeMode = false
+        requestedExcludeMode = false
         localAmountCondition = .any
         localSelectedCurrencies = []
         localSearchText = ""

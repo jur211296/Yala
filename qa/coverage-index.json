@@ -2040,7 +2040,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-09-30"
+      "lastVerified": "2026-10-17"
     },
     {
       "area": "records-transaction-detail",
@@ -2451,7 +2451,7 @@
       "classification": "agentic",
       "coverage": "device-qa",
       "owner": "",
-      "lastVerified": "2026-10-02"
+      "lastVerified": "2026-10-17"
     },
     {
       "area": "tags-crud",
@@ -3382,6 +3382,57 @@
       "coverage": "xcuitest:YalaUITests/TrendsInsightCardUITests (Free en Todo el tiempo sin bullet de Comparativa, Mes pasado con Comparativa en su orden, Pro pre-IA con bullets + CTA) + unit:YalaTests/TrendInsightLogicTests (+ TrendInsightTrendRuleTests, TrendInsightCashFlowAndWeekdayTests, TrendInsightBulletsTests) + TrendHistoryLogicTests + TrendsAIServiceTests (+ TrendsAIViewModelTests). 2026-10-03: el resumen al final de Tendencias pasa a bullets, uno por gráfica (racha sostenida, comparativa, flujo, día pico); Pro con análisis IA propio de Tendencias. La respuesta real del LLM no se cubre en simulador (App Attest): device-QA en el ticket. | 2026-10-07: TrendsAIService manda trends.summary (ProxyTaskHeaderTests#everyCallSiteNamesItsTask).",
       "owner": "",
       "lastVerified": "2026-10-15"
+    },
+    {
+      "area": "records-lote8-list-detail-selection",
+      "codeGlobs": [
+        "Yala/App/Logic/RecordsLote8Logic.swift",
+        "Yala/App/Views/Records/Components/GroupNameCatalogProvider.swift",
+        "Yala/App/Views/Records/Components/RecordSubcategoryChangeSheet.swift",
+        "Yala/App/Views/Records/Components/RecordsSelectionBar.swift",
+        "Yala/App/Views/Records/Components/RecordRowContextMenu.swift",
+        "Yala/App/Views/Shared/TabBarArrivesExpandedModifier.swift",
+        "Yala/App/Views/More/MoreView.swift",
+        "Yala/Utils/L10n+UXAudit22Lote8.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/RecordsLote8UITests | 2026-10-17 (auditoría UX 2.2, lote 8: L8-1 Registros junto a Panel en Más, L8-4 Duplicar/Eliminar al pie del detalle, L8-7 una alerta que nombra el registro en detalle/menú/selección/editor, L8-8 «Duplicar registro», L8-9 «Cambiar subcategoría» con la actual marcada y Deshacer, L8-12 «Seleccionar» a la vista + ayuda + barra con texto). Lógica pura: unit:YalaTests/UXAudit22Lote8Tests (fila L8-3, «Pagaste/Tu parte/Te deben» L8-5, nombre en la pregunta, aviso con necesidad, cableado del editor L8-6). L8-2 (la barra llega desplegada) y L8-5 en pantalla se midieron en el simulador.",
+      "owner": "",
+      "lastVerified": "2026-10-17"
+    },
+    {
+      "area": "records-lote8-calendar-duplicates-bulk",
+      "codeGlobs": [
+        "Yala/App/Logic/BulkEditLogic.swift",
+        "Yala/App/Logic/RecordsCalendarDaySummaryLogic.swift",
+        "Yala/App/Logic/RecordsDuplicateLogic.swift",
+        "Yala/App/Logic/Calculators/DailySpendingCalculator.swift",
+        "Yala/App/Views/Records/Components/RecordsCalendarView.swift",
+        "Yala/App/Views/Records/Components/RecordsOverflowMenu.swift",
+        "Yala/Utils/L10n+UXAudit22Lote8B.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/RecordsLote8BUITests | 2026-10-17 (auditoría UX 2.2, lote 8: L8-10 resumen del día y punto de ingresos en el calendario, L8-11 modo duplicados agrupado con «Quitar repetidos» tras alerta, L8-13 editar varios elige y luego «Aplicar a N registros»). También xcuitest:YalaUITests/BulkEditUITests. Unit: YalaTests/UXAudit22Lote8BTests.",
+      "owner": "",
+      "lastVerified": "2026-10-17"
+    },
+    {
+      "area": "search-filters-lote8",
+      "codeGlobs": [
+        "Yala/App/Views/Search/GlobalSearchView.swift",
+        "Yala/App/Logic/RecordsFiltersDraftLogic.swift",
+        "Yala/App/Views/Filters/FiltersSheetPresenting.swift",
+        "Yala/App/Views/Filters/FilterChipView.swift",
+        "Yala/App/Views/Records/Components/RecordDateSectionView.swift",
+        "Yala/Utils/L10n+UXAudit22Lote8C.swift"
+      ],
+      "scenarioIDs": [],
+      "classification": "deterministic",
+      "coverage": "xcuitest:YalaUITests/UXAudit22Lote8CUITests | 2026-10-17 (auditoría UX 2.2, lote 8: L8-14 un resultado de Buscar abre el detalle con la fila de Registros y «Recientes», L8-16 la X pregunta si hay cambios y cambiar de modo pregunta antes de vaciar, L8-17 tocar una cápsula abre Filtros y lo oculto dice «Sin …»). L8-15 sigue cubierto por SearchViewAllUITests. Unit: YalaTests/UXAudit22Lote8CTests.",
+      "owner": "",
+      "lastVerified": "2026-10-17"
     }
   ]
 }

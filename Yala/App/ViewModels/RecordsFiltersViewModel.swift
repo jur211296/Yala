@@ -123,33 +123,38 @@ final class RecordsFiltersViewModel {
 
     // MARK: - Helper Methods
 
+    // Sin nada marcado cada sección dice lo suyo («Todas las cuentas», «Ninguna oculta»): antes era «(Todos)» y
+    // «(Nada)» en todas (UX 2.2 · L8-16). El texto lo decide `RecordsFiltersSection.emptyStatus`.
+
     func selectedAccountsText(selectedAccounts: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
+        let empty = RecordsFiltersSection.accounts.emptyStatus(isExcludeMode: isExcludeMode)
         if selectedAccounts.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
+            return empty
         }
         if !isExcludeMode && selectedAccounts.count == activeAccounts.count {
-            return L10n.Filters.allFeminine
+            return empty
         }
         return "\(selectedAccounts.count)/\(activeAccounts.count)"
     }
 
     func selectedCategoriesText(selectedSubcategories: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
         let subCount = selectedSubcategories.count
+        let empty = RecordsFiltersSection.categories.emptyStatus(isExcludeMode: isExcludeMode)
 
         if subCount == 0 {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
+            return empty
         }
 
         let allIDs = Set(allSubcategories.map { $0.persistentModelID })
         if !isExcludeMode && selectedSubcategories == allIDs {
-            return L10n.Filters.allFeminine
+            return empty
         }
 
         let selectedSubs = allSubcategories.filter {
             selectedSubcategories.contains($0.persistentModelID)
         }
         if selectedSubs.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
+            return empty
         }
 
         if let firstSub = selectedSubs.first {
@@ -161,15 +166,16 @@ final class RecordsFiltersViewModel {
             }
         }
 
-        return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
+        return empty
     }
 
     func selectedTagsText(selectedTags: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {
+        let empty = RecordsFiltersSection.tags.emptyStatus(isExcludeMode: isExcludeMode)
         if selectedTags.isEmpty {
-            return isExcludeMode ? L10n.Filters.nothingExcluded : L10n.Filters.allFeminine
+            return empty
         }
         if !isExcludeMode && selectedTags.count == activeTags.count {
-            return L10n.Filters.allFeminine
+            return empty
         }
         return "\(selectedTags.count)/\(activeTags.count)"
     }

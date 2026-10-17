@@ -4,6 +4,11 @@
 //
 //  Sheet for bulk editing multiple transactions.
 //
+//  Auditoría UX 2.2 · L8-13 (decisión de Jürgen, 2026-10-15): se elige primero y se aplica después. Cada opción deja
+//  su cambio PENDIENTE; el resumen dice qué va a cambiar («Cuenta → Ahorros») y «Aplicar a N registros» lo aplica
+//  todo de una vez, o nada si algo está bloqueado (`RecordsViewModel.applyBulkEdit`). Antes cada opción se aplicaba
+//  al elegirla, sin resumen ni vuelta atrás.
+//
 
 import SwiftData
 import SwiftUI
@@ -19,11 +24,12 @@ enum BulkEditOption: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// En singular: se elige UNA cuenta para todos (antes decía «Cuentas»).
     var title: String {
         switch self {
-        case .account: return L10n.Settings.accounts
+        case .account: return L10n.Transaction.account
         case .subcategory: return L10n.Transaction.subcategory
-        case .tag: return L10n.Settings.tags
+        case .tag: return L10n.Transaction.tags
         case .note: return L10n.Transaction.note
         case .amount: return L10n.Transaction.amount
         }
@@ -56,6 +62,7 @@ enum BulkEditOption: String, CaseIterable, Identifiable {
 struct BulkEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var bulkEditViewModel = BulkEditViewModel()
 
@@ -70,29 +77,27 @@ struct BulkEditSheet: View {
     @State private var showNoteEditor = false
     @State private var showAmountEditor = false
 
-    // Track applied changes
-    @State private var appliedChanges: Set<BulkEditOption> = []
-
     // Detected transaction type for subcategory filtering
     private var detectedTransactionType: TransactionType? {
         viewModel.getSelectedTransactionType()
     }
 
-    // Selected values for editing
-    @State private var selectedAccount: Account?
-    @State private var selectedSubcategory: Subcategory?
+    // Lo que se está escribiendo en las hojas de nota y monto (pasa a `changes` al guardar).
     @State private var bulkNote: String = ""
     @State private var bulkAmount: Double = 0
+
+    private var changes: BulkEditChanges { bulkEditViewModel.changes }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
                     // Header with count
-                    Text(L10n.BulkEdit.editCount(selectedCount))
+                    Text(L10n.UXL8B.BulkEdit.title(selectedCount))
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("bulk_edit_title")
 
                         // Options list
                         SectionBox(title: "") {
@@ -102,10 +107,11 @@ struct BulkEditSheet: View {
                                         SubsectionDivider()
                                     }
 
-                                    let isDisabled = option == .subcategory && detectedTransactionType == nil
+                                    let isDisabled = isOptionDisabled(option)
                                     BulkEditOptionRow(
                                         option: option,
-                                        isApplied: appliedChanges.contains(option)
+                                        subtitle: subtitle(for: option),
+                                        isPending: changes.changedOptions.contains(option)
                                     ) {
                                         handleOptionTap(option)
                                     }
@@ -116,15 +122,20 @@ struct BulkEditSheet: View {
                             }
                         }
 
-                        // Currency warning for account changes
-                        if appliedChanges.contains(.account) || showAccountSelector {
-                            currencyWarning
+                        // Lo que va a cambiar, antes de aplicarlo (con el aviso de moneda y lo bloqueado).
+                        if !changes.isEmpty {
+                            pendingSummary
                         }
 
-                        // Applied changes summary
-                        if !appliedChanges.isEmpty {
-                            appliedChangesSummary
+                        YalaPrimaryButton(
+                            L10n.UXL8B.BulkEdit.apply(selectedCount),
+                            isDisabled: changes.isEmpty || bulkEditViewModel.blocker != nil,
+                            disabledHint: changes.isEmpty
+                                ? L10n.UXL8B.BulkEdit.nothingPendingHint : bulkEditViewModel.blocker
+                        ) {
+                            applyChanges()
                         }
+                        .accessibilityIdentifier("bulk_edit_apply")
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.xxl)
@@ -138,63 +149,56 @@ struct BulkEditSheet: View {
                         finishEditing()
                     }
                 }
-
-                if !appliedChanges.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(L10n.Action.done) {
-                            finishEditing()
-                        }
-                        .fontWeight(.semibold)
-                        .accessibilityIdentifier("bulk_edit_done")
-                    }
-                }
             }
             .sheet(isPresented: $showAccountSelector) {
-                AccountSelectorSheet(selectedAccount: $selectedAccount)
-                    .onDisappear {
-                        if let account = selectedAccount {
-                            applyAccountChange(account)
-                        }
-                    }
+                AccountSelectorSheet(selectedAccount: $bulkEditViewModel.changes.account)
             }
             .sheet(isPresented: $showSubcategorySelector) {
                 SubcategorySelectorSheet(
-                    selectedSubcategory: $selectedSubcategory,
+                    selectedSubcategory: $bulkEditViewModel.changes.subcategory,
                     transactionType: detectedTransactionType ?? .expense
                 )
-                .onDisappear {
-                    if let subcategory = selectedSubcategory {
-                        applySubcategoryChange(subcategory)
-                    }
-                }
             }
             .sheet(isPresented: $showTagEditor) {
                 BulkTagEditorSheet(
                     viewModel: viewModel,
                     allTags: bulkEditViewModel.activeTags,
                     onApply: { tagsToAdd, tagsToRemove in
-                        applyTagChanges(add: tagsToAdd, remove: tagsToRemove)
+                        bulkEditViewModel.changes.tagsToAdd = tagsToAdd
+                        bulkEditViewModel.changes.tagsToRemove = tagsToRemove
                     }
                 )
             }
             .sheet(isPresented: $showNoteEditor) {
                 BulkNoteEditorSheet(note: $bulkNote) {
-                    applyNoteChange(bulkNote)
+                    bulkEditViewModel.changes.note = bulkNote
                 }
             }
             .sheet(isPresented: $showAmountEditor) {
-                BulkAmountEditorSheet(amount: $bulkAmount) {
-                    applyAmountChange(bulkAmount)
+                if let currencyCode = bulkEditViewModel.amountCurrency {
+                    BulkAmountEditorSheet(
+                        amount: $bulkAmount,
+                        currencyCode: currencyCode,
+                        recordCount: selectedCount
+                    ) {
+                        bulkEditViewModel.changes.amount = bulkAmount
+                    }
                 }
             }
         }
 
         .onAppear {
             bulkEditViewModel.setContext(modelContext)
+            bulkEditViewModel.loadSelection(viewModel.selectedTransactions(context: modelContext))
         }
-        // Surface bulkUpdateError (e.g., subcat lock on transfers).
+        .onChange(of: changes.signature) {
+            bulkEditViewModel.dropAmountIfCurrencyIsUnclear()
+            bulkEditViewModel.blocker = viewModel.bulkEditBlocker(bulkEditViewModel.changes, context: modelContext)
+        }
+        // Lo que rechaza «Aplicar» (la comprobación de antes cubre casi todo; esto es la red). No se titula «Error»:
+        // dice qué pasa.
         .alert(
-            L10n.Common.error,
+            L10n.UXL8B.BulkEdit.blockedTitle,
             isPresented: Binding(
                 get: { viewModel.bulkUpdateError != nil },
                 set: { if !$0 { viewModel.bulkUpdateError = nil } }
@@ -209,39 +213,150 @@ struct BulkEditSheet: View {
         }
     }
 
-    // MARK: - Currency Warning
+    // MARK: - Hoy / pendiente por opción
 
-    private var currencyWarning: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "exclamationmark.triangle.fill")
+    private func isOptionDisabled(_ option: BulkEditOption) -> Bool {
+        switch option {
+        case .subcategory: return detectedTransactionType == nil
+        // Con monedas distintas el mismo número no significa lo mismo en cada registro: no se ofrece (L8-13).
+        case .amount: return bulkEditViewModel.amountCurrency == nil
+        case .account, .tag, .note: return false
+        }
+    }
+
+    /// Lo que enseña la fila: el valor nuevo si hay un cambio pendiente; si no, qué tienen hoy los elegidos.
+    private func subtitle(for option: BulkEditOption) -> String? {
+        if let pending = pendingValue(for: option) { return "→ \(pending)" }
+        switch option {
+        case .account:
+            return todayText(
+                bulkEditViewModel.currentAccount, distinct: { L10n.UXL8B.BulkEdit.distinctAccounts($0) })
+        case .subcategory:
+            guard detectedTransactionType != nil else { return nil }
+            return todayText(
+                bulkEditViewModel.currentSubcategory, distinct: { L10n.UXL8B.BulkEdit.distinctSubcategories($0) })
+        case .tag:
+            return nil
+        case .note:
+            switch bulkEditViewModel.currentNote {
+            case .same(let note): return L10n.UXL8B.BulkEdit.today(note ?? L10n.UXL8B.BulkEdit.noNote)
+            case .distinct: return L10n.UXL8B.BulkEdit.today(L10n.UXL8B.BulkEdit.distinctNotes)
+            }
+        case .amount:
+            guard bulkEditViewModel.amountCurrency != nil else {
+                return L10n.UXL8B.BulkEdit.mixedCurrencies
+            }
+            // `sharedAmount` solo existe si todos comparten moneda: se enseña en la de hoy.
+            if let shared = bulkEditViewModel.sharedAmount, let currencyCode = bulkEditViewModel.selectedCurrencies.first {
+                return L10n.UXL8B.BulkEdit.today(appPreferences.currency(shared, currencyCode: currencyCode))
+            }
+            return L10n.UXL8B.BulkEdit.today(L10n.UXL8B.BulkEdit.distinctAmounts)
+        }
+    }
+
+    private func todayText(_ current: BulkEditLogic.Current, distinct: (Int) -> String) -> String? {
+        switch current {
+        case .same(let value):
+            guard let value else { return nil }
+            return L10n.UXL8B.BulkEdit.today(value)
+        case .distinct(let count):
+            return count > 1 ? L10n.UXL8B.BulkEdit.today(distinct(count)) : nil
+        }
+    }
+
+    private func pendingValue(for option: BulkEditOption) -> String? {
+        summaryLines.first { $0.option == option }?.value
+    }
+
+    private var summaryLines: [BulkEditLogic.SummaryLine] {
+        BulkEditLogic.summaryLines(
+            account: changes.account?.name,
+            subcategory: changes.subcategory?.name,
+            tagsAdded: changes.tagsToAdd.map(\.name),
+            tagsRemoved: changes.tagsToRemove.map(\.name),
+            note: changes.note,
+            amount: pendingAmountText,
+            noNote: L10n.UXL8B.BulkEdit.noNote
+        )
+    }
+
+    private var pendingAmountText: String? {
+        guard let amount = changes.amount, let currencyCode = bulkEditViewModel.amountCurrency else { return nil }
+        return appPreferences.currency(amount, currencyCode: currencyCode)
+    }
+
+    // MARK: - Resumen de lo pendiente
+
+    private var pendingSummary: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.UXL8B.BulkEdit.summaryTitle(selectedCount))
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.thPrimaryText)
+
+            ForEach(summaryLines, id: \.option) { line in
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    Text(verbatim: "\(line.option.title) → \(line.value)")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thPrimaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("bulk_edit_summary_\(line.option.id)")
+                    Spacer(minLength: DS.Spacing.sm)
+                    Button {
+                        discard(line.option)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.tertiary)
+                            .frame(minWidth: DS.Button.actionSize, minHeight: DS.Button.actionSize)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.UXL8B.BulkEdit.discardChange)
+                    .accessibilityIdentifier("bulk_edit_discard_\(line.option.id)")
+                }
+            }
+
+            if let pendingAmountText {
+                Text(L10n.UXL8B.BulkEdit.amountResult(count: selectedCount, amount: pendingAmountText))
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if bulkEditViewModel.pendingAccountChangesCurrency {
+                notice(icon: "exclamationmark.triangle.fill", text: L10n.BulkEdit.currencyWarning)
+            }
+
+            if let blocker = bulkEditViewModel.blocker {
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.UXL8B.BulkEdit.blockedTitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.thPrimaryText)
+                    notice(icon: "hand.raised.fill", text: blocker)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("bulk_edit_blocked")
+            }
+        }
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(radius: DS.Radius.md)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("bulk_edit_summary")
+    }
+
+    private func notice(icon: String, text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+            Image(systemName: icon)
                 .foregroundStyle(DS.Semantic.warningForeground)
                 .accessibilityHidden(true)
-
-            Text(L10n.BulkEdit.currencyWarning)
+            Text(text)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(DS.Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(DS.Semantic.warningBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-    }
-
-    // MARK: - Applied Changes Summary
-
-    private var appliedChangesSummary: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(DS.Semantic.successForeground)
-                .accessibilityHidden(true)
-
-            Text(L10n.BulkEdit.successMessage)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(DS.Spacing.md)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DS.Semantic.successBackground)
         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
     }
 
@@ -250,63 +365,39 @@ struct BulkEditSheet: View {
     private func handleOptionTap(_ option: BulkEditOption) {
         switch option {
         case .account:
-            selectedAccount = nil
             showAccountSelector = true
         case .subcategory:
             guard detectedTransactionType != nil else { return }
-            selectedSubcategory = nil
             showSubcategorySelector = true
         case .tag:
             showTagEditor = true
         case .note:
-            bulkNote = ""
+            bulkNote = changes.note ?? ""
             showNoteEditor = true
         case .amount:
-            bulkAmount = 0
+            guard bulkEditViewModel.amountCurrency != nil else { return }
+            bulkAmount = changes.amount ?? 0
             showAmountEditor = true
         }
     }
 
-    private func applyAccountChange(_ account: Account) {
-        viewModel.bulkUpdateAccount(account, context: modelContext)
-        guard viewModel.bulkUpdateError == nil else { return }
-        appliedChanges.insert(.account)
-        onComplete()
-    }
-
-    private func applySubcategoryChange(_ subcategory: Subcategory) {
-        viewModel.bulkUpdateSubcategory(subcategory, context: modelContext)
-        guard viewModel.bulkUpdateError == nil else { return }
-        appliedChanges.insert(.subcategory)
-        onComplete()
-    }
-
-    private func applyTagChanges(add tagsToAdd: [Tag], remove tagsToRemove: [Tag]) {
-        if !tagsToAdd.isEmpty {
-            viewModel.bulkAddTags(tagsToAdd, context: modelContext)
-        }
-        if !tagsToRemove.isEmpty {
-            viewModel.bulkRemoveTags(tagsToRemove, context: modelContext)
-        }
-        guard viewModel.bulkUpdateError == nil else { return }
-        if !tagsToAdd.isEmpty || !tagsToRemove.isEmpty {
-            appliedChanges.insert(.tag)
-            onComplete()
+    private func discard(_ option: BulkEditOption) {
+        switch option {
+        case .account: bulkEditViewModel.changes.account = nil
+        case .subcategory: bulkEditViewModel.changes.subcategory = nil
+        case .tag:
+            bulkEditViewModel.changes.tagsToAdd = []
+            bulkEditViewModel.changes.tagsToRemove = []
+        case .note: bulkEditViewModel.changes.note = nil
+        case .amount: bulkEditViewModel.changes.amount = nil
         }
     }
 
-    private func applyNoteChange(_ note: String) {
-        viewModel.bulkUpdateNote(note, context: modelContext)
-        guard viewModel.bulkUpdateError == nil else { return }
-        appliedChanges.insert(.note)
+    /// Todo o nada: si algo está bloqueado no se aplica ninguna parte y el aviso dice por qué.
+    private func applyChanges() {
+        guard viewModel.applyBulkEdit(bulkEditViewModel.changes, context: modelContext) else { return }
         onComplete()
-    }
-
-    private func applyAmountChange(_ amount: Double) {
-        viewModel.bulkUpdateAmount(amount, context: modelContext)
-        guard viewModel.bulkUpdateError == nil else { return }
-        appliedChanges.insert(.amount)
-        onComplete()
+        finishEditing()
     }
 
     private func finishEditing() {
@@ -319,46 +410,50 @@ struct BulkEditSheet: View {
 
 private struct BulkEditOptionRow: View {
     let option: BulkEditOption
-    let isApplied: Bool
+    /// «Hoy: Ahorros» o, con un cambio pendiente, «→ Restaurantes».
+    let subtitle: String?
+    let isPending: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                // Icon
+                // Icon: relleno de color cuando la opción tiene un cambio pendiente (lo elegido va relleno).
                 Circle()
-                    .fill(option.iconColor.opacity(0.15))
+                    .fill(isPending ? option.iconColor : option.iconColor.opacity(0.15))
                     .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
                     .overlay(
                         Image(systemName: option.icon)
                             .font(DS.Typography.body).fontWeight(.medium)
-                            .foregroundStyle(option.iconColor)
+                            .foregroundStyle(isPending ? Color.white : option.iconColor)
                     )
+                    .accessibilityHidden(true)
 
-                // Title
-                Text(option.title)
-                    .font(DS.Typography.body)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(option.title)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(isPending ? DS.Typography.subheadlineEmphasized : DS.Typography.caption)
+                            .foregroundStyle(isPending ? Color.primary : Color.secondary)
+                            .lineLimit(2)
+                    }
+                }
 
                 Spacer()
 
-                // Applied checkmark or chevron
-                if isApplied {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(DS.Typography.body)
-                        .foregroundStyle(DS.Semantic.successForeground)
-                        .accessibilityHidden(true)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(DS.Typography.labelSmall.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.labelSmall.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isPending ? .isSelected : [])
     }
 }
 
@@ -666,23 +761,38 @@ struct BulkNoteEditorSheet: View {
 
 // MARK: - Bulk Amount Editor Sheet
 
+/// L8-13: el campo lleva la moneda de los elegidos y avisa de que todos quedan con ese importe («Los 3 quedarán en
+/// S/ 20»). Antes era un «0.00» sin moneda ni aviso.
 struct BulkAmountEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppPreferences.self) private var appPreferences
     @Binding var amount: Double
+    /// La moneda en que quedarán todos (la de la cuenta nueva si se cambia, o la que comparten).
+    let currencyCode: String
+    let recordCount: Int
     let onSave: () -> Void
 
     @State private var amountText: String = ""
     @FocusState private var isFocused: Bool
 
+    private var typedAmount: Double { AmountInputHelper.parseDecimal(amountText) }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: DS.Spacing.xxl) {
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 SectionBox(title: "") {
-                    HStack {
-                        TextField("0.00", text: $amountText)
+                    HStack(spacing: DS.Spacing.sm) {
+                        Text(appPreferences.currencyIdentifier(for: currencyCode))
+                            .font(DS.Typography.title)
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, DS.Spacing.lg)
+                            .accessibilityHidden(true)
+                        TextField(appPreferences.number(0), text: $amountText)
+                            .accessibilityLabel(L10n.Transaction.amount)
+                            .accessibilityIdentifier("bulk_amount_field")
                             .keyboardType(.decimalPad)
                             .font(DS.Typography.title)
-                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.trailing, DS.Spacing.lg)
                             .padding(.vertical, DS.FormRow.paddingV)
                             .focused($isFocused)
                             .onChange(of: isFocused) { _, focused in
@@ -699,6 +809,17 @@ struct BulkAmountEditorSheet: View {
                             }
                     }
                 }
+
+                // Lo que va a pasar, antes de guardar: todos quedan con el mismo importe (cada uno con su signo).
+                Text(L10n.UXL8B.BulkEdit.amountResult(
+                    count: recordCount,
+                    amount: appPreferences.currency(typedAmount, currencyCode: currencyCode)
+                ))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, DS.Spacing.sm)
+                .accessibilityIdentifier("bulk_amount_result")
 
                 Spacer()
             }
@@ -717,7 +838,7 @@ struct BulkAmountEditorSheet: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     YalaSaveButton {
-                        let value = AmountInputHelper.parseDecimal(amountText)
+                        let value = typedAmount
                         if value > 0 {
                             amount = value
                             onSave()
@@ -729,6 +850,10 @@ struct BulkAmountEditorSheet: View {
                 }
             }
             .onAppear {
+                // Al volver a abrirlo, el monto que ya quedó pendiente.
+                if amount > 0 && amountText.isEmpty {
+                    amountText = AmountInputHelper.formatWithGrouping(amount)
+                }
                 Task {
                     try? await Task.sleep(for: .milliseconds(100))
                     isFocused = true

@@ -1885,7 +1885,6 @@ enum L10n {
         static var saveAsRecurring: String { ls("action.saveAsRecurring", comment: "") }
         static var savedAsFavorite: String { ls("action.savedAsFavorite", comment: "") }
         static var savedAsRecurring: String { ls("action.savedAsRecurring", comment: "") }
-        static var duplicated: String { ls("action.duplicated", comment: "") }
         static var select: String { ls("action.select", comment: "") }
         static var retry: String { ls("action.retry", comment: "") }
         static var later: String { ls("action.later", comment: "") }

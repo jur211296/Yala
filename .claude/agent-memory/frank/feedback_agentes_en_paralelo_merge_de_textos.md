@@ -1,6 +1,6 @@
 ---
 name: agentes-en-paralelo-merge-de-textos
-description: Varios agentes en paralelo sobre los .strings no se integran con merge union, porque también borran y cambian claves en mitad del fichero; hay que fusionarlos clave a clave
+description: Agentes en paralelo y textos: no con merge union; mejor que entreguen JSON y aplicarlo con script (17-oct). Y el barrido cazó seis defectos que los tests no ven
 metadata:
   type: feedback
 ---
@@ -21,3 +21,13 @@ Dos detalles que también mordieron:
 **How to apply:** al lanzar agentes que toquen textos, diles que pueden cambiar y borrar claves, y prepara el
 merge clave a clave antes de integrar. Pídeles además que no toquen el índice de QA ni el tablero: esos los
 escribe quien integra.
+
+**Lo que funcionó el 2026-10-17 (lote 8, 17 cards con dos agentes):** que los agentes NO toquen los `.strings` y
+entreguen sus textos como JSON (clave → idioma → valor, más plurales) que yo aplico con un script a los 16 idiomas.
+Cero conflictos de textos. Dos detalles del script: las cuatro variantes no tienen `.stringsdict` y necesitan la forma
+`other` como línea plana, y `es`/`pt` se copian de `es-419`/`pt-BR`. El código se integró con `git merge-file` en
+los dos ficheros compartidos, sin conflictos, porque cada agente tenía su lista de ficheros vetados.
+
+Y lo que no ven: los agentes solo compilan, y el barrido en el simulador cazó **seis** defectos visuales que ningún
+test veía (una hoja vacía, un aviso bajo el teclado, una barra translúcida que cortaba sus textos, un contorno tapado
+por el cristal…). Con agentes, el barrido no es opcional.

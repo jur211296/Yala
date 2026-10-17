@@ -35,6 +35,16 @@ paths:
 
 ## Gotchas de vistas
 
+- **`.sheet(isPresented:)` con el contenido sacado de OTRO `@State` sale VACÍA si el `body` no lee ese estado fuera del
+  cierre (medido el 2026-10-17, iOS 27.0, lote 8).** Buscar ponía `detailTransaction = record` y `showsDetail = true` en
+  el mismo toque, y la hoja se presentaba con `if let transaction = detailTransaction` en nil: el cierre se quedó con el
+  valor de antes. Con un `@Observable` (Registros, `RecordsViewModel`) el mismo molde funciona. ⇒ **para presentar UN
+  objeto, `.sheet(item:)`**; si hace falta encadenar otra presentación al cerrar, guarda el objeto en un estado aparte
+  (`recordAwaitingEditor`) antes de vaciar el `item`. Pin: `UXAudit22Lote8CWiringTests`.
+- **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
+  contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
+  como contenido, sí (`FilterChipView`).
+
 - **Un `.confirmationDialog` colgado de un BOTÓN no pinta el `Button(role: .cancel)` en iOS 26 (medido el 2026-10-04,
   iPhone 17 Pro, iOS 27.0).** Sale anclado al botón y la salida de cancelar no aparece: `app.sheets.buttons[id]`
   no la encuentra y la persona solo puede tocar fuera. ⇒ si la opción de «no hacer nada» tiene que verse —porque es

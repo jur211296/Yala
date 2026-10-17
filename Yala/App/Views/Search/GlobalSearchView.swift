@@ -76,11 +76,22 @@ struct SearchContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(AppPreferences.self) private var appPreferences
     @Environment(\.tagCatalog) private var tagCatalog
+    @Environment(\.modelContext) private var modelContext
     @Binding var searchText: String
     let transactions: [TransactionItem]  // Passed from parent
 
     @State private var selectedFilter: SearchFilter = .all
+    /// Un resultado abre su detalle, como en Registros (UX 2.2 · L8-14); antes abría el editor directo.
+    @State private var detailTransaction: TransactionItem?
+    /// El registro del detalle mientras Editar o Duplicar esperan a que la hoja termine de cerrarse.
+    @State private var recordAwaitingEditor: TransactionItem?
+    /// «Editar» en el detalle: el detalle baja y, en su `onDismiss`, sube el editor con el mismo registro. Es el
+    /// encadenado de Registros (`RecordsViewModel.requestEditFromDetail`), con estado propio de Buscar: nunca dos
+    /// presentaciones a la vez desde el mismo anchor.
     @State private var editingTransaction: TransactionItem?
+    /// Duplicar y Eliminar al pie del detalle, como en Registros (L8-4): por el mismo encadenado que Editar.
+    @State private var editorStartsAsDuplicate = false
+    @State private var pendingDeleteAfterDetail: TransactionItem?
     /// «Ver todos» despliega aquí mismo todo lo que contó el encabezado. Antes llevaba a Estadísticas › Registros con
     /// el texto como filtro de nota, que solo mira la nota: «Restaurantes» contaba 204 resultados (por categoría) y
     /// allí no salía ninguno; además dejaba el período de toda la app en «Todo» (auditoría UX 2.2, lote 8).
@@ -166,9 +177,50 @@ struct SearchContentView: View {
         }
         .onChange(of: searchText) { showsAllResults = false }
         .onChange(of: selectedFilter) { showsAllResults = false }
-        .sheet(item: $editingTransaction) { transaction in
-            NewTransactionView(transactionToEdit: transaction)
+        // `item:` y no `isPresented:` + un `@State` aparte: el `body` no lee ese estado fuera del cierre de la hoja, así
+        // que el cierre se quedaba con el valor viejo (nil) y la hoja salía vacía (medido en el simulador el 17-oct).
+        .sheet(item: $detailTransaction, onDismiss: handleDetailDismiss) { transaction in
+            TransactionDetailSheet(
+                transaction: transaction,
+                onEdit: { requestEditFromDetail(transaction) },
+                onDuplicate: {
+                    editorStartsAsDuplicate = true
+                    requestEditFromDetail(transaction)
+                },
+                onDelete: {
+                    pendingDeleteAfterDetail = transaction
+                    detailTransaction = nil
+                }
+            )
+        }
+        .sheet(item: $editingTransaction, onDismiss: { editorStartsAsDuplicate = false }) { transaction in
+            NewTransactionView(transactionToEdit: transaction, startsAsDuplicate: editorStartsAsDuplicate)
                 .presentationDetents([.large])
+        }
+    }
+
+    // MARK: - Detalle → Editar (UX 2.2 · L8-14)
+
+    private func openDetail(_ record: TransactionItem) {
+        detailTransaction = record
+    }
+
+    /// Botón Editar (o Duplicar) del detalle: lo cierra sin perder el registro; el editor sube en `handleDetailDismiss`.
+    private func requestEditFromDetail(_ record: TransactionItem) {
+        recordAwaitingEditor = record
+        detailTransaction = nil
+    }
+
+    private func handleDetailDismiss() {
+        if let record = recordAwaitingEditor {
+            recordAwaitingEditor = nil
+            editingTransaction = record
+        }
+        // Eliminar desde el detalle, ya confirmado en él: con la hoja cerrada, por el mismo borrado que Registros
+        // (respeta lo de grupo y borra la pareja de una transferencia).
+        if let record = pendingDeleteAfterDetail {
+            pendingDeleteAfterDetail = nil
+            RecordsViewModel().deleteRecords(ids: [record.persistentModelID], context: modelContext)
         }
     }
 
@@ -218,17 +270,22 @@ struct SearchContentView: View {
 
     private var searchResultsView: some View {
         ScrollView {
-            LazyVStack(spacing: DS.Spacing.none, pinnedViews: [.sectionHeaders]) {
-                // Header with count and Ver todo
-                if !filteredResults.isEmpty && !searchText.isEmpty {
+            // Sin cabeceras fijas: fijadas, la fecha se montaba sobre la primera fila sin fondo, y un fondo propio no
+            // casa con el degradado de la pantalla (L8-14). La fecha se va con su día al desplazarse.
+            LazyVStack(spacing: DS.Spacing.none) {
+                // Encabezado: sin texto, «Recientes»; con texto, el número de resultados y «Ver todos».
+                if !filteredResults.isEmpty {
                     HStack {
-                        Text(L10n.Search.resultsCount(totalMatchingCount))
+                        Text(SearchResultsLogic.headerLabel(searchText: searchText, total: totalMatchingCount))
                             .font(DS.Typography.caption)
                             .foregroundStyle(.secondary)
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("search_results_header")
 
                         Spacer()
 
-                        if SearchResultsLogic.offersShowAll(total: totalMatchingCount, showsAll: showsAllResults) {
+                        if !searchText.isEmpty,
+                           SearchResultsLogic.offersShowAll(total: totalMatchingCount, showsAll: showsAllResults) {
                             Button {
                                 dsWithAnimation(reduceMotion, .easeInOut(duration: 0.2)) {
                                     showsAllResults = true
@@ -244,23 +301,34 @@ struct SearchContentView: View {
                             .accessibilityIdentifier("search_view_all")
                         }
                     }
-                    .padding(.horizontal, DS.Spacing.xl)
+                    // Al borde de las tarjetas, como la fecha de cada día (en Registros la fecha va a ese borde).
+                    .padding(.horizontal, DS.Spacing.lg)
                     .padding(.top, DS.Spacing.sm)
                     .padding(.bottom, DS.Spacing.md)
                 }
 
-                // Grouped results by date
+                // Grouped results by date — la misma fila y la misma fecha que Registros (L8-14).
                 ForEach(groupedResults, id: \.date) { group in
                     Section {
                         ForEach(group.records, id: \.persistentModelID) { record in
-                            SearchResultRow(record: record, currencyCode: appPreferences.defaultCurrencyCode.rawValue) {
-                                editingTransaction = record
-                            }
+                            RecordRowView(
+                                record: record,
+                                currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                                isSelectionMode: false,
+                                isSelected: false,
+                                onTap: { openDetail(record) },
+                                onToggleSelection: {}
+                            )
                             .padding(.horizontal, DS.Spacing.lg)
                             .padding(.vertical, DS.Spacing.xs)
                         }
                     } header: {
-                        SearchDateSectionHeader(date: group.date)
+                        RecordDateSectionView(
+                            date: group.date,
+                            includesYear: SearchResultsLogic.headerIncludesYear(group.date)
+                        )
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.top, DS.Spacing.sm)
                     }
                 }
 
@@ -276,43 +344,6 @@ struct SearchContentView: View {
             .padding(.bottom, DS.Spacing.xl)
         }
         .scrollDismissesKeyboard(.immediately)
-    }
-}
-
-// MARK: - Search Date Section Header
-
-struct SearchDateSectionHeader: View {
-    let date: Date
-
-    private static let sectionDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLocale.current
-        f.dateFormat = "d MMM yyyy"
-        return f
-    }()
-
-    private var formattedDate: String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(date) {
-            return L10n.Date.today
-        } else if calendar.isDateInYesterday(date) {
-            return L10n.Date.yesterday
-        } else {
-            return Self.sectionDateFormatter.string(from: date).replacing(".", with: "")
-        }
-    }
-
-    var body: some View {
-        HStack {
-            Text(formattedDate)
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-
-            Spacer()
-        }
-        .padding(.horizontal, DS.Spacing.xl)
-        .padding(.vertical, DS.Spacing.sm)
     }
 }
 
@@ -339,84 +370,6 @@ enum SearchFilter: String, CaseIterable, Identifiable {
         case .need: return L10n.Search.Filter.need
         case .tag: return L10n.Search.Filter.tag
         }
-    }
-}
-
-// MARK: - Search Result Row
-
-struct SearchResultRow: View {
-    let record: TransactionItem
-    let currencyCode: String
-    let onTap: () -> Void
-
-    @Environment(AppPreferences.self) private var appPreferences
-
-    var body: some View {
-        Button {
-            onTap()
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                // Icon
-                subcategoryIcon
-
-                // Content
-                VStack(alignment: .leading, spacing: 3) { // DS: intentional non-token value
-                    Text(
-                        record.note ?? record.subcategory?.name ?? record.category?.name
-                            ?? L10n.Common.uncategorized
-                    )
-                    .font(DS.Typography.label)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                    let categoryName = record.subcategory?.name ?? record.category?.name ?? ""
-                    let accountName = record.account?.name ?? ""
-
-                    if !categoryName.isEmpty || !accountName.isEmpty {
-                        Text("\(categoryName) • \(accountName)")
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-
-                Spacer()
-
-                // Amount
-                Text(formattedAmount)
-                    .font(DS.Typography.amount)
-                    .foregroundStyle(amountColor)
-            }
-            .padding(.vertical, DS.Spacing.md)
-            .padding(.horizontal, DS.Spacing.md)
-            .contentShape(Rectangle())
-            .solidCard(radius: DS.Radius.card)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var subcategoryIcon: some View {
-        let colorHex = record.category?.colorHex ?? AppConstants.defaultColorHex
-        let iconName = record.subcategory?.iconName ?? record.category?.iconName ?? "tag.fill"
-
-        return ZStack {
-            Circle()
-                .fill(Color(hex: colorHex))
-                .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
-
-            Image(systemName: iconName)
-                .font(DS.Typography.label)
-                .foregroundStyle(.white)
-        }
-    }
-
-    private var formattedAmount: String {
-        appPreferences.currency(record.amount, currencyCode: record.currencyCode, forceFullPrecision: true)
-    }
-
-    private var amountColor: Color {
-        let isIncome = record.category?.isIncome ?? (record.amount >= 0)
-        return Color.amountTint(isIncome: isIncome)
     }
 }
 
@@ -447,5 +400,17 @@ enum SearchResultsLogic {
     /// «Ver todos» solo cuando hay más de los que se ven.
     static func offersShowAll(total: Int, showsAll: Bool) -> Bool {
         !showsAll && total > previewLimit
+    }
+
+    /// Sin texto, Buscar enseña los últimos registros: el encabezado lo dice («Recientes») en vez de dejarlos sin
+    /// nombre. Con texto, cuántos resultados hay (UX 2.2 · L8-14).
+    static func headerLabel(searchText: String, total: Int) -> String {
+        searchText.isEmpty ? L10n.UXL8C.searchRecent : L10n.Search.resultsCount(total)
+    }
+
+    /// La fecha de cada día es la de Registros («14 de octubre»); como Buscar recorre todos los años, un día de otro
+    /// año lleva el año.
+    static func headerIncludesYear(_ date: Date, now: Date = .now, calendar: Calendar = .current) -> Bool {
+        !calendar.isDate(date, equalTo: now, toGranularity: .year)
     }
 }

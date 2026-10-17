@@ -120,6 +120,19 @@ final class RecordsViewModel: Filterable {
         amount: true, note: true, subcategory: true, date: true
     )
 
+    /// Modo duplicados (L8-11): los grupos que casan entre sí, cada uno con el que se queda delante. Vacío fuera del
+    /// modo. Los calcula `applyFilters` sobre lo ya filtrado.
+    private(set) var duplicateGroups: [[TransactionItem]] = []
+    /// «2 posibles duplicados en 1 grupo».
+    private(set) var duplicateTally = RecordsDuplicateLogic.Tally(duplicates: 0, groups: 0)
+    private var duplicateCandidateGroups: [[RecordsDuplicateLogic.Candidate<PersistentIdentifier>]] = []
+
+    /// «Quitar repetidos»: lo que va a borrar, medido al tocar el botón (la confirmación lo cuenta).
+    private(set) var duplicateRemovalPlan = RecordsDuplicateLogic.RemovalPlan<PersistentIdentifier>(
+        toDelete: [], keptGroupRecords: 0
+    )
+    var isConfirmingDuplicateRemoval = false
+
     /// Sheet states
     var showFiltersSheet: Bool = false
     var showNewTransaction: Bool = false
@@ -314,23 +327,38 @@ final class RecordsViewModel: Filterable {
         // the already-filtered set ("duplicates within what you're filtering"). Excludes
         // transfers/adjustments — their pair is legitimate, not a duplicate to delete.
         if duplicateModeActive && !duplicateCriteria.isEmpty {
+            var recordsByID: [PersistentIdentifier: TransactionItem] = [:]
             let candidates = groupedRecords.flatMap(\.records).compactMap {
                 tx -> RecordsDuplicateLogic.Candidate<PersistentIdentifier>? in
                 guard tx.balanceAdjustmentType == nil else { return nil }
+                recordsByID[tx.persistentModelID] = tx
                 return .init(
                     id: tx.persistentModelID,
                     amount: tx.amount,
                     currencyCode: tx.currencyCode,
                     note: tx.note,
                     subcategoryID: tx.subcategory?.shortcutID.uuidString,
-                    date: tx.date
+                    date: tx.date,
+                    createdAt: tx.createdAt,
+                    isDeletable: RecordBulkActionLogic.allows(.delete, .init(record: tx)),
+                    tiebreak: tx.syncID?.uuidString ?? "",
+                    accountID: tx.account?.shortcutID.uuidString
                 )
             }
-            let dupIDs = RecordsDuplicateLogic.duplicateIDs(in: candidates, criteria: duplicateCriteria)
+            // L8-11: los grupos de duplicados, cada uno junto y con el que se queda delante.
+            let candidateGroups = RecordsDuplicateLogic.duplicateGroups(in: candidates, criteria: duplicateCriteria)
+            duplicateCandidateGroups = candidateGroups
+            duplicateGroups = candidateGroups.map { group in group.compactMap { recordsByID[$0.id] } }
+            duplicateTally = RecordsDuplicateLogic.tally(candidateGroups)
+            let dupIDs = Set(candidateGroups.flatMap { $0.map(\.id) })
             groupedRecords = groupedRecords.compactMap { group in
                 let kept = group.records.filter { dupIDs.contains($0.persistentModelID) }
                 return kept.isEmpty ? nil : (group.date, kept)
             }
+        } else {
+            duplicateCandidateGroups = []
+            duplicateGroups = []
+            duplicateTally = RecordsDuplicateLogic.Tally(duplicates: 0, groups: 0)
         }
 
         // Update cached summary (calculated once per filter change, not per render)
@@ -460,6 +488,70 @@ final class RecordsViewModel: Filterable {
     /// Exit "identify duplicates" mode (ephemeral — also called on view/tab change)
     func exitDuplicateMode() {
         duplicateModeActive = false
+    }
+
+    /// «Quitar repetidos»: mide qué se borraría y pide la confirmación. Con un día elegido en el calendario, solo los
+    /// grupos que se ven (los que tocan ese día): borrar repetidos de días que no están delante sorprende.
+    func requestDuplicateRemoval(limitedToDay day: Date? = nil) {
+        let groups = day.map { day in
+            duplicateCandidateGroups.filter { group in group.contains { Calendar.current.isDate($0.date, inSameDayAs: day) } }
+        } ?? duplicateCandidateGroups
+        duplicateRemovalPlan = RecordsDuplicateLogic.removalPlan(groups)
+        duplicateRemovalGroupIDs = Set(groups.flatMap { $0.map(\.id) })
+        isConfirmingDuplicateRemoval = true
+    }
+
+    /// Los registros (todos, también los que se quedan) de los grupos medidos al pedir «Quitar repetidos».
+    private var duplicateRemovalGroupIDs: Set<PersistentIdentifier> = []
+
+    /// Al confirmar se vuelve a medir con lo que hay AHORA en el store: con la alerta abierta, otro dispositivo pudo
+    /// borrar el que se queda o cambiarle la nota. Solo se borra lo que sigue repetido y con su registro de referencia
+    /// vivo (revisión adversarial del lote 8).
+    private func currentRemovalIDs(context: ModelContext) -> Set<PersistentIdentifier> {
+        let planned = Set(duplicateRemovalPlan.toDelete)
+        guard !planned.isEmpty, !duplicateCriteria.isEmpty else { return [] }
+        let fresh = fetchTransactions(ids: duplicateRemovalGroupIDs, context: context).filter {
+            !$0.isDeleted && $0.balanceAdjustmentType == nil
+        }
+        let candidates = fresh.map { tx in
+            RecordsDuplicateLogic.Candidate(
+                id: tx.persistentModelID,
+                amount: tx.amount,
+                currencyCode: tx.currencyCode,
+                note: tx.note,
+                subcategoryID: tx.subcategory?.shortcutID.uuidString,
+                date: tx.date,
+                createdAt: tx.createdAt,
+                isDeletable: RecordBulkActionLogic.allows(.delete, .init(record: tx)),
+                tiebreak: tx.syncID?.uuidString ?? "",
+                accountID: tx.account?.shortcutID.uuidString
+            )
+        }
+        let regrouped = RecordsDuplicateLogic.duplicateGroups(in: candidates, criteria: duplicateCriteria)
+        return Set(RecordsDuplicateLogic.removalPlan(regrouped).toDelete).intersection(planned)
+    }
+
+    /// Borra los repetidos medidos al pedirlo, con el borrado de siempre (`deleteRecords`), que vuelve a dejar fuera lo
+    /// de grupo y borra la pareja de una transferencia (los candidatos ya no llevan transferencias ni ajustes).
+    func confirmDuplicateRemoval(context: ModelContext) {
+        let ids = currentRemovalIDs(context: context)
+        duplicateRemovalPlan = RecordsDuplicateLogic.RemovalPlan(toDelete: [], keptGroupRecords: 0)
+        duplicateRemovalGroupIDs = []
+        guard !ids.isEmpty else { return }
+        deleteRecords(ids: ids, context: context)
+        // La recarga llega por `dataVersion` (el host la difiere 150 ms). Mientras, la lista no puede seguir pintando
+        // los registros borrados: se quitan ya de lo que se enseña.
+        groupedRecords = groupedRecords.compactMap { group in
+            let kept = group.records.filter { !ids.contains($0.persistentModelID) }
+            return kept.isEmpty ? nil : (group.date, kept)
+        }
+        duplicateCandidateGroups = duplicateCandidateGroups
+            .map { group in group.filter { !ids.contains($0.id) } }
+            .filter { $0.count >= 2 }
+        duplicateGroups = duplicateGroups
+            .map { group in group.filter { !ids.contains($0.persistentModelID) } }
+            .filter { $0.count >= 2 }
+        duplicateTally = RecordsDuplicateLogic.tally(duplicateCandidateGroups)
     }
 
     /// Delete selected records (including transfer pairs)
@@ -624,6 +716,66 @@ final class RecordsViewModel: Filterable {
         return pendingEditAfterDetail
     }
 
+    // MARK: - Duplicar y Eliminar desde el detalle (auditoría UX 2.2, L8-4)
+
+    /// Detalle › Eliminar, ya confirmado en el propio detalle. La hoja se cierra primero y el borrado corre en su
+    /// `onDismiss` (`consumePendingDeleteAfterDetail`): así la hoja no repinta un registro que ya no existe.
+    private var pendingDeleteAfterDetail: PersistentIdentifier?
+
+    /// Detalle › Duplicar (hoja): se cierra el detalle y el editor sube ya como copia, por el mismo encadenado que
+    /// Editar.
+    func requestDuplicateFromDetail() {
+        editorStartsAsDuplicate = true
+        requestEditFromDetail()
+    }
+
+    func requestDeleteFromDetail(_ record: TransactionItem) {
+        pendingDeleteAfterDetail = record.persistentModelID
+        showTransactionDetail = false
+    }
+
+    /// En el `onDismiss` del detalle: borra lo que se pidió borrar desde él. `true` si había algo.
+    func consumePendingDeleteAfterDetail(context: ModelContext) -> Bool {
+        guard let id = pendingDeleteAfterDetail else { return false }
+        pendingDeleteAfterDetail = nil
+        deleteRecords(ids: [id], context: context)
+        return true
+    }
+
+    /// Eliminar desde la columna o el panel de una ventana ancha: se cierra lo abierto y se borra.
+    func deleteOpenRecord(_ record: TransactionItem, context: ModelContext) {
+        let id = record.persistentModelID
+        if openRecordID == id { openRecordID = nil }
+        deleteRecords(ids: [id], context: context)
+    }
+
+    /// «Deshacer» del aviso tras cambiar la subcategoría desde el menú (L8-9): deja la subcategoría y la categoría que
+    /// tenía. Directo y no por `updateSubcategory`, que no admite volver a «sin subcategoría».
+    func restoreSubcategory(
+        _ subcategory: Subcategory?,
+        category: Category?,
+        id: PersistentIdentifier,
+        ifStillIs applied: Subcategory,
+        context: ModelContext
+    ) {
+        do {
+            // Un fetch y no `model(for:)`, que fabrica un objeto aunque el registro ya se haya borrado.
+            var descriptor = FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.persistentModelID == id })
+            descriptor.fetchLimit = 1
+            guard let transaction = try context.fetch(descriptor).first else { return }
+            // Si en los segundos del aviso la subcategoría cambió por otro camino, Deshacer no pisa ese cambio.
+            guard transaction.subcategory?.persistentModelID == applied.persistentModelID else { return }
+            transaction.subcategory = subcategory
+            transaction.category = category
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("RecordsViewModel: Error restoring subcategory: \(error)")
+            #endif
+        }
+    }
+
     /// Handle edit action for selected records
     func editSelectedRecords(transactions: [TransactionItem]) -> EditAction {
         guard !selectedRecordIDs.isEmpty else { return .none }
@@ -653,19 +805,8 @@ final class RecordsViewModel: Filterable {
     /// rate en cross-currency). Editar la cuenta de un transfer debe hacerse desde su editor dedicado.
     func bulkUpdateAccount(_ account: Account, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
-            bulkUpdateError = L10n.BulkEdit.cannotEditTransferAccount
-            return
-        }
-        guard !blocksGroupRecords(.account, in: transactions) else { return }
-        // Y aunque el caso A deje cambiar la cuenta, no a una de OTRA divisa: el editor tampoco lo ofrece
-        // (`currencyFilter`), porque el puente de grupos exige la divisa del gasto y, si no casa, borra el registro y
-        // lo devuelve como borrador al siguiente re-puente (`GroupTransactionBridge`, `.currencyChanged`).
-        let destination = normalizeCurrencyCode(account.currencyCode)
-        if transactions.contains(where: {
-            ($0.splitExpenseID != nil || $0.splitSettlementID != nil) && normalizeCurrencyCode($0.currencyCode) != destination
-        }) {
-            bulkUpdateError = L10n.BulkEdit.cannotEditGroupRecords
+        if let blocker = accountBlocker(account, in: transactions) {
+            bulkUpdateError = blocker
             return
         }
         for transaction in transactions {
@@ -674,9 +815,9 @@ final class RecordsViewModel: Filterable {
             transaction.recalculatePreferredCurrency(context: context)
         }
         do {
-            try context.save()
-            SessionState.shared.incrementDataVersion()
+            try commitBulkStep(context)
         } catch {
+            bulkBatchFailed = true
             #if DEBUG
             print("RecordsViewModel: Error saving bulk account update: \(error)")
             #endif
@@ -692,19 +833,18 @@ final class RecordsViewModel: Filterable {
     /// El cambio de subcategoría del modo selección, para estos registros. El menú contextual lo usa con uno solo.
     func updateSubcategory(_ subcategory: Subcategory, ids: Set<PersistentIdentifier>, context: ModelContext) {
         let transactions = fetchTransactions(ids: ids, context: context)
-        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
-            bulkUpdateError = L10n.BulkEdit.cannotEditTransferSubcategory
+        if let blocker = subcategoryBlocker(in: transactions) {
+            bulkUpdateError = blocker
             return
         }
-        guard !blocksGroupRecords(.subcategory, in: transactions) else { return }
         for transaction in transactions {
             transaction.subcategory = subcategory
             transaction.category = subcategory.safeCategory
         }
         do {
-            try context.save()
-            SessionState.shared.incrementDataVersion()
+            try commitBulkStep(context)
         } catch {
+            bulkBatchFailed = true
             #if DEBUG
             print("RecordsViewModel: Error saving bulk subcategory update: \(error)")
             #endif
@@ -717,7 +857,10 @@ final class RecordsViewModel: Filterable {
     /// CSV-first read (resolvedTagIDs) — fixes lazy nil → tag loss bug.
     func bulkAddTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        guard !blocksGroupRecords(.tags, in: transactions) else { return }
+        if let blocker = groupBlocker(.tags, in: transactions) {
+            bulkUpdateError = blocker
+            return
+        }
         let toAddIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
 
@@ -740,9 +883,9 @@ final class RecordsViewModel: Filterable {
                     try applyAdd(to: partner)
                 }
             }
-            try context.save()
-            SessionState.shared.incrementDataVersion()
+            try commitBulkStep(context)
         } catch {
+            bulkBatchFailed = true
             #if DEBUG
             print("RecordsViewModel: Error saving bulk tags update: \(error)")
             #endif
@@ -754,7 +897,10 @@ final class RecordsViewModel: Filterable {
     /// CSV-first read (resolvedTagIDs).
     func bulkRemoveTags(_ tags: [Tag], context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        guard !blocksGroupRecords(.tags, in: transactions) else { return }
+        if let blocker = groupBlocker(.tags, in: transactions) {
+            bulkUpdateError = blocker
+            return
+        }
         let toRemoveIDs = Set(tags.map(\.id))
         var processedPairIDs: Set<String> = []
 
@@ -776,15 +922,16 @@ final class RecordsViewModel: Filterable {
                 }
             }
         } catch {
+            bulkBatchFailed = true
             #if DEBUG
             print("RecordsViewModel: Error applying bulk remove: \(error)")
             #endif
             return  // abort early — no save (preserva tags previos)
         }
         do {
-            try context.save()
-            SessionState.shared.incrementDataVersion()
+            try commitBulkStep(context)
         } catch {
+            bulkBatchFailed = true
             #if DEBUG
             print("RecordsViewModel: Error saving bulk tags removal: \(error)")
             #endif
@@ -797,7 +944,10 @@ final class RecordsViewModel: Filterable {
     /// schema noise en CloudKit.
     func bulkUpdateNote(_ note: String, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        guard !blocksGroupRecords(.note, in: transactions) else { return }
+        if let blocker = groupBlocker(.note, in: transactions) {
+            bulkUpdateError = blocker
+            return
+        }
         let finalNote = note.isEmpty ? nil : note
         var processedPairIDs: Set<String> = []
         for transaction in transactions {
@@ -814,9 +964,9 @@ final class RecordsViewModel: Filterable {
             }
         }
         do {
-            try context.save()
-            SessionState.shared.incrementDataVersion()
+            try commitBulkStep(context)
         } catch {
+            bulkBatchFailed = true
             #if DEBUG
             print("RecordsViewModel: Error saving bulk note update: \(error)")
             #endif
@@ -829,15 +979,10 @@ final class RecordsViewModel: Filterable {
     /// el exchange rate). Skip si collision (3+).
     func bulkUpdateAmount(_ amount: Double, context: ModelContext) {
         let transactions = getSelectedTransactions(context: context)
-        // Preserve exchange rate: bloquear bulk-edit en transfers cross-currency.
-        for tx in transactions {
-            if let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: tx, in: context),
-               tx.currencyCode != partner.currencyCode {
-                bulkUpdateError = L10n.BulkEdit.cannotEditTransferAmountCrossCurrency
-                return
-            }
+        if let blocker = amountBlocker(in: transactions, context: context) {
+            bulkUpdateError = blocker
+            return
         }
-        guard !blocksGroupRecords(.amount, in: transactions) else { return }
         var processedPairIDs: Set<String> = []
         for transaction in transactions {
             // Preserve sign: expenses are negative, income positive
@@ -852,9 +997,9 @@ final class RecordsViewModel: Filterable {
             }
         }
         do {
-            try context.save()
-            SessionState.shared.incrementDataVersion()
+            try commitBulkStep(context)
         } catch {
+            bulkBatchFailed = true
             #if DEBUG
             print("RecordsViewModel: Error saving bulk amount update: \(error)")
             #endif
@@ -914,12 +1059,127 @@ final class RecordsViewModel: Filterable {
 
     /// Si algún registro viene de un grupo y en esta operación manda el grupo, avisa y no se toca ninguno: el mismo
     /// molde que el bloqueo de las transferencias (todo o nada, nunca a medias).
-    private func blocksGroupRecords(_ operation: RecordBulkActionLogic.Operation, in transactions: [TransactionItem]) -> Bool {
+    private func groupBlocker(_ operation: RecordBulkActionLogic.Operation, in transactions: [TransactionItem]) -> String? {
         guard transactions.contains(where: { !RecordBulkActionLogic.allows(operation, .init(record: $0)) }) else {
+            return nil
+        }
+        return L10n.BulkEdit.cannotEditGroupRecords
+    }
+
+    // MARK: - Bloqueos de «Editar varios» (uno por operación)
+    //
+    // Cada operación en lote y la comprobación previa de `bulkEditBlocker` leen la MISMA regla: si se copiaran, la
+    // hoja podría ofrecer «Aplicar» para algo que la operación luego rechaza a medias.
+
+    private func accountBlocker(_ account: Account, in transactions: [TransactionItem]) -> String? {
+        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
+            return L10n.BulkEdit.cannotEditTransferAccount
+        }
+        if let blocker = groupBlocker(.account, in: transactions) { return blocker }
+        // Y aunque el caso A deje cambiar la cuenta, no a una de OTRA divisa: el editor tampoco lo ofrece
+        // (`currencyFilter`), porque el puente de grupos exige la divisa del gasto y, si no casa, borra el registro y
+        // lo devuelve como borrador al siguiente re-puente (`GroupTransactionBridge`, `.currencyChanged`).
+        let destination = normalizeCurrencyCode(account.currencyCode)
+        if transactions.contains(where: {
+            ($0.splitExpenseID != nil || $0.splitSettlementID != nil) && normalizeCurrencyCode($0.currencyCode) != destination
+        }) {
+            return L10n.BulkEdit.cannotEditGroupRecords
+        }
+        return nil
+    }
+
+    private func subcategoryBlocker(in transactions: [TransactionItem]) -> String? {
+        if transactions.contains(where: { $0.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer }) {
+            return L10n.BulkEdit.cannotEditTransferSubcategory
+        }
+        return groupBlocker(.subcategory, in: transactions)
+    }
+
+    /// Preserve exchange rate: bloquear bulk-edit en transfers cross-currency.
+    private func amountBlocker(in transactions: [TransactionItem], context: ModelContext) -> String? {
+        for tx in transactions {
+            if let partner = TransferPartnerLookup.partnerSkipIfAmbiguous(of: tx, in: context),
+               tx.currencyCode != partner.currencyCode {
+                return L10n.BulkEdit.cannotEditTransferAmountCrossCurrency
+            }
+        }
+        return groupBlocker(.amount, in: transactions)
+    }
+
+    // MARK: - «Editar varios»: elegir primero, aplicar después (UX 2.2 · L8-13)
+
+    /// Los registros elegidos, para que la hoja enseñe qué tienen hoy.
+    func selectedTransactions(context: ModelContext) -> [TransactionItem] {
+        getSelectedTransactions(context: context)
+    }
+
+    /// Por qué no se puede aplicar lo pendiente, o `nil`. Mira todas las operaciones antes de tocar nada: así
+    /// «Aplicar» es todo o nada, como cada operación por separado (el molde del bloqueo de transferencias).
+    func bulkEditBlocker(_ changes: BulkEditChanges, context: ModelContext) -> String? {
+        let transactions = getSelectedTransactions(context: context)
+        if changes.subcategory != nil, let blocker = subcategoryBlocker(in: transactions) { return blocker }
+        if let account = changes.account, let blocker = accountBlocker(account, in: transactions) { return blocker }
+        if !changes.tagsToAdd.isEmpty || !changes.tagsToRemove.isEmpty,
+           let blocker = groupBlocker(.tags, in: transactions) {
+            return blocker
+        }
+        if changes.note != nil, let blocker = groupBlocker(.note, in: transactions) { return blocker }
+        if changes.amount != nil, let blocker = amountBlocker(in: transactions, context: context) { return blocker }
+        return nil
+    }
+
+    /// Aplica todo lo pendiente de una vez. Si algo está bloqueado no aplica nada, deja el motivo en
+    /// `bulkUpdateError` y devuelve `false`.
+    ///
+    /// Orden: categoría, cuenta, etiquetas, nota y, al final, el monto, que recalcula la divisa principal con la
+    /// cuenta ya cambiada.
+    @discardableResult
+    func applyBulkEdit(_ changes: BulkEditChanges, context: ModelContext) -> Bool {
+        if let blocker = bulkEditBlocker(changes, context: context) {
+            bulkUpdateError = blocker
             return false
         }
-        bulkUpdateError = L10n.BulkEdit.cannotEditGroupRecords
+        bulkUpdateError = nil
+        // Todo o nada también ante un fallo del store (revisión adversarial del lote 8): los pasos no guardan cada uno
+        // por su cuenta; se guarda una vez al final, y si un paso falla o se bloquea, se deshace lo que ya se tocó.
+        isBatchingBulkEdit = true
+        bulkBatchFailed = false
+        defer { isBatchingBulkEdit = false }
+        if let subcategory = changes.subcategory { bulkUpdateSubcategory(subcategory, context: context) }
+        if let account = changes.account { bulkUpdateAccount(account, context: context) }
+        if !changes.tagsToAdd.isEmpty { bulkAddTags(changes.tagsToAdd, context: context) }
+        if !changes.tagsToRemove.isEmpty { bulkRemoveTags(changes.tagsToRemove, context: context) }
+        if let note = changes.note { bulkUpdateNote(note, context: context) }
+        if let amount = changes.amount { bulkUpdateAmount(amount, context: context) }
+        guard bulkUpdateError == nil, !bulkBatchFailed else {
+            context.rollback()
+            if bulkUpdateError == nil { bulkUpdateError = L10n.UXL8.bulkSaveFailed }
+            return false
+        }
+        do {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("RecordsViewModel: Error saving bulk edit: \(error)")
+            #endif
+            context.rollback()
+            bulkUpdateError = L10n.UXL8.bulkSaveFailed
+            return false
+        }
         return true
+    }
+
+    /// `applyBulkEdit` en curso: los pasos no guardan (lo hace él al final, una vez).
+    private var isBatchingBulkEdit = false
+    /// Algún paso de `applyBulkEdit` falló contra el store (lectura o guardado).
+    private var bulkBatchFailed = false
+
+    /// El guardado de un paso de edición en lote: suelto, guarda y avisa; dentro de `applyBulkEdit`, espera al final.
+    private func commitBulkStep(_ context: ModelContext) throws {
+        guard !isBatchingBulkEdit else { return }
+        try context.save()
+        SessionState.shared.incrementDataVersion()
     }
 
     /// Lo que dice la confirmación del borrado en lote. Se mide al tocar la papelera (`prepareBulkDelete`), no en cada
