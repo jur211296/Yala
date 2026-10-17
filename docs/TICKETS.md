@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (911)
+## Index (912)
 
 | id | status | path |
 |---|---|---|
@@ -464,6 +464,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-push-reads-an-offline-token-refresh-as-a-session-expiry | done | tickets/done/groups-push-reads-an-offline-token-refresh-as-a-session-expiry.md |
 | groups-reassociation-does-not-restore-the-bridge-link | backlog | tickets/backlog/groups-reassociation-does-not-restore-the-bridge-link.md |
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
+| groups-reject-can-expel-a-member-approved-elsewhere | backlog | tickets/backlog/groups-reject-can-expel-a-member-approved-elsewhere.md |
 | groups-settlement-reminder | done | tickets/done/groups-settlement-reminder.md |
 | groups-settlement-reminder-discoverability | done | tickets/done/groups-settlement-reminder-discoverability.md |
 | groups-settlement-reminder-stale-clock | backlog | tickets/backlog/groups-settlement-reminder-stale-clock.md |

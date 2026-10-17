@@ -88,6 +88,21 @@ enum GroupBatchLeaveLogic {
     }
 
     /// Motivo del `.needsDecision` derivado de la clasificación (llamar solo cuando `classify == .needsDecision`).
+    /// Titular del resultado de «Salir de mis grupos». Lote 19 de la auditoría UX: con todos los grupos en
+    /// «Necesitan tu decisión» decía «Saliste de algunos grupos» sin haber salido de ninguno.
+    enum ResultHeadline: Equatable {
+        case stopped
+        case allDone
+        case someNeedDecision
+        case noneLeft
+    }
+
+    static func resultHeadline(wasStopped: Bool, leftOrTransferred: Int, needsDecision: Int) -> ResultHeadline {
+        if wasStopped { return .stopped }
+        if needsDecision == 0 { return .allDone }
+        return leftOrTransferred > 0 ? .someNeedDecision : .noneLeft
+    }
+
     static func needsDecisionReason(_ facts: GroupFacts) -> NeedsDecisionReason {
         facts.isBackendChannel ? .backendNoEligibleHeir : .cloudKitOwnerWithCoMembers
     }

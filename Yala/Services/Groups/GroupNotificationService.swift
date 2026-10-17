@@ -311,15 +311,20 @@ final class GroupNotificationService {
         // Formato canónico off-MainActor: respeta decimalPlaces / formato de moneda del usuario
         // (evita drift visual entre la notificación y el resto de la app).
         let formattedShare = YalaFormatterStatic.currency(value: myShare, currencyCode: expense.currencyCode)
+        return (groupName, Self.expenseBody(
+            isNew: isNew, memberName: memberName,
+            description: expense.expenseDescription, formattedShare: formattedShare))
+    }
 
-        if isNew {
-            if expense.expenseDescription.isEmpty {
-                return (groupName, L10n.Notifications.Group.newExpenseNoDesc(memberName, formattedShare))
-            }
-            return (groupName, L10n.Notifications.Group.newExpense(memberName, expense.expenseDescription, formattedShare))
-        } else {
-            let desc = expense.expenseDescription.isEmpty ? L10n.Notifications.Group.fallbackGroup : expense.expenseDescription
-            return (groupName, L10n.Notifications.Group.modifiedExpense(memberName, desc, formattedShare))
+    /// El cuerpo del aviso de un gasto nuevo o editado. Sin descripción, «agregó un gasto» / «actualizó un gasto»:
+    /// hasta el lote 19 de la auditoría UX, el editado sin descripción decía «actualizó 'Grupo'», con el nombre de
+    /// reserva del GRUPO en el sitio del gasto.
+    static func expenseBody(isNew: Bool, memberName: String, description: String, formattedShare: String) -> String {
+        switch (isNew, description.isEmpty) {
+        case (true, true): return L10n.Notifications.Group.newExpenseNoDesc(memberName, formattedShare)
+        case (true, false): return L10n.Notifications.Group.newExpense(memberName, description, formattedShare)
+        case (false, true): return L10n.Notifications.Group.modifiedExpenseNoDesc(memberName, formattedShare)
+        case (false, false): return L10n.Notifications.Group.modifiedExpense(memberName, description, formattedShare)
         }
     }
 

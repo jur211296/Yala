@@ -2370,6 +2370,7 @@
 "notifications.groups.newExpense" = "🧾 %1$@ dodał(a) '%2$@' — twoja część: %3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@ dodał(a) wydatek — twoja część: %2$@";
 "notifications.groups.modifiedExpense" = "✏️ %1$@ zaktualizował(a) '%2$@' — twoja część: %3$@";
+"notifications.groups.modifiedExpenseNoDesc" = "✏️ %1$@ zaktualizował(a) wydatek — twoja część: %2$@";
 "notifications.groups.settlement" = "💸 %@ zapłacił(a) ci %@!";
 "notifications.groups.newMember" = "🙌 %@ dołączył(a) do grupy";
 "notifications.groups.multipleChanges" = "📋 %d nowych aktualizacji";
@@ -5143,6 +5144,7 @@
 
 /* D10 batch: result headline when some need decision */
 "settings.batchLeaveSomeNeedDecision" = "Opuszczono niektóre grupy.";
+"settings.batchLeaveNoneLeft" = "Nie opuszczono żadnej grupy.";
 
 /* D10 batch: stat label for groups left/deleted */
 "settings.batchLeaveStatLeft" = "Opuszczone";

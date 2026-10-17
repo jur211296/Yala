@@ -167,7 +167,7 @@ struct GroupExpenseAccountAndSubcategoryFinalizationSheet: View {
             #if DEBUG
             print("GroupExpenseAccountAndSubcategoryFinalizationSheet: approve failed: \(error)")
             #endif
-            saveErrorMessage = error.localizedDescription
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
             showSaveError = true
         }
     }

@@ -2370,6 +2370,7 @@
 "notifications.groups.newExpense" = "🧾 %1$@ 添加了「%2$@」— 你需付 %3$@";
 "notifications.groups.newExpenseNoDesc" = "🧾 %1$@ 添加了一笔支出 — 你需付 %2$@";
 "notifications.groups.modifiedExpense" = "✏️ %1$@ 更新了「%2$@」— 你需付 %3$@";
+"notifications.groups.modifiedExpenseNoDesc" = "✏️ %1$@ 更新了一笔支出 — 你需付 %2$@";
 "notifications.groups.settlement" = "💸 %@ 给你付了 %@!";
 "notifications.groups.newMember" = "🙌 %@ 加入了群组";
 "notifications.groups.multipleChanges" = "📋 %d 条新动态";
@@ -5143,6 +5144,7 @@
 
 /* D10 batch: result headline when some need decision */
 "settings.batchLeaveSomeNeedDecision" = "已离开部分群组。";
+"settings.batchLeaveNoneLeft" = "未离开任何群组。";
 
 /* D10 batch: stat label for groups left/deleted */
 "settings.batchLeaveStatLeft" = "已离开";

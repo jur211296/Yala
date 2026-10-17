@@ -1907,6 +1907,7 @@
 "notifications.groups.fallbackMember" = "Alguem";
 "notifications.groups.hint" = "Avisos quando outros membros registram gastos ou te pagam";
 "notifications.groups.modifiedExpense" = "✏️ %1$@ atualizou '%2$@' — deves %3$@";
+"notifications.groups.modifiedExpenseNoDesc" = "✏️ %1$@ atualizou uma despesa — deves %2$@";
 "notifications.groups.multipleChanges" = "📋 %d novidades para rever";
 "notifications.groups.name" = "Grupos";
 "notifications.groups.remoteActivity" = "Novidades nos teus grupos";
@@ -4418,6 +4419,7 @@
 
 /* D10 batch: result headline when some need decision */
 "settings.batchLeaveSomeNeedDecision" = "Saíste de alguns grupos.";
+"settings.batchLeaveNoneLeft" = "Não saíste de nenhum grupo.";
 
 /* D10 batch: stat label for groups left/deleted */
 "settings.batchLeaveStatLeft" = "Saídos";
