@@ -656,12 +656,12 @@ la tienda de prueba de Apple (`SKTestSession`): `xcodebuild` + `simctl` no aplic
 | 18.3 | Crear mi plan de flujo de caja | Chip Flujo de caja sin plan | `CashFlowSetupView` («¿Qué es el flujo de caja?», líneas sugeridas, «¿Con cuánto empiezas?», «Crear mi plan») → `CashFlowTableView` con tour | `V/Reports/CashFlow/CashFlowSetupView.swift`, `CashFlowTableView.swift`, `VM/CashFlowPlanViewModel.swift` | parcial (`CashFlowPlan`, solo monta) |
 | 18.4 | Revisar el plan mes a mes | Tira de meses | `CashFlowMonthStrip` → `CashFlowMonthDetailView` → `CashFlowOthersSheet` | `V/Reports/CashFlow/CashFlowMonthDetailView.swift` | no |
 | 18.5 | Ajustar el monto de un mes | Tocar una celda | `CashFlowCellDetailSheet` («Solo este mes / Este mes y futuros») | `V/Reports/CashFlow/CashFlowCellDetailSheet.swift` | no |
-| 18.6 | Cambiar cómo se calcula una línea | Tocar una línea | `CashFlowLineConfigSheet` (promedios, fijo, tendencia, personalizado; candado Pro) | `V/Reports/CashFlow/CashFlowLineConfigSheet.swift` | no |
+| 18.6 | Cambiar cómo se calcula una línea | Tocar una línea | `CashFlowLineConfigSheet` (promedios, fijo, tendencia, personalizado) — **inalcanzable desde `2daa86d95`** (Jürgen retiró su menú por no estar listo); sin candado Pro | `V/Reports/CashFlow/CashFlowLineConfigSheet.swift` | no |
 | 18.7 | Añadir una línea al plan | «Agregar línea» · «+ Agregar al plan» | `CashFlowAddLineSheet`, `CashFlowOthersSheet` | `V/Reports/CashFlow/CashFlowAddLineSheet.swift` | no |
-| 18.8 | Borrar una línea | Pulsación larga en la fila del mes · configuración de la línea | Menú contextual / diálogo | `V/Reports/CashFlow/CashFlowDetailLineRow.swift`, `CashFlowMonthDetailView.swift` | no |
+| 18.8 | Borrar una línea | Pulsación larga en la fila del mes (la configuración de la línea no se abre, ver 18.6) | Menú contextual / diálogo | `V/Reports/CashFlow/CashFlowDetailLineRow.swift`, `CashFlowMonthDetailView.swift` | no |
 | 18.9 | Cambiar el saldo inicial | Resumen del mes | `EditStartingBalanceSheet` | `V/Reports/CashFlow/CashFlowTableView.swift` | no |
 | 18.10 | Configurar el horizonte o reiniciar el plan | Menú ··· | `CashFlowHorizonSheet`, diálogo «Reiniciar plan» | `V/Reports/CashFlow/CashFlowHorizonSheet.swift` | no |
-| 18.11 | Ver las gráficas del flujo de caja | Icono de gráfica | `CashFlowChartsSheet` (5 gráficas, chip IA) | `V/Reports/CashFlow/CashFlowChartsSheet.swift` | no |
+| 18.11 | Ver las gráficas del flujo de caja | Icono de gráfica | `CashFlowChartsSheet` (3 gráficas y 2 tarjetas de comentario, chip IA) | `V/Reports/CashFlow/CashFlowChartsSheet.swift` | no |
 
 **Visto en el código:**
 - 18.8 está **verificado**: desde el menú, el botón se llama como la pregunta de confirmación y borra sin preguntar.
@@ -672,9 +672,21 @@ la tienda de prueba de Apple (`SKTestSession`): `xcodebuild` + `simctl` no aplic
 - La guía de la Comparativa explica con color: «Rojo = gastaste más, verde = gastaste menos».
 - Sin Pro, el chip de IA de las gráficas ofrece «Insights con IA», no el flujo de caja.
 
-**Tickets abiertos del lote:** `cashflow-line-context-menu-deletes-without-asking`, `financial-report-amounts-unmarked`,
+**Tickets abiertos del lote:** ~~`cashflow-line-context-menu-deletes-without-asking`~~ (cerrado en el lote 18), `financial-report-amounts-unmarked`,
 `qa/cashflow-scheduled-line-ignores-payment-currency`, `cashflow-spend-prediction`,
 `ipad-reports-and-search-get-a-readable-width`, `multi-currency-accounts-4-reports-and-export`.
+
+**Medido en el lote 18 (2026-10-16):**
+- No hay nada de pago en el flujo de caja salvo el chip de IA de las gráficas: `cashFlowAdvanced` no es `isProOnly`, así
+  que `canAccess` da `true` a todos y el tope del horizonte para gratis es código muerto. Corrige la nota del lote 17
+  («lo Pro del flujo de caja es el horizonte»).
+- La lista del mes no se desplazaba con el dedo: el `DragGesture` de cambiar de mes se comía el arrastre vertical, también
+  con `.simultaneousGesture`. `PeriodNavigationHeader` y `RecordsCalendarView` cuelgan el mismo patrón (sin medir).
+- «Este mes y futuros» reescribe también los meses pasados y el actual: ticket
+  `cashflow-this-and-future-adjustment-rewrites-past-months` (pide decisión de modelo).
+
+**Hecho (lote 18, 2026-10-16):** diez bugs arreglados y trece mejoras a decisión de Jürgen; informe en
+`~/Claude/entregas/Yala--auditoria-ux-2-2-lote-18-reportes/`.
 
 ---
 

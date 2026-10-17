@@ -21,6 +21,11 @@ Bash de fondo, nunca colgada de un `Monitor`, y el flag se comprueba en el scrip
 **No es solo de mutantes** (2026-10-06, #373): cualquier `xcodebuild test` con un rojo lo paga — una repetición de
 4 tests tardaba 10 min 34 s y con el flag 1 min 23 s. Por eso el paso pure-logic del CI lo lleva.
 
+**Y la copia misma puede no existir** (2026-10-16, lote 18): `FILES="a b c"; for f in $FILES` es UNA palabra en zsh,
+así que el `cp` del respaldo falló, el `trap` «restauró» nada e imprimió «restaurado», y el árbol quedó mutado. Lo
+salvó que el mutante era un script de sustituciones exactas y se pudo invertir. La lista va en un array
+(`typeset -a F=(…)`, `"${F[@]}"`) y, antes de mutar, se comprueba que cada copia existe; si falta una, no se muta.
+
 **How to apply:** guarda copias en el scratchpad antes de lanzar, `cmp` contra ellas al terminar y tras cada corte,
 y nunca `git checkout` para restaurar (ver [[el-script-de-mutantes-revierte-mi-trabajo]]). Si una corrida de un
 solo mutante pasa de 5 min, mira si hay un `simctl diagnose` hijo del `xcodebuild` antes de pensar en un cuelgue.

@@ -41,6 +41,19 @@ paths:
   (`StorageConfirmations`) no tienen ese problema. ⇒ si la opción de «no hacer nada» tiene que verse —porque es
   una decisión sobre datos—, dale un `Button` normal sin rol, o cuelga el diálogo de la raíz. Molde:
   `StorageSettingsView`, diálogo del borrado de iCloud pendiente (`PendingICloudWipeMigrationUITests`).
+  **Colgarlo de la raíz no siempre basta (medido el 2026-10-16, lote 18):** en el flujo de caja, el de borrar una
+  línea (en el detalle del mes, dentro del scroll) y el de «Reiniciar plan» (en el contenido de Reportes) salían como
+  globo anclado a media pantalla, sin «Cancelar». Se pasaron a `.alert`, que siempre pinta las dos salidas
+  (`CashFlowPlanUITests#test_resetPlan_asksWithAVisibleCancel`). En XCUITest los botones de esa alerta salen
+  duplicados en el árbol: `.firstMatch`.
+
+- **Un `DragGesture` en el contenido de un `ScrollView` vertical le quita el arrastre al scroll, también con
+  `.simultaneousGesture` (medido el 2026-10-16, iOS 27.0, lote 18).** La lista del mes del flujo de caja solo se movía
+  arrastrando desde la tira de meses; sin el gesto, se movía. ⇒ **para deslizar a los lados dentro de un scroll,
+  `HorizontalSwipeGesture`** (`Views/Shared/`, UIKit con `UIGestureRecognizerRepresentable`): solo arranca si la
+  velocidad horizontal manda y reconoce a la vez **solo** con el pan del `UIScrollView` — con `true` a todo, el
+  `Button` de la fila también disparaba y abría su hoja. `PeriodNavigationHeader` y `RecordsCalendarView` siguen con el
+  patrón viejo (sin medir). Test: `CashFlowPlanUITests#test_monthDetail_scrollsWithAFingerOnTheList_andASideSwipeChangesMonth`.
 
 - **Cancelar una tarea que crea un `onChange` ANTES de cambiar su valor no la cancela (medido 2026-09-30).** El
   `onChange` corre en el render SIGUIENTE a la escritura, cuando el `cancel()` ya pasó, y la tarea nace después.
