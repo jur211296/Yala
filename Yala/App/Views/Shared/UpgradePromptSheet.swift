@@ -34,6 +34,14 @@ enum UpgradeContext {
         }
     }
 
+    /// Si la hoja destaca la función que la abrió. `.trialExpired` no la abre ninguna función.
+    var showsFeatureHighlight: Bool {
+        switch self {
+        case .limitReached, .proFeature: return true
+        case .trialExpired: return false
+        }
+    }
+
     var iconColor: Color {
         // A11Y-DM: colores decorativos por caso del prompt (sistema, adaptan a Dark Mode)
         switch self {
@@ -96,8 +104,11 @@ struct UpgradePromptSheet: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
 
-                // Feature highlight
-                featureHighlight
+                // Feature highlight. Al acabarse la prueba no hay UNA función que destacar: la fila decía
+                // «Registro por voz · PRO» a todo el mundo, la usara o no (lote 17 · B6).
+                if context.showsFeatureHighlight {
+                    featureHighlight
+                }
 
                 Spacer()
 
@@ -164,6 +175,7 @@ struct UpgradePromptSheet: View {
                 .stroke(Color.primary.opacity(0.05), lineWidth: 1)
         )
         .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityIdentifier("upgrade_prompt_feature_row")
     }
 
     // MARK: - Helpers

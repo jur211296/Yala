@@ -22,6 +22,9 @@ struct SubscriptionView: View {
     @State private var showError = false
     @State private var animateHero = false
     @State private var showSuccessView = false
+    /// La App Store no devolvió precios. Sin esto el paywall dejaba «Suscribirse» en gris sin decir por qué
+    /// ni dejar reintentar (lote 17 · B1); mismo aviso que la oferta de prueba.
+    @State private var productLoadFailed = false
 
     var body: some View {
         Group {
@@ -45,7 +48,7 @@ struct SubscriptionView: View {
             }
         }
         .task {
-            await store.loadProducts()
+            await loadProducts()
             await store.updateSubscriptionStatus()
         }
         .alert(store.alertTitle ?? L10n.Subscription.errorTitle, isPresented: $showError) {
@@ -85,7 +88,26 @@ struct SubscriptionView: View {
                     featuresSection
 
                     // Plan selector
-                    planSelector
+                    if !store.products.isEmpty {
+                        planSelector
+                    } else if productLoadFailed {
+                        VStack(spacing: DS.Spacing.sm) {
+                            Text(L10n.TrialOffer.pricesUnavailable)
+                                .font(DS.Typography.subheadline)
+                                .foregroundStyle(.thSecondaryText)
+                                .multilineTextAlignment(.center)
+                                .accessibilityIdentifier("subscription_prices_unavailable")
+                            Button(L10n.Action.retry) {
+                                productLoadFailed = false
+                                Task { await loadProducts() }
+                            }
+                            .font(DS.Typography.label)
+                            .accessibilityIdentifier("subscription_prices_retry")
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                    } else {
+                        ProgressView()
+                    }
 
                     // Purchase button
                     VStack(spacing: DS.Spacing.md) {
@@ -343,15 +365,10 @@ struct SubscriptionView: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, DS.Spacing.sm)
                                 .padding(.vertical, DS.Spacing.xxs)
-                                .background(
-                                    Capsule().fill(
-                                        LinearGradient(
-                                            colors: DS.Gradients.subscription,
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                )
+                                // Relleno sólido: hasta el lote 17 la etiqueta no salía nunca (B3) y su degradado
+                                // no se veía; al salir, no estrena un degradado (regla de UI de Jürgen).
+                                .background(Capsule().fill(theme.accent))
+                                .accessibilityIdentifier("subscription_save_badge")
                         }
                     }
 
@@ -447,7 +464,12 @@ struct SubscriptionView: View {
     private func planPeriodLabel(for product: Product) -> String {
         product.id == StoreKitManager.proYearlyID
             ? L10n.Subscription.perYear
-            : L10n.Subscription.perMonth("")
+            : L10n.Subscription.perMonthUnit
+    }
+
+    private func loadProducts() async {
+        await store.loadProducts()
+        productLoadFailed = store.products.isEmpty
     }
 
     private func purchaseSelected() async {
@@ -461,27 +483,19 @@ struct SubscriptionView: View {
         guard let product = store.products.first(where: { $0.id == selectedPlan }),
               let intro = product.subscription?.introductoryOffer,
               intro.paymentMode == .freeTrial else { return false }
-        return true
+        return store.isIntroOfferEligible
     }
 
     /// Extract readable trial duration from a product's introductory offer
     private func trialDaysText(for product: Product) -> String? {
-        guard let intro = product.subscription?.introductoryOffer,
-              intro.paymentMode == .freeTrial else { return nil }
-        let period = intro.period
-        let days: Int
-        switch period.unit {
-        case .day:
-            days = period.value
-        case .week:
-            days = period.value * 7
-        case .month:
-            days = period.value * 30
-        case .year:
-            days = period.value * 365
-        @unknown default:
-            days = period.value
-        }
+        let intro = product.subscription?.introductoryOffer
+        // Solo se promete la prueba a quien aún tiene derecho a ella (lote 17 · B4).
+        guard let days = PaywallPricingLogic.promisedTrialDays(
+            hasFreeTrialOffer: intro?.paymentMode == .freeTrial,
+            periodUnit: intro?.period.unit,
+            periodValue: intro?.period.value ?? 0,
+            isEligible: store.isIntroOfferEligible
+        ) else { return nil }
         return L10n.Subscription.trialThenPrice(
             "\(days)",
             product.displayPrice + " " + planPeriodLabel(for: product)

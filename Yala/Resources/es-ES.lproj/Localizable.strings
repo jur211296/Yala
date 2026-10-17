@@ -2421,7 +2421,7 @@
 "planning.scheduled.totalLabel" = "Total del mes";
 "planning.scheduledPayments" = "Pagos planificados";
 "planning.title" = "Planificación";
-"proBanner.subtitle" = "Desbloquea voz, insights AI y cuentas ilimitadas.";
+"proBanner.subtitle" = "Desbloquea voz, insights con IA y cuentas ilimitadas.";
 "proBanner.title" = "Lleva tus finanzas al siguiente nivel";
 "profile.addPhoto" = "Añadir foto";
 "profile.aliasAvailable" = "Alias disponible";
@@ -4716,6 +4716,15 @@
 
 /* Apple confirmó la compra pero el derecho Pro no quedó activo */
 "subscription.purchaseNotActivated" = "El pago se confirmó, pero Yala Pro aún no está activo. Prueba Restaurar compras.";
+
+/* Periodo mensual detrás del precio, como subscription.perYear (lote 17) */
+"subscription.perMonthUnit" = "/ mes";
+
+/* Título del aviso cuando Restaurar compras falla y no fue por cancelar (lote 17) */
+"subscription.restoreErrorTitle" = "No pudimos restaurar tus compras";
+
+/* Apple devolvió una compra cuya firma no se pudo verificar (lote 17) */
+"subscription.error.verificationFailed" = "No pudimos verificar la compra con Apple. Inténtalo de nuevo o usa Restaurar compras.";
 
 /* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
 "panel.aiPill" = "IA";
