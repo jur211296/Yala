@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Deze categorie heeft een subcategorie met %d transactie. Verwijder of verplaats eerst die transactie uit de subcategorie om deze categorie te kunnen verwijderen.</string>
+			<string>Deze categorie heeft een subcategorie met %d boeking. Verwijder of verplaats eerst die boeking uit de subcategorie om deze categorie te kunnen verwijderen.</string>
 			<key>other</key>
-			<string>Deze categorie heeft subcategorieën met %d transacties. Verwijder of verplaats eerst de transacties uit elke subcategorie om deze categorie te kunnen verwijderen.</string>
+			<string>Deze categorie heeft subcategorieën met %d boekingen. Verwijder of verplaats eerst de boekingen uit elke subcategorie om deze categorie te kunnen verwijderen.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d transactie wordt permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
+			<string>%d boeking wordt permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
 			<key>other</key>
-			<string>%d transacties worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
+			<string>%d boekingen worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Er staat %1$d transactie in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
+			<string>Er staat %1$d boeking in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
 			<key>other</key>
-			<string>Er staan %1$d transacties in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
+			<string>Er staan %1$d boekingen in "%2$@". Kies wat je ermee wilt doen voordat je verwijdert.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>

@@ -33,13 +33,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Ta kategoria ma podkategorię z %d transakcją. Aby ją usunąć, najpierw usuń lub przenieś tę transakcję z jej podkategorii.</string>
+			<string>Ta kategoria ma podkategorię z %d wpisem. Aby ją usunąć, najpierw usuń lub przenieś ten wpis z jej podkategorii.</string>
 			<key>few</key>
-			<string>Ta kategoria ma podkategorie z %d transakcjami. Aby ją usunąć, najpierw usuń lub przenieś transakcje z każdej podkategorii.</string>
+			<string>Ta kategoria ma podkategorie z %d wpisami. Aby ją usunąć, najpierw usuń lub przenieś wpisy z każdej podkategorii.</string>
 			<key>many</key>
-			<string>Ta kategoria ma podkategorie z %d transakcjami. Aby ją usunąć, najpierw usuń lub przenieś transakcje z każdej podkategorii.</string>
+			<string>Ta kategoria ma podkategorie z %d wpisami. Aby ją usunąć, najpierw usuń lub przenieś wpisy z każdej podkategorii.</string>
 			<key>other</key>
-			<string>Ta kategoria ma podkategorie z %d transakcji. Aby ją usunąć, najpierw usuń lub przenieś transakcje z każdej podkategorii.</string>
+			<string>Ta kategoria ma podkategorie z %d wpisów. Aby ją usunąć, najpierw usuń lub przenieś wpisy z każdej podkategorii.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -53,13 +53,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d transakcja zostanie trwale usunięta. Tej operacji nie można cofnąć.</string>
+			<string>%d wpis zostanie trwale usunięty. Tej operacji nie można cofnąć.</string>
 			<key>few</key>
-			<string>%d transakcje zostaną trwale usunięte. Tej operacji nie można cofnąć.</string>
+			<string>%d wpisy zostaną trwale usunięte. Tej operacji nie można cofnąć.</string>
 			<key>many</key>
-			<string>%d transakcji zostanie trwale usuniętych. Tej operacji nie można cofnąć.</string>
+			<string>%d wpisów zostanie trwale usuniętych. Tej operacji nie można cofnąć.</string>
 			<key>other</key>
-			<string>%d transakcji zostanie trwale usuniętych. Tej operacji nie można cofnąć.</string>
+			<string>%d wpisów zostanie trwale usuniętych. Tej operacji nie można cofnąć.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -73,13 +73,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>W „%2$@” jest %1$d transakcja. Wybierz, co z nią zrobić przed usunięciem.</string>
+			<string>W „%2$@” jest %1$d wpis. Wybierz, co z nim zrobić przed usunięciem.</string>
 			<key>few</key>
-			<string>W „%2$@” są %1$d transakcje. Wybierz, co z nimi zrobić przed usunięciem.</string>
+			<string>W „%2$@” są %1$d wpisy. Wybierz, co z nimi zrobić przed usunięciem.</string>
 			<key>many</key>
-			<string>W „%2$@” jest %1$d transakcji. Wybierz, co z nimi zrobić przed usunięciem.</string>
+			<string>W „%2$@” jest %1$d wpisów. Wybierz, co z nimi zrobić przed usunięciem.</string>
 			<key>other</key>
-			<string>W „%2$@” jest %1$d transakcji. Wybierz, co z nimi zrobić przed usunięciem.</string>
+			<string>W „%2$@” jest %1$d wpisów. Wybierz, co z nimi zrobić przed usunięciem.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>
@@ -653,13 +653,13 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Przeliczyć %d transakcję?</string>
+			<string>Przeliczyć %d wpis?</string>
 			<key>few</key>
-			<string>Przeliczyć %d transakcje?</string>
+			<string>Przeliczyć %d wpisy?</string>
 			<key>many</key>
-			<string>Przeliczyć %d transakcji?</string>
+			<string>Przeliczyć %d wpisów?</string>
 			<key>other</key>
-			<string>Przeliczyć %d transakcji?</string>
+			<string>Przeliczyć %d wpisów?</string>
 		</dict>
 	</dict>
 	<key>storage.sync.needsSignIn</key>

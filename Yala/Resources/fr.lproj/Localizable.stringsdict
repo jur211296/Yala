@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Cette catégorie a une sous-catégorie avec %d transaction. Pour la supprimer, supprimez ou transférez d'abord cette transaction de sa sous-catégorie.</string>
+			<string>Cette catégorie a une sous-catégorie avec %d enregistrement. Pour la supprimer, supprimez ou déplacez d'abord cet enregistrement de sa sous-catégorie.</string>
 			<key>other</key>
-			<string>Cette categorie a des sous-categories avec %d transactions. Pour la supprimer, supprimez ou transferez d'abord les transactions de chaque sous-categorie.</string>
+			<string>Cette catégorie a des sous-catégories avec %d enregistrements. Pour la supprimer, supprimez ou déplacez d'abord les enregistrements de chaque sous-catégorie.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d transaction sera supprimée définitivement. Cette action ne peut pas être annulée.</string>
+			<string>%d enregistrement sera supprimé définitivement. Cette action ne peut pas être annulée.</string>
 			<key>other</key>
-			<string>%d transactions seront supprimees definitivement. Cette action ne peut pas etre annulee.</string>
+			<string>%d enregistrements seront supprimés définitivement. Cette action ne peut pas être annulée.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Il y a %1$d transaction dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
+			<string>Il y a %1$d enregistrement dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
 			<key>other</key>
-			<string>Il y a %1$d transactions dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
+			<string>Il y a %1$d enregistrements dans "%2$@". Choisissez quoi en faire avant de supprimer.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>
@@ -525,9 +525,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Convertir %d opération ?</string>
+			<string>Convertir %d enregistrement ?</string>
 			<key>other</key>
-			<string>Convertir %d opérations ?</string>
+			<string>Convertir %d enregistrements ?</string>
 		</dict>
 	</dict>
 	<key>storage.sync.needsSignIn</key>

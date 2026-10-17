@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>This category has a subcategory with %d transaction. To delete it, first delete or transfer that transaction from its subcategory.</string>
+			<string>This category has a subcategory with %d record. To delete it, first delete or move that record from its subcategory.</string>
 			<key>other</key>
-			<string>This category has subcategories with %d transactions. To delete it, first delete or transfer the transactions from each subcategory.</string>
+			<string>This category has subcategories with %d records. To delete it, first delete or move the records from each subcategory.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d transaction will be permanently deleted. This action cannot be undone.</string>
+			<string>%d record will be permanently deleted. This action cannot be undone.</string>
 			<key>other</key>
-			<string>%d transactions will be permanently deleted. This action cannot be undone.</string>
+			<string>%d records will be permanently deleted. This action cannot be undone.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>There is %1$d transaction in "%2$@". Choose what to do with it before deleting.</string>
+			<string>There is %1$d record in "%2$@". Choose what to do with it before deleting.</string>
 			<key>other</key>
-			<string>There are %1$d transactions in "%2$@". Choose what to do with them before deleting.</string>
+			<string>There are %1$d records in "%2$@". Choose what to do with them before deleting.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>

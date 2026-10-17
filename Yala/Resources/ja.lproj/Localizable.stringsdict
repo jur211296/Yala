@@ -27,7 +27,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>このカテゴリーには%d件の取引を持つサブカテゴリーが含まれています。削除するには、まず各サブカテゴリーから取引を削除または移動してください。</string>
+			<string>このカテゴリーには%d件の記録を持つサブカテゴリーが含まれています。削除するには、まず各サブカテゴリーから記録を削除または移動してください。</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -41,7 +41,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d件の取引が完全に削除されます。この操作は取り消せません。</string>
+			<string>%d件の記録が完全に削除されます。この操作は取り消せません。</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -55,7 +55,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>「%2$@」に%1$d件の取引があります。削除前にどう処理するか選んでください。</string>
+			<string>「%2$@」に%1$d件の記録があります。削除前にどう処理するか選んでください。</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>
