@@ -915,6 +915,7 @@
 "cashFlowPlan.addCustomLine" = "Custom line";
 "cashFlowPlan.addCustomLineDesc" = "Free name and amount";
 "cashFlowPlan.addFromExpenses" = "From my expenses";
+"cashFlowPlan.addFromIncome" = "From my income";
 "cashFlowPlan.addFromExpensesDesc" = "Pick a subcategory with history";
 "cashFlowPlan.addFromScheduled" = "From scheduled payment";
 "cashFlowPlan.addFromScheduledDesc" = "Use an active payment as a fixed line";
@@ -928,7 +929,7 @@
 "cashFlowPlan.average12m" = "12-month average";
 "cashFlowPlan.average12mDesc" = "Average of the last year";
 "cashFlowPlan.average3m" = "3-month average";
-"cashFlowPlan.average3mDesc" = "Average of what you spent in the last 3 months";
+"cashFlowPlan.average3mDesc" = "Average of the last 3 months";
 "cashFlowPlan.average6m" = "6-month average";
 "cashFlowPlan.average6mDesc" = "Average of the last 6 months";
 "cashFlowPlan.bannerBody" = "It's your month-by-month plan for income and expenses. It shows you if your money will stretch or if you need to adjust something.";
@@ -943,6 +944,7 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Amount manually adjusted";
 "cashFlowPlan.cellDetailRecentTransactions" = "Recent transactions";
 "cashFlowPlan.cellDetailRemaining" = "You have %@ left";
+"cashFlowPlan.cellDetailPendingIncome" = "%@ still to receive";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Save adjustment";
 "cashFlowPlan.cellDetailSpent" = "You spent";
 "cashFlowPlan.chartAllWithinPlan" = "All your expense lines are within the plan";
@@ -976,6 +978,7 @@
 "cashFlowPlan.custom" = "Custom";
 "cashFlowPlan.customDesc" = "Select specific months to average";
 "cashFlowPlan.deleteLineConfirmation" = "Delete this line from your plan? This action cannot be undone.";
+"cashFlowPlan.deleteLine" = "Delete line";
 "cashFlowPlan.densityFull" = "Full";
 "cashFlowPlan.densityIcons" = "Icons";
 "cashFlowPlan.deviationCommentMultiple" = "%@ is where you went over the most, by %@ extra — you spent %@ over plan in total";
@@ -994,7 +997,7 @@
 "cashFlowPlan.incomeSection" = "Income";
 "cashFlowPlan.incomeVsExpense" = "Income vs Expense";
 "cashFlowPlan.lastMonth" = "Last month";
-"cashFlowPlan.lastMonthDesc" = "What you spent last month";
+"cashFlowPlan.lastMonthDesc" = "Last month's amount";
 "cashFlowPlan.lineNameLabel" = "Line name";
 "cashFlowPlan.manual" = "Fixed amount";
 "cashFlowPlan.manualDesc" = "You set the exact amount";
@@ -1580,7 +1583,7 @@
 "guide.categories.message" = "See how much you spend on each thing: food, transport, etc. The biggest slice is where you spend the most.";
 "guide.categories.title" = "Where does your money go?";
 "guide.categoriesSettings.message" = "Categories group your expenses: food, transport, entertainment... You can create subcategories for more detail.";
-"guide.comparative.message" = "See if you spent more or less this month compared to last. Red = spent more, green = spent less.";
+"guide.comparative.message" = "See if you spent more or less this month compared to last. Pink = spent more, purple = spent less.";
 "guide.comparative.title" = "Compare periods";
 "guide.favoritesManage.title" = "Your most frequent payments";
 "guide.inbox.message" = "When you have payments to confirm or automatic expenses, they appear here for you to review.";

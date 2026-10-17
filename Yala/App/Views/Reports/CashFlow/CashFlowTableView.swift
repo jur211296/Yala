@@ -51,13 +51,12 @@ struct CashFlowTableView: View {
                                 transactions: transactions,
                                 onCellDetailDismiss: { recalculate() }
                             )
-                            .gesture(
-                                DragGesture(minimumDistance: 50)
-                                    .onEnded { value in
-                                        guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                                        navigateMonth(in: projection.months, forward: value.translation.width < 0)
-                                    }
-                            )
+                            // Deslizar cambia de mes sin quitarle el arrastre vertical al scroll. Un `DragGesture`
+                            // aquí —con `.gesture` y también con `.simultaneousGesture`— dejaba la lista del mes sin
+                            // desplazarse: solo se movía arrastrando desde la tira de meses (lote 18, medido).
+                            .gesture(HorizontalSwipeGesture { towardsNext in
+                                navigateMonth(in: projection.months, forward: towardsNext)
+                            })
                             .accessibilityAdjustableAction { direction in
                                 navigateMonth(in: projection.months, forward: direction == .increment)
                             }
@@ -82,6 +81,7 @@ struct CashFlowTableView: View {
         .onAppear {
             recalculate()
         }
+        .onChange(of: viewModel.planRevision) { _, _ in recalculate() }
         .task {
             do {
                 try await Task.sleep(for: .seconds(0.5))

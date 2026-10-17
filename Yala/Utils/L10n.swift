@@ -1203,6 +1203,7 @@ enum L10n {
         static var resetPlan: String { ls("cashFlowPlan.resetPlan", comment: "") }
         static var resetConfirmation: String { ls("cashFlowPlan.resetConfirmation", comment: "") }
         static var deleteLineConfirmation: String { ls("cashFlowPlan.deleteLineConfirmation", comment: "") }
+        static var deleteLine: String { ls("cashFlowPlan.deleteLine", comment: "") }
         static func suggestPayment(_ name: String) -> String {
             String(format: ls("cashFlowPlan.suggestPayment", comment: ""), name)
         }
@@ -1220,6 +1221,9 @@ enum L10n {
         static var cellDetailOf: String { ls("cashFlowPlan.cellDetailOf", comment: "") }
         static func cellDetailRemaining(_ amount: String) -> String {
             String(format: ls("cashFlowPlan.cellDetailRemaining", comment: ""), amount)
+        }
+        static func cellDetailPendingIncome(_ amount: String) -> String {
+            String(format: ls("cashFlowPlan.cellDetailPendingIncome", comment: ""), amount)
         }
         static var cellDetailRecentTransactions: String { ls("cashFlowPlan.cellDetailRecentTransactions", comment: "") }
         static var cellDetailSpent: String { ls("cashFlowPlan.cellDetailSpent", comment: "") }
@@ -1247,6 +1251,7 @@ enum L10n {
 
         // Add Line redesign (Inc 6)
         static var addFromExpenses: String { ls("cashFlowPlan.addFromExpenses", comment: "") }
+        static var addFromIncome: String { ls("cashFlowPlan.addFromIncome", comment: "") }
         static var addFromExpensesDesc: String { ls("cashFlowPlan.addFromExpensesDesc", comment: "") }
         static var addFromScheduled: String { ls("cashFlowPlan.addFromScheduled", comment: "") }
         static var addFromScheduledDesc: String { ls("cashFlowPlan.addFromScheduledDesc", comment: "") }

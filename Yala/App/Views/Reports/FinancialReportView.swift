@@ -242,7 +242,8 @@ struct FinancialReportView: View {
                             currentAmount: viewModel.netFlowCurrent,
                             previousAmount: viewModel.netFlowPrevious,
                             variation: viewModel.netFlowVariation,
-                            currencyCode: preferredCurrencyCode
+                            currencyCode: preferredCurrencyCode,
+                            showsComparison: viewModel.supportsComparison
                         )
                     }
                 } else {
@@ -262,7 +263,8 @@ struct FinancialReportView: View {
                 PivotRowView(
                     node: row.node,
                     level: row.level,
-                    preferredCurrency: preferredCurrencyCode
+                    preferredCurrency: preferredCurrencyCode,
+                    showsComparison: viewModel.supportsComparison
                 )
 
                 if row.id != viewModel.flattenedRows.last?.id {
@@ -325,17 +327,20 @@ struct FinancialReportView: View {
                             } label: {
                                 Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
                             }
+                            .accessibilityIdentifier("cashflow_configure_horizon")
                             Divider()
                             Button(role: .destructive) {
                                 showResetConfirmation = true
                             } label: {
                                 Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
                             }
+                            .accessibilityIdentifier("cashflow_reset_plan")
                         } label: {
                             Image(systemName: "ellipsis.circle")
                                 .font(DS.Typography.bodyBold)
                                 .foregroundStyle(.thToolbarIcon)
                         }
+                        .accessibilityIdentifier("cashflow_more_menu")
                     }
                 } else if effectiveReportTab == .comparativa {
                     Button {
@@ -432,16 +437,20 @@ private struct CashFlowResetDialogModifier: ViewModifier {
     @Binding var isPresented: Bool
     let onReset: () -> Void
 
+    // Alerta y no `confirmationDialog`: en iOS 26 el diálogo salía como un globo anclado a media pantalla, sin
+    // «Cancelar» a la vista (medido en el simulador, lote 18), y reiniciar borra todas las líneas y ajustes.
     func body(content: Content) -> some View {
         content
-            .confirmationDialog(
+            .alert(
                 L10n.CashFlowPlan.resetPlan,
-                isPresented: $isPresented,
-                titleVisibility: .visible
+                isPresented: $isPresented
             ) {
                 Button(L10n.CashFlowPlan.resetPlan, role: .destructive) {
                     onReset()
                 }
+                .accessibilityIdentifier("cashflow_reset_confirm")
+                Button(L10n.Action.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("cashflow_reset_cancel")
             } message: {
                 Text(L10n.CashFlowPlan.resetConfirmation)
             }

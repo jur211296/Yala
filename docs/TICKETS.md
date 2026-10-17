@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (910)
+## Index (911)
 
 | id | status | path |
 |---|---|---|
@@ -153,9 +153,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | cash-flow-plan-asks-the-starting-balance-the-account-already-has | backlog | tickets/backlog/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
-| cashflow-line-context-menu-deletes-without-asking | backlog | tickets/backlog/cashflow-line-context-menu-deletes-without-asking.md |
+| cashflow-line-context-menu-deletes-without-asking | done | tickets/done/cashflow-line-context-menu-deletes-without-asking.md |
 | cashflow-scheduled-line-ignores-payment-currency | qa | tickets/qa/cashflow-scheduled-line-ignores-payment-currency.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
+| cashflow-this-and-future-adjustment-rewrites-past-months | backlog | tickets/backlog/cashflow-this-and-future-adjustment-rewrites-past-months.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | qa | tickets/qa/changing-an-account-currency-orphans-its-whole-history.md |
 | chart-mark-labels-are-english-for-voiceover | backlog | tickets/backlog/chart-mark-labels-are-english-for-voiceover.md |

@@ -888,6 +888,7 @@
 "cashFlowPlan.resetPlan" = "Reiniciar plano";
 "cashFlowPlan.resetConfirmation" = "Reiniciar seu plano? Todas as linhas e ajustes serão excluídos. Esta ação não pode ser desfeita.";
 "cashFlowPlan.deleteLineConfirmation" = "Excluir esta linha do seu plano? Esta ação não pode ser desfeita.";
+"cashFlowPlan.deleteLine" = "Excluir linha";
 "cashFlowPlan.suggestPayment" = "Novo pagamento: %@. Adicionar ao plano?";
 "cashFlowPlan.chartsTitle" = "Gráficos";
 "cashFlowPlan.chartsSectionTitle" = "Teu fluxo de caixa";
@@ -906,10 +907,10 @@
 "cashFlowPlan.accumulatedHintMessage" = "Seu saldo total desde o início do plano. Soma o disponível de cada mês.";
 "cashFlowPlan.editStartingBalance" = "Editar saldo inicial";
 "cashFlowPlan.editStartingBalanceSave" = "Salvar";
-"cashFlowPlan.average3mDesc" = "Média do que você gastou nos últimos 3 meses";
+"cashFlowPlan.average3mDesc" = "Média dos últimos 3 meses";
 "cashFlowPlan.average6mDesc" = "Média dos últimos 6 meses";
 "cashFlowPlan.average12mDesc" = "Média do último ano";
-"cashFlowPlan.lastMonthDesc" = "O que você gastou no mês passado";
+"cashFlowPlan.lastMonthDesc" = "O valor do mês passado";
 "cashFlowPlan.manualDesc" = "Você define o valor exato";
 "cashFlowPlan.scheduledDesc" = "Usa o valor do seu pagamento programado";
 "cashFlowPlan.trendDesc" = "Calcula a tendência dos seus últimos meses";
@@ -927,6 +928,7 @@
 // Cell Detail Sheet (Inc 4)
 "cashFlowPlan.cellDetailOf" = "de";
 "cashFlowPlan.cellDetailRemaining" = "Ainda te restam %@";
+"cashFlowPlan.cellDetailPendingIncome" = "Ainda falta receber %@";
 "cashFlowPlan.cellDetailRecentTransactions" = "Transações recentes";
 "cashFlowPlan.cellDetailSpent" = "Gastaste";
 "cashFlowPlan.cellDetailEarned" = "Recebeste";
@@ -951,6 +953,7 @@
 
 // Add Line redesign (Inc 6)
 "cashFlowPlan.addFromExpenses" = "Das minhas despesas";
+"cashFlowPlan.addFromIncome" = "Das minhas receitas";
 "cashFlowPlan.addFromExpensesDesc" = "Escolhe uma subcategoria com histórico";
 "cashFlowPlan.addFromScheduled" = "De pagamento programado";
 "cashFlowPlan.addFromScheduledDesc" = "Usa um pagamento ativo como linha fixa";
@@ -3289,7 +3292,7 @@
 "guide.transaction.title" = "Registre um gasto ou receita";
 "guide.transaction.message" = "Coloque apenas o valor e uma categoria. Todo o resto é opcional. Quanto mais registrar, melhor entenderá seus gastos.";
 "guide.comparative.title" = "Compare períodos";
-"guide.comparative.message" = "Veja se gastou mais ou menos este mês comparado ao anterior. Vermelho = mais, verde = menos.";
+"guide.comparative.message" = "Veja se gastou mais ou menos este mês comparado ao anterior. Rosa = mais, roxo = menos.";
 "guide.cashflow.title" = "Vai dar?";
 "guide.cashflow.message" = "O Yala calcula se seu dinheiro vai durar até o fim do mês com base em receitas e gastos.";
 "guide.insights.title" = "O Yala analisa por você";

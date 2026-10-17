@@ -18,6 +18,9 @@ struct CashFlowMonthDetailView: View {
     @State private var incomeCollapsed = false
     @State private var expenseCollapsed = false
     @State private var selectedCellLineID: UUID?
+    /// La línea que el menú contextual pidió borrar; el diálogo la confirma o la suelta.
+    @State private var pendingDeleteLine: CashFlowLine?
+    @State private var showDeleteLineConfirmation = false
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -39,6 +42,8 @@ struct CashFlowMonthDetailView: View {
             summaryCard
                 .solidCard()
                 .coachMarkAnchor("cfTableAvailable")
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("cashflow_month_summary")
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.bottom, DS.Spacing.lg)
@@ -58,6 +63,24 @@ struct CashFlowMonthDetailView: View {
                 )
             }
         }
+        // Alerta y no `confirmationDialog`: dentro del scroll, iOS 26 pinta el diálogo como un globo anclado sin
+        // «Cancelar» (medido; regla de `swiftui-ds.md`), y borrar una línea es una decisión sobre datos: la salida
+        // de no borrar tiene que verse.
+        .alert(
+            L10n.CashFlowPlan.deleteLineConfirmation,
+            isPresented: $showDeleteLineConfirmation,
+            presenting: pendingDeleteLine
+        ) { line in
+            Button(L10n.Action.delete, role: .destructive) {
+                viewModel.removeLine(line)
+                pendingDeleteLine = nil
+            }
+            .accessibilityIdentifier("cashflow_line_delete_confirm")
+            Button(L10n.Action.cancel, role: .cancel) {
+                pendingDeleteLine = nil
+            }
+            .accessibilityIdentifier("cashflow_line_delete_cancel")
+        }
     }
 
     // MARK: - Transition Bar
@@ -67,6 +90,7 @@ struct CashFlowMonthDetailView: View {
             Text(month.date.formatted(.dateTime.month(.wide).year()))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
+                .accessibilityIdentifier("cashflow_month_title")
 
             if month.isCurrent {
                 Text(L10n.CashFlowPlan.thisMonth)
@@ -238,7 +262,10 @@ struct CashFlowMonthDetailView: View {
                     selectedCellLineID = lineResult.lineID
                 },
                 onDeleteLine: line.map { l in
-                    { viewModel.removeLine(l) }
+                    {
+                        pendingDeleteLine = l
+                        showDeleteLineConfirmation = true
+                    }
                 }
             )
         }

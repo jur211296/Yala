@@ -12,6 +12,8 @@ struct PivotRowView: View {
     let node: PivotNode
     let level: Int
     let preferredCurrency: String
+    /// `false` en «Todo el tiempo»: no hay período anterior y el chip diría «N/A» en cada fila.
+    var showsComparison: Bool = true
 
     @Environment(AppPreferences.self) private var appPreferences
     private var showVariations: Bool { appPreferences.showVariations }
@@ -63,7 +65,7 @@ struct PivotRowView: View {
             .frame(minWidth: 80, alignment: .trailing)
 
             // Variation chip
-            if showVariations {
+            if showVariations && showsComparison {
                 VariationChip(
                     variation: node.variation,
                     size: .small,

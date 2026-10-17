@@ -890,6 +890,7 @@
 "cashFlowPlan.resetPlan" = "Reset plan";
 "cashFlowPlan.resetConfirmation" = "Reset your plan? All lines and adjustments will be deleted. This action cannot be undone.";
 "cashFlowPlan.deleteLineConfirmation" = "Delete this line from your plan? This action cannot be undone.";
+"cashFlowPlan.deleteLine" = "Delete line";
 "cashFlowPlan.suggestPayment" = "New payment: %@. Add to plan?";
 "cashFlowPlan.chartsTitle" = "Charts";
 "cashFlowPlan.chartsSectionTitle" = "Your cash flow";
@@ -908,10 +909,10 @@
 "cashFlowPlan.accumulatedHintMessage" = "Your total balance since the plan started. It adds up what's available each month.";
 "cashFlowPlan.editStartingBalance" = "Edit starting balance";
 "cashFlowPlan.editStartingBalanceSave" = "Save";
-"cashFlowPlan.average3mDesc" = "Average of what you spent in the last 3 months";
+"cashFlowPlan.average3mDesc" = "Average of the last 3 months";
 "cashFlowPlan.average6mDesc" = "Average of the last 6 months";
 "cashFlowPlan.average12mDesc" = "Average of the last year";
-"cashFlowPlan.lastMonthDesc" = "What you spent last month";
+"cashFlowPlan.lastMonthDesc" = "Last month's amount";
 "cashFlowPlan.manualDesc" = "You set the exact amount";
 "cashFlowPlan.scheduledDesc" = "Uses the amount from your scheduled payment";
 "cashFlowPlan.trendDesc" = "Calculates the trend from your recent months";
@@ -929,6 +930,7 @@
 // Cell Detail Sheet (Inc 4)
 "cashFlowPlan.cellDetailOf" = "of";
 "cashFlowPlan.cellDetailRemaining" = "You have %@ left";
+"cashFlowPlan.cellDetailPendingIncome" = "%@ still to receive";
 "cashFlowPlan.cellDetailRecentTransactions" = "Recent transactions";
 "cashFlowPlan.cellDetailSpent" = "You spent";
 "cashFlowPlan.cellDetailEarned" = "You earned";
@@ -953,6 +955,7 @@
 
 // Add Line redesign (Inc 6)
 "cashFlowPlan.addFromExpenses" = "From my expenses";
+"cashFlowPlan.addFromIncome" = "From my income";
 "cashFlowPlan.addFromExpensesDesc" = "Pick a subcategory with history";
 "cashFlowPlan.addFromScheduled" = "From scheduled payment";
 "cashFlowPlan.addFromScheduledDesc" = "Use an active payment as a fixed line";
@@ -3340,7 +3343,7 @@
 "guide.transaction.title" = "Log an expense or income";
 "guide.transaction.message" = "Just enter the amount and a category. Everything else is optional. The more you log, the better you'll understand your spending.";
 "guide.comparative.title" = "Compare periods";
-"guide.comparative.message" = "See if you spent more or less this month compared to last. Red = spent more, green = spent less.";
+"guide.comparative.message" = "See if you spent more or less this month compared to last. Pink = spent more, purple = spent less.";
 "guide.cashflow.title" = "Will you make it?";
 "guide.cashflow.message" = "Yala calculates if your money will last until the end of the month based on your income and expenses.";
 "guide.insights.title" = "Yala analyzes for you";

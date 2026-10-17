@@ -890,6 +890,7 @@
 "cashFlowPlan.resetPlan" = "重置计划";
 "cashFlowPlan.resetConfirmation" = "重置你的计划?所有行和调整都将被删除。此操作无法撤销。";
 "cashFlowPlan.deleteLineConfirmation" = "从你的计划中删除这一行?此操作无法撤销。";
+"cashFlowPlan.deleteLine" = "删除这一行";
 "cashFlowPlan.suggestPayment" = "新付款:%@。添加到计划?";
 "cashFlowPlan.chartsTitle" = "图表";
 "cashFlowPlan.chartsSectionTitle" = "你的现金流";
@@ -908,10 +909,10 @@
 "cashFlowPlan.accumulatedHintMessage" = "自计划开始以来你的总余额。它累加每月的可用部分。";
 "cashFlowPlan.editStartingBalance" = "编辑起始余额";
 "cashFlowPlan.editStartingBalanceSave" = "保存";
-"cashFlowPlan.average3mDesc" = "你过去 3 个月的支出平均值";
+"cashFlowPlan.average3mDesc" = "过去 3 个月的平均值";
 "cashFlowPlan.average6mDesc" = "过去 6 个月的平均值";
 "cashFlowPlan.average12mDesc" = "过去一年的平均值";
-"cashFlowPlan.lastMonthDesc" = "你上个月的支出";
+"cashFlowPlan.lastMonthDesc" = "上个月的金额";
 "cashFlowPlan.manualDesc" = "你设定确切金额";
 "cashFlowPlan.scheduledDesc" = "使用你的计划付款金额";
 "cashFlowPlan.trendDesc" = "根据你最近几个月计算趋势";
@@ -929,6 +930,7 @@
 // Cell Detail Sheet (Inc 4)
 "cashFlowPlan.cellDetailOf" = "/";
 "cashFlowPlan.cellDetailRemaining" = "你还剩 %@";
+"cashFlowPlan.cellDetailPendingIncome" = "还有 %@ 待收到";
 "cashFlowPlan.cellDetailRecentTransactions" = "最近交易";
 "cashFlowPlan.cellDetailSpent" = "你支出了";
 "cashFlowPlan.cellDetailEarned" = "你赚到了";
@@ -953,6 +955,7 @@
 
 // Add Line redesign (Inc 6)
 "cashFlowPlan.addFromExpenses" = "来自我的支出";
+"cashFlowPlan.addFromIncome" = "来自我的收入";
 "cashFlowPlan.addFromExpensesDesc" = "选择有历史的子类别";
 "cashFlowPlan.addFromScheduled" = "来自计划付款";
 "cashFlowPlan.addFromScheduledDesc" = "用一笔活跃付款作为固定行";
@@ -3300,7 +3303,7 @@
 "guide.transaction.title" = "记录支出或收入";
 "guide.transaction.message" = "只需输入金额和类别。其他都是可选的。记录得越多,你越了解自己的支出。";
 "guide.comparative.title" = "对比时段";
-"guide.comparative.message" = "看看本月比上月花得多还是少。红色 = 花得多,绿色 = 花得少。";
+"guide.comparative.message" = "看看本月比上月花得多还是少。粉色 = 花得多,紫色 = 花得少。";
 "guide.cashflow.title" = "你能撑到月底吗?";
 "guide.cashflow.message" = "Yala 根据你的收入和支出计算你的钱能否撑到月底。";
 "guide.insights.title" = "Yala 替你分析";

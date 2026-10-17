@@ -106,6 +106,10 @@ final class FinancialReportViewModel: Filterable {
     private(set) var netFlowPrevious: Double?
     private(set) var netFlowVariation: Double?
 
+    /// «Todo el tiempo» no tiene período anterior: `PreviousPeriodHelper` devuelve el mismo intervalo y la
+    /// tabla se comparaba consigo misma («+0 %» en cada fila). Con `false` no hay columna anterior ni chip.
+    private(set) var supportsComparison: Bool = true
+
     /// Whether there is data to display
     var hasData: Bool { !rootNodes.isEmpty }
 
@@ -146,6 +150,7 @@ final class FinancialReportViewModel: Filterable {
         let resolvedPeriod = period ?? detailPeriod
         let resolvedMode = comparisonMode ?? SessionState.shared.comparisonMode
         let resolvedExpensesOnly = expensesOnly ?? SessionState.shared.isExpensesOnlyMode
+        let supportsComparison = resolvedPeriod != .allTime
         let interval = resolvedPeriod.dateInterval(customRange: customDateRange, now: now)
         let previousInterval = PreviousPeriodHelper.previousInterval(
             for: resolvedPeriod,
@@ -192,14 +197,19 @@ final class FinancialReportViewModel: Filterable {
         let currentTxns = currentFiltered.filter { $0.balanceAdjustmentType == nil }
         // WTD/MTD/YTD: recorta el previo al span de días del actual (p20-15).
         // No-op en modo año, cerrados y rodantes (`aggregatePreviousNeedsAlignment`).
-        let previousTxns = DateAlignmentHelper.alignedPreviousItems(
-            previousFiltered.filter { $0.balanceAdjustmentType == nil },
-            currentDates: currentTxns.map(\.date),
-            currentInterval: interval,
-            previousInterval: previousInterval,
-            period: resolvedPeriod,
-            comparisonMode: resolvedMode
-        ) { $0.date }
+        let previousTxns: [TransactionItem]
+        if supportsComparison {
+            previousTxns = DateAlignmentHelper.alignedPreviousItems(
+                previousFiltered.filter { $0.balanceAdjustmentType == nil },
+                currentDates: currentTxns.map(\.date),
+                currentInterval: interval,
+                previousInterval: previousInterval,
+                period: resolvedPeriod,
+                comparisonMode: resolvedMode
+            ) { $0.date }
+        } else {
+            previousTxns = []
+        }
 
         // Build pivot tree
         let hierarchy = groupingState.activeDimensions
@@ -235,5 +245,6 @@ final class FinancialReportViewModel: Filterable {
         netFlowVariation = netFlowPrevious.flatMap {
             PreviousPeriodHelper.calculateVariation(currentAmount: netFlowCurrent, previousAmount: $0)
         }
+        self.supportsComparison = supportsComparison
     }
 }

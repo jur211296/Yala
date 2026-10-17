@@ -380,6 +380,7 @@ struct CoachMarkOverlay: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("coach_mark_skip")
 
                 Spacer()
 

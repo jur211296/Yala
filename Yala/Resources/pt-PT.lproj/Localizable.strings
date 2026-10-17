@@ -835,6 +835,7 @@
 "cashFlowPlan.addCustomLine" = "Linha personalizada";
 "cashFlowPlan.addCustomLineDesc" = "Nome e valor livre";
 "cashFlowPlan.addFromExpenses" = "Das minhas despesas";
+"cashFlowPlan.addFromIncome" = "Das minhas receitas";
 "cashFlowPlan.addFromExpensesDesc" = "Escolhe uma subcategoria com histórico";
 "cashFlowPlan.addFromScheduled" = "De pagamento programado";
 "cashFlowPlan.addFromScheduledDesc" = "Usa um pagamento ativo como linha fixa";
@@ -848,7 +849,7 @@
 "cashFlowPlan.average12m" = "Média 12 meses";
 "cashFlowPlan.average12mDesc" = "Média do último ano";
 "cashFlowPlan.average3m" = "Média 3 meses";
-"cashFlowPlan.average3mDesc" = "Média do que você gastou nos últimos 3 meses";
+"cashFlowPlan.average3mDesc" = "Média dos últimos 3 meses";
 "cashFlowPlan.average6m" = "Média 6 meses";
 "cashFlowPlan.average6mDesc" = "Média dos últimos 6 meses";
 "cashFlowPlan.bannerBody" = "É o seu plano de receitas e despesas mês a mês. Mostra se o dinheiro vai dar ou se precisa ajustar algo.";
@@ -863,6 +864,7 @@
 "cashFlowPlan.cellDetailOverrideActive" = "Valor ajustado manualmente";
 "cashFlowPlan.cellDetailRecentTransactions" = "Transações recentes";
 "cashFlowPlan.cellDetailRemaining" = "Ainda te restam %@";
+"cashFlowPlan.cellDetailPendingIncome" = "Ainda falta receber %@";
 "cashFlowPlan.cellDetailSaveAdjustment" = "Guardar ajuste";
 "cashFlowPlan.cellDetailSpent" = "Gastaste";
 "cashFlowPlan.chartAllWithinPlan" = "Todas as linhas de despesa estão dentro do plano";
@@ -896,6 +898,7 @@
 "cashFlowPlan.custom" = "Personalizado";
 "cashFlowPlan.customDesc" = "Selecione meses específicos para calcular a média";
 "cashFlowPlan.deleteLineConfirmation" = "Excluir esta linha do seu plano? Esta ação não pode ser desfeita.";
+"cashFlowPlan.deleteLine" = "Eliminar linha";
 "cashFlowPlan.densityFull" = "Completo";
 "cashFlowPlan.densityIcons" = "Ícones";
 "cashFlowPlan.description" = "Analisamos seus últimos 6 meses para montar seu plano. Revise e ajuste o que precisar.";
@@ -915,7 +918,7 @@
 "cashFlowPlan.incomeSection" = "Receitas";
 "cashFlowPlan.incomeVsExpense" = "Receita vs Despesa";
 "cashFlowPlan.lastMonth" = "Último mês";
-"cashFlowPlan.lastMonthDesc" = "O que você gastou no mês passado";
+"cashFlowPlan.lastMonthDesc" = "O valor do mês passado";
 "cashFlowPlan.lineNameHint" = "Você pode personalizar";
 "cashFlowPlan.lineNameLabel" = "Nome da linha";
 "cashFlowPlan.manual" = "Valor fixo";
@@ -1543,7 +1546,7 @@
 "guide.categories.title" = "Para onde vai seu dinheiro?";
 "guide.categoriesSettings.message" = "As categorias agrupam seus gastos: alimentação, transporte, lazer... Você pode criar subcategorias para mais detalhe.";
 "guide.categoriesSettings.title" = "Organize suas categorias";
-"guide.comparative.message" = "Veja se gastou mais ou menos este mês comparado ao anterior. Vermelho = mais, verde = menos.";
+"guide.comparative.message" = "Veja se gastou mais ou menos este mês comparado ao anterior. Rosa = mais, roxo = menos.";
 "guide.comparative.title" = "Compare períodos";
 "guide.favoritesManage.message" = "Salve aqui seus gastos frequentes. Ao registrar, toque no favorito e tudo se preenche automaticamente.";
 "guide.favoritesManage.title" = "Seus pagamentos mais frequentes";

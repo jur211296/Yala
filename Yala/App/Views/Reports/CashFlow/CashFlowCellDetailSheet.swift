@@ -85,6 +85,7 @@ struct CashFlowCellDetailSheet: View {
                 }
             }
             .scrollDismissesKeyboard(.interactively)
+            .accessibilityIdentifier("cashflow_cell_detail")
             .yalaScreenBackground(.subtle)
             .navigationTitle(lineResult.name)
             .navigationBarTitleDisplayMode(.inline)
@@ -171,7 +172,8 @@ struct CashFlowCellDetailSheet: View {
                     transactions: activeTransactions,
                     plannedAmount: lr.plannedAmount,
                     month: m,
-                    currencyCode: currencyCode
+                    currencyCode: currencyCode,
+                    isIncome: lr.isIncome
                 )
                 .solidCard()
             }
@@ -220,7 +222,7 @@ struct CashFlowCellDetailSheet: View {
                                 .fill(DS.Semantic.neutralBackground)
                                 .frame(height: 8)
                             Capsule()
-                                .fill(progress > 1.0 ? Color.hotPink : theme.accent)
+                                .fill(CashFlowLineSideLogic.progressIsAlarm(progress: progress, isIncome: lr.isIncome) ? Color.hotPink : theme.accent)
                                 .frame(width: max(8, geo.size.width * clamped), height: 8)
                         }
                     }
@@ -234,7 +236,11 @@ struct CashFlowCellDetailSheet: View {
                         Spacer()
                         let remaining = lr.plannedAmount - (lr.realAmount ?? 0)
                         if remaining > 0 {
-                            Text(L10n.CashFlowPlan.cellDetailRemaining(appPreferences.currency(remaining, currencyCode: currencyCode)))
+                            // En un ingreso lo que falta no es dinero que te queda: es lo que aún no recibiste.
+                            let remainingText = appPreferences.currency(remaining, currencyCode: currencyCode)
+                            Text(lr.isIncome
+                                ? L10n.CashFlowPlan.cellDetailPendingIncome(remainingText)
+                                : L10n.CashFlowPlan.cellDetailRemaining(remainingText))
                                 .font(DS.Typography.captionSmall)
                                 .foregroundStyle(.secondary)
                         }
@@ -314,7 +320,8 @@ struct CashFlowCellDetailSheet: View {
                     transactions: activeTransactions,
                     plannedAmount: lr.plannedAmount,
                     month: m,
-                    currencyCode: currencyCode
+                    currencyCode: currencyCode,
+                    isIncome: lr.isIncome
                 )
                 .solidCard()
             }

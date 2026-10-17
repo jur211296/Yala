@@ -4,7 +4,7 @@
 //
 //  A single line row in the month detail view.
 //  Shows icon, name, planned/real amount, and progress bar for current month.
-//  Tap → line config sheet. Context menu → delete line.
+//  Tap → cell detail sheet. Context menu → ask to delete the line (the month detail confirms).
 //
 
 import SwiftUI
@@ -52,13 +52,17 @@ struct CashFlowDetailLineRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("cashflow_detail_line")
         .contextMenu {
+            // El botón pide el borrado; la confirmación la pinta `CashFlowMonthDetailView`. Antes el botón
+            // llevaba el texto de la pregunta y borraba sin preguntar nada.
             if let onDeleteLine {
                 Button(role: .destructive) {
                     onDeleteLine()
                 } label: {
-                    Label(L10n.CashFlowPlan.deleteLineConfirmation, systemImage: "trash")
+                    Label(L10n.CashFlowPlan.deleteLine, systemImage: "trash")
                 }
+                .accessibilityIdentifier("cashflow_line_delete")
             }
         }
     }
@@ -169,7 +173,7 @@ struct CashFlowDetailLineRow: View {
                 .fill(DS.Semantic.neutralBackground)
                 .frame(height: DS.Sizing.progressBarHeight)
             Capsule()
-                .fill(progress > 1.0 ? Color.hotPink : theme.accent)
+                .fill(CashFlowLineSideLogic.progressIsAlarm(progress: progress, isIncome: lineResult.isIncome) ? Color.hotPink : theme.accent)
                 .frame(maxWidth: .infinity, maxHeight: DS.Sizing.progressBarHeight)
                 .scaleEffect(x: max(0.05, clamped), anchor: .leading)
         }

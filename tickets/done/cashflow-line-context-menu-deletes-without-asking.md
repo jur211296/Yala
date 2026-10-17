@@ -1,10 +1,10 @@
 ---
 id: cashflow-line-context-menu-deletes-without-asking
-status: backlog
+status: done
 area: reports
 priority: medium
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-16
 source: docs/ux/mapa-de-flujos-2.2.md (auditoría UX 2.2, fase 1)
 ---
 
@@ -28,3 +28,17 @@ puede deshacer.») y tocarlo borra la línea sin preguntar nada más.
 ## Hecho cuando
 
 El menú dice «Eliminar línea» y pide confirmación como el otro camino, o se decide quitarlo de ahí.
+
+## Resolución (2026-10-16, auditoría UX 2.2 · lote 18)
+
+- El menú dice «Eliminar línea» (clave nueva `cashFlowPlan.deleteLine`, 16 idiomas) y pide confirmación con una
+  alerta que tiene «Cancelar» a la vista. Se probó primero con `confirmationDialog` colgado del detalle del mes y
+  salía como globo anclado, sin «Cancelar» (la trampa de iOS 26 de `swiftui-ds.md`).
+- **La premisa «desde la configuración de la línea el borrado sí pide confirmación» era falsa**: esa hoja
+  (`CashFlowLineConfigSheet`) no se abre desde ningún sitio desde el 2026-03-31 (`2daa86d95`, retirada a propósito
+  como «no lista»). El menú contextual era el ÚNICO camino para borrar una línea.
+- De paso: la línea borrada seguía en pantalla (con «?» por icono) hasta salir y volver, porque `removeLine` no
+  recalculaba. Ahora el VM sube `planRevision` y `CashFlowTableView` recalcula.
+- Red: `YalaUITests/CashFlowPlanUITests#test_lineMenu_asksBeforeDeleting_andTheLineLeavesRightAway` y
+  `YalaTests/CashFlowPlanRevisionTests`.
+
