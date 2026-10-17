@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (941)
+## Index (943)
 
 | id | status | path |
 |---|---|---|
@@ -101,6 +101,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | ai-insights-error-card-shows-raw-english-errors | done | tickets/done/ai-insights-error-card-shows-raw-english-errors.md |
 | ai-model-choice-lives-in-the-app-binary | done | tickets/done/ai-model-choice-lives-in-the-app-binary.md |
 | ai-onboarding-demo-speaks-english-and-dollars | done | tickets/done/ai-onboarding-demo-speaks-english-and-dollars.md |
+| ai-provider-still-named-outside-the-consent-notices | backlog | tickets/backlog/ai-provider-still-named-outside-the-consent-notices.md |
 | ai-recommended-budgets | backlog | tickets/backlog/ai-recommended-budgets.md |
 | ai-responses-use-json-object-not-a-strict-schema | backlog | tickets/backlog/ai-responses-use-json-object-not-a-strict-schema.md |
 | ai-text-model-generation-upgrade | done | tickets/done/ai-text-model-generation-upgrade.md |
@@ -962,6 +963,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | backlog | tickets/backlog/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
 | whats-new-2-2-review-before-release | backlog | tickets/backlog/whats-new-2-2-review-before-release.md |
+| white-text-on-the-brand-indigo-is-just-below-aa | backlog | tickets/backlog/white-text-on-the-brand-indigo-is-just-below-aa.md |
 | widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
 | widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |

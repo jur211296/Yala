@@ -337,7 +337,11 @@ struct AIConsentAlertModifier: ViewModifier {
     var onAccepted: (PendingAIInput) -> Void
 
     func body(content: Content) -> some View {
-        content
+        // El ancla de la alerta es una vista vacía de fondo con su propio tinte, para no teñir la pantalla que hay debajo.
+        // Con el tinte de la app, «Activar» salía con texto negro sobre el púrpura en el tema oscuro (Jürgen, 2026-10-17).
+        // `alertActionTint` explica por qué este tinte lo deja en blanco en oscuro, y por qué en claro sigue negro.
+        content.background {
+            Color.clear
             // UX 2.2 · L4-2: el aviso dice qué gana la persona y el botón bueno va destacado (`.defaultAction` lo pinta
             // en negrita). Sigue siendo una alerta del sistema: no admite relleno ni un enlace pequeño, y pasarla a hoja
             // tocaría las cinco pantallas que la presentan justo antes de otra hoja (la de voz o foto).
@@ -358,6 +362,8 @@ struct AIConsentAlertModifier: ViewModifier {
             } message: {
                 Text(L10n.AIConsent.processingMessage)
             }
+            .tint(Color.alertActionTint)
+        }
     }
 }
 

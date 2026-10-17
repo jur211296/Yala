@@ -2901,14 +2901,14 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala records it for you";
-"aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service (OpenAI), only at that moment. It’s not used to train the AI.";
+"aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service, only at that moment. It’s not used to train the AI.";
 "aiConsent.insightsTitle" = "Smart Overview";
-"aiConsent.insightsMessage" = "This feature sends OpenAI a summary of your finances —totals and trends by category, budgets, and recurring payments— to generate your analysis.\n\nYour full record history is not sent. OpenAI does not use this data to train its models.";
+"aiConsent.insightsMessage" = "Yala analyzes your finances and explains how you’re doing. To do that it sends an AI service a summary —totals and trends by category, budgets, and recurring payments—, not your full record history. It’s not used to train the AI.";
 "aiConsent.accept" = "Accept and Enable";
 "aiConsent.privacyPolicy" = "Privacy Policy";
-"aiConsent.inlineHintProcessing" = "Your voice and image data is processed with OpenAI. It is not stored permanently.";
-"aiConsent.inlineHintInsights" = "Your financial summary is sent to OpenAI for the analysis. It is not stored permanently.";
-"aiConsent.inlineHintBoth" = "Your voice, image, and summary data is processed with OpenAI. It is not stored permanently.";
+"aiConsent.inlineHintProcessing" = "Your voice and image data is processed by an AI service. It is not stored permanently.";
+"aiConsent.inlineHintInsights" = "Your financial summary is sent to an AI service for the analysis. It is not stored permanently.";
+"aiConsent.inlineHintBoth" = "Your voice, image, and summary data is processed by an AI service. It is not stored permanently.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Artificial Intelligence";
@@ -3445,9 +3445,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financial assistant";
-"aiConsent.chatMessage" = "To answer your questions, this feature sends OpenAI a summary of your financial situation from the past 13 months: your account balances and names, totals by category, frequent merchants, budgets, and recurring payments.\n\nThe data is used only to generate the response. OpenAI does not use it to train its models.";
-"aiConsent.inlineHintChat" = "Your financial summary is processed by OpenAI to answer. It is not stored permanently.";
-"aiConsent.inlineHintMultiple" = "Multiple AI features use OpenAI to process your data. It is not stored permanently.";
+"aiConsent.chatMessage" = "Yala answers your questions about your finances using your own numbers. To do that it sends an AI service a summary of your last 13 months: your account balances and names, totals by category, frequent merchants, budgets, and recurring payments. It’s used only to answer you, not to train the AI.";
+"aiConsent.inlineHintChat" = "Your financial summary is processed by an AI service to answer. It is not stored permanently.";
+"aiConsent.inlineHintMultiple" = "Several features use an AI service to process your data. It is not stored permanently.";
 
 // MARK: - Chat Assistant Feature Gate & Settings
 "featureGate.chatAssistant" = "Chat assistant";

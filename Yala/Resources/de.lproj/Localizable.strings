@@ -2850,14 +2850,14 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala erfasst es für dich";
-"aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst (OpenAI) gesendet. Es wird nicht zum Trainieren der KI verwendet.";
+"aiConsent.processingMessage" = "Sprich es ein oder wähle ein Foto vom Beleg, und Yala erfasst die Ausgabe. Dafür wird die Aufnahme oder das Foto nur in diesem Moment an einen KI-Dienst gesendet. Es wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.insightsTitle" = "Intelligenter Überblick";
-"aiConsent.insightsMessage" = "Diese Funktion sendet eine Zusammenfassung deiner Finanzen an OpenAI – Summen und Trends nach Kategorie, Budgets und wiederkehrende Zahlungen –, um deine Analyse zu erstellen.\n\nDein vollständiger Verlauf an Einträgen wird nicht gesendet. OpenAI verwendet diese Daten nicht zum Trainieren seiner Modelle.";
+"aiConsent.insightsMessage" = "Yala analysiert deine Finanzen und zeigt dir, wie du dastehst. Dafür wird eine Zusammenfassung an einen KI-Dienst gesendet – Summen und Trends nach Kategorie, Budgets und wiederkehrende Zahlungen –, nicht dein vollständiger Verlauf an Einträgen. Sie wird nicht zum Trainieren der KI verwendet.";
 "aiConsent.accept" = "Akzeptieren und aktivieren";
 "aiConsent.privacyPolicy" = "Datenschutzrichtlinie";
-"aiConsent.inlineHintProcessing" = "Deine Sprach- und Bilddaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
-"aiConsent.inlineHintInsights" = "Deine Finanzzusammenfassung wird für die Analyse an OpenAI gesendet. Sie wird nicht dauerhaft gespeichert.";
-"aiConsent.inlineHintBoth" = "Deine Sprach-, Bild- und Zusammenfassungsdaten werden mit OpenAI verarbeitet. Sie werden nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintProcessing" = "Deine Sprach- und Bilddaten werden von einem KI-Dienst verarbeitet. Sie werden nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintInsights" = "Deine Finanzzusammenfassung wird für die Analyse an einen KI-Dienst gesendet. Sie wird nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintBoth" = "Deine Sprach-, Bild- und Zusammenfassungsdaten werden von einem KI-Dienst verarbeitet. Sie werden nicht dauerhaft gespeichert.";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Künstliche Intelligenz";
@@ -3394,9 +3394,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Finanzassistent";
-"aiConsent.chatMessage" = "Um deine Fragen zu beantworten, sendet diese Funktion eine Zusammenfassung deiner finanziellen Situation der letzten 13 Monate an OpenAI: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets und wiederkehrende Zahlungen.\n\nDie Daten werden nur zur Erstellung der Antwort verwendet. OpenAI verwendet sie nicht zum Trainieren seiner Modelle.";
-"aiConsent.inlineHintChat" = "Deine Finanzzusammenfassung wird von OpenAI verarbeitet, um zu antworten. Sie wird nicht dauerhaft gespeichert.";
-"aiConsent.inlineHintMultiple" = "Mehrere KI-Funktionen nutzen OpenAI zur Datenverarbeitung. Daten werden nicht dauerhaft gespeichert.";
+"aiConsent.chatMessage" = "Yala beantwortet deine Fragen zu deinen Finanzen mit deinen eigenen Zahlen. Dafür wird eine Zusammenfassung der letzten 13 Monate an einen KI-Dienst gesendet: Salden und Namen deiner Konten, Summen nach Kategorie, häufige Händler, Budgets und wiederkehrende Zahlungen. Sie wird nur für die Antwort verwendet, nicht zum Trainieren der KI.";
+"aiConsent.inlineHintChat" = "Deine Finanzzusammenfassung wird von einem KI-Dienst verarbeitet, um zu antworten. Sie wird nicht dauerhaft gespeichert.";
+"aiConsent.inlineHintMultiple" = "Mehrere Funktionen nutzen einen KI-Dienst zur Datenverarbeitung. Daten werden nicht dauerhaft gespeichert.";
 
 // MARK: - Chat Assistant Feature Gate & Settings
 "featureGate.chatAssistant" = "Chat-Assistent";

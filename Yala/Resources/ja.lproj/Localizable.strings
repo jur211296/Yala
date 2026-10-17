@@ -2854,14 +2854,14 @@
 
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yalaが代わりに記録します";
-"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービス（OpenAI）に送ります。AIの学習には使われません。";
+"aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービスに送ります。AIの学習には使われません。";
 "aiConsent.insightsTitle" = "スマート概要";
-"aiConsent.insightsMessage" = "この機能は家計の概要（カテゴリ別の合計と推移、予算、定期的な支払い）をOpenAIに送信して分析を生成します。\n\n記録の履歴全体は送信されません。OpenAIはこのデータをモデルの学習に使用しません。";
+"aiConsent.insightsMessage" = "Yalaが家計を分析して、今の状況をお伝えします。そのために、概要（カテゴリ別の合計と推移、予算、定期的な支払い）をAIサービスに送ります。記録の履歴全体は送りません。AIの学習には使われません。";
 "aiConsent.accept" = "同意して有効化";
 "aiConsent.privacyPolicy" = "プライバシーポリシー";
-"aiConsent.inlineHintProcessing" = "音声と画像のデータはOpenAIで処理されます。永続的に保存されることはありません。";
-"aiConsent.inlineHintInsights" = "あなたの財務概要は分析のためOpenAIに送信されます。永続的に保存されることはありません。";
-"aiConsent.inlineHintBoth" = "音声、画像、サマリーのデータはOpenAIで処理されます。永続的に保存されることはありません。";
+"aiConsent.inlineHintProcessing" = "音声と画像のデータはAIサービスで処理されます。永続的に保存されることはありません。";
+"aiConsent.inlineHintInsights" = "あなたの財務概要は分析のためAIサービスに送信されます。永続的に保存されることはありません。";
+"aiConsent.inlineHintBoth" = "音声、画像、サマリーのデータはAIサービスで処理されます。永続的に保存されることはありません。";
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "人工知能";
@@ -3405,9 +3405,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "金融アシスタント";
-"aiConsent.chatMessage" = "ご質問にお答えするため、この機能はあなたの財務状況（直近13か月）の概要をOpenAIに送信します：口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い。\n\nデータは回答の生成にのみ使用されます。OpenAIはこのデータをモデルの学習に使用しません。";
-"aiConsent.inlineHintChat" = "あなたの財務概要は回答のためOpenAIで処理されます。永続的に保存されることはありません。";
-"aiConsent.inlineHintMultiple" = "複数のAI機能がOpenAIでデータを処理します。永続的に保存されることはありません。";
+"aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い）をAIサービスに送ります。回答のためだけに使われ、AIの学習には使われません。";
+"aiConsent.inlineHintChat" = "あなたの財務概要は回答のためAIサービスで処理されます。永続的に保存されることはありません。";
+"aiConsent.inlineHintMultiple" = "複数の機能がAIサービスでデータを処理します。永続的に保存されることはありません。";
 
 // MARK: - Chat Assistant Feature Gate & Settings
 "featureGate.chatAssistant" = "チャットアシスタント";

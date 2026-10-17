@@ -88,16 +88,18 @@
       "codeGlobs": [
         "Yala/App/Views/Settings/AIPrivacySettingsView.swift",
         "Yala/App/Views/Settings/PersonalizationSettingsView.swift",
-        "Yala/App/Services/AppPreferences.swift"
+        "Yala/App/Services/AppPreferences.swift",
+        "Yala/App/Theme/ViewModifiers.swift",
+        "Yala/Resources/Assets.xcassets/AccentColor.colorset/Contents.json"
       ],
       "scenarioIDs": [
         "F-CHA-01",
         "F-CHA-04"
       ],
       "classification": "manual",
-      "coverage": "manual + W3 (2026-08-11): el consent de nube MOVIÓ aquí su punto 4 —el resumen financiero que viaja al proveedor de IA— al podarse. `aiConsent.chatMessage` ya describía el resumen con más detalle que aquel bullet; lo único que le faltaba era el HORIZONTE, así que gana «de los últimos 13 meses» en los 16 locales. El 13 no es una cifra heredada de un documento: está MEDIDO en `FullFinancialContextBuilder.swift:52` (`byAdding: .month, value: -13`), y `CloudConsentCopyTests.aiConsentHorizon_matchesTheContextBuilder` lo ata a ese literal para que mover la ventana del builder no deje mintiendo a las 16 traducciones. `lastVerified` NO se bumpea: el cambio es de copy y la alerta no se ha vuelto a ver en pantalla.",
+      "coverage": "manual + 2026-10-17 (pulido: avisos de IA sin «OpenAI» y «Activar» en blanco): las 8 cadenas aiConsent.* de los 16 idiomas dicen «un servicio de IA» con el estilo de L4-2 (beneficio, qué se envía, no entrena a la IA); el proveedor queda en la política, que los tres avisos enlazan. «Activar» sale con texto blanco en los temas oscuros (#585BEC, 5,09:1) y negro en el Claro (#6366F1, 4,70:1): límite medido de la alerta del sistema (swiftui-ds.md). xcuitest:YalaUITests/AIConsentAlertUITests (el aviso sale desde su ancla de fondo, sin el proveedor, y Cancelar cierra) + unit:YalaTests/AIConsentProviderNameTests (ningún aiConsent.* nombra al proveedor; los tres avisos conservan la política) + unit:YalaTests/AlertActionIndigoParityTests (catálogo = tinte por modo). Mutantes verificados en rojo. · W3 (2026-08-11): el consent de nube MOVIÓ aquí su punto 4 —el resumen financiero que viaja al proveedor de IA— al podarse. `aiConsent.chatMessage` ya describía el resumen con más detalle que aquel bullet; lo único que le faltaba era el HORIZONTE, así que gana «de los últimos 13 meses» en los 16 locales. El 13 no es una cifra heredada de un documento: está MEDIDO en `FullFinancialContextBuilder.swift:52` (`byAdding: .month, value: -13`), y `CloudConsentCopyTests.aiConsentHorizon_matchesTheContextBuilder` lo ata a ese literal para que mover la ventana del builder no deje mintiendo a las 16 traducciones. `lastVerified` NO se bumpea: el cambio es de copy y la alerta no se ha vuelto a ver en pantalla.",
       "owner": "",
-      "lastVerified": "2026-10-15"
+      "lastVerified": "2026-10-17"
     },
     {
       "area": "app-intents-shortcuts-siri",

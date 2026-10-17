@@ -48,6 +48,11 @@ struct PanelQuickActionsRow: View {
     /// antes se recorta texto o se deja que el scroll horizontal haga su trabajo.
     private static let pillHeight: CGFloat = 44
 
+    /// Alto común del icono en las píldoras con palabra debajo (Voz y Foto). La onda y la foto tienen alturas de glifo
+    /// distintas y, sin un marco igual, «Voz» y «Foto» quedaban a alturas diferentes (Jürgen, 2026-10-17). Escala con el
+    /// texto, para que con letra grande el icono no se quede pequeño respecto a su palabra.
+    @ScaledMetric(relativeTo: .subheadline) private var captionIconHeight: CGFloat = 18
+
     var body: some View {
         if hasAccounts {
             actionsRow
@@ -183,7 +188,10 @@ struct PanelQuickActionsRow: View {
                     // texto grande la palabra no cabe en 44 pt y el botón crece en vez
                     // de cortarla.
                     VStack(spacing: DS.Spacing.xxs) {
+                        // Mismo marco para los dos iconos: con la misma altura arriba, las dos palabras caen en la
+                        // misma línea base.
                         pillIcon(icon, isPrimary: isPrimary, usaDorado: usaDorado, isLocked: isLocked)
+                            .frame(height: captionIconHeight)
                         Text(caption)
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(iconStyle(isPrimary: isPrimary, usaDorado: usaDorado))

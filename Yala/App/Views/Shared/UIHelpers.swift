@@ -260,6 +260,23 @@ extension Color {
     /// Texto blanco encima con contraste AA (#3D36B3). `electricIndigo` con blanco no llega a 4,5.
     static let selectedIndigoFill = Color(hex: "3D36B3")
 
+    /// Relleno del botón destacado de una alerta del sistema (el «Activar» del aviso de voz y foto) en el modo OSCURO.
+    /// La alerta lo toma del `AccentColor` del catálogo, que en oscuro tiene que valer esto y en claro `electricIndigo`
+    /// (lo fija `AlertActionIndigoParityTests`). Con blanco encima da 5,09:1, AA; `electricIndigo` (#6366F1) daba 4,47:1.
+    static let alertActionIndigo = Color(hex: "585BEC")
+
+    /// Tinte con el que se presenta esa alerta. Medido en píxeles el 2026-10-17 (iOS 27.0): el texto del botón destacado
+    /// sale del tinte de SwiftUI de quien presenta la alerta, y si el tinte coincide con el relleno sale NEGRO, en claro
+    /// y en oscuro, sea cual sea el relleno (también sobre #3D36B3). No responde a `.tint` ni a `foregroundStyle` en el
+    /// propio botón, y el mismo tinte colorea «Política de privacidad» y «Cancelar».
+    /// - Oscuro: blanco. El texto del botón sale blanco (5,09:1) y los otros dos también, sobre cristal oscuro.
+    /// - Claro: el mismo `electricIndigo` del relleno, así que el sistema pone negro (4,70:1, AA). Blanco obligaría a
+    ///   pintar en blanco los otros dos botones sobre el cristal claro, donde no se leen. Es un límite de la alerta del
+    ///   sistema; solo lo usa el tema Claro (y Sistema de día): el resto de temas son oscuros.
+    static let alertActionTint = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? .white : UIColor(Color.electricIndigo)
+    })
+
     /// Rosa profundo: la tarjeta «¿No sabes tu saldo?». `hotPink` (#FF0080) con texto blanco da 3,8:1;
     /// este tono da 5,2:1 sin dejar de ser el rosa de marca.
     static let emphasisPinkFill = Color(hex: "D6006B")
