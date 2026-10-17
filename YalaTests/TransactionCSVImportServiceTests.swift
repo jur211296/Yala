@@ -81,9 +81,11 @@ struct TransactionCSVImportServiceTests {
         #expect(error.errorDescription != nil)
     }
 
-    @Test func importError_invalidHeader_includesFoundValue() {
+    /// Auditoría UX 2.2, lote 7, L7-17: el aviso ya no enseña el encabezado crudo; dice qué columnas hacen falta.
+    @Test func importError_invalidHeader_namesTheExpectedColumns_notTheRawHeader() {
         let error = ImportError.invalidHeader(found: "col1,col2,col3")
-        #expect(error.errorDescription?.contains("col1,col2,col3") == true)
+        #expect(error.errorDescription?.contains("col1,col2,col3") == false)
+        #expect(error.errorDescription?.contains("subcategory") == true)
     }
 
     @Test func importError_invalidColumnCount_includesDetails() {
