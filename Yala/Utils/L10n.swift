@@ -8440,7 +8440,6 @@ enum L10n {
             static var pointAccess: String { ls("storage.consent.pointAccess", comment: "") }
             /// Es un alivio, no una advertencia: va al pie y con jerarquía secundaria.
             static var footer: String { ls("storage.consent.footer", comment: "") }
-            static var accept: String { ls("storage.consent.accept", comment: "") }
             static var privacyLink: String { ls("storage.consent.privacyLink", comment: "") }
         }
 
@@ -9053,5 +9052,52 @@ enum AppLocale {
         formatter.locale = current
         formatter.dateFormat = dateFormat
         return formatter
+    }
+}
+
+// MARK: - UX 2.2 · lote 6 (primera vez con datos previos o en la nube)
+
+/// Los textos nuevos del lote 6 de la auditoría UX 2.2, juntos para que el lote se lea y se revise de una vez. Las
+/// claves sí van en el espacio de nombres de su pantalla (`welcome.*`, `storage.consent.*`, `groups.fullActivation.*`).
+extension L10n {
+    enum UXLote6 {
+        /// L6-1 · la ayuda de «¡Hola de nuevo!» para quien no recuerda dónde guardó sus datos.
+        static var existingDontRemember: String { ls("welcome.existing.dontRemember", comment: "") }
+        /// L6-8 · el título de la entrada a la que lleva el faro («Es mi primera vez» con una cuenta previa).
+        static var beaconTitle: String { ls("welcome.cloud.beaconTitle", comment: "") }
+        /// L6-8 · bajo «Crear otra cuenta»: la anterior no se borra.
+        static var beaconCreateAnotherNote: String { ls("welcome.cloud.createAnotherNote", comment: "") }
+        /// L6-9 · el botón de «Tu cuenta no está disponible».
+        static var writeToSupport: String { ls("welcome.cloud.accountBlockedWrite", comment: "") }
+        /// L6-9 · el asunto del correo a soporte desde esa pantalla.
+        static var accountBlockedMailSubject: String { ls("welcome.cloud.accountBlockedMailSubject", comment: "") }
+        /// L6-7 · «reabre Yala» tras entrar en la nube: ese terminal no se cierra solo al ir a inicio.
+        static var relaunchBodyCloseFully: String { ls("welcome.relaunch.bodyCloseFully", comment: "") }
+        /// L6-5 · el botón de «Encontramos tus datos».
+        static var restoreBringBack: String { ls("welcome.restore.bringBack", comment: "") }
+        /// L6-5 · los nombres de las filas del recibo (la palabra sola; el número va a la derecha).
+        static var restoreRowTransactions: String { ls("welcome.restore.row.transactions", comment: "") }
+        static var restoreRowAccounts: String { ls("welcome.restore.row.accounts", comment: "") }
+        static var restoreRowCategories: String { ls("welcome.restore.row.categories", comment: "") }
+        static var restoreRowBudgets: String { ls("welcome.restore.row.budgets", comment: "") }
+        static var restoreRowGroups: String { ls("welcome.restore.row.groups", comment: "") }
+        /// L6-4 · la frase que abre el consentimiento y los títulos de sus tres fichas.
+        static var consentLead: String { ls("storage.consent.lead", comment: "") }
+        static var consentServersTitle: String { ls("storage.consent.serversTitle", comment: "") }
+        static var consentPhotosTitle: String { ls("storage.consent.photosTitle", comment: "") }
+        static var consentAccessTitle: String { ls("storage.consent.accessTitle", comment: "") }
+        /// L6-4 · el botón del consentimiento, por contexto (`CloudConsentCopyLogic`).
+        static var consentAcceptEnter: String { ls("storage.consent.acceptEnter", comment: "") }
+        static var consentAcceptCreate: String { ls("storage.consent.acceptCreate", comment: "") }
+        static var consentAcceptMove: String { ls("storage.consent.acceptMove", comment: "") }
+        /// L6-6 · el aviso tardío de iCloud.
+        static var lateLead: String { ls("welcome.privateICloud.lateLead", comment: "") }
+        static var lateMerge: String { ls("welcome.privateICloud.lateMerge", comment: "") }
+        static var lateWipe: String { ls("welcome.privateICloud.lateWipe", comment: "") }
+        static var lateMergeExplainer: String { ls("welcome.privateICloud.lateMergeExplainer", comment: "") }
+        /// L6-9 · «Tu cuenta ya tiene finanzas personales» → Ajustes, donde se cierra la sesión.
+        static var blockedGoToSignOut: String { ls("groups.fullActivation.blockedGoToSignOut", comment: "") }
+        /// L6-10 · el ejemplo de «¿Traemos tus gastos de grupo?».
+        static var historyExample: String { ls("groups.fullActivation.historyExample", comment: "") }
     }
 }

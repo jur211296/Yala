@@ -45,11 +45,39 @@ struct WelcomeExistingChooserView: View {
 
     private var offersRestore: Bool { options.contains(.restoreICloud) }
 
+    /// Los dos caminos a la vez: la cuenta de Yala en la nube y el iCloud. Es cuando hay que elegir, y por tanto cuando
+    /// la ayuda de L6-1 tiene sentido.
+    private var offersBothPaths: Bool { offersRestore && !accountOptions.isEmpty }
+
+    /// UX 2.2 · L6-1 (opción B): quien usó Yala hace meses no recuerda si guardó sus datos en su iCloud o en una cuenta
+    /// de la nube. Una frase lo resuelve sin cambiar el flujo: el modo de siempre de Yala es el iCloud, y la nube exige
+    /// haber entrado con Apple o Google. Fuera de la tarjeta, entre el título y lo que se elige, con un icono que la
+    /// marca como ayuda y no como una opción más.
+    private var dontRememberHelp: some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: "questionmark.circle.fill")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.white.opacity(0.85))
+                .accessibilityHidden(true)
+            Text(L10n.UXLote6.existingDontRemember)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.white.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("welcome_existing_dont_remember")
+    }
+
     var body: some View {
         WelcomeFormScreen(
             title: L10n.Welcome.Existing.title,
             subtitle: L10n.Welcome.Existing.subtitle
         ) {
+            if offersBothPaths {
+                dontRememberHelp
+            }
+
             VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                 if !accountOptions.isEmpty {
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {
@@ -57,6 +85,14 @@ struct WelcomeExistingChooserView: View {
                         ForEach(accountOptions, id: \.self) { option in
                             accountEntry(option)
                         }
+                        // UX 2.2 · L6-3: la nota del método vivía en la pantalla intermedia «Entra a tu cuenta», que ya no
+                        // se enseña (estos botones abren directamente el consentimiento). Es aquí donde se elige el método.
+                        Text(L10n.Welcome.Cloud.providerNote)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.white.opacity(0.7))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("welcome_existing_provider_note")
                     }
                 }
 

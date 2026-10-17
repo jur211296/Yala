@@ -2433,8 +2433,8 @@
 "icloud.detail.cta.retry" = "立即重试";
 "icloud.detail.cta.diagnose" = "检查并修复";
 "icloud.detail.cta.viewTechnical" = "查看技术详情";
-"icloud.remoteOnboardingCompleted" = "✓ 你已就绪,你的数据在这里";
-"icloud.remoteRestoreCompleted" = "✓ 数据已恢复";
+"icloud.remoteOnboardingCompleted" = "你已在另一台设备上完成设置，现在一切都在这里了。";
+"icloud.remoteRestoreCompleted" = "数据已恢复";
 "icloud.remoteWipe.title" = "数据不再可用";
 "icloud.remoteWipe.message" = "你的数据已从 iCloud 移除。你可以从头开始,或等待它再同步回来。";
 "icloud.remoteWipe.confirm" = "重新开始";
@@ -4087,7 +4087,7 @@
 "welcome.restore.searchingTip" = "这可能需要几秒钟。";
 "welcome.restore.foundTitle" = "你好 %@！很高兴再次见到你。";
 "welcome.restore.foundTitleAnonymous" = "很高兴再次见到你！";
-"welcome.restore.foundBody" = "我们在 iCloud 中找到了你的数据：";
+"welcome.restore.foundBody" = "以下数据会回到这台手机：";
 "welcome.restore.continue" = "继续";
 "welcome.restore.notFoundTitle" = "未找到数据";
 "welcome.restore.notFoundBody" = "你的 iCloud 账户没有关联的数据。想要重新开始吗？";
@@ -4662,11 +4662,10 @@
 "storage.errors.adoptICloudNotSettled" = "无法开始启用云端：iCloud 仍在向此设备传输数据。请几分钟后再试。";
 "storage.errors.signIn" = "无法登录。请重试。";
 "storage.consent.title" = "您在 Yala 云端的数据";
-"storage.consent.pointServers" = "您的数据保存在 Yala 的服务器上，我们的团队可以查看这些数据，以便为您提供支持和智能功能。我们不使用端到端加密。";
-"storage.consent.pointPhotos" = "收据照片仅保留在此设备上：不会备份到云端，也不会在其他设备上显示。如需保留，请在更换手机前先保存。";
-"storage.consent.pointAccess" = "作为交换，您只需 Apple 或 Google 登录即可在任何设备上访问数据，无需依赖 iCloud。前提是您保留该登录方式：没有电子邮件或 Yala 密码找回，因此如果您失去该账户的访问权限，请先导出数据（设置 → 导出数据）。";
+"storage.consent.pointServers" = "我们的团队可以查看这些数据，以便为您提供支持和智能功能。我们不使用端到端加密。";
+"storage.consent.pointPhotos" = "不会备份到云端，也不会在其他设备上显示。如需保留，请在更换手机前先保存。";
+"storage.consent.pointAccess" = "无需依赖 iCloud。没有 Yala 密码，也没有电子邮件找回：如果失去该登录方式，请先导出数据（设置 → 导出数据）。";
 "storage.consent.footer" = "您可以随时切换回私密模式，不会丢失任何内容。";
-"storage.consent.accept" = "我已了解并希望启用云端";
 "storage.consent.privacyLink" = "查看隐私政策";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -4932,10 +4931,10 @@
 "welcome.cloud.providerMismatchBodyGeneric" = "此 Apple ID 的 Yala 账户是通过其他方式创建的。";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "此 Apple ID 曾通过%@创建过 Yala 账户。";
+"welcome.cloud.beaconOrigin" = "它是通过%@创建的。你可以登录该账户，或创建另一个。";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "此 Apple ID 曾创建过 Yala 账户。";
+"welcome.cloud.beaconOriginGeneric" = "你可以登录该账户，或创建另一个。";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "创建另一个账户";
@@ -5525,10 +5524,10 @@
 "stats.hero.captionTotalPeriod" = "期间合计";
 
 /* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
-"welcome.restore.cloudPausedTitle" = "Yala 云同步已暂停";
+"welcome.restore.cloudPausedTitle" = "你的数据不在 iCloud 中";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "你的数据仍安全地保存在 Yala 账户中。同步暂时已暂停，请稍后再试。";
+"welcome.restore.cloudPausedBody" = "此 Apple ID 有一个 Yala 云端账户：你的数据安全地保存在那里，而不在你的 iCloud 中。云端登录暂时已暂停，请稍后再试。";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 温馨提醒：你还欠 %2$@ %1$@。方便的时候结一下吧。";
@@ -5753,7 +5752,7 @@
 "groups.fullActivation.chooserSubtitle" = "你的群组保持不变。选择你的个人数据存放在哪里。";
 "groups.fullActivation.cloudBody" = "我们会使用你在群组中已经在用的同一个账户，而不是新建一个。数据保存在我们的服务器上，我们的团队可以查看，用于为你提供支持。";
 "groups.fullActivation.historyTitle" = "要带上你的群组支出吗？";
-"groups.fullActivation.historyBody" = "你的群组支出也可以显示在「首页」「记录」和「统计」中。";
+"groups.fullActivation.historyBody" = "我们只导入你在每笔支出中承担的部分，它会计入「首页」、你的预算和「统计」。";
 "groups.fullActivation.historyShow" = "是，显示";
 "groups.fullActivation.historyKeepInGroups" = "不，只留在群组中";
 "groups.fullActivation.historyFootnote" = "这也适用于之后记录的支出。你随时可以在群组设置中更改。";
@@ -6975,3 +6974,28 @@
 "whatsNew.v22.firstSteps.title" = "按你的节奏入门";
 "whatsNew.v22.firstSteps.description" = "从你感兴趣的开始：没有锁定的步骤，指南也直奔主题。";
 "settings.whatsNew" = "新功能";
+"welcome.existing.dontRemember" = "想不起来了？如果你从未用 Apple 或 Google 登录过，你的数据就在你的 iCloud 里。";
+"welcome.cloud.beaconTitle" = "此 Apple ID 已有一个 Yala 账户";
+"welcome.cloud.createAnotherNote" = "原来的账户还在，你随时可以回到它。";
+"welcome.cloud.accountBlockedWrite" = "发邮件给客服";
+"welcome.cloud.accountBlockedMailSubject" = "Yala：我的账户无法使用";
+"welcome.relaunch.bodyCloseFully" = "为了妥善保管你的数据，Yala 需要重新启动。请彻底关闭 App，然后重新打开——回来后会从你离开的地方继续。";
+"welcome.restore.bringBack" = "恢复我的数据";
+"welcome.restore.row.transactions" = "记录";
+"welcome.restore.row.accounts" = "账户";
+"welcome.restore.row.categories" = "分类";
+"welcome.restore.row.budgets" = "预算";
+"welcome.restore.row.groups" = "共享群组";
+"storage.consent.lead" = "继续之前，有三件事需要了解：";
+"storage.consent.serversTitle" = "您的数据保存在 Yala 的服务器上";
+"storage.consent.photosTitle" = "收据照片会留在这台手机上";
+"storage.consent.accessTitle" = "使用 Apple 或 Google 登录，任何设备都可以";
+"storage.consent.acceptEnter" = "知道了，登录我的账户";
+"storage.consent.acceptCreate" = "知道了，创建我的账户";
+"storage.consent.acceptMove" = "知道了，把我的数据移到云端";
+"welcome.privateICloud.lateLead" = "这是你之前用同一个 Apple ID 保存在 iCloud 中的数据：";
+"welcome.privateICloud.lateMerge" = "与现在的数据合并";
+"welcome.privateICloud.lateWipe" = "从 iCloud 删除并从头开始";
+"welcome.privateICloud.lateMergeExplainer" = "合并后，你会在账户和记录中看到所有数据。多余的可以之后删除。";
+"groups.fullActivation.blockedGoToSignOut" = "打开设置以退出登录";
+"groups.fullActivation.historyExample" = "例如：120 的晚餐 3 人平分 → 你的支出为 40";
