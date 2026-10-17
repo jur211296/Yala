@@ -4616,7 +4616,6 @@
 "storage.revert.ineligible" = "Du kannst gerade nicht von diesem Gerät zu iCloud zurückkehren.";
 "storage.sync.title" = "Synchronisierung";
 "storage.sync.upToDate" = "Alles synchronisiert";
-"storage.sync.needsSignIn" = "Melde dich an, um %d Änderungen hochzuladen";
 "storage.sync.signInButton" = "Anmelden";
 "storage.progress.migrating" = "Cloud wird aktiviert …";
 "storage.progress.reverting" = "Zurück zu iCloud …";
@@ -6643,3 +6642,8 @@
 "profile.icon.sun" = "Sonne";
 "profile.icon.cloud" = "Wolke";
 "profile.icon.drop" = "Tropfen";
+
+/* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
+"export.error.invalidDateRange" = "Diese Daten passen nicht: Das Startdatum muss vor dem Enddatum liegen.";
+"export.error.noTransactions" = "Keine Buchungen passen zu diesen Filtern. Versuche einen anderen Zeitraum oder entferne einen Filter.";
+"export.error.fileWriteFailed" = "Wir konnten die Datei nicht erstellen. Versuche es erneut.";

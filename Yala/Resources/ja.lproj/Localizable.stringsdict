@@ -468,6 +468,20 @@
 			<string>%d 件の記録を換算しますか？</string>
 		</dict>
 	</dict>
+	<key>storage.sync.needsSignIn</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>サインインして %d件の変更をアップロード</string>
+		</dict>
+	</dict>
 	<key>storage.sync.waitingForConnection</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

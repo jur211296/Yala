@@ -4043,6 +4043,10 @@ enum L10n {
         static var exportError: String {
             ls("export.exportError", comment: "")
         }
+        // B4 (lote 20, ticket `export-errors-are-hardcoded-in-spanish`): los tres motivos de `TransactionsExportError`.
+        static var errorInvalidDateRange: String { ls("export.error.invalidDateRange", comment: "") }
+        static var errorNoTransactions: String { ls("export.error.noTransactions", comment: "") }
+        static var errorFileWriteFailed: String { ls("export.error.fileWriteFailed", comment: "") }
         static var exportCompleted: String {
             ls("export.exportCompleted", comment: "")
         }
@@ -7825,8 +7829,10 @@ enum L10n {
         enum Sync {
             static var title: String { ls("storage.sync.title", comment: "") }
             static var upToDate: String { ls("storage.sync.upToDate", comment: "") }
+            /// Plural en `Localizable.stringsdict` (ticket `storage-sync-sign-in-count-has-no-plural`): con `String(format:)`
+            /// salía «Inicia sesión para subir 1 cambios».
             static func needsSignIn(_ count: Int) -> String {
-                String(format: ls("storage.sync.needsSignIn", comment: ""), count)
+                String.localizedStringWithFormat(ls("storage.sync.needsSignIn", comment: ""), count)
             }
             /// La sincronización espera a que inicies sesión y la cola no se dejó contar: sin cifra.
             static var needsSignInUncounted: String { ls("storage.sync.needsSignInUncounted", comment: "") }

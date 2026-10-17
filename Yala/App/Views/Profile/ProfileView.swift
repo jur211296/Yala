@@ -680,133 +680,6 @@ struct ProfileView: View {
             } message: { result in
                 Text(result.message)
             }
-            // H4 + D4 + paso 9: «Cerrar sesión» — hoja de alcance (3 filas 📱/☁️/👥) de la celda que toca, con
-            // la operación resuelta al tocar (`makeSignOutScope`). El botón fija `pendingSignOutScope` y cierra la
-            // hoja; el `onDismiss` actúa YA con la hoja fuera (anti-carrera): o el segundo gesto del cierre sin
-            // copia, o el cierre. El cover terminal lo dueña el root vía `.phase`.
-            .sheet(item: $signOutScope, onDismiss: {
-                guard let scope = pendingSignOutScope else { return }
-                pendingSignOutScope = nil
-                // La celda pudo cambiar con la hoja abierta (una sesión que caduca, un evento del espejo): se
-                // enseña la hoja de la celda de AHORA en vez de ejecutar un borrado que nadie leyó.
-                let live = makeSignOutScope()
-                guard live.operation == scope.operation else {
-                    signOutScope = live
-                    return
-                }
-                if DestructiveScopeLogic.requiresNoCopyConfirmation(scope.operation) {
-                    pendingNoCopyPath = scope.path
-                    showSignOutNoCopyConfirm = true
-                } else {
-                    Task { await CloudSessionSignOut.shared.signOut(context: modelContext, confirmedPath: scope.path) }
-                }
-            }) { scope in
-                DestructiveScopeSheet(config: .make(
-                    operation: scope.operation,
-                    cloudLabel: scope.cloudLabel,
-                    onConfirm: { pendingSignOutScope = scope }))
-            }
-            // Paso 9 · el segundo gesto del cierre privado sin copia en iCloud: no se bloquea, se avisa.
-            .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showSignOutNoCopyConfirm) {
-                Button(L10n.Settings.signOutNoCopyConfirmAction, role: .destructive) {
-                    let path = pendingNoCopyPath
-                    pendingNoCopyPath = nil
-                    // La celda pudo cambiar con el aviso abierto (una sesión que caduca): se enseña su hoja —un
-                    // turno después, para no presentar mientras este aviso se desmonta— en vez de no hacer nada.
-                    let live = makeSignOutScope()
-                    guard live.path == path, DestructiveScopeLogic.requiresNoCopyConfirmation(live.operation) else {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { signOutScope = live }
-                        return
-                    }
-                    Task {
-                        await CloudSessionSignOut.shared.signOut(
-                            context: modelContext, confirmedPath: path, confirmedWithoutICloudCopy: true)
-                    }
-                }
-                .accessibilityIdentifier("signout_no_copy_confirm")
-                Button(L10n.Common.cancel, role: .cancel) { pendingNoCopyPath = nil }
-                    .accessibilityIdentifier("signout_no_copy_cancel")
-            } message: {
-                Text(L10n.Settings.signOutNoCopyConfirmMessage)
-            }
-            // Paso 9 · la espera del export se agotó: el aviso cuenta lo que no llegó a iCloud y ofrece cerrar
-            // igualmente o seguir esperando (decisión de Jürgen del 2026-09-09). Nunca borra sin este gesto.
-            .alert(L10n.Settings.signOutExportPendingTitle, isPresented: $showSignOutExportAlert) {
-                Button(L10n.Settings.signOutExportDiscardButton, role: .destructive) {
-                    Task { await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext) }
-                }
-                .accessibilityIdentifier("signout_export_discard")
-                // «Esperar» sigue esperando y cierra solo cuando llega lo último: no cancela el cierre.
-                Button(L10n.Settings.signOutWaitButton, role: .cancel) {
-                    Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
-                }
-                .accessibilityIdentifier("signout_export_wait")
-            } message: {
-                Text(signOutExportPending > 0
-                     ? L10n.Settings.signOutExportPendingMessage(signOutExportPending)
-                     : L10n.Settings.signOutExportPendingMessageUnknown)
-            }
-            // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
-            // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
-            // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`. Desde el 2026-09-28 es
-            // también el de la sesión caducada y el de los cambios de otra cuenta: título y mensaje salen del motivo.
-            .alert(SignOutBlockedCopy.groupsLossTitle(for: signOutGroupsLossReason), isPresented: $showSignOutAttestLossAlert) {
-                Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
-                    Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext) }
-                }
-                Button(L10n.Action.notNow, role: .cancel) {
-                    CloudSessionSignOut.shared.acknowledgeBlocked()
-                }
-            } message: {
-                Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending,
-                                                          readsUncaptured: signOutGroupsLossReadsUncaptured))
-            }
-            // Tus datos en la nube con el teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios
-            // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar
-            // no toca el cierre, que sigue parado: al cerrar la hoja de compartir vuelve este aviso. Botones literales y sin
-            // `accessibilityIdentifier`, como el de grupos.
-            //
-            // **Desde el 2026-09-28 es también el de la sesión caducada** (ticket
-            // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): título y mensaje salen de la causa, y
-            // el mensaje dice primero cómo subirlos. «Exportar» va primero y no es destructivo; **no se marca como acción
-            // preferida** (`.keyboardShortcut(.defaultAction)`): sería el primer uso en la app, este aviso no se puede montar en
-            // el simulador para verlo, y `swiftui-ds.md` mide que un cambio así en el `actions` de un `.alert` rompió flujos de
-            // otras pantallas (review adversarial, 2026-09-28).
-            .alert(SignOutBlockedCopy.personalLossTitle(for: signOutPersonalLossCause), isPresented: $showSignOutPersonalAttestAlert) {
-                Button(L10n.Settings.signOutAttestExportButton) {
-                    exportAllTransactionsBeforeLosingThem()
-                }
-                Button(L10n.Settings.signOutAttestLossButton, role: .destructive) {
-                    Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedPersonalChanges(context: modelContext) }
-                }
-                Button(L10n.Action.notNow, role: .cancel) {
-                    CloudSessionSignOut.shared.acknowledgeBlocked()
-                }
-            } message: {
-                Text(SignOutBlockedCopy.personalLossMessage(for: signOutPersonalLossCause, pending: signOutPersonalAttestPending))
-            }
-            .sheet(item: $signOutRescueExportFile, onDismiss: { returnToPersonalAttestNotice() }) { file in
-                ShareSheet(activityItems: file.urls)
-                    .yalaSheetDetents([.medium, .large])
-            }
-            .alert(L10n.Export.exportError, isPresented: $showSignOutRescueExportError) {
-                Button(L10n.Common.ok, role: .cancel) { returnToPersonalAttestNotice() }
-            } message: {
-                Text(signOutRescueExportErrorMessage)
-            }
-            .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
-                signOutBlockedButtons
-            } message: {
-                Text(signOutBlockedMessage)
-            }
-            // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
-            // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
-            // (rutas mutuamente excluyentes en `syncSignOutUI`).
-            .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
-                signOutBlockedButtons
-            } message: {
-                Text(L10n.Settings.signOutPendingMessage)
-            }
             .onChange(of: signOutCoordinator.phase) { _, newPhase in
                 syncSignOutUI(from: newPhase)
             }
@@ -815,53 +688,6 @@ struct ProfileView: View {
             // armado, solo informar); con `.awaitingRelaunch` el sheet se cierra solo para
             // despejar el anchor del cover terminal del root (dueño único).
             .onAppear { syncSignOutUI(from: signOutCoordinator.phase) }
-            // G5-D1b + D4: eliminar cuenta — DOBLE confirmación. Paso 1 = hoja de alcance (📱/☁️/👥 + líneas
-            // D5: deudas/desvío/copia congelada/huella legacy). "Continuar" fija `pendingDeleteAccountFinal`;
-            // el desvío SEGURO "Ver mis grupos" (D5, id preservado para `DeleteAccountDialogUITests`) fija
-            // `pendingViewGroups`. El `onDismiss` actúa YA con la hoja fuera: presenta el alert 2 (irreversible,
-            // contenedor DISTINTO → sin carrera) o salta al tab Grupos + cierra Ajustes. INFORMA, jamás bloquea.
-            .sheet(item: $deleteAccountScope, onDismiss: {
-                // Defense-in-depth: captura el intent y resetea AMBOS flags ANTES de actuar (aunque sean
-                // mutuamente excluyentes por construcción, evita un flag stale en un dismiss posterior).
-                let goFinal = pendingDeleteAccountFinal
-                let goViewGroups = pendingViewGroups
-                pendingDeleteAccountFinal = false
-                pendingViewGroups = false
-                if goFinal {
-                    showDeleteAccountFinal = true
-                } else if goViewGroups {
-                    // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el estado del
-                    // tab vive en el singleton SessionState y sobrevive al cierre del sheet de Ajustes.
-                    navigation.selectMainTab(.groups)
-                    dismiss()
-                }
-            }) { scope in
-                DestructiveScopeSheet(config: .make(
-                    operation: deleteAccountScopeOperation,
-                    cloudLabel: .cloudAccount,  // eliminar-cuenta = SIEMPRE la cuenta de Yala (backend)
-                    hasOutstandingDebt: scope.summary.hasOutstandingDebt,
-                    hasLegacyCloudKitFootprint: scope.summary.hasLegacyCloudKitFootprint,
-                    onConfirm: { pendingDeleteAccountFinal = true },
-                    onSecondary: { pendingViewGroups = true }))
-            }
-            .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
-                Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
-                    Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
-                }
-                Button(L10n.Common.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Settings.deleteAccountFinalMessage)
-            }
-            .alert(L10n.Settings.deleteAccountErrorTitle, isPresented: $showDeleteAccountError) {
-                Button(L10n.Settings.deleteAccountRetry) {
-                    Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
-                }
-                Button(L10n.Common.cancel, role: .cancel) {
-                    AccountDeletionService.shared.acknowledgeFailure()
-                }
-            } message: {
-                Text(L10n.Settings.deleteAccountErrorMessage)
-            }
             .onChange(of: deletionService.phase) { _, newPhase in
                 syncDeletionUI(from: newPhase)
             }
@@ -883,6 +709,198 @@ struct ProfileView: View {
             }
     }
 
+
+    // MARK: - Presentaciones del cierre de sesión y del borrado de cuenta
+
+    /// B5 (lote 20, medido en el simulador el 2026-10-17): estas hojas y alertas colgaban de la RAÍZ de la pila de Ajustes
+    /// (`listColumn`). Con «Tu cuenta de Yala» empujada encima —desde el paso 9, la única puerta de «Eliminar mi cuenta»— la
+    /// hoja de alcance sí salía, pero la alerta que la sigue («Esto es definitivo») no: tras «Continuar» no pasaba nada y no
+    /// había forma de eliminar la cuenta. Lo mismo le pasaba al segundo gesto del cierre sin copia y a los avisos de bloqueo
+    /// de un cierre lanzado desde ahí. Ahora cuelgan del contenedor (`body`, fuera de la pila), que siempre está en pantalla.
+    /// Un solo anchor por estado, como antes: no las dupliques en `YalaAccountView`. Los `onChange`/`onAppear` que las
+    /// encienden se quedan en `listColumn`.
+    private func signOutPresentations<Content: View>(_ content: Content) -> some View {
+        content
+        // H4 + D4 + paso 9: «Cerrar sesión» — hoja de alcance (3 filas 📱/☁️/👥) de la celda que toca, con
+        // la operación resuelta al tocar (`makeSignOutScope`). El botón fija `pendingSignOutScope` y cierra la
+        // hoja; el `onDismiss` actúa YA con la hoja fuera (anti-carrera): o el segundo gesto del cierre sin
+        // copia, o el cierre. El cover terminal lo dueña el root vía `.phase`.
+        .sheet(item: $signOutScope, onDismiss: {
+            guard let scope = pendingSignOutScope else { return }
+            pendingSignOutScope = nil
+            // La celda pudo cambiar con la hoja abierta (una sesión que caduca, un evento del espejo): se
+            // enseña la hoja de la celda de AHORA en vez de ejecutar un borrado que nadie leyó.
+            let live = makeSignOutScope()
+            guard live.operation == scope.operation else {
+                signOutScope = live
+                return
+            }
+            if DestructiveScopeLogic.requiresNoCopyConfirmation(scope.operation) {
+                pendingNoCopyPath = scope.path
+                showSignOutNoCopyConfirm = true
+            } else {
+                Task { await CloudSessionSignOut.shared.signOut(context: modelContext, confirmedPath: scope.path) }
+            }
+        }) { scope in
+            DestructiveScopeSheet(config: .make(
+                operation: scope.operation,
+                cloudLabel: scope.cloudLabel,
+                onConfirm: { pendingSignOutScope = scope }))
+        }
+        // Paso 9 · el segundo gesto del cierre privado sin copia en iCloud: no se bloquea, se avisa.
+        .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showSignOutNoCopyConfirm) {
+            Button(L10n.Settings.signOutNoCopyConfirmAction, role: .destructive) {
+                let path = pendingNoCopyPath
+                pendingNoCopyPath = nil
+                // La celda pudo cambiar con el aviso abierto (una sesión que caduca): se enseña su hoja —un
+                // turno después, para no presentar mientras este aviso se desmonta— en vez de no hacer nada.
+                let live = makeSignOutScope()
+                guard live.path == path, DestructiveScopeLogic.requiresNoCopyConfirmation(live.operation) else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { signOutScope = live }
+                    return
+                }
+                Task {
+                    await CloudSessionSignOut.shared.signOut(
+                        context: modelContext, confirmedPath: path, confirmedWithoutICloudCopy: true)
+                }
+            }
+            .accessibilityIdentifier("signout_no_copy_confirm")
+            Button(L10n.Common.cancel, role: .cancel) { pendingNoCopyPath = nil }
+                .accessibilityIdentifier("signout_no_copy_cancel")
+        } message: {
+            Text(L10n.Settings.signOutNoCopyConfirmMessage)
+        }
+        // Paso 9 · la espera del export se agotó: el aviso cuenta lo que no llegó a iCloud y ofrece cerrar
+        // igualmente o seguir esperando (decisión de Jürgen del 2026-09-09). Nunca borra sin este gesto.
+        .alert(L10n.Settings.signOutExportPendingTitle, isPresented: $showSignOutExportAlert) {
+            Button(L10n.Settings.signOutExportDiscardButton, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_discard")
+            // «Esperar» sigue esperando y cierra solo cuando llega lo último: no cancela el cierre.
+            Button(L10n.Settings.signOutWaitButton, role: .cancel) {
+                Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_wait")
+        } message: {
+            Text(signOutExportPending > 0
+                 ? L10n.Settings.signOutExportPendingMessage(signOutExportPending)
+                 : L10n.Settings.signOutExportPendingMessageUnknown)
+        }
+        // El teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios de grupos que se
+        // pierden y ofrece cerrar igualmente. «Ahora no» reconoce el bloqueo y no pierde nada. Botones literales y
+        // sin `accessibilityIdentifier`: SwiftUI no los propaga a los botones de un `.alert`. Desde el 2026-09-28 es
+        // también el de la sesión caducada y el de los cambios de otra cuenta: título y mensaje salen del motivo.
+        .alert(SignOutBlockedCopy.groupsLossTitle(for: signOutGroupsLossReason), isPresented: $showSignOutAttestLossAlert) {
+            Button(L10n.Groups.Errors.attestUnavailableSignOutLossButton, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedGroups(context: modelContext) }
+            }
+            Button(L10n.Action.notNow, role: .cancel) {
+                CloudSessionSignOut.shared.acknowledgeBlocked()
+            }
+        } message: {
+            Text(SignOutBlockedCopy.groupsLossMessage(for: signOutGroupsLossReason, pending: signOutAttestLossPending,
+                                                      readsUncaptured: signOutGroupsLossReadsUncaptured))
+        }
+        // Tus datos en la nube con el teléfono sin App Attest (2026-09-15, decisión de Jürgen): el aviso cuenta los cambios
+        // que no llegaron y ofrece, en este orden, exportar los movimientos, cerrar sesión perdiéndolos o dejarlo. Exportar
+        // no toca el cierre, que sigue parado: al cerrar la hoja de compartir vuelve este aviso. Botones literales y sin
+        // `accessibilityIdentifier`, como el de grupos.
+        //
+        // **Desde el 2026-09-28 es también el de la sesión caducada** (ticket
+        // `cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit`): título y mensaje salen de la causa, y
+        // el mensaje dice primero cómo subirlos. «Exportar» va primero y no es destructivo; **no se marca como acción
+        // preferida** (`.keyboardShortcut(.defaultAction)`): sería el primer uso en la app, este aviso no se puede montar en
+        // el simulador para verlo, y `swiftui-ds.md` mide que un cambio así en el `actions` de un `.alert` rompió flujos de
+        // otras pantallas (review adversarial, 2026-09-28).
+        .alert(SignOutBlockedCopy.personalLossTitle(for: signOutPersonalLossCause), isPresented: $showSignOutPersonalAttestAlert) {
+            Button(L10n.Settings.signOutAttestExportButton) {
+                exportAllTransactionsBeforeLosingThem()
+            }
+            Button(L10n.Settings.signOutAttestLossButton, role: .destructive) {
+                Task { await CloudSessionSignOut.shared.exitDiscardingUnsyncedPersonalChanges(context: modelContext) }
+            }
+            Button(L10n.Action.notNow, role: .cancel) {
+                CloudSessionSignOut.shared.acknowledgeBlocked()
+            }
+        } message: {
+            Text(SignOutBlockedCopy.personalLossMessage(for: signOutPersonalLossCause, pending: signOutPersonalAttestPending))
+        }
+        .sheet(item: $signOutRescueExportFile, onDismiss: { returnToPersonalAttestNotice() }) { file in
+            ShareSheet(activityItems: file.urls)
+                .yalaSheetDetents([.medium, .large])
+        }
+        .alert(L10n.Export.exportError, isPresented: $showSignOutRescueExportError) {
+            Button(L10n.Common.ok, role: .cancel) { returnToPersonalAttestNotice() }
+        } message: {
+            Text(signOutRescueExportErrorMessage)
+        }
+        .alert(L10n.Settings.signOutBlockedTitle, isPresented: $showSignOutBlockedAlert) {
+            signOutBlockedButtons
+        } message: {
+            Text(signOutBlockedMessage)
+        }
+        // H-2026-07-18-6: bloqueo TRANSITORIO (solo-grupos, tras agotar el retry interno) —
+        // copy que invita a esperar, no a revisar la conexión. Solo un bool se pone a la vez
+        // (rutas mutuamente excluyentes en `syncSignOutUI`).
+        .alert(L10n.Settings.signOutPendingTitle, isPresented: $showSignOutPendingAlert) {
+            signOutBlockedButtons
+        } message: {
+            Text(L10n.Settings.signOutPendingMessage)
+        }
+    }
+
+    private func deleteAccountPresentations<Content: View>(_ content: Content) -> some View {
+        content
+        // G5-D1b + D4: eliminar cuenta — DOBLE confirmación. Paso 1 = hoja de alcance (📱/☁️/👥 + líneas
+        // D5: deudas/desvío/copia congelada/huella legacy). "Continuar" fija `pendingDeleteAccountFinal`;
+        // el desvío SEGURO "Ver mis grupos" (D5, id preservado para `DeleteAccountDialogUITests`) fija
+        // `pendingViewGroups`. El `onDismiss` actúa YA con la hoja fuera: presenta el alert 2 (irreversible,
+        // contenedor DISTINTO → sin carrera) o salta al tab Grupos + cierra Ajustes. INFORMA, jamás bloquea.
+        .sheet(item: $deleteAccountScope, onDismiss: {
+            // Defense-in-depth: captura el intent y resetea AMBOS flags ANTES de actuar (aunque sean
+            // mutuamente excluyentes por construcción, evita un flag stale en un dismiss posterior).
+            let goFinal = pendingDeleteAccountFinal
+            let goViewGroups = pendingViewGroups
+            pendingDeleteAccountFinal = false
+            pendingViewGroups = false
+            if goFinal {
+                showDeleteAccountFinal = true
+            } else if goViewGroups {
+                // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el estado del
+                // tab vive en el singleton SessionState y sobrevive al cierre del sheet de Ajustes.
+                navigation.selectMainTab(.groups)
+                dismiss()
+            }
+        }) { scope in
+            DestructiveScopeSheet(config: .make(
+                operation: deleteAccountScopeOperation,
+                cloudLabel: .cloudAccount,  // eliminar-cuenta = SIEMPRE la cuenta de Yala (backend)
+                hasOutstandingDebt: scope.summary.hasOutstandingDebt,
+                hasLegacyCloudKitFootprint: scope.summary.hasLegacyCloudKitFootprint,
+                onConfirm: { pendingDeleteAccountFinal = true },
+                onSecondary: { pendingViewGroups = true }))
+        }
+        .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
+            Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
+                Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.Settings.deleteAccountFinalMessage)
+        }
+        .alert(L10n.Settings.deleteAccountErrorTitle, isPresented: $showDeleteAccountError) {
+            Button(L10n.Settings.deleteAccountRetry) {
+                Task { await AccountDeletionService.shared.deleteAccount(context: modelContext) }
+            }
+            Button(L10n.Common.cancel, role: .cancel) {
+                AccountDeletionService.shared.acknowledgeFailure()
+            }
+        } message: {
+            Text(L10n.Settings.deleteAccountErrorMessage)
+        }
+    }
+
     /// Como la app Ajustes: en una hoja ancha, la lista y el ajuste abierto a la vez (`ListDetailSplit`); en
     /// compacta (iPhone), la pila de siempre, la misma de antes de la fase 2. **No es el mismo split plegado**, y está
     /// medido (2026-09-29): con los ajustes presentados desde la lista del split, lo que un ajuste empuja por su cuenta
@@ -894,7 +912,7 @@ struct ProfileView: View {
     /// a lado y otras mide 810 pt y la lista flota sobre el ajuste (ticket
     /// `ipad-settings-sheet-size-depends-on-where-it-opens`).
     var body: some View {
-        settingsContainer
+        deleteAccountPresentations(signOutPresentations(settingsContainer))
         .coachMarkOverlay(
             steps: SettingsTourSteps.steps,
             isPresented: $showSettingsTour,

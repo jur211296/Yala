@@ -292,8 +292,17 @@ struct ExportFilters: Equatable {
 
     // MARK: Helpers de periodo
 
-    /// Devuelve el `DateInterval` efectivo a aplicar al filtrar transacciones.
-    func effectiveDateInterval() -> DateInterval {
-        return DateInterval(start: dateFrom, end: dateTo)
+    /// Devuelve el `DateInterval` efectivo a aplicar al filtrar transacciones, y el que enseña el resumen.
+    ///
+    /// Los períodos en curso («Últimos 30 días», «Este mes», «Todo el tiempo»…) cierran en el INICIO de mañana, y un
+    /// `DateInterval` es cerrado en los dos extremos: sin el segundo de menos, un registro fechado mañana a medianoche
+    /// (lo que guarda `DatePicker` con solo la fecha) entraba en la exportación y el resumen decía que el período
+    /// terminaba mañana. Solo se resta si el fin es una medianoche: «Mes pasado» y el personalizado ya cierran en
+    /// 23:59:59, y `allTransactions` en `.distantFuture`, y ninguno pierde un instante real.
+    func effectiveDateInterval(calendar: Calendar = .current) -> DateInterval {
+        guard dateTo != .distantFuture, dateTo > dateFrom, calendar.startOfDay(for: dateTo) == dateTo else {
+            return DateInterval(start: dateFrom, end: dateTo)
+        }
+        return DateInterval(start: dateFrom, end: dateTo.addingTimeInterval(-1))
     }
 }

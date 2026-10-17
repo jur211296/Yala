@@ -94,4 +94,21 @@ final class UserDataResetScopeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["destructive_scope_confirm"].exists,
                       "La acción destructiva debe seguir disponible.")
     }
+
+    /// B3 (auditoría UX 2.2, lote 20): «Exportar antes» abre el asistente con «Todo el tiempo». Hasta ese día abría con
+    /// «Últimos 30 días», y quien hacía la copia sin tocar nada se llevaba un mes y luego lo borraba todo. El control
+    /// —desde Ajustes sigue abriendo con «Últimos 30 días»— ya lo fija `ExportFreePeriodsUITests`.
+    func test_exportBefore_opensTheWizardWithAllTime() {
+        let app = openWipeScopeSheet(seed: "minimal")
+
+        let exportBefore = app.buttons["wipe_export_before"]
+        XCTAssertTrue(exportBefore.waitForExistence(timeout: 5), "La hoja de Vaciar no ofrece «Exportar antes».")
+        exportBefore.tap()
+
+        let period = app.buttons["export_period_row"]
+        XCTAssertTrue(period.waitForExistence(timeout: 10), "«Exportar antes» no abrió el asistente de exportación.")
+        XCTAssertEqual(period.value as? String, "Todo el tiempo", """
+            «Exportar antes» abrió con otro período: la copia que se hace antes de vaciar tiene que ser la de todo.
+            """)
+    }
 }

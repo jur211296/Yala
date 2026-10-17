@@ -4626,7 +4626,6 @@
 "storage.revert.ineligible" = "Al momento non puoi tornare a iCloud da questo dispositivo.";
 "storage.sync.title" = "Sincronizzazione";
 "storage.sync.upToDate" = "Tutto sincronizzato";
-"storage.sync.needsSignIn" = "Accedi per caricare %d modifiche";
 "storage.sync.signInButton" = "Accedi";
 "storage.progress.migrating" = "Attivazione del cloud…";
 "storage.progress.reverting" = "Ritorno a iCloud…";
@@ -6653,3 +6652,8 @@
 "profile.icon.sun" = "Sole";
 "profile.icon.cloud" = "Nuvola";
 "profile.icon.drop" = "Goccia";
+
+/* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
+"export.error.invalidDateRange" = "Le date non sono valide: quella di inizio deve precedere quella di fine.";
+"export.error.noTransactions" = "Nessun movimento corrisponde a questi filtri. Prova un altro periodo o togli un filtro.";
+"export.error.fileWriteFailed" = "Non siamo riusciti a creare il file. Riprova.";

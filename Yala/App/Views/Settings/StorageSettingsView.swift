@@ -757,7 +757,7 @@ struct StorageSettingsView: View {
             }
             Button(controller.isBeforeReverseMount
                    ? L10n.Storage.Confirm.cancelReverseKeepBeforeMount
-                   : L10n.Storage.Confirm.cancelReverseKeep, role: .cancel) {}
+                   : L10n.Storage.Confirm.cancelReverseKeep) {}
         } message: {
             Text(controller.isBeforeReverseMount
                  ? L10n.Storage.Confirm.cancelReverseBeforeMountBody
@@ -782,7 +782,7 @@ struct StorageSettingsView: View {
             Button(L10n.Storage.Confirm.cancelMigrationConfirm) {
                 Task { await controller.cancelMigration() }
             }
-            Button(L10n.Storage.Confirm.cancelMigrationKeep, role: .cancel) {}
+            Button(L10n.Storage.Confirm.cancelMigrationKeep) {}
         } message: {
             // El cuerpo por fase —claim del adopt, efecto del adopt, «Migrar»— lo elige `StorageFailureCopyLogic`, que es
             // también quien lo elige en la barra del adopt de la bienvenida.
@@ -875,7 +875,7 @@ struct StorageSettingsView: View {
             Button(L10n.Storage.Confirm.stopWaitingConfirm) {
                 Task { await controller.cancelMigration() }
             }
-            Button(L10n.Storage.Confirm.stopWaitingKeep, role: .cancel) {}
+            Button(L10n.Storage.Confirm.stopWaitingKeep) {}
         } message: {
             Text(L10n.Storage.Confirm.stopWaitingBody)
         }
@@ -1138,6 +1138,11 @@ struct StorageSettingsView: View {
 }
 
 // MARK: - Confirmaciones (2 confirmationDialog destructive por acción, patrón panel)
+//
+// B6 (lote 20, medido en el simulador el 2026-10-17): en iOS 26 estos diálogos salen como globo y NO pintan el botón con
+// `role: .cancel`, también colgados de la raíz de la pantalla: «¿Activar la nube?» enseñaba solo «Continuar», y
+// «¿Cancelar la activación?» solo «Sí, cancelar». Los siete botones de no hacer nada van SIN rol, el molde del diálogo del
+// borrado pendiente de esta misma pantalla. No les devuelvas el rol: la única salida visible volvería a ser tocar fuera.
 
 private struct StorageConfirmations: ViewModifier {
     @Binding var confirmMigrate1: Bool
@@ -1152,28 +1157,32 @@ private struct StorageConfirmations: ViewModifier {
             .confirmationDialog(L10n.Storage.Confirm.migrateTitle,
                                 isPresented: $confirmMigrate1, titleVisibility: .visible) {
                 Button(L10n.Storage.Confirm.migrateContinue, role: .destructive) { confirmMigrate2 = true }
-                Button(L10n.Common.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("storage_confirm_migrate_continue")
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("storage_confirm_migrate_cancel")
             } message: {
                 Text(L10n.Storage.Confirm.migrateBody)
             }
             .confirmationDialog(L10n.Storage.Confirm.migrate2Title,
                                 isPresented: $confirmMigrate2, titleVisibility: .visible) {
                 Button(L10n.Storage.Confirm.migrate2Confirm, role: .destructive) { onMigrate() }
-                Button(L10n.Common.cancel, role: .cancel) {}
+                    .accessibilityIdentifier("storage_confirm_migrate2_confirm")
+                Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("storage_confirm_migrate2_cancel")
             } message: {
                 Text(L10n.Storage.Confirm.migrate2Body)
             }
             .confirmationDialog(L10n.Storage.Confirm.revertTitle,
                                 isPresented: $confirmRevert1, titleVisibility: .visible) {
                 Button(L10n.Storage.Confirm.revertContinue, role: .destructive) { confirmRevert2 = true }
-                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.cancel) {}
             } message: {
                 Text(L10n.Storage.Confirm.revertBody)
             }
             .confirmationDialog(L10n.Storage.Confirm.revert2Title,
                                 isPresented: $confirmRevert2, titleVisibility: .visible) {
                 Button(L10n.Storage.Confirm.revert2Confirm, role: .destructive) { onRevert() }
-                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.cancel) {}
             } message: {
                 Text(L10n.Storage.Confirm.revert2Body)
             }

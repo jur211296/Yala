@@ -662,6 +662,26 @@
 			<string>Przeliczyć %d transakcji?</string>
 		</dict>
 	</dict>
+	<key>storage.sync.needsSignIn</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zaloguj się, aby wysłać %d zmianę</string>
+			<key>few</key>
+			<string>Zaloguj się, aby wysłać %d zmiany</string>
+			<key>many</key>
+			<string>Zaloguj się, aby wysłać %d zmian</string>
+			<key>other</key>
+			<string>Zaloguj się, aby wysłać %d zmiany</string>
+		</dict>
+	</dict>
 	<key>storage.sync.waitingForConnection</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

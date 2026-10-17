@@ -109,4 +109,29 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
             dejó sin camino.
             """)
     }
+
+    /// B6 (auditoría UX 2.2, lote 20): «¿Activar la nube?» enseña «Cancelar». Con `role: .cancel` el globo de iOS 26 no lo
+    /// pintaba y solo se veía «Continuar»; la única salida era tocar fuera. «Cancelar» no sigue a «¿Seguro?» ni al selector.
+    func test_activateCloudConfirmation_showsCancel_andCancelStops() {
+        let (app, migrate) = openMigrateCard(pendingICloudWipe: false)
+        migrate.tap()
+
+        let accept = consentAccept(app)
+        XCTAssertTrue(accept.waitForExistence(timeout: 10), "«Activar la nube» no llegó al consentimiento.")
+        accept.tap()
+
+        let cancel = app.sheets.buttons["storage_confirm_migrate_cancel"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5), """
+            «¿Activar la nube?» no enseña «Cancelar»: con `role: .cancel` el globo no lo pinta y la persona solo ve \
+            «Continuar».
+            """)
+        XCTAssertTrue(app.sheets.buttons["storage_confirm_migrate_continue"].firstMatch.exists,
+                      "El diálogo perdió «Continuar».")
+        cancel.tap()
+
+        XCTAssertFalse(app.sheets.buttons["storage_confirm_migrate2_confirm"].firstMatch.waitForExistence(timeout: 3),
+                       "«Cancelar» abrió «¿Seguro?»: la activación siguió aunque la persona dijo que no.")
+        XCTAssertFalse(app.descendants(matching: .any)["storage_signin_chooser"].exists,
+                       "«Cancelar» abrió el selector de Apple o Google.")
+    }
 }

@@ -37,15 +37,26 @@ paths:
 
 - **Un `.confirmationDialog` colgado de un BOTÓN no pinta el `Button(role: .cancel)` en iOS 26 (medido el 2026-10-04,
   iPhone 17 Pro, iOS 27.0).** Sale anclado al botón y la salida de cancelar no aparece: `app.sheets.buttons[id]`
-  no la encuentra y la persona solo puede tocar fuera. Los diálogos colgados de la raíz de la pantalla
-  (`StorageConfirmations`) no tienen ese problema. ⇒ si la opción de «no hacer nada» tiene que verse —porque es
-  una decisión sobre datos—, dale un `Button` normal sin rol, o cuelga el diálogo de la raíz. Molde:
-  `StorageSettingsView`, diálogo del borrado de iCloud pendiente (`PendingICloudWipeMigrationUITests`).
+  no la encuentra y la persona solo puede tocar fuera. ⇒ si la opción de «no hacer nada» tiene que verse —porque es
+  una decisión sobre datos—, dale un `Button` normal sin rol. Molde: `StorageSettingsView`, diálogo del borrado de
+  iCloud pendiente (`PendingICloudWipeMigrationUITests`). **Colgarlo de la raíz de la pantalla tampoco lo arregla
+  (medido el 2026-10-17, lote 20):** esta regla decía que los de `StorageConfirmations` no tenían el problema, y
+  «¿Activar la nube?» salía con solo «Continuar»; los siete de esa pantalla pasaron a botón sin rol
+  (`PendingICloudWipeMigrationUITests#test_activateCloudConfirmation_showsCancel_andCancelStops`).
   **Colgarlo de la raíz no siempre basta (medido el 2026-10-16, lote 18):** en el flujo de caja, el de borrar una
   línea (en el detalle del mes, dentro del scroll) y el de «Reiniciar plan» (en el contenido de Reportes) salían como
   globo anclado a media pantalla, sin «Cancelar». Se pasaron a `.alert`, que siempre pinta las dos salidas
   (`CashFlowPlanUITests#test_resetPlan_asksWithAVisibleCancel`). En XCUITest los botones de esa alerta salen
   duplicados en el árbol: `.firstMatch`.
+
+- **Una `.alert` colgada de la RAÍZ de una `NavigationStack` no sale si hay una pantalla empujada encima, aunque una
+  `.sheet` colgada del mismo sitio sí (medido el 2026-10-17, iPhone 17 Pro, iOS 27.0, lote 20).** En Ajustes, las
+  presentaciones del cierre de sesión y del borrado de cuenta colgaban de `listColumn`; desde «Tu cuenta de Yala»
+  (empujada) la hoja de alcance salía y la alerta que la sigue («Esto es definitivo») no, sin ningún aviso en el log:
+  la cuenta no se podía eliminar. ⇒ **una presentación cuya entrada vive en una pantalla empujada cuelga del
+  CONTENEDOR de la pila** (fuera del `NavigationStack`), no de su raíz. Molde: `ProfileView.signOutPresentations` /
+  `deleteAccountPresentations`, aplicados en `body`. Test: `DeleteAccountDialogUITests#test_deleteAccount_continue_showsTheFinalConfirmation`
+  (con la alerta devuelta a la raíz, cae en la espera del título).
 
 - **Un `DragGesture` en el contenido de un `ScrollView` vertical le quita el arrastre al scroll, también con
   `.simultaneousGesture` (medido el 2026-10-16, iOS 27.0, lote 18).** La lista del mes del flujo de caja solo se movía

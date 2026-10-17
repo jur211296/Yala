@@ -37,7 +37,7 @@ struct ExportFiltersStepView: View {
     @State private var amountCondition: AmountFilterCondition = .any
 
     // Periodo
-    @State private var selectedPeriod: DetailPeriod = .last30Days
+    @State private var selectedPeriod: DetailPeriod
     @State private var customDateRange: DateInterval?
 
     // Nota
@@ -49,6 +49,13 @@ struct ExportFiltersStepView: View {
     // MARK: - Sheet Presentation State
     @State private var showCategoriesSheet = false
     @State private var showPeriodPicker = false
+
+    /// El período con el que abre. Desde Ajustes, «Últimos 30 días»; desde «Exportar antes» de «Vaciar datos»,
+    /// `.allTime` (B3, lote 20): la copia que se hace justo antes de borrarlo todo tiene que ser todo, y con el
+    /// default de 30 días quien la hacía sin tocar nada se quedaba con un mes y borraba el resto.
+    init(initialPeriod: DetailPeriod = .last30Days) {
+        _selectedPeriod = State(initialValue: initialPeriod)
+    }
 
     // MARK: - Computed Properties
 

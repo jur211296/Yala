@@ -174,7 +174,8 @@ struct UserDataResetView: View {
         // `wipeDataFull` (el wizard personal exige transacciones; el 5a exporta grupos desde la fila de Ajustes).
         // SEAM D10: aquí encajará el batch "También salir de mis grupos" (caso sin deuda) — OTRO chip.
         .sheet(isPresented: $isShowingExportWizard) {
-            ExportFiltersStepView()
+            // Antes de vaciar, la copia por defecto es la de todo (B3, lote 20).
+            ExportFiltersStepView(initialPeriod: .allTime)
         }
 
         // Paso 2 — confirmación final corta (C3). Contenedor DISTINTO al paso 1 (alert vs sheet).

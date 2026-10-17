@@ -4628,7 +4628,6 @@
 "storage.revert.ineligible" = "Je kunt nu niet terug naar iCloud vanaf dit apparaat.";
 "storage.sync.title" = "Synchronisatie";
 "storage.sync.upToDate" = "Alles gesynchroniseerd";
-"storage.sync.needsSignIn" = "Meld je aan om %d wijzigingen te uploaden";
 "storage.sync.signInButton" = "Aanmelden";
 "storage.progress.migrating" = "Cloud wordt ingeschakeld…";
 "storage.progress.reverting" = "Terug naar iCloud…";
@@ -6655,3 +6654,8 @@
 "profile.icon.sun" = "Zon";
 "profile.icon.cloud" = "Wolk";
 "profile.icon.drop" = "Druppel";
+
+/* Errores del asistente de exportación (B4, lote 20): antes eran literales en español en todos los idiomas */
+"export.error.invalidDateRange" = "Deze datums kloppen niet: de begindatum moet vóór de einddatum liggen.";
+"export.error.noTransactions" = "Geen transacties komen overeen met deze filters. Probeer een andere periode of verwijder een filter.";
+"export.error.fileWriteFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";
