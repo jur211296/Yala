@@ -41,6 +41,11 @@ struct FullModeActivationFinaleView: View {
     /// después de la promoción.
     var onLeave: () -> Void
 
+    /// UX 2.2 · L6-9: «Tu cuenta ya tiene finanzas personales» manda a cerrar sesión, y antes no daba dónde. El botón
+    /// abre Ajustes encima de esta pantalla, que es donde vive «Cerrar sesión» (ProfileView es el dueño único de ese
+    /// flujo, con sus hojas de alcance y su terminal: abrirlo es reusar el camino que ya existe, no duplicarlo).
+    @State private var showsSettingsForSignOut = false
+
     var body: some View {
         OnboardingFlowScreen(style: .themedPanel) { logoTopSpacing in
             ScrollView {
@@ -53,6 +58,9 @@ struct FullModeActivationFinaleView: View {
                 .padding(.bottom, DS.Spacing.xl)
             }
             .scrollBounceBehavior(.basedOnSize)
+        }
+        .sheet(isPresented: $showsSettingsForSignOut) {
+            ProfileView()
         }
     }
 
@@ -77,8 +85,18 @@ struct FullModeActivationFinaleView: View {
                    title: Self.title(for: block),
                    body: Self.body(for: block),
                    identifier: "full_activation_blocked") {
-                YalaPrimaryButton(L10n.Action.close) { onLeave() }
-                    .accessibilityIdentifier("full_activation_blocked_close")
+                if FullModeActivationBlockExitLogic.offersSignOut(for: block) {
+                    VStack(spacing: DS.Spacing.sm) {
+                        YalaPrimaryButton(L10n.UXLote6.blockedGoToSignOut) { showsSettingsForSignOut = true }
+                            .accessibilityIdentifier("full_activation_blocked_go_sign_out")
+                        secondaryButton(L10n.Action.close, identifier: "full_activation_blocked_close") {
+                            onLeave()
+                        }
+                    }
+                } else {
+                    YalaPrimaryButton(L10n.Action.close) { onLeave() }
+                        .accessibilityIdentifier("full_activation_blocked_close")
+                }
             }
         case .failed:
             notice(icon: "wifi.exclamationmark",
@@ -124,6 +142,14 @@ struct FullModeActivationFinaleView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                // UX 2.2 · L6-10 (opción B): un ejemplo en una línea de qué entra. Es una cifra que mueve sus totales y la
+                // persona tiene que saber, antes de decir sí, que entra su parte y no el total del gasto.
+                Text(L10n.UXLote6.historyExample)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("full_activation_history_example")
             }
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("full_activation_history")

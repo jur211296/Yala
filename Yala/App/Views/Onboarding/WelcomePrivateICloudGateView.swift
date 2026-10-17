@@ -1155,6 +1155,12 @@ struct WelcomePrivateICloudGateView: View {
         return parts.joined(separator: forVoiceOver ? ", " : " · ")
     }
 
+    /// El «mes año» del «desde …», con el mismo formatter que la línea de cifras: lo usan también las píldoras del aviso
+    /// tardío (`ICloudCorpusChipsLogic`, UX 2.2 · L6-6), que cuentan el mismo hecho.
+    static func monthYearText(_ date: Date) -> String {
+        monthYear.string(from: date)
+    }
+
     /// `DateFormatter` no es `Sendable`, así que vive en el MainActor con su única consumidora.
     private static let monthYear: DateFormatter = {
         let formatter = DateFormatter()

@@ -83,6 +83,11 @@ struct WelcomeCloudSignInView: View {
     /// recorta» al decidir el `.notFound`, y adoptar mueve datos personales a la nube — es el registro
     /// GDPR de esa cuenta. Un gesto, y es el que él protegió.
     var startsAtConsent: Bool = false
+    /// UX 2.2 · L6-3: la entrada la abrió «¡Hola de nuevo!» y arranca en el consentimiento (`startsAtConsent`). Ahí el
+    /// consentimiento ES la primera pantalla —el intro repetía el botón «Iniciar sesión con Apple» que la persona
+    /// acababa de tocar—, así que cancelarlo vuelve a «¡Hola de nuevo!» (`onBack`) en vez de dejar el intro. La puerta
+    /// de Grupos, que también arranca en el consentimiento, no lo pide: allí cancelar deja el intro, que es su salida.
+    var cancelConsentGoesBack: Bool = false
     /// **Bloque [I]** · el estado de sesión de este dispositivo, evaluado EN el momento de la decisión y
     /// no al montar la pantalla: entre una cosa y otra puede asentar un import de iCloud, o el usuario
     /// puede llegar aquí desde la puerta de Grupos con el onboarding ya completado.
@@ -131,6 +136,7 @@ struct WelcomeCloudSignInView: View {
     /// R2: el alta sin relanzar arranca el motor del dominio EN ESTA SESIÓN y `startShared` necesita un
     /// contexto. Es el mismo `mainContext` que el bootstrap le pasa en el paso 14.7.
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
 
     @State private var phase: CloudWelcomeSignInPhase = .intro
     @State private var showConsent = false
@@ -200,11 +206,17 @@ struct WelcomeCloudSignInView: View {
         // Estructuralmente lo garantiza que el ÚNICO productor del flujo sea este `onAccept`: los
         // botones del intro solo abren el sheet, nunca firman.
         .sheet(isPresented: $showConsent) {
-            CloudConsentView(path: consentPath, persistsOnAccept: persistsConsentOnAccept) {
+            CloudConsentView(path: consentPath, persistsOnAccept: persistsConsentOnAccept, onAccept: {
                 showConsent = false
                 consentPendingPersistence = !persistsConsentOnAccept
                 launchFlow { await runFlowAfterConsent() }
-            }
+            }, onCancel: {
+                showConsent = false
+                if WelcomeBackStepLogic.consentCancelReturnsBack(
+                    requested: cancelConsentGoesBack, isAtIntro: phase == .intro) {
+                    onBack()
+                }
+            })
         }
         .onDisappear { flowTask?.cancel() }
         // El diálogo de «Cancelar la activación» cuelga del `body` y no del botón: el botón sale del árbol en la misma
@@ -495,11 +507,24 @@ struct WelcomeCloudSignInView: View {
             // Icono de CUENTA y no de wifi: el 403 llega con la conexión perfectamente sana, y el copy
             // de `.error` —que empieza por «Revisa tu conexión»— mandaba a la gente a mirar su router.
             // Sin botón de reintentar a propósito: esperar no despierta una cuenta bloqueada.
-            messageContent(
-                icon: "person.crop.circle.badge.xmark",
-                title: L10n.Welcome.Cloud.accountBlockedTitle,
-                body: L10n.Welcome.Cloud.accountBlockedBody(AppConstants.supportEmail))
-                .accessibilityIdentifier("welcome_cloud_account_blocked")
+            //
+            // UX 2.2 · L6-9: el texto manda a escribir un correo y el correo no se podía tocar. Ahora el botón ES la
+            // instrucción: abre el correo con el destinatario y el asunto puestos. La flecha de atrás sigue ahí.
+            VStack(spacing: DS.Spacing.lg) {
+                messageContent(
+                    icon: "person.crop.circle.badge.xmark",
+                    title: L10n.Welcome.Cloud.accountBlockedTitle,
+                    body: L10n.Welcome.Cloud.accountBlockedBody(AppConstants.supportEmail))
+                    .accessibilityIdentifier("welcome_cloud_account_blocked")
+                if let mailURL = SupportMailLinkLogic.url(
+                    to: AppConstants.supportEmail, subject: L10n.UXLote6.accountBlockedMailSubject) {
+                    YalaPrimaryButton(L10n.UXLote6.writeToSupport, icon: "envelope.fill") {
+                        openURL(mailURL)
+                    }
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("welcome_cloud_account_blocked_write")
+                }
+            }
         }
     }
 
@@ -561,7 +586,9 @@ struct WelcomeCloudSignInView: View {
 
     private var reentryIntro: some View {
         WelcomeFormScreen(
-            title: L10n.Welcome.Cloud.title,
+            // UX 2.2 · L6-8: quien llega por el faro tocó «Es mi primera vez»; el título dice lo que pasó («ya hay una
+            // cuenta con este Apple ID») en vez de mandarle a entrar en algo que no sabe que tiene.
+            title: isBeaconRouted ? L10n.UXLote6.beaconTitle : L10n.Welcome.Cloud.title,
             subtitle: reentrySubtitle.text,
             subtitleIdentifier: reentrySubtitle.identifier
         ) {
@@ -602,6 +629,14 @@ struct WelcomeCloudSignInView: View {
                         onCreateAnotherAccount()
                     }
                     .accessibilityIdentifier("welcome_cloud_create_another")
+                    // L6-8: crear otra no borra la que ya existe, y la persona tiene que saberlo antes de tocarlo.
+                    Text(L10n.UXLote6.beaconCreateAnotherNote)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier("welcome_cloud_create_another_note")
                 }
             }
             .welcomeFormCard()
@@ -787,6 +822,9 @@ struct WelcomeCloudSignInView: View {
             ProgressView(value: fraction)
                 .tint(.white)
                 .padding(.horizontal, DS.Spacing.xl)
+            // UX 2.2 · L6-13 (opción B): las mismas cifras en vivo que Restaurar, debajo de la barra. Conectar puede
+            // tardar minutos, y ver subir las cuentas y los registros es lo que dice que avanza.
+            AdoptLiveCountsView()
             Text(L10n.Welcome.Cloud.adopting)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.white)
@@ -882,23 +920,11 @@ struct WelcomeCloudSignInView: View {
         }
     }
 
+    /// UX 2.2 · L6-7: el mismo mensaje de «reabre Yala» que el del Welcome (`WelcomeRelaunchMessage`), con la
+    /// instrucción de cerrarla del todo: este terminal NO se cierra solo al ir a inicio (ver su docblock).
     private var relaunchContent: some View {
-        VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
-                .font(.system(size: 44))
-                .foregroundStyle(.white.opacity(0.8))
-                .accessibilityHidden(true)
-            Text(L10n.Storage.Relaunch.title)
-                .font(DS.Typography.title2)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-            Text(L10n.Storage.Relaunch.body)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
-        }
-        .accessibilityIdentifier("welcome_cloud_relaunch")
+        WelcomeRelaunchMessage(kind: .cloudAccount)
+            .accessibilityIdentifier("welcome_cloud_relaunch")
     }
 
     /// R2 · el alta terminó y NO hay nada que reabrir. Es una pantalla de continuidad, no una terminal de

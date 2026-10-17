@@ -29,6 +29,10 @@ struct ContentView: View {
     /// elige dentro). Cada productor lo setea EXPLÍCITO antes de presentar — jamás se hereda el del
     /// intento anterior.
     @State private var welcomeCloudEntry: WelcomeCloudSignInView.Entry = .reentry(.apple)
+    /// UX 2.2 · L6-3: la entrada a la nube la abrió «¡Hola de nuevo!» (y no la puerta de Grupos ni el faro). Decide dos
+    /// cosas de esa entrada: cancelar su consentimiento —que es su primera pantalla— vuelve a «¡Hola de nuevo!», y
+    /// «atrás» también. Cada productor del cover la escribe EXPLÍCITA, como `welcomeCloudEntry`.
+    @State private var cloudSignInFromExistingChooser: Bool = false
     // H4 + fix carrera 2026-07-14: DUEÑO ÚNICO del cover de relaunch del sign-out
     // `.cloud`/secundario. ProfileView ya NO presenta (ante la fase cierra su sheet) —
     // dos anchors ante el mismo observable tumbaban ambas cadenas. La presentación se
@@ -237,16 +241,31 @@ struct ContentView: View {
             // Positive toast overlay — only for reactive events (remote onboarding,
             // remote restore). The noisy "Syncing…" banner was removed; failure states
             // are surfaced by SyncStatusBanner below when MainTabView is mounted.
+            //
+            // UX 2.2 · L6-12: más legible y DEBAJO de la barra del Panel. Era un `caption` de una línea a 32 pt del borde,
+            // que quedaba medio tapado por los botones de arriba justo cuando el onboarding se cerraba de golpe. Ahora
+            // lleva su icono, el texto en dos líneas si hace falta y baja lo que mide una barra de navegación.
             if let toast = positiveToast {
-                Text(toast)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.vertical, DS.Spacing.sm)
-                    .glassEffect()
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .padding(.top, DS.Spacing.xxl)
+                HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(Color.incomeAmount)
+                        .accessibilityHidden(true)
+                    Text(toast)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, DS.Spacing.md)
+                .glassEffect()
+                .padding(.horizontal, DS.Spacing.lg)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .padding(.top, PositiveToastLayout.topInset)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("positive_toast")
             }
 
             // Sync status banner overlay — failure/stalled states from iCloudSyncService.
@@ -582,6 +601,7 @@ struct ContentView: View {
             showWelcomeCloudSignIn: $showWelcomeCloudSignIn,
             welcomeCloudEntry: $welcomeCloudEntry,
             adoptStartsAtConsent: $adoptStartsAtConsent,
+            cloudSignInFromExistingChooser: $cloudSignInFromExistingChooser,
             prefilledOnboardingData: $prefilledOnboardingData,
             hasShownWelcomeChooser: $hasShownWelcomeChooser,
             hasCompletedOnboarding: $hasCompletedOnboarding,
@@ -1005,7 +1025,21 @@ struct ContentView: View {
                 }
             },
             onBack: {
-                returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .chooser)
+                // UX 2.2 · L6-11: «Volver» lleva a «¡Hola de nuevo!», que es de donde se vino, y no un nivel más
+                // arriba. Con bypass (una sola entrada visible) no hubo sub-chooser y el origen es el chooser.
+                returnToWelcomeChooser(dismissing: $showWelcomeRestore,
+                                       step: WelcomeBackStepLogic.existingBranchOrigin(
+                                        options: WelcomeFlowContainer.liveVisibleExistingOptions))
+            },
+            onNeedsMirrorRelaunch: {
+                // UX 2.2 · L6-2: se entró a Restaurar SIN reabrir porque no había iCloud, y la persona acaba de
+                // encenderlo. Buscar en este proceso no traería nada (el store montó sin el espejo), así que se pide
+                // reabrir con el mismo destino durable que escribe el Welcome (`onNeedsMirrorRelaunch` del
+                // contenedor): el arranque siguiente lo consume y vuelve aquí ya con el espejo puesto.
+                // `hasShownWelcomeChooser` ya está en `true` (lo marcó la elección de «Restaurar»).
+                StorageModePersistence.clearGroupsOnlyNeutralMount()
+                WelcomePendingDestinationStore.set(.restoreICloud)
+                returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .mirrorRelaunch)
             }
         )
         .environment(SessionState.shared)
@@ -1519,6 +1553,7 @@ struct ContentView: View {
             ?? .apple
         welcomeCloudEntry = .reentry(proveedor)
         adoptStartsAtConsent = true
+        cloudSignInFromExistingChooser = false
         showWelcomeCloudSignIn = true
     }
 
@@ -1685,11 +1720,11 @@ struct ContentView: View {
     /// Show a positive confirmation toast for ~3s. Used for remote onboarding
     /// completed and remote restore completed — the only events where a brief
     /// "your data is here" reassurance is worth interrupting the silent sync rule.
-    private func showPositiveToast(_ text: String) {
+    private func showPositiveToast(_ text: String, seconds: Double = PositiveToastLayout.defaultSeconds) {
         withAnimation(.easeInOut) { positiveToast = text }
         toastDismissTask?.cancel()
         toastDismissTask = Task {
-            try? await Task.sleep(for: .seconds(3))
+            try? await Task.sleep(for: .seconds(seconds))
             withAnimation(.easeInOut) { positiveToast = nil }
         }
     }
@@ -2007,7 +2042,9 @@ struct ContentView: View {
         // signal del KV-Store. User debe terminar onboarding aquí. Bug #6 P0.
         guard hasCompletedOnboarding else { return }
         showOnboarding = false
-        showPositiveToast(L10n.iCloud.remoteOnboardingCompleted)
+        // UX 2.2 · L6-12: el onboarding se va de golpe mientras la persona escribía; el aviso dice qué pasó y dura lo
+        // bastante para leerlo.
+        showPositiveToast(L10n.iCloud.remoteOnboardingCompleted, seconds: PositiveToastLayout.remoteOnboardingSeconds)
     }
 
     private func performLocalWipeForRemoteSync(skipOnboarding: Bool, signaledAt: Date) {
@@ -2863,6 +2900,8 @@ private struct WelcomeFlowModifier: ViewModifier {
     /// **Bloque [I]** · el cover del adopt se abrió con la sesión ya firmada en la puerta de Grupos, así
     /// que arranca en el consentimiento y no en el intro. Lo repone este modifier al cerrarse el cover.
     @Binding var adoptStartsAtConsent: Bool
+    /// UX 2.2 · L6-3: la entrada la abrió «¡Hola de nuevo!». Ver el `@State` de `ContentView`.
+    @Binding var cloudSignInFromExistingChooser: Bool
     @Binding var prefilledOnboardingData: ICloudAccountSummary?
     @Binding var hasShownWelcomeChooser: Bool
     @Binding var hasCompletedOnboarding: Bool
@@ -2935,10 +2974,16 @@ private struct WelcomeFlowModifier: ViewModifier {
                             showWelcomeRestore = true
                         case .cloudSignIn:
                             welcomeCloudEntry = .reentry(.apple)  // EXPLÍCITO (jamás heredar el previo)
+                            cloudSignInFromExistingChooser = true
+                            // UX 2.2 · L6-3: «Entrar con Apple» abre directamente el consentimiento, y de ahí Apple.
+                            // La pantalla intermedia repetía el mismo botón («Iniciar sesión con Apple»).
+                            adoptStartsAtConsent = true
                             showWelcomeFlow = false
                             showWelcomeCloudSignIn = true
                         case .googleSignIn:
                             welcomeCloudEntry = .reentry(.google)
+                            cloudSignInFromExistingChooser = true
+                            adoptStartsAtConsent = true
                             showWelcomeFlow = false
                             showWelcomeCloudSignIn = true
                         }
@@ -2963,6 +3008,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // el claim acaba encaminando al returning-user.
                         hasShownWelcomeChooser = true
                         welcomeCloudEntry = .bornCloud
+                        cloudSignInFromExistingChooser = false
                         showWelcomeFlow = false
                         showWelcomeCloudSignIn = true
                     },
@@ -2988,6 +3034,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         // es un fresh start.
                         hasShownWelcomeChooser = true
                         welcomeCloudEntry = .beaconRouted(accountProvider: provider)
+                        cloudSignInFromExistingChooser = false
                         showWelcomeFlow = false
                         showWelcomeCloudSignIn = true
                     },
@@ -3140,6 +3187,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                     // El arranque-en-consent es de UNA entrada: la siguiente por el chooser es un
                     // recorrido normal y debe ver su intro.
                     adoptStartsAtConsent = false
+                    cloudSignInFromExistingChooser = false
                     // R2: `!showOnboarding` es el término nuevo. El alta born-cloud que NO relanza cierra
                     // este cover y enciende el onboarding en la misma vuelta; sin este término, el respaldo
                     // devolvería al usuario al chooser encima del onboarding que acaba de abrirse — dos
@@ -3158,6 +3206,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                 WelcomeCloudSignInView(
                     entry: welcomeCloudEntry,
                     startsAtConsent: adoptStartsAtConsent,
+                    cancelConsentGoesBack: cloudSignInFromExistingChooser,
                     deviceStateNow: {
                         // Se compone AQUÍ y se evalúa en el momento de la decisión: el mirror puede
                         // asentar entre que se monta la pantalla y que la persona firma, y esta vista es
@@ -3267,7 +3316,14 @@ private struct WelcomeFlowModifier: ViewModifier {
                     },
                     onBack: {
                         showWelcomeCloudSignIn = false
-                        welcomeFlowInitialStep = .chooser
+                        // UX 2.2 · L6-3: la re-entrada vuelve a «¡Hola de nuevo!», que es de donde salió (también al
+                        // cancelar el consentimiento, que ahora es su primera pantalla). El alta y el faro, al chooser.
+                        if cloudSignInFromExistingChooser {
+                            welcomeFlowInitialStep = WelcomeBackStepLogic.existingBranchOrigin(
+                                options: WelcomeFlowContainer.liveVisibleExistingOptions)
+                        } else {
+                            welcomeFlowInitialStep = .chooser
+                        }
                         showWelcomeFlow = true
                     }
                 )

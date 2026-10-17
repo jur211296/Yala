@@ -2448,8 +2448,8 @@
 "icloud.detail.cta.retry" = "Nu opnieuw proberen";
 "icloud.detail.cta.diagnose" = "Controleren en herstellen";
 "icloud.detail.cta.viewTechnical" = "Technisch detail bekijken";
-"icloud.remoteOnboardingCompleted" = "✓ Helemaal klaar, je gegevens zijn hier";
-"icloud.remoteRestoreCompleted" = "✓ Gegevens hersteld";
+"icloud.remoteOnboardingCompleted" = "Je hebt de configuratie op je andere apparaat afgerond. Alles staat nu hier.";
+"icloud.remoteRestoreCompleted" = "Gegevens hersteld";
 "icloud.remoteWipe.title" = "Gegevens niet meer beschikbaar";
 "icloud.remoteWipe.message" = "Je gegevens zijn uit iCloud verwijderd. Je kunt opnieuw beginnen of wachten tot ze terugsynchroniseren.";
 "icloud.remoteWipe.confirm" = "Opnieuw beginnen";
@@ -4137,7 +4137,7 @@
 "welcome.restore.searchingTip" = "Dit kan een paar seconden duren.";
 "welcome.restore.foundTitle" = "Hoi %@! Fijn dat je terug bent.";
 "welcome.restore.foundTitleAnonymous" = "Fijn dat je terug bent!";
-"welcome.restore.foundBody" = "We hebben je gegevens in iCloud gevonden:";
+"welcome.restore.foundBody" = "Dit komt terug op deze telefoon:";
 "welcome.restore.continue" = "Doorgaan";
 "welcome.restore.notFoundTitle" = "Geen gegevens gevonden";
 "welcome.restore.notFoundBody" = "Er zijn geen gegevens gekoppeld aan je iCloud-account. Wil je opnieuw beginnen?";
@@ -4712,11 +4712,10 @@
 "storage.errors.adoptICloudNotSettled" = "We konden de cloud niet inschakelen: iCloud zet nog gegevens over naar dit apparaat. Probeer het over een paar minuten opnieuw.";
 "storage.errors.signIn" = "We konden je niet aanmelden. Probeer het opnieuw.";
 "storage.consent.title" = "Je gegevens in de Yala-cloud";
-"storage.consent.pointServers" = "Je gegevens worden opgeslagen op de servers van Yala en ons team kan ze inzien om je ondersteuning en slimme functies te bieden. We gebruiken geen eind-tot-eindversleuteling.";
-"storage.consent.pointPhotos" = "De foto’s van je bonnetjes blijven alleen op dit apparaat: ze worden niet in de cloud bewaard en niet op andere apparaten getoond. Wil je ze bewaren, sla ze dan op voordat je van telefoon wisselt.";
-"storage.consent.pointAccess" = "In ruil daarvoor gebruik je je gegevens op elk apparaat met alleen je Apple- of Google-login, zonder afhankelijk te zijn van iCloud. Zolang je die login behoudt: er is geen herstel via e-mail of Yala-wachtwoord, dus als je de toegang tot dat account verliest, exporteer dan eerst je gegevens (Instellingen → Gegevens exporteren).";
+"storage.consent.pointServers" = "Ons team kan ze inzien om je ondersteuning en slimme functies te bieden. We gebruiken geen eind-tot-eindversleuteling.";
+"storage.consent.pointPhotos" = "Ze worden niet in de cloud bewaard en niet op andere apparaten getoond. Wil je ze bewaren, sla ze dan op voordat je van telefoon wisselt.";
+"storage.consent.pointAccess" = "Zonder iCloud. Er is geen Yala-wachtwoord en geen herstel via e-mail: verlies je die toegang, exporteer dan eerst je gegevens (Instellingen → Gegevens exporteren).";
 "storage.consent.footer" = "Je kunt op elk moment terug naar de privémodus, zonder iets te verliezen.";
-"storage.consent.accept" = "Ik begrijp het en wil de cloud inschakelen";
 "storage.consent.privacyLink" = "Bekijk het privacybeleid";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -4982,10 +4981,10 @@
 "welcome.cloud.providerMismatchBodyGeneric" = "Het Yala-account van deze Apple ID is met een andere inlogmethode gemaakt.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "Met deze Apple ID is al een Yala-account gemaakt met %@.";
+"welcome.cloud.beaconOrigin" = "Het is gemaakt met %@. Je kunt erop inloggen of een nieuw account maken.";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "Met deze Apple ID is al een Yala-account gemaakt.";
+"welcome.cloud.beaconOriginGeneric" = "Je kunt erop inloggen of een nieuw account maken.";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "Nog een account aanmaken";
@@ -5575,10 +5574,10 @@
 "stats.hero.captionTotalPeriod" = "Totaal in de periode";
 
 /* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
-"welcome.restore.cloudPausedTitle" = "De cloud van Yala is gepauzeerd";
+"welcome.restore.cloudPausedTitle" = "Je gegevens staan niet in iCloud";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "Je gegevens staan nog steeds veilig in je Yala-account. De synchronisatie is nu gepauzeerd. Probeer het later opnieuw.";
+"welcome.restore.cloudPausedBody" = "Deze Apple ID heeft een Yala-account in de cloud: je gegevens staan daar veilig, en niet in je iCloud. Inloggen in de cloud is nu gepauzeerd. Probeer het later opnieuw.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 Kleine herinnering: je bent %2$@ nog %1$@ schuldig. Wanneer het uitkomt, reken het samen af.";
@@ -5803,7 +5802,7 @@
 "groups.fullActivation.chooserSubtitle" = "Je groepen blijven zoals ze zijn. Kies waar je persoonlijke gegevens komen te staan.";
 "groups.fullActivation.cloudBody" = "We gebruiken hetzelfde account dat je al voor je groepen gebruikt, geen nieuw. Je gegevens staan op onze servers en ons team kan ze inzien om je te helpen.";
 "groups.fullActivation.historyTitle" = "Zullen we je groepsuitgaven meenemen?";
-"groups.fullActivation.historyBody" = "Je groepsuitgaven kunnen ook verschijnen in Start, in Boekingen en in Statistieken.";
+"groups.fullActivation.historyBody" = "We nemen alleen jouw deel van elke uitgave over. Dat telt mee in Start, je budgetten en Statistieken.";
 "groups.fullActivation.historyShow" = "Ja, toon ze";
 "groups.fullActivation.historyKeepInGroups" = "Nee, laat ze in Groepen";
 "groups.fullActivation.historyFootnote" = "Dit geldt ook voor de uitgaven die je later toevoegt. Je kunt dit altijd wijzigen in Groepsinstellingen.";
@@ -6995,3 +6994,30 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "Nog open: %d";
+
+/* UX 2.2 · lote 6 — primera vez con datos previos o en la nube */
+"welcome.existing.dontRemember" = "Weet je het niet meer? Als je nooit met Apple of Google hebt ingelogd, staan je gegevens in je iCloud.";
+"welcome.cloud.beaconTitle" = "Er is al een Yala-account met deze Apple ID";
+"welcome.cloud.createAnotherNote" = "Het vorige account blijft bestaan; je kunt er altijd naar terug.";
+"welcome.cloud.accountBlockedWrite" = "Mail de support";
+"welcome.cloud.accountBlockedMailSubject" = "Yala: mijn account is niet beschikbaar";
+"welcome.relaunch.bodyCloseFully" = "Om je gegevens goed te beschermen moet Yala opnieuw starten. Sluit de app helemaal af en open hem weer — daarna gaan we verder waar je gebleven was.";
+"welcome.restore.bringBack" = "Mijn gegevens terughalen";
+"welcome.restore.row.transactions" = "Boekingen";
+"welcome.restore.row.accounts" = "Rekeningen";
+"welcome.restore.row.categories" = "Categorieën";
+"welcome.restore.row.budgets" = "Budgetten";
+"welcome.restore.row.groups" = "Gedeelde groepen";
+"storage.consent.lead" = "Voordat je verdergaat, drie dingen om te weten:";
+"storage.consent.serversTitle" = "Je gegevens staan op de servers van Yala";
+"storage.consent.photosTitle" = "De foto's van je bonnetjes blijven op deze telefoon";
+"storage.consent.accessTitle" = "Je logt in met Apple of Google, op elk apparaat";
+"storage.consent.acceptEnter" = "Begrepen, inloggen op mijn account";
+"storage.consent.acceptCreate" = "Begrepen, mijn account maken";
+"storage.consent.acceptMove" = "Begrepen, mijn gegevens naar de cloud brengen";
+"welcome.privateICloud.lateLead" = "Je hebt ze eerder in je iCloud bewaard, met dezelfde Apple ID:";
+"welcome.privateICloud.lateMerge" = "Samenvoegen met wat er nu is";
+"welcome.privateICloud.lateWipe" = "Uit iCloud verwijderen en opnieuw beginnen";
+"welcome.privateICloud.lateMergeExplainer" = "Als je ze samenvoegt, zie je alles samen in je rekeningen en boekingen. Wat te veel is, kun je later verwijderen.";
+"groups.fullActivation.blockedGoToSignOut" = "Instellingen openen om uit te loggen";
+"groups.fullActivation.historyExample" = "Bijvoorbeeld: een diner van 120 met z'n drieën → 40 in je uitgaven.";

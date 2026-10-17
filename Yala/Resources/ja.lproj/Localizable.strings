@@ -2448,8 +2448,8 @@
 "icloud.detail.cta.retry" = "今すぐ再試行";
 "icloud.detail.cta.diagnose" = "確認と修復";
 "icloud.detail.cta.viewTechnical" = "技術詳細を表示";
-"icloud.remoteOnboardingCompleted" = "✓ 準備完了、データはこちらにあります";
-"icloud.remoteRestoreCompleted" = "✓ データを復元しました";
+"icloud.remoteOnboardingCompleted" = "別の端末で設定が完了しました。すべてここにそろっています。";
+"icloud.remoteRestoreCompleted" = "データを復元しました";
 "icloud.remoteWipe.title" = "データが利用できなくなりました";
 "icloud.remoteWipe.message" = "iCloudからデータが削除されました。新規に始めるか、戻ってくるのを待つことができます。";
 "icloud.remoteWipe.confirm" = "新規に始める";
@@ -4137,7 +4137,7 @@
 "welcome.restore.searchingTip" = "数秒かかることがあります。";
 "welcome.restore.foundTitle" = "%@さん、おかえりなさい！";
 "welcome.restore.foundTitleAnonymous" = "おかえりなさい！";
-"welcome.restore.foundBody" = "iCloudにデータが見つかりました：";
+"welcome.restore.foundBody" = "この端末に戻るデータ：";
 "welcome.restore.continue" = "続ける";
 "welcome.restore.notFoundTitle" = "データが見つかりませんでした";
 "welcome.restore.notFoundBody" = "iCloudアカウントに関連するデータが見つかりません。最初から始めますか？";
@@ -4712,11 +4712,10 @@
 "storage.errors.adoptICloudNotSettled" = "クラウドの有効化を開始できませんでした。iCloudがまだこの端末にデータを取り込んでいます。数分後にもう一度お試しください。";
 "storage.errors.signIn" = "サインインできませんでした。もう一度お試しください。";
 "storage.consent.title" = "Yala のクラウドにあるあなたのデータ";
-"storage.consent.pointServers" = "データは Yala のサーバーに保存され、サポートやスマート機能を提供するために私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";
-"storage.consent.pointPhotos" = "レシートの写真はこの端末にのみ残ります。クラウドにバックアップされず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
-"storage.consent.pointAccess" = "その代わり、iCloud に依存せず Apple または Google のログインだけでどの端末からでもアクセスできます。そのログインを保持している限り有効です。メールや Yala のパスワードによる復旧はないため、そのアカウントへのアクセスを失う前にデータを書き出してください（設定 → データをエクスポート）。";
+"storage.consent.pointServers" = "サポートやスマート機能を提供するため、私たちのチームが見ることがあります。エンドツーエンドの暗号化は使用していません。";
+"storage.consent.pointPhotos" = "クラウドにバックアップされず、他の端末にも表示されません。残したい場合は、機種変更の前に保存してください。";
+"storage.consent.pointAccess" = "iCloudは不要です。Yalaのパスワードやメールによる復旧はないため、そのログインを失う前にデータを書き出してください（設定 → データをエクスポート）。";
 "storage.consent.footer" = "いつでもプライベートモードに戻せます。何も失われません。";
-"storage.consent.accept" = "理解したうえでクラウドを有効化します";
 "storage.consent.privacyLink" = "プライバシーポリシーを見る";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -4982,10 +4981,10 @@
 "welcome.cloud.providerMismatchBodyGeneric" = "このApple IDのYalaアカウントは別の方法で作成されています。";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "このApple IDでは、%@でYalaアカウントがすでに作成されています。";
+"welcome.cloud.beaconOrigin" = "%@で作成されています。そのアカウントにサインインするか、別のアカウントを作成できます。";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "このApple IDでは、Yalaアカウントがすでに作成されています。";
+"welcome.cloud.beaconOriginGeneric" = "そのアカウントにサインインするか、別のアカウントを作成できます。";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "別のアカウントを作る";
@@ -5575,10 +5574,10 @@
 "stats.hero.captionTotalPeriod" = "期間の合計";
 
 /* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
-"welcome.restore.cloudPausedTitle" = "Yalaのクラウドは一時停止中です";
+"welcome.restore.cloudPausedTitle" = "データはiCloudにはありません";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "データはYalaアカウントに安全に保存されています。同期は現在一時停止中です。しばらくしてからもう一度お試しください。";
+"welcome.restore.cloudPausedBody" = "このApple IDにはYalaのクラウドアカウントがあります。データはiCloudではなく、そちらに安全に保存されています。クラウドへのサインインは現在一時停止中です。しばらくしてからもう一度お試しください。";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 お知らせです。%2$@さんに%1$@の精算が残っています。都合のよいときにどうぞ。";
@@ -5803,7 +5802,7 @@
 "groups.fullActivation.chooserSubtitle" = "グループはそのままです。個人データの保存場所を選んでください。";
 "groups.fullActivation.cloudBody" = "グループで使っているアカウントをそのまま使います。新しいアカウントは作りません。データは私たちのサーバーに保存され、サポートのために私たちのチームが見ることがあります。";
 "groups.fullActivation.historyTitle" = "グループの支出も表示しますか？";
-"groups.fullActivation.historyBody" = "グループの支出を「ホーム」「記録」「統計」にも表示できます。";
+"groups.fullActivation.historyBody" = "各支出のうちあなたの負担分だけを取り込みます。「ホーム」、予算、「統計」に反映されます。";
 "groups.fullActivation.historyShow" = "はい、表示する";
 "groups.fullActivation.historyKeepInGroups" = "いいえ、グループだけにする";
 "groups.fullActivation.historyFootnote" = "今後登録する支出にも適用されます。グループ設定からいつでも変更できます。";
@@ -6995,3 +6994,30 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "未完了：%d件";
+
+/* UX 2.2 · lote 6 — primera vez con datos previos o en la nube */
+"welcome.existing.dontRemember" = "思い出せませんか？AppleやGoogleでサインインしたことがなければ、データはあなたのiCloudにあります。";
+"welcome.cloud.beaconTitle" = "このApple IDにはすでにYalaアカウントがあります";
+"welcome.cloud.createAnotherNote" = "以前のアカウントはそのまま残り、いつでも戻れます。";
+"welcome.cloud.accountBlockedWrite" = "サポートにメールする";
+"welcome.cloud.accountBlockedMailSubject" = "Yala：アカウントが利用できません";
+"welcome.relaunch.bodyCloseFully" = "データを安全に扱うために、Yala を開き直す必要があります。アプリを完全に閉じてから、もう一度開いてください。続きからそのまま再開できます。";
+"welcome.restore.bringBack" = "データを戻す";
+"welcome.restore.row.transactions" = "記録";
+"welcome.restore.row.accounts" = "口座";
+"welcome.restore.row.categories" = "カテゴリ";
+"welcome.restore.row.budgets" = "予算";
+"welcome.restore.row.groups" = "共有グループ";
+"storage.consent.lead" = "続ける前に、知っておきたい3つのこと：";
+"storage.consent.serversTitle" = "データはYalaのサーバーに保存されます";
+"storage.consent.photosTitle" = "レシートの写真はこの端末に残ります";
+"storage.consent.accessTitle" = "AppleまたはGoogleで、どの端末からでもサインイン";
+"storage.consent.acceptEnter" = "了解して、アカウントにサインイン";
+"storage.consent.acceptCreate" = "了解して、アカウントを作成";
+"storage.consent.acceptMove" = "了解して、データをクラウドに移す";
+"welcome.privateICloud.lateLead" = "以前、同じApple IDであなたのiCloudに保存したデータです：";
+"welcome.privateICloud.lateMerge" = "今のデータとまとめる";
+"welcome.privateICloud.lateWipe" = "iCloudから削除して最初から始める";
+"welcome.privateICloud.lateMergeExplainer" = "まとめると、口座や記録にすべてが一緒に表示されます。不要なものは後から削除できます。";
+"groups.fullActivation.blockedGoToSignOut" = "設定を開いてサインアウト";
+"groups.fullActivation.historyExample" = "例：120の夕食を3人で割ると → あなたの支出は40";

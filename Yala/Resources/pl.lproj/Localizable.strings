@@ -2448,8 +2448,8 @@
 "icloud.detail.cta.retry" = "Ponów teraz";
 "icloud.detail.cta.diagnose" = "Sprawdź i napraw";
 "icloud.detail.cta.viewTechnical" = "Zobacz szczegół techniczny";
-"icloud.remoteOnboardingCompleted" = "✓ Wszystko gotowe, twoje dane są tutaj";
-"icloud.remoteRestoreCompleted" = "✓ Dane przywrócone";
+"icloud.remoteOnboardingCompleted" = "Konfiguracja została ukończona na Twoim drugim urządzeniu. Wszystko jest już tutaj.";
+"icloud.remoteRestoreCompleted" = "Dane przywrócone";
 "icloud.remoteWipe.title" = "Dane już niedostępne";
 "icloud.remoteWipe.message" = "Twoje dane zostały usunięte z iCloud. Możesz zacząć od nowa lub poczekać, aż się zsynchronizują.";
 "icloud.remoteWipe.confirm" = "Zacznij od nowa";
@@ -4137,7 +4137,7 @@
 "welcome.restore.searchingTip" = "Może to potrwać kilka sekund.";
 "welcome.restore.foundTitle" = "Cześć %@! Miło Cię znowu widzieć.";
 "welcome.restore.foundTitleAnonymous" = "Miło Cię znowu widzieć!";
-"welcome.restore.foundBody" = "Znaleźliśmy Twoje dane w iCloud:";
+"welcome.restore.foundBody" = "To wraca na ten telefon:";
 "welcome.restore.continue" = "Kontynuuj";
 "welcome.restore.notFoundTitle" = "Nie znaleziono danych";
 "welcome.restore.notFoundBody" = "Brak danych powiązanych z Twoim kontem iCloud. Chcesz zacząć od nowa?";
@@ -4712,11 +4712,10 @@
 "storage.errors.adoptICloudNotSettled" = "Nie udało się rozpocząć włączania chmury: iCloud wciąż przesyła dane na to urządzenie. Spróbuj ponownie za kilka minut.";
 "storage.errors.signIn" = "Nie udało się zalogować. Spróbuj ponownie.";
 "storage.consent.title" = "Twoje dane w chmurze Yala";
-"storage.consent.pointServers" = "Twoje dane są przechowywane na serwerach Yala, a nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia i dodawać inteligentne funkcje. Nie stosujemy szyfrowania end-to-end.";
-"storage.consent.pointPhotos" = "Zdjęcia paragonów pozostają tylko na tym urządzeniu: nie są zapisywane w chmurze ani widoczne na innych urządzeniach. Jeśli chcesz je zachować, zapisz je przed zmianą telefonu.";
-"storage.consent.pointAccess" = "W zamian korzystasz z danych na dowolnym urządzeniu tylko za pomocą logowania Apple lub Google, bez zależności od iCloud. Dopóki zachowasz to logowanie: nie ma odzyskiwania przez e-mail ani hasła Yala, więc jeśli utracisz dostęp do tego konta, najpierw wyeksportuj dane (Ustawienia → Eksportuj dane).";
+"storage.consent.pointServers" = "Nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia i dodawać inteligentne funkcje. Nie stosujemy szyfrowania end-to-end.";
+"storage.consent.pointPhotos" = "Nie są zapisywane w chmurze ani widoczne na innych urządzeniach. Jeśli chcesz je zachować, zapisz je przed zmianą telefonu.";
+"storage.consent.pointAccess" = "Bez zależności od iCloud. Nie ma hasła Yala ani odzyskiwania przez e-mail: jeśli utracisz ten dostęp, najpierw wyeksportuj dane (Ustawienia → Eksportuj dane).";
 "storage.consent.footer" = "Możesz wrócić do trybu prywatnego, kiedy zechcesz, bez utraty czegokolwiek.";
-"storage.consent.accept" = "Rozumiem i chcę włączyć chmurę";
 "storage.consent.privacyLink" = "Zobacz politykę prywatności";
 
 /* Invite onboarding: spinner title while zone/member sync */
@@ -4982,10 +4981,10 @@
 "welcome.cloud.providerMismatchBodyGeneric" = "Konto Yala tego Apple ID utworzono inną metodą logowania.";
 
 /* Paso 6: origin line on the sign-in screen the iCloud beacon routes to; %@ = Apple/Google */
-"welcome.cloud.beaconOrigin" = "Na tym Apple ID utworzono już konto Yala przez %@.";
+"welcome.cloud.beaconOrigin" = "Utworzono je przez %@. Możesz się na nie zalogować albo założyć inne.";
 
 /* Paso 6: same origin line when the beacon does not know the sign-in method */
-"welcome.cloud.beaconOriginGeneric" = "Na tym Apple ID utworzono już konto Yala.";
+"welcome.cloud.beaconOriginGeneric" = "Możesz się na nie zalogować albo założyć inne.";
 
 /* Paso 6: secondary button on the beacon-routed sign-in screen; opens the full account-type chooser */
 "welcome.cloud.createAnother" = "Załóż inne konto";
@@ -5575,10 +5574,10 @@
 "stats.hero.captionTotalPeriod" = "Łącznie w okresie";
 
 /* Restore: el kill-switch remoto está puesto y el usuario nació en la nube — sus datos existen, la sincronización no está disponible ahora */
-"welcome.restore.cloudPausedTitle" = "Chmura Yala jest wstrzymana";
+"welcome.restore.cloudPausedTitle" = "Twoich danych nie ma w iCloud";
 
 /* Restore: cuerpo del estado de nube en pausa — tranquiliza sobre los datos sin prometer plazo */
-"welcome.restore.cloudPausedBody" = "Twoje dane są nadal bezpieczne na Twoim koncie Yala. Synchronizacja jest teraz wstrzymana. Spróbuj ponownie później.";
+"welcome.restore.cloudPausedBody" = "To Apple ID ma konto Yala w chmurze: Twoje dane są tam, bezpieczne, a nie w Twoim iCloud. Logowanie do chmury jest teraz wstrzymane. Spróbuj ponownie później.";
 
 /* Push: gentle reminder to the DEBTOR that a group debt has been idle. Args: 1=formatted amount, 2=creditor name. Never dunning/collector tone. */
 "notifications.groups.settlementReminder" = "👋 Małe przypomnienie: masz do oddania %1$@ dla %2$@. Rozlicz się, kiedy będzie wygodnie.";
@@ -5803,7 +5802,7 @@
 "groups.fullActivation.chooserSubtitle" = "Twoje grupy zostają bez zmian. Wybierz, gdzie mają być przechowywane Twoje dane osobiste.";
 "groups.fullActivation.cloudBody" = "Użyjemy tego samego konta, którego już używasz w grupach — nie nowego. Twoje dane są na naszych serwerach, a nasz zespół może je zobaczyć, żeby udzielić Ci wsparcia.";
 "groups.fullActivation.historyTitle" = "Dodać Twoje wydatki grupowe?";
-"groups.fullActivation.historyBody" = "Twoje wydatki grupowe mogą też pojawiać się w sekcjach Start, Wpisy i Statystyki.";
+"groups.fullActivation.historyBody" = "Przenosimy tylko Twoją część każdego wydatku. Będzie liczona w sekcji Start, w budżetach i w Statystykach.";
 "groups.fullActivation.historyShow" = "Tak, pokaż je";
 "groups.fullActivation.historyKeepInGroups" = "Nie, zostaw je w Grupach";
 "groups.fullActivation.historyFootnote" = "Dotyczy to też wydatków dodanych później. Możesz to zmienić w każdej chwili w Ustawieniach grup.";
@@ -6995,3 +6994,30 @@
 
 /* Bulk save success: how many drafts are still pending. %d = count */
 "inbox.stillPending" = "Nadal oczekujące: %d";
+
+/* UX 2.2 · lote 6 — primera vez con datos previos o en la nube */
+"welcome.existing.dontRemember" = "Nie pamiętasz? Jeśli nigdy nie logowałeś się przez Apple ani Google, Twoje dane są w Twoim iCloud.";
+"welcome.cloud.beaconTitle" = "Na tym Apple ID jest już konto Yala";
+"welcome.cloud.createAnotherNote" = "Poprzednie zostaje; możesz do niego wrócić, kiedy chcesz.";
+"welcome.cloud.accountBlockedWrite" = "Napisz do pomocy";
+"welcome.cloud.accountBlockedMailSubject" = "Yala: moje konto jest niedostępne";
+"welcome.relaunch.bodyCloseFully" = "Żeby zadbać o Twoje dane, Yala musi uruchomić się ponownie. Zamknij aplikację całkowicie i otwórz ją znowu — zaczniemy dokładnie tam, gdzie skończyłeś.";
+"welcome.restore.bringBack" = "Przywróć moje dane";
+"welcome.restore.row.transactions" = "Wpisy";
+"welcome.restore.row.accounts" = "Konta";
+"welcome.restore.row.categories" = "Kategorie";
+"welcome.restore.row.budgets" = "Budżety";
+"welcome.restore.row.groups" = "Udostępnione grupy";
+"storage.consent.lead" = "Zanim przejdziesz dalej, trzy rzeczy, które warto wiedzieć:";
+"storage.consent.serversTitle" = "Twoje dane są na serwerach Yala";
+"storage.consent.photosTitle" = "Zdjęcia paragonów zostają na tym telefonie";
+"storage.consent.accessTitle" = "Logujesz się przez Apple lub Google, na dowolnym urządzeniu";
+"storage.consent.acceptEnter" = "Rozumiem, zaloguj mnie";
+"storage.consent.acceptCreate" = "Rozumiem, załóż moje konto";
+"storage.consent.acceptMove" = "Rozumiem, przenieś dane do chmury";
+"welcome.privateICloud.lateLead" = "Zapisałeś je wcześniej w swoim iCloud, na tym samym Apple ID:";
+"welcome.privateICloud.lateMerge" = "Połącz z obecnymi";
+"welcome.privateICloud.lateWipe" = "Usuń je z iCloud i zacznij od nowa";
+"welcome.privateICloud.lateMergeExplainer" = "Jeśli je połączysz, zobaczysz wszystko razem w kontach i wpisach. To, co zbędne, możesz później usunąć.";
+"groups.fullActivation.blockedGoToSignOut" = "Otwórz Ustawienia, aby się wylogować";
+"groups.fullActivation.historyExample" = "Na przykład: kolacja za 120 na 3 osoby → 40 w Twoich wydatkach.";

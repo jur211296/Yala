@@ -17,7 +17,7 @@ final class WelcomeChooserUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    func testExistingChooser_withCloudConfigured_showsThreeCards_andGoogleIntro() throws {
+    func testExistingChooser_withCloudConfigured_showsThreeCards_andGoogleOpensTheConsent() throws {
         let app = XCUIApplication()
         // Sin skipOnboarding (el flow Welcome ES el sujeto) y sin seed (no hace falta data).
         app.launchForUITest(
@@ -44,12 +44,19 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome_existing_cloud"].exists, "No apareció la card de Apple.")
         let googleCard = app.buttons["welcome_existing_google"]
         XCTAssertTrue(googleCard.exists, "No apareció la card de Google.")
+        // UX 2.2 · L6-1: con los dos caminos a la vista, la ayuda de «¿No te acuerdas?» está.
+        XCTAssertTrue(app.descendants(matching: .any)["welcome_existing_dont_remember"].exists,
+                      "No apareció la ayuda para quien no recuerda dónde guardó sus datos.")
 
-        // Card Google → intro con el botón Google (SIN tapearlo — nada de sign-in real).
+        // UX 2.2 · L6-3: la card Google abre DIRECTAMENTE el consentimiento (sin la pantalla intermedia que repetía
+        // el botón). Nada se firma: el test no acepta.
         googleCard.tap()
-        let googleButton = app.descendants(matching: .any)
-            .matching(identifier: "welcome_cloud_signin_button_google").firstMatch
-        XCTAssertTrue(googleButton.waitForExistence(timeout: 10), "No apareció el botón de Google en el intro.")
+        let consentAccept = app.buttons["storage_consent_accept"]
+        XCTAssertTrue(consentAccept.waitForExistence(timeout: 10),
+                      "La card de Google no abrió el consentimiento de la nube.")
+        XCTAssertFalse(app.descendants(matching: .any)
+                        .matching(identifier: "welcome_cloud_signin_button_google").firstMatch.exists,
+                       "Sigue saliendo la pantalla intermedia con «Iniciar sesión con Google».")
 
         // Paso 6 · CONTROL del test del faro de abajo: «Crear otra cuenta» es SOLO de la entrada a la que
         // encamina el faro. Quien entra por «Ya tengo cuenta» dijo que tenía una; si no la tiene, «No
@@ -57,12 +64,10 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertFalse(app.buttons["welcome_cloud_create_another"].exists,
                        "«Crear otra cuenta» apareció en la re-entrada normal: se coló fuera del faro.")
 
-        // Back → de vuelta al chooser (nivel 1, por el onBack del cover).
-        let backButton = app.buttons["welcome_back_button"].firstMatch
-        XCTAssertTrue(backButton.waitForExistence(timeout: 10), "No apareció el botón Volver del intro.")
-        backButton.tap()
-        XCTAssertTrue(app.buttons["welcome_chooser_restore"].waitForExistence(timeout: 10),
-                      "El back no volvió al chooser.")
+        // L6-3 + L6-11: cancelar el consentimiento vuelve a «¡Hola de nuevo!», de donde se salió, y no al chooser.
+        app.buttons["storage_consent_cancel"].tap()
+        XCTAssertTrue(app.buttons["welcome_existing_restore"].waitForExistence(timeout: 10),
+                      "Cancelar el consentimiento no volvió a «¡Hola de nuevo!».")
     }
 
     /// A4 + A5 de D-A7: el 2º nivel de "Soy nuevo" y el destino REAL de su card de nube. Mismo

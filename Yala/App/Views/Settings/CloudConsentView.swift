@@ -27,8 +27,16 @@
 //  de aquí. `CloudConsentText.version` se bumpeó por ese recorte.
 //
 //  **La MISMA pantalla sirve a los tres contextos** —alta born-cloud, migración desde iCloud y re-entrada
-//  a una cuenta que ya existe— y solo cambia el `path` de la telemetría. Por eso el copy no puede asumir
-//  ninguno de los tres: el título habla de dónde viven los datos y no de «activar» nada.
+//  a una cuenta que ya existe—. El contrato (título, tres puntos y pie) no puede asumir ninguno de los tres: el
+//  título habla de dónde viven los datos y no de «activar» nada. **Lo único que cambia con el contexto es el verbo
+//  del botón** (UX 2.2 · L6-4): «Entendido, entrar a mi cuenta», «…crear mi cuenta» o «…llevar mis datos a la nube»,
+//  que elige `CloudConsentCopyLogic`. Antes decía «Entiendo y quiero activar la nube» también a quien volvía a una
+//  cuenta que ya usaba.
+//
+//  **UX 2.2 · L6-4 (variante 1 elegida por Jürgen): tres fichas y no tres viñetas.** Cada punto lleva su icono en
+//  color sólido, un título que se lee de un vistazo y el detalle debajo. El detalle dice lo mismo que las viñetas
+//  —qué sale, quién lo lee, qué no viaja, cómo se entra y qué pasa si se pierde el acceso—, así que el contrato no
+//  cambió y `CloudConsentText.version` no sube.
 //
 
 import SwiftUI
@@ -57,8 +65,12 @@ struct CloudConsentView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.xl) {
-                    VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-                        ForEach(Array(Self.points.enumerated()), id: \.offset) { _, point in
+                    VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                        Text(L10n.UXLote6.consentLead)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(Self.points, id: \.title) { point in
                             consentPoint(point)
                         }
                     }
@@ -98,24 +110,45 @@ struct CloudConsentView: View {
         }
     }
 
-    /// Viñeta tipográfica en vez de icono: la marca de lista es del documento, no una señal.
-    /// Oculta a VoiceOver — leerla en voz alta antes de cada punto solo estorba.
-    private func consentPoint(_ text: String) -> some View {
+    /// Un punto del contrato (UX 2.2 · L6-4, variante 1 elegida por Jürgen): una ficha con su icono en color SÓLIDO,
+    /// un título corto que se lee de un vistazo y el detalle completo debajo. Antes eran tres viñetas de cuatro o cinco
+    /// líneas sin jerarquía, y es el paso que decide la privacidad de la persona. **El detalle no se recorta**: dice lo
+    /// mismo que decían las viñetas (el contrato es el de `CloudConsentText.version`, que por eso no sube).
+    private struct Point {
+        let icon: String
+        let fill: Color
+        let title: String
+        let detail: String
+    }
+
+    private func consentPoint(_ point: Point) -> some View {
         HStack(alignment: .top, spacing: DS.Spacing.md) {
-            Text(verbatim: "•")
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            Text(text)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            SolidIconTile(systemName: point.icon, fill: point.fill)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(point.title)
+                    .font(DS.Typography.subheadlineEmphasized)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(point.detail)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(DS.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+        .accessibilityElement(children: .combine)
     }
 
     private var ctaSection: some View {
         VStack(spacing: DS.Spacing.md) {
-            YalaPrimaryButton(L10n.Storage.Consent.accept, icon: "checkmark.icloud") {
+            // L6-4: el botón dice lo que va a pasar al tocarlo —entrar, crear o llevar los datos—, no «activar la nube»
+            // a quien vuelve a una cuenta que ya usaba. Lo decide `CloudConsentCopyLogic` con el contexto.
+            YalaPrimaryButton(CloudConsentCopyLogic.acceptTitle(for: path), icon: "checkmark.icloud") {
                 registerConsent()
                 onAccept()
             }
@@ -137,11 +170,14 @@ struct CloudConsentView: View {
     /// quién los lee · qué NO viaja (las fotos: su ausencia es pérdida real) · cómo se entra y
     /// qué pasa si pierde ese acceso. El cuarto bloque —volver atrás es posible— va al pie:
     /// es un alivio, no una advertencia, y mezclarlo aquí lo disfrazaba de riesgo.
-    private static var points: [String] {
+    private static var points: [Point] {
         [
-            L10n.Storage.Consent.pointServers,
-            L10n.Storage.Consent.pointPhotos,
-            L10n.Storage.Consent.pointAccess,
+            Point(icon: "server.rack", fill: SolidIconTilePalette.transactions,
+                  title: L10n.UXLote6.consentServersTitle, detail: L10n.Storage.Consent.pointServers),
+            Point(icon: "photo.on.rectangle", fill: SolidIconTilePalette.accounts,
+                  title: L10n.UXLote6.consentPhotosTitle, detail: L10n.Storage.Consent.pointPhotos),
+            Point(icon: "key.fill", fill: SolidIconTilePalette.categories,
+                  title: L10n.UXLote6.consentAccessTitle, detail: L10n.Storage.Consent.pointAccess),
         ]
     }
 }
