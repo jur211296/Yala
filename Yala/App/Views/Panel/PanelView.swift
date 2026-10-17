@@ -308,7 +308,7 @@ struct PanelView: View {
                 }
         }
         .coachMarkOverlay(
-            steps: ProTourSteps.panelSteps,
+            steps: ProTourSteps.panelSteps(includesAssistant: appPreferences.chatFABVisible),
             isPresented: $showProFabTour,
             currentIndex: $proFabTourIndex,
             // «Omitir guía» salta el tour Pro ENTERO, no solo esta fase: antes avanzaba a la siguiente y el tour
@@ -592,6 +592,10 @@ struct PanelView: View {
                             onChatTap: { startChat() }
                         )
                         .headerBandColumn(.leading)
+                        // El tour Pro señala esta fila (UX 2.2 · L5-12): si el Panel no está arriba, sube hasta ella.
+                        .onChange(of: showProFabTour) { _, showing in
+                            if showing { scrollToProTourRow(scrollProxy) }
+                        }
 
                         // Movimientos sin cuenta: el primero de los avisos tras la cabecera. No ofrece nada: dice que hay
                         // dinero fuera del saldo y de los gastos, y lleva a la única salida (darles una cuenta).
@@ -707,14 +711,9 @@ struct PanelView: View {
             // Botón flotante de nuevo registro + Chat FAB. Sólo mientras la
             // fila de acciones del hero NO esté a la vista (ver
             // `showFloatingActions`): con las dos a la vez, la acción principal
-            // saldría dos veces en la misma pantalla.
-            // `|| showProFabTour`: los dos pasos del tour de Pro (`ProTourSteps
-            // .panelSteps`, ids "fab" y "proChatFab") señalan estos botones, y el
-            // tour arranca con el Panel ARRIBA DEL TODO —donde ahora están
-            // ocultos—, así que sin esto el coach mark apuntaría a una vista que
-            // no existe. Mientras el tour corre, se muestran aunque el scroll
-            // diga que no.
-            if showFloatingActions || showProFabTour {
+            // saldría dos veces en la misma pantalla. El tour Pro ya no los
+            // fuerza: señala la fila de acciones de arriba (UX 2.2 · L5-12).
+            if showFloatingActions {
                 VStack {
                     Spacer()
                     HStack {
@@ -743,6 +742,12 @@ struct PanelView: View {
                 }
                 .transition(.opacity)
             }
+        }
+    }
+
+    private func scrollToProTourRow(_ proxy: ScrollViewProxy) {
+        withAnimation(.easeInOut(duration: DS.Animation.normal)) {
+            proxy.scrollTo(ProTourSteps.panelVoiceImageAnchor, anchor: .center)
         }
     }
 

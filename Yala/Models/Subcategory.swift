@@ -108,6 +108,7 @@ extension Subcategory {
         "Ajustements de solde", "Ajustement de solde",
         "Rettifiche del saldo", "Aggiustamento saldo",
         "Ajuste de saldo",
+        "Saldo-aanpassing", "Korekta salda", "残高調整", "余额调整",
     ]
 
     /// Transfer subcategory names (all localizations)

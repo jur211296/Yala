@@ -985,12 +985,10 @@ final class NewTransactionViewModel {
 
     // MARK: - Notification Primer
 
+    /// El tercer registro es el RESPALDO del permiso de notificaciones (UX 2.2 · L5-14): lo normal es pedirlo al
+    /// guardar el primer pago planificado o encender la alerta de un presupuesto (`NotificationPrimerMoments`).
     func checkNotificationPrimer() async {
-        let count = UserDefaults.standard.integer(forKey: "transactionsSavedCount")
-        guard count >= 3, !UserDefaults.standard.bool(forKey: "hasSeenNotificationPrimer") else { return }
-        let status = await NotificationService.shared.checkPermissionStatus()
-        UserDefaults.standard.set(true, forKey: "hasSeenNotificationPrimer")
-        if status == .notDetermined {
+        if await NotificationPrimerMoments.claim(.records) {
             showNotificationPrimer = true
         }
     }

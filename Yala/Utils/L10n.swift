@@ -4714,6 +4714,8 @@ enum L10n {
         static var rateApp: String { ls("settings.rateApp", comment: "") }
         static var tutorials: String { ls("settings.tutorials", comment: "") }
         static var faq: String { ls("settings.faq", comment: "") }
+        /// Ajustes › Ayuda › Novedades: volver a ver la hoja de la versión (UX 2.2 · L5-15).
+        static var whatsNew: String { ls("settings.whatsNew", comment: "") }
         static var contact: String { ls("settings.contact", comment: "") }
         static var privacy: String { ls("settings.privacy", comment: "") }
         static var terms: String { ls("settings.terms", comment: "") }
@@ -7767,6 +7769,11 @@ enum L10n {
         static var accept: String { ls("notificationPrimer.accept", comment: "") }
         static var reject: String { ls("notificationPrimer.reject", comment: "") }
         static var hint: String { ls("notificationPrimer.hint", comment: "") }
+        // En contexto (UX 2.2 · L5-14)
+        static var scheduledTitle: String { ls("notificationPrimer.scheduled.title", comment: "Primer after the first planned payment") }
+        static var scheduledBenefit: String { ls("notificationPrimer.scheduled.benefit", comment: "Primer after the first planned payment") }
+        static var budgetTitle: String { ls("notificationPrimer.budget.title", comment: "Primer when a budget alert is turned on") }
+        static var budgetBenefit: String { ls("notificationPrimer.budget.benefit", comment: "Primer when a budget alert is turned on") }
     }
 
     // MARK: - What's New
@@ -7811,6 +7818,13 @@ enum L10n {
         static var v21LoggingDescription: String { ls("whatsNew.v21.logging.description", comment: "") }
         static var v21DataTitle: String { ls("whatsNew.v21.data.title", comment: "") }
         static var v21DataDescription: String { ls("whatsNew.v21.data.description", comment: "") }
+        // 2.2 (UX 2.2 · L5-15). Texto a revisar antes de publicar: ticket `whats-new-2-2-review-before-release`.
+        static var v22PanelTitle: String { ls("whatsNew.v22.panel.title", comment: "") }
+        static var v22PanelDescription: String { ls("whatsNew.v22.panel.description", comment: "") }
+        static var v22InboxTitle: String { ls("whatsNew.v22.inbox.title", comment: "") }
+        static var v22InboxDescription: String { ls("whatsNew.v22.inbox.description", comment: "") }
+        static var v22FirstStepsTitle: String { ls("whatsNew.v22.firstSteps.title", comment: "") }
+        static var v22FirstStepsDescription: String { ls("whatsNew.v22.firstSteps.description", comment: "") }
     }
 
     // MARK: - App Update
@@ -8426,7 +8440,6 @@ enum L10n {
             static var pointAccess: String { ls("storage.consent.pointAccess", comment: "") }
             /// Es un alivio, no una advertencia: va al pie y con jerarquía secundaria.
             static var footer: String { ls("storage.consent.footer", comment: "") }
-            static var accept: String { ls("storage.consent.accept", comment: "") }
             static var privacyLink: String { ls("storage.consent.privacyLink", comment: "") }
         }
 
@@ -8514,9 +8527,16 @@ enum L10n {
         static var skip: String { ls("tipkit.skip", comment: "") }
         static var next: String { ls("tipkit.next", comment: "") }
         static var done: String { ls("tipkit.done", comment: "") }
+        /// «1 de 9» en la píldora de la guía sombreada (UX 2.2 · L5-10).
+        static func stepProgress(_ current: Int, _ total: Int) -> String {
+            String(format: ls("tipkit.stepProgress", comment: "Coach mark step N of M"), current, total)
+        }
         // TipKit standalone tips
         static var comparison: String { ls("tipkit.comparison.title", comment: "") }
-        static var comparisonMessage: String { ls("tipkit.comparison.message", comment: "") }
+        /// Dice qué es cada círculo del selector, con sus mismas etiquetas (UX 2.2 · L5-11).
+        static var comparisonMessage: String {
+            String(format: ls("tipkit.comparison.message", comment: "P-1 / A-1 explained"), L10n.Comparison.monthShort, L10n.Comparison.yearShort)
+        }
         // AI Charts tips
         static var aiChartsPro: String { ls("tipkit.aiCharts.pro.title", comment: "") }
         static var aiChartsProMessage: String { ls("tipkit.aiCharts.pro.message", comment: "") }
@@ -8525,20 +8545,8 @@ enum L10n {
         // Grupo D: Settings
         static var settingsAccounts: String { ls("tipkit.settings.accounts.title", comment: "") }
         static var settingsAccountsMessage: String { ls("tipkit.settings.accounts.message", comment: "") }
-        static var settingsCategories: String { ls("tipkit.settings.categories.title", comment: "") }
-        static var settingsCategoriesMessage: String { ls("tipkit.settings.categories.message", comment: "") }
-        static var settingsTags: String { ls("tipkit.settings.tags.title", comment: "") }
-        static var settingsTagsMessage: String { ls("tipkit.settings.tags.message", comment: "") }
-        static var settingsBudgets: String { ls("tipkit.settings.budgets.title", comment: "") }
-        static var settingsBudgetsMessage: String { ls("tipkit.settings.budgets.message", comment: "") }
-        static var settingsPlanned: String { ls("tipkit.settings.planned.title", comment: "") }
-        static var settingsPlannedMessage: String { ls("tipkit.settings.planned.message", comment: "") }
         static var settingsPersonalization: String { ls("tipkit.settings.personalization.title", comment: "") }
         static var settingsPersonalizationMessage: String { ls("tipkit.settings.personalization.message", comment: "") }
-        static var settingsAppIcon: String { ls("tipkit.settingsAppIcon.title", comment: "") }
-        static var settingsAppIconMessage: String { ls("tipkit.settingsAppIcon.message", comment: "") }
-        static var settingsTheme: String { ls("tipkit.settingsTheme.title", comment: "") }
-        static var settingsThemeMessage: String { ls("tipkit.settingsTheme.message", comment: "") }
         static var settingsTutorials: String { ls("tipkit.settings.tutorials.title", comment: "") }
         static var settingsTutorialsMessage: String { ls("tipkit.settings.tutorials.message", comment: "") }
         // Cash Flow Setup Tour
@@ -8569,10 +8577,10 @@ enum L10n {
         static var proPremiumIconsMessage: String { ls("tipkit.pro.premiumIcons.message", comment: "") }
         static var proProThemesTitle: String { ls("tipkit.pro.proThemes.title", comment: "") }
         static var proProThemesMessage: String { ls("tipkit.pro.proThemes.message", comment: "") }
-        static var proFabTitle: String { ls("tipkit.pro.fab.title", comment: "") }
-        static var proFabMessage: String { ls("tipkit.pro.fab.message", comment: "") }
+        static var proQuickEntryTitle: String { ls("tipkit.pro.quickEntry.title", comment: "") }
+        static var proQuickEntryMessage: String { ls("tipkit.pro.quickEntry.message", comment: "") }
         static var proChatFabTitle: String { ls("tipkit.pro.chatFab.title", comment: "") }
-        static var proChatFabMessage: String { ls("tipkit.pro.chatFab.message", comment: "") }
+        static var proQuickAIMessage: String { ls("tipkit.pro.quickAI.message", comment: "") }
         static var proAiSummaryTitle: String { ls("tipkit.pro.aiSummary.title", comment: "") }
         static var proAiSummaryMessage: String { ls("tipkit.pro.aiSummary.message", comment: "") }
     }
@@ -9044,5 +9052,52 @@ enum AppLocale {
         formatter.locale = current
         formatter.dateFormat = dateFormat
         return formatter
+    }
+}
+
+// MARK: - UX 2.2 · lote 6 (primera vez con datos previos o en la nube)
+
+/// Los textos nuevos del lote 6 de la auditoría UX 2.2, juntos para que el lote se lea y se revise de una vez. Las
+/// claves sí van en el espacio de nombres de su pantalla (`welcome.*`, `storage.consent.*`, `groups.fullActivation.*`).
+extension L10n {
+    enum UXLote6 {
+        /// L6-1 · la ayuda de «¡Hola de nuevo!» para quien no recuerda dónde guardó sus datos.
+        static var existingDontRemember: String { ls("welcome.existing.dontRemember", comment: "") }
+        /// L6-8 · el título de la entrada a la que lleva el faro («Es mi primera vez» con una cuenta previa).
+        static var beaconTitle: String { ls("welcome.cloud.beaconTitle", comment: "") }
+        /// L6-8 · bajo «Crear otra cuenta»: la anterior no se borra.
+        static var beaconCreateAnotherNote: String { ls("welcome.cloud.createAnotherNote", comment: "") }
+        /// L6-9 · el botón de «Tu cuenta no está disponible».
+        static var writeToSupport: String { ls("welcome.cloud.accountBlockedWrite", comment: "") }
+        /// L6-9 · el asunto del correo a soporte desde esa pantalla.
+        static var accountBlockedMailSubject: String { ls("welcome.cloud.accountBlockedMailSubject", comment: "") }
+        /// L6-7 · «reabre Yala» tras entrar en la nube: ese terminal no se cierra solo al ir a inicio.
+        static var relaunchBodyCloseFully: String { ls("welcome.relaunch.bodyCloseFully", comment: "") }
+        /// L6-5 · el botón de «Encontramos tus datos».
+        static var restoreBringBack: String { ls("welcome.restore.bringBack", comment: "") }
+        /// L6-5 · los nombres de las filas del recibo (la palabra sola; el número va a la derecha).
+        static var restoreRowTransactions: String { ls("welcome.restore.row.transactions", comment: "") }
+        static var restoreRowAccounts: String { ls("welcome.restore.row.accounts", comment: "") }
+        static var restoreRowCategories: String { ls("welcome.restore.row.categories", comment: "") }
+        static var restoreRowBudgets: String { ls("welcome.restore.row.budgets", comment: "") }
+        static var restoreRowGroups: String { ls("welcome.restore.row.groups", comment: "") }
+        /// L6-4 · la frase que abre el consentimiento y los títulos de sus tres fichas.
+        static var consentLead: String { ls("storage.consent.lead", comment: "") }
+        static var consentServersTitle: String { ls("storage.consent.serversTitle", comment: "") }
+        static var consentPhotosTitle: String { ls("storage.consent.photosTitle", comment: "") }
+        static var consentAccessTitle: String { ls("storage.consent.accessTitle", comment: "") }
+        /// L6-4 · el botón del consentimiento, por contexto (`CloudConsentCopyLogic`).
+        static var consentAcceptEnter: String { ls("storage.consent.acceptEnter", comment: "") }
+        static var consentAcceptCreate: String { ls("storage.consent.acceptCreate", comment: "") }
+        static var consentAcceptMove: String { ls("storage.consent.acceptMove", comment: "") }
+        /// L6-6 · el aviso tardío de iCloud.
+        static var lateLead: String { ls("welcome.privateICloud.lateLead", comment: "") }
+        static var lateMerge: String { ls("welcome.privateICloud.lateMerge", comment: "") }
+        static var lateWipe: String { ls("welcome.privateICloud.lateWipe", comment: "") }
+        static var lateMergeExplainer: String { ls("welcome.privateICloud.lateMergeExplainer", comment: "") }
+        /// L6-9 · «Tu cuenta ya tiene finanzas personales» → Ajustes, donde se cierra la sesión.
+        static var blockedGoToSignOut: String { ls("groups.fullActivation.blockedGoToSignOut", comment: "") }
+        /// L6-10 · el ejemplo de «¿Traemos tus gastos de grupo?».
+        static var historyExample: String { ls("groups.fullActivation.historyExample", comment: "") }
     }
 }

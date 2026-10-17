@@ -52,7 +52,7 @@ final class TrialOfferMomentUITests: XCTestCase {
         accept.tap()
 
         // Es el primer registro: detrás viene «¿Era de prueba?», y la oferta espera a la respuesta.
-        let keep = app.alerts.buttons["Conservar"]
+        let keep = app.alerts.buttons["Guardarlo"]
         XCTAssertTrue(keep.waitForExistence(timeout: 10), "No apareció el aviso «¿era de prueba?».")
         XCTAssertFalse(offer.exists, "La oferta salió a la vez que «¿era de prueba?».")
         keep.tap()

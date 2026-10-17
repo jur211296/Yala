@@ -153,31 +153,10 @@ struct RestoreProgressView: View {
         .padding(.horizontal, DS.Spacing.xxxxl)
     }
 
-    /// Conteos REALES que van apareciendo conforme llegan los lotes de CloudKit.
-    /// Iconos + número (sin labels de texto → no requiere L10n; el ícono comunica el tipo).
+    /// Conteos REALES que van apareciendo conforme llegan los lotes de CloudKit. La fila es compartida con la entrada
+    /// a una cuenta de la nube (`RestoreLiveCountsRow`, UX 2.2 · L6-13).
     private var liveCounts: some View {
-        HStack(spacing: DS.Spacing.lg) {
-            countChip("creditcard.fill", counts?.accountsCount ?? 0, L10n.Welcome.Restore.foundAccounts(counts?.accountsCount ?? 0))
-            countChip("tag.fill", counts?.categoriesCount ?? 0, "\(counts?.categoriesCount ?? 0)")
-            countChip("list.bullet.rectangle.fill", counts?.transactionsCount ?? 0, L10n.Welcome.Restore.foundTransactions(counts?.transactionsCount ?? 0))
-            countChip("chart.pie.fill", counts?.budgetsCount ?? 0, L10n.Welcome.Restore.foundBudgets(counts?.budgetsCount ?? 0))
-            countChip("person.2.fill", counts?.groupsCount ?? 0, L10n.Welcome.Restore.foundGroups(counts?.groupsCount ?? 0))
-        }
-        .font(DS.Typography.caption)
-        .foregroundStyle(.secondary)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: counts)
-    }
-
-    @ViewBuilder
-    private func countChip(_ icon: String, _ value: Int, _ a11y: String) -> some View {
-        if value > 0 {
-            HStack(spacing: DS.Spacing.xxs) {
-                Image(systemName: icon)
-                Text("\(value)").monospacedDigit().contentTransition(.numericText())
-            }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(a11y)
-        }
+        RestoreLiveCountsRow(counts: counts)
     }
 
     private func startFlow() {

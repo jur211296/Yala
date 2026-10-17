@@ -129,8 +129,7 @@ private enum CoachMarkLayout {
     static let darkDimOpacity: Double = 0.75
     static let tooltipGap: CGFloat = 80
     static let visibilityMargin: CGFloat = 100
-    static let spotlightBorderWidth: CGFloat = 2
-    static let spotlightGlowRadius: CGFloat = 12
+    static let spotlightBorderWidth: CGFloat = 2.5
 }
 
 // MARK: - Coach Mark Overlay
@@ -203,20 +202,20 @@ struct CoachMarkOverlay: View {
                     .opacity(isVisible ? 1 : 0)
                     .allowsHitTesting(true)
                     .contentShape(Rectangle())
+                    // Tocar la zona oscura cierra la guía, como «Omitir guía» (UX 2.2 · L5-9): antes avanzaba al
+                    // paso siguiente, y en iOS tocar fuera cierra.
                     .onTapGesture {
                         guard !isTransitioning else { return }
-                        advance()
+                        dismissAndComplete(skipped: true)
                     }
 
-                // Bright border around spotlight for dark themes
-                if isDarkTheme {
-                    SpotlightBorderShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
-                        .stroke(theme.accent.opacity(0.8), lineWidth: CoachMarkLayout.spotlightBorderWidth)
-                        .shadow(color: theme.accent.opacity(0.5), radius: CoachMarkLayout.spotlightGlowRadius)
-                        .ignoresSafeArea()
-                        .opacity(isVisible ? 1 : 0)
-                        .allowsHitTesting(false)
-                }
+                // Borde sólido del color de la app alrededor del foco, sin brillo (UX 2.2 · L5-10, variante 1).
+                // Antes era un borde difuso con sombra de color, y solo en temas oscuros.
+                SpotlightBorderShape(spotlight: AnimatableRect(rect), cornerRadius: cornerRadius)
+                    .stroke(theme.accent, lineWidth: CoachMarkLayout.spotlightBorderWidth)
+                    .ignoresSafeArea()
+                    .opacity(isVisible ? 1 : 0)
+                    .allowsHitTesting(false)
 
                 // Tooltip card
                 tooltipCard(step: step, targetFrame: frame)
@@ -360,6 +359,17 @@ struct CoachMarkOverlay: View {
         let isAbove = targetFrame.midY > screenHeight * 0.4
 
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // El avance en una píldora rellena, arriba (UX 2.2 · L5-10): «1/9» abajo casi no se veía.
+            if steps.count > 1 {
+                Text(L10n.TipKit.stepProgress(currentIndex + 1, steps.count))
+                    .font(DS.Typography.labelSmall.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DS.Spacing.sm)
+                    .padding(.vertical, DS.Spacing.xxs)
+                    .background(Capsule().fill(theme.accent))
+                    .accessibilityIdentifier("coach_mark_progress")
+            }
+
             Text(step.title)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
@@ -383,11 +393,6 @@ struct CoachMarkOverlay: View {
                 .accessibilityIdentifier("coach_mark_skip")
 
                 Spacer()
-
-                // Step indicator
-                Text("\(currentIndex + 1)/\(steps.count)")
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
 
                 // Next / Done button
                 Button {

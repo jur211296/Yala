@@ -1,11 +1,13 @@
 ---
 id: restore-found-copy-says-icloud-for-groups-that-never-were
-status: backlog
+status: qa
 priority: low
 area: "welcome, icloud, restore, l10n"
 created: 2026-09-21
-updated: 2026-10-08
+updated: 2026-10-17
 source: "medición durante `restore-treats-budgets-and-groups-as-no-data` (2026-09-21): al añadir los grupos al criterio de «hay datos» salió que los grupos NO viajan por iCloud"
+qa-status: needs-testing
+qa-notes: Resuelto por UX 2.2 L6-5 (encabezado sin en iCloud, lista tipo recibo); falta ver una restauracion real en el iPhone
 ---
 
 # «Encontramos tus datos en iCloud» a quien solo tiene grupos, que no están en iCloud
@@ -64,3 +66,8 @@ Tres razones, y la tercera es la que decide:
 - Recomendación: **quitar «en iCloud»** de `foundBody` en los 16 locales (sin clave nueva). La pantalla ya se llama «Restaurar desde iCloud», así que el matiz no se pierde, y el encabezado deja de afirmar un origen falso. La prioridad es la de esa opción.
 
 Triage 2026-10-08: abierto · low → low · imprecisión de encabezado: la cifra es correcta y nadie pierde datos ni decide mal por ella.
+
+
+## Resuelto en 2.2 (UX 2.2 · L6-5, 2026-10-17)
+
+«Encontramos tus datos» pasa a una lista tipo recibo y el encabezado pierde «en iCloud» («Esto vuelve a este teléfono:»): los grupos siguen en la lista sin afirmar que vienen de iCloud. Falta verlo con una restauración real, que el simulador no tiene.

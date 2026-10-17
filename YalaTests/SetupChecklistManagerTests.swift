@@ -51,10 +51,11 @@ struct SetupChecklistManagerTests {
         #expect(manager.progress == 0.0)
     }
 
+    /// UX 2.2 · L5-1: lo primero que toca es apuntar un gasto (antes era «Conoce todo lo que puedes personalizar»).
     @MainActor @Test func initialState_hasCurrentStep() {
         let manager = freshManager()
         #expect(manager.currentStep != nil)
-        #expect(manager.currentStep?.id == .exploreSettings)
+        #expect(manager.currentStep?.id == .firstExpense)
     }
 
     @MainActor @Test func initialState_stepsInOrder() {
@@ -81,8 +82,8 @@ struct SetupChecklistManagerTests {
 
     @MainActor @Test func markCompleted_advancesCurrentStep() {
         let manager = freshManager()
-        manager.markCompleted(.exploreSettings)
-        #expect(manager.currentStep?.id == .firstExpense)
+        manager.markCompleted(.firstExpense)
+        #expect(manager.currentStep?.id == .tryVoiceInput)
     }
 
     @MainActor @Test func markCompleted_progressUpdates() {
@@ -136,17 +137,15 @@ struct SetupChecklistManagerTests {
         #expect(calls == 1)
     }
 
-    @MainActor @Test func discoverFeatures_lockedUntilOthersComplete() {
+    /// UX 2.2 · L5-1: sin candados. Completar un paso fuera de orden lo cuenta, y el destacado sigue siendo el primero
+    /// que falta en el orden nuevo.
+    @MainActor @Test func anyStepCanBeDoneOutOfOrder() {
         let manager = freshManager()
-        let discoverStep = manager.steps.first { $0.id == .discoverFeatures }
-        #expect(discoverStep?.isLocked == true)
-
-        // Complete all except discoverFeatures
-        for step in SetupStepID.allCases where step != .discoverFeatures {
-            manager.markCompleted(step)
-        }
-        let discoverStepAfter = manager.steps.first { $0.id == .discoverFeatures }
-        #expect(discoverStepAfter?.isLocked == false)
+        manager.markCompleted(.discoverFeatures)
+        manager.markCompleted(.firstBudget)
+        #expect(manager.completedCount == 2)
+        #expect(manager.currentStep?.id == .firstExpense)
+        #expect(manager.steps.first { $0.id == .discoverFeatures }?.isCompleted == true)
     }
 
     // MARK: - Auto Detect
@@ -339,24 +338,21 @@ struct SetupChecklistManagerTests {
 
     // MARK: - Voice/Image Trial Steps
 
-    @MainActor @Test func discoverFeatures_lockedUntilTrialStepsComplete() {
-        let manager = freshManager()
-        // Complete original steps except discoverFeatures and trial steps
-        manager.markCompleted(.exploreSettings)
-        manager.markCompleted(.firstExpense)
-        manager.markCompleted(.firstBudget)
-        manager.markCompleted(.scheduledPayment)
+    /// UX 2.2 · L5-1 (opción A): primer gasto, voz, foto, presupuesto, pago que se repite, Ajustes y Pro.
+    @Test func stepsOrder_firstExpenseFirst_settingsAndProLast() {
+        #expect(SetupStepID.allCases == [
+            .firstExpense, .tryVoiceInput, .tryImageInput, .firstBudget, .scheduledPayment,
+            .exploreSettings, .discoverFeatures,
+        ])
+    }
 
-        // Still locked — trial steps not complete
-        let discoverStep = manager.steps.first { $0.id == .discoverFeatures }
-        #expect(discoverStep?.isLocked == true)
-
-        // Complete trial steps
-        manager.markCompleted(.tryVoiceInput)
-        manager.markCompleted(.tryImageInput)
-
-        let discoverStepAfter = manager.steps.first { $0.id == .discoverFeatures }
-        #expect(discoverStepAfter?.isLocked == false)
+    /// El orden cambió, las claves guardadas no: quien ya tenía pasos hechos los conserva.
+    @Test func storageKeys_keepTheirRawValues() {
+        #expect(SetupStepID.exploreSettings.storageKey == "setup.step.1.completed")
+        #expect(SetupStepID.firstExpense.storageKey == "setup.step.2.completed")
+        #expect(SetupStepID.discoverFeatures.storageKey == "setup.step.5.completed")
+        #expect(SetupStepID.tryImageInput.storageKey == "setup.step.7.completed")
+        #expect(SetupStepID.tryVoiceInput.skippedStorageKey == "setup.step.6.skipped")
     }
 
     @MainActor @Test func stepsOrder_trialBeforeDiscover() {
@@ -386,60 +382,110 @@ struct SetupChecklistManagerTests {
         }
     }
 
-    // MARK: - Sequential Locking
+    // MARK: - El paso destacado (UX 2.2 · L5-1)
 
-    @MainActor @Test func sequentialLocking_onlyFirstPendingUnlocked() {
-        let manager = freshManager()
-        let steps = manager.steps
-        // First step (exploreSettings) should be unlocked
-        let first = steps.first { $0.id == .exploreSettings }
-        #expect(first?.isLocked == false)
-        #expect(first?.isCompleted == false)
-
-        // All other steps should be locked
-        for step in steps where step.id != .exploreSettings {
-            #expect(step.isLocked == true, "Step \(step.id) should be locked")
-        }
-    }
-
-    @MainActor @Test func sequentialLocking_afterFirstComplete_secondUnlocks() {
-        let manager = freshManager()
-        manager.markCompleted(.exploreSettings)
-        let steps = manager.steps
-
-        // exploreSettings completed
-        #expect(steps.first { $0.id == .exploreSettings }?.isCompleted == true)
-        // firstExpense now unlocked
-        #expect(steps.first { $0.id == .firstExpense }?.isLocked == false)
-        // Steps after firstExpense still locked
-        #expect(steps.first { $0.id == .firstBudget }?.isLocked == true)
-        #expect(steps.first { $0.id == .scheduledPayment }?.isLocked == true)
-    }
-
-    @MainActor @Test func sequentialLocking_outOfOrderComplete_sequencePreserved() {
-        let manager = freshManager()
-        // Complete step 2 without completing step 1
-        manager.markCompleted(.firstExpense)
-
-        // exploreSettings is still the current step (first pending)
-        #expect(manager.currentStep?.id == .exploreSettings)
-        // firstExpense is completed, not locked
-        #expect(manager.steps.first { $0.id == .firstExpense }?.isCompleted == true)
-        // firstBudget is still locked (not first pending)
-        #expect(manager.steps.first { $0.id == .firstBudget }?.isLocked == true)
-    }
-
-    @MainActor @Test func sequentialLocking_autoDetect_skipsCompleted() {
+    @MainActor @Test func currentStep_autoDetect_skipsCompleted() {
         let manager = freshManager()
         manager.autoDetect(transactionCount: 3, budgetCount: 1, scheduledCount: 2)
         // 3 steps auto-completed: firstExpense, firstBudget, scheduledPayment
         #expect(manager.completedCount == 3)
-        // First pending is exploreSettings (step 1, not auto-detected)
-        #expect(manager.currentStep?.id == .exploreSettings)
-
-        // After completing exploreSettings, next pending skips to tryVoiceInput
-        manager.markCompleted(.exploreSettings)
+        // First pending in the new order is the voice practice
         #expect(manager.currentStep?.id == .tryVoiceInput)
+
+        manager.markCompleted(.tryVoiceInput)
+        manager.markCompleted(.tryImageInput)
+        #expect(manager.currentStep?.id == .exploreSettings)
+    }
+
+    // MARK: - «Ahora no» (UX 2.2 · L5-2)
+
+    /// Saltar la práctica no la da por hecha: no suma, no lleva ✓, y el destacado pasa al siguiente.
+    @MainActor @Test func skip_doesNotCountAsDone_andMovesTheCurrentStepOn() {
+        let manager = freshManager()
+        manager.markCompleted(.firstExpense)
+        manager.markSkipped(.tryVoiceInput)
+
+        #expect(manager.completedCount == 1)
+        let voice = manager.steps.first { $0.id == .tryVoiceInput }
+        #expect(voice?.isCompleted == false)
+        #expect(voice?.isSkipped == true)
+        #expect(manager.currentStep?.id == .tryImageInput)
+        #expect(manager.hasSkippedSteps)
+    }
+
+    /// Volver a probarlo y hacerlo lo cuenta como hecho y quita el «saltado».
+    @MainActor @Test func doingASkippedStep_marksItDone() {
+        let manager = freshManager()
+        manager.markSkipped(.tryImageInput)
+        manager.markCompleted(.tryImageInput)
+
+        let image = manager.steps.first { $0.id == .tryImageInput }
+        #expect(image?.isCompleted == true)
+        #expect(image?.isSkipped == false)
+        #expect(!manager.hasSkippedSteps)
+        #expect(UserDefaults.standard.object(forKey: SetupStepID.tryImageInput.skippedStorageKey) == nil)
+    }
+
+    /// Un paso ya hecho no se puede «saltar» después.
+    @MainActor @Test func skip_afterDone_isIgnored() {
+        let manager = freshManager()
+        manager.markCompleted(.tryVoiceInput)
+        manager.markSkipped(.tryVoiceInput)
+        #expect(manager.steps.first { $0.id == .tryVoiceInput }?.isSkipped == false)
+        #expect(!manager.hasSkippedSteps)
+    }
+
+    /// Con los saltados, la lista se cierra igual (y avisa una vez), pero el final sabe que hubo saltos: no dice
+    /// «¡Ya eres experto!».
+    @MainActor @Test func skippedSteps_closeTheList_butTheEndKnows() {
+        let manager = freshManager()
+        var calls = 0
+        manager.onAllStepsCompleted = { calls += 1 }
+        defer { manager.onAllStepsCompleted = {} }
+        for step in SetupStepID.allCases where step != .tryVoiceInput && step != .tryImageInput {
+            manager.markCompleted(step)
+        }
+        #expect(!manager.isAllComplete)
+        #expect(manager.wouldCompleteAll(by: .tryVoiceInput) == false, "falta también la foto")
+        manager.markSkipped(.tryImageInput)
+        #expect(manager.wouldCompleteAll(by: .tryVoiceInput))
+        manager.markSkipped(.tryVoiceInput)
+
+        #expect(manager.isAllComplete)
+        #expect(calls == 1)
+        #expect(manager.hasSkippedSteps)
+        #expect(manager.completedCount == 5)
+        #expect(manager.currentStep == nil)
+    }
+
+    /// El «saltado» sobrevive a un relanzamiento (se lee de UserDefaults) y `resetAll` lo borra.
+    @MainActor @Test func skipped_isPersisted_andResetClearsIt() {
+        let manager = freshManager()
+        manager.markSkipped(.tryVoiceInput)
+        #expect(UserDefaults.standard.bool(forKey: SetupStepID.tryVoiceInput.skippedStorageKey))
+        manager.resetAll()
+        #expect(UserDefaults.standard.object(forKey: SetupStepID.tryVoiceInput.skippedStorageKey) == nil)
+        #expect(!manager.hasSkippedSteps)
+    }
+
+    // MARK: - «¿Era de prueba?» en Planificación (UX 2.2 · L5-5)
+
+    /// Planificación toma solo la pregunta de su paso; la del primer gasto la deja para el Panel.
+    @MainActor @Test func takePendingPracticeCleanup_onlyTakesItsOwnSteps() throws {
+        let manager = freshManager()
+        let context = try makeTestContext()
+        let saved = makeTestAccount(context: context, name: "Guardado")
+        manager.pendingPracticeCleanup = PracticeCleanupItem(
+            stepID: .firstExpense, itemName: "x", persistentID: saved.persistentModelID)
+        defer { manager.pendingPracticeCleanup = nil }
+
+        #expect(manager.takePendingPracticeCleanup(for: [.firstBudget, .scheduledPayment]) == nil)
+        #expect(manager.pendingPracticeCleanup?.stepID == .firstExpense, "la del gasto sigue esperando al Panel")
+
+        manager.pendingPracticeCleanup = PracticeCleanupItem(
+            stepID: .firstBudget, itemName: "x", persistentID: saved.persistentModelID)
+        #expect(manager.takePendingPracticeCleanup(for: [.firstBudget])?.stepID == .firstBudget)
+        #expect(manager.pendingPracticeCleanup == nil, "tomada, no se pregunta dos veces")
     }
 
     // MARK: - Re-entrada (ticket `reentry-counts-as-fresh-install`, pieza 2)
@@ -456,9 +502,9 @@ struct SetupChecklistManagerTests {
         #expect(manager.completedCount == 3)
         #expect(manager.totalCount == 7)
         #expect(manager.isAllComplete == false)
-        // Y lo que de verdad ve el usuario que vuelve: la card, pidiéndole que explore los ajustes.
+        // Y lo que de verdad ve el usuario que vuelve: la card, pidiéndole que pruebe la voz.
         #expect(manager.shouldShow == true)
-        #expect(manager.currentStep?.id == .exploreSettings)
+        #expect(manager.currentStep?.id == .tryVoiceInput)
     }
 
     /// La consecuencia del fix: sin el marcador de instalación nueva —que la re-entrada ya no

@@ -13,6 +13,8 @@ struct SetupStepRow: View {
 
     let step: SetupStep
     let isCurrent: Bool
+    /// Cualquier paso pendiente o saltado se puede tocar (UX 2.2 · L5-1): ya no hay candados.
+    var onTap: (() -> Void)?
 
     // MARK: - Indicator
 
@@ -23,8 +25,9 @@ struct SetupStepRow: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 18))
                 .foregroundStyle(DS.Semantic.successForeground)
-        } else if step.isLocked {
-            Image(systemName: "lock.circle.fill")
+        } else if step.isSkipped {
+            // Saltado con «Ahora no»: sin ✓, en gris (UX 2.2 · L5-2).
+            Image(systemName: "minus.circle")
                 .font(.system(size: 18))
                 .foregroundStyle(.thSecondaryText)
         } else if isCurrent {
@@ -38,36 +41,54 @@ struct SetupStepRow: View {
         }
     }
 
+    private var isDimmed: Bool { step.isCompleted || step.isSkipped }
+
     // MARK: - Body
 
     var body: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            // Completion indicator
-            indicatorImage
+        Button {
+            onTap?()
+        } label: {
+            HStack(spacing: DS.Spacing.sm) {
+                // Completion indicator
+                indicatorImage
 
-            // Step icon
-            Image(systemName: step.icon)
-                .font(.system(size: 14)) // A11Y-DT: SF Symbol icon sizing for step icon
-                .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
-                .frame(width: 20)
+                // Step icon
+                Image(systemName: step.icon)
+                    .font(.system(size: 14)) // A11Y-DT: SF Symbol icon sizing for step icon
+                    .foregroundStyle(isDimmed ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
+                    .frame(width: 20)
 
-            // Step title
-            Text(step.id.localizedTitle)
-                .font(isCurrent ? DS.Typography.label : DS.Typography.caption)
-                .foregroundStyle((step.isCompleted || step.isLocked) ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
+                // Step title
+                Text(step.id.localizedTitle)
+                    .font(isCurrent ? DS.Typography.label : DS.Typography.caption)
+                    .foregroundStyle(isDimmed ? ThemeColor.thSecondaryText : ThemeColor.thPrimaryText)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Spacer()
+                Spacer(minLength: DS.Spacing.xs)
 
-            if isCurrent {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold)) // A11Y-DT: SF Symbol icon sizing for chevron
-                    .foregroundStyle(.thAccent)
+                if step.isSkipped {
+                    Text(L10n.SetupChecklist.tryAgain)
+                        .font(DS.Typography.labelSmall)
+                        .foregroundStyle(.thAccent)
+                } else if !step.isCompleted {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold)) // A11Y-DT: SF Symbol icon sizing for chevron
+                        .foregroundStyle(isCurrent ? AnyShapeStyle(.thAccent) : AnyShapeStyle(.thSecondaryText))
+                }
             }
+            .padding(.vertical, DS.Spacing.xs)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, DS.Spacing.xxs)
+        .buttonStyle(.plain)
+        .disabled(step.isCompleted || onTap == nil)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(step.id.localizedTitle)
-        .accessibilityHint(step.isCompleted ? L10n.SetupChecklist.stepCompleted : step.isLocked ? L10n.SetupChecklist.stepLocked : L10n.SetupChecklist.stepTapToStart)
+        .accessibilityHint(
+            step.isCompleted ? L10n.SetupChecklist.stepCompleted
+                : step.isSkipped ? L10n.SetupChecklist.stepSkipped
+                : L10n.SetupChecklist.stepTapToStart
+        )
     }
 }
 
@@ -82,8 +103,28 @@ extension SetupStepID {
         case .scheduledPayment: L10n.SetupChecklist.Step.scheduledPayment
         case .tryVoiceInput: L10n.SetupChecklist.Step.tryVoiceInput
         case .tryImageInput: L10n.SetupChecklist.Step.tryImageInput
-        case .discoverFeatures: L10n.SetupChecklist.Step.discoverFeatures
+        case .discoverFeatures:
+            L10n.SetupChecklist.Step.discoverFeatures(
+                Self.discoverTitle(
+                    isProUser: FeatureGateService.shared.isProUser,
+                    trialEligible: StoreKitManager.shared.isIntroOfferEligible
+                )
+            )
         }
+    }
+
+    /// Cómo se llama el último paso (UX 2.2 · L5-3, opción A): por lo que abre. Antes decía «Descubre qué más puede
+    /// hacer Yala» y abría una oferta con precios. Quien ya usó la prueba no la vuelve a tener (lote 17 · B4), así que
+    /// a esa persona no se le promete «gratis».
+    enum DiscoverTitle: Equatable {
+        case freeTrial
+        case knowPro
+        case alreadyPro
+    }
+
+    static func discoverTitle(isProUser: Bool, trialEligible: Bool) -> DiscoverTitle {
+        if isProUser { return .alreadyPro }
+        return trialEligible ? .freeTrial : .knowPro
     }
 }
 
@@ -118,8 +159,32 @@ extension L10n {
         static var stepTapToStart: String {
             NSLocalizedString("setup.step.tapToStart", comment: "Accessibility: tap to start step")
         }
-        static var stepLocked: String {
-            NSLocalizedString("setup.step.locked", comment: "Accessibility: step is locked")
+        static var stepSkipped: String {
+            NSLocalizedString("setup.step.skipped", comment: "Accessibility: step was skipped with Not now")
+        }
+        /// «Probar» en un paso saltado (UX 2.2 · L5-2).
+        static var tryAgain: String {
+            NSLocalizedString("setup.step.tryAgain", comment: "Try a skipped setup step")
+        }
+        /// Final de la lista con algún paso saltado (UX 2.2 · L5-2).
+        static var basicsTitle: String {
+            NSLocalizedString("setup.complete.basics.title", comment: "Setup finished with skipped steps")
+        }
+        static var basicsSubtitle: String {
+            NSLocalizedString("setup.complete.basics.subtitle", comment: "Setup finished with skipped steps, subtitle")
+        }
+        /// Tarjeta «Primeros pasos» (UX 2.2 · L5-4).
+        static var nextStepLabel: String {
+            NSLocalizedString("setup.nextStepLabel", comment: "Label above the current setup step")
+        }
+        static var start: String {
+            NSLocalizedString("setup.start", comment: "Start the current setup step")
+        }
+        static func showAllSteps(_ count: Int) -> String {
+            String(format: NSLocalizedString("setup.showAllSteps", comment: "Show all N setup steps"), count)
+        }
+        static var hideAllSteps: String {
+            NSLocalizedString("setup.hideAllSteps", comment: "Hide the setup steps list")
         }
         static func nextStep(_ stepTitle: String) -> String {
             String(format: NSLocalizedString("setup.nextStep", comment: "Accessibility: next step to complete"), stepTitle)
@@ -177,8 +242,15 @@ extension L10n {
             static var tryImageInput: String {
                 NSLocalizedString("setup.step7.title", comment: "Step 7 title")
             }
-            static var discoverFeatures: String {
-                NSLocalizedString("setup.step5.title", comment: "Step 5 title")
+            static func discoverFeatures(_ title: SetupStepID.DiscoverTitle) -> String {
+                switch title {
+                case .freeTrial:
+                    NSLocalizedString("setup.step5.title.trial", comment: "Last setup step: free Pro trial (30 days)")
+                case .knowPro:
+                    NSLocalizedString("setup.step5.title.knowPro", comment: "Last setup step: see Yala Pro (trial already used)")
+                case .alreadyPro:
+                    NSLocalizedString("setup.step5.title.alreadyPro", comment: "Last setup step for a Pro user")
+                }
             }
         }
 

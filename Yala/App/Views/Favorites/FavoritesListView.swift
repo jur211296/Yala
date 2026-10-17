@@ -132,7 +132,15 @@ struct FavoritesListView: View {
     private var emptyState: some View {
         VStack {
             Spacer()
-            YalaEmptyState.noFavorites()
+            // Con botón para crear el primero (L7-14): antes solo estaba el «+» de arriba.
+            YalaEmptyState(
+                icon: "star",
+                title: L10n.Empty.noFavorites,
+                message: L10n.Favorites.createTemplate,
+                actionTitle: L10n.UXL7.Favorites.createAction,
+                action: { viewModel.openEditor(for: nil) },
+                actionAccessibilityIdentifier: "favorites_empty_create"
+            )
             Spacer()
         }
     }

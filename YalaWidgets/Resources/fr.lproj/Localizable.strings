@@ -21,7 +21,7 @@
 "widget.gallery.budgets" = "Budgets";
 "widget.gallery.budgets.desc" = "Votre progression budgétaire";
 "widget.gallery.latestRecords" = "Derniers registres";
-"widget.gallery.latestRecords.desc" = "Vos transactions les plus récentes";
+"widget.gallery.latestRecords.desc" = "Vos enregistrements les plus récents";
 "widget.gallery.expense" = "Dépenses";
 "widget.gallery.expense.desc" = "Vos dépenses totales pour la période";
 "widget.gallery.categoriesPie" = "Catégories (Camembert)";
@@ -63,7 +63,7 @@
 "widget.intent.scheduledPayments.title" = "Paiements à venir";
 "widget.intent.scheduledPayments.desc" = "Affiche vos prochains paiements planifiés";
 "widget.intent.latestRecords.title" = "Derniers registres";
-"widget.intent.latestRecords.desc" = "Affiche vos transactions les plus récentes";
+"widget.intent.latestRecords.desc" = "Affiche vos enregistrements les plus récents";
 "widget.intent.accessoryBalance.title" = "Solde";
 "widget.intent.accessoryBalance.desc" = "Solde de la période";
 "widget.intent.accessoryExpense.title" = "Dépenses";

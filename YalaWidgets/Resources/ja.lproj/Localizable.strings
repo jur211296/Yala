@@ -21,7 +21,7 @@
 "widget.gallery.budgets" = "予算";
 "widget.gallery.budgets.desc" = "予算の進捗状況";
 "widget.gallery.latestRecords" = "最新の記録";
-"widget.gallery.latestRecords.desc" = "最近の取引";
+"widget.gallery.latestRecords.desc" = "最近の記録";
 "widget.gallery.expense" = "支出";
 "widget.gallery.expense.desc" = "期間の合計支出";
 "widget.gallery.categoriesPie" = "カテゴリー(円グラフ)";
@@ -63,7 +63,7 @@
 "widget.intent.scheduledPayments.title" = "予定の支払い";
 "widget.intent.scheduledPayments.desc" = "予定支払いを表示";
 "widget.intent.latestRecords.title" = "最新の記録";
-"widget.intent.latestRecords.desc" = "最近の取引を表示";
+"widget.intent.latestRecords.desc" = "最近の記録を表示";
 "widget.intent.accessoryBalance.title" = "残高";
 "widget.intent.accessoryBalance.desc" = "期間の残高";
 "widget.intent.accessoryExpense.title" = "支出";

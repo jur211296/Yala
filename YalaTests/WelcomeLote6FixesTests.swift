@@ -89,6 +89,9 @@ struct WelcomeLote6FixesTests {
             "Yala/App/Views/Groups/FullModeActivationView.swift",
             "Yala/App/Views/Groups/FullModeActivationFinaleView.swift",
             "Yala/App/Views/Settings/CloudConsentView.swift",
+            // UX 2.2 · implementación del lote 6: las píldoras del aviso tardío y el aviso positivo.
+            "Yala/App/Logic/ICloudCorpusChipsLogic.swift",
+            "Yala/App/ContentView.swift",
         ]
         let pattern = #/(?:systemName: |icon: |\.system\(|systemImage: )"([a-z0-9.]+)"/#
         var checked = 0

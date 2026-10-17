@@ -982,8 +982,13 @@ struct WelcomeBackDestinationTests {
         let cover = try #require(Self.bodyOf("private var welcomeRestoreCover: some View {", in: src),
                                  "no está `welcomeRestoreCover`")
         let back = try #require(Self.bodyOf("onBack: {", in: cover), "no está el `onBack:` del restore")
-        #expect(back.contains("returnToWelcomeChooser(dismissing: $showWelcomeRestore, step: .chooser)"), """
-            `WelcomeRestoreView` sí viene del chooser de nivel 1 — su destino no cambia.
+        // UX 2.2 · L6-11: Restaurar vuelve a «¡Hola de nuevo!» (el sub-chooser de quien ya tiene cuenta), de donde
+        // se vino; solo sin sub-chooser visible vuelve al de nivel 1. La elección la fija `WelcomeBackStepLogic`
+        // (tests en `UXAudit22Lote6LogicTests`); aquí se fija que el «Atrás» del restore la consulta.
+        let compact = back.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "\n", with: "")
+        #expect(compact.contains("letback=welcomeRestoreOrigin??WelcomeBackStepLogic.existingBranchOrigin(")
+                && compact.contains("returnToWelcomeChooser(dismissing:$showWelcomeRestore,step:back)"), """
+            El «Atrás» de `WelcomeRestoreView` ya no vuelve a «¡Hola de nuevo!».
             Cuerpo leído: \(back)
             """)
     }

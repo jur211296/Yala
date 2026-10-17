@@ -127,6 +127,9 @@ struct WelcomeFlowContainer: View {
     /// activación de Yala completo —que comparte la puerta— jamás debe borrar lo local.
     var performDeviceCorpusWipe: @MainActor () async -> String?
 
+    /// Desde qué pantalla se abrió Restaurar, para que su «Volver» vuelva allí (UX 2.2 · L6-11).
+    var onRestoreOrigin: (WelcomeFlowStep) -> Void
+
     @State private var step: WelcomeFlowStep = .hero
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -146,8 +149,10 @@ struct WelcomeFlowContainer: View {
         welcomeDeviceDataNow: @escaping @MainActor @Sendable () -> Bool,
         welcomeDeviceDataReading: @escaping @MainActor @Sendable () -> WelcomePrivateICloudGateLogic.DeviceDataReading,
         performICloudCorpusWipe: @escaping @MainActor () async -> String?,
-        performDeviceCorpusWipe: @escaping @MainActor () async -> String?
+        performDeviceCorpusWipe: @escaping @MainActor () async -> String?,
+        onRestoreOrigin: @escaping (WelcomeFlowStep) -> Void = { _ in }
     ) {
+        self.onRestoreOrigin = onRestoreOrigin
         self.initialStep = initialStep
         self.onSelectBranch = onSelectBranch
         self.onSelectExistingOption = onSelectExistingOption
@@ -167,6 +172,13 @@ struct WelcomeFlowContainer: View {
     }
 
     private var visibleExistingOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
+        Self.liveVisibleExistingOptions
+    }
+
+    /// Las entradas de «Ya tengo una cuenta» que se pintan hoy. Estático para que `ContentView` sepa a qué step
+    /// vuelve un «atrás» desde Restaurar o desde la entrada a la nube (UX 2.2 · L6-3 y L6-11) con el MISMO
+    /// predicado que decide si se enseña el sub-chooser — dos copias de los tres términos es como divergen.
+    static var liveVisibleExistingOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
         // `-uitest-cloud-chooser` (opt-in EXPLÍCITO, sesión 2): destapa las cards cloud bajo
         // uitest SOLO para el XCUITest del chooser — el resto de uitest queda byte-idéntico
         // (bypass a restore intacto). `remoteCloudEnabled` (DIFERIDOS #34): kill-switch de la
@@ -405,9 +417,14 @@ struct WelcomeFlowContainer: View {
     /// (`.restoreICloud`), y se fue entero con el alert cuando la reentrada pasó a ser decisión del usuario.
     private func leaveWelcome(to destination: WelcomeMirrorRelaunchLogic.Destination,
                               proceed: () -> Void) {
+        // **L6-2 · «Restaurar» sin iCloud entra sin reabrir**: Restaurar dirá «Activa iCloud para continuar» en el acto,
+        // y si la persona lo enciende y vuelve a buscar, es Restaurar quien pide reabrir (`WelcomeRestoreRelaunchLogic`).
         guard WelcomeMirrorRelaunchLogic.shouldRelaunch(
             destination: destination,
-            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) else {
+            mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision),
+              !WelcomeRestoreRelaunchLogic.skipsRelaunch(
+                destination: destination,
+                iCloudAvailable: iCloudSyncService.shared.isAccountAvailable) else {
             proceed()
             return
         }
@@ -439,6 +456,7 @@ struct WelcomeFlowContainer: View {
         switch option {
         case .restoreICloud:
             StorageModePersistence.clearICloudCorpusWipeLeftHalfway()
+            onRestoreOrigin(WelcomeBackStepLogic.restoreOrigin(openedFrom: step))
             destination = .restoreICloud
         case .cloudSignIn, .googleSignIn: destination = .cloudSignIn
         }

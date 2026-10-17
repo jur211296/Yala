@@ -19,6 +19,13 @@
 //
 //  Solo `.background` — `.inactive` (app switcher, centro de notificaciones) JAMÁS mata el proceso.
 //
+//  **UX 2.2 · L6-7 (opción B): una sola pantalla de «reabre Yala».** La entrada a una cuenta de la nube tenía la suya
+//  («Ya casi está — reinicia Yala · deslízala fuera del selector de apps»), con otro título, otro icono y otra
+//  instrucción. Las dos pintan ahora `WelcomeRelaunchMessage`: mismo título, mismo motivo y la misma promesa. Lo
+//  único que cambia es media frase, y no por estilo: **solo este terminal se cierra solo al ir a inicio**
+//  (`RelaunchNetLogic`); el de la nube no —su docblock lo declara «NUNCA auto-kill»—, así que decirle allí «ve a la
+//  pantalla de inicio» haría que volver no reiniciara nada. La línea de privacidad, solo aquí: es el iCloud privado.
+//
 
 import SwiftUI
 
@@ -38,38 +45,56 @@ struct WelcomeMirrorRelaunchView: View {
 
                 Spacer(minLength: DS.Spacing.lg)
 
-                VStack(spacing: DS.Spacing.lg) {
-                    Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .accessibilityHidden(true)
-
-                    Text(L10n.Welcome.MirrorRelaunch.title)
-                        .font(DS.Typography.title2)
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.lg)
-
-                    Text(L10n.Welcome.MirrorRelaunch.body)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.xl)
-
-                    // El porqué del reinicio (UX 2.2 · L1-4). Decisión de Jürgen: el paso se queda —Yala empuja
-                    // la nube y el alta privada paga este reinicio—, pero quien lo paga tiene que saber para qué.
-                    Text(L10n.Welcome.MirrorRelaunch.privacyNote)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, DS.Spacing.xl)
-                        .accessibilityIdentifier("welcome_mirror_relaunch_privacy_note")
-                }
+                WelcomeRelaunchMessage(kind: .iCloudPrivate)
 
                 Spacer(minLength: DS.Spacing.xl)
             }
         }
         .accessibilityIdentifier("welcome_mirror_relaunch")
         .interactiveDismissDisabled()
+    }
+}
+
+/// El mensaje de «reabre Yala» que comparten el Welcome (iCloud privado) y la entrada a una cuenta de la nube.
+struct WelcomeRelaunchMessage: View {
+    enum Kind {
+        /// El terminal del Welcome: la app se cierra sola al ir a inicio, y hay línea de privacidad.
+        case iCloudPrivate
+        /// La entrada a una cuenta de la nube: hay que cerrarla del todo.
+        case cloudAccount
+    }
+
+    let kind: Kind
+
+    var body: some View {
+        VStack(spacing: DS.Spacing.lg) {
+            Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                .font(.system(size: 44))
+                .foregroundStyle(.white.opacity(0.8))
+                .accessibilityHidden(true)
+
+            Text(L10n.Welcome.MirrorRelaunch.title)
+                .font(DS.Typography.title2)
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.lg)
+
+            Text(kind == .iCloudPrivate ? L10n.Welcome.MirrorRelaunch.body : L10n.UXLote6.relaunchBodyCloseFully)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, DS.Spacing.xl)
+
+            if kind == .iCloudPrivate {
+                // El porqué del reinicio (UX 2.2 · L1-4). Decisión de Jürgen: el paso se queda —Yala empuja
+                // la nube y el alta privada paga este reinicio—, pero quien lo paga tiene que saber para qué.
+                Text(L10n.Welcome.MirrorRelaunch.privacyNote)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("welcome_mirror_relaunch_privacy_note")
+            }
+        }
     }
 }

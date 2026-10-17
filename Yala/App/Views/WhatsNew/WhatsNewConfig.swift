@@ -22,9 +22,18 @@ enum WhatsNewConfig {
             return version2_0
         case "2.1":
             return version2_1
+        case "2.2":
+            return version2_2
         default:
             return nil
         }
+    }
+
+    /// Lo que enseña Ajustes › Ayuda › Novedades (UX 2.2 · L5-15): la hoja de la versión que corre. `nil` si esa
+    /// versión no tiene entrada (entonces la fila no se pinta).
+    static func current(version: String) -> (features: [WhatsNewFeature], version: String)? {
+        guard let features = features(for: version), !features.isEmpty else { return nil }
+        return (features, version)
     }
 
     // MARK: - Version 1.1
@@ -132,6 +141,32 @@ enum WhatsNewConfig {
             iconColor: .blue,
             title: L10n.WhatsNew.v21DataTitle,
             description: L10n.WhatsNew.v21DataDescription
+        ),
+    ]
+
+    // MARK: - Version 2.2
+
+    /// Solo lo que ya está en 2.2 (lotes 3, 4 y 5 de la auditoría UX). 2.2 sigue recibiendo trabajo: el texto se
+    /// revisa antes de publicar (ticket `whats-new-2-2-review-before-release`).
+    // A11Y-DM: paleta decorativa por feature del carrusel (colores de sistema, adaptan a Dark Mode)
+    private static let version2_2: [WhatsNewFeature] = [
+        WhatsNewFeature(
+            icon: "house.fill",
+            iconColor: .indigo,
+            title: L10n.WhatsNew.v22PanelTitle,
+            description: L10n.WhatsNew.v22PanelDescription
+        ),
+        WhatsNewFeature(
+            icon: "tray.fill",
+            iconColor: .orange,
+            title: L10n.WhatsNew.v22InboxTitle,
+            description: L10n.WhatsNew.v22InboxDescription
+        ),
+        WhatsNewFeature(
+            icon: "checklist",
+            iconColor: .green,
+            title: L10n.WhatsNew.v22FirstStepsTitle,
+            description: L10n.WhatsNew.v22FirstStepsDescription
         ),
     ]
 }

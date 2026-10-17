@@ -179,8 +179,16 @@ import SwiftData
         )
 
         do {
-            let subcategories = try context.fetch(descriptor)
-            return subcategories.first
+            if let found = try context.fetch(descriptor).first { return found }
+            // Sembrada en otro idioma (la app cambió de idioma, o llegó de otro aparato): el nombre localizado de hoy
+            // no la encuentra. Se busca por los nombres de todos los idiomas, como el fusionador de duplicados.
+            let names = Array(Subcategory.balanceAdjustmentNames)
+            let anyLanguage = FetchDescriptor<Subcategory>(
+                predicate: #Predicate<Subcategory> { subcategory in
+                    names.contains(subcategory.name)
+                }
+            )
+            return try context.fetch(anyLanguage).first
         } catch {
             #if DEBUG
             print("Error fetching balance adjustment subcategory: \(error)")

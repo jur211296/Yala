@@ -63,6 +63,11 @@ struct WelcomeRestoreView: View {
     var onStartFresh: () -> Void
     var onOpenSettings: () -> Void
     var onBack: () -> Void
+    /// UX 2.2 · L6-2: el Welcome ya no pide reabrir Yala ANTES de mirar si hay iCloud — sin iCloud, esta pantalla sale
+    /// en el acto con «Activa iCloud para continuar». Si después la persona lo enciende y vuelve a buscar, el store de
+    /// este proceso sigue montado sin el espejo de iCloud y buscar no traería nada: es entonces cuando hay que reabrir.
+    /// Este callback lo pide. `nil` = el consumidor ya monta con el espejo (la activación de Yala completo).
+    var onNeedsMirrorRelaunch: (() -> Void)? = nil
 
     /// Computed: `if case` no es válido dentro de `ToolbarItem` content closure.
     ///
@@ -207,11 +212,12 @@ struct WelcomeRestoreView: View {
                     ICloudRestoreSessionSignal.noteRestoreAbandoned(flowToken)
                 }
             }
-            .confirmationDialog(
+            // **Alerta y no `confirmationDialog`** (UX 2.2 · L6-11): en iOS 26 un diálogo colgado de un botón sale como
+            // globo SIN su botón de cancelar, y la única salida era tocar fuera. La alerta enseña los dos.
+            .alert(
                 L10n.Welcome.Restore.startFreshConfirmTitle,
                 isPresented: $showStartFreshConfirm,
-                titleVisibility: .visible
-            ) {
+                actions: {
                 Button(L10n.Welcome.Restore.startFreshConfirmConfirm, role: .destructive) {
                     // **Confirmar ES comprometer el descarte**, así que sale por el punto único que
                     // lo hace: `discardImportAndStartFresh()`, al final del fichero, donde está
@@ -224,9 +230,11 @@ struct WelcomeRestoreView: View {
                     discardImportAndStartFresh()
                 }
                 Button(L10n.Welcome.Restore.startFreshConfirmCancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Welcome.Restore.startFreshConfirmBody)
-            }
+                },
+                message: {
+                    Text(L10n.Welcome.Restore.startFreshConfirmBody)
+                }
+            )
         }
     }
 
@@ -246,6 +254,17 @@ struct WelcomeRestoreView: View {
         guard iCloudSyncService.shared.isAccountAvailable else {
             ICloudRestoreSessionSignal.noteRestoreUnavailable()
             state = .iCloudDisabled
+            return
+        }
+        // L6-2 · iCloud está, pero este proceso montó el store sin su espejo (el Welcome no relanzó porque al elegir
+        // «Restaurar» no había iCloud). Buscar aquí no puede traer nada: toca reabrir, y es ahora cuando se pide.
+        // Sale ANTES de encender la señal —no hay import en este proceso— y sin tirar el reloj aparcado: el proceso
+        // muere en el relanzamiento.
+        if let onNeedsMirrorRelaunch,
+           WelcomeRestoreRelaunchLogic.needsRelaunchToSearch(
+               iCloudAvailable: true,
+               mountedDecision: SwiftDataConfiguration.personalStoreMountedDecision) {
+            onNeedsMirrorRelaunch()
             return
         }
         if RestoreOfferGate.wasWiped(
@@ -346,19 +365,27 @@ struct WelcomeRestoreView: View {
 
     // MARK: - State views
 
+    /// «Encontramos tus datos» (UX 2.2 · L6-5, variante 2 elegida por Jürgen): el icono en un círculo SÓLIDO
+    /// —era el único degradado de la pantalla— y las cifras como un recibo, el nombre a la izquierda y el número a la
+    /// derecha, una sola vez cada una. Antes cada ficha ponía el número grande y debajo otra vez «3 cuentas».
+    ///
+    /// **Los grupos siguen en la lista** y el encabezado deja de decir «en iCloud» (ticket
+    /// `restore-found-copy-says-icloud-for-groups-that-never-were`, su recomendación): la cifra es correcta, lo falso
+    /// era el origen común. La pantalla ya se llama «Restaurar desde iCloud», así que el matiz no se pierde.
     private func foundView(summary: ICloudAccountSummary) -> some View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer(minLength: DS.Spacing.xxl)
 
-            Image(systemName: "sparkles")
-                .font(.system(size: 56, weight: .semibold))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: DS.Gradients.heroIntense,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+            Circle()
+                .fill(Color.selectedIndigoFill)
+                .frame(width: 72, height: 72)
+                .overlay(
+                    Image(systemName: "checkmark.icloud.fill")
+                        .font(.system(size: 32, weight: .semibold))
+                        // A11Y-DM: blanco fijo sobre el relleno índigo sólido (AA).
+                        .foregroundStyle(.white)
                 )
+                .accessibilityHidden(true)
 
             VStack(spacing: DS.Spacing.sm) {
                 Text(summary.userName.map { L10n.Welcome.Restore.foundTitle($0) } ?? L10n.Welcome.Restore.foundTitleAnonymous)
@@ -372,18 +399,19 @@ struct WelcomeRestoreView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
 
-            countCards(for: summary)
+            receiptList(for: summary)
                 .padding(.horizontal, DS.Spacing.lg)
 
             Spacer()
 
             VStack(spacing: DS.Spacing.sm) {
-                YalaPrimaryButton(L10n.Welcome.Restore.continueAction) {
+                YalaPrimaryButton(L10n.UXLote6.restoreBringBack) {
                     DS.Haptic.success()
                     // El destino (directo / onboarding) lo decide el caller con
                     // RestoreRouter, según lo que traiga el resumen restaurado.
                     onContinueWithSummary(summary)
                 }
+                .accessibilityIdentifier("welcome_restore_continue")
 
                 Button {
                     showStartFreshConfirm = true
@@ -399,117 +427,41 @@ struct WelcomeRestoreView: View {
         }
     }
 
-    /// Items visibles del resumen `.found` (count > 0), cada uno renderizado
-    /// como card individual.
+    /// Las cifras visibles del resumen `.found` (count > 0), una fila cada una.
     ///
-    /// **Toda cifra que enciende `hasAnyData` tiene que tener su card aquí.** Es la misma invariante que
+    /// **Toda cifra que enciende `hasAnyData` tiene que tener su fila aquí.** Es la misma invariante que
     /// gobierna `WelcomePrivateICloudGateView.countsLine`, y se escribe porque se rompió en los dos
     /// sitios por el mismo motivo: un término del predicado sin consumidor que lo pinte deja la pantalla
-    /// afirmando «Encontramos tus datos en iCloud:» sobre NADA — `countCards` con cero items cae en su
-    /// `default` y dibuja un grid vacío.
-    private struct CountItem: Identifiable {
-        let id = UUID()
-        let icon: String
-        let count: Int
-        let label: String
-    }
-
-    private func visibleCountItems(for s: ICloudAccountSummary) -> [CountItem] {
-        var items: [CountItem] = []
-        if s.accountsCount > 0 {
-            items.append(CountItem(icon: "creditcard.fill", count: s.accountsCount,
-                                   label: L10n.Welcome.Restore.foundAccounts(s.accountsCount)))
-        }
-        if s.transactionsCount > 0 {
-            items.append(CountItem(icon: "list.bullet.rectangle.fill", count: s.transactionsCount,
-                                   label: L10n.Welcome.Restore.foundTransactions(s.transactionsCount)))
-        }
-        // **Las categorías, desde el 2026-09-21** (`restore-treats-budgets-and-groups-as-no-data`, D5).
-        // Es un hueco ANTERIOR a ese ticket, cazado al revisar este consumidor: `hasAnyData` ya las
-        // contaba y esta lista era el único de los tres sitios que enseñan cifras del restore que no las
-        // pintaba (`RestoreProgressView.liveCounts` sí, `countsLine` desde el 10-sep). Quien restauraba
-        // solo categorías veía la pantalla del hallazgo con el grid en blanco.
-        if s.categoriesCount > 0 {
-            items.append(CountItem(icon: "tag.fill", count: s.categoriesCount,
-                                   label: L10n.Welcome.PrivateICloud.foundCategories(s.categoriesCount)))
-        }
-        if s.budgetsCount > 0 {
-            items.append(CountItem(icon: "chart.pie.fill", count: s.budgetsCount,
-                                   label: L10n.Welcome.Restore.foundBudgets(s.budgetsCount)))
-        }
-        if s.groupsCount > 0 {
-            items.append(CountItem(icon: "person.2.fill", count: s.groupsCount,
-                                   label: L10n.Welcome.Restore.foundGroups(s.groupsCount)))
-        }
-        return items
-    }
-
-    /// Layout adaptativo según número de CIFRAS visibles:
-    /// 1 → card centrado max-width 280pt; 2 → HStack 2 cols;
-    /// 3 → HStack 3 cols; **4 o 5 → grid de 2 columnas** (2×2, o 2×2+1 con la quinta sola en su fila).
-    ///
-    /// **Cinco es alcanzable desde el 2026-09-21** y hasta entonces no lo era: las categorías entraron
-    /// en `visibleCountItems` ese día, así que un restore con las cinco cifras deja una card sola en la
-    /// última fila. Es un grid impar, no un defecto, pero se mira con los ojos en el device-QA — el
-    /// docblock decía «4 → grid 2×2» y describía un máximo que ya no existe.
-    @ViewBuilder
-    private func countCards(for summary: ICloudAccountSummary) -> some View {
-        let items = visibleCountItems(for: summary)
-        switch items.count {
-        case 1:
-            HStack {
-                Spacer()
-                countCard(items[0])
-                    .frame(maxWidth: 280)
-                Spacer()
-            }
-        case 2, 3:
-            HStack(spacing: DS.Spacing.md) {
-                ForEach(items) { item in
-                    countCard(item)
-                        .frame(maxWidth: .infinity)
+    /// afirmando «Encontramos tus datos» sobre NADA. Quién entra y en qué orden lo decide
+    /// `RestoreFoundRowsLogic`, que es lo que fijan los tests.
+    private func receiptList(for summary: ICloudAccountSummary) -> some View {
+        let rows = RestoreFoundRowsLogic.rows(for: summary)
+        return VStack(spacing: 0) {
+            ForEach(Array(rows.enumerated()), id: \.element.kind) { index, row in
+                HStack(spacing: DS.Spacing.md) {
+                    SolidIconTile(systemName: row.kind.icon, fill: row.kind.fill, size: 32)
+                    Text(row.kind.name)
+                        .font(DS.Typography.body)
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: DS.Spacing.sm)
+                    Text(row.count, format: .number)
+                        .font(DS.Typography.headline)
+                        .monospacedDigit()
+                        .foregroundStyle(.primary)
                 }
-            }
-        default:
-            // 4 items o más → grid 2×2.
-            LazyVGrid(
-                columns: [GridItem(.flexible(), spacing: DS.Spacing.md),
-                          GridItem(.flexible(), spacing: DS.Spacing.md)],
-                spacing: DS.Spacing.md
-            ) {
-                ForEach(items) { item in
-                    countCard(item)
-                }
+                .padding(.vertical, DS.Spacing.sm)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(row.kind.spokenCount(row.count))
+                if index < rows.count - 1 { Divider() }
             }
         }
-    }
-
-    private func countCard(_ item: CountItem) -> some View {
-        VStack(spacing: DS.Spacing.sm) {
-            Image(systemName: item.icon)
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundStyle(theme.accent)
-            Text("\(item.count)")
-                .font(DS.Typography.amount)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(item.label)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-        }
-        .padding(DS.Spacing.md)
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, DS.Spacing.lg)
+        .padding(.vertical, DS.Spacing.sm)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
                 .fill(.thCard)
         )
-        .dsCardShadow()
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(item.label)
+        .accessibilityIdentifier("welcome_restore_found_list")
     }
 
     /// No hay datos. **El copy no cambia** —Jürgen descartó el 2026-09-17 convertir al usuario

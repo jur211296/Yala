@@ -29,9 +29,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Esta categoria tem uma subcategoria com %d transação. Para eliminá-la, primeiro elimine ou transfira essa transação da sua subcategoria.</string>
+			<string>Esta categoria tem uma subcategoria com %d registro. Para excluí-la, primeiro exclua esse registro ou mova-o para outra subcategoria.</string>
 			<key>other</key>
-			<string>Esta categoria tem subcategorias com %d transacoes. Para elimina-la, primeiro elimine ou transfira as transacoes de cada subcategoria.</string>
+			<string>Esta categoria tem subcategorias com %d registros. Para excluí-la, primeiro exclua esses registros ou mova-os para outra subcategoria.</string>
 		</dict>
 	</dict>
 	<key>subcategory.deleteTransactionsConfirmMessage</key>
@@ -45,9 +45,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d transação será eliminada permanentemente. Esta ação não pode ser desfeita.</string>
+			<string>%d registro será excluído permanentemente. Esta ação não pode ser desfeita.</string>
 			<key>other</key>
-			<string>%d transacoes serao eliminadas permanentemente. Esta acao nao pode ser desfeita.</string>
+			<string>%d registros serão excluídos permanentemente. Esta ação não pode ser desfeita.</string>
 		</dict>
 	</dict>
 	<key>subcategory.transferDescription</key>
@@ -61,9 +61,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Há %1$d transação em "%2$@". Escolha o que fazer com ela antes de eliminar.</string>
+			<string>Há %1$d registro em "%2$@". Escolha o que fazer com ele antes de excluir.</string>
 			<key>other</key>
-			<string>Há %1$d transações em "%2$@". Escolha o que fazer com elas antes de eliminar.</string>
+			<string>Há %1$d registros em "%2$@". Escolha o que fazer com eles antes de excluir.</string>
 		</dict>
 	</dict>
 	<key>panel.panorama.collapsedSummary</key>
@@ -381,9 +381,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%d despesa registrada!</string>
+			<string>%d registro!</string>
 			<key>other</key>
-			<string>%d despesas registradas!</string>
+			<string>%d registros!</string>
 		</dict>
 	</dict>
 	<key>groups.activate.importPrompt</key>
@@ -525,9 +525,9 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Converter %d lançamento?</string>
+			<string>Converter %d registro?</string>
 			<key>other</key>
-			<string>Converter %d lançamentos?</string>
+			<string>Converter %d registros?</string>
 		</dict>
 	</dict>
 	<key>storage.sync.needsSignIn</key>
@@ -906,6 +906,134 @@
 			<string>Todo ano</string>
 			<key>other</key>
 			<string>A cada %d anos</string>
+		</dict>
+	</dict>
+	<key>import.preview.failuresHeader</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d linha não vai entrar</string>
+			<key>other</key>
+			<string>%d linhas não vão entrar</string>
+		</dict>
+	</dict>
+	<key>records.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d registro</string>
+			<key>other</key>
+			<string>%d registros</string>
+		</dict>
+	</dict>
+	<key>category.cannotDelete.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tem %d registro.</string>
+			<key>other</key>
+			<string>Tem %d registros.</string>
+		</dict>
+	</dict>
+	<key>import.result.notImported</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d linha não entrou:</string>
+			<key>other</key>
+			<string>%d linhas não entraram:</string>
+		</dict>
+	</dict>
+	<key>import.preview.futureIgnored</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d linha tem data futura e fica de fora.</string>
+			<key>other</key>
+			<string>%d linhas têm data futura e ficam de fora.</string>
+		</dict>
+	</dict>
+	<key>import.preview.importButton</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Importar %d registro</string>
+			<key>other</key>
+			<string>Importar %d registros</string>
+		</dict>
+	</dict>
+	<key>tag.deleteConfirm.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ela sai de %d registro; o registro não é excluído. Não dá para desfazer.</string>
+			<key>other</key>
+			<string>Ela sai de %d registros; os registros não são excluídos. Não dá para desfazer.</string>
+		</dict>
+	</dict>
+	<key>import.preview.more</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>… e mais %d</string>
+			<key>other</key>
+			<string>… e mais %d</string>
 		</dict>
 	</dict>
 </dict>

@@ -21,7 +21,7 @@
 "widget.gallery.budgets" = "Orçamentos";
 "widget.gallery.budgets.desc" = "Seu progresso de orçamento";
 "widget.gallery.latestRecords" = "Últimos Registros";
-"widget.gallery.latestRecords.desc" = "Suas transações mais recentes";
+"widget.gallery.latestRecords.desc" = "Seus registros mais recentes";
 "widget.gallery.expense" = "Despesas";
 "widget.gallery.expense.desc" = "Suas despesas totais do período";
 "widget.gallery.categoriesPie" = "Categorias (Pizza)";
@@ -63,7 +63,7 @@
 "widget.intent.scheduledPayments.title" = "Pagamentos Futuros";
 "widget.intent.scheduledPayments.desc" = "Mostra seus próximos pagamentos agendados";
 "widget.intent.latestRecords.title" = "Últimos Registros";
-"widget.intent.latestRecords.desc" = "Mostra suas transações mais recentes";
+"widget.intent.latestRecords.desc" = "Mostra seus registros mais recentes";
 "widget.intent.accessoryBalance.title" = "Saldo";
 "widget.intent.accessoryBalance.desc" = "Saldo do período";
 "widget.intent.accessoryExpense.title" = "Despesas";

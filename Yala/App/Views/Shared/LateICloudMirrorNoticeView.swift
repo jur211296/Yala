@@ -156,16 +156,11 @@ struct LateICloudMirrorNoticeView: View {
     private var content: some View {
         switch phase {
         case .notice:
-            noticeBody(
-                icon: "exclamationmark.icloud",
-                title: L10n.Welcome.PrivateICloud.lateTitle,
-                body: L10n.Welcome.PrivateICloud.lateBody(
-                    WelcomePrivateICloudGateView.countsLine(corpus)),
-                identifier: "late_icloud_notice",
-                primary: L10n.Welcome.PrivateICloud.lateKeep,
-                primaryAction: { onKeep(); dismiss() },
-                destructive: L10n.Welcome.PrivateICloud.wipeAction,
-                destructiveAction: { phase = .confirming })
+            // UX 2.2 · L6-6 (variante 1 elegida por Jürgen): las cifras salen del párrafo y van en píldoras, y cada botón
+            // dice lo que hace —«Juntarlos con lo de ahora» o «Borrarlos de iCloud y empezar de cero»—, con una línea que
+            // cuenta qué significa juntarlos. Antes era un párrafo de seis líneas con las cifras dentro y un «Déjalo así»
+            // que no decía qué dejaba. Las salidas no cambian: juntar es `onKeep` y borrar pasa por su «¿seguro?».
+            lateNotice
         case .confirming:
             noticeBody(
                 icon: "trash",
@@ -273,6 +268,49 @@ struct LateICloudMirrorNoticeView: View {
                 identifier: "late_icloud_cancelled_in_cloud",
                 primary: L10n.Common.understood,
                 primaryAction: { dismiss() })
+        }
+    }
+
+    /// El aviso con sus cifras (L6-6). **«Cerrar» de la barra se queda** y hace lo mismo que «Juntarlos»: la persona vio
+    /// el aviso y no pidió borrar nada, y el espejo ya está trayendo los datos —juntar es dejar que siga—. Lo que faltaba
+    /// era decir qué significa eso, y ahora lo dice la línea de debajo de los botones.
+    private var lateNotice: some View {
+        VStack(spacing: DS.Spacing.xl) {
+            VStack(spacing: DS.Spacing.md) {
+                SolidIconTile(systemName: "icloud.fill", fill: SolidIconTilePalette.transactions, size: 56)
+                VStack(spacing: DS.Spacing.sm) {
+                    Text(L10n.Welcome.PrivateICloud.lateTitle)
+                        .font(DS.Typography.title2)
+                        .multilineTextAlignment(.center)
+                    Text(L10n.UXLote6.lateLead)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                ICloudCorpusChipsView(chips: ICloudCorpusChipsLogic.chips(
+                    for: corpus, monthYear: { WelcomePrivateICloudGateView.monthYearText($0) }))
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("late_icloud_notice")
+
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.UXLote6.lateMerge) { onKeep(); dismiss() }
+                    .accessibilityIdentifier("late_icloud_notice_primary")
+                Button(role: .destructive) { phase = .confirming } label: {
+                    Text(L10n.UXLote6.lateWipe)
+                        .font(DS.Typography.label)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, minHeight: DS.Button.actionSize)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityIdentifier("late_icloud_notice_destructive")
+                Text(L10n.UXLote6.lateMergeExplainer)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 

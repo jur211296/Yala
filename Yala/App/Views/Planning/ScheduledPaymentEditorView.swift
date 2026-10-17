@@ -108,6 +108,9 @@ struct ScheduledPaymentEditorView: View {
     @State private var showGroupPicker = false
     @State private var showSplitCurrencyPicker = false
     @State private var showSplitSheet = false
+    /// El permiso de notificaciones al guardar el primer pago (UX 2.2 · L5-14).
+    @State private var showNotificationPrimer = false
+    @State private var isFinishingSave = false
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
@@ -183,6 +186,9 @@ struct ScheduledPaymentEditorView: View {
                     showSaveError: $showSaveError,
                     onDismissSaveError: { viewModel.dismissSaveError() }
                 ))
+                .notificationPrimerSheet(isPresented: $showNotificationPrimer, context: .scheduledPayment) {
+                    dismiss()
+                }
         }
     }
 
@@ -237,11 +243,7 @@ struct ScheduledPaymentEditorView: View {
 
     private var editorContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
-            // Contextual guide for new users creating first scheduled payment
-            if payment == nil {
-                ContextualGuideBanner.scheduledEditor()
-            }
-
+            // Sin banner «¿Qué es un pago planificado?» (UX 2.2 · L5-6, opción A): Planificación ya lo explica.
             basicInfoSection
             togglesSection
             if isGroupExpense {
@@ -1487,6 +1489,8 @@ struct ScheduledPaymentEditorView: View {
     }
 
     private func savePayment() {
+        // Ya guardado y esperando a la hoja de notificaciones: un segundo toque no crea otro pago.
+        guard !isFinishingSave else { return }
         let amountValue = AmountInputHelper.parseDecimal(amount)
         guard amountValue > 0 else { return }
 
@@ -1562,7 +1566,24 @@ struct ScheduledPaymentEditorView: View {
             } else {
                 SetupChecklistManager.shared.markCompleted(.scheduledPayment)
             }
+            finishAfterSave(isNew: payment == nil)
+        }
+    }
+
+    /// Un pago NUEVO es el momento de pedir las notificaciones (UX 2.2 · L5-14): la hoja sale sobre el editor y, al
+    /// cerrarla, el editor se cierra. Si no toca, se cierra en el acto, como antes.
+    private func finishAfterSave(isNew: Bool) {
+        guard isNew else {
             dismiss()
+            return
+        }
+        isFinishingSave = true
+        Task { @MainActor in
+            if await NotificationPrimerMoments.claim(.scheduledPayment) {
+                showNotificationPrimer = true
+            } else {
+                dismiss()
+            }
         }
     }
 

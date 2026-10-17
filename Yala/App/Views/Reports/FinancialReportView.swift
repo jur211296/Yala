@@ -208,7 +208,9 @@ struct FinancialReportView: View {
         case .comparativa:
             ContextualGuideBanner.comparative()
         case .flujoDeCaja:
-            ContextualGuideBanner.cashflow()
+            // Sin banner (UX 2.2 · L5-6, opción A): el flujo de caja ya trae su propia explicación («¿Qué es el flujo
+            // de caja?») y su guía sombreada, y con el banner eran tres a la vez.
+            EmptyView()
         }
     }
 

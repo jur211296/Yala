@@ -29,6 +29,9 @@
 
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
 ## Cómo mido y cómo entrego
+- [La decisión vive en la nota de la card](feedback_la_decision_vive_en_la_nota_de_la_card.md) — `listar --json` no trae `note`: `tablero ver` antes de lanzar.
+- [Agentes en paralelo: textos clave a clave](feedback_agentes_en_paralelo_merge_de_textos.md) — `union` duplica; L7-18 el último; force-with-lease con autopush.
+- [Prefs del simulador y NavigationLink](reference_simulador_prefs_y_navigationlink.md) — plist con el simulador apagado; axe no abre un link en hoja.
 - [axe no ve las hojas](feedback_axe_no_ve_las_hojas.md) — árbol de debajo; filas de List con el tap de MCP.
 - [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
