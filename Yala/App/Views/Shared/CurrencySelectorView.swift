@@ -38,9 +38,36 @@ struct CurrencySelectorView: View {
         }
     }
 
+    /// Lo que la persona escribe en el buscador (auditoría UX 2.2, lote 7, L7-9).
+    @State private var query: String = ""
+
+    /// La moneda elegida va arriba, sola, cuando no está ya entre las recomendadas: antes, una cuenta en MXN
+    /// abría el selector sin ver su moneda hasta bajar por los continentes (L7-9).
+    private var showsCurrentOnTop: Bool {
+        !recommendedCurrencies.contains(selectedCurrency)
+    }
+
+    /// Con algo escrito, una sola lista con lo que casa, sin secciones.
+    private var searchResults: [CurrencyCode] {
+        CurrencySearchLogic.filter(CurrencyCode.allCases, query: query)
+    }
+
+    private var isSearching: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: DS.Spacing.lg) {
+            if isSearching {
+                searchResultsSection
+            } else {
+            if showsCurrentOnTop {
+                SectionBox(title: L10n.UXL7.CurrencyPicker.current) {
+                    currencyRow(currency: selectedCurrency)
+                }
+            }
+
             // Recommended section
             recommendedSection
 
@@ -58,10 +85,17 @@ struct CurrencySelectorView: View {
                     }
                 }
             }
+            }
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.lg)
         }
+        .searchable(
+            text: $query,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: L10n.UXL7.CurrencyPicker.searchPrompt
+        )
+        .autocorrectionDisabled()
         .refreshable {}
         .yalaScreenBackground(.subtle)
         // «Moneda», no «Divisa preferida»: aquí se elige la de una cuenta o un grupo, nunca la de la app
@@ -73,6 +107,33 @@ struct CurrencySelectorView: View {
             ToolbarItem(placement: .topBarLeading) {
                 YalaToolbarButton(systemName: "xmark", label: L10n.Action.close) {
                     dismiss()
+                }
+            }
+        }
+    }
+
+    // MARK: - Search Results
+
+    @ViewBuilder
+    private var searchResultsSection: some View {
+        let results = searchResults
+        if results.isEmpty {
+            Text(L10n.UXL7.CurrencyPicker.noResults(query.trimmingCharacters(in: .whitespacesAndNewlines)))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, DS.Spacing.xxl)
+                .accessibilityIdentifier("currency_selector_no_results")
+        } else {
+            SectionBox(title: "") {
+                VStack(spacing: DS.Spacing.none) {
+                    ForEach(Array(results.enumerated()), id: \.element) { index, currency in
+                        if index > 0 {
+                            SubsectionDivider()
+                        }
+                        currencyRow(currency: currency)
+                    }
                 }
             }
         }

@@ -49,6 +49,7 @@ struct FavoriteEditorView: View {
     @State private var showSubcategorySelector = false
     @State private var showTagSelector = false
     @State private var showNeedSelector = false
+    @State private var showDeleteConfirmation = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var scaledAmountSize: CGFloat = 64 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .largeTitle) private var heroAmountSize: CGFloat = 64
@@ -77,7 +78,25 @@ struct FavoriteEditorView: View {
 
                 // Bottom selection chips
                 bottomChips
+                    .padding(.bottom, favorite == nil ? DS.Spacing.lg : DS.Spacing.sm)
+
+                // «Eliminar favorito» al fondo del editor, donde se busca (L7-14): antes solo se borraba
+                // deslizando la fila o desde «Editar».
+                if favorite != nil {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Text(L10n.UXL7.Favorites.delete)
+                            .font(DS.Typography.bodyBold)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, DS.Spacing.md)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                     .padding(.bottom, DS.Spacing.lg)
+                    .accessibilityIdentifier("favorite_editor_delete")
+                }
             }
             .dismissKeyboardOnTap()
             .yalaScreenBackground(.subtle)
@@ -160,6 +179,17 @@ struct FavoriteEditorView: View {
             )
         }
 
+        .alert(L10n.UXL7.Favorites.deleteConfirmTitle, isPresented: $showDeleteConfirmation) {
+            Button(L10n.Action.delete, role: .destructive) {
+                guard let favorite else { return }
+                if viewModel.deleteFavorite(favorite) {
+                    dismiss()
+                }
+            }
+            Button(L10n.Action.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.UXL7.Favorites.deleteConfirmMessage)
+        }
         .onAppear {
             viewModel.setContext(modelContext)
             loadFavoriteData()

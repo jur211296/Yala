@@ -173,6 +173,12 @@ final class AccountFormViewModel {
         var planCount: Int = 0
         /// Los primeros de esos, con su importe antes y después, para enseñarlos en el aviso.
         var planPreview: [PlanPreviewItem] = []
+        /// El saldo antes y después de convertir: «Tu saldo pasará de MXN 2,000.00 a ≈ USD 110.40» (L7-7).
+        /// `nil` sin registros, o sin contexto para leer las tasas.
+        var balancePreview: AccountCurrencyBalancePreviewLogic.Preview?
+        /// Entre los registros que se convierten está el saldo inicial: el aviso lo nombra, porque la persona
+        /// no lo reconoce como «un registro» (L7-7).
+        var includesInitialBalance: Bool = false
 
         /// ¿Hay algo que el aviso tenga que enseñar? Sin nada, no se pregunta (decisión D6).
         var hasAnythingToConvert: Bool { rowCount > 0 || draftCount > 0 || planCount > 0 }
@@ -192,7 +198,71 @@ final class AccountFormViewModel {
     static let planPreviewLimit = 3
 
     // MARK: - Secondary Currency Suggestion
-    var currencyToSuggestAsSecondary: CurrencyCode? = nil
+
+    /// Tras guardar una cuenta en otra moneda: ofrecer verla en el Panel (o cambiar una de las dos que ya se
+    /// ven por ella). Auditoría UX 2.2, lote 7, L7-8.
+    var secondaryCurrencySuggestion: SecondaryCurrencySuggestionLogic.Suggestion? = nil
+
+    // MARK: - Editar el saldo (L7-6)
+
+    /// La pantalla «Editar el saldo» (pantalla 8 del rediseño de cuentas, auditoría UX 2.2, L7-6): al
+    /// editar, la persona escribe cuánto tiene HOY y elige cómo se corrige. La vista lo enciende fuera del
+    /// modo «solo gastos», donde el saldo de hoy no se enseña y el campo sigue pidiendo el saldo de partida.
+    ///
+    /// Va apagado por defecto: los dos sentidos del campo conviven, y el viejo es el del modo «solo gastos».
+    var editsTodayBalance: Bool = false
+
+    /// La corrección que se aplicará al guardar, con la diferencia y el saldo de partida nuevo.
+    /// `nil` al crear la cuenta o con el campo vacío.
+    var balanceCorrection: AccountBalanceCorrectionLogic.Plan? {
+        guard isEditing, editsTodayBalance, let target = parsedBalanceAmount else { return nil }
+        return AccountBalanceCorrectionLogic.plan(
+            current: currentBalance, currentInitialBalance: existingInitialBalance, target: target)
+    }
+
+    // MARK: - Cambios sin guardar (L7-5)
+
+    /// Lo que la persona puede cambiar en el formulario, para saber si cerrar tiraría algo.
+    private struct FormSnapshot: Equatable {
+        let name: String
+        let type: AccountType
+        let accountNumber: String
+        let isPositive: Bool
+        let balanceText: String
+        let currency: CurrencyCode
+        let mode: AdjustmentMode
+        let adjustmentDate: Date
+        let colorHex: String
+        let excludeFromStatistics: Bool
+        let isArchived: Bool
+        let creditCardPaymentReminder: Bool
+        let creditCardPaymentDay: Int
+    }
+
+    private var baseline: FormSnapshot?
+
+    private var snapshot: FormSnapshot {
+        FormSnapshot(
+            name: trimmedName, type: selectedType,
+            accountNumber: accountNumber.trimmingCharacters(in: .whitespacesAndNewlines),
+            // Sin importe escrito, el signo solo no es un cambio que se pierda.
+            isPositive: balanceText.isEmpty ? true : isPositive,
+            balanceText: balanceText, currency: selectedCurrency, mode: selectedAdjustmentMode,
+            adjustmentDate: adjustmentDate, colorHex: selectedColorHex,
+            excludeFromStatistics: excludeFromStatistics, isArchived: isArchived,
+            creditCardPaymentReminder: creditCardPaymentReminder, creditCardPaymentDay: creditCardPaymentDay
+        )
+    }
+
+    /// ¿Cerrar ahora tiraría algo escrito? La X y el gesto de cerrar preguntan si es así (L7-5).
+    ///
+    /// La foto de partida se toma la primera vez que el formulario recibe su contexto, DESPUÉS de que
+    /// `initializeBalanceIfNeeded` deje el signo y el campo como los ve la persona al abrir: tomarla en el
+    /// `init` contaría como cambio lo que el propio formulario rellenó solo.
+    var hasUnsavedChanges: Bool {
+        guard let baseline else { return false }
+        return snapshot != baseline
+    }
 
     // MARK: - Computed Balance Properties
 
@@ -245,6 +315,10 @@ final class AccountFormViewModel {
 
     /// Whether an adjustment is needed
     var needsAdjustment: Bool {
+        // «Editar el saldo» (L7-6): las dos opciones corrigen la MISMA diferencia, la del saldo de hoy.
+        if isEditing && editsTodayBalance {
+            return balanceCorrection?.needsCorrection ?? false
+        }
         if selectedAdjustmentMode == .changeInitialBalance {
             guard let newInitial = parsedBalanceAmount else { return false }
             return abs(newInitial - existingInitialBalance) > 0.01
@@ -313,6 +387,7 @@ final class AccountFormViewModel {
         loadTransactions()
         loadPlans()
         initializeBalanceIfNeeded()
+        if baseline == nil { baseline = snapshot }
     }
 
     /// Carga lo que se convierte con la cuenta además del historial.
@@ -386,6 +461,14 @@ final class AccountFormViewModel {
 
         guard !allTransactions.isEmpty else { return }
 
+        // «Editar el saldo» (L7-6): el campo pide el saldo de HOY y arranca vacío en las dos opciones, con
+        // el signo del saldo de hoy (B6). Prellenarlo con el saldo de partida era justo la confusión de B7.
+        if editsTodayBalance {
+            isPositive = currentBalance >= 0
+            hasInitializedBalance = true
+            return
+        }
+
         if selectedAdjustmentMode == .changeInitialBalance {
             let existingInitial = existingInitialBalance
             isPositive = existingInitial >= 0
@@ -403,6 +486,8 @@ final class AccountFormViewModel {
     /// Handle adjustment mode change — reset balanceText based on new mode semantics
     func adjustmentModeChanged() {
         guard isEditing else { return }
+        // En «Editar el saldo» las dos opciones leen el mismo número: cambiar de opción no lo toca (L7-6).
+        guard !editsTodayBalance else { return }
         if selectedAdjustmentMode == .changeInitialBalance {
             let existingInitial = existingInitialBalance
             isPositive = existingInitial >= 0
@@ -602,8 +687,12 @@ final class AccountFormViewModel {
             // Handle balance adjustment if specified
             if let balanceValue = parsedBalanceAmount, needsAdjustment, let sub = subcategory {
                 if selectedAdjustmentMode == .changeInitialBalance {
+                    // «Editar el saldo» (L7-6): lo escrito es el saldo de HOY, así que el saldo de partida nuevo
+                    // es el de ahora más la diferencia. Fuera de esa pantalla, lo escrito ya es el de partida.
+                    let initialAmount = editsTodayBalance
+                        ? (balanceCorrection?.newInitialBalance ?? balanceValue) : balanceValue
                     _ = InitialBalanceService.setInitialBalance(
-                        amount: balanceValue,
+                        amount: initialAmount,
                         for: account,
                         subcategory: sub,
                         allTransactions: allTransactions,
@@ -781,14 +870,40 @@ final class AccountFormViewModel {
             }
         }
 
+        let pendingRows = rowsPendingReexpression
         return PendingCurrencyConversion(
-            rowCount: rowsPendingReexpression.count,
+            rowCount: pendingRows.count,
             fromCurrencyCode: source,
             toCurrencyCode: target,
             draftCount: draftsPendingReexpression.count,
             planCount: planCount,
-            planPreview: preview
+            planPreview: preview,
+            balancePreview: makeBalancePreview(to: target, hasPendingRows: !pendingRows.isEmpty),
+            includesInitialBalance: pendingRows.contains {
+                $0.balanceAdjustmentType == InitialBalanceService.typeInitialBalance
+            }
         )
+    }
+
+    /// El saldo de la cuenta antes y después de convertir, con el MISMO conversor que `convertHistory`
+    /// (`CurrencyConverter.convertChecked` con la fecha de cada registro): si el aviso calculara por otro
+    /// camino, la persona confirmaría una cifra y se guardaría otra.
+    ///
+    /// **Es una estimación y lo dice («≈»)**: se calcula antes de traer las tasas de cada fecha, y la
+    /// conversión de verdad corre después de traerlas. Por eso sale con «≈» salvo que todas las fechas ya
+    /// tuvieran su tasa exacta.
+    private func makeBalancePreview(
+        to target: String, hasPendingRows: Bool
+    ) -> AccountCurrencyBalancePreviewLogic.Preview? {
+        guard hasPendingRows, let context = modelContext ?? accountToEdit?.modelContext else { return nil }
+        let rows = accountTransactions.map {
+            AccountCurrencyBalancePreviewLogic.Row(amount: $0.amount, currencyCode: $0.currencyCode, date: $0.date)
+        }
+        return AccountCurrencyBalancePreviewLogic.preview(rows: rows, to: target) { amount, from, to, date in
+            let outcome = CurrencyConverter.shared.convertChecked(
+                Decimal(amount), from: from, to: to, on: date, context: context)
+            return (outcome.amount, outcome.quality.isExact)
+        }
     }
 
     /// El usuario ha confirmado: refresca las tasas, reexpresa el histórico y guarda la cuenta.
@@ -945,16 +1060,14 @@ final class AccountFormViewModel {
         account.creditCardPaymentDay = selectedType == .creditCard ? creditCardPaymentDay : 1
     }
 
-    /// Suggest adding the saved currency as secondary if it differs from preferred
+    /// Tras guardar en una moneda que no es la principal: ofrece verla en el Panel. Con las dos secundarias
+    /// ya puestas, ofrece cambiar una por la nueva en vez de callar (L7-8).
     private func suggestSecondaryCurrencyIfNeeded() {
-        let savedCurrency = normalizeCurrencyCode(selectedCurrency.rawValue)
-        let preferred = CurrencyDefaults.currentPreferred
-        guard savedCurrency != preferred, let code = CurrencyCode(rawValue: savedCurrency) else { return }
-        let raw = UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
-        let existing = raw.split(separator: ",").map(String.init)
-        if existing.count < 2, !existing.contains(savedCurrency) {
-            currencyToSuggestAsSecondary = code
-        }
+        secondaryCurrencySuggestion = SecondaryCurrencySuggestionLogic.suggestion(
+            saved: selectedCurrency.rawValue,
+            preferred: CurrencyDefaults.currentPreferred,
+            stored: UserDefaults.standard.string(forKey: "secondaryCurrencies") ?? ""
+        )
     }
 
     func deleteAccount(context: ModelContext) -> Bool {

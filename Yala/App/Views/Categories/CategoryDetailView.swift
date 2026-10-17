@@ -17,13 +17,16 @@ struct CategoryDetailView: View {
     @State private var viewModel: CategoryDetailViewModel
 
     // UI State
-    @State private var showVisibilityInfo: Bool = false
     @State private var showDiscardDialog: Bool = false
     @State private var showMissingSubcategoriesAlert: Bool = false
     @State private var showIconColorPicker: Bool = false
     @State private var showDeleteConfirmation: Bool = false
     @State private var showCannotDeleteAlert: Bool = false
     @State private var transactionCount: Int = 0
+    /// «Mover sus registros…» desde el aviso de «No se puede eliminar» (L7-10).
+    @State private var showMoveRecordsSheet: Bool = false
+    /// No se pudo contar lo que hay dentro: no se borra nada a ciegas.
+    @State private var showCountFailed: Bool = false
 
     // Subcategory editing/deletion states
     @State private var isEditingSubcategories: Bool = false
@@ -61,6 +64,8 @@ struct CategoryDetailView: View {
                 header
                 detailsSection
                 subcategoriesSection
+                // «Eliminar» al fondo, como en cuentas y etiquetas: en medio se tocaba sin querer (L7-11).
+                deleteSection
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.xxl)
@@ -83,11 +88,6 @@ struct CategoryDetailView: View {
                     isDisabled: !viewModel.canSave
                 )
             }
-        }
-        .alert(L10n.Category.hiddenTitle, isPresented: $showVisibilityInfo) {
-            Button(L10n.Common.understood, role: .cancel) {}
-        } message: {
-            Text(L10n.Category.hiddenDescription)
         }
         .alert(L10n.Category.addOneSubcategory, isPresented: $showMissingSubcategoriesAlert) {
             Button(L10n.Common.understood, role: .cancel) {}
@@ -118,13 +118,23 @@ struct CategoryDetailView: View {
         } message: {
             Text(L10n.Category.deleteConfirmMessage)
         }
-        .alert(
-            L10n.Category.cannotDeleteTitle,
-            isPresented: $showCannotDeleteAlert
-        ) {
+        .modifier(CategoryCannotDeleteAlert(
+            isPresented: $showCannotDeleteAlert,
+            recordCount: transactionCount,
+            onHide: hideCategory,
+            onMove: { showMoveRecordsSheet = true }
+        ))
+        .alert(L10n.Common.error, isPresented: $showCountFailed) {
             Button(L10n.Common.understood, role: .cancel) {}
         } message: {
-            Text(L10n.Category.cannotDeleteMessage(transactionCount))
+            Text(L10n.UXL7.Categories.countFailed)
+        }
+        .sheet(isPresented: $showMoveRecordsSheet) {
+            CategoryMoveRecordsSheet(category: viewModel.category) {
+                dismiss()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .alert(L10n.Subcategory.deleteConfirmTitle, isPresented: $showSubcategoryDeleteConfirmation) {
             Button(L10n.Subcategory.delete, role: .destructive) {
@@ -233,41 +243,45 @@ struct CategoryDetailView: View {
 
                     SubsectionDivider()
 
+                    // «Usar al registrar» con su pie, y sin alerta al apagarlo: la alerta salía antes de guardar,
+                    // como si ya estuviera hecho, y decía lo mismo que este pie (L7-11).
                     Toggle(isOn: $viewModel.isVisible) {
-                        Text(L10n.Category.show)
+                        Text(L10n.UXL7.Categories.useWhenRecording)
                     }
-
                     .padding()
-                    .onChange(of: viewModel.isVisible) { _, newValue in
-                        if newValue == false {
-                            showVisibilityInfo = true
-                        }
-                    }
+                    .accessibilityIdentifier("category_use_when_recording_toggle")
+
+                    Text(L10n.UXL7.Categories.useWhenRecordingFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                        .padding(.bottom)
                 }
             }
+        }
+    }
 
-            // Delete button (only for user-created categories, not system categories)
-            if !viewModel.isNewCategory && !viewModel.isSystemCategory {
-                SectionBox(title: "") {
-                    Button {
-                        transactionCount = viewModel.countTransactionsInCategory()
-                        if transactionCount > 0 {
-                            showCannotDeleteAlert = true
-                        } else {
-                            showDeleteConfirmation = true
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text(L10n.Category.delete)
-                                .foregroundStyle(DS.Semantic.errorForeground)
-                            Spacer()
-                        }
-                        .padding()
-                        .contentShape(Rectangle())
+    // Delete button (only for user-created categories, not system categories)
+    @ViewBuilder
+    private var deleteSection: some View {
+        if !viewModel.isNewCategory && !viewModel.isSystemCategory {
+            SectionBox(title: "") {
+                Button {
+                    requestDelete()
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text(L10n.Category.delete)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
+                    .padding()
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("category_delete_button")
             }
         }
     }
@@ -463,6 +477,29 @@ struct CategoryDetailView: View {
     }
 
     // MARK: - Actions
+
+    /// Con registros no se borra: se ofrece ocultarla o mover sus registros (L7-10). El recuento cuenta también
+    /// los registros que solo llevan una de sus subcategorías, y si no se puede leer, no se borra nada.
+    private func requestDelete() {
+        guard let count = viewModel.recordCountForDeletion() else {
+            showCountFailed = true
+            return
+        }
+        transactionCount = count
+        if count > 0 {
+            showCannotDeleteAlert = true
+        } else {
+            showDeleteConfirmation = true
+        }
+    }
+
+    /// «Ocultarla»: deja de aparecer al registrar y su historial se queda (L7-10).
+    private func hideCategory() {
+        viewModel.isVisible = false
+        if viewModel.saveCategory() {
+            dismiss()
+        }
+    }
 
     private func saveCategory() {
         if viewModel.isNewCategory && viewModel.subcategories.isEmpty {
