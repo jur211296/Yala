@@ -17,6 +17,7 @@ struct YalaAIChatPreview: View {
 
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(AppPreferences.self) private var appPreferences
 
     @State private var stage: Stage = .userVisible
     @State private var scenarioIndex: Int = 0
@@ -78,7 +79,7 @@ struct YalaAIChatPreview: View {
                 }
 
                 if scenario.showsCard, stage.rawValue >= Stage.cardVisible.rawValue {
-                    ChatDraftPreviewCard()
+                    ChatDraftPreviewCard(amount: cardAmount)
                         .id("card-\(scenarioIndex)")
                         .transition(reduceMotion
                             ? .opacity
@@ -100,7 +101,7 @@ struct YalaAIChatPreview: View {
         .accessibilityLabel(L10n.YalaAI.Onboarding.step1A11yLabel)
         .task {
             if scenarios.isEmpty {
-                scenarios = Self.makeScenarios()
+                scenarios = Self.makeScenarios(demoAmounts, format: demoAmountText)
             }
             startAnimation()
         }
@@ -115,21 +116,50 @@ struct YalaAIChatPreview: View {
         let scenarioIndex: Int
     }
 
-    private static func makeScenarios() -> [Scenario] {
-        [
+    /// Importes del ejemplo en la divisa principal (ticket `ai-onboarding-demo-speaks-english-and-dollars`).
+    private var demoAmounts: YalaAIOnboardingDemoAmounts.Amounts {
+        YalaAIOnboardingDemoAmounts.amounts(for: appPreferences.defaultCurrencyCode)
+    }
+
+    private func demoAmountText(_ value: Double) -> String {
+        YalaAIOnboardingDemoAmounts.formatted(
+            value,
+            identifier: appPreferences.currencyIdentifier(for: appPreferences.defaultCurrencyCode.rawValue)
+        )
+    }
+
+    /// La tarjeta se formatea como la real: con los decimales que el usuario tenga puestos.
+    private var cardAmount: String {
+        appPreferences.currency(demoAmounts.lunch, currencyCode: appPreferences.defaultCurrencyCode.rawValue)
+    }
+
+    private static func makeScenarios(
+        _ amounts: YalaAIOnboardingDemoAmounts.Amounts,
+        format: (Double) -> String
+    ) -> [Scenario] {
+        let onboarding = L10n.YalaAI.Onboarding.self
+        return [
             Scenario(
-                userMessage: ChatMessage(role: .user, text: L10n.YalaAI.Onboarding.step1DemoScenario1User, timestamp: .now),
-                botMessage: ChatMessage(role: .assistant, text: L10n.YalaAI.Onboarding.step1DemoScenario1Bot, timestamp: .now),
+                userMessage: ChatMessage(role: .user, text: onboarding.step1DemoScenario1User(format(amounts.lunch)), timestamp: .now),
+                botMessage: ChatMessage(role: .assistant, text: onboarding.step1DemoScenario1Bot(format(amounts.lunch)), timestamp: .now),
                 showsCard: true
             ),
             Scenario(
                 userMessage: ChatMessage(role: .user, text: L10n.YalaAI.Onboarding.step1DemoScenario2User, timestamp: .now),
-                botMessage: ChatMessage(role: .assistant, text: L10n.YalaAI.Onboarding.step1DemoScenario2Bot, timestamp: .now),
+                botMessage: ChatMessage(
+                    role: .assistant,
+                    text: onboarding.step1DemoScenario2Bot(format(amounts.coffeeThisMonth), format(amounts.coffeeAboveAverage)),
+                    timestamp: .now
+                ),
                 showsCard: false
             ),
             Scenario(
                 userMessage: ChatMessage(role: .user, text: L10n.YalaAI.Onboarding.step1DemoScenario3User, timestamp: .now),
-                botMessage: ChatMessage(role: .assistant, text: L10n.YalaAI.Onboarding.step1DemoScenario3Bot, timestamp: .now),
+                botMessage: ChatMessage(
+                    role: .assistant,
+                    text: onboarding.step1DemoScenario3Bot(format(amounts.deliverySavingPerMonth), format(amounts.deliverySavingPerYear)),
+                    timestamp: .now
+                ),
                 showsCard: false
             )
         ]

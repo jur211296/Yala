@@ -195,6 +195,8 @@ struct PanelSheetStateActivePresentationTests {
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.showSubscriptionFromBanner = true
         #expect(s.hasActivePresentation)
+        s = PanelSheetState(); s.showOrphanedRecords = true
+        #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.showChatSheet = true
         #expect(s.hasActivePresentation)
         s = PanelSheetState(); s.showUpgradeForChat = true

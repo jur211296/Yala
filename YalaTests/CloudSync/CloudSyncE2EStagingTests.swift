@@ -493,7 +493,7 @@ struct CloudSyncE2EStagingTests {
         line.customMonthsRaw = "2026-01,2026-02"
         contextA.insert(line)
         let override = CashFlowOverride(monthKey: "2026-04", amount: 12, note: "n")
-        override.line = line
+        override.cashFlowLine = line
         contextA.insert(override)
         let pref = GroupBridgePreference(groupZoneID: "zone-\(run)", bridgeOverride: false)
         contextA.insert(pref)
@@ -564,7 +564,7 @@ struct CloudSyncE2EStagingTests {
         #expect(bLine?.subcategory?.shortcutID == subShortcut)
         #expect(bLine?.customMonthsRaw == "2026-01,2026-02")
         let bOverride = try contextB.fetch(FetchDescriptor<CashFlowOverride>()).first { $0.id == overrideID }
-        #expect(bOverride?.line?.id == lineID)          // override→line
+        #expect(bOverride?.cashFlowLine?.id == lineID)          // override→line
         let bPref = try contextB.fetch(FetchDescriptor<GroupBridgePreference>()).first { $0.id == prefID }
         #expect(bPref?.groupZoneID == "zone-\(run)")    // opaco byte a byte
         #expect(bPref?.bridgeOverride == false)

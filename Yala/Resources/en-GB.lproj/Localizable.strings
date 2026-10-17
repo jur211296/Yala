@@ -244,7 +244,7 @@
 "welcome.hero.cards.budgets.title" = "Budgets & goals";
 "welcome.hero.cards.budgets.body" = "Set limits. Hit them.";
 "welcome.hero.cards.multiAndCurrencies.title" = "Accounts & currencies";
-"welcome.hero.cards.multiAndCurrencies.body" = "Cards, cash, 48+ currencies.";
+"welcome.hero.cards.multiAndCurrencies.body" = "Cards, cash, 50+ currencies.";
 "welcome.hero.cards.import.title" = "Import your history";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Done.";
 "welcome.hero.cards.icloud.title" = "Private iCloud";
@@ -265,12 +265,12 @@
 "yalaAI.onboarding.progressLabel" = "Step %1$d of %2$d";
 "yalaAI.onboarding.step1.title" = "Meet Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Your financial right hand.";
-"yalaAI.onboarding.step1.demoScenario1User" = "Spent £12 on lunch.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Done! I've logged your £12 lunch.";
+"yalaAI.onboarding.step1.demoScenario1User" = "Spent %@ on lunch.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Done! I've logged your %@ lunch.";
 "yalaAI.onboarding.step1.demoScenario2User" = "How much on coffee this month?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "You're at £35 on coffee this month ☕ — 12% less than April, but £6 above your usual average.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "You're at %1$@ on coffee this month ☕, 12%% less than April, but %2$@ above your usual average.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Any tip?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Your takeaway is up 20% vs last month. Back to your usual pace and you save £60 a month — nearly £720 a year.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Your takeaway is up 20%% vs last month. Back to your usual pace and you save %1$@ a month. That's %2$@ a year.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Example chat with Yala AI logging an expense";
 "yalaAI.onboarding.step2.title" = "Here's what you can do";
@@ -296,11 +296,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Helps you cut back and save more each month.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Flags any drift so nothing catches you off guard.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Your income covers this month's expenses. Good rhythm.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "Cut restaurants by 10% and save £30 a month.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "Cut restaurants by 10%% and save %@ a month.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Heads up: you're pacing faster than last month on takeaway.";
 "yalaAI.onboarding.step5.title" = "All set!";
 "yalaAI.onboarding.step5.subtitle" = "Whenever you like, tell Yala what you need.";
-"yalaAI.onboarding.step5.tip" = "💡 Try: \"Log a £5 coffee\" or \"How much did I spend today?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Try: \"Log a %@ coffee\" or \"How much did I spend today?\"";
 "yalaAI.onboarding.step5.cta" = "Start chatting";
 
 "onboarding.startUsingYala" = "Start using Yala";
@@ -733,7 +733,6 @@
 "account.currency" = "Currency";
 "account.currentBalance" = "Current balance";
 "account.delete" = "Delete account";
-"account.deleteBalanceError" = "You cannot delete this account because it has a non-zero balance. Adjust the balance to 0 before deleting it.";
 "account.deleteError" = "This account can't be deleted";
 "account.edit" = "Edit Account";
 "account.excludeFromStats" = "Exclude from statistics";
@@ -1339,7 +1338,7 @@
 "devseed.accountMain" = "Main Account";
 "devseed.accountSavings" = "Savings USD";
 "devseed.budgetEatingOut" = "Eating Out";
-"devseed.budgetFriendsOutings" = "Friends Outings";
+"devseed.budgetFriendsOutings" = "Friends' Outings";
 "devseed.budgetHomeEssentials" = "Home Essentials";
 "devseed.budgetMobility" = "Mobility";
 "devseed.budgetPersonalCare" = "Personal Care";
@@ -1396,6 +1395,56 @@
 "devseed.stepExchangeRates" = "Generating exchange rates...";
 "devseed.stepInitialBalances" = "Setting initial balances...";
 "devseed.stepReloading" = "Reloading data...";
+
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "Lisbon trip";
+"devseed.ficha.groupWeekend" = "Cotswolds weekend";
+"devseed.ficha.memberYou" = "You";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "Accommodation";
+"devseed.ficha.expenseTour" = "Walking tour";
+"devseed.ficha.expenseGroupDinner" = "Group dinner";
+"devseed.ficha.expenseAirportTaxi" = "Airport taxi";
+"devseed.ficha.expenseLocalMeal" = "Seafood dinner";
+"devseed.ficha.expenseMuseum" = "Museum tickets";
+"devseed.ficha.expenseTransport" = "Metro passes";
+"devseed.ficha.expenseGroceries" = "Groceries";
+"devseed.ficha.expenseSouvenirs" = "Souvenirs";
+"devseed.ficha.expenseWeekendStay" = "Country inn";
+"devseed.ficha.expenseWeekendMeal" = "Pub lunch";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "Travel %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "Spent 45 on a taxi to the airport and 120.50 on groceries";
+"uitestDemo.chat.draftNoteTaxi" = "Taxi to the airport";
+"uitestDemo.chat.draftNoteGroceries" = "Groceries";
+"uitestDemo.chat.suggestionSplit" = "How did my Housing and Personal spending break down?";
+"uitestDemo.chat.suggestionMonth" = "How much did I spend on Restaurants and Delivery this month?";
+"uitestDemo.chat.suggestionBudget" = "Was my Eating Out budget enough?";
+"uitestDemo.chat.pizzaNote" = "Pizza";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "Lunch, 25, on my card";
+"uitestDemo.voice.lunchNote" = "Lunch";
+"uitestDemo.voice.twoTranscript" = "Taxi 12 and coffee 8 on my card";
+"uitestDemo.voice.taxiNote" = "Taxi";
+"uitestDemo.voice.coffeeNote" = "Coffee";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "Blue Door Bistro";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "105.31";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "Taxi";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "Page %ld";
 "devseed.stepSaving" = "Saving...";
 "devseed.stepSavingBase" = "Saving base entities...";
 "devseed.stepScheduledPayments" = "Creating scheduled payments...";
@@ -3682,6 +3731,14 @@
 "whatsNew.v20.redesign.title" = "A whole new look";
 "whatsNew.v20.redesign.description" = "We redesigned Yala top to bottom: new widgets, clearer summaries in every section, and the new Liquid Glass finish from iOS across the app. Plus, we fixed plenty of bugs so everything feels smoother.";
 
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "Groups";
+"whatsNew.v21.groups.description" = "Share expenses with anyone you like. Invite them with a link, log together, and Yala works out who owes whom. No maths, no awkward moments.";
+"whatsNew.v21.logging.title" = "Logging has never been easier";
+"whatsNew.v21.logging.description" = "Talk to it, snap a photo, or text it like a friend. Yala understands what you spent and logs it for you, so keeping track takes seconds.";
+"whatsNew.v21.data.title" = "Your data, your rules";
+"whatsNew.v21.data.description" = "You choose where your information lives: in your private iCloud or in the Yala cloud, so it's on all your devices. Plus, a redesigned Home screen and Yala in full screen on your iPad.";
+
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
 "transaction.exchangeRateShort %@" = "Rate: %@";
@@ -4178,6 +4235,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Your Yala cloud account, if you created it with your Google account.";
+"welcome.existing.usedOnThisDeviceNote" = "The one you used on this iPhone";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Use the same Google account you used to create your cloud account.";
@@ -5942,3 +6000,89 @@
 "export.error.invalidDateRange" = "Those dates don't work: the start date has to come before the end date.";
 "export.error.noTransactions" = "No transactions match these filters. Try another period or remove a filter.";
 "export.error.fileWriteFailed" = "We couldn't create the file. Please try again.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "Delete “%@”";
+"account.removal.intro" = "Before deleting it, choose what to do with what it holds.";
+"account.removal.countRecords" = "Transactions";
+"account.removal.countScheduled" = "Planned payments";
+"account.removal.countFavorites" = "Favourite payments";
+"account.removal.countDrafts" = "Pending in the inbox";
+"account.removal.choiceHeader" = "What should we do with it";
+"account.removal.moveTitle" = "Move it to another account";
+"account.removal.moveSubtitle" = "Recommended. Your history and your balance are kept.";
+"account.removal.noDestination" = "You don't have another account to move it to.";
+"account.removal.deleteTitle" = "Delete the transactions";
+"account.removal.deleteSubtitle" = "They're deleted for good, along with the account.";
+"account.removal.deleteBlockedGroups" = "It has transactions from your groups: they can only be moved.";
+"account.removal.destinationHeader" = "Move to";
+"account.removal.destinationBlockedCurrency" = "Not available: it has transfers or group transactions that can't be converted to this currency.";
+"account.removal.convertNote" = "Anything in another currency moves to %@: transactions at the exchange rate of their date; planned and favourite payments at today's rate.";
+"account.removal.collapsedNote" = "Transfers between “%1$@” and “%2$@” are removed: within one account they don't move money.";
+"account.removal.partnersNote" = "Transfers with other accounts stay in those accounts as regular transactions.";
+"account.removal.plansNote" = "Planned payments, favourites and items pending in the inbox are left without an account: you'll choose one when you use them.";
+"account.removal.moveAction" = "Move and delete the account";
+"account.removal.deleteAction" = "Delete and remove the account";
+"account.removal.confirmDeleteTitle" = "Delete the transactions?";
+"account.removal.confirmDeleteCount" = "Transactions to delete";
+"account.removal.confirmDeleteMessage" = "They're deleted for good and this can't be undone. The account is deleted too.";
+"account.removal.confirmDeleteAction" = "Yes, delete everything";
+"account.removal.working" = "Deleting the account…";
+"account.removal.failedTitle" = "The account wasn't deleted";
+"account.removal.failedUnreadable" = "We couldn't read what's in this account. Nothing was changed.";
+"account.removal.failedChanged" = "Something changed in the account in the meantime. Check it and try again.";
+"account.removal.failedRates" = "We couldn't get the exchange rates to convert. Nothing was moved: try again with a connection.";
+"account.removal.noAllowedDestination" = "Your other accounts are in another currency, and this one has transfers or group items that can't be converted.";
+"account.removal.countBudgets" = "Budgets";
+"account.removal.budgetsMovedNote" = "Budgets that tracked this account will track “%@” instead.";
+"account.removal.budgetsOnlyNote" = "Some budgets only tracked this account: without it, they'll track all your accounts.";
+"orphanedRecords.title" = "Transactions without an account";
+"orphanedRecords.bannerMessage" = "They lost their account when an account was deleted, so they don't count in your balance or your expenses.";
+"orphanedRecords.bannerAction" = "Choose where they go";
+"orphanedRecords.intro" = "These transactions lost their account when an account was deleted. Until they have one, they don't count in your balance or your expenses. Choose which account to move them to.";
+"orphanedRecords.listHeader" = "Which ones";
+"orphanedRecords.moreNote" = "And %d more.";
+"orphanedRecords.noDestination" = "Create an account to be able to move them.";
+"orphanedRecords.keptCurrencyNote" = "Transfers in another currency move as they are, without converting, so their other side still matches.";
+"orphanedRecords.convertNote" = "Any in another currency switch to %@ at the exchange rate of their date.";
+"orphanedRecords.collapsedNote" = "Transfers that would end up within “%@” are removed: within the same account they don't move money.";
+"orphanedRecords.moveAction" = "Move to “%@”";
+"orphanedRecords.moveActionGeneric" = "Move";
+"orphanedRecords.working" = "Moving…";
+"orphanedRecords.failedTitle" = "They weren't moved";
+"orphanedRecords.failedUnreadable" = "We couldn't read the transactions. Nothing was changed.";
+"orphanedRecords.failedChanged" = "Something changed in the meantime. Check it and try again.";
+"orphanedRecords.untitled" = "No description";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud isn't available on this device";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala keeps your data in your iCloud and can't read it right now. When iCloud is available again, whatever you have there will show up again. You can check this in Settings, under iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Checking your iCloud…";
+"storage.revert.prior.title" = "Your iCloud already has Yala data";
+"storage.revert.prior.body" = "This phone’s iCloud has Yala data that isn’t in your account: %@. If you add it, it’ll show up next to yours. If you start without it, it’s deleted from your iCloud.";
+"storage.revert.prior.bodyNoCount" = "This phone’s iCloud has Yala data that isn’t in your account. If you add it, it’ll show up next to yours. If you start without it, it’s deleted from your iCloud.";
+"storage.revert.prior.groupRecords" = "%d group records";
+"storage.revert.prior.groupsNote" = "Group records may arrive without their group.";
+"storage.revert.prior.merge" = "Add it to my data";
+"storage.revert.prior.discard" = "Start without it";
+"storage.revert.prior.discardConfirmTitle" = "Delete it from your iCloud?";
+"storage.revert.prior.discardConfirmBody" = "It’s deleted from your iCloud and from the devices that use it with this Apple ID. No copy is kept and we can’t recover it. Then the return to iCloud starts.";
+"storage.revert.prior.discardConfirm" = "Delete and return to iCloud";
+"storage.revert.prior.checkFailedTitle" = "We couldn’t check your iCloud";
+"storage.revert.prior.checkFailedBody" = "Before returning, we check whether your iCloud already has Yala data, so we don’t mix it in without telling you. It might be your connection: try again.";
+"storage.revert.prior.wipeFailed" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. Check your connection and try again.";
+"storage.revert.prior.noAccountTitle" = "Sign in to iCloud on this iPhone";
+"storage.revert.prior.noAccountBody" = "Before returning, we check what’s in your iCloud, and this iPhone isn’t signed in to iCloud. Sign in from the iPhone’s Settings and try again.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Remove here";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Removes it on this phone only. If its group arrives, it comes back.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Group expenses in another currency move as they are, without converting: the group sets their amount.";

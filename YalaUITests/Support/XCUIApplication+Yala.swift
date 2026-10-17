@@ -55,6 +55,12 @@ extension XCUIApplication {
         groupsAttestTerminal: Bool = false,
         fakeAttestSupport: Bool = false,
         pendingICloudWipe: Bool = false,
+        // «Volver a iCloud» en un teléfono nacido en la nube y la respuesta fingida de la pregunta a iCloud (ticket
+        // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
+        // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
+        bornCloudStorage: Bool = false,
+        reversePriorICloud: String? = nil,
+        reversePriorICloudWipeFails: Bool = false,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
@@ -69,6 +75,16 @@ extension XCUIApplication {
         // esa lectura del teléfono fingida e iCloud «sin cuenta» (ticket `private-gate-device-notice-has-no-forward-exit`).
         privateGateDeviceReading: String? = nil,
         scheduledSeedDay: Int? = nil,
+        // `-uitest-last-seen-version <versión|none|keep>`: la última versión cuyas Novedades «vio» el dispositivo
+        // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
+        // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
+        lastSeenAppVersion: String? = nil,
+        // Idioma y región de la corrida. El default es el de toda la suite (ver abajo); solo lo cambia un test que
+        // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
+        // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
+        // que este harness quiera depender de medir.
+        appleLanguages: String = "(es)",
+        appleLocale: String = XCUIApplication.uiTestLocaleIdentifier,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -181,6 +197,12 @@ extension XCUIApplication {
         // positivo caería culpando al diálogo. Su nombre lo fija un test de paridad con `UITestHooks`
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
+        if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
+        if let reversePriorICloud {
+            args.append("-uitest-reverse-prior-icloud")
+            args.append(reversePriorICloud)
+        }
+        if reversePriorICloudWipeFails { args.append("-uitest-reverse-prior-icloud-wipe-fails") }
         // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
         // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
         // verdad, la comprobación no podría (sin sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la
@@ -216,6 +238,10 @@ extension XCUIApplication {
         if signOutKeepsSession { args.append("-uitest-sign-out-keeps-session") }
         if groupsGateMirrorLive { args.append("-uitest-groups-gate-mirror-live") }
         if groupsGateWipeFailed { args.append("-uitest-groups-gate-wipe-failed") }
+        if let lastSeenAppVersion {
+            args.append("-uitest-last-seen-version")
+            args.append(lastSeenAppVersion)
+        }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado
@@ -228,7 +254,7 @@ extension XCUIApplication {
         // se verificó en un idioma, así que se declara en vez de heredarlo del entorno.
         // Los CUATRO elementos son necesarios y el valor de `-AppleLanguages` va entre paréntesis
         // porque es un array serializado; sin ellos el argumento se ignora EN SILENCIO.
-        args += ["-AppleLanguages", "(es)", "-AppleLocale", Self.uiTestLocaleIdentifier]
+        args += ["-AppleLanguages", appleLanguages, "-AppleLocale", appleLocale]
         launchArguments = args
         launch()
         return self

@@ -73,3 +73,7 @@ reason`, y para entonces la fase es `.idle`. Falta verlo con los ojos (desasocia
 red) antes de cerrar este ticket. **Y los comentarios de `ProfileView.presentSignOutBlock` que describen el agujero
 siguen diciendo que el desasociar escribe esa fase**: no se tocaron a propósito (un cambio de comentario en `ProfileView`
 dispara en el gate ~25 suites XCUITest). Al cerrar este ticket, corregirlos.
+
+## Barrido de QA · 2026-10-15
+
+Visto en el simulador (Yala Dev, iOS 27.0, `8cd693cb6`): con la sesión de grupos fingida y un cambio de grupos sin subir, «Desasociar» muestra su propio aviso y, al volver a Perfil, el de «No pudimos cerrar tu sesión» **no** sale en 15 s. La card `7m1e` pasó a done con esa evidencia. Queda lo que este ticket pide del código (corregir los comentarios de `ProfileView` que siguen describiendo el agujero).

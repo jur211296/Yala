@@ -924,6 +924,43 @@ struct OrphanedBridgedTxSweeperTests {
         #expect(try UnbridgeHarness.txCount(context) == 1)
     }
 
+    /// Huérfanas SIN cuenta, con el barrido de verdad (ticket `orphaned-group-records-stay-out-of-the-notice`): la de
+    /// subcategoría de préstamo es virtual y se borra; la que no se puede clasificar NO se suelta (soltarla la metía en
+    /// el aviso «Movimientos sin cuenta» como movible) ni se borra; la de «Liquidación enviada» es real y se suelta.
+    @Test func sweep_sinCuenta_clasificaConLaReglaComun() throws {
+        let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }
+        let context = try UnbridgeHarness.makeContext(dir)
+        UnbridgeHarness.makeGroup(zoneID: "SplitGroup-BE", context: context)
+        try UnbridgeHarness.markZonesPulled(["SplitGroup-BE"], context: context)
+        let loan = try GroupBridgeSystemEntities.systemSubcategory(role: .loanToGroups, context: context)
+        let sent = try GroupBridgeSystemEntities.systemSubcategory(role: .settlementSent, context: context)
+
+        func noAccount(expense: Bool, sub: Subcategory?) -> TransactionItem {
+            let tx = TransactionItem(date: .now, amount: -10, currencyCode: "USD", subcategory: sub, account: nil)
+            if expense { tx.splitExpenseID = UUID().uuidString } else { tx.splitSettlementID = UUID().uuidString }
+            tx.splitGroupZoneID = "SplitGroup-BE"
+            context.insert(tx)
+            return tx
+        }
+        let virtual = noAccount(expense: true, sub: loan)
+        let unknown = noAccount(expense: true, sub: nil)
+        let sentLeg = noAccount(expense: false, sub: sent)
+        try context.save()
+
+        let outcome = OrphanedBridgedTxSweeper.sweep(context: context, signals: UnbridgeHarness.signals())
+
+        let virtualID = virtual.persistentModelID
+        let survivors = try context.fetch(FetchDescriptor<TransactionItem>()).map(\.persistentModelID)
+        #expect(!survivors.contains(virtualID), "la virtual sin cuenta no se borró")
+        #expect(survivors.count == 2)
+        #expect(unknown.isDeleted == false)
+        #expect(unknown.splitExpenseID != nil, "la que no se sabe qué es se soltó: entraría en el aviso como movible")
+        #expect(sentLeg.isDeleted == false)
+        #expect(sentLeg.splitSettlementID == nil, "la pata real de la liquidación no se soltó")
+        #expect(outcome.deleted == 1)
+        #expect(outcome.released == 1)
+    }
+
     /// Una zona rezagada NO retiene la limpieza de las demás: el barrido decide por zona.
     @Test func sweep_repairsFreshZone_whileSparingStaleOne() throws {
         let dir = UnbridgeHarness.freshDir(); defer { UnbridgeHarness.cleanup(dir) }

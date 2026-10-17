@@ -25,7 +25,12 @@ import SwiftUI
 
 struct WelcomeExistingChooserView: View {
 
+    /// Las opciones en el orden en que se pintan. El orden lo decide el faro (`WelcomeNewBranchRouter.existingOrder`):
+    /// esta vista no reordena nada.
     let options: [WelcomeAccountChoiceLogic.ExistingOption]
+    /// **La entrada con la que se creó la cuenta de este Apple ID, según el faro** (ticket vb1f, opción A). Va primera
+    /// —eso ya viene en `options`— y lleva debajo «La que usaste en este iPhone». `nil` = sin nota.
+    var usedOnThisDevice: WelcomeAccountChoiceLogic.ExistingOption? = nil
     var onSelect: (WelcomeAccountChoiceLogic.ExistingOption) -> Void
     var onBack: () -> Void
     /// La pregunta de pie: «¿Es tu primera vez en Yala?». Va a la misma rama que la card «Es mi primera
@@ -33,7 +38,7 @@ struct WelcomeExistingChooserView: View {
     /// dónde quiere guardar sus datos.
     var onStartNew: () -> Void
 
-    /// Las entradas a una cuenta de Yala, en el orden de la lógica (Apple, Google).
+    /// Las entradas a una cuenta de Yala, en el orden que llega (Apple, Google; o Google, Apple si el faro dice Google).
     private var accountOptions: [WelcomeAccountChoiceLogic.ExistingOption] {
         options.filter { $0 != .restoreICloud }
     }
@@ -50,7 +55,7 @@ struct WelcomeExistingChooserView: View {
                     VStack(alignment: .leading, spacing: DS.Spacing.md) {
                         WelcomeFormLabel(L10n.Welcome.Existing.cloudBody)
                         ForEach(accountOptions, id: \.self) { option in
-                            optionButton(option, weight: .filled)
+                            accountEntry(option)
                         }
                     }
                 }
@@ -71,6 +76,26 @@ struct WelcomeExistingChooserView: View {
             footer
         }
         .welcomeBackButton(tint: .white, action: onBack)
+    }
+
+    /// Un botón de entrada a una cuenta y, si es el del faro, su nota debajo. Los dos botones conservan el mismo peso
+    /// (guideline 4.8): lo que distingue al del faro es el sitio y la nota, no el estilo.
+    @ViewBuilder
+    private func accountEntry(_ option: WelcomeAccountChoiceLogic.ExistingOption) -> some View {
+        if option == usedOnThisDevice {
+            VStack(spacing: DS.Spacing.xs) {
+                optionButton(option, weight: .filled)
+                Text(L10n.Welcome.Existing.usedOnThisDeviceNote)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("welcome_existing_used_on_this_device")
+            }
+        } else {
+            optionButton(option, weight: .filled)
+        }
     }
 
     /// Fuera de la tarjeta solo queda esto (rasgo 2 de la referencia). `ViewThatFits` y no un `HStack`

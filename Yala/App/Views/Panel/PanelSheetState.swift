@@ -48,6 +48,8 @@ struct PanelSheetState {
     var showUpgradeForAccounts = false
     var showSubscriptionFromBanner = false
     var subscriptionBannerSource = "direct"
+    /// «Movimientos sin cuenta», desde su aviso del Panel.
+    var showOrphanedRecords = false
 
     // Chat assistant
     var showChatSheet = false
@@ -120,6 +122,7 @@ struct PanelSheetState {
             || showUpgradeForImage
             || showUpgradeForAccounts
             || showSubscriptionFromBanner
+            || showOrphanedRecords
             || showChatSheet
             || showUpgradeForChat
             || showChatConsentAlert

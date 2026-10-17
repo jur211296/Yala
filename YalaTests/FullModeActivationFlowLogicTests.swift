@@ -760,7 +760,7 @@ struct FullModeActivationWiringTests {
     @Test("la oferta de «Activar Yala completo» viaja desde [I] hasta que la sesión solo-grupos queda montada")
     func offer_travelsFromTheIdentityBlockToTheShell() throws {
         let welcome = try Self.code("Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift")
-        #expect(welcome.contains("onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation)"))
+        #expect(welcome.contains("onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation, sessionOpenedHere)"))
 
         let src = try Self.code(Self.contentView)
         #expect(src.contains("offersFullActivationAfterGroupsEntry = offersFullActivation"))

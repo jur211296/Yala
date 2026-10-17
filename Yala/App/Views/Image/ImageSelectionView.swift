@@ -1250,10 +1250,15 @@ struct ImageSelectionView: View {
     // MARK: - Seam de XCUITest
 
     #if DEBUG
-    /// `-uitest-image-result`: las fotos que «elige» Fotos son los recibos de ejemplo de la práctica guiada.
+    /// `-uitest-image-result`: las fotos que «elige» Fotos son los recibos de ejemplo de la práctica guiada, o la de
+    /// `-uitest-image-file` si la hay y se pide una sola.
     private func uiTestImages() -> [UIImage] {
         let names = ["ExampleImages/example-receipt-es", "ExampleImages/example-bank-alert-es"]
         let count = ["two", "partial"].contains(UITestHooks.imageResult ?? "") ? 2 : 1
+        if count == 1, let path = UITestHooks.imageFile {
+            if let image = UIImage(contentsOfFile: path) { return [image] }
+            print("ImageSelectionView: Error: -uitest-image-file no se pudo leer: \(path)")
+        }
         return names.prefix(count).compactMap { UIImage(named: $0) }
     }
 
@@ -1279,10 +1284,13 @@ struct ImageSelectionView: View {
         let isFirst = index == 0
         // `pages`: un movimiento distinto por página, para que la deduplicación no junte dos páginas en uno.
         let perPage = profile.hasPrefix("pages")
+        // Comercio y total en el idioma de la app: el recibo de la ficha de cada idioma (en español, el de siempre).
         let transaction = VisionTransaction(
-            amount: perPage ? -Double(10 + index) : (isFirst ? -251.81 : -22),
+            amount: perPage ? -Double(10 + index) : (isFirst ? -L10n.UITestDemo.Photo.receiptTotal : -22),
             date: today,
-            merchant: perPage ? "Página \(index + 1)" : (isFirst ? "Restaurante El Buen Gusto" : "Taxi"),
+            merchant: perPage
+                ? L10n.UITestDemo.Photo.page(index + 1)
+                : (isFirst ? L10n.UITestDemo.Photo.merchant : L10n.UITestDemo.Photo.secondMerchant),
             note: nil,
             currency: uiTestAccountCurrency()
         )
@@ -1292,6 +1300,14 @@ struct ImageSelectionView: View {
             confidence: VisionConfidence(overall: 1, imageType: 1)
         )
         let made = VisionDraftFactory.makeDrafts(from: response, rawText: nil, context: modelContext)
+        // Con varias cuentas en la divisa (la semilla `ficha`) la regla real no elige; la demo va a la corriente.
+        if let currency = transaction.currency, made.contains(where: { $0.account == nil }) {
+            let account = UITestDemoAccountLogic.account(for: .photo, among: uiTestActiveAccounts(), currencyCode: currency)
+            for draft in made where draft.account == nil {
+                draft.account = account
+                if account != nil { draft.needsUserInput.removeAll { $0 == DraftInputRequirement.account } }
+            }
+        }
         if profile != "incomplete" {
             let subcategory = uiTestExpenseSubcategory()
             for draft in made where draft.subcategory == nil {
@@ -1300,6 +1316,15 @@ struct ImageSelectionView: View {
             }
         }
         return made
+    }
+
+    private func uiTestActiveAccounts() -> [Account] {
+        do {
+            return try modelContext.fetch(FetchDescriptor<Account>())
+        } catch {
+            print("ImageSelectionView: Error fetching accounts for the UI-test seam: \(error)")
+            return []
+        }
     }
 
     private func uiTestAccountCurrency() -> String? {

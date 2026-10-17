@@ -1,0 +1,132 @@
+<!doctype html>
+<!-- Vista previa de la App Store (App Preview) de Yala 2.1 · 886×1920 · 30 fps, para cualquier idioma.
+     Mismo lenguaje que los reels v3 (navy, estrellas planas, una frase con una palabra subrayada, cierre fijo),
+     con dos diferencias que pide Apple: la pantalla va SIN marco de iPhone (solo la grabación real, recortada en sus
+     esquinas) y el cierre NO lleva la insignia de la App Store (la vista previa ya vive dentro de la tienda).
+     No se abre a mano: video/render.sh copia esto a una carpeta de trabajo (poniendo las duraciones en __FIN__ y
+     __PANTALLA__) junto a config.js (las frases de
+     textos/<idioma>.js → VIDEO y los tiempos que tomas.py mide de los cortes de ese idioma) y la renderiza con HyperFrames. -->
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=886, height=1920" />
+    <script src="assets/gsap.min.js"></script>
+    <script src="config.js"></script>
+    <style>
+      :root { --navy:#0F172A; --rosa:#FF2D78; --azul:#6164EB; --teal:#3BD6F0; --violeta:#8B5CF6;
+        --fuente:-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      * { margin:0; padding:0; box-sizing:border-box; }
+      html, body { width:886px; height:1920px; overflow:hidden; background:var(--navy); }
+      body { font-family:var(--fuente); color:#fff; -webkit-font-smoothing:antialiased; }
+      #root { position:relative; width:100%; height:100%; overflow:hidden; background:var(--navy); }
+      .estrella { position:absolute; z-index:1; }
+
+      .w { display:inline-block; opacity:0; }
+      .linea { display:block; white-space:nowrap; }
+      .u { position:relative; color:var(--acento); }
+      .barra { position:absolute; left:2px; right:2px; bottom:-5px; height:9px; border-radius:5px; background:var(--acento); transform-origin:left center; }
+
+      /* Franja de arriba: pill + una frase. La pantalla empieza debajo: nunca se tapan. */
+      .frase { position:absolute; left:50px; right:50px; top:70px; height:270px; z-index:6; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; text-align:center; opacity:0; }
+      .pill { display:inline-block; font-size:24px; font-weight:800; letter-spacing:3px; text-transform:uppercase; padding:10px 22px;
+        border-radius:999px; color:var(--acento); background:color-mix(in srgb, var(--acento) 15%, transparent);
+        border:2px solid color-mix(in srgb, var(--acento) 32%, transparent); margin-bottom:26px; }
+      .titulo { font-size:74px; font-weight:850; line-height:1.1; letter-spacing:-2px; }
+      [data-acento=rosa]{--acento:var(--rosa)} [data-acento=azul]{--acento:var(--azul)}
+      [data-acento=teal]{--acento:var(--teal)} [data-acento=violeta]{--acento:var(--violeta)}
+
+      /* La grabación real, sin marco de dispositivo. Esquinas como las de la pantalla y sombra negra. */
+      #pantalla { position:absolute; left:93px; top:362px; width:700px; height:1522px; z-index:3; border-radius:66px; overflow:hidden;
+        background:#000; box-shadow:0 0 0 2px rgba(255,255,255,.10), 0 40px 90px rgba(0,0,0,.55); }
+      .vid { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:top; }
+      .toque { position:absolute; width:70px; height:70px; margin:-35px 0 0 -35px; border-radius:50%; z-index:5; opacity:0;
+        background:rgba(255,255,255,.3); border:4px solid rgba(255,255,255,.92); box-shadow:0 6px 18px rgba(0,0,0,.45); }
+      .anillo { position:absolute; inset:-4px; border-radius:50%; border:4px solid #fff; opacity:0; }
+
+      #cierre { position:absolute; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+      #logo { width:360px; height:auto; opacity:0; }
+      #cierre .titulo { font-size:68px; margin-top:80px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="__FIN__" data-width="886" data-height="1920">
+      <div id="estrellas"></div>
+      <div id="pantalla">
+        <video id="toma" class="clip vid" src="assets/pantalla.mp4" muted playsinline data-start="0" data-duration="__PANTALLA__" data-media-start="0" data-track-index="10"></video>
+        <div id="toques"></div>
+      </div>
+      <div id="frases"></div>
+      <div id="cierre"><img id="logo" src="assets/logo.png" alt="yala" /><div class="titulo" id="cierre-titulo"></div></div>
+    </div>
+
+    <script>
+      const C = window.CONFIG;   // {video: VIDEO de textos/<idioma>.js, escenas: [{id, inicio, fin}], toques: [{t, x, y}], fin}
+      const ESC = ["t0", "t1", "t2", "t3"];
+      // Una línea de la frase → palabras en <span class="w">; <u>…</u> = la palabra subrayada con su barra. Un signo
+      // pegado tras </u> (el «.» del cierre) va en su propio span, sin espacio, como en el original.
+      const linea = l => `<span class="linea">${l.split(/(<u>.*?<\/u>[^\s]*)|\s+/).filter(Boolean).map(p => {
+        const m = p.match(/^<u>(.*?)<\/u>(.*)$/);
+        if (!m) return `<span class="w">${p}</span>`;
+        return `<span class="w u">${m[1]}<span class="barra"></span></span>${m[2] ? `<span class="w">${m[2]}</span>` : ""}`;
+      }).join(" ")}</span>`;
+      document.getElementById("frases").innerHTML = ESC.map(k => {
+        const v = C.video[k];
+        return `<div id="${k}" class="frase" data-acento="${v.acento}">${v.pill ? `<span class="pill">${v.pill}</span>` : ""}
+          <div class="titulo">${v.lineas.map(linea).join("")}</div></div>`;
+      }).join("");
+      document.getElementById("cierre").dataset.acento = C.video.cierre.acento;
+      document.getElementById("cierre-titulo").innerHTML = C.video.cierre.lineas.map(linea).join("");
+      document.getElementById("toques").innerHTML = C.toques.map((q, i) =>
+        `<div id="q${i}" class="toque" style="left:${q.x}%;top:${q.y}%"><i class="anillo"></i></div>`).join("");
+
+      const T = C.fin;
+
+      const TRAZO = "M50 0 C54 36 64 46 100 50 C64 54 54 64 50 100 C46 64 36 54 0 50 C36 46 46 36 50 0 Z";
+      const COL = {rosa:"#FF2D78", azul:"#6164EB", teal:"#3BD6F0", violeta:"#8B5CF6"};
+      // [x, y, tamaño, color, giro]: planas, sin glow. Todas fuera de la pantalla y de la frase.
+      const E = [[34, 40, 40, "teal", -8], [812, 312, 34, "rosa", 12], [22, 760, 44, "azul", 6], [826, 1180, 50, "teal", -14], [30, 1500, 34, "rosa", 10], [800, 1860, 40, "violeta", -6]];
+      document.getElementById("estrellas").innerHTML = E.map(([x, y, s, c, r], i) =>
+        `<svg class="estrella" id="e${i}" viewBox="0 0 100 100" style="left:${x}px;top:${y}px;width:${s}px;height:${s}px;transform:rotate(${r}deg)"><path d="${TRAZO}" fill="${COL[c]}"/></svg>`).join("");
+
+      const tl = gsap.timeline({ paused: true });
+      tl.set(".w", { opacity: 0, y: 18 }, 0);
+      tl.set(".barra", { scaleX: 0 }, 0);
+      tl.set([".frase", "#logo"], { opacity: 0 }, 0);
+
+      function entra(sel, t) {
+        tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: 0.01, immediateRender: false }, t);
+        tl.fromTo(sel + " .pill", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", immediateRender: false }, t);
+        tl.fromTo(sel + " .w", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.07, immediateRender: false }, t + 0.1);
+        tl.fromTo(sel + " .barra", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power2.inOut", immediateRender: false }, t + 0.55);
+      }
+      function sale(sel, t) { tl.fromTo(sel, { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "sine.inOut", immediateRender: false }, t); }
+      function toca(sel, t) {
+        tl.fromTo(sel, { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power2.out", immediateRender: false }, t - 0.45);
+        tl.to(sel, { scale: 0.86, duration: 0.12, ease: "power1.inOut", yoyo: true, repeat: 1 }, t - 0.05);
+        tl.fromTo(sel + " .anillo", { opacity: 0.9, scale: 1 }, { opacity: 0, scale: 2, duration: 0.55, ease: "power2.out", immediateRender: false }, t + 0.05);
+        tl.to(sel, { opacity: 0, duration: 0.3, ease: "power1.in" }, t + 0.3);
+      }
+
+      // Estrellas: giran unos grados en todo el vídeo, sin parpadeo ni brillo.
+      E.forEach((e, i) => tl.to("#e" + i, { rotation: e[4] + (i % 2 ? 10 : -10), duration: T, ease: "none" }, 0));
+
+      // Escenas: cada frase entra con su escena y sale justo antes del fundido de la siguiente (tomas.py da los tiempos).
+      C.escenas.forEach((e, i) => {
+        entra("#" + ESC[i], i === 0 ? 0 : e.inicio + 0.05);
+        sale("#" + ESC[i], e.fin - 0.35);
+      });
+      C.toques.forEach((q, i) => toca("#q" + i, q.t));
+
+      // Cierre: la pantalla se funde y entra la placa: logo y lema. Queda quieta hasta el final.
+      const finPantalla = C.escenas[C.escenas.length - 1].fin;
+      tl.fromTo("#pantalla", { opacity: 1, y: 0 }, { opacity: 0, y: 24, duration: 0.7, ease: "sine.inOut", immediateRender: false }, finPantalla - 0.7);
+      tl.fromTo("#logo", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.7, ease: "sine.out", immediateRender: false }, finPantalla - 0.15);
+      entra("#cierre", finPantalla + 0.1);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

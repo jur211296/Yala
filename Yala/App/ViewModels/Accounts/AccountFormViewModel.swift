@@ -122,6 +122,10 @@ final class AccountFormViewModel {
     /// serviría — `applyBaseAccountProperties` lo sobrescribe al guardar, así que después del primer
     /// intento la pregunta «¿ha cambiado?» se respondería siempre que no.
     private let originalCurrencyCode: String?
+    /// El nombre de la cuenta al abrir el formulario. `isNameUnique` lo lee de aquí y no de `accountToEdit`: el
+    /// formulario sigue montado mientras se cierra la hoja de eliminar, con la cuenta ya eliminada, y leer un
+    /// modelo borrado puede tumbar la app.
+    private let originalName: String?
 
     /// La conversión que espera un sí del usuario. `nil` = no hay nada pendiente.
     ///
@@ -267,6 +271,7 @@ final class AccountFormViewModel {
         self.allFavoritePayments = favoritePayments
         self.pendingInboxDrafts = pendingInboxDrafts
         self.originalCurrencyCode = accountToEdit.map { normalizeCurrencyCode($0.currencyCode) }
+        self.originalName = accountToEdit?.name
 
         if let account = accountToEdit {
             self.name = account.name
@@ -333,6 +338,17 @@ final class AccountFormViewModel {
             pendingInboxDrafts = []
             didFailToLoadPlans = true
         }
+    }
+
+    /// La hoja de eliminar va a mover o borrar filas de esta cuenta, y el formulario sigue montado mientras se
+    /// cierra: suelta las que tenía cargadas para que su `body` no lea filas ya borradas. Se llama justo antes
+    /// del guardado, sin `await` de por medio; si el guardado falla, `loadTransactions()` y `loadPlans()` las
+    /// vuelven a traer.
+    func releaseLoadedRows() {
+        allTransactions = []
+        allScheduledPayments = []
+        allFavoritePayments = []
+        pendingInboxDrafts = []
     }
 
     func loadTransactions() {
@@ -410,7 +426,7 @@ final class AccountFormViewModel {
 
     var isNameUnique: Bool {
         let lower = trimmedName.lowercased()
-        if let account = accountToEdit, account.name.lowercased() == lower {
+        if let originalName, originalName.lowercased() == lower {
             return true
         }
         return

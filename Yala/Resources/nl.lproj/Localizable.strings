@@ -1399,7 +1399,6 @@
 "subcategory.namePlaceholder" = "Naam van subcategorie";
 "subcategory.unassigned" = "Niet-toegewezen";
 
-"account.deleteBalanceError" = "Je kunt deze rekening niet verwijderen omdat het saldo niet nul is. Pas het saldo aan naar 0 voordat je hem verwijdert.";
 "account.type.general" = "Algemeen";
 "account.type.cash" = "Contant";
 "account.type.current" = "Betaalrekening";
@@ -3216,6 +3215,56 @@
 "devseed.stepDeleting" = "Gegevens worden verwijderd...";
 "devseed.stepReloading" = "Gegevens opnieuw laden...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "Reis naar Lissabon";
+"devseed.ficha.groupWeekend" = "Weekend in Porto";
+"devseed.ficha.memberYou" = "Jij";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "Verblijf";
+"devseed.ficha.expenseTour" = "Stadswandeling";
+"devseed.ficha.expenseGroupDinner" = "Groepsdiner";
+"devseed.ficha.expenseAirportTaxi" = "Taxi luchthaven";
+"devseed.ficha.expenseLocalMeal" = "Visdiner";
+"devseed.ficha.expenseMuseum" = "Museumtickets";
+"devseed.ficha.expenseTransport" = "Vervoer";
+"devseed.ficha.expenseGroceries" = "Boodschappen";
+"devseed.ficha.expenseSouvenirs" = "Souvenirs";
+"devseed.ficha.expenseWeekendStay" = "Hotel in Porto";
+"devseed.ficha.expenseWeekendMeal" = "Wijnproeverij";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "Reis %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "45 uitgegeven aan een taxi naar het vliegveld en 120,50 aan boodschappen";
+"uitestDemo.chat.draftNoteTaxi" = "Taxi naar het vliegveld";
+"uitestDemo.chat.draftNoteGroceries" = "Boodschappen";
+"uitestDemo.chat.suggestionSplit" = "Hoe zijn mijn uitgaven aan Wonen en Persoonlijk verdeeld?";
+"uitestDemo.chat.suggestionMonth" = "Hoeveel heb ik deze maand uitgegeven aan restaurants en bezorging?";
+"uitestDemo.chat.suggestionBudget" = "Was mijn budget voor uit eten genoeg?";
+"uitestDemo.chat.pizzaNote" = "Pizza";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "Lunch 25 met de kaart";
+"uitestDemo.voice.lunchNote" = "Lunch";
+"uitestDemo.voice.twoTranscript" = "Taxi 12 en koffie 8 met de kaart";
+"uitestDemo.voice.taxiNote" = "Taxi";
+"uitestDemo.voice.coffeeNote" = "Koffie";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "Bistro De Blauwe Deur";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "Taxi";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "Pagina %ld";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "Aan de slag";
@@ -4132,7 +4181,7 @@
 "welcome.hero.cards.budgets.title" = "Budgetten en doelen";
 "welcome.hero.cards.budgets.body" = "Stel grenzen. Houd ze aan.";
 "welcome.hero.cards.multiAndCurrencies.title" = "Rekeningen en valuta's";
-"welcome.hero.cards.multiAndCurrencies.body" = "Kaarten, contant, 48+ valuta's.";
+"welcome.hero.cards.multiAndCurrencies.body" = "Kaarten, contant, 50+ valuta's.";
 "welcome.hero.cards.import.title" = "Importeer je geschiedenis";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Klaar.";
 "welcome.hero.cards.icloud.title" = "Privé iCloud";
@@ -4160,12 +4209,12 @@
 "yalaAI.onboarding.progressLabel" = "Stap %1$d van %2$d";
 "yalaAI.onboarding.step1.title" = "Maak kennis met Yala AI";
 "yalaAI.onboarding.step1.subtitle" = "Je rechterhand voor je financiën.";
-"yalaAI.onboarding.step1.demoScenario1User" = "€12 uitgegeven aan lunch.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "Klaar! Ik heb je lunch van €12 vastgelegd.";
+"yalaAI.onboarding.step1.demoScenario1User" = "%@ uitgegeven aan lunch.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "Klaar! Ik heb je lunch van %@ vastgelegd.";
 "yalaAI.onboarding.step1.demoScenario2User" = "Hoeveel aan koffie deze maand?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "Je zit op €35 aan koffie deze maand ☕ — 12% minder dan in april, maar €6 boven je gewone gemiddelde.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Je zit op %1$@ aan koffie deze maand ☕, 12%% minder dan in april, maar %2$@ boven je gewone gemiddelde.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Een tip?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Je bezorging is 20% gestegen vs vorige maand. Terug naar je normale ritme: €60 besparing per maand — bijna €720 per jaar.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Je bezorging is 20%% gestegen vs vorige maand. Terug naar je normale ritme: %1$@ besparing per maand, dus %2$@ per jaar.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Lunch";
 "yalaAI.onboarding.step1.a11yLabel" = "Voorbeeldchat met Yala AI die een uitgave vastlegt";
 "yalaAI.onboarding.step2.title" = "Dit kun je doen";
@@ -4191,11 +4240,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Helpt je elke maand meer opzij te zetten.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Waarschuwt bij elke afwijking, zodat je niets ontgaat.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Je inkomsten dekken de uitgaven van deze maand. Goed ritme.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "10% minder restaurants: €30 besparing per maand.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "10%% minder restaurants: %@ besparing per maand.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Let op: je gaat sneller dan vorige maand met bezorging.";
 "yalaAI.onboarding.step5.title" = "Helemaal klaar!";
 "yalaAI.onboarding.step5.subtitle" = "Vertel Yala wanneer je maar wilt wat je nodig hebt.";
-"yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van €5 vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
+"yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van %@ vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
 "yalaAI.onboarding.step5.cta" = "Beginnen met chatten";
 
 // MARK: - Stats Records polish
@@ -4411,6 +4460,14 @@
 "whatsNew.v20.ai.description" = "Je financiële assistent met kunstmatige intelligentie. Stel vragen over je geld, laat hem je uitgaven vastleggen en krijg heldere inzichten over je maand. Als een vriend die verstand heeft van geld, op slechts één bericht afstand.";
 "whatsNew.v20.redesign.title" = "Een compleet nieuw uiterlijk";
 "whatsNew.v20.redesign.description" = "We hebben Yala van top tot teen opnieuw ontworpen: nieuwe widgets, duidelijkere overzichten in elke sectie en de nieuwe Liquid Glass-afwerking van iOS in de hele app. Daarnaast hebben we veel bugs opgelost zodat alles soepeler aanvoelt.";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "Groepen";
+"whatsNew.v21.groups.description" = "Deel uitgaven met wie je maar wilt. Nodig uit met een link, houd samen bij en Yala rekent uit wie wie wat verschuldigd is. Zonder rekenwerk en zonder ongemak.";
+"whatsNew.v21.logging.title" = "Bijhouden was nog nooit zo makkelijk";
+"whatsNew.v21.logging.description" = "Praat ertegen, maak een foto of typ zoals aan een vriend. Yala begrijpt wat je hebt uitgegeven en legt het voor je vast, zodat je je geldzaken in een paar seconden bijhoudt.";
+"whatsNew.v21.data.title" = "Jouw gegevens, jouw regels";
+"whatsNew.v21.data.description" = "Jij kiest waar je gegevens staan: in je privé-iCloud of in de Yala-cloud, zodat je ze op al je apparaten hebt. Plus een vernieuwd Start-scherm en Yala op volledig scherm op je iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4907,6 +4964,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Je Yala-account in de cloud, als je het met je Google-account hebt gemaakt.";
+"welcome.existing.usedOnThisDeviceNote" = "Die je op deze iPhone hebt gebruikt";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Gebruik hetzelfde Google-account waarmee je je cloudaccount hebt gemaakt.";
@@ -6659,3 +6717,89 @@
 "export.error.invalidDateRange" = "Deze datums kloppen niet: de begindatum moet vóór de einddatum liggen.";
 "export.error.noTransactions" = "Geen transacties komen overeen met deze filters. Probeer een andere periode of verwijder een filter.";
 "export.error.fileWriteFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "„%@” verwijderen";
+"account.removal.intro" = "Kies voordat je hem verwijdert wat er met de inhoud moet gebeuren.";
+"account.removal.countRecords" = "Transacties";
+"account.removal.countScheduled" = "Geplande betalingen";
+"account.removal.countFavorites" = "Favoriete betalingen";
+"account.removal.countDrafts" = "Wachtend in de inbox";
+"account.removal.choiceHeader" = "Wat doen we ermee";
+"account.removal.moveTitle" = "Naar een andere rekening verplaatsen";
+"account.removal.moveSubtitle" = "Aanbevolen. Je geschiedenis en je saldo blijven behouden.";
+"account.removal.noDestination" = "Je hebt geen andere rekening om naartoe te verplaatsen.";
+"account.removal.deleteTitle" = "De transacties verwijderen";
+"account.removal.deleteSubtitle" = "Ze worden definitief verwijderd, samen met de rekening.";
+"account.removal.deleteBlockedGroups" = "Er staan transacties van je groepen in: die kunnen alleen worden verplaatst.";
+"account.removal.destinationHeader" = "Verplaatsen naar";
+"account.removal.destinationBlockedCurrency" = "Niet beschikbaar: er staan overboekingen of groepstransacties in die niet naar deze valuta kunnen worden omgerekend.";
+"account.removal.convertNote" = "Wat in een andere valuta staat, gaat naar %@: transacties tegen de wisselkoers van hun datum, geplande en favoriete betalingen tegen die van vandaag.";
+"account.removal.collapsedNote" = "Overboekingen tussen „%1$@” en „%2$@” worden verwijderd: binnen één rekening verplaatsen ze geen geld.";
+"account.removal.partnersNote" = "Overboekingen met andere rekeningen blijven op die rekeningen staan als gewone transacties.";
+"account.removal.plansNote" = "Geplande betalingen, favorieten en wachtende items in de inbox blijven zonder rekening: je kiest er een als je ze gebruikt.";
+"account.removal.moveAction" = "Verplaatsen en rekening verwijderen";
+"account.removal.deleteAction" = "Transacties en rekening verwijderen";
+"account.removal.confirmDeleteTitle" = "De transacties verwijderen?";
+"account.removal.confirmDeleteCount" = "Te verwijderen transacties";
+"account.removal.confirmDeleteMessage" = "Ze worden definitief verwijderd en dit kan niet ongedaan worden gemaakt. De rekening wordt ook verwijderd.";
+"account.removal.confirmDeleteAction" = "Ja, alles verwijderen";
+"account.removal.working" = "Rekening verwijderen…";
+"account.removal.failedTitle" = "De rekening is niet verwijderd";
+"account.removal.failedUnreadable" = "We konden de inhoud van deze rekening niet lezen. Er is niets gewijzigd.";
+"account.removal.failedChanged" = "Er is intussen iets aan de rekening veranderd. Controleer het en probeer het opnieuw.";
+"account.removal.failedRates" = "We konden de wisselkoersen voor het omrekenen niet ophalen. Er is niets verplaatst: probeer het opnieuw met een verbinding.";
+"account.removal.noAllowedDestination" = "Je andere rekeningen zijn in een andere valuta, en deze heeft overboekingen of groepsitems die niet kunnen worden omgerekend.";
+"account.removal.countBudgets" = "Budgetten";
+"account.removal.budgetsMovedNote" = "Budgetten die deze rekening volgden, volgen voortaan „%@”.";
+"account.removal.budgetsOnlyNote" = "Sommige budgetten volgden alleen deze rekening: zonder haar volgen ze al je rekeningen.";
+"orphanedRecords.title" = "Transacties zonder rekening";
+"orphanedRecords.bannerMessage" = "Ze zijn hun rekening kwijtgeraakt toen een rekening werd verwijderd en tellen niet mee in je saldo of je uitgaven.";
+"orphanedRecords.bannerAction" = "Rekening kiezen";
+"orphanedRecords.intro" = "Deze transacties zijn hun rekening kwijtgeraakt toen een rekening werd verwijderd. Zolang ze er geen hebben, tellen ze niet mee in je saldo of je uitgaven. Kies naar welke rekening je ze verplaatst.";
+"orphanedRecords.listHeader" = "Welke het zijn";
+"orphanedRecords.moreNote" = "En nog %d.";
+"orphanedRecords.noDestination" = "Maak een rekening aan om ze te kunnen verplaatsen.";
+"orphanedRecords.keptCurrencyNote" = "Overboekingen in een andere valuta gaan mee zoals ze zijn, zonder omrekening, zodat hun tegenboeking blijft kloppen.";
+"orphanedRecords.convertNote" = "Wat in een andere valuta staat, gaat naar %@ tegen de wisselkoers van de datum.";
+"orphanedRecords.collapsedNote" = "Overboekingen die binnen ‘%@’ zouden belanden, worden verwijderd: binnen dezelfde rekening verplaatsen ze geen geld.";
+"orphanedRecords.moveAction" = "Verplaatsen naar ‘%@’";
+"orphanedRecords.moveActionGeneric" = "Verplaatsen";
+"orphanedRecords.working" = "Verplaatsen…";
+"orphanedRecords.failedTitle" = "Niet verplaatst";
+"orphanedRecords.failedUnreadable" = "We konden de transacties niet lezen. Er is niets gewijzigd.";
+"orphanedRecords.failedChanged" = "Er is intussen iets veranderd. Controleer het en probeer het opnieuw.";
+"orphanedRecords.untitled" = "Geen omschrijving";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud is niet beschikbaar op dit apparaat";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala bewaart je gegevens in je iCloud en kan ze nu niet lezen. Zodra iCloud weer beschikbaar is, verschijnt wat daar staat weer. Je kunt dit controleren in Instellingen, bij iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Je iCloud wordt gecontroleerd…";
+"storage.revert.prior.title" = "Je iCloud heeft al Yala-gegevens";
+"storage.revert.prior.body" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan: %@. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.bodyNoCount" = "De iCloud van deze telefoon heeft Yala-gegevens die niet in je account staan. Als je ze toevoegt, verschijnen ze naast die van jou. Als je zonder begint, worden ze uit je iCloud verwijderd.";
+"storage.revert.prior.groupRecords" = "%d groepsrecords";
+"storage.revert.prior.groupsNote" = "Groepsrecords kunnen zonder hun groep binnenkomen.";
+"storage.revert.prior.merge" = "Toevoegen aan mijn gegevens";
+"storage.revert.prior.discard" = "Zonder beginnen";
+"storage.revert.prior.discardConfirmTitle" = "Uit je iCloud verwijderen?";
+"storage.revert.prior.discardConfirmBody" = "Ze worden verwijderd uit je iCloud en van de apparaten die die met deze Apple ID gebruiken. Er blijft geen kopie en we kunnen ze niet terughalen. Daarna begint de terugkeer naar iCloud.";
+"storage.revert.prior.discardConfirm" = "Verwijderen en terug naar iCloud";
+"storage.revert.prior.checkFailedTitle" = "We konden je iCloud niet controleren";
+"storage.revert.prior.checkFailedBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. Misschien ligt het aan je verbinding: probeer het opnieuw.";
+"storage.revert.prior.wipeFailed" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Controleer je verbinding en probeer het opnieuw.";
+"storage.revert.prior.noAccountTitle" = "Log in bij iCloud op deze iPhone";
+"storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en deze iPhone is niet ingelogd bij iCloud. Log in via Instellingen op de iPhone en probeer het opnieuw.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Hier verwijderen";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Verwijdert het alleen op deze telefoon. Als de groep binnenkomt, verschijnt het weer.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Groepsuitgaven in een andere valuta gaan ongewijzigd mee, zonder omrekening: het bedrag bepaalt de groep.";

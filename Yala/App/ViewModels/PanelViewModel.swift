@@ -267,6 +267,8 @@ final class PanelViewModel {
     private(set) var budgets: [Budget] = []
     private(set) var scheduledPayments: [ScheduledPayment] = []
     private(set) var pendingDrafts: [InboxDraft] = []
+    /// Cuántos movimientos se quedaron sin cuenta (`OrphanedRecordsService.orphanCount`). Lo pinta el aviso del Panel.
+    private(set) var orphanedRecordCount = 0
 
     /// Proyección de "mi parte" (neto) de los gastos de grupo BRIDGEADOS para la capa de
     /// stats. Se reconstruye en `loadData()` desde `transactions` — el set MÁS AMPLIO (con
@@ -471,6 +473,13 @@ final class PanelViewModel {
         // queda siempre fresco ANTES de cualquier cálculo de widget (contexto y Hero).
         statsAdjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: context)
 
+        // Movimientos sin cuenta (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`): se recuentan en CADA
+        // recarga, no una vez, para que el aviso enseñe también los que llegan tarde por sync tras eliminar su cuenta
+        // (card `tablero-eliminar-una-cuenta-todavia-puede-dejar-mjzx`). Se recuenta aunque `transactions` no cambie:
+        // mover uno le cambia la cuenta en sitio, y el array sigue siendo el mismo.
+        let orphans = OrphanedRecordsService.orphanCount(in: transactions, context: context)
+        if orphans != orphanedRecordCount { orphanedRecordCount = orphans }
+
         var budgetsDesc = FetchDescriptor<Budget>(
             predicate: #Predicate<Budget> { $0.isActive },
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
@@ -503,7 +512,8 @@ final class PanelViewModel {
         )
         draftsDesc.fetchLimit = 100
         do {
-            let fetched = try context.fetch(draftsDesc)
+            // Sin los gastos de grupo quitados de la Bandeja en este teléfono: el contador del Panel es el de la Bandeja.
+            let fetched = InboxGroupDraftsHiddenHere.visible(try context.fetch(draftsDesc), context: context)
             if fetched != pendingDrafts { pendingDrafts = fetched }
         } catch {
             #if DEBUG
@@ -1291,7 +1301,10 @@ final class PanelViewModel {
                 interval: calcContext.effectiveInterval,
                 accounts: calcContext.eligibleAccounts,
                 transactions: calcContext.balanceTransactions,
-                preferredCurrencyCode: calcContext.defaultCurrencyCode
+                preferredCurrencyCode: calcContext.defaultCurrencyCode,
+                // El mismo converter que la curva: la cifra y su último punto salen de la misma regla
+                // (`panel-balance-chart-contradicts-its-own-figure`).
+                converter: calcContext.converter
             )
             let result = TrendDataProcessor.processTrendData(
                 transactions: transactionsForTrend,
@@ -2782,7 +2795,8 @@ final class PanelViewModel {
             interval: context.effectiveInterval,
             accounts: context.eligibleAccounts,
             transactions: context.balanceTransactions,
-            preferredCurrencyCode: context.defaultCurrencyCode
+            preferredCurrencyCode: context.defaultCurrencyCode,
+            converter: context.converter
         )
 
         let currentResult = TrendDataProcessor.processTrendData(

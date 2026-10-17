@@ -219,9 +219,11 @@ struct LegacyGroupsRetirementDecisionTests {
         #expect(LegacyGroupsRetirement.decide(.init(zoneIsLegacy: true, accountIsSystem: true)) == .deleteVirtual)
     }
 
-    /// `account == nil` → REAL (conservar). Hay que fijarlo porque las dos mecánicas existentes discrepan
-    /// justo ahí, y la dirección segura es preservar el rastro.
-    @Test func txWithoutAccount_countsAsReal() {
+    /// `account == nil` sin prueba de qué es → no se toca (2026-10-16, ticket
+    /// `orphaned-group-records-stay-out-of-the-notice`): soltarla la metía en el aviso «Movimientos sin cuenta» como
+    /// movible aunque fuera una virtual. La cuenta real sigue soltándose.
+    @Test func txWithoutAccount_unknown_isLeftAlone() {
+        #expect(LegacyGroupsRetirement.decide(.init(zoneIsLegacy: true, leg: .unknown)) == nil)
         #expect(decide(legacy: true, system: false) == .releasePointers)
     }
 }
@@ -355,9 +357,9 @@ struct LegacyGroupsRetirementSweepTests {
         #expect(real.splitSettlementID == nil)
     }
 
-    /// `account == nil` → se CONSERVA liberada. Borrarla por no poder clasificarla sería destruir un rastro
-    /// que puede ser dinero real.
-    @Test func retire_txWithoutAccount_isReleasedNotDeleted() throws {
+    /// `account == nil` sin prueba de qué es → no se borra (puede ser dinero real) ni se suelta (puede ser una virtual:
+    /// soltada entraría en el aviso «Movimientos sin cuenta» como movible). Se queda tal cual, como en el freeze.
+    @Test func retire_txWithoutAccount_isLeftAlone() throws {
         let dir = RetirementHarness.freshDir()
         defer { RetirementHarness.cleanup(dir) }
         let ctx = try RetirementHarness.makeContext(dir)
@@ -368,10 +370,10 @@ struct LegacyGroupsRetirementSweepTests {
 
         let outcome = LegacyGroupsRetirement.retire(context: ctx)
 
-        #expect(outcome.released == 1)
+        #expect(outcome.released == 0)
         #expect(outcome.deleted == 0)
         #expect(try RetirementHarness.txCount(ctx) == 1)
-        #expect(orphanAccount.splitGroupZoneID == nil)
+        #expect(orphanAccount.splitGroupZoneID == "Z1")
     }
 
     /// Una zona con canal vivo no se toca: ni su grupo se oculta ni su puente se suelta.
@@ -628,7 +630,9 @@ struct LegacyGroupsRetirementWiringTests {
         // Y lo protegió: el seed pasó a 5 en `a620118e` y el pin se quedó en 4, así que `2.1` llevaba
         // este rojo desde ese merge. Comprobado antes de subir el número, que es lo único que hace útil
         // subirlo: las 5 construcciones tienen sus 5 marcas — el grupo nuevo NO nace legacy.
-        #expect(constructions == 6, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
+        // 7 desde el 2026-10-16: `createFicha` (perfil `ficha`, capturas de la ficha en cada idioma) construye sus dos
+        // grupos con UN `SplitGroup(` dentro de su helper `seedGroup`, que marca backend justo debajo.
+        #expect(constructions == 7, "Cambió el número de grupos del seed; revisa que todos sigan siendo backend.")
         #expect(marks == constructions,
                 "Un grupo del seed volvió a nacer legacy: la retirada lo oculta y los XCUITest de Grupos se quedan sin datos.")
     }

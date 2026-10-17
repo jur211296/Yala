@@ -343,6 +343,9 @@ final class CloudMigrationController {
 
     var uiState: CloudMigrationUIState = .idle
     var isWorking = false
+    /// «Volver a iCloud» le está preguntando a iCloud qué sumaría (`checkICloudBeforeReverse`). La tarjeta lo pinta en el
+    /// botón y no deja tocarlo otra vez.
+    private(set) var isCheckingICloudBeforeReverse = false
     /// Mensaje de error localizado (para el `.alert` de la vista). `nil` = sin error.
     var lastError: String?
 
@@ -1281,6 +1284,101 @@ final class CloudMigrationController {
         }
     }
 
+    // MARK: - Datos previos en iCloud antes de volver
+
+    /// ¿Qué sumaría la vuelta a iCloud de lo que ya hay en el iCloud de este Apple ID? Lo pregunta el botón «Volver a
+    /// iCloud» ANTES de sus confirmaciones (ticket `reverse-to-icloud-merges-prior-icloud-data-without-asking`, decisión A
+    /// de Jürgen). Solo en un teléfono nacido en la nube: en una cuenta migrada la zona es su propio corpus.
+    ///
+    /// No escribe nada: con `.ask` la persona elige, con `.cannotCheck` o `.needsICloud` la vuelta no empieza, con
+    /// `.proceed` siguen las confirmaciones de siempre. `nil` = ya hay una pregunta en vuelo (un doble toque): quien llama
+    /// no abre nada, y la primera contesta.
+    func checkICloudBeforeReverse() async -> ReverseICloudPriorDataLogic.Gate? {
+        guard ReverseICloudPriorDataLogic.asksICloud(isBornCloud: Self.readIsBornCloud()) else { return .proceed }
+        guard !isCheckingICloudBeforeReverse else { return nil }
+        isCheckingICloudBeforeReverse = true
+        defer { isCheckingICloudBeforeReverse = false }
+        let check: ICloudForeignCorpusCheck
+        #if DEBUG
+        if let fake = UITestHooks.fakeReverseForeignCorpus {
+            check = fake
+        } else {
+            check = await ICloudPersonalCorpusProbe.foreignCorpusForReverse()
+        }
+        #else
+        check = await ICloudPersonalCorpusProbe.foreignCorpusForReverse()
+        #endif
+        MetricsService.cloudReverseICloudPriorDataChecked(outcome: check.canaryDetail)
+        return ReverseICloudPriorDataLogic.gate(check)
+    }
+
+    /// «Sumarlos a mis datos»: la vuelta de siempre, con lo ajeno dentro. Solo deja el canario de la elección.
+    func startReverseMergingICloudPriorData() async {
+        MetricsService.cloudReverseICloudPriorDataChoice("merge")
+        await startReverse()
+    }
+
+    /// «Empezar sin ellos»: borra de iCloud lo ajeno y **solo si el borrado terminó** empieza la vuelta. Un borrado a medias
+    /// deja la persona en la nube con su cuenta intacta y el resto de lo ajeno todavía en iCloud: la vuelta montaría el
+    /// espejo encima y sumaría lo que quedó, que es justo lo que eligió no hacer.
+    ///
+    /// Se borra al confirmar y no al montar el espejo: si la vuelta sale después antes de llegar a iCloud, lo borrado no
+    /// vuelve, y es lo que la persona pidió borrar.
+    func startReverseDiscardingICloudPriorData() async {
+        // **Las comprobaciones de `startReverse` van ANTES del borrado, que no tiene vuelta**: con la vuelta imposible
+        // (journal ilegible, una salida anterior a medias, la pantalla ya fuera de «nube activa»), borrar dejaría a la
+        // persona sin lo de antes y en la nube. Tras el borrado `startReverse` las repite: algo puede cambiar en medio.
+        guard !isWorking, uiState == .cloudActive, reverseEligibility() == .eligible else {
+            lastError = L10n.Storage.Revert.ineligible
+            return
+        }
+        guard let journal = readJournalDecisionInputs() else {
+            lastError = L10n.Storage.journalUnreadableMessage
+            return
+        }
+        if hasPendingReverseExit, MigrationRuntimeGate.isDomainStablePhase(journal.phase) {
+            lastError = L10n.Storage.Errors.reversePendingExit
+            return
+        }
+        isWorking = true
+        lastError = nil
+        let failure: String?
+        #if DEBUG
+        if UITestHooks.fakeReverseForeignWipeFails {
+            failure = "uitest"
+        } else {
+            failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()
+        }
+        #else
+        failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()
+        #endif
+        isWorking = false
+        if let failure {
+            MetricsService.cloudReverseICloudPriorDataChoice("discardFailed:\(failure)")
+            lastError = L10n.Storage.Revert.Prior.wipeFailed
+            return
+        }
+        MetricsService.cloudReverseICloudPriorDataChoice("discard")
+        await startReverse()
+    }
+
+    /// El modo persistido del dueño, como lo leen la pantalla y la elegibilidad de la vuelta. En DEBUG, el seam
+    /// `-uitest-born-cloud-storage` lo lee `.cloud` (finge la entrada; ver `UITestHooks.fakeBornCloudStorage`).
+    private static func readPersistedStorageMode() -> StorageMode {
+        #if DEBUG
+        if UITestHooks.fakeBornCloudStorage { return .cloud }
+        #endif
+        return StorageModePersistence.read()
+    }
+
+    /// ¿Nació la cuenta en la nube EN ESTE dispositivo? Mismo seam que `readPersistedStorageMode`.
+    private static func readIsBornCloud() -> Bool {
+        #if DEBUG
+        if UITestHooks.fakeBornCloudStorage { return true }
+        #endif
+        return StorageModePersistence.isBornCloud()
+    }
+
     /// Avisa de una salida del claim de la vuelta a iCloud que haya producido la llamada en curso (ticket
     /// `reverse-claim-rejection-has-no-way-out-in-the-client`): el servidor no la dejó empezar, u otro dispositivo ya la
     /// lleva, y el runner volvió a la nube. La barra solo parpadea, así que sin alerta el gesto parecería no hacer nada;
@@ -1707,7 +1805,7 @@ final class CloudMigrationController {
         uiState = CloudMigrationUIStateDeriver.derive(
             // M1: modo PERSISTIDO del dueño, no el efectivo — la UI de migración describe la
             // travesía del DEVICE (un `.cloud` efectivo espurio de una sesión secundaria mentiría).
-            storageMode: StorageModePersistence.read(),
+            storageMode: Self.readPersistedStorageMode(),
             read: read.phaseRead,
             mirrorOffArmed: mirrorOffArmed,
             mountedDecision: mountedDecision,
@@ -1955,12 +2053,12 @@ final class CloudMigrationController {
         return ReverseEligibility.decide(
             // M1: modo PERSISTIDO del dueño — la reversa es SU travesía; una sesión secundaria
             // jamás debe volverse elegible por el `.cloud` efectivo derivado del descriptor.
-            storageMode: StorageModePersistence.read(),
+            storageMode: Self.readPersistedStorageMode(),
             hasCKMap: hasCKMap,
             // Marca POSITIVA escrita por el alta born-cloud de este dispositivo. No se deriva de la
             // ausencia del `CloudMigrationMarker`: ese fetch falla abierto (el marcador falta también en
             // un 2.º device adoptado y lo borra un botón DEBUG). Ver `StorageModePersistence.bornCloudKey`.
-            isBornCloud: StorageModePersistence.isBornCloud(),
+            isBornCloud: Self.readIsBornCloud(),
             journaledPhase: journaledPhase)
     }
 

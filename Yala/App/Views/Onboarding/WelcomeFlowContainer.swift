@@ -255,8 +255,12 @@ struct WelcomeFlowContainer: View {
                 )
                 .transition(.opacity)
             case .existingChooser:
+                // vb1f (opción A): el faro ordena las entradas y marca la del método con que se creó la cuenta. Se lee
+                // al pintar, con el mismo adaptador que encamina «Soy nuevo».
+                let order = WelcomeNewBranchRouter.existingOrder(beacon: CloudBeacon(), options: visibleExistingOptions)
                 WelcomeExistingChooserView(
-                    options: visibleExistingOptions,
+                    options: order.options,
+                    usedOnThisDevice: order.usedOnThisDevice,
                     onSelect: { option in handleExistingOption(option) },
                     onBack: { goTo(.chooser) },
                     // La pregunta de pie («¿Es tu primera vez en Yala?») entra por la MISMA puerta que la card

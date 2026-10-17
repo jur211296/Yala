@@ -588,3 +588,13 @@ mutantes en 20 min, con el simulador tomado todo ese rato. Con `-collect-test-di
 mutantes, 7 suites, 437 casos cada una) tardó ~14 s por corrida de tests, y el build dominó el tiempo. **Solo para
 mutantes**: en una corrida normal esos diagnósticos son lo que explica un rojo inesperado. Y ojo al leer el proceso
 colgado: `simctl diagnose` vivo con la app a 0 % de CPU parece un test que se colgó, y es xcodebuild terminando.
+
+### Notificaciones locales en el simulador: `UNErrorDomain 2003` con el permiso concedido; se cura reiniciándolo (2026-10-15)
+
+En el barrido de QA de 2.1, el resumen de pagos planificados no llegó a su hora dos veces seguidas, con la app cerrada y
+el permiso concedido (`authStatus=2`). El log de la app lo decía: cada `UNUserNotificationCenter.add` fallaba con
+`UNErrorDomain Code=2003 "Repository could not save notification. Source is not authorized."`, y en
+`data/Library/UserNotifications/` no había ninguna pendiente de Yala. Las notificaciones de `simctl push` sí llegaban,
+porque no pasan por ese repositorio. Tras `simctl shutdown` + `boot`, el mismo arranque dio `notificationCenter.add OK` y
+el resumen llegó a su hora. **Antes de culpar al planificador de notificaciones, lanza la app con el log a la vista y
+busca 2003**; si sale, reinicia el simulador. Un `simctl push` que sí llega no prueba que el simulador acepte las locales.

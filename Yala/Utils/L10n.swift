@@ -3418,6 +3418,39 @@ enum L10n {
         }
     }
 
+    // MARK: - Movimientos sin cuenta
+
+    /// El aviso del Panel y la hoja «Movimientos sin cuenta» (card `tablero-los-movimientos-que-quedaron-sin-cuenta-sovw`).
+    enum OrphanedRecords {
+        static var title: String { ls("orphanedRecords.title", comment: "") }
+        static var bannerTitle: String { title }
+        static var bannerMessage: String { ls("orphanedRecords.bannerMessage", comment: "") }
+        static var bannerAction: String { ls("orphanedRecords.bannerAction", comment: "") }
+        static var intro: String { ls("orphanedRecords.intro", comment: "") }
+        static var listHeader: String { ls("orphanedRecords.listHeader", comment: "") }
+        static func moreNote(_ count: Int) -> String {
+            String(format: ls("orphanedRecords.moreNote", comment: ""), count)
+        }
+        static var noDestination: String { ls("orphanedRecords.noDestination", comment: "") }
+        static var keptCurrencyNote: String { ls("orphanedRecords.keptCurrencyNote", comment: "") }
+        static var groupKeptCurrencyNote: String { ls("orphanedRecords.groupKeptCurrencyNote", comment: "") }
+        static func convertNote(_ to: String) -> String {
+            String(format: ls("orphanedRecords.convertNote", comment: ""), to)
+        }
+        static func collapsedNote(_ destination: String) -> String {
+            String(format: ls("orphanedRecords.collapsedNote", comment: ""), destination)
+        }
+        static func moveAction(_ destination: String) -> String {
+            String(format: ls("orphanedRecords.moveAction", comment: ""), destination)
+        }
+        static var moveActionGeneric: String { ls("orphanedRecords.moveActionGeneric", comment: "") }
+        static var working: String { ls("orphanedRecords.working", comment: "") }
+        static var failedTitle: String { ls("orphanedRecords.failedTitle", comment: "") }
+        static var failedUnreadable: String { ls("orphanedRecords.failedUnreadable", comment: "") }
+        static var failedChanged: String { ls("orphanedRecords.failedChanged", comment: "") }
+        static var untitled: String { ls("orphanedRecords.untitled", comment: "") }
+    }
+
     // MARK: - Account
 
     enum Account {
@@ -3474,10 +3507,53 @@ enum L10n {
             String.localizedStringWithFormat(ls("account.deleteConfirmMessage", comment: ""), count)
         }
         static var deleteConfirmMessageEmpty: String { ls("account.deleteConfirmMessageEmpty", comment: "") }
-        static var deleteBalanceError: String {
-            ls("account.deleteBalanceError", comment: "")
-        }
         static var addAccount: String { ls("account.addAccount", comment: "") }
+
+        // MARK: - Eliminar con movimientos (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst)
+        enum Removal {
+            static func title(_ name: String) -> String {
+                String(format: ls("account.removal.title", comment: ""), name)
+            }
+            static func convertNote(_ to: String) -> String {
+                String(format: ls("account.removal.convertNote", comment: ""), to)
+            }
+            static func budgetsMovedNote(_ destination: String) -> String {
+                String(format: ls("account.removal.budgetsMovedNote", comment: ""), destination)
+            }
+            static var noAllowedDestination: String { ls("account.removal.noAllowedDestination", comment: "") }
+            static var countBudgets: String { ls("account.removal.countBudgets", comment: "") }
+            static var budgetsOnlyNote: String { ls("account.removal.budgetsOnlyNote", comment: "") }
+            static func collapsedNote(_ source: String, _ destination: String) -> String {
+                String(format: ls("account.removal.collapsedNote", comment: ""), source, destination)
+            }
+            static var intro: String { ls("account.removal.intro", comment: "") }
+            static var countRecords: String { ls("account.removal.countRecords", comment: "") }
+            static var countScheduled: String { ls("account.removal.countScheduled", comment: "") }
+            static var countFavorites: String { ls("account.removal.countFavorites", comment: "") }
+            static var countDrafts: String { ls("account.removal.countDrafts", comment: "") }
+            static var choiceHeader: String { ls("account.removal.choiceHeader", comment: "") }
+            static var moveTitle: String { ls("account.removal.moveTitle", comment: "") }
+            static var moveSubtitle: String { ls("account.removal.moveSubtitle", comment: "") }
+            static var noDestination: String { ls("account.removal.noDestination", comment: "") }
+            static var deleteTitle: String { ls("account.removal.deleteTitle", comment: "") }
+            static var deleteSubtitle: String { ls("account.removal.deleteSubtitle", comment: "") }
+            static var deleteBlockedGroups: String { ls("account.removal.deleteBlockedGroups", comment: "") }
+            static var destinationHeader: String { ls("account.removal.destinationHeader", comment: "") }
+            static var destinationBlockedCurrency: String { ls("account.removal.destinationBlockedCurrency", comment: "") }
+            static var partnersNote: String { ls("account.removal.partnersNote", comment: "") }
+            static var plansNote: String { ls("account.removal.plansNote", comment: "") }
+            static var moveAction: String { ls("account.removal.moveAction", comment: "") }
+            static var deleteAction: String { ls("account.removal.deleteAction", comment: "") }
+            static var confirmDeleteTitle: String { ls("account.removal.confirmDeleteTitle", comment: "") }
+            static var confirmDeleteCount: String { ls("account.removal.confirmDeleteCount", comment: "") }
+            static var confirmDeleteMessage: String { ls("account.removal.confirmDeleteMessage", comment: "") }
+            static var confirmDeleteAction: String { ls("account.removal.confirmDeleteAction", comment: "") }
+            static var working: String { ls("account.removal.working", comment: "") }
+            static var failedTitle: String { ls("account.removal.failedTitle", comment: "") }
+            static var failedUnreadable: String { ls("account.removal.failedUnreadable", comment: "") }
+            static var failedChanged: String { ls("account.removal.failedChanged", comment: "") }
+            static var failedRates: String { ls("account.removal.failedRates", comment: "") }
+        }
 
         enum AccountType {
             static var general: String { ls("account.type.general", comment: "") }
@@ -5559,6 +5635,8 @@ enum L10n {
             // Sesión 2: tercera card — sign-in con Google.
             static var googleTitle: String { ls("welcome.existing.googleTitle", comment: "") }
             static var googleBody: String { ls("welcome.existing.googleBody", comment: "") }
+            /// vb1f (opción A): nota bajo el botón del método con que se creó la cuenta de este Apple ID, según el faro.
+            static var usedOnThisDeviceNote: String { ls("welcome.existing.usedOnThisDeviceNote", comment: "") }
         }
 
         /// Piezas compartidas de las pantallas de entrada del Welcome (`WelcomeForm.swift`).
@@ -6591,6 +6669,13 @@ enum L10n {
         static var groupDraftCannotDelete: String {
             ls("inbox.groupDraftCannotDelete", comment: "")
         }
+        /// "Quitar de aquí": oculta en este teléfono un gasto de grupo cuyo grupo no está aquí.
+        static var hideHere: String {
+            ls("inbox.hideHere", comment: "")
+        }
+        static var hideHereHint: String {
+            ls("inbox.hideHereHint", comment: "")
+        }
         static var errorNoAccount: String {
             ls("inbox.errorNoAccount", comment: "")
         }
@@ -7588,6 +7673,12 @@ enum L10n {
         static var v20AIDescription: String { ls("whatsNew.v20.ai.description", comment: "") }
         static var v20RedesignTitle: String { ls("whatsNew.v20.redesign.title", comment: "") }
         static var v20RedesignDescription: String { ls("whatsNew.v20.redesign.description", comment: "") }
+        static var v21GroupsTitle: String { ls("whatsNew.v21.groups.title", comment: "") }
+        static var v21GroupsDescription: String { ls("whatsNew.v21.groups.description", comment: "") }
+        static var v21LoggingTitle: String { ls("whatsNew.v21.logging.title", comment: "") }
+        static var v21LoggingDescription: String { ls("whatsNew.v21.logging.description", comment: "") }
+        static var v21DataTitle: String { ls("whatsNew.v21.data.title", comment: "") }
+        static var v21DataDescription: String { ls("whatsNew.v21.data.description", comment: "") }
     }
 
     // MARK: - App Update
@@ -7672,6 +7763,10 @@ enum L10n {
         static var remoteWipeMessage: String { ls("icloud.remoteWipe.message", comment: "") }
         static var remoteWipeConfirm: String { ls("icloud.remoteWipe.confirm", comment: "") }
         static var remoteWipeCancel: String { ls("icloud.remoteWipe.cancel", comment: "") }
+        /// El aviso que sale en lugar del de borrado cuando faltan los datos y iCloud no está disponible en este
+        /// iPhone (iCloud Drive apagado, sin sesión de iCloud). No ofrece borrar nada.
+        static var unavailableNoticeTitle: String { ls("icloud.unavailableNotice.title", comment: "") }
+        static var unavailableNoticeMessage: String { ls("icloud.unavailableNotice.message", comment: "") }
         static var forceSyncButton: String { ls("icloud.forceSync.button", comment: "") }
         static var forceSyncDescription: String { ls("icloud.forceSync.description", comment: "") }
         static var forceSyncOfflineNote: String { ls("icloud.forceSync.offlineNote", comment: "") }
@@ -7824,6 +7919,31 @@ enum L10n {
             static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
+
+            /// El aviso de datos previos en iCloud antes de volver (ticket
+            /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`).
+            enum Prior {
+                static var checking: String { ls("storage.revert.prior.checking", comment: "") }
+                static var title: String { ls("storage.revert.prior.title", comment: "") }
+                static func body(_ summary: String) -> String {
+                    String(format: ls("storage.revert.prior.body", comment: ""), summary)
+                }
+                static var bodyNoCount: String { ls("storage.revert.prior.bodyNoCount", comment: "") }
+                static func groupRecords(_ count: Int) -> String {
+                    String(format: ls("storage.revert.prior.groupRecords", comment: ""), count)
+                }
+                static var groupsNote: String { ls("storage.revert.prior.groupsNote", comment: "") }
+                static var merge: String { ls("storage.revert.prior.merge", comment: "") }
+                static var discard: String { ls("storage.revert.prior.discard", comment: "") }
+                static var discardConfirmTitle: String { ls("storage.revert.prior.discardConfirmTitle", comment: "") }
+                static var discardConfirmBody: String { ls("storage.revert.prior.discardConfirmBody", comment: "") }
+                static var discardConfirm: String { ls("storage.revert.prior.discardConfirm", comment: "") }
+                static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
+                static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
+                static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
+                static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
+                static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
+            }
         }
 
         enum Sync {
@@ -8417,6 +8537,66 @@ enum L10n {
         static var stepDone: String { ls("devseed.stepDone", comment: "") }
         static var stepDeleting: String { ls("devseed.stepDeleting", comment: "") }
         static var stepReloading: String { ls("devseed.stepReloading", comment: "") }
+
+        /// Perfil `ficha` (capturas y vídeo de la App Store): los grupos y la cuenta en divisa extranjera, en el idioma
+        /// de la app. Las cifras viven en `DevSeedFicha`, por divisa.
+        enum Ficha {
+            static var groupTrip: String { ls("devseed.ficha.groupTrip", comment: "") }
+            static var groupWeekend: String { ls("devseed.ficha.groupWeekend", comment: "") }
+            static var memberYou: String { ls("devseed.ficha.memberYou", comment: "") }
+            static var memberA: String { ls("devseed.ficha.memberA", comment: "") }
+            static var memberB: String { ls("devseed.ficha.memberB", comment: "") }
+            static var memberC: String { ls("devseed.ficha.memberC", comment: "") }
+            static var expenseLodging: String { ls("devseed.ficha.expenseLodging", comment: "") }
+            static var expenseTour: String { ls("devseed.ficha.expenseTour", comment: "") }
+            static var expenseGroupDinner: String { ls("devseed.ficha.expenseGroupDinner", comment: "") }
+            static var expenseAirportTaxi: String { ls("devseed.ficha.expenseAirportTaxi", comment: "") }
+            static var expenseLocalMeal: String { ls("devseed.ficha.expenseLocalMeal", comment: "") }
+            static var expenseMuseum: String { ls("devseed.ficha.expenseMuseum", comment: "") }
+            static var expenseTransport: String { ls("devseed.ficha.expenseTransport", comment: "") }
+            static var expenseGroceries: String { ls("devseed.ficha.expenseGroceries", comment: "") }
+            static var expenseSouvenirs: String { ls("devseed.ficha.expenseSouvenirs", comment: "") }
+            static var expenseWeekendStay: String { ls("devseed.ficha.expenseWeekendStay", comment: "") }
+            static var expenseWeekendMeal: String { ls("devseed.ficha.expenseWeekendMeal", comment: "") }
+            /// «Travel EUR», «Viagem USD», «Ahorros USD»: el nombre lleva el código ISO de la cuenta.
+            static func accountForeign(_ currencyCode: String) -> String {
+                String(format: ls("devseed.ficha.accountForeign", comment: ""), currencyCode)
+            }
+        }
+    }
+
+    // MARK: - UI-test demo seams
+
+    /// Lo que «dicen» los seams DEBUG que sustituyen a la red en las capturas y el vídeo de la App Store
+    /// (`-uitest-chat-draft`, `-uitest-chat-suggestions`, `-uitest-chat-reply`, `-uitest-voice-result`,
+    /// `-uitest-image-result`). En español conservan el texto de siempre, que es el que leen los XCUITest.
+    enum UITestDemo {
+        enum Chat {
+            static var draftMessage: String { ls("uitestDemo.chat.draftMessage", comment: "") }
+            static var draftNoteTaxi: String { ls("uitestDemo.chat.draftNoteTaxi", comment: "") }
+            static var draftNoteGroceries: String { ls("uitestDemo.chat.draftNoteGroceries", comment: "") }
+            static var suggestionSplit: String { ls("uitestDemo.chat.suggestionSplit", comment: "") }
+            static var suggestionMonth: String { ls("uitestDemo.chat.suggestionMonth", comment: "") }
+            static var suggestionBudget: String { ls("uitestDemo.chat.suggestionBudget", comment: "") }
+            static var pizzaNote: String { ls("uitestDemo.chat.pizzaNote", comment: "") }
+        }
+        enum Voice {
+            static var lunchTranscript: String { ls("uitestDemo.voice.lunchTranscript", comment: "") }
+            static var lunchNote: String { ls("uitestDemo.voice.lunchNote", comment: "") }
+            static var twoTranscript: String { ls("uitestDemo.voice.twoTranscript", comment: "") }
+            static var taxiNote: String { ls("uitestDemo.voice.taxiNote", comment: "") }
+            static var coffeeNote: String { ls("uitestDemo.voice.coffeeNote", comment: "") }
+        }
+        enum Photo {
+            static var merchant: String { ls("uitestDemo.photo.merchant", comment: "") }
+            static var secondMerchant: String { ls("uitestDemo.photo.secondMerchant", comment: "") }
+            /// El total del recibo de la ficha de cada idioma (la boleta que se ve al lado en la captura), con punto
+            /// decimal. 251.81 si la cadena no es un número.
+            static var receiptTotal: Double { Double(ls("uitestDemo.photo.receiptTotal", comment: "")) ?? 251.81 }
+            static func page(_ number: Int) -> String {
+                String(format: ls("uitestDemo.photo.pageFormat", comment: ""), number)
+            }
+        }
     }
 
     // MARK: - Yala AI Onboarding
@@ -8435,12 +8615,17 @@ enum L10n {
             // Step 1 — Hero with chat preview animation (3 scenarios)
             static var step1Title: String { ls("yalaAI.onboarding.step1.title", comment: "") }
             static var step1Subtitle: String { ls("yalaAI.onboarding.step1.subtitle", comment: "") }
-            static var step1DemoScenario1User: String { ls("yalaAI.onboarding.step1.demoScenario1User", comment: "") }
-            static var step1DemoScenario1Bot: String { ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: "") }
+            // Los importes llegan ya formateados en la divisa principal (`YalaAIOnboardingDemoAmounts`).
+            static func step1DemoScenario1User(_ lunch: String) -> String { String(format: ls("yalaAI.onboarding.step1.demoScenario1User", comment: ""), lunch) }
+            static func step1DemoScenario1Bot(_ lunch: String) -> String { String(format: ls("yalaAI.onboarding.step1.demoScenario1Bot", comment: ""), lunch) }
             static var step1DemoScenario2User: String { ls("yalaAI.onboarding.step1.demoScenario2User", comment: "") }
-            static var step1DemoScenario2Bot: String { ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: "") }
+            static func step1DemoScenario2Bot(_ coffeeThisMonth: String, _ aboveAverage: String) -> String {
+                String(format: ls("yalaAI.onboarding.step1.demoScenario2Bot", comment: ""), coffeeThisMonth, aboveAverage)
+            }
             static var step1DemoScenario3User: String { ls("yalaAI.onboarding.step1.demoScenario3User", comment: "") }
-            static var step1DemoScenario3Bot: String { ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: "") }
+            static func step1DemoScenario3Bot(_ perMonth: String, _ perYear: String) -> String {
+                String(format: ls("yalaAI.onboarding.step1.demoScenario3Bot", comment: ""), perMonth, perYear)
+            }
             static var step1DemoAmountLabel: String { ls("yalaAI.onboarding.step1.demoAmountLabel", comment: "") }
             static var step1A11yLabel: String { ls("yalaAI.onboarding.step1.a11yLabel", comment: "") }
 
@@ -8472,13 +8657,13 @@ enum L10n {
             static var step4FocusSaverDescription: String { ls("yalaAI.onboarding.step4.focusSaverDescription", comment: "") }
             static var step4FocusCautiousDescription: String { ls("yalaAI.onboarding.step4.focusCautiousDescription", comment: "") }
             static var step4FocusBalancedQuote: String { ls("yalaAI.onboarding.step4.focusBalancedQuote", comment: "") }
-            static var step4FocusSaverQuote: String { ls("yalaAI.onboarding.step4.focusSaverQuote", comment: "") }
+            static func step4FocusSaverQuote(_ perMonth: String) -> String { String(format: ls("yalaAI.onboarding.step4.focusSaverQuote", comment: ""), perMonth) }
             static var step4FocusCautiousQuote: String { ls("yalaAI.onboarding.step4.focusCautiousQuote", comment: "") }
 
             // Step 5 — Done
             static var step5Title: String { ls("yalaAI.onboarding.step5.title", comment: "") }
             static var step5Subtitle: String { ls("yalaAI.onboarding.step5.subtitle", comment: "") }
-            static var step5Tip: String { ls("yalaAI.onboarding.step5.tip", comment: "") }
+            static func step5Tip(_ coffee: String) -> String { String(format: ls("yalaAI.onboarding.step5.tip", comment: ""), coffee) }
             static var step5CTA: String { ls("yalaAI.onboarding.step5.cta", comment: "") }
         }
     }

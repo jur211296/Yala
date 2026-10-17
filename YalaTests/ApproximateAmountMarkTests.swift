@@ -778,7 +778,22 @@ struct ApproximateMarkNewProducersTests {
             """)
     }
 
+    /// Una fila en EUR para el saldo en dólares: su duda sale de la tasa con la que se valora al cierre.
+    private func makeEuroTx(amount: Double, date: Date, account: Account, category: YalaCategory) -> TransactionItem {
+        let tx = TransactionItem(
+            date: date, amount: amount, currencyCode: "EUR", note: "",
+            category: category, account: account, tags: [],
+            amountInPreferredCurrency: amount
+        )
+        tx.preferredCurrencyCode = "USD"
+        return tx
+    }
+
     /// El saldo del período es el número del `BalanceWidget`, y su bucle es otro.
+    ///
+    /// Desde `panel-balance-chart-contradicts-its-own-figure` (2026-10-16) ese saldo es lo que había en cada divisa
+    /// al cierre, valorado con la tasa de ese día (`BalanceValuation`): su duda es la de ESA conversión, no la marca
+    /// que la fila guardó el día que se creó. Lo que está en la divisa del saldo no se convierte y es exacto.
     @Test("El saldo del período del widget lleva su propia marca")
     func widgetSummary_periodBalanceCarriesItsOwnMark() {
         let account = Account(name: "Main", currencyCode: "USD", colorHex: "#6366F1", iconName: "creditcard", type: "bank")
@@ -786,15 +801,18 @@ struct ApproximateMarkNewProducersTests {
 
         // Fuera del período (no tocan income/expense) pero SÍ dentro del saldo acumulado.
         let historicas = [
-            makeStoredTx(amount: -500, date: day(2026, 2, 3), account: account, category: category, provisional: true),
+            makeEuroTx(amount: -500, date: day(2026, 2, 3), account: account, category: category),
             makeStoredTx(amount: -500, date: day(2026, 2, 4), account: account, category: category, provisional: false),
         ]
+        var dudosa = MockCurrencyConverter()
+        dudosa.quality = .carriedForward(fromDateKey: "2026-04-29")
 
         let summary = WidgetDataCache.buildPeriodSummary(
             transactions: [], periodStart: day(2026, 4, 1), periodEnd: day(2026, 4, 30),
-            currencyCode: "USD", allTransactionsForBalance: historicas
+            currencyCode: "USD", allTransactionsForBalance: historicas, converter: dudosa
         )
 
+        #expect(summary.periodBalance == -1_000)
         #expect(summary.periodBalanceIsApproximate == true, """
             El saldo acumula TODO el histórico, no solo el período: su marca sale de ese recorrido y
             no de los totales del mes, que aquí están vacíos.
@@ -803,13 +821,18 @@ struct ApproximateMarkNewProducersTests {
             Y al revés: ninguna de esas dos cae en el período, así que el gasto del mes no se marca.
             Si esto sale `true`, los dos bucles se están pisando.
             """)
+
+        let exacta = WidgetDataCache.buildPeriodSummary(
+            transactions: [], periodStart: day(2026, 4, 1), periodEnd: day(2026, 4, 30),
+            currencyCode: "USD", allTransactionsForBalance: historicas, converter: MockCurrencyConverter()
+        )
+        #expect(exacta.periodBalanceIsApproximate == false, "con la tasa del cierre exacta, el saldo no se marca")
     }
 
-    /// **El caso que separa el denominador bueno del malo, y por eso existe.** El test de arriba
-    /// (−500 dudosa y −500 exacta) da 50 % por las DOS reglas: pasaba igual con el denominador mal
-    /// puesto. Éste no: la review adversarial del 2026-09-09 encontró que `periodBalanceIsApproximate`
-    /// dividía entre `Σ|monto|` —la facturación bruta— en vez de entre el saldo, y la marca se perdía
-    /// justo en quien más historial tiene.
+    /// **El caso que separa el denominador bueno del malo, y por eso existe.** Con −500 dudosa y −500 exacta las
+    /// DOS reglas dan 50 %: pasaba igual con el denominador mal puesto. Éste no: la review adversarial del
+    /// 2026-09-09 encontró que `periodBalanceIsApproximate` dividía entre `Σ|monto|` —la facturación bruta— en vez
+    /// de entre el saldo, y la marca se perdía justo en quien más historial tiene.
     @Test("El saldo del widget se mide contra el SALDO, no contra la facturación que lo formó")
     func widgetSummary_periodBalanceDividesByTheBalance() {
         let account = Account(name: "Main", currencyCode: "USD", colorHex: "#6366F1", iconName: "creditcard", type: "bank")
@@ -817,16 +840,18 @@ struct ApproximateMarkNewProducersTests {
         let ingreso = YalaCategory(name: "Salary", colorHex: "#00FF00", isIncome: true)
 
         // Movimientos que casi se cancelan: entra 60.500 y sale 60.000, así que el saldo es 500.
-        // De lo que salió, 400 se convirtió con una tasa que no era la de su día.
+        // De lo que salió, 400 están en euros y se valoran con una tasa que no es la del cierre.
         let historicas = [
             makeStoredTx(amount: 60_500, date: day(2026, 1, 5), account: account, category: ingreso, provisional: false),
             makeStoredTx(amount: -59_600, date: day(2026, 1, 6), account: account, category: gasto, provisional: false),
-            makeStoredTx(amount: -400, date: day(2026, 1, 7), account: account, category: gasto, provisional: true),
+            makeEuroTx(amount: -400, date: day(2026, 1, 7), account: account, category: gasto),
         ]
+        var dudosa = MockCurrencyConverter()
+        dudosa.quality = .staticFallback
 
         let summary = WidgetDataCache.buildPeriodSummary(
             transactions: [], periodStart: day(2026, 4, 1), periodEnd: day(2026, 4, 30),
-            currencyCode: "USD", allTransactionsForBalance: historicas
+            currencyCode: "USD", allTransactionsForBalance: historicas, converter: dudosa
         )
 
         #expect(summary.periodBalance == 500)

@@ -5,7 +5,7 @@ priority: high
 area: "onboarding, modo-nube"
 created: 2026-09-11
 source: "medido leyendo el código durante el paso 8 del rediseño de sesiones; NO reproducido en device"
-updated: 2026-09-23
+updated: 2026-10-15
 ---
 
 # «Empezar desde cero» en Restaurar promete «sin tus datos previos» y los deja bajando
@@ -349,3 +349,7 @@ device-QA vive aparte: `tickets/qa/device-qa-activation-restore-start-fresh.md`.
 ## Barrido de `qa` · 2026-09-23 · se queda para el iPhone
 
 Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se prueba con **Yala Dev compilado desde `2.1`**: el TestFlight 13 es del 9-sep y no lleva los arreglos posteriores. Para cerrarlo basta con los recorridos 1 y 3, que no borran nada.
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D6): pide datos reales en iCloud. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.

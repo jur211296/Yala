@@ -13,3 +13,9 @@ igual en la sesión reusando piezas del #348 (card) y del #350 (orbe).
 
 **How to apply:** en el lienzo, marca la recomendación por producto, no por esfuerzo; el coste va en la descripción
 como dato. Y antes de llamar «grande» a una propuesta, mira qué piezas ya existen. Ver [[disena-en-lienzo-antes-de-construir]].
+
+**Y cuando contesta «¿qué es lo correcto?» (2026-10-16):** le puse tres formas de valorar el saldo en dólares
+(todo al TC de hoy —mi recomendada, ya implementada—, cada día a su TC, solo lo que incluye hoy) y contestó con esa
+pregunta en vez de elegir. Le di la regla del dominio (contablemente, un saldo a una fecha va al tipo de ESA fecha)
+y eligió esa, la más cara. ⇒ en una decisión de cálculo financiero, la recomendada es la correcta según la regla del
+dominio, no la que ya está hecha; dilo en la primera ronda y te ahorras la segunda.

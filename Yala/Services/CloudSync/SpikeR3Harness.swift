@@ -245,6 +245,22 @@ final class SpikeR3Harness {
     ///
     /// Una CANCELACIÓN también devuelve `nil` (= «no se le vio morir»), que es el sesgo seguro: hace
     /// abortar el wipe del eje 4a en vez de ejecutarlo sobre un release no verificado.
+    /// Cuántos descriptores quedan sobre el store tras esperar hasta `timeoutMs` a que lleguen a cero.
+    private func awaitDescriptorsClosed(timeoutMs: Int) async -> Int {
+        var elapsed = 0
+        var open = Self.openDescriptorCountForSpikeStore()
+        while open > 0 && elapsed < timeoutMs {
+            do {
+                try await Task.sleep(for: .milliseconds(10))
+            } catch {
+                return open
+            }
+            elapsed += 10
+            open = Self.openDescriptorCountForSpikeStore()
+        }
+        return open
+    }
+
     private func awaitDeath(timeoutMs: Int, sentinelIsAlive: () -> Bool) async -> Int? {
         var elapsed = 0
         if !sentinelIsAlive() { return 0 }
@@ -457,7 +473,11 @@ final class SpikeR3Harness {
             line("EJE 4a ❌ ABORTADO: el container no murió ⇒ el wipe NO se ejecuta (es exactamente el canario que R4 necesita)")
             return
         }
-        let fdsAfterRelease = Self.openDescriptorCountForSpikeStore()
+        // Core Data cierra la conexión en su cola, un momento DESPUÉS de que muera el objeto: contado en ese mismo instante,
+        // con la máquina cargada (la suite completa) salían 3 descriptores con el container ya muerto (medido el
+        // 2026-10-16: «release verificado en 0 ms · descriptores 3»). Se espera a que se cierren, con techo: el release
+        // verificado sigue exigiendo cero descriptores antes de borrar, y un techo vencido sigue abortando.
+        let fdsAfterRelease = await awaitDescriptorsClosed(timeoutMs: 2000)
         line("release verificado en \(ms) ms · trío \(Self.fileTrio().description) · descriptores \(fdsAfterRelease)")
         guard fdsAfterRelease == 0 else {
             line("EJE 4a ❌ ABORTADO: quedan \(fdsAfterRelease) descriptores abiertos ⇒ el wipe NO se ejecuta (release verificado = sentinel nil Y cero descriptores)")

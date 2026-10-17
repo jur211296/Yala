@@ -481,8 +481,12 @@ struct ActivationRestoreDiscardTests {
         // (`remote-wipe-alert-skips-the-router`): la gracia ya no enciende nada, PIDE el aviso por la
         // cola del router. El término sigue teniendo que ir por delante de esa petición, que es lo que
         // impide que la tarea NAZCA mientras la activación está en pantalla.
+        //
+        // **Y desde el 2026-10-15 la gracia nace en `startRemoteWipeGrace()`** (el drenaje la re-arma con una
+        // importación en marcha), así que la petición ya no está en este `onChange`: el ancla es la llamada que
+        // arranca la gracia, que es lo que el término tiene que preceder.
         try Self.expectOrder(termino,
-                             before: "RouterEntryGate.shared.submit(.presentRemoteWipeNotice)",
+                             before: "startRemoteWipeGrace()",
                              in: onChange, """
             el término quedó por debajo del armado de la gracia: entonces no la impide, solo la adorna.
             """)

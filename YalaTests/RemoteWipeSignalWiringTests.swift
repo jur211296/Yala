@@ -220,7 +220,10 @@ struct RemoteWipeSignalWiringTests {
     func theNoticeIsGatedByTheAxisAtItsOnlyProducer() throws {
         let vista = try Self.code("Yala/App/ContentView.swift")
 
+        // Desde el 2026-10-15 (ticket `tablero-apagar-icloud-drive-hace-que-yala-diga-t-i1o5`) la espera de la
+        // importación va entre el `sleep` y el eje: el eje sigue leyéndose tras la ÚLTIMA espera.
         let tramo = "try await Task.sleep(for: .seconds(5)) "
+            + "try await waitWhileAnImportCouldStillBringTheRowsBack() "
             + Self.origenEsperado(defaultsArg: "")
             + " guard sessionObeysWipeSignal else { return } "
             + "RouterEntryGate.shared.submit(.presentRemoteWipeNotice)"
@@ -285,6 +288,18 @@ struct RemoteWipeSignalWiringTests {
             aquí explicando cuál es.
             """)
 
+        // **Y su gemelo, el aviso de iCloud no disponible** (2026-10-15): los mismos seis escritores, uno a uno. Lo
+        // enciende solo `mountRemoteWipeAlert()` y lo apagan los mismos cinco sitios que al otro; un sexto apagado
+        // que falte deja el aviso de iCloud dibujado tras una salida que solo apagó el de borrado.
+        #expect(try Self.countInProduction("showICloudUnavailableAlert = ") == 6, """
+            las asignaciones al flag del aviso de iCloud no disponible cambiaron de número. Tiene que ir a la par que \
+            `showRemoteWipeAlert`: un encendido (`mountRemoteWipeAlert()`) y los mismos cinco apagados.
+            """)
+        #expect(try Self.countInProduction("showICloudUnavailableAlert = true") == 1,
+                "el aviso de iCloud no disponible se enciende fuera de `mountRemoteWipeAlert()`")
+        #expect(try Self.countInProduction("@State private var showICloudUnavailableAlert") == 1,
+                "el flag del aviso de iCloud no está declarado exactamente una vez: el escáner mide otra cosa")
+
         // Control del instrumento, y éste sí puede fallar solo: si el recorrido del árbol se rompiera o
         // el flag se renombrara, las cuentas de arriba darían 0 por el motivo equivocado.
         #expect(try Self.countInProduction("@State private var showRemoteWipeAlert") == 1,
@@ -306,10 +321,13 @@ struct RemoteWipeSignalWiringTests {
     func theNoticeDrainRemeasuresBeforePresenting() throws {
         let vista = try Self.code("Yala/App/ContentView.swift")
 
-        let tramo = "guard !hasPersonalData else { return } "
+        let tramo = "remeasurePersonalData() guard !hasPersonalData else { return } "
             + "guard hasCompletedOnboarding else { return } "
             + Self.origenEsperado(defaultsArg: "")
             + " guard sessionObeysWipeSignal else { return } "
+            + "guard case .present(let notice) = currentRemoteWipeNoticeDecision() else { "
+            + "startRemoteWipeGrace() return } "
+            + "remoteWipeNoticeKind = notice "
             + "remoteWipeNoticePending = true mountRemoteWipeAlert() "
             + "armRemoteWipeNoticePresentationNet()"
         #expect(Self.count(tramo, in: vista) == 1, """
@@ -352,7 +370,9 @@ struct RemoteWipeSignalWiringTests {
         let vista = try Self.code("Yala/App/ContentView.swift")
         let cuerpo = "private func mountRemoteWipeAlert() { #if DEBUG "
             + "guard !UITestHooks.remoteWipeNoticeNeverMounts else { return } #endif "
-            + "showRemoteWipeAlert = true }"
+            + "switch remoteWipeNoticeKind { "
+            + "case .dataRemoved: showRemoteWipeAlert = true "
+            + "case .iCloudUnavailable: showICloudUnavailableAlert = true } }"
         #expect(Self.count(cuerpo, in: vista) == 1, """
             el único escritor de la red visual del aviso cambió de forma. Esperado exactamente: \(cuerpo)
             """)
@@ -400,6 +420,7 @@ struct RemoteWipeSignalWiringTests {
             VISUAL; el blocker es `remoteWipeNoticePending`.
             """)
         let desarme = "case .exhausted: remoteWipeNoticePending = false showRemoteWipeAlert = false "
+            + "showICloudUnavailableAlert = false "
             + "MetricsService.canary(.remoteWipeNoticeNotPresented) return"
         #expect(Self.count(desarme, in: vista) == 1, """
             el desarme de la red de presentación cambió de forma. Al agotarse el cap del ciclo tiene que

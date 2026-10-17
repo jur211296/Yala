@@ -148,6 +148,11 @@ final class CloudAuthService: NSObject {
 
     private var didRegisterRevocationObserver = false
 
+    /// vb1f · la credencial de Google del último canje y el `sub` de la sesión que abrió. En memoria y nada más: no
+    /// sobrevive al proceso, la olvidan `takeGoogleCredentialForReuse()`, `signOut()` y el comienzo de cualquier otro
+    /// inicio de sesión.
+    private var lastGoogleCredential: (credential: GoogleSignInCredential, sub: String)?
+
     /// Hook INYECTADO del canje SIWA (B1, AJUSTE #2 del review — layering): la composición de producción
     /// (`SIWAExchangeSeam.installProductionHook()`, un ÚNICO punto en AppBootstrapper) instala el closure
     /// real que canjea el `authorizationCode` por el refresh token de Apple vía el Worker y persiste el
@@ -310,6 +315,7 @@ final class CloudAuthService: NSObject {
         guard signInContinuation == nil, !googleSignInInFlight else {
             throw CloudAuthError.signInAlreadyInFlight
         }
+        lastGoogleCredential = nil
 
         let rawNonce = Self.randomNonceString()
         currentNonce = rawNonce
@@ -330,10 +336,16 @@ final class CloudAuthService: NSObject {
     }
 
     /// Despacho por provider (sesión 2 — un solo call-site para las vistas parametrizadas).
-    func signIn(with provider: CloudSignInProvider) async throws {
+    ///
+    /// `reusingGoogleCredential` (vb1f): con Google, se intenta primero esa credencial sin abrir la hoja; si no entra,
+    /// la hoja de siempre. Con Apple se ignora.
+    func signIn(with provider: CloudSignInProvider,
+                reusingGoogleCredential reusable: GoogleSignInCredential? = nil) async throws {
         switch provider {
         case .apple: try await signInWithApple()
-        case .google: try await signInWithGoogle()
+        case .google:
+            if let reusable, await signInWithReusedGoogleCredential(reusable) { break }
+            try await signInWithGoogle()
         }
         // C-8: el derecho Pro de la cuenta entrante debe estar disponible YA. Sin esto, quien entra
         // con su cuenta de Yala en un device con otro Apple ID — el caso central del bug — sigue
@@ -353,13 +365,14 @@ final class CloudAuthService: NSObject {
     /// Cancel del usuario (`GIDSignInError.canceled`) → `CloudAuthError.cancelled` (sesión 2,
     /// D2): la UI lo consume en silencio (sin alert ni breadcrumb — un cancel no es fallo).
     func signInWithGoogle() async throws {
-        guard let client else { throw CloudAuthError.notConfigured }
+        guard client != nil else { throw CloudAuthError.notConfigured }
         // Guard in-flight COMPARTIDO con SIWA: un sign-in Apple y uno Google jamás conviven.
         guard signInContinuation == nil, !googleSignInInFlight else {
             throw CloudAuthError.signInAlreadyInFlight
         }
         googleSignInInFlight = true
         defer { googleSignInInFlight = false }
+        lastGoogleCredential = nil
 
         let rawNonce = Self.randomNonceString()
 
@@ -395,6 +408,49 @@ final class CloudAuthService: NSObject {
             throw CloudAuthError.missingIdentityToken
         }
 
+        let profile = result.user.profile
+        try await completeGoogleSignIn(GoogleSignInCredential(
+            idToken: idToken,
+            accessToken: result.user.accessToken.tokenString,
+            rawNonce: rawNonce,
+            googleUserID: result.user.userID,
+            email: profile.flatMap { $0.email.isEmpty ? nil : $0.email },
+            fullName: profile.flatMap { $0.name.isEmpty ? nil : $0.name },
+            obtainedAt: Date()))
+    }
+
+    /// **vb1f (opción C) · inicia sesión con una credencial de Google que esta app YA obtuvo, sin abrir la hoja.** La
+    /// pantalla de entrar la recoge con `takeGoogleCredentialForReuse()` antes de soltar la sesión del «otro método», y
+    /// la pasa al alta: así «Registrarse con Google» no vuelve a pedir Google.
+    ///
+    /// Devuelve `false` si el canje no entró, y entonces quien llama abre la hoja de siempre: **lo peor que puede pasar
+    /// es lo de antes**. Que Supabase acepte canjear dos veces el mismo id token de Google dentro de su vigencia NO está
+    /// medido (no se puede desde el simulador); por eso el camino interactivo queda detrás, y el rastro
+    /// `google-reuse-rejected` dice en producción si ese caso existe.
+    private func signInWithReusedGoogleCredential(_ credential: GoogleSignInCredential) async -> Bool {
+        guard client != nil, signInContinuation == nil, !googleSignInInFlight else { return false }
+        googleSignInInFlight = true
+        defer { googleSignInInFlight = false }
+        do {
+            try await completeGoogleSignIn(credential)
+            return true
+        } catch {
+            #if DEBUG
+            print("CloudAuthService: la credencial de Google reusada no entró, se pide otra vez: \(error)")
+            #endif
+            CloudSyncBreadcrumb.authSignInFailed(reason: "google-reuse-rejected")
+            return false
+        }
+    }
+
+    /// El canje de una credencial de Google con Supabase y todo lo que nace con la sesión. **Un solo sitio para el canje
+    /// interactivo y el reusado**: si fueran dos, el registro de sesiones, la época, la marca del adopt o el par de
+    /// Google acabarían divergiendo en uno de ellos.
+    private func completeGoogleSignIn(_ credential: GoogleSignInCredential) async throws {
+        guard let client else { throw CloudAuthError.notConfigured }
+        let idToken = credential.idToken
+        let rawNonce = credential.rawNonce
+
         // La sesión que había antes del canje: siembra el registro de sesiones si este build aún no lo había visto.
         let previousUserID = currentUserID
         do {
@@ -402,7 +458,7 @@ final class CloudAuthService: NSObject {
                 credentials: .init(
                     provider: .google,
                     idToken: idToken,
-                    accessToken: result.user.accessToken.tokenString,
+                    accessToken: credential.accessToken,
                     nonce: rawNonce
                 )
             )
@@ -434,15 +490,14 @@ final class CloudAuthService: NSObject {
         if storedAppleUserID() != nil {
             clearCapturedProfile()
         }
-        let googleUserID = result.user.userID
+        let googleUserID = credential.googleUserID
         if let googleUserID {
-            let profile = result.user.profile
             applyProfileCapture(
                 persistIncomingUserIDToKey: nil,  // la identidad Google se persiste como PAR (abajo)
                 storedUserID: GoogleUserPairStore(storage: profileStore).read()?.googleUserID,
                 incomingUserID: googleUserID,
-                email: profile.flatMap { $0.email.isEmpty ? nil : $0.email },
-                fullName: profile.flatMap { $0.name.isEmpty ? nil : $0.name }
+                email: credential.email,
+                fullName: credential.fullName
             )
         }
 
@@ -463,6 +518,19 @@ final class CloudAuthService: NSObject {
             CloudSyncBreadcrumb.googlePairCaptureSkipped(
                 reason: googleUserID == nil ? "no-google-user-id" : "no-sub")
         }
+
+        // vb1f: la credencial queda a mano, atada a ESTA sesión, por si la pantalla de entrar la necesita para el alta.
+        lastGoogleCredential = currentUserID.map { (credential, $0) }
+    }
+
+    /// **vb1f · la credencial de Google del último canje, una sola vez.** Solo si la sesión viva es la que nació de ella
+    /// (mismo `sub`) y aún está fresca (`GoogleCredentialReuseLogic`); en cualquier caso la olvida: sirve a UN alta,
+    /// la siguiente. La llama la pantalla de entrar ANTES de soltar la sesión, porque `signOut()` también la olvida.
+    func takeGoogleCredentialForReuse(now: Date = Date()) -> GoogleSignInCredential? {
+        defer { lastGoogleCredential = nil }
+        guard let stored = lastGoogleCredential else { return nil }
+        return GoogleCredentialReuseLogic.reusable(
+            stored.credential, boundToSub: stored.sub, liveSub: currentUserID, now: now)
     }
 
     /// ¿Es el error el CANCEL del usuario en el sheet de Google? Por NSError domain+code (AJUSTE #6
@@ -521,6 +589,8 @@ final class CloudAuthService: NSObject {
         AdoptSessionOwnership.record(nil)
         // Antes del guard y aunque el cierre falle: olvidar un rechazo de más solo cuesta volver a preguntar.
         sessionEpoch += 1
+        // vb1f: la credencial de Google reusable muere con la sesión, también sin backend.
+        lastGoogleCredential = nil
         guard let client else { return storedSessionIsGone }
         // La cuenta que se cierra, antes de cerrarla: el registro de sesiones vuelve a la de antes si se va de verdad.
         let closingUserID = currentUserID

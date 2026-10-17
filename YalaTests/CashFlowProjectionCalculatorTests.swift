@@ -268,8 +268,8 @@ struct CashFlowProjectionCalculatorTests {
 
         let currentKey = CashFlowProjectionCalculator.monthKey(for: currentMonthStart, calendar: calendar)
         let override = CashFlowOverride(monthKey: currentKey, amount: 800, note: "Vacaciones")
-        override.line = line
-        line.overrides = [override]
+        override.cashFlowLine = line
+        line.monthOverrides = [override]
 
         let result = CashFlowProjectionCalculator.calculate(
             plan: plan, lines: [line], transactions: [],
@@ -281,6 +281,36 @@ struct CashFlowProjectionCalculatorTests {
         let lineResult = result.months[0].expenseLines[0]
         #expect(lineResult.plannedAmount == 800)
         #expect(lineResult.isOverride == true)
+    }
+
+    // MARK: - 9b. Dos ajustes del mismo mes: siempre el mismo
+
+    /// Ticket `cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two`: con `.first` el mes enseñaba uno
+    /// cualquiera de los dos según el orden de la relación. Ahora, el de menor `id`, el que deja la pasada de arranque.
+    @Test func twoOverridesOfTheSameMonth_alwaysShowTheLowestID() throws {
+        let low = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
+        let high = try #require(UUID(uuidString: "00000000-0000-0000-0000-000000000002"))
+        let currentKey = CashFlowProjectionCalculator.monthKey(for: currentMonthStart, calendar: calendar)
+        for lowFirst in [true, false] {
+            let cat = makeCategory(name: "Food")
+            let line = makeLine(name: "Food", method: .manual, manualAmount: 500, category: cat)
+            let a = CashFlowOverride(monthKey: currentKey, amount: 800)
+            a.id = low
+            let b = CashFlowOverride(monthKey: currentKey, amount: 900)
+            b.id = high
+            a.cashFlowLine = line
+            b.cashFlowLine = line
+            line.monthOverrides = lowFirst ? [a, b] : [b, a]
+
+            let result = CashFlowProjectionCalculator.calculate(
+                plan: makePlan(), lines: [line], transactions: [],
+                allExpenseCategories: [], scheduledPayments: [],
+                monthsBack: 0, monthsAhead: 0,
+                currencyCode: "USD", converter: MockCurrencyConverter()
+            )
+
+            #expect(result.months[0].expenseLines[0].plannedAmount == 800, "lowFirst=\(lowFirst)")
+        }
     }
 
     // MARK: - 11. Real vs plan for past month

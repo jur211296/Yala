@@ -56,8 +56,8 @@ struct CashFlowScheduledCurrencyTests {
             let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentMonthStart)!
             let key = CashFlowProjectionCalculator.monthKey(for: nextMonth, calendar: calendar)
             let override = CashFlowOverride(monthKey: key, amount: overrideAmount)
-            override.line = line
-            line.overrides = [override]
+            override.cashFlowLine = line
+            line.monthOverrides = [override]
         }
         let projection = CashFlowProjectionCalculator.calculate(
             plan: CashFlowPlan(name: "Plan", startingBalance: 0),

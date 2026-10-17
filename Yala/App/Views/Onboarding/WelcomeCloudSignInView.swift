@@ -113,7 +113,12 @@ struct WelcomeCloudSignInView: View {
     /// `offersFullActivation` (paso 8) distingue los dos destinos de [I] que llegan aquí: quien entró por
     /// «Primera vez → nube» venía a estrenar Yala entero y su cuenta resultó ser de grupos, así que cuando su
     /// sesión solo-grupos quede montada se le pone delante «Activar Yala completo» (ADR §7).
-    var onEnterGroupsOnly: (_ offersFullActivation: Bool) -> Void
+    ///
+    /// `sessionOpenedHere` dice si la sesión la abrió ESTE intento (`ensureSignedIn`) o era una que ya estaba en el
+    /// llavero. Solo con la primera se puede afirmar que los grupos que baje el canal son de quien está delante
+    /// (`LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet`): una sesión que sobrevivió a una reinstalación es
+    /// de la persona anterior.
+    var onEnterGroupsOnly: (_ offersFullActivation: Bool, _ sessionOpenedHere: Bool) -> Void
     /// **Paso 6** · «Crear otra cuenta» desde la entrada encaminada por el faro: cerrar este cover y volver
     /// a «Elige dónde quieres guardar tus datos» ENTERO —las dos cards, privado incluido (decisión de
     /// Jürgen 2026-09-09, que deroga el «card nube activa» del ticket)—. Es un callback y no una fase propia
@@ -169,6 +174,10 @@ struct WelcomeCloudSignInView: View {
     /// elegir la terminal de «listo»: el alta que entró en una cuenta ya creada lo dice (ticket
     /// `born-cloud-signup-lands-on-existing-account-silently`).
     @State private var adoptOrigin: WelcomeAdoptOrigin = .reentry
+    /// **vb1f (opción C)** · la credencial de Google del intento que acabó en «Esa cuenta usa otro método» o en «No
+    /// encontramos una cuenta». La recoge `runSignInFlow` antes de soltar esa sesión y la gasta el SIGUIENTE
+    /// `ensureSignedIn`: si es el alta con Google, no vuelve a abrir la hoja. Vive lo que la pantalla.
+    @State private var pendingGoogleCredential: GoogleSignInCredential?
 
     var body: some View {
         screen
@@ -742,6 +751,11 @@ struct WelcomeCloudSignInView: View {
     /// reusara (`ensureSignedIn` salta con `hasSession`) y la persona entraría con una cuenta que no eligió.
     /// La fase vuelve al intro para que cerrar el consentimiento aterrice en el intro del ALTA, con sus dos
     /// botones, y no otra vez en la pantalla de la que se sale.
+    ///
+    /// **vb1f (opción C): con Google, viaja también la credencial** (`pendingGoogleCredential`, recogida antes de soltar
+    /// la sesión). El consentimiento se sigue pidiendo; lo que no se repite es la hoja de Google. No hace falta tocarla
+    /// aquí: `ensureSignedIn` la gasta en el siguiente inicio de sesión y solo si es de Google, así que si la persona
+    /// cierra el consentimiento y elige Apple en el intro del alta, se descarta sin usarse.
     private func switchToSignUp(with signUpProvider: CloudSignInProvider) {
         chosenProvider = signUpProvider
         entryOverride = .bornCloud
@@ -1013,8 +1027,12 @@ struct WelcomeCloudSignInView: View {
     private func ensureSignedIn() async -> Bool {
         // Retry con sesión ya viva (falló solo el paso siguiente): no re-pedir Face ID.
         guard !CloudAuthService.shared.hasSession else { return true }
+        // vb1f: la credencial de Google que ya dio esta pantalla sirve a ESTE inicio de sesión y a ninguno más.
+        let reusable = GoogleCredentialReuseLogic.credentialForNextSignIn(
+            pendingGoogleCredential, provider: provider, now: Date())
+        pendingGoogleCredential = nil
         do {
-            try await CloudAuthService.shared.signIn(with: provider)
+            try await CloudAuthService.shared.signIn(with: provider, reusingGoogleCredential: reusable)
             sessionOpenedHere = true
             return true
         } catch CloudAuthError.cancelled {
@@ -1127,6 +1145,10 @@ struct WelcomeCloudSignInView: View {
                 beaconProvider: beacon.linkedProvider,
                 sessionSubHash: CloudBeacon.hash(userID),
                 sessionProvider: provider)
+            // vb1f: las dos salidas de aquí llevan al alta con el método que se acaba de usar (`switchToSignUp`). La
+            // credencial de Google se recoge ANTES de soltar la sesión —`signOut()` la olvida— para que el alta no
+            // vuelva a pedirla. La SESIÓN no viaja, solo la credencial: lo que sigue de abajo no cambia.
+            pendingGoogleCredential = CloudAuthService.shared.takeGoogleCredentialForReuse()
             // Sin claim no se creó NADA server-side; soltar la sesión SIEMPRE (no dejar el
             // sign-in colgado) — también en mismatch (jamás dejar un sub huérfano vivo).
             await CloudAuthService.shared.signOut()
@@ -1164,7 +1186,7 @@ struct WelcomeCloudSignInView: View {
                 // sabe pedir lo que falte en este dispositivo. Los dos destinos comparten rama porque van al
                 // mismo sitio; lo único que los separa es la oferta de «Activar Yala completo» al terminar
                 // (paso 8), y viaja como argumento.
-                onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation)
+                onEnterGroupsOnly(destino == .enterGroupsOnlyOfferingFullActivation, sessionOpenedHere)
                 return
             // `.adoptAsComplete` es el destino NORMAL de esta puerta: sigue al guard cross-cuenta y al
             // adopt de abajo, intactos. Los demás son inalcanzables aquí con `exists == true` —lo afirma

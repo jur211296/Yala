@@ -1111,7 +1111,7 @@
 "settings.wipeData" = "Effacer les donnees";
 "settings.faceId" = "Face ID";
 "settings.permissions" = "Autorisations";
-"settings.aiPrivacy" = "Confidentialite et donnees IA";
+"settings.aiPrivacy" = "Confidentialité et données IA";
 "settings.subscriptions" = "Gerer les abonnements";
 "settings.rateApp" = "Noter et recommander";
 "settings.tutorials" = "Tutoriels";
@@ -1401,7 +1401,6 @@
 "subcategory.namePlaceholder" = "Nom de la sous-categorie";
 "subcategory.unassigned" = "Non attribue";
 
-"account.deleteBalanceError" = "Vous ne pouvez pas supprimer ce compte car il a un solde non nul. Ajustez le solde a 0 avant de le supprimer.";
 "account.type.general" = "General";
 "account.type.cash" = "Especes";
 "account.type.current" = "Compte courant";
@@ -2019,13 +2018,13 @@
 "inbox.newTag" = "Nouveau";
 "inbox.noArchived" = "Aucun brouillon archivé";
 "inbox.noArchivedDescription" = "Les brouillons approuvés ou rejetés apparaîtront ici.";
-"inbox.editDraft" = "{'de': 'Entwurf bearbeiten', 'fr': 'Modifier le brouillon', 'it': 'Modifica bozza', 'pt-BR': 'Editar rascunho', 'pt-PT': 'Editar rascunho'}";
-"inbox.cannotApprove" = "{'de': 'Kann nicht genehmigt werden', 'fr': 'Impossible d’approuver', 'it': 'Impossibile approvare', 'pt-BR': 'Não é possível aprovar', 'pt-PT': 'Não é possível aprovar'}";
-"inbox.sourceVoice" = "{'de': 'Sprache', 'fr': 'Voix', 'it': 'Voce', 'pt-BR': 'Voz', 'pt-PT': 'Voz'}";
-"inbox.sourceEmail" = "{'de': 'E-Mail', 'fr': 'E-mail', 'it': 'E-mail', 'pt-BR': 'E-mail', 'pt-PT': 'E-mail'}";
-"inbox.sourceScreenshot" = "{'de': 'Bildschirmfoto', 'fr': 'Capture d’écran', 'it': 'Schermata', 'pt-BR': 'Captura de tela', 'pt-PT': 'Captura de ecrã'}";
-"inbox.sourceScreenshotList" = "{'de': 'Liste', 'fr': 'Liste', 'it': 'Elenco', 'pt-BR': 'Lista', 'pt-PT': 'Lista'}";
-"inbox.sourceReceipt" = "{'de': 'Beleg', 'fr': 'Reçu', 'it': 'Ricevuta', 'pt-BR': 'Recibo', 'pt-PT': 'Recibo'}";
+"inbox.editDraft" = "Modifier le brouillon";
+"inbox.cannotApprove" = "Impossible d’approuver";
+"inbox.sourceVoice" = "Voix";
+"inbox.sourceEmail" = "E-mail";
+"inbox.sourceScreenshot" = "Capture d’écran";
+"inbox.sourceScreenshotList" = "Liste";
+"inbox.sourceReceipt" = "Reçu";
 "inbox.sourceScheduledPayment" = "Paiement planifié";
 "inbox.sourceSubscription" = "Abonnement";
 "inbox.sourceApplePay" = "Apple Pay";
@@ -2036,9 +2035,9 @@
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.errorArchivedAccount" = "Ce compte est archivé. Modifiez le brouillon et changez le compte pour approuver.";
 "inbox.errorFutureDate" = "Les transactions avec une date future ne peuvent pas être approuvées";
-"inbox.duplicateWarningTitle" = "{'de': 'Mögliches Duplikat', 'fr': 'Doublon possible', 'it': 'Possibile duplicato', 'pt-BR': 'Possível duplicado', 'pt-PT': 'Possível duplicado'}";
-"inbox.duplicateWarningMessage" = "{'de': 'Es gibt schon eine ähnliche Transaktion. Trotzdem erstellen?', 'fr': 'Une transaction similaire existe déjà. La créer quand même ?', 'it': 'Esiste già una transazione simile. Crearla comunque?', 'pt-BR': 'Já existe uma transação parecida. Criar mesmo assim?', 'pt-PT': 'Já existe uma transação semelhante. Criar mesmo assim?'}";
-"inbox.createAnyway" = "{'de': 'Trotzdem erstellen', 'fr': 'Créer quand même', 'it': 'Crea comunque', 'pt-BR': 'Criar mesmo assim', 'pt-PT': 'Criar mesmo assim'}";
+"inbox.duplicateWarningTitle" = "Doublon possible";
+"inbox.duplicateWarningMessage" = "Une transaction similaire existe déjà. La créer quand même ?";
+"inbox.createAnyway" = "Créer quand même";
 "inbox.saveLater" = "Approuver plus tard";
 "inbox.deleteTitle" = "Supprimer le brouillon";
 "inbox.deleteMessage" = "Cette action ne peut pas être annulée.";
@@ -3206,6 +3205,56 @@
 "devseed.stepDeleting" = "Suppression des données...";
 "devseed.stepReloading" = "Rechargement...";
 
+/* Seed DEBUG de las capturas de la ficha (perfil ficha) */
+"devseed.ficha.groupTrip" = "Voyage à Lisbonne";
+"devseed.ficha.groupWeekend" = "Week-end à Porto";
+"devseed.ficha.memberYou" = "Toi";
+"devseed.ficha.memberA" = "Ana";
+"devseed.ficha.memberB" = "Ben";
+"devseed.ficha.memberC" = "Kate";
+"devseed.ficha.expenseLodging" = "Hébergement";
+"devseed.ficha.expenseTour" = "Visite guidée";
+"devseed.ficha.expenseGroupDinner" = "Dîner de groupe";
+"devseed.ficha.expenseAirportTaxi" = "Taxi aéroport";
+"devseed.ficha.expenseLocalMeal" = "Dîner fruits de mer";
+"devseed.ficha.expenseMuseum" = "Billets de musée";
+"devseed.ficha.expenseTransport" = "Transports";
+"devseed.ficha.expenseGroceries" = "Courses";
+"devseed.ficha.expenseSouvenirs" = "Souvenirs";
+"devseed.ficha.expenseWeekendStay" = "Hôtel à Porto";
+"devseed.ficha.expenseWeekendMeal" = "Dégustation de vin";
+
+/* Seed DEBUG de la ficha: nombre de la cuenta en divisa extranjera; %@ = código ISO */
+"devseed.ficha.accountForeign" = "Voyage %@";
+
+/* Seam DEBUG -uitest-chat-draft / -uitest-chat-suggestions / -uitest-chat-reply (capturas y vídeo) */
+"uitestDemo.chat.draftMessage" = "J'ai dépensé 45 en taxi pour l'aéroport et 120,50 au supermarché";
+"uitestDemo.chat.draftNoteTaxi" = "Taxi pour l'aéroport";
+"uitestDemo.chat.draftNoteGroceries" = "Courses au supermarché";
+"uitestDemo.chat.suggestionSplit" = "Comment se répartissent mes dépenses Logement et Personnel ?";
+"uitestDemo.chat.suggestionMonth" = "Combien ai-je dépensé en restaurants et livraisons ce mois-ci ?";
+"uitestDemo.chat.suggestionBudget" = "Mon budget restos a-t-il suffi ?";
+"uitestDemo.chat.pizzaNote" = "Pizza";
+
+/* Seam DEBUG -uitest-voice-result (capturas y vídeo) */
+"uitestDemo.voice.lunchTranscript" = "Déjeuner 25 par carte";
+"uitestDemo.voice.lunchNote" = "Déjeuner";
+"uitestDemo.voice.twoTranscript" = "Taxi 12 et café 8 par carte";
+"uitestDemo.voice.taxiNote" = "Taxi";
+"uitestDemo.voice.coffeeNote" = "Café";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.merchant" = "Bistrot du Coin";
+
+/* Seam DEBUG de foto: total del recibo, con punto decimal (no se muestra tal cual: es el importe) */
+"uitestDemo.photo.receiptTotal" = "251.81";
+
+/* Seam DEBUG -uitest-image-result (capturas y vídeo); el total casa con el recibo de la ficha de cada idioma */
+"uitestDemo.photo.secondMerchant" = "Taxi";
+
+/* Seam DEBUG de foto: comercio de cada página; %ld = número de página */
+"uitestDemo.photo.pageFormat" = "Page %ld";
+
 // MARK: - Setup Checklist
 
 "setup.title" = "Premiers pas";
@@ -4101,7 +4150,7 @@
 "welcome.hero.cards.budgets.title" = "Budgets et objectifs";
 "welcome.hero.cards.budgets.body" = "Fixez des limites. Tenez-les.";
 "welcome.hero.cards.multiAndCurrencies.title" = "Comptes et devises";
-"welcome.hero.cards.multiAndCurrencies.body" = "Cartes, espèces, 48+ devises.";
+"welcome.hero.cards.multiAndCurrencies.body" = "Cartes, espèces, 50+ devises.";
 "welcome.hero.cards.import.title" = "Importez votre historique";
 "welcome.hero.cards.import.body" = "PDF, CSV, Excel. Voilà.";
 "welcome.hero.cards.icloud.title" = "iCloud privé";
@@ -4129,12 +4178,12 @@
 "yalaAI.onboarding.progressLabel" = "Étape %1$d sur %2$d";
 "yalaAI.onboarding.step1.title" = "Voici Yala IA";
 "yalaAI.onboarding.step1.subtitle" = "Votre bras droit financier.";
-"yalaAI.onboarding.step1.demoScenario1User" = "12 € dépensés au déjeuner.";
-"yalaAI.onboarding.step1.demoScenario1Bot" = "C'est noté ! J'ai enregistré votre déjeuner de 12 €.";
+"yalaAI.onboarding.step1.demoScenario1User" = "%@ dépensés au déjeuner.";
+"yalaAI.onboarding.step1.demoScenario1Bot" = "C'est noté ! J'ai enregistré votre déjeuner de %@.";
 "yalaAI.onboarding.step1.demoScenario2User" = "Combien dépensé en café ce mois-ci ?";
-"yalaAI.onboarding.step1.demoScenario2Bot" = "Vous en êtes à 35 € en café ce mois-ci ☕ — 12 % de moins qu'en avril, mais 6 € de plus que votre moyenne habituelle.";
+"yalaAI.onboarding.step1.demoScenario2Bot" = "Vous en êtes à %1$@ en café ce mois-ci ☕, 12 %% de moins qu'en avril, mais %2$@ de plus que votre moyenne habituelle.";
 "yalaAI.onboarding.step1.demoScenario3User" = "Un conseil ?";
-"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Vos livraisons ont augmenté de 20 % par rapport au mois dernier. En revenant à votre rythme habituel, vous économisez 60 € par mois — près de 720 € par an.";
+"yalaAI.onboarding.step1.demoScenario3Bot" = "💡 Vos livraisons ont augmenté de 20 %% par rapport au mois dernier. En revenant à votre rythme habituel, vous économisez %1$@ par mois, soit %2$@ par an.";
 "yalaAI.onboarding.step1.demoAmountLabel" = "Déjeuner";
 "yalaAI.onboarding.step1.a11yLabel" = "Exemple de chat avec Yala IA enregistrant une dépense";
 "yalaAI.onboarding.step2.title" = "Voici ce que vous pouvez faire";
@@ -4160,11 +4209,11 @@
 "yalaAI.onboarding.step4.focusSaverDescription" = "Vous aide à réduire et à mettre plus de côté chaque mois.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Vous alerte au moindre écart pour rien laisser passer.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Vos revenus couvrent les dépenses du mois. Bon rythme.";
-"yalaAI.onboarding.step4.focusSaverQuote" = "Réduisez les restaurants de 10% et économisez 30 € par mois.";
+"yalaAI.onboarding.step4.focusSaverQuote" = "Réduisez les restaurants de 10%% et économisez %@ par mois.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Attention : vous allez plus vite que le mois dernier sur les livraisons.";
 "yalaAI.onboarding.step5.title" = "Tout est prêt !";
 "yalaAI.onboarding.step5.subtitle" = "Quand vous voulez, dites à Yala ce dont vous avez besoin.";
-"yalaAI.onboarding.step5.tip" = "💡 Essayez : « Enregistre un café à 5 euros » ou « Combien j'ai dépensé aujourd'hui ? »";
+"yalaAI.onboarding.step5.tip" = "💡 Essayez : « Enregistre un café à %@ » ou « Combien j'ai dépensé aujourd'hui ? »";
 "yalaAI.onboarding.step5.cta" = "Commencer à chatter";
 
 // MARK: - Stats Records polish
@@ -4400,6 +4449,14 @@
 "whatsNew.v20.ai.description" = "Ton assistant financier doté d'intelligence artificielle. Pose-lui des questions sur ton argent, demande-lui d'enregistrer tes dépenses et reçois des analyses claires de ton mois. Comme un ami qui s'y connaît en finances, à portée de message.";
 "whatsNew.v20.redesign.title" = "Tout nouveau design";
 "whatsNew.v20.redesign.description" = "Nous avons repensé Yala de fond en comble : nouveaux widgets, résumés plus clairs dans chaque section et la nouvelle finition Liquid Glass d'iOS dans toute l'app. Nous avons aussi corrigé de nombreux bugs pour que tout soit plus fluide.";
+
+/* Novedades de 2.1 */
+"whatsNew.v21.groups.title" = "Groupes";
+"whatsNew.v21.groups.description" = "Partage tes dépenses avec qui tu veux. Invite par un lien, notez tout ensemble et Yala calcule qui doit quoi à qui. Sans calculs et sans gêne.";
+"whatsNew.v21.logging.title" = "Noter n'a jamais été aussi simple";
+"whatsNew.v21.logging.description" = "Parle-lui, prends une photo ou écris-lui comme à un ami. Yala comprend ce que tu as dépensé et l'enregistre pour toi : tenir tes comptes ne prend que quelques secondes.";
+"whatsNew.v21.data.title" = "Tes données, tes règles";
+"whatsNew.v21.data.description" = "C'est toi qui choisis où vivent tes informations : dans ton iCloud privé ou dans le cloud de Yala, pour les retrouver sur tous tes appareils. En plus, un Accueil repensé et Yala en plein écran sur ton iPad.";
 
 /* MARK: Release 2.0 — a11y & UI keys */
 "common.vs" = "vs";
@@ -4896,6 +4953,7 @@
 
 /* Existing-account chooser: Google sign-in card body */
 "welcome.existing.googleBody" = "Ton compte Yala dans le cloud, si tu l'as créé avec ton compte Google.";
+"welcome.existing.usedOnThisDeviceNote" = "Celle que tu as utilisée sur cet iPhone";
 
 /* Cloud sign-in intro subtitle when provider is Google */
 "welcome.cloud.subtitleGoogle" = "Utilise le même compte Google qu'à la création de ton compte cloud.";
@@ -6648,3 +6706,89 @@
 "export.error.invalidDateRange" = "Ces dates ne conviennent pas : la date de début doit précéder la date de fin.";
 "export.error.noTransactions" = "Aucune opération ne correspond à ces filtres. Essaie une autre période ou retire un filtre.";
 "export.error.fileWriteFailed" = "Impossible de créer le fichier. Réessaie.";
+
+/* Eliminar una cuenta con movimientos: mover a otra cuenta o borrar (card tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst) */
+"account.removal.title" = "Supprimer « %@ »";
+"account.removal.intro" = "Avant de le supprimer, choisis quoi faire de son contenu.";
+"account.removal.countRecords" = "Opérations";
+"account.removal.countScheduled" = "Paiements planifiés";
+"account.removal.countFavorites" = "Paiements favoris";
+"account.removal.countDrafts" = "En attente dans la boîte de réception";
+"account.removal.choiceHeader" = "Que faire de son contenu";
+"account.removal.moveTitle" = "Le déplacer vers un autre compte";
+"account.removal.moveSubtitle" = "Recommandé. Ton historique et ton solde sont conservés.";
+"account.removal.noDestination" = "Tu n’as pas d’autre compte vers lequel le déplacer.";
+"account.removal.deleteTitle" = "Supprimer les opérations";
+"account.removal.deleteSubtitle" = "Elles sont supprimées définitivement, avec le compte.";
+"account.removal.deleteBlockedGroups" = "Il contient des opérations de tes groupes : elles peuvent seulement être déplacées.";
+"account.removal.destinationHeader" = "Déplacer vers";
+"account.removal.destinationBlockedCurrency" = "Indisponible : il contient des virements ou des opérations de groupe qui ne peuvent pas être converties dans cette devise.";
+"account.removal.convertNote" = "Ce qui est dans une autre devise passe en %@ : les opérations au taux de change de leur date ; les paiements planifiés et favoris au taux du jour.";
+"account.removal.collapsedNote" = "Les virements entre « %1$@ » et « %2$@ » sont retirés : au sein d’un même compte, ils ne déplacent pas d’argent.";
+"account.removal.partnersNote" = "Les virements avec d’autres comptes restent dans ces comptes comme des opérations normales.";
+"account.removal.plansNote" = "Les paiements planifiés, les favoris et les éléments en attente dans la boîte de réception restent sans compte : tu le choisiras en les utilisant.";
+"account.removal.moveAction" = "Déplacer et supprimer le compte";
+"account.removal.deleteAction" = "Supprimer les opérations et le compte";
+"account.removal.confirmDeleteTitle" = "Supprimer les opérations ?";
+"account.removal.confirmDeleteCount" = "Opérations supprimées";
+"account.removal.confirmDeleteMessage" = "Elles sont supprimées définitivement et c’est irréversible. Le compte est aussi supprimé.";
+"account.removal.confirmDeleteAction" = "Oui, tout supprimer";
+"account.removal.working" = "Suppression du compte…";
+"account.removal.failedTitle" = "Le compte n’a pas été supprimé";
+"account.removal.failedUnreadable" = "Nous n’avons pas pu lire le contenu de ce compte. Rien n’a été modifié.";
+"account.removal.failedChanged" = "Quelque chose a changé dans le compte entre-temps. Vérifie-le et réessaie.";
+"account.removal.failedRates" = "Nous n’avons pas pu obtenir les taux de change pour convertir. Rien n’a été déplacé : réessaie avec une connexion.";
+"account.removal.noAllowedDestination" = "Tes autres comptes sont dans une autre devise, et celui-ci contient des virements ou des éléments de groupe qui ne peuvent pas être convertis.";
+"account.removal.countBudgets" = "Budgets";
+"account.removal.budgetsMovedNote" = "Les budgets qui suivaient ce compte suivront « %@ ».";
+"account.removal.budgetsOnlyNote" = "Certains budgets ne suivaient que ce compte : sans lui, ils suivront tous tes comptes.";
+"orphanedRecords.title" = "Opérations sans compte";
+"orphanedRecords.bannerMessage" = "Elles ont perdu leur compte lors de la suppression d'un compte et ne comptent ni dans ton solde ni dans tes dépenses.";
+"orphanedRecords.bannerAction" = "Choisir un compte";
+"orphanedRecords.intro" = "Ces opérations ont perdu leur compte lors de la suppression d'un compte. Tant qu'elles n'en ont pas, elles ne comptent ni dans ton solde ni dans tes dépenses. Choisis vers quel compte les déplacer.";
+"orphanedRecords.listHeader" = "Lesquelles";
+"orphanedRecords.moreNote" = "Et %d de plus.";
+"orphanedRecords.noDestination" = "Crée un compte pour pouvoir les déplacer.";
+"orphanedRecords.keptCurrencyNote" = "Les virements dans une autre devise passent tels quels, sans conversion : leur contrepartie reste ainsi cohérente.";
+"orphanedRecords.convertNote" = "Celles dans une autre devise passent en %@ au taux de change de leur date.";
+"orphanedRecords.collapsedNote" = "Les virements qui resteraient au sein de « %@ » sont supprimés : dans un même compte, ils ne déplacent pas d'argent.";
+"orphanedRecords.moveAction" = "Déplacer vers « %@ »";
+"orphanedRecords.moveActionGeneric" = "Déplacer";
+"orphanedRecords.working" = "Déplacement…";
+"orphanedRecords.failedTitle" = "Elles n'ont pas été déplacées";
+"orphanedRecords.failedUnreadable" = "Nous n'avons pas pu lire les opérations. Rien n'a été modifié.";
+"orphanedRecords.failedChanged" = "Quelque chose a changé entre-temps. Vérifie et réessaie.";
+"orphanedRecords.untitled" = "Sans description";
+
+/* Título del aviso cuando faltan los datos y iCloud no está disponible (p. ej. iCloud Drive apagado) */
+"icloud.unavailableNotice.title" = "iCloud n'est pas disponible sur cet appareil";
+
+/* Mensaje del aviso de iCloud no disponible. No ofrece borrar nada */
+"icloud.unavailableNotice.message" = "Yala garde tes données dans ton iCloud et ne peut pas les lire pour le moment. Quand iCloud sera de nouveau disponible, ce qui s'y trouve réapparaîtra. Tu peux vérifier dans Réglages, rubrique iCloud.";
+
+/* Volver a iCloud: datos previos en el iCloud del teléfono (reverse-to-icloud-merges-prior-icloud-data-without-asking) */
+"storage.revert.prior.checking" = "Vérification de ton iCloud…";
+"storage.revert.prior.title" = "Ton iCloud contient déjà des données Yala";
+"storage.revert.prior.body" = "L’iCloud de ce téléphone contient des données Yala qui ne sont pas dans ton compte : %@. Si tu les ajoutes, elles apparaîtront à côté des tiennes. Si tu commences sans elles, elles sont supprimées de ton iCloud.";
+"storage.revert.prior.bodyNoCount" = "L’iCloud de ce téléphone contient des données Yala qui ne sont pas dans ton compte. Si tu les ajoutes, elles apparaîtront à côté des tiennes. Si tu commences sans elles, elles sont supprimées de ton iCloud.";
+"storage.revert.prior.groupRecords" = "%d enregistrements de groupes";
+"storage.revert.prior.groupsNote" = "Les enregistrements de groupes peuvent arriver sans leur groupe.";
+"storage.revert.prior.merge" = "Les ajouter à mes données";
+"storage.revert.prior.discard" = "Commencer sans elles";
+"storage.revert.prior.discardConfirmTitle" = "Les supprimer de ton iCloud ?";
+"storage.revert.prior.discardConfirmBody" = "Elles sont supprimées de ton iCloud et des appareils qui l’utilisent avec cet identifiant Apple. Aucune copie n’est conservée et nous ne pourrons pas les récupérer. Ensuite, le retour à iCloud commence.";
+"storage.revert.prior.discardConfirm" = "Supprimer et revenir à iCloud";
+"storage.revert.prior.checkFailedTitle" = "Impossible de vérifier ton iCloud";
+"storage.revert.prior.checkFailedBody" = "Avant de revenir, on vérifie si ton iCloud contient déjà des données Yala, pour ne pas les mélanger sans te prévenir. C’est peut-être la connexion : réessaie.";
+"storage.revert.prior.wipeFailed" = "Nous n’avons pas pu finir de supprimer les anciennes données de ton iCloud, donc le retour n’a pas commencé : tu restes dans le cloud. Vérifie ta connexion et réessaie.";
+"storage.revert.prior.noAccountTitle" = "Connecte-toi à iCloud sur cet iPhone";
+"storage.revert.prior.noAccountBody" = "Avant de revenir, on vérifie ce que contient ton iCloud, et cet iPhone n’est pas connecté à iCloud. Connecte-toi dans les Réglages de l’iPhone et réessaie.";
+
+/* Swipe action: hides a group expense draft from the Inbox on this phone only */
+"inbox.hideHere" = "Retirer ici";
+
+/* Accessibility hint for the hide-here swipe action */
+"inbox.hideHereHint" = "Le retire uniquement sur ce téléphone. Si son groupe arrive, il réapparaît.";
+
+/* Note in the 'records without account' sheet when group records keep their currency */
+"orphanedRecords.groupKeptCurrencyNote" = "Les dépenses de groupe dans une autre devise passent telles quelles, sans conversion : leur montant est fixé par le groupe.";

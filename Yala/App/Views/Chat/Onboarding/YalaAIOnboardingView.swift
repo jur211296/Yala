@@ -317,7 +317,7 @@ struct YalaAIOnboardingView: View {
                     .multilineTextAlignment(.center)
             }
 
-            Text(L10n.YalaAI.Onboarding.step5Tip)
+            Text(L10n.YalaAI.Onboarding.step5Tip(demoAmountText(demoAmounts.tipCoffee)))
                 .font(DS.Typography.subheadline)
                 .foregroundStyle(.thSecondaryText)
                 .multilineTextAlignment(.center)
@@ -416,10 +416,22 @@ struct YalaAIOnboardingView: View {
         }
     }
 
+    /// Importes de ejemplo en la divisa principal (ticket `ai-onboarding-demo-speaks-english-and-dollars`).
+    private var demoAmounts: YalaAIOnboardingDemoAmounts.Amounts {
+        YalaAIOnboardingDemoAmounts.amounts(for: appPreferences.defaultCurrencyCode)
+    }
+
+    private func demoAmountText(_ value: Double) -> String {
+        YalaAIOnboardingDemoAmounts.formatted(
+            value,
+            identifier: appPreferences.currencyIdentifier(for: appPreferences.defaultCurrencyCode.rawValue)
+        )
+    }
+
     private func focusQuote(for focus: InsightFocus) -> String {
         switch focus {
         case .balanced: return L10n.YalaAI.Onboarding.step4FocusBalancedQuote
-        case .saver:    return L10n.YalaAI.Onboarding.step4FocusSaverQuote
+        case .saver:    return L10n.YalaAI.Onboarding.step4FocusSaverQuote(demoAmountText(demoAmounts.saverSavingPerMonth))
         case .cautious: return L10n.YalaAI.Onboarding.step4FocusCautiousQuote
         }
     }

@@ -151,12 +151,13 @@ struct GroupsAssociationDetachPolarityTests {
         #expect(GroupsAssociationDetach.action(choice: .remove, accountIsSystem: true) == .delete)
     }
 
-    /// `account == nil` cuenta como REAL. Las dos mecánicas existentes discrepan justo ahí (el freeze
-    /// conserva, el barredor libera) y este camino sigue al clasificador COMPARTIDO: ante la duda,
-    /// preservar el rastro.
+    /// `account == nil` sin nada que pruebe qué es: NO se toca (2026-10-16, ticket
+    /// `orphaned-group-records-stay-out-of-the-notice`). Hasta ese día contaba como real y se soltaba, y si era una
+    /// virtual quedaba sin cuenta y sin puntero: entraba en el aviso «Movimientos sin cuenta» como movible y moverla
+    /// contaba el gasto dos veces. Lo que sí se prueba lo fija `GroupLegWithoutAccountTests`.
     @MainActor
-    @Test("Una transacción SIN cuenta se trata como real y se conserva")
-    func sinCuentaEsReal() throws {
+    @Test("Una transacción SIN cuenta y sin prueba de qué es no se toca")
+    func sinCuentaSinPrueba_noSeToca() throws {
         let dir = DetachHarness.freshDir()
         defer { DetachHarness.cleanup(dir) }
         let context = try DetachHarness.makeContext(dir)
@@ -165,7 +166,8 @@ struct GroupsAssociationDetachPolarityTests {
             expenseID: UUID(), accountIsSystem: nil, context: context)
         try context.save()
 
-        #expect(GroupsAssociationDetach.action(for: tx, choice: .keep) == .releasePointers)
+        let evidence = GroupLegEvidence.read(for: [tx], context: context)
+        #expect(GroupsAssociationDetach.action(leg: evidence.kind(of: tx), choice: .keep) == .leaveUntouched)
     }
 
     /// Las cuatro celdas, afirmadas. Un bucle que descarte el resultado con `_ =` sugiere una cobertura

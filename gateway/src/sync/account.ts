@@ -12,7 +12,7 @@
 import type { Context } from "hono";
 import type { Env } from "../env";
 import { errorBody, jsonError } from "../errors";
-import { gateRequest } from "../ratelimit";
+import { accountQuotaBucket, forgetAccountQuota, gateRequest } from "../ratelimit";
 import { verifySessionToken, type SessionClaims } from "../attest/session";
 import { bearerToken, callRpc, getRows, verifyUserToken } from "./userauth";
 import { deleteAccountEntitlement } from "../db";
@@ -44,7 +44,7 @@ export async function requireUser(c: Ctx): Promise<AuthedUser | Response> {
   if (!user) return jsonError("yala_attest_invalid", "JWT de usuario inválido o expirado.", 401);
 
   if (c.env.RATE_LIMITER) {
-    const claims: SessionClaims = { keyId: `sub:${user.sub}`, tier: "free" };
+    const claims: SessionClaims = { keyId: accountQuotaBucket(user.sub), tier: "free" };
     const blocked = await gateRequest(c.env, claims, "sync");
     if (blocked) return blocked;
   }
@@ -218,7 +218,7 @@ export async function requireUserAndAttest(c: Ctx): Promise<AuthedUserAttest | R
     return jsonError("yala_attest_required", "Falta el token de sesión de App Attest.", 401);
   }
   if (c.env.RATE_LIMITER) {
-    const claims: SessionClaims = attest ?? { keyId: `sub:${user.sub}`, tier: "free" };
+    const claims: SessionClaims = attest ?? { keyId: accountQuotaBucket(user.sub), tier: "free" };
     const blocked = await gateRequest(c.env, claims, "sync");
     if (blocked) return blocked;
   }
@@ -269,6 +269,19 @@ export async function handleAccountDelete(c: Ctx): Promise<Response> {
     await deleteAccountEntitlement(c.env, auth.sub);
   } catch (e) {
     console.log(`[account-delete] entitlement cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
+  }
+
+  // El contador de uso de la CUENTA (Durable Object `sub:<sub>`) tampoco lo alcanza el RPC. Mismo trato que el
+  // derecho: después del borrado y sin tumbar la respuesta. Lo que se queda es del DISPOSITIVO y no de la cuenta: la
+  // fila de `attest_keys` de D1 (por keyId, sin columna de cuenta; el vínculo cuenta↔clave vivía en `attest_keys` de
+  // Supabase, que borra el RPC) y su contador, que guarda el cupo de prueba de la IA (`forgetAccountQuota`). La
+  // política lo dice en «Cuánto tiempo guardamos tus datos». Lo fija `account.delete.test.ts`.
+  if (c.env.RATE_LIMITER) {
+    try {
+      await forgetAccountQuota(c.env, auth.sub);
+    } catch (e) {
+      console.log(`[account-delete] quota cleanup falló: ${e instanceof Error ? e.message : "unknown"}`);
+    }
   }
 
   return c.json((out ?? {}) as Record<string, unknown>);

@@ -104,6 +104,43 @@ nonisolated enum WelcomeAccountChoiceLogic {
         return options
     }
 
+    /// **El orden de las entradas a una cuenta en «¡Hola de nuevo!», según el faro** (ticket vb1f, decisión de Jürgen
+    /// 2026-10-14, opción A). Si el faro de iCloud-KV dice con qué método se creó la cuenta de este Apple ID, ese botón va
+    /// primero y lleva la nota «La que usaste en este iPhone»; el otro sigue disponible, con el mismo peso y sin aviso.
+    ///
+    /// **Solo reordena: no añade ni quita ninguna opción**, y «Restaurar desde iCloud» se queda donde estaba (la vista la
+    /// pinta aparte, tras el «o»). Sin faro, o con un método que esta versión no conoce, el orden de siempre y sin nota:
+    /// el faro solo afirma lo que dice — el mismo criterio que `NewBranchRoute.cloudSignIn(accountProvider:)`.
+    struct ExistingAccountOrder: Equatable {
+        /// Las opciones, en el orden en que se pintan.
+        let options: [ExistingOption]
+        /// La que lleva la nota «La que usaste en este iPhone». `nil` = ninguna.
+        let usedOnThisDevice: ExistingOption?
+    }
+
+    static func orderExistingOptions(
+        _ options: [ExistingOption],
+        beaconLinked: Bool,
+        beaconProvider: String?
+    ) -> ExistingAccountOrder {
+        let unchanged = ExistingAccountOrder(options: options, usedOnThisDevice: nil)
+        guard beaconLinked,
+              let provider = beaconProvider.flatMap(CloudSignInProvider.init(rawValue:)) else { return unchanged }
+        let used: ExistingOption = switch provider {
+        case .apple: .cloudSignIn
+        case .google: .googleSignIn
+        }
+        // La opción del faro tiene que estar a la vista: con el kill remoto las dos entradas se ocultan, y una nota
+        // sobre un botón que no está sería una nota huérfana.
+        guard let index = options.firstIndex(of: used) else { return unchanged }
+        // El botón del faro sube al sitio de la PRIMERA entrada a una cuenta; el resto conserva su orden relativo.
+        let firstAccount = options.firstIndex { $0 != .restoreICloud } ?? index
+        var reordered = options
+        reordered.remove(at: index)
+        reordered.insert(used, at: min(firstAccount, index))
+        return ExistingAccountOrder(options: reordered, usedOnThisDevice: used)
+    }
+
     /// Bypass del sub-chooser: con una sola opción visible se navega directo a ella.
     static func bypass<Option>(_ options: [Option]) -> Option? {
         options.count == 1 ? options.first : nil
@@ -405,5 +442,17 @@ enum WelcomeNewBranchRouter {
             beaconProvider: beacon.linkedProvider,
             cloudEntryAvailable: cloudEntryAvailable,
             options: options)
+    }
+
+    /// El orden de «¡Hola de nuevo!» (ticket vb1f). Mismo adaptador y mismo faro que la ruta de «Soy nuevo»: las dos
+    /// pantallas tienen que leer la misma señal, o una encaminaría a Google y la otra marcaría Apple.
+    static func existingOrder(
+        beacon: CloudBeacon,
+        options: [WelcomeAccountChoiceLogic.ExistingOption]
+    ) -> WelcomeAccountChoiceLogic.ExistingAccountOrder {
+        WelcomeAccountChoiceLogic.orderExistingOptions(
+            options,
+            beaconLinked: beacon.isCloudAccountLinked,
+            beaconProvider: beacon.linkedProvider)
     }
 }

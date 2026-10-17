@@ -28,6 +28,14 @@ export interface CheckRequest {
   notePairing?: "grant" | "consume";
 }
 
+/**
+ * Olvida el contador entero. Solo lo pide el borrado de cuenta (`/account/delete`) sobre el cubo de la CUENTA
+ * (`accountQuotaBucket`): ese cubo lleva el `sub` en el nombre y, borrada la cuenta, ese `sub` no vuelve.
+ */
+export interface ForgetRequest {
+  op: "forget";
+}
+
 export interface RefundRequest {
   op: "refund";
   category: string;
@@ -129,7 +137,11 @@ export class RateLimiter {
   ) {}
 
   async fetch(request: Request): Promise<Response> {
-    const req = (await request.json()) as CheckRequest | RefundRequest;
+    const req = (await request.json()) as CheckRequest | RefundRequest | ForgetRequest;
+    if (req.op === "forget") {
+      await this.state.storage.deleteAll();
+      return Response.json({ ok: true });
+    }
     const now = Date.now();
     const today = new Date(now).toISOString().slice(0, 10);
     const stored: DOState = (await this.state.storage.get<DOState>("s")) ?? { day: today, counts: {}, burst: [] };

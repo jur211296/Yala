@@ -38,6 +38,19 @@ final class UITestHooks {
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
+    /// `-uitest-last-seen-version <valor>`: qué `lastSeenAppVersion` deja el arranque uitest. Sin el flag, la versión
+    /// actual (las Novedades no tapan el primer tap de ningún XCUITest). Con una versión (`2.0.4`), esa: el
+    /// dispositivo «viene de actualizar». `none` borra la key; `keep` no la toca, para medir lo que dejó el
+    /// arranque anterior. Lo usa `WhatsNewLaunchUITests`.
+    nonisolated static var lastSeenAppVersionOverride: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-last-seen-version", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// `-uitest-onboarding`: presenta el OnboardingView directo (salta Welcome Hero/Chooser),
     /// SIN marcar onboarding completado. Para testear el flujo de onboarding aislado.
     nonisolated static var startAtOnboarding: Bool { hasArg("-uitest-onboarding") }
@@ -210,6 +223,47 @@ final class UITestHooks {
         return nil
         #endif
     }
+
+    /// `-uitest-born-cloud-storage`: `CloudMigrationController` LEE el modo persistido como `.cloud` y «la cuenta nació en la
+    /// nube aquí» como cierto, al derivar la pantalla de Almacenamiento y la elegibilidad de «Volver a iCloud» (ticket
+    /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`). Sin esto la tarjeta de la vuelta es inalcanzable en el
+    /// simulador: crear una cuenta en la nube pide App Attest, y el secreto de staging no está en esta Mac.
+    ///
+    /// **Finge la ENTRADA, no la decisión**, y solo esa lectura: el modo real sigue en `.icloud`, el store monta igual y el
+    /// motor no arranca. Lo que la pantalla pinta lo siguen decidiendo `CloudMigrationUIStateDeriver` y
+    /// `ReverseEligibility`. No persiste nada. Solo DEBUG.
+    nonisolated static var fakeBornCloudStorage: Bool { hasArg("-uitest-born-cloud-storage") }
+
+    /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|noAccount>`: lo que contesta la pregunta a iCloud antes
+    /// de «Volver a iCloud» (`ICloudPersonalCorpusProbe.foreignCorpusForReverse`), que en el simulador no tiene CloudKit.
+    /// `found`: 12 registros, 2 cuentas y 1 presupuesto ajenos; `foundGroups`: solo 9 registros de grupos, el caso del QA
+    /// del 2026-10-15. **Finge la respuesta, no la decisión**: qué hace el botón lo decide `ReverseICloudPriorDataLogic`.
+    /// Un valor desconocido se ignora. Solo DEBUG.
+    nonisolated static var fakeReverseForeignCorpus: ICloudForeignCorpusCheck? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-reverse-prior-icloud", from: ProcessInfo.processInfo.arguments) {
+        case "found":
+            return .measured(ICloudForeignCorpus(
+                transactions: 12, groupTransactions: 0, accounts: 2, budgets: 1, otherRecords: 6,
+                truncated: false, fieldsUnread: false))
+        case "foundGroups":
+            return .measured(ICloudForeignCorpus(
+                transactions: 0, groupTransactions: 9, accounts: 0, budgets: 0, otherRecords: 0,
+                truncated: false, fieldsUnread: false))
+        case "none":      return .measured(.empty)
+        case "noAccount": return .noAccount
+        case "failed": return .failed("uitest")
+        default:       return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-reverse-prior-icloud-wipe-fails`: el borrado de «Empezar sin ellos» falla. Solo el fallo: un borrado que
+    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Solo DEBUG.
+    nonisolated static var fakeReverseForeignWipeFails: Bool { hasArg("-uitest-reverse-prior-icloud-wipe-fails") }
 
     /// `-uitest-migration-journal-unreadable`: el fetch del journal de la migración que hace `CloudMigrationController` LANZA
     /// (ticket `an-unreadable-migration-journal-reads-as-never-started`). Existe para el XCUITest de la pantalla de
@@ -455,6 +509,20 @@ final class UITestHooks {
     /// en pantalla para capturar y probar su diseño.
     nonisolated static var chatDraft: Bool { hasArg("-uitest-chat-draft") }
 
+    /// Valor de `-uitest-chat-reply <pizza>`: enviar en el chat no llama a la red. El mensaje del usuario entra en el
+    /// hilo, el indicador de «pensando» se ve un momento y Yala IA contesta con lo que diga el perfil, resuelto contra
+    /// los datos sembrados (`pizza`: un gasto completo «Pizza», 280 en la divisa principal, Restaurantes, hoy). Existe
+    /// para la demo grabada del chat (`DemoIAPizzaUITests`): `-uitest-chat-draft` abre con la respuesta ya puesta, y el
+    /// vídeo tiene que ver escribir y contestar.
+    nonisolated static var chatReply: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-chat-reply", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// Valor de `-uitest-voice-result <one|incomplete|two|trial-used-up>`: el registro por voz no graba ni llama a la red.
     /// La hoja abre escuchando sin pedir el micro y, al tocar Listo, «entiende» lo que diga el perfil, resuelto contra los
     /// datos sembrados (`one`: un gasto completo · `incomplete`: sin subcategoría · `two`: dos gastos completos ·
@@ -479,6 +547,19 @@ final class UITestHooks {
         #if DEBUG
         guard isActive else { return nil }
         return parseValue(after: "-uitest-image-result", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// Valor de `-uitest-image-file <ruta>`: con `-uitest-image-result one`, la foto que «elige» Fotos es este fichero en
+    /// vez del recibo de ejemplo de la práctica guiada. Lo pasa el molde de la ficha de la App Store
+    /// (`ficha-app-store/`) con el recibo de cada idioma, para que la foto que se «lee» diga lo mismo que la hoja: los
+    /// recibos de ejemplo traducidos siguen siendo de Lima y en soles. Nil si falta.
+    nonisolated static var imageFile: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-image-file", from: ProcessInfo.processInfo.arguments)
         #else
         return nil
         #endif

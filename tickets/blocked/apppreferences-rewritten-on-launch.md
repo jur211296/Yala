@@ -3,7 +3,7 @@ id: apppreferences-rewritten-on-launch
 status: blocked
 priority: high
 created: 2026-08-05
-updated: 2026-09-02
+updated: 2026-10-15
 source: YalaWiki/Backlog/qa_apppreferences-lavado-general.md
 ---
 
@@ -156,3 +156,7 @@ Los cuatro se midieron el 2026-08-05 y **el detalle vive en `docs/aprendizajes-t
   afirme «esta preferencia no existe tras el vaciado».
 
 migrated from YalaWiki Backlog/qa_apppreferences-lavado-general.md @ 1934e8ad
+
+## Barrido de QA · 2026-10-15
+
+Barrido de QA 2026-10-15 · se queda: se queda para tus dos aparatos con el mismo iCloud (D · E3). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
