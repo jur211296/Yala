@@ -518,7 +518,7 @@
 "planning.budgetCharts.byCategoryTitle" = "按分类";
 "planning.budgetCharts.spendingHint" = "你按天累计的支出。";
 "planning.budgetCharts.spendingTitle" = "周期支出";
-"planning.budgetCharts.historyHint" = "你过去 6 个周期的表现。";
+"planning.budgetCharts.historyHint" = "最近 6 个周期。粉色表示超出上限的周期,虚线是上限。";
 "planning.budgetCharts.historyTitle" = "历史";
 
 // MARK: - Budgets
@@ -526,8 +526,8 @@
 "budgets.title" = "预算";
 "budgets.empty.title" = "你还没有任何预算";
 "budgets.empty.message" = "创建预算来更好地控制你的支出。";
-"budgets.includeSharedExpenses" = "包含共享支出";
-"budgets.includeSharedExpensesHint" = "关闭时,只统计你的个人支出";
+"budgets.includeSharedExpenses" = "统计我在群组支出中的份额";
+"budgets.includeSharedExpensesHint" = "关闭后,只统计你的个人支出。";
 "budgets.widget.noFavorites.title" = "没有收藏的预算";
 "budgets.widget.noFavorites.message" = "在「设置 > 预算」中将预算标记为收藏即可在此查看。";
 "budgets.widget.selectFavorites" = "选择收藏";
@@ -545,8 +545,7 @@
 "budgets.edit" = "编辑预算";
 "budgets.delete" = "删除预算";
 "budgets.delete.confirm.title" = "删除预算?";
-"budgets.delete.confirm.message" = "此操作无法撤销。";
-
+"budgets.delete.confirm.message" = "你的支出不会被删除:只删除这个上限。";
 // Budget Period Types
 "budgets.period.weekly" = "每周";
 "budgets.period.monthly" = "每月";
@@ -563,7 +562,7 @@
 // Budget Details
 "budgets.spent.percent" = "已支出 %@";
 "budgets.days.remaining" = "剩余 %@ 天";
-"budgets.period.past" = "过去";
+"budgets.period.past" = "已结束";
 "budgets.amount.of" = "/ %@";
 "budgets.exceeded.encouragement" = "你超出了预算 — 下一个周期会更好!";
 
@@ -7144,3 +7143,39 @@
 "records.l8b.bulk.nothingPendingHint" = "请先选择要更改的内容。";
 "records.l8.bulkSaveFailed" = "无法保存。未做任何更改，请重试。";
 "records.l8.duplicatesMatchedOn" = "%@相同，且在同一账户。";
+
+/* Auditoría UX 2.2 · lote 9 (presupuestos) */
+"budgets.l9.remainingLabel" = "还剩";
+"budgets.l9.overLabel" = "超出";
+"budgets.l9.spentOfLimit" = "%1$@ / %2$@";
+"budgets.l9.notStarted" = "尚未开始";
+"budgets.l9.days.one" = "1 天";
+"budgets.l9.days" = "%@ 天";
+"budgets.l9.perDay" = "每天可花 %@";
+"budgets.l9.countsAllExpenses" = "统计你的全部支出";
+"budgets.l9.limitLabel" = "上限";
+"budgets.l9.whatCountsTitle" = "统计哪些支出？";
+"budgets.l9.allExpensesChip" = "我的全部支出";
+"budgets.l9.chooseCategories" = "选择类别";
+"budgets.l9.whatCountsAllHint" = "统计该周期内的所有支出。选择类别可只限制其中一部分。";
+"budgets.l9.whatCountsSomeHint" = "只统计这些类别的支出。";
+"budgets.l9.typeHint.weekly" = "每周重新开始";
+"budgets.l9.typeHint.monthly" = "每月重新开始";
+"budgets.l9.typeHint.yearly" = "每年重新开始";
+"budgets.l9.typeHint.unique" = "在两个日期之间;不重复";
+"budgets.l9.alertsOffHint" = "预算提醒在“通知”中已关闭,所以你不会收到任何提醒。";
+"budgets.l9.activateAlerts" = "开启提醒";
+"budgets.l9.alertsOffInNotifications" = "“通知”中已关闭提醒";
+"budgets.l9.showInWidget" = "在小组件中显示";
+"budgets.l9.showInWidgetHint" = "显示在首页的预算小组件中。";
+"budgets.l9.hideFromWidget" = "从小组件移除";
+"budgets.l9.deleteTitle" = "删除“%@”?";
+"budgets.l9.historyTitle.weekly" = "你每周的支出与上限对比";
+"budgets.l9.historyTitle.monthly" = "你每月的支出与上限对比";
+"budgets.l9.historyTitle.yearly" = "你每年的支出与上限对比";
+"budgets.l9.limitShort" = "上限 %@";
+"budgets.l9.freePlanBanner" = "免费计划中有 %lld 个启用的预算";
+"budgets.l9.freePlanSheet" = "免费计划可启用 %lld 个预算。停用一个,或升级到 Pro。";
+"budgets.l9.seePro" = "查看 Pro";
+"budgets.l9.chooseWhich" = "选择";
+"budgets.l9.previewEmpty" = "用星标标记最多 3 个预算,就能在这里看到你的小组件。";

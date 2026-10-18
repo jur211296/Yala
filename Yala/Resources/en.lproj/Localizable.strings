@@ -518,7 +518,7 @@
 "planning.budgetCharts.byCategoryTitle" = "By category";
 "planning.budgetCharts.spendingHint" = "Your accumulated spending day by day.";
 "planning.budgetCharts.spendingTitle" = "Period spending";
-"planning.budgetCharts.historyHint" = "Your performance over the last 6 periods.";
+"planning.budgetCharts.historyHint" = "The last 6 periods. In pink, the ones that went over your limit; the dashed line is the limit.";
 "planning.budgetCharts.historyTitle" = "History";
 
 // MARK: - Budgets
@@ -526,8 +526,8 @@
 "budgets.title" = "Budgets";
 "budgets.empty.title" = "You don't have any budgets yet";
 "budgets.empty.message" = "Create budgets to better control your spending.";
-"budgets.includeSharedExpenses" = "Include shared expenses";
-"budgets.includeSharedExpensesHint" = "When off, only your personal expenses count";
+"budgets.includeSharedExpenses" = "Count my share of group expenses";
+"budgets.includeSharedExpensesHint" = "When off, only your personal expenses count.";
 "budgets.widget.noFavorites.title" = "No favorite budgets";
 "budgets.widget.noFavorites.message" = "Mark budgets as favorites in Settings > Budgets to see them here.";
 "budgets.widget.selectFavorites" = "Select favorites";
@@ -545,8 +545,7 @@
 "budgets.edit" = "Edit Budget";
 "budgets.delete" = "Delete Budget";
 "budgets.delete.confirm.title" = "Delete budget?";
-"budgets.delete.confirm.message" = "This action cannot be undone.";
-
+"budgets.delete.confirm.message" = "Your expenses aren't deleted: only this limit.";
 // Budget Period Types
 "budgets.period.weekly" = "Weekly";
 "budgets.period.monthly" = "Monthly";
@@ -563,7 +562,7 @@
 // Budget Details
 "budgets.spent.percent" = "%@ spent";
 "budgets.days.remaining" = "%@ days left";
-"budgets.period.past" = "Past";
+"budgets.period.past" = "Closed";
 "budgets.amount.of" = "of %@";
 "budgets.exceeded.encouragement" = "You went over budget — next period will be better!";
 
@@ -7138,3 +7137,39 @@
 "records.l8b.bulk.nothingPendingHint" = "Choose what to change first.";
 "records.l8.bulkSaveFailed" = "Couldn’t save. Nothing was changed; try again.";
 "records.l8.duplicatesMatchedOn" = "They match on %@, in the same account.";
+
+/* Auditoría UX 2.2 · lote 9 (presupuestos) */
+"budgets.l9.remainingLabel" = "Left to spend";
+"budgets.l9.overLabel" = "You went over by";
+"budgets.l9.spentOfLimit" = "%1$@ of %2$@";
+"budgets.l9.notStarted" = "Not started yet";
+"budgets.l9.days.one" = "1 day";
+"budgets.l9.days" = "%@ days";
+"budgets.l9.perDay" = "You can spend %@ a day";
+"budgets.l9.countsAllExpenses" = "Counts all your expenses";
+"budgets.l9.limitLabel" = "Limit";
+"budgets.l9.whatCountsTitle" = "Which expenses count?";
+"budgets.l9.allExpensesChip" = "All my expenses";
+"budgets.l9.chooseCategories" = "Choose categories";
+"budgets.l9.whatCountsAllHint" = "Counts everything you spend in the period. Choose categories to limit just some.";
+"budgets.l9.whatCountsSomeHint" = "Only expenses in those categories count.";
+"budgets.l9.typeHint.weekly" = "Renews every week";
+"budgets.l9.typeHint.monthly" = "Renews every month";
+"budgets.l9.typeHint.yearly" = "Renews every year";
+"budgets.l9.typeHint.unique" = "Between two dates; doesn't repeat";
+"budgets.l9.alertsOffHint" = "Budget alerts are off in Notifications, so no alert will reach you.";
+"budgets.l9.activateAlerts" = "Turn on alerts";
+"budgets.l9.alertsOffInNotifications" = "Alerts off in Notifications";
+"budgets.l9.showInWidget" = "Show in widget";
+"budgets.l9.showInWidgetHint" = "Appears in the Budgets widget on Home.";
+"budgets.l9.hideFromWidget" = "Remove from widget";
+"budgets.l9.deleteTitle" = "Delete “%@”?";
+"budgets.l9.historyTitle.weekly" = "What you spent each week against your limit";
+"budgets.l9.historyTitle.monthly" = "What you spent each month against your limit";
+"budgets.l9.historyTitle.yearly" = "What you spent each year against your limit";
+"budgets.l9.limitShort" = "Limit %@";
+"budgets.l9.freePlanBanner" = "%lld active budgets on the free plan";
+"budgets.l9.freePlanSheet" = "The free plan includes %lld active budgets. Turn one off or upgrade to Pro.";
+"budgets.l9.seePro" = "See Pro";
+"budgets.l9.chooseWhich" = "Choose which";
+"budgets.l9.previewEmpty" = "Star up to 3 budgets and you'll see your widget here.";

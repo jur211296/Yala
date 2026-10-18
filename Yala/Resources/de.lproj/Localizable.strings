@@ -516,7 +516,7 @@
 "planning.budgetCharts.byCategoryTitle" = "Nach Kategorie";
 "planning.budgetCharts.spendingHint" = "Ihre kumulierten Ausgaben Tag für Tag.";
 "planning.budgetCharts.spendingTitle" = "Ausgaben im Zeitraum";
-"planning.budgetCharts.historyHint" = "Ihre Leistung in den letzten 6 Zeiträumen.";
+"planning.budgetCharts.historyHint" = "Die letzten 6 Zeiträume. In Pink die, die dein Limit überschritten haben; die gestrichelte Linie ist das Limit.";
 "planning.budgetCharts.historyTitle" = "Verlauf";
 
 // MARK: - Budgets
@@ -524,8 +524,8 @@
 "budgets.title" = "Budgets";
 "budgets.empty.title" = "Keine Budgets";
 "budgets.empty.message" = "Erstelle Budgets, um deine Ausgaben zu kontrollieren.";
-"budgets.includeSharedExpenses" = "Geteilte Ausgaben einbeziehen";
-"budgets.includeSharedExpensesHint" = "Wenn deaktiviert, zahlen nur personliche Ausgaben";
+"budgets.includeSharedExpenses" = "Meinen Anteil an Gruppenausgaben zählen";
+"budgets.includeSharedExpensesHint" = "Wenn aus, zählen nur deine persönlichen Ausgaben.";
 "budgets.widget.noFavorites.title" = "Keine Favoriten";
 "budgets.widget.noFavorites.message" = "Markiere Budgets in Einstellungen > Budgets als Favoriten, um sie hier anzuzeigen.";
 "budgets.widget.selectFavorites" = "Favoriten auswählen";
@@ -543,8 +543,7 @@
 "budgets.edit" = "Budget bearbeiten";
 "budgets.delete" = "Budget löschen";
 "budgets.delete.confirm.title" = "Budget löschen?";
-"budgets.delete.confirm.message" = "Diese Aktion kann nicht rückgängig gemacht werden.";
-
+"budgets.delete.confirm.message" = "Deine Ausgaben werden nicht gelöscht – nur dieses Limit.";
 // Budget Period Types
 "budgets.period.weekly" = "Wöchentlich";
 "budgets.period.monthly" = "Monatlich";
@@ -561,7 +560,7 @@
 // Budget Details
 "budgets.spent.percent" = "%@ ausgegeben";
 "budgets.days.remaining" = "%@ Tage verbleibend";
-"budgets.period.past" = "Vergangen";
+"budgets.period.past" = "Abgeschlossen";
 "budgets.amount.of" = "von %@";
 "budgets.exceeded.encouragement" = "Budget überschritten — der nächste Zeitraum wird besser!";
 
@@ -7132,3 +7131,39 @@
 "records.l8b.bulk.nothingPendingHint" = "Wähle zuerst, was du ändern willst.";
 "records.l8.bulkSaveFailed" = "Speichern fehlgeschlagen. Nichts wurde geändert; versuch es noch einmal.";
 "records.l8.duplicatesMatchedOn" = "Sie stimmen überein in: %@, im selben Konto.";
+
+/* Auditoría UX 2.2 · lote 9 (presupuestos) */
+"budgets.l9.remainingLabel" = "Noch übrig";
+"budgets.l9.overLabel" = "Überschritten um";
+"budgets.l9.spentOfLimit" = "%1$@ von %2$@";
+"budgets.l9.notStarted" = "Noch nicht begonnen";
+"budgets.l9.days.one" = "1 Tag";
+"budgets.l9.days" = "%@ Tage";
+"budgets.l9.perDay" = "Du kannst %@ pro Tag ausgeben";
+"budgets.l9.countsAllExpenses" = "Zählt alle deine Ausgaben";
+"budgets.l9.limitLabel" = "Limit";
+"budgets.l9.whatCountsTitle" = "Welche Ausgaben zählen?";
+"budgets.l9.allExpensesChip" = "Alle meine Ausgaben";
+"budgets.l9.chooseCategories" = "Kategorien wählen";
+"budgets.l9.whatCountsAllHint" = "Zählt alles, was du im Zeitraum ausgibst. Wähle Kategorien, um nur einige zu begrenzen.";
+"budgets.l9.whatCountsSomeHint" = "Nur Ausgaben in diesen Kategorien zählen.";
+"budgets.l9.typeHint.weekly" = "Erneuert sich jede Woche";
+"budgets.l9.typeHint.monthly" = "Erneuert sich jeden Monat";
+"budgets.l9.typeHint.yearly" = "Erneuert sich jedes Jahr";
+"budgets.l9.typeHint.unique" = "Zwischen zwei Daten; wiederholt sich nicht";
+"budgets.l9.alertsOffHint" = "Budget-Warnungen sind in den Mitteilungen aus, deshalb erreicht dich keine.";
+"budgets.l9.activateAlerts" = "Warnungen aktivieren";
+"budgets.l9.alertsOffInNotifications" = "Warnungen in den Mitteilungen aus";
+"budgets.l9.showInWidget" = "Im Widget zeigen";
+"budgets.l9.showInWidgetHint" = "Erscheint im Budget-Widget in der Übersicht.";
+"budgets.l9.hideFromWidget" = "Aus dem Widget entfernen";
+"budgets.l9.deleteTitle" = "„%@“ löschen?";
+"budgets.l9.historyTitle.weekly" = "Was du jede Woche ausgegeben hast, verglichen mit deinem Limit";
+"budgets.l9.historyTitle.monthly" = "Was du jeden Monat ausgegeben hast, verglichen mit deinem Limit";
+"budgets.l9.historyTitle.yearly" = "Was du jedes Jahr ausgegeben hast, verglichen mit deinem Limit";
+"budgets.l9.limitShort" = "Limit %@";
+"budgets.l9.freePlanBanner" = "%lld aktive Budgets im kostenlosen Plan";
+"budgets.l9.freePlanSheet" = "Im kostenlosen Plan hast du %lld aktive Budgets. Deaktiviere eines oder wechsle zu Pro.";
+"budgets.l9.seePro" = "Pro ansehen";
+"budgets.l9.chooseWhich" = "Auswählen";
+"budgets.l9.previewEmpty" = "Markiere bis zu 3 Budgets mit dem Stern, dann siehst du hier dein Widget.";

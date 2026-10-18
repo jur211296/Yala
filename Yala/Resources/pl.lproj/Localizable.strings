@@ -518,7 +518,7 @@
 "planning.budgetCharts.byCategoryTitle" = "Według kategorii";
 "planning.budgetCharts.spendingHint" = "Twoje skumulowane wydatki dzień po dniu.";
 "planning.budgetCharts.spendingTitle" = "Wydatki okresu";
-"planning.budgetCharts.historyHint" = "Twoje wyniki w ostatnich 6 okresach.";
+"planning.budgetCharts.historyHint" = "Ostatnie 6 okresów. Na różowo te, w których przekroczono limit; linia przerywana to limit.";
 "planning.budgetCharts.historyTitle" = "Historia";
 
 // MARK: - Budgets
@@ -526,8 +526,8 @@
 "budgets.title" = "Budżety";
 "budgets.empty.title" = "Nie masz jeszcze żadnych budżetów";
 "budgets.empty.message" = "Twórz budżety, aby lepiej kontrolować swoje wydatki.";
-"budgets.includeSharedExpenses" = "Uwzględnij wydatki współdzielone";
-"budgets.includeSharedExpensesHint" = "Po wyłączeniu liczone są tylko twoje osobiste wydatki";
+"budgets.includeSharedExpenses" = "Licz mój udział w wydatkach grupy";
+"budgets.includeSharedExpensesHint" = "Po wyłączeniu liczą się tylko twoje osobiste wydatki.";
 "budgets.widget.noFavorites.title" = "Brak ulubionych budżetów";
 "budgets.widget.noFavorites.message" = "Oznacz budżety jako ulubione w Ustawieniach > Budżety, aby zobaczyć je tutaj.";
 "budgets.widget.selectFavorites" = "Wybierz ulubione";
@@ -545,8 +545,7 @@
 "budgets.edit" = "Edytuj budżet";
 "budgets.delete" = "Usuń budżet";
 "budgets.delete.confirm.title" = "Usunąć budżet?";
-"budgets.delete.confirm.message" = "Tej operacji nie można cofnąć.";
-
+"budgets.delete.confirm.message" = "Twoje wydatki nie zostaną usunięte: tylko ten limit.";
 // Budget Period Types
 "budgets.period.weekly" = "Tygodniowy";
 "budgets.period.monthly" = "Miesięczny";
@@ -563,7 +562,7 @@
 // Budget Details
 "budgets.spent.percent" = "Wydano %@";
 "budgets.days.remaining" = "Pozostało dni: %@";
-"budgets.period.past" = "Miniony";
+"budgets.period.past" = "Zamknięty";
 "budgets.amount.of" = "z %@";
 "budgets.exceeded.encouragement" = "Przekroczono budżet — następny okres pójdzie lepiej!";
 
@@ -7144,3 +7143,39 @@
 "records.l8b.bulk.nothingPendingHint" = "Najpierw wybierz, co zmienić.";
 "records.l8.bulkSaveFailed" = "Nie udało się zapisać. Nic nie zmieniono; spróbuj ponownie.";
 "records.l8.duplicatesMatchedOn" = "Zgadzają się: %@, na tym samym koncie.";
+
+/* Auditoría UX 2.2 · lote 9 (presupuestos) */
+"budgets.l9.remainingLabel" = "Zostało";
+"budgets.l9.overLabel" = "Przekroczono o";
+"budgets.l9.spentOfLimit" = "%1$@ z %2$@";
+"budgets.l9.notStarted" = "Jeszcze się nie zaczął";
+"budgets.l9.days.one" = "1 dzień";
+"budgets.l9.days" = "Dni: %@";
+"budgets.l9.perDay" = "Możesz wydać %@ dziennie";
+"budgets.l9.countsAllExpenses" = "Liczy wszystkie twoje wydatki";
+"budgets.l9.limitLabel" = "Limit";
+"budgets.l9.whatCountsTitle" = "Które wydatki liczy?";
+"budgets.l9.allExpensesChip" = "Wszystkie moje wydatki";
+"budgets.l9.chooseCategories" = "Wybierz kategorie";
+"budgets.l9.whatCountsAllHint" = "Liczy wszystko, co wydasz w okresie. Wybierz kategorie, aby ograniczyć tylko niektóre.";
+"budgets.l9.whatCountsSomeHint" = "Liczą się tylko wydatki z tych kategorii.";
+"budgets.l9.typeHint.weekly" = "Odnawia się co tydzień";
+"budgets.l9.typeHint.monthly" = "Odnawia się co miesiąc";
+"budgets.l9.typeHint.yearly" = "Odnawia się co rok";
+"budgets.l9.typeHint.unique" = "Między dwiema datami; nie powtarza się";
+"budgets.l9.alertsOffHint" = "Alerty budżetu są wyłączone w Powiadomieniach, więc żaden do ciebie nie dotrze.";
+"budgets.l9.activateAlerts" = "Włącz alerty";
+"budgets.l9.alertsOffInNotifications" = "Alerty wyłączone w Powiadomieniach";
+"budgets.l9.showInWidget" = "Pokaż w widżecie";
+"budgets.l9.showInWidgetHint" = "Pojawia się w widżecie Budżety na ekranie Start.";
+"budgets.l9.hideFromWidget" = "Usuń z widżetu";
+"budgets.l9.deleteTitle" = "Usunąć „%@”?";
+"budgets.l9.historyTitle.weekly" = "Ile wydałeś w każdym tygodniu w porównaniu z limitem";
+"budgets.l9.historyTitle.monthly" = "Ile wydałeś w każdym miesiącu w porównaniu z limitem";
+"budgets.l9.historyTitle.yearly" = "Ile wydałeś w każdym roku w porównaniu z limitem";
+"budgets.l9.limitShort" = "Limit %@";
+"budgets.l9.freePlanBanner" = "Aktywne budżety w planie darmowym: %lld";
+"budgets.l9.freePlanSheet" = "W planie darmowym masz %lld aktywne budżety. Wyłącz jeden albo przejdź na Pro.";
+"budgets.l9.seePro" = "Zobacz Pro";
+"budgets.l9.chooseWhich" = "Wybierz które";
+"budgets.l9.previewEmpty" = "Oznacz gwiazdką do 3 budżetów, a tu zobaczysz swój widżet.";

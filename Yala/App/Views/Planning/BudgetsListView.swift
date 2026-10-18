@@ -93,7 +93,8 @@ struct BudgetsListView: View {
         // `editingBudget`: `nil` crea (el FAB y el empty state lo ponen a `nil` antes); un presupuesto lo edita
         // (menú contextual de la fila, fase 3). Hasta entonces nadie lo leía y la hoja creaba siempre.
         .sheet(isPresented: $viewModel.showBudgetEditor, onDismiss: { budgetEditorClosedToken += 1 }) {
-            BudgetEditorView(budget: viewModel.editingBudget)
+            // Un presupuesto nuevo se abre en el tipo de la pestaña que se miraba (UX 2.2 · L9-3).
+            BudgetEditorView(budget: viewModel.editingBudget, initialPeriodType: viewModel.selectedPeriodType)
                 .onDisappear {
                     viewModel.editingBudget = nil
                     refreshData()
@@ -111,6 +112,8 @@ struct BudgetsListView: View {
         .sheet(isPresented: $showUpgradeSheet) {
             UpgradePromptSheet(feature: .budgets, context: .limitReached)
         }
+        // Tocar una alerta abre ESE presupuesto, en su tipo y su período actual (UX 2.2 · L9-5).
+        .modifier(BudgetAlertOpening(viewModel: viewModel, selectedSegment: $selectedSegment, onPeriodReset: { recalculatePeriodFilters() }))
         // «¿Era de prueba?» del primer presupuesto, al cerrar el editor y aquí mismo (UX 2.2 · L5-5).
         .practiceCleanupPrompt(for: [.firstBudget], editorClosedToken: budgetEditorClosedToken) { refreshData() }
         .appliesPendingRemoteChanges(sessionState)
@@ -155,6 +158,7 @@ struct BudgetsListView: View {
         }
         .pickerStyle(.segmented)
         .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("budgets_period_type_picker")
         .onChange(of: selectedSegment) { _, newValue in
             switch newValue {
             case 0: viewModel.selectedPeriodType = .weekly
@@ -211,6 +215,16 @@ struct BudgetsListView: View {
                                 viewModel.editingBudget = summary.budget
                                 viewModel.showBudgetEditor = true
                             }
+                            // Elegir lo que sale en el widget desde la propia lista (UX 2.2 · L9-12). Solo activos: el
+                            // Panel y Perfil › Presupuestos no enseñan los inactivos.
+                            if summary.budget.isActive {
+                            Button(
+                                summary.budget.isFavorite ? L10n.UXL9.hideFromWidget : L10n.UXL9.showInWidget,
+                                systemImage: summary.budget.isFavorite ? "star.slash" : "star"
+                            ) {
+                                toggleShownInWidget(summary.budget)
+                            }
+                            }
                         }
                     }
                 }
@@ -247,6 +261,23 @@ struct BudgetsListView: View {
         }
     }
 
+    // MARK: - Widget (UX 2.2 · L9-12)
+
+    private func toggleShownInWidget(_ budget: Budget) {
+        BudgetWidgetFavoriteLogic.setShownInWidget(
+            !budget.isFavorite, for: budget, among: viewModel.allBudgets.filter(\.isActive))
+        do {
+            try modelContext.save()
+            WidgetDataCache.updateCache(context: modelContext)
+            sessionState.needsBudgetsWidgetRefresh = true
+        } catch {
+            #if DEBUG
+            print("BudgetsListView: Error saving widget favorite: \(error)")
+            #endif
+        }
+        refreshData()
+    }
+
     // MARK: - Data Management
 
     /// Reload from DB + recompute. Use when DB mutations could have occurred
@@ -267,6 +298,60 @@ struct BudgetsListView: View {
         )
     }
 
+}
+
+// MARK: - Abrir desde una alerta (UX 2.2 · L9-5)
+
+/// Consume el presupuesto que pidió una alerta en ESTA ventana (`SceneNavigation.pendingBudgetID`): pone su pestaña, vuelve al período actual —el de
+/// la alerta— y abre su detalle. En la columna de lista de una ventana ancha, el destino se presenta en la de detalle.
+private struct BudgetAlertOpening: ViewModifier {
+    @Bindable var viewModel: BudgetsViewModel
+    @Binding var selectedSegment: Int
+    let onPeriodReset: () -> Void
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(SceneNavigation.self) private var navigation
+    @State private var openedBudget: BudgetNavigationID?
+
+    func body(content: Content) -> some View {
+        content
+            .navigationDestination(item: $openedBudget) { navID in
+                BudgetDetailDestination(budgetID: navID.id, viewModel: viewModel)
+                    .announcesShownInDetailColumn()
+                    .id(navID.id)
+            }
+            .onAppear { openPendingIfAny() }
+            .onChange(of: navigation.pendingBudgetID) { _, _ in openPendingIfAny() }
+    }
+
+    private func openPendingIfAny() {
+        guard let budgetID = navigation.pendingBudgetID else { return }
+        navigation.pendingBudgetID = nil
+        // Este `onAppear` puede correr antes que el de la lista, que es quien le da el contexto al ViewModel: sin él no
+        // hay presupuestos que buscar y el aviso se perdía (lo cazó `BudgetsLote9UITests`).
+        viewModel.setContext(modelContext)
+        viewModel.loadData()
+        guard let budget = viewModel.allBudgets.first(where: { $0.id == budgetID }) else { return }
+        let type = BudgetPeriodType(rawValue: budget.periodType) ?? .monthly
+        let calendar = userConfiguredCalendar()
+        viewModel.selectedWeek = calendar.startOfWeek(for: Date.now)
+        viewModel.selectedMonth = calendar.startOfMonth(for: Date.now)
+        viewModel.selectedYear = calendar.component(.year, from: Date.now)
+        viewModel.selectedPeriodType = type
+        selectedSegment = BudgetAlertOpening.segment(for: type)
+        onPeriodReset()
+        openedBudget = BudgetNavigationID(id: budget.persistentModelID)
+    }
+
+    /// El índice del selector de la lista (0 semanal, 1 mensual, 2 anual, 3 único).
+    static func segment(for type: BudgetPeriodType) -> Int {
+        switch type {
+        case .weekly: return 0
+        case .monthly: return 1
+        case .yearly: return 2
+        case .unique: return 3
+        }
+    }
 }
 
 // MARK: - Budget Detail Destination

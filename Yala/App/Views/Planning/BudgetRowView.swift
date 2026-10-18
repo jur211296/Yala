@@ -45,23 +45,21 @@ struct BudgetRowView: View {
                         statusInfo
                     }
                 } trailing: {
-                    // Amount (right-aligned)
-                    VStack(alignment: .trailingUnlessStacked(dynamicTypeSize), spacing: DS.Spacing.xxs) {
-                        HStack(spacing: DS.Spacing.xxs) {
-                            if summary.status == .exceeded {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(DS.Typography.captionSmall)
-                                    .foregroundStyle(Color.hotPink)
-                                    .accessibilityHidden(true)
-                            }
-                            Text(formattedSpent)
-                                .font(DS.Typography.headline)
-                                .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                    // Lo que queda, o lo que te pasaste (UX 2.2 · L9-1): es lo que se viene a mirar. Lo gastado va en la
+                    // línea gris de la izquierda; la fila no crece.
+                    HStack(alignment: .lastTextBaseline, spacing: DS.Spacing.xxs) {
+                        if BudgetRemainingLogic.isOver(limit: summary.budget.limitAmount, spent: summary.spent) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(Color.overBudgetText)
+                                .accessibilityHidden(true)
                         }
-
-                        Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), formattedLimit))
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.secondary)
+                        BudgetRemainingFigure(
+                            limit: summary.budget.limitAmount,
+                            spent: summary.spent,
+                            currencyCode: currencyCode,
+                            alignment: .trailingUnlessStacked(dynamicTypeSize)
+                        )
                     }
                 }
 
@@ -71,6 +69,11 @@ struct BudgetRowView: View {
                     color: summary.color,
                     isExceeded: summary.status == .exceeded
                 )
+
+                // Sin filtros cuenta TODO lo gastado (UX 2.2 · L9-2): «Viajes» salió al 1522% sin que nada lo dijera.
+                if summary.budget.countsAllExpenses {
+                    BudgetCountsAllExpensesNote()
+                }
 
                 // Exceeded encouragement (brand voice: constructive, never scolding)
                 if summary.status == .exceeded {
@@ -104,35 +107,15 @@ struct BudgetRowView: View {
         }
     }
 
+    /// «S/ 1,408.00 de S/ 1,800.00 · 18 días» (UX 2.2 · L9-1): sin porcentaje y en una línea. Un período cerrado dice
+    /// «Cerrado».
     private var statusInfo: some View {
-        let percentText = String(format: "%.0f%%", summary.percentage)
-        let spentKey = NSLocalizedString("budgets.spent.percent", comment: "")
-        let spentText = String(format: spentKey, percentText)
-
-        let daysText: String
-        if summary.daysRemaining == -1 {
-            daysText = NSLocalizedString("budgets.period.past", comment: "")
-        } else {
-            daysText = L10n.Budgets.daysRemaining(summary.daysRemaining)
-        }
-
-        // A tamaños de accesibilidad las dos cifras van una bajo otra, sin el separador: en fila se
-        // partían sílaba a sílaba.
-        return AdaptiveRowStack(spacing: DS.Spacing.xs, stackedSpacing: DS.Spacing.xxs) {
-            Text(spentText)
-                .font(DS.Typography.labelTiny)
-                .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .secondary)
-
-            if !dynamicTypeSize.isAccessibilitySize {
-                Text("•")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary.opacity(0.5))
-            }
-
-            Text(daysText)
-                .font(DS.Typography.captionSmall)
-                .foregroundStyle(.secondary)
-        }
+        BudgetSpentLine(
+            spent: summary.spent,
+            limit: summary.budget.limitAmount,
+            currencyCode: currencyCode,
+            suffix: L10n.UXL9.shortDays(summary.daysRemaining)
+        )
     }
 
     // MARK: - Formatters

@@ -775,7 +775,7 @@
 "budgets.charts.title" = "Gráficas";
 "budgets.days.remaining" = "%@ días restantes";
 "budgets.delete" = "Eliminar presupuesto";
-"budgets.delete.confirm.message" = "Esta acción no se puede deshacer";
+"budgets.delete.confirm.message" = "Tus gastos no se borran: solo este límite.";
 "budgets.delete.confirm.title" = "¿Eliminar presupuesto?";
 "budgets.detail.accounts" = "Cuentas";
 "budgets.detail.alerts" = "Alertas";
@@ -804,8 +804,8 @@
 "budgets.exceeded.encouragement" = "Pasaste tu presupuesto, ¡el próximo período será mejor!";
 "budgets.favorites.previewEmpty" = "Selecciona favoritos para ver el preview";
 "budgets.favorites.previewTitle" = "Así se verá tu widget";
-"budgets.includeSharedExpenses" = "Incluir gastos compartidos";
-"budgets.includeSharedExpensesHint" = "Si está desactivado, solo se cuentan tus gastos personales";
+"budgets.includeSharedExpenses" = "Contar mi parte de los gastos de grupo";
+"budgets.includeSharedExpensesHint" = "Si lo apagas, solo cuentan tus gastos personales.";
 "budgets.new" = "Nuevo presupuesto";
 "budgets.period.all" = "Todo";
 "budgets.period.confirm" = "Listo";
@@ -814,7 +814,7 @@
 "budgets.period.current.year" = "Este año";
 "budgets.period.goToToday" = "Ir a hoy";
 "budgets.period.monthly" = "Mensual";
-"budgets.period.past" = "Pasado";
+"budgets.period.past" = "Cerrado";
 "budgets.period.selector.title.monthly" = "Elige un mes";
 "budgets.period.selector.title.weekly" = "Elige una semana";
 "budgets.period.selector.title.yearly" = "Elige un año";
@@ -2455,7 +2455,7 @@
 "period.thisYear" = "Este año";
 "planning.budgetCharts.byCategoryHint" = "Toca una categoría para ver subcategorías.";
 "planning.budgetCharts.byCategoryTitle" = "Por categoría";
-"planning.budgetCharts.historyHint" = "Tu cumplimiento en los últimos 6 períodos.";
+"planning.budgetCharts.historyHint" = "Los últimos 6 períodos. En rosa, los que pasaron tu límite; la línea discontinua es el límite.";
 "planning.budgetCharts.historyTitle" = "Historial";
 "planning.budgetCharts.spendingHint" = "Tu gasto acumulado día por día.";
 "planning.budgetCharts.spendingTitle" = "Gasto del período";
@@ -6461,3 +6461,39 @@
 "records.l8b.bulk.apply" = "Aplicar a %d registros";
 "records.l8.bulkSaveFailed" = "No se pudo guardar. No se cambió nada; vuelve a probar.";
 "records.l8.duplicatesMatchedOn" = "Coinciden en %@, en la misma cuenta.";
+
+/* Auditoría UX 2.2 · lote 9 (presupuestos) */
+"budgets.l9.remainingLabel" = "Te quedan";
+"budgets.l9.overLabel" = "Te pasaste por";
+"budgets.l9.spentOfLimit" = "%1$@ de %2$@";
+"budgets.l9.notStarted" = "Aún no empieza";
+"budgets.l9.days.one" = "1 día";
+"budgets.l9.days" = "%@ días";
+"budgets.l9.perDay" = "Puedes gastar %@ al día";
+"budgets.l9.countsAllExpenses" = "Cuenta todos tus gastos";
+"budgets.l9.limitLabel" = "Límite";
+"budgets.l9.whatCountsTitle" = "¿Qué gastos cuenta?";
+"budgets.l9.allExpensesChip" = "Todos mis gastos";
+"budgets.l9.chooseCategories" = "Elegir categorías";
+"budgets.l9.whatCountsAllHint" = "Cuenta todo lo que gastes en el período. Elige categorías para limitar solo algunas.";
+"budgets.l9.whatCountsSomeHint" = "Solo cuentan los gastos de esas categorías.";
+"budgets.l9.typeHint.weekly" = "Se renueva cada semana";
+"budgets.l9.typeHint.monthly" = "Se renueva cada mes";
+"budgets.l9.typeHint.yearly" = "Se renueva cada año";
+"budgets.l9.typeHint.unique" = "Entre dos fechas; no se repite";
+"budgets.l9.alertsOffHint" = "Las alertas de presupuesto están apagadas en Notificaciones: así no te llega ningún aviso.";
+"budgets.l9.activateAlerts" = "Activar alertas";
+"budgets.l9.alertsOffInNotifications" = "Alertas apagadas en Notificaciones";
+"budgets.l9.showInWidget" = "Mostrar en el widget";
+"budgets.l9.showInWidgetHint" = "Sale en el widget de Presupuestos del Panel.";
+"budgets.l9.hideFromWidget" = "Quitar del widget";
+"budgets.l9.deleteTitle" = "¿Eliminar «%@»?";
+"budgets.l9.historyTitle.weekly" = "Lo que gastaste cada semana frente a tu límite";
+"budgets.l9.historyTitle.monthly" = "Lo que gastaste cada mes frente a tu límite";
+"budgets.l9.historyTitle.yearly" = "Lo que gastaste cada año frente a tu límite";
+"budgets.l9.limitShort" = "Límite %@";
+"budgets.l9.freePlanBanner" = "%lld presupuestos activos en el plan gratis";
+"budgets.l9.freePlanSheet" = "Con el plan gratis tienes %lld activos. Desactiva uno o pásate a Pro.";
+"budgets.l9.seePro" = "Ver Pro";
+"budgets.l9.chooseWhich" = "Elegir cuáles";
+"budgets.l9.previewEmpty" = "Marca hasta 3 presupuestos con la estrella y aquí verás tu widget.";

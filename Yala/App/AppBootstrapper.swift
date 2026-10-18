@@ -1126,6 +1126,19 @@ final class AppBootstrapper {
         if let dest = uitestDeeplinkDestination() {
             RouterEntryGate.shared.submit(.navigate(dest))
         }
+        // Toque fingido en la alerta de un presupuesto (UX 2.2 · L9-5): mismo camino que el toque real.
+        if let name = UITestHooks.budgetAlertTapName {
+            do {
+                let budgets = try context.fetch(FetchDescriptor<Budget>(predicate: #Predicate { $0.name == name }))
+                if let budget = budgets.first {
+                    NotificationService.routeTap(deepLink: BudgetAlertRouting.deepLink(for: budget.id), targetSessionID: nil)
+                }
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: Error: \(error)")
+                #endif
+            }
+        }
         // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
         // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
         // testear el modal sin depender de un evento de CloudKit.

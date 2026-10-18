@@ -28,6 +28,7 @@ extension XCUIApplication {
         seed: String? = "minimal",
         deeplink: String? = nil,
         deeplinkURL: String? = nil,
+        budgetAlertTap: String? = nil,
         seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
@@ -111,6 +112,12 @@ extension XCUIApplication {
         if let deeplinkURL {
             args.append("-uitest-deeplink-url")
             args.append(deeplinkURL)
+        }
+        // Toque fingido en la alerta de ese presupuesto (UX 2.2 · L9-5). NOMBRADO como sus vecinos: un typo dejaría la
+        // lista sin abrir nada y el rojo culparía al enrutado.
+        if let budgetAlertTap {
+            args.append("-uitest-budget-alert-tap")
+            args.append(budgetAlertTap)
         }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }

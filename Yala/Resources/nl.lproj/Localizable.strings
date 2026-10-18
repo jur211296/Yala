@@ -518,7 +518,7 @@
 "planning.budgetCharts.byCategoryTitle" = "Per categorie";
 "planning.budgetCharts.spendingHint" = "Jouw cumulatieve uitgaven dag voor dag.";
 "planning.budgetCharts.spendingTitle" = "Uitgaven van de periode";
-"planning.budgetCharts.historyHint" = "Jouw prestaties over de laatste 6 perioden.";
+"planning.budgetCharts.historyHint" = "De laatste 6 periodes. In roze de periodes boven je limiet; de stippellijn is de limiet.";
 "planning.budgetCharts.historyTitle" = "Geschiedenis";
 
 // MARK: - Budgets
@@ -526,8 +526,8 @@
 "budgets.title" = "Budgetten";
 "budgets.empty.title" = "Je hebt nog geen budgetten";
 "budgets.empty.message" = "Maak budgetten om je uitgaven beter onder controle te houden.";
-"budgets.includeSharedExpenses" = "Gedeelde uitgaven meetellen";
-"budgets.includeSharedExpensesHint" = "Als dit uit staat, tellen alleen je persoonlijke uitgaven mee";
+"budgets.includeSharedExpenses" = "Mijn deel van groepsuitgaven meetellen";
+"budgets.includeSharedExpensesHint" = "Als dit uit staat, tellen alleen je persoonlijke uitgaven mee.";
 "budgets.widget.noFavorites.title" = "Geen favoriete budgetten";
 "budgets.widget.noFavorites.message" = "Markeer budgetten als favoriet via Instellingen > Budgetten om ze hier te zien.";
 "budgets.widget.selectFavorites" = "Selecteer favorieten";
@@ -545,8 +545,7 @@
 "budgets.edit" = "Budget bewerken";
 "budgets.delete" = "Budget verwijderen";
 "budgets.delete.confirm.title" = "Budget verwijderen?";
-"budgets.delete.confirm.message" = "Deze actie kan niet ongedaan worden gemaakt.";
-
+"budgets.delete.confirm.message" = "Je uitgaven worden niet verwijderd: alleen deze limiet.";
 // Budget Period Types
 "budgets.period.weekly" = "Wekelijks";
 "budgets.period.monthly" = "Maandelijks";
@@ -563,7 +562,7 @@
 // Budget Details
 "budgets.spent.percent" = "%@ besteed";
 "budgets.days.remaining" = "%@ dagen over";
-"budgets.period.past" = "Verleden";
+"budgets.period.past" = "Afgesloten";
 "budgets.amount.of" = "van %@";
 "budgets.exceeded.encouragement" = "Je bent over budget gegaan — volgende periode wordt beter!";
 
@@ -7144,3 +7143,39 @@
 "records.l8b.bulk.nothingPendingHint" = "Kies eerst wat je wilt wijzigen.";
 "records.l8.bulkSaveFailed" = "Opslaan is mislukt. Er is niets gewijzigd; probeer het opnieuw.";
 "records.l8.duplicatesMatchedOn" = "Ze komen overeen in %@, op dezelfde rekening.";
+
+/* Auditoría UX 2.2 · lote 9 (presupuestos) */
+"budgets.l9.remainingLabel" = "Nog over";
+"budgets.l9.overLabel" = "Overschreden met";
+"budgets.l9.spentOfLimit" = "%1$@ van %2$@";
+"budgets.l9.notStarted" = "Nog niet begonnen";
+"budgets.l9.days.one" = "1 dag";
+"budgets.l9.days" = "%@ dagen";
+"budgets.l9.perDay" = "Je kunt %@ per dag uitgeven";
+"budgets.l9.countsAllExpenses" = "Telt al je uitgaven";
+"budgets.l9.limitLabel" = "Limiet";
+"budgets.l9.whatCountsTitle" = "Welke uitgaven tellen?";
+"budgets.l9.allExpensesChip" = "Al mijn uitgaven";
+"budgets.l9.chooseCategories" = "Categorieën kiezen";
+"budgets.l9.whatCountsAllHint" = "Telt alles wat je in de periode uitgeeft. Kies categorieën om er maar een paar te begrenzen.";
+"budgets.l9.whatCountsSomeHint" = "Alleen uitgaven in die categorieën tellen.";
+"budgets.l9.typeHint.weekly" = "Vernieuwt elke week";
+"budgets.l9.typeHint.monthly" = "Vernieuwt elke maand";
+"budgets.l9.typeHint.yearly" = "Vernieuwt elk jaar";
+"budgets.l9.typeHint.unique" = "Tussen twee datums; herhaalt niet";
+"budgets.l9.alertsOffHint" = "Budgetmeldingen staan uit in Meldingen, dus er komt geen melding binnen.";
+"budgets.l9.activateAlerts" = "Meldingen aanzetten";
+"budgets.l9.alertsOffInNotifications" = "Meldingen uit in Meldingen";
+"budgets.l9.showInWidget" = "In widget tonen";
+"budgets.l9.showInWidgetHint" = "Verschijnt in de Budgetten-widget op Start.";
+"budgets.l9.hideFromWidget" = "Uit widget halen";
+"budgets.l9.deleteTitle" = "‘%@’ verwijderen?";
+"budgets.l9.historyTitle.weekly" = "Wat je elke week uitgaf tegenover je limiet";
+"budgets.l9.historyTitle.monthly" = "Wat je elke maand uitgaf tegenover je limiet";
+"budgets.l9.historyTitle.yearly" = "Wat je elk jaar uitgaf tegenover je limiet";
+"budgets.l9.limitShort" = "Limiet %@";
+"budgets.l9.freePlanBanner" = "%lld actieve budgetten in het gratis abonnement";
+"budgets.l9.freePlanSheet" = "In het gratis abonnement heb je %lld actieve budgetten. Zet er een uit of stap over op Pro.";
+"budgets.l9.seePro" = "Pro bekijken";
+"budgets.l9.chooseWhich" = "Kies welke";
+"budgets.l9.previewEmpty" = "Markeer tot 3 budgetten met de ster en hier zie je je widget.";

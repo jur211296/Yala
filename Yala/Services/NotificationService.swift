@@ -73,6 +73,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     @MainActor
     static func routeTap(deepLink destination: String, targetSessionID: String?) {
         guard let dest = parseDestination(destination) else { return }
+        // Una alerta de presupuesto lleva su id (`budgets/<uuid>`): se apunta antes de navegar y Presupuestos abre ese
+        // detalle al llegar (UX 2.2 · L9-5).
+        if let budgetID = BudgetAlertRouting.budgetID(fromDeepLink: destination) {
+            BudgetAlertRouting.shared.request(budgetID)
+        }
         if let targetSessionID {
             SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
         }
@@ -85,6 +90,11 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if destination.hasPrefix("groups/") {
             let groupID = String(destination.dropFirst("groups/".count))
             return .groupDetail(groupID: groupID)
+        }
+
+        // Alerta de un presupuesto: "budgets/{UUID}". El destino es Presupuestos; el id lo apunta `routeTap`.
+        if BudgetAlertRouting.budgetID(fromDeepLink: destination) != nil {
+            return .budgets
         }
 
         switch destination {

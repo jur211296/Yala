@@ -18,6 +18,8 @@ struct BudgetsFavoritesSettingsView: View {
     @Environment(AppPreferences.self) private var appPreferences
 
     @State private var viewModel = BudgetsFavoritesSettingsViewModel()
+    /// Lo gastado de cada favorito en su período actual, para que la vista previa enseñe cifras reales (UX 2.2 · L9-11).
+    @State private var spendingViewModel = BudgetsViewModel()
 
     var body: some View {
         ScrollView {
@@ -28,8 +30,9 @@ struct BudgetsFavoritesSettingsView: View {
                         // Info header (visible when budgets exist)
                         infoHeader
 
-                        // Widget preview
-                        if viewModel.hasFavorites && !viewModel.isEditMode {
+                        // Vista previa con su sitio reservado desde el principio (UX 2.2 · L9-11): al aparecer con la primera
+                        // estrella empujaba la lista, y el segundo toque caía en otro presupuesto.
+                        if !viewModel.isEditMode {
                             widgetPreview
                         }
 
@@ -108,8 +111,9 @@ struct BudgetsFavoritesSettingsView: View {
                 Text(L10n.Common.deleteError)
             }
         )
+        // Nombra el presupuesto y dice que los gastos se quedan (UX 2.2 · L9-14).
         .alert(
-            NSLocalizedString("budgets.delete.confirm.title", comment: ""),
+            L10n.UXL9.deleteTitle(viewModel.budgetToDelete?.name ?? ""),
             isPresented: $viewModel.showDeleteConfirmation
         ) {
             Button(L10n.Action.delete, role: .destructive) { viewModel.deleteBudget() }
@@ -119,11 +123,14 @@ struct BudgetsFavoritesSettingsView: View {
         }
         .onAppear {
             viewModel.setContext(modelContext, sessionState: sessionState)
+            spendingViewModel.setContext(modelContext)
         }
     }
 
     // MARK: - Widget Preview
 
+    /// La MISMA tarjeta de Presupuestos del Panel en tamaño mediano, con lo gastado real (UX 2.2 · L9-11). Su alto se
+    /// reserva para tres filas aunque no haya ninguna marcada, así la lista de debajo no se mueve al tocar estrellas.
     private var widgetPreview: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(NSLocalizedString("budgets.favorites.previewTitle", comment: ""))
@@ -131,56 +138,69 @@ struct BudgetsFavoritesSettingsView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, DS.Chip.paddingV)
 
-            VStack(spacing: DS.Spacing.md) {
-                ForEach(Array(viewModel.favoriteBudgets.prefix(3).enumerated()), id: \.element.persistentModelID) { _, budget in
-                    previewBudgetRow(budget)
+            ZStack(alignment: .top) {
+                // Molde invisible de tres filas: fija el alto.
+                previewSkeleton
+                    .hidden()
+                    .accessibilityHidden(true)
+
+                if previewSummaries.isEmpty {
+                    VStack(spacing: DS.Spacing.sm) {
+                        Image(systemName: "star")
+                            .font(DS.Typography.title)
+                            .foregroundStyle(DS.Semantic.favoriteIcon)
+                            .accessibilityHidden(true)
+                        Text(L10n.UXL9.previewEmpty)
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(DS.Spacing.lg)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .panelCard()
+                    .accessibilityIdentifier("budgets_favorites_preview_empty")
+                } else {
+                    BudgetsWidget(
+                        budgets: previewSummaries,
+                        currencyCode: appPreferences.defaultCurrencyCode.rawValue,
+                        size: .medium
+                    )
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("budgets_favorites_preview")
                 }
             }
-            .padding(DS.Spacing.lg)
-            .solidCard(radius: DS.Radius.xl)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    private func previewBudgetRow(_ budget: Budget) -> some View {
-        // CSV mirror SSOT con fallback M2M para legacy budgets pre-deploy.
-        let (icon, colorHex) = Budget.computeDisplayProperties(for: budget, in: modelContext)
+    /// Los tres primeros favoritos, en su orden, con lo gastado de su período actual.
+    private var previewSummaries: [BudgetSummary] {
+        let currency = appPreferences.defaultCurrencyCode.rawValue
+        return viewModel.favoriteBudgets.prefix(3).map {
+            spendingViewModel.buildSummary(for: $0, defaultCurrencyCode: currency)
+        }
+    }
 
-        return HStack(spacing: DS.Spacing.md) {
-            // Icon badge (matches BudgetWidgetRow)
-            ZStack {
-                Circle()
-                    .fill(Color(hex: colorHex))
-                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
-
-                Image(systemName: icon)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.white)
-            }
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                // Name and limit row
-                HStack {
-                    Text(budget.name)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    Text(formatAmount(budget.limitAmount, currency: budget.currencyCode))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
+    /// Mismas piezas y tipografías que la tarjeta con tres filas (`BudgetsWidget` + `BudgetWidgetRow`).
+    private var previewSkeleton: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Text(L10n.WidgetType.budgets)
+                .font(DS.Typography.subheadlineEmphasized)
+            VStack(spacing: DS.Spacing.lg) {
+                ForEach(0..<3, id: \.self) { _ in
+                    HStack(spacing: DS.Spacing.md) {
+                        Circle().frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
+                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                            Text(verbatim: "Aa").font(DS.Typography.headline)
+                            Text(verbatim: "Aa").font(DS.Typography.captionSmall)
+                            BudgetProgressBar(percentage: 0, color: "#000000", isExceeded: false, simplified: true)
+                        }
+                    }
                 }
-
-                // Placeholder progress bar (empty)
-                BudgetProgressBar(
-                    percentage: 0,
-                    color: colorHex,
-                    isExceeded: false,
-                    simplified: true
-                )
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .panelCard()
     }
 
     // MARK: - Info Header

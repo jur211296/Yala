@@ -223,6 +223,10 @@ struct UpgradePromptSheet: View {
     private var messageForFeature: String {
         switch context {
         case .limitReached:
+            // Presupuestos dice el límite y la salida gratis (UX 2.2 · L9-9): desactivar uno también libera sitio.
+            if feature == .budgets, let limit = feature.freeLimit {
+                return L10n.UXL9.freePlanSheet(limit)
+            }
             return L10n.FeatureGate.limitReachedMessage(feature.localizedName)
         case .proFeature:
             return L10n.FeatureGate.proFeatureMessage(feature.localizedName)

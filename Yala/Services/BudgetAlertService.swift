@@ -175,6 +175,7 @@ final class BudgetAlertService {
 
         // El enviado (el más alto): marca solo tras entrega confirmada.
         let delivered = await sendNotification(
+            budgetID: budgetID,
             budgetName: budgetName,
             threshold: maxThreshold,
             spent: spent,
@@ -211,6 +212,7 @@ final class BudgetAlertService {
     /// Envía la notificación del threshold. Retorna `true` si iOS aceptó el request
     /// (`NotificationService.sendNotification -> Bool`) — el llamador gatea el dedup con ese valor.
     private func sendNotification(
+        budgetID: UUID,
         budgetName: String,
         threshold: Int,
         spent: Double,
@@ -234,11 +236,18 @@ final class BudgetAlertService {
         default: message = "\(budgetName): \(threshold)%"
         }
 
+        // Título «Presupuestos» y el nombre solo en el cuerpo, que ya lo trae; el toque abre ESE presupuesto
+        // (UX 2.2 · L9-5). Antes llevaba solo «budgets» y abría la lista, a veces en otra pestaña.
         return await NotificationService.shared.sendNotification(
-            title: budgetName,
+            title: Self.notificationTitle,
             body: message,
-            deepLink: "budgets"
+            deepLink: BudgetAlertRouting.deepLink(for: budgetID)
         )
+    }
+
+    /// El título de toda alerta de presupuesto.
+    static var notificationTitle: String {
+        L10n.Planning.budgets
     }
 }
 

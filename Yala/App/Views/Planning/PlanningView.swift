@@ -123,6 +123,11 @@ struct PlanningView: View {
                 // Keep SessionState in sync
                 navigation.selectedPlanningTab = newValue
             }
+            // Un destino que llega con Planificación ya a la vista (la alerta de un presupuesto con «Pagos» elegido) cambia
+            // el chip; antes solo se leía al aparecer y la alerta no abría nada (UX 2.2 · L9-5).
+            .onChange(of: navigation.selectedPlanningTab) { _, newValue in
+                if selectedTab != newValue { selectedTab = newValue }
+            }
     }
 
     // MARK: - Tab Content

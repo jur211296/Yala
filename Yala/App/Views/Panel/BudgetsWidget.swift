@@ -85,17 +85,37 @@ struct BudgetsWidget: View {
             Spacer()
 
             if !budgets.isEmpty, let onEditFavorites {
-                Button {
-                    onEditFavorites()
-                } label: {
-                    Image(systemName: "star")
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.secondary)
+                if hasBudgetsButNoFavorites {
+                    // Sin favoritos salen los dos más cerca de su límite; el enlace dice que se pueden elegir (UX 2.2 · L9-10).
+                    chooseWhichButton(onEditFavorites)
+                } else {
+                    Button {
+                        onEditFavorites()
+                    } label: {
+                        Image(systemName: "star")
+                            .font(DS.Typography.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Settings.budgetsFavorites)
                 }
-                .buttonStyle(.plain)
             }
 
         }
+    }
+
+    /// «Elegir cuáles»: abre la pantalla de favoritos.
+    private func chooseWhichButton(_ action: @escaping () -> Void) -> some View {
+        Button {
+            DS.Haptic.light()
+            action()
+        } label: {
+            Text(L10n.UXL9.chooseWhich)
+                .font(DS.Typography.labelSmall)
+                .foregroundStyle(.thAccent)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("panel_budgets_choose_which")
     }
 
     // MARK: - Budgets List
@@ -176,8 +196,14 @@ struct BudgetsWidget: View {
                             smallBudgetRow(for: summary)
                         }
                     }
+
+                    // Sin favoritos, los dos más cerca de su límite y el enlace para elegirlos (UX 2.2 · L9-10).
+                    if hasBudgetsButNoFavorites, let onEditFavorites {
+                        Spacer(minLength: 0)
+                        chooseWhichButton(onEditFavorites)
+                    }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
         }
     }
@@ -229,12 +255,14 @@ struct BudgetsWidget: View {
                     }
                     .frame(width: 28, height: 6)
 
-                    AmountText(
-                        value: summary.spent,
-                        currencyCode: currencyCode,
-                        font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary
-                    )
+                    // Lo que queda, con su rótulo (UX 2.2 · L9-10): antes era lo gastado, sin decir que lo era.
+                    let remaining = BudgetRemainingLogic.remaining(limit: summary.budget.limitAmount, spent: summary.spent)
+                    let isOver = BudgetRemainingLogic.isOver(limit: summary.budget.limitAmount, spent: summary.spent)
+                    Text("\(isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel) \(appPreferences.currency(abs(remaining), currencyCode: summary.budget.currencyCode))")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(isOver ? Color.overBudgetText : Color.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
 
                     Spacer(minLength: 0)
                 }

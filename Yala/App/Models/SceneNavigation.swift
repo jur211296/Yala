@@ -143,6 +143,10 @@ final class SceneNavigation: Identifiable {
     /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?
 
+    /// Presupuesto que esta ventana debe abrir al llegar a Presupuestos: el de la alerta tocada (UX 2.2 · L9-5). Lo pone
+    /// `ContentView.handleMainTabIntent` al drenar `.navigate(.budgets)` y lo consume `BudgetsListView`.
+    var pendingBudgetID: UUID?
+
     /// Registro que esta ventana debe abrir al llegar a Registros (una ventana abierta con «Abrir en una ventana
     /// nueva» desde la fila). Lo consume `RecordsStandaloneView` cuando sus datos ya cargaron.
     var pendingRecordID: PersistentIdentifier?
