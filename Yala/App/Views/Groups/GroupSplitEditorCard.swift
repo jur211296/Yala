@@ -240,7 +240,10 @@ struct GroupSplitMemberList: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
-            if member.isCurrentUser {
+            // «Tú» una sola vez (UX 2.2 · L10-16): si el nombre ya es «Tú», no se le añade «(Tú)».
+            if member.isCurrentUser,
+               (viewModel.memberNameLookup[id] ?? member.resolvedDisplayName)
+                .localizedCaseInsensitiveCompare(L10n.Groups.Member.youName) != .orderedSame {
                 Text(L10n.Groups.Member.you)
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)

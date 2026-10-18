@@ -95,9 +95,6 @@ final class ScheduledPaymentsViewModel {
     /// Cached paid amounts — pre-computed in calculatePaymentData(), consumed by calculateMonthlyTotal()
     private(set) var cachedPaidAmounts: [String: [PaidOccurrenceInfo]] = [:]
 
-    /// Payment status filter (all/paid/pending)
-    var paymentStatusFilter: PaymentStatusFilter = .all
-
     /// Smart label for the selected month
     var monthYearLabel: String {
         let calendar = Calendar.current
@@ -185,25 +182,6 @@ final class ScheduledPaymentsViewModel {
 
     private func invalidateMonthlyTotals() { cachedMonthlyTotals = nil }
 
-    /// Grouped payments filtered by paymentStatusFilter
-    var filteredGroupedPayments: [(status: DueStatus, payments: [ScheduledPaymentSummary])] {
-        if paymentStatusFilter == .all { return groupedPayments }
-
-        return groupedPayments.compactMap { section in
-            let filtered: [ScheduledPaymentSummary]
-            switch paymentStatusFilter {
-            case .paid:
-                filtered = section.payments.filter { $0.isPaidForMonth }
-            case .pending:
-                filtered = section.payments.filter { !$0.isPaidForMonth && !$0.isSkippedForMonth }
-            case .all:
-                filtered = section.payments
-            }
-            guard !filtered.isEmpty else { return nil }
-            return (status: section.status, payments: filtered)
-        }
-    }
-
     // MARK: - Filter Computed Properties
 
     /// Whether any filters are active
@@ -245,7 +223,9 @@ final class ScheduledPaymentsViewModel {
         )
 
         do {
-            let fetched = try context.fetch(descriptor)
+            // Un pago que espera su borrado con «Deshacer» ya no sale (UX 2.2 · L10-15).
+            let pendingDeletion = ScheduledPaymentPendingDeletion.shared.pendingIDs
+            let fetched = try context.fetch(descriptor).filter { !pendingDeletion.contains($0.id) }
             if fetched != allPayments {
                 allPayments = fetched
                 // Clean up skipped dates older than 1 year (prevents unbounded growth via iCloud sync)
@@ -317,6 +297,113 @@ final class ScheduledPaymentsViewModel {
         } catch {
             #if DEBUG
             print("ScheduledPaymentsViewModel: Error rejecting draft: \(error)")
+            #endif
+        }
+    }
+
+    // MARK: - Pausar / reanudar (UX 2.2 · L10-7)
+
+    /// Pausa o reanuda un pago desde el detalle o la pulsación larga de la fila. Pausado no avisa ni cuenta en las cifras
+    /// (B11). Al reanudar, la próxima fecha pasa a la primera desde hoy: lo que cayó en pausa no deja un borrador en la
+    /// Bandeja por un pago que la persona decidió no hacer.
+    func setPaused(_ payment: ScheduledPayment, paused: Bool) {
+        guard let context = modelContext else { return }
+        if paused {
+            guard payment.isActive else { return }
+            payment.isActive = false
+        } else {
+            guard payment.isPausedByUser else { return }
+            payment.nextDueDate = ScheduledPaymentListLogic.resumedNextDueDate(
+                current: payment.nextDueDate, today: Date.now
+            ) { month in
+                getPaymentDatesInMonth(payment: payment, month: month)
+            }
+            payment.isActive = true
+        }
+        do {
+            try persistAndRefresh(context: context)
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error saving pause: \(error)")
+            #endif
+        }
+        loadPayments()
+        calculatePaymentData(payments: allPayments)
+    }
+
+    // MARK: - «Ya lo pagué» → «Apuntarlo ahora» (UX 2.2 · L10-9, L10-11)
+
+    /// El borrador con el que se apunta una fecha: el pendiente que ya espera en la Bandeja para ese pago y ese mes
+    /// (el que dejó el vencimiento), o uno nuevo (`isNew`). La fecha del registro es la del pago si ya llegó, y hoy si
+    /// se paga por adelantado: la Bandeja no deja guardar registros con fecha futura. Un pago compartido no pasa por
+    /// aquí: se aprueba con el formulario de grupo (`DraftService` lo rechazaría).
+    func draftForPaying(_ payment: ScheduledPayment, occurrence: Date) -> (draft: InboxDraft, isNew: Bool)? {
+        guard let context = modelContext, !payment.isGroupPayment else { return nil }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date.now)
+        let targetDate = min(calendar.startOfDay(for: occurrence), today)
+        let paymentID = payment.id.uuidString
+        do {
+            let descriptor = FetchDescriptor<InboxDraft>(
+                predicate: #Predicate<InboxDraft> { draft in
+                    draft.sourceScheduledPaymentID == paymentID && draft.statusRaw == "pending"
+                }
+            )
+            if let existing = try context.fetch(descriptor).first(where: {
+                calendar.isDate($0.date ?? $0.createdAt, equalTo: occurrence, toGranularity: .month)
+            }) {
+                return (existing, false)
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error fetching pending drafts: \(error)")
+            #endif
+            return nil
+        }
+        let draft = ScheduledPaymentDraftService.createDraftForOccurrence(from: payment, date: targetDate, context: context)
+        return (draft, true)
+    }
+
+    /// «Apuntarlo ahora» en un toque: el borrador de esa fecha con el monto elegido, aprobado por el mismo camino que la
+    /// Bandeja (`DraftService.approveDraft`: registro, fecha pagada y próxima fecha). Lanza lo que lance la Bandeja.
+    @discardableResult
+    func recordPaymentNow(
+        _ payment: ScheduledPayment,
+        occurrence: Date,
+        amount: Double,
+        draftService: DraftService,
+        currencyConverter: CurrencyConverter
+    ) throws -> TransactionItem? {
+        guard amount > 0, let (draft, isNew) = draftForPaying(payment, occurrence: occurrence) else { return nil }
+        draft.amount = payment.isIncome ? abs(amount) : -abs(amount)
+        if draft.account == nil { draft.account = payment.account }
+        if draft.subcategory == nil { draft.subcategory = payment.subcategory }
+        let transaction: TransactionItem
+        do {
+            transaction = try draftService.approveDraft(draft, currencyConverter: currencyConverter)
+        } catch {
+            // Un borrador recién creado que no se pudo aprobar no se queda en el contexto: el siguiente guardado lo
+            // dejaría en la Bandeja sin que nadie lo pidiera.
+            if isNew { modelContext?.delete(draft) }
+            throw error
+        }
+        ScheduledPaymentNotificationService.shared.requestSummaryReplan()
+        loadPayments()
+        calculatePaymentData(payments: allPayments)
+        return transaction
+    }
+
+    /// Deshace un alta a medias: si el borrador se CREÓ para «Pagar ahora» (`draftForPaying` con `isNew`) y la persona
+    /// cerró sin guardar, no se queda en la Bandeja como un pendiente que nadie pidió. Uno que ya esperaba ahí no se toca.
+    func discardUnusedPayNowDraft(_ draft: InboxDraft) {
+        guard let context = modelContext, draft.status == .pending, draft.approvedTransaction == nil else { return }
+        context.delete(draft)
+        do {
+            try context.save()
+            SessionState.shared.incrementDataVersion()
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentsViewModel: Error discarding pay-now draft: \(error)")
             #endif
         }
     }
@@ -858,8 +945,10 @@ final class ScheduledPaymentsViewModel {
 
 // MARK: - Subscriptions View Mode
 
+/// Lista · Línea de tiempo · Calendario (UX 2.2 · L10-1: Jürgen pidió la línea de tiempo como otra vista).
 enum PaymentsViewMode: String, CaseIterable, Identifiable {
     case list
+    case timeline
     case calendar
 
     var id: String { rawValue }
@@ -867,7 +956,16 @@ enum PaymentsViewMode: String, CaseIterable, Identifiable {
     var iconName: String {
         switch self {
         case .list: return "list.bullet"
+        case .timeline: return "calendar.day.timeline.left"
         case .calendar: return "calendar"
+        }
+    }
+
+    var accessibilityLabel: String {
+        switch self {
+        case .list: return L10n.UXL10.viewList
+        case .timeline: return L10n.UXL10.viewTimeline
+        case .calendar: return L10n.UXL10.viewCalendar
         }
     }
 }

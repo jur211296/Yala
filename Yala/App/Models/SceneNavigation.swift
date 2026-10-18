@@ -147,6 +147,14 @@ final class SceneNavigation: Identifiable {
     /// `ContentView.handleMainTabIntent` al drenar `.navigate(.budgets)` y lo consume `BudgetsListView`.
     var pendingBudgetID: UUID?
 
+    /// Pago planificado que esta ventana debe abrir al llegar a Pagos planificados: el del recordatorio tocado (UX 2.2 ·
+    /// L10-13). Lo pone `ContentView.handleMainTabIntent` y lo consume `ScheduledPaymentsView`.
+    var pendingScheduledPaymentID: UUID?
+
+    /// Cuenta (`shortcutID`) cuya ficha debe abrir el Panel de esta ventana: la tarjeta del aviso de pago (L10-14). Lo
+    /// pone `ContentView.handleMainTabIntent` y lo consume `PanelView`.
+    var pendingAccountID: UUID?
+
     /// Registro que esta ventana debe abrir al llegar a Registros (una ventana abierta con «Abrir en una ventana
     /// nueva» desde la fila). Lo consume `RecordsStandaloneView` cuando sus datos ya cargaron.
     var pendingRecordID: PersistentIdentifier?

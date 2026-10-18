@@ -78,6 +78,14 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if let budgetID = BudgetAlertRouting.budgetID(fromDeepLink: destination) {
             BudgetAlertRouting.shared.request(budgetID)
         }
+        // Recordatorio de un pago (`scheduledPayments/<uuid>`) y aviso de la tarjeta (`accounts/<uuid>`): abren ese
+        // pago y esa ficha al llegar (UX 2.2 · L10-13, L10-14).
+        if let paymentID = AlertDeepLink.scheduledPayment.id(fromDeepLink: destination) {
+            AlertDeepLinkTarget.scheduledPayment.request(paymentID)
+        }
+        if let accountID = AlertDeepLink.account.id(fromDeepLink: destination) {
+            AlertDeepLinkTarget.account.request(accountID)
+        }
         if let targetSessionID {
             SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
         }
@@ -95,6 +103,16 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         // Alerta de un presupuesto: "budgets/{UUID}". El destino es Presupuestos; el id lo apunta `routeTap`.
         if BudgetAlertRouting.budgetID(fromDeepLink: destination) != nil {
             return .budgets
+        }
+
+        // Recordatorio de un pago planificado: "scheduledPayments/{UUID}" (L10-13).
+        if AlertDeepLink.scheduledPayment.id(fromDeepLink: destination) != nil {
+            return .scheduledPayments
+        }
+        // Aviso de pago de la tarjeta: "accounts/{UUID}" abre su ficha en el Panel; "accounts" a secas (avisos que ya
+        // estaban programados con la versión anterior) abre el Panel, donde están las cuentas (L10-14).
+        if destination == "accounts" || AlertDeepLink.account.id(fromDeepLink: destination) != nil {
+            return .panel
         }
 
         switch destination {

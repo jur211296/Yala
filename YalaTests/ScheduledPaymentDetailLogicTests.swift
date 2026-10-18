@@ -327,14 +327,17 @@ struct ScheduledPaymentWiringTests {
 
     @Test("La fila, el detalle, Ajustes y el flujo de caja nombran la frecuencia con la misma regla")
     func frequencyIsShared() throws {
-        for path in ["Yala/App/Views/Planning/ScheduledPaymentRowView.swift",
-                     "Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
-                     "Yala/App/Views/Settings/ScheduledPaymentsSettingsView.swift",
+        // Desde UX 2.2 · L10-1 la fila ya no dice la frecuencia (dice el estado de la fecha) y la lista de Ajustes se
+        // retiró (L10-15): quedan el detalle y el flujo de caja.
+        for path in ["Yala/App/Views/Planning/ScheduledPaymentDetailView.swift",
                      "Yala/App/Views/Reports/CashFlow/CashFlowAddLineSheet.swift"] {
             let code = Self.codeOnly(try Self.source(path))
             #expect(code.contains("ScheduledPaymentDetailLogic.frequencyText("), "\(path)")
             #expect(!code.contains("localizedNamePlural"), "\(path)")
         }
+        let row = Self.codeOnly(try Self.source("Yala/App/Views/Planning/ScheduledPaymentRowView.swift"))
+        #expect(!row.contains("localizedNamePlural"))
+        #expect(row.contains("ScheduledPaymentStatusPill(state: state"))
     }
 
     @Test("El detalle no formatea fechas con el idioma del sistema ni busca el gasto a ±7 días")
@@ -376,10 +379,9 @@ struct ScheduledPaymentWiringTests {
     func monthEmptyState() throws {
         let code = Self.codeOnly(try Self.source("Yala/App/Views/Planning/ScheduledPaymentsListView.swift"))
         #expect(code.contains("if payments.isEmpty {"))
-        #expect(code.contains("} else if !viewModel.groupedPayments.isEmpty {"))
-        #expect(code.contains("\"scheduled.filter.empty\""))
         #expect(code.contains("\"scheduled.calendar.month.empty\""))
-        #expect(code.contains("subscriptions: payments,"))
+        // La cabecera sale de lo pagado y lo pendiente (UX 2.2 · L10-2): las dos cifras y el total cuadran siempre.
+        #expect(code.contains("ScheduledPaymentListLogic.Hero("))
     }
 
     @Test("«Vincular gasto» excluye transferencias y ordena por magnitud del importe")

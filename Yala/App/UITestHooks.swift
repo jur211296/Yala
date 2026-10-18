@@ -782,6 +782,27 @@ final class UITestHooks {
         #endif
     }
 
+    /// `-uitest-scheduled-alert-tap <nombre>`: finge el TOQUE en el recordatorio de ese pago planificado (UX 2.2 ·
+    /// L10-13). Entra por el mismo `NotificationService.routeTap` que el toque real.
+    nonisolated static var scheduledAlertTapName: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-scheduled-alert-tap", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-account-alert-tap <nombre>`: finge el TOQUE en el aviso de pago de esa tarjeta (UX 2.2 · L10-14).
+    nonisolated static var accountAlertTapName: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-account-alert-tap", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     nonisolated static var deeplinkTarget: String? {
         #if DEBUG
         guard isActive else { return nil }

@@ -536,6 +536,16 @@ struct ScheduledPaymentDraftService {
         return draft
     }
 
+    /// Un borrador para UNA fecha concreta del pago, con esa fecha («Ya lo pagué → Apuntarlo ahora» y «Pagar ahora»,
+    /// UX 2.2 · L10-9/L10-11). Lo inserta sin guardar: lo guarda quien lo apruebe. Como `createAdvancedDraft`, no
+    /// avanza la próxima fecha: eso lo hace la aprobación (`handleDraftApproved`), una sola vez.
+    static func createDraftForOccurrence(from payment: ScheduledPayment, date: Date, context: ModelContext) -> InboxDraft {
+        let draft = createDraft(from: payment, context: context)
+        draft.date = Calendar.current.startOfDay(for: date)
+        context.insert(draft)
+        return draft
+    }
+
     // MARK: - Post-Approval Update
 
     /// Called after a draft from a scheduled payment is approved

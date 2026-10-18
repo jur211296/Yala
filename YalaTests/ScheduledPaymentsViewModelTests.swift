@@ -94,64 +94,6 @@ struct ScheduledPaymentsViewModelTests {
         #expect(diff.month == 1)
     }
 
-    // MARK: - filteredGroupedPayments
-
-    @MainActor @Test func filteredGrouped_allFilter_returnsAll() {
-        let vm = ScheduledPaymentsViewModel()
-        let paid = makeSummary(isPaid: true)
-        let pending = makeSummary(isPaid: false)
-        vm.groupedPayments = [
-            (status: .upcoming, payments: [paid, pending])
-        ]
-        vm.paymentStatusFilter = .all
-
-        let result = vm.filteredGroupedPayments
-        #expect(result.count == 1)
-        #expect(result[0].payments.count == 2)
-    }
-
-    @MainActor @Test func filteredGrouped_paidFilter_onlyPaid() {
-        let vm = ScheduledPaymentsViewModel()
-        let paid = makeSummary(isPaid: true)
-        let pending = makeSummary(isPaid: false)
-        vm.groupedPayments = [
-            (status: .upcoming, payments: [paid, pending])
-        ]
-        vm.paymentStatusFilter = .paid
-
-        let result = vm.filteredGroupedPayments
-        #expect(result.count == 1)
-        #expect(result[0].payments.count == 1)
-    }
-
-    @MainActor @Test func filteredGrouped_pendingFilter() {
-        let vm = ScheduledPaymentsViewModel()
-        let paid = makeSummary(isPaid: true)
-        let pending = makeSummary(isPaid: false, isSkipped: false)
-        let skipped = makeSummary(isPaid: false, isSkipped: true)
-        vm.groupedPayments = [
-            (status: .upcoming, payments: [paid, pending, skipped])
-        ]
-        vm.paymentStatusFilter = .pending
-
-        let result = vm.filteredGroupedPayments
-        #expect(result.count == 1)
-        #expect(result[0].payments.count == 1)
-    }
-
-    @MainActor @Test func filteredGrouped_emptySectionRemoved() {
-        let vm = ScheduledPaymentsViewModel()
-        let paid = makeSummary(isPaid: true)
-        vm.groupedPayments = [
-            (status: .past, payments: [paid]),
-            (status: .upcoming, payments: [paid])
-        ]
-        vm.paymentStatusFilter = .pending
-
-        let result = vm.filteredGroupedPayments
-        #expect(result.isEmpty)
-    }
-
     // MARK: - displayAmount / displayCurrencyCode
 
     @Test func displayAmount_whenPaid_returnsRealAmount() {

@@ -418,13 +418,10 @@
 "scheduled.paid" = "Betaald";
 "scheduled.overdue" = "Te laat";
 "scheduled.skip" = "Overslaan";
-"scheduled.skip.undo" = "Overslaan ongedaan maken";
-"scheduled.skip.confirm.title" = "Deze keer overslaan?";
-"scheduled.skip.confirm.message" = "Hij wordt niet als uitgave geboekt. Je kunt dit later ongedaan maken.";
-"scheduled.skip.overdue.title" = "Te late betaling overslaan";
+"scheduled.skip.undo" = "Niet overslaan";
 "scheduled.status.skipped" = "Overgeslagen";
 "scheduled.status.paid" = "Betaald";
-"scheduled.unlink" = "Boeking ontkoppelen";
+"scheduled.unlink" = "Toch niet betaald";
 "scheduled.status.overdue" = "Te laat";
 "scheduled.draftCreatedTitle" = "Je hebt openstaande betalingen!";
 "scheduled.draftCreatedMessage" = "%d geplande betalingen zijn aan je inbox toegevoegd. Bekijk ze wanneer het je uitkomt.";
@@ -783,7 +780,7 @@
 "scheduled.widget.empty.title" = "Geen aankomende betalingen";
 "scheduled.widget.empty.message" = "Je aankomende betalingen verschijnen hier";
 "scheduled.widget.tomorrow" = "Morgen";
-"scheduled.widget.smallTitle" = "Gepland";
+"scheduled.widget.smallTitle" = "Geplande betalingen";
 "scheduled.widget.largeTitle.recurring" = "Terugkerende betalingen";
 "scheduled.widget.smallToPay" = "te betalen";
 "scheduled.widget.smallPaidAmount" = "Je hebt %@ betaald";
@@ -1543,7 +1540,7 @@
 
 // Recurrence - New logic
 "scheduled.recurrence.onetime" = "Eenmalig";
-"scheduled.recurrence.recurring" = "Terugkerend";
+"scheduled.recurrence.recurring" = "Herhalen";
 "scheduled.recurrence.daily" = "Dagelijks";
 "scheduled.recurrence.day" = "Dag";
 "scheduled.recurrence.week" = "Week";
@@ -2797,7 +2794,7 @@
 "scheduled.associate.paymentHeader" = "Geplande betaling";
 "scheduled.associate.candidatesHeader" = "Nabije uitgaven";
 "scheduled.associate.already" = "Deze uitgave is al gekoppeld";
-"scheduled.advance" = "Vervroegde betaling";
+"scheduled.advance" = "Nu betalen";
 "scheduled.view.record" = "Boeking bekijken";
 
 // MARK: - Siri Shortcuts
@@ -7179,3 +7176,73 @@
 "budgets.l9.seePro" = "Pro bekijken";
 "budgets.l9.chooseWhich" = "Kies welke";
 "budgets.l9.previewEmpty" = "Markeer tot 3 budgetten met de ster en hier zie je je widget.";
+
+/* Auditoría UX 2.2 · lote 10 (pagos planificados) */
+"scheduled.l10.state.overdue" = "Achterstallig";
+"scheduled.l10.state.today" = "Vandaag";
+"scheduled.l10.state.tomorrow" = "Morgen";
+"scheduled.l10.state.inDays" = "Over %d dagen";
+"scheduled.l10.state.paid" = "Betaald";
+"scheduled.l10.state.received" = "Ontvangen";
+"scheduled.l10.state.skipped" = "Overgeslagen";
+"scheduled.l10.state.paused" = "Gepauzeerd";
+"scheduled.l10.state.finished" = "Afgelopen";
+"scheduled.l10.state.pending" = "Open";
+"scheduled.l10.due.overdue" = "Achterstallig";
+"scheduled.l10.due.today" = "Vandaag te betalen";
+"scheduled.l10.due.tomorrow" = "Morgen te betalen";
+"scheduled.l10.due.inDays" = "Over %d dagen te betalen";
+"scheduled.l10.section.toPay" = "Te betalen";
+"scheduled.l10.section.paid" = "Betaald";
+"scheduled.l10.section.skipped" = "Overgeslagen";
+"scheduled.l10.section.paused" = "Gepauzeerd";
+"scheduled.l10.view.list" = "Lijst";
+"scheduled.l10.view.timeline" = "Tijdlijn";
+"scheduled.l10.view.calendar" = "Kalender";
+"scheduled.l10.hero.toPay" = "Nog te betalen";
+"scheduled.l10.hero.paidOf" = "Je hebt %1$@ van %2$@ betaald";
+"scheduled.l10.hero.scope" = "Zonder inkomsten en gepauzeerde betalingen";
+"scheduled.l10.detail.monthPaid" = "%@ is al betaald";
+"scheduled.l10.action.paid" = "Al betaald";
+"scheduled.l10.action.received" = "Al ontvangen";
+"scheduled.l10.action.skipMonth" = "Deze maand overslaan";
+"scheduled.l10.action.skipHelp" = "Er wordt niets vastgelegd; de andere maanden blijven hetzelfde";
+"scheduled.l10.action.pause" = "Deze betaling pauzeren";
+"scheduled.l10.action.resume" = "Hervatten";
+"scheduled.l10.action.pauseHelp" = "We herinneren je er niet aan en tellen het niet mee tot je het hervat";
+"scheduled.l10.action.skip" = "Overslaan";
+"scheduled.l10.dateActions" = "Acties voor deze datum";
+"scheduled.l10.skipped" = "Betaling van %@ overgeslagen";
+"scheduled.l10.paid.recordNow" = "Nu vastleggen";
+"scheduled.l10.paid.recordNowHelp" = "We leggen het vast in %@. Je kunt het bedrag aanpassen.";
+"scheduled.l10.paid.recordButton" = "%@ vastleggen";
+"scheduled.l10.paid.alreadyRecorded" = "Al vastgelegd";
+"scheduled.l10.paid.alreadyRecordedHelp" = "Kies de registratie en we markeren hem als betaald.";
+"scheduled.l10.paid.candidatesExpenses" = "Je uitgaven rond die datum";
+"scheduled.l10.paid.candidatesIncome" = "Je inkomsten rond die datum";
+"scheduled.l10.paid.candidatesEmpty" = "Geen registraties rond die datum";
+"scheduled.l10.paid.confirmTitle" = "Is dit de betaling van %@?";
+"scheduled.l10.paid.confirmMessage" = "We markeren het als betaald met deze registratie. Er wordt niets nieuws aangemaakt.";
+"scheduled.l10.paid.confirmYes" = "Ja, deze";
+"scheduled.l10.payNow.title" = "Die van %@ nu betalen";
+"scheduled.l10.record.title" = "Die van %@ vastleggen";
+"scheduled.l10.saved.firstPayment" = "Klaar. Eerste betaling: %@";
+"scheduled.l10.saved.view" = "Bekijken";
+"scheduled.l10.delete.title" = "„%@” verwijderen?";
+"scheduled.l10.delete.keepsRecords" = "Je registraties worden niet verwijderd.";
+"scheduled.l10.deleted" = "„%@” verwijderd";
+"scheduled.l10.editor.moreOptions" = "Meer opties";
+"scheduled.l10.editor.when" = "Wanneer";
+"scheduled.l10.editor.optional" = "Optioneel";
+"scheduled.l10.editor.missing" = "Ontbreekt";
+"scheduled.l10.summary.today" = "vandaag";
+"scheduled.l10.summary.once" = "%1$@ eenmalig, op %2$@.";
+"scheduled.l10.summary.recurring" = "%1$@ %2$@. Eerste betaling: %3$@.";
+"scheduled.l10.cadence.month" = "elke maand, op dag %d";
+"scheduled.l10.cadence.months" = "elke %1$d maanden, op dag %2$d";
+"scheduled.l10.cadence.week" = "elke week";
+"scheduled.l10.cadence.weeks" = "elke %d weken";
+"scheduled.l10.cadence.day" = "elke dag";
+"scheduled.l10.cadence.days" = "elke %d dagen";
+"scheduled.l10.cadence.year" = "elk jaar, op %@";
+"scheduled.l10.cadence.years" = "elke %1$d jaar, op %2$@";

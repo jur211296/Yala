@@ -21,7 +21,6 @@ enum ProfileDestination: Hashable {
     case notifications
     case favorites
     case budgets
-    case planned
     case userDataReset
     case faceIDProtectionGuide
     case subscription

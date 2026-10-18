@@ -4043,6 +4043,10 @@ struct MainTabView: View {
             // intents no-groups en modo groupInvite se descartan ahí.
             switch dest {
             case .panel:
+                // El aviso de la tarjeta abre su ficha en ESTA ventana (UX 2.2 · L10-14).
+                if let accountID = AlertDeepLinkTarget.account.consume() {
+                    navigation.pendingAccountID = accountID
+                }
                 navigation.selectMainTab(.panel)
             case .statistics:
                 navigation.selectMainTab(.statistics)
@@ -4065,6 +4069,10 @@ struct MainTabView: View {
                 navigation.selectMainTab(.panel)
                 RouterEntryGate.shared.submit(.presentInboxSheet)
             case .scheduledPayments:
+                // El recordatorio de un pago abre su detalle en ESTA ventana (UX 2.2 · L10-13).
+                if let paymentID = AlertDeepLinkTarget.scheduledPayment.consume() {
+                    navigation.pendingScheduledPaymentID = paymentID
+                }
                 navigation.selectedPlanningTab = .scheduledPayments
                 navigation.selectMainTab(.planning)
             case .recordsStandalone:

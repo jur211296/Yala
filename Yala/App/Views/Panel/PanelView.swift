@@ -412,6 +412,7 @@ struct PanelView: View {
             reconcileAccountsSortOrder()
         }
         .modifier(PanelKeyboardRequestObserver(sessionState: sessionState, open: openFromKeyboard))
+        .modifier(PanelAccountAlertOpening { sheets.accountDetail = AccountDetailPresentation(account: $0) })
     }
 
     /// ⌘K y ⌘, (iPad con teclado): Yala IA por su camino de siempre (Pro → presentación → consentimiento) y Ajustes
@@ -779,5 +780,35 @@ private struct PanelKeyboardRequestObserver: ViewModifier {
         guard navigation.selectedMainTab == .panel, let request = navigation.pendingKeyboardPanelRequest else { return }
         navigation.pendingKeyboardPanelRequest = nil
         open(request)
+    }
+}
+
+/// Abre la ficha de la tarjeta cuyo aviso de pago se tocó (`SceneNavigation.pendingAccountID`, UX 2.2 · L10-14), con
+/// el Panel delante. Busca la cuenta él mismo, al aparecer y cuando llega el id: no cuenta con el orden de los `onAppear`.
+private struct PanelAccountAlertOpening: ViewModifier {
+    @Environment(SceneNavigation.self) private var navigation
+    @Environment(\.modelContext) private var modelContext
+    let open: (Account) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { openIfFront() }
+            .onChange(of: navigation.pendingAccountID) { _, _ in openIfFront() }
+            .onChange(of: navigation.selectedMainTab) { _, _ in openIfFront() }
+    }
+
+    private func openIfFront() {
+        guard navigation.selectedMainTab == .panel, let accountID = navigation.pendingAccountID else { return }
+        navigation.pendingAccountID = nil
+        do {
+            let descriptor = FetchDescriptor<Account>(predicate: #Predicate { $0.shortcutID == accountID })
+            if let account = try modelContext.fetch(descriptor).first {
+                open(account)
+            }
+        } catch {
+            #if DEBUG
+            print("PanelAccountAlertOpening: Error: \(error)")
+            #endif
+        }
     }
 }

@@ -1139,6 +1139,34 @@ final class AppBootstrapper {
                 #endif
             }
         }
+        // Toque fingido en el recordatorio de un pago y en el aviso de una tarjeta (UX 2.2 · L10-13, L10-14).
+        if let name = UITestHooks.scheduledAlertTapName {
+            do {
+                let payments = try context.fetch(FetchDescriptor<ScheduledPayment>(predicate: #Predicate { $0.name == name }))
+                if let payment = payments.first {
+                    NotificationService.routeTap(deepLink: AlertDeepLink.scheduledPayment.deepLink(for: payment.id), targetSessionID: nil)
+                }
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: Error: \(error)")
+                #endif
+            }
+        }
+        if let name = UITestHooks.accountAlertTapName {
+            do {
+                // «*» = la primera cuenta del usuario: el nombre de la del seed está localizado.
+                let accounts = name == "*"
+                    ? try context.fetch(FetchDescriptor<Account>(sortBy: [SortDescriptor(\.name)])).filter { !$0.isSystemAccount }
+                    : try context.fetch(FetchDescriptor<Account>(predicate: #Predicate { $0.name == name }))
+                if let account = accounts.first {
+                    NotificationService.routeTap(deepLink: AlertDeepLink.account.deepLink(for: account.shortcutID), targetSessionID: nil)
+                }
+            } catch {
+                #if DEBUG
+                print("AppBootstrapper: Error: \(error)")
+                #endif
+            }
+        }
         // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
         // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
         // testear el modal sin depender de un evento de CloudKit.
