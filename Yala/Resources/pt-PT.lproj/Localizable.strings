@@ -716,7 +716,7 @@
 "aiConsent.processingMessage" = "Ditas ou escolhes uma foto do recibo e o Yala regista o gasto. Para isso, envia o áudio ou a foto a um serviço de IA, só nesse momento. Não são usados para treinar a IA.";
 "aiConsent.processingTitle" = "O Yala regista por ti";
 "aiPrivacy.chatRow" = "Assistente Pro";
-"aiPrivacy.footerHint" = "Os teus dados só são enviados quando usas Insights, o Assistente ou registos com voz e imagem, e chegam à OpenAI através do nosso servidor. Não os vendemos nem os usamos para publicidade.";
+"aiPrivacy.footerHint" = "Os teus dados só são enviados quando usas Insights, o Assistente ou registos com voz e imagem, e chegam a um serviço de IA através do nosso servidor. Não os vendemos nem os usamos para publicidade.";
 "aiPrivacy.insightsRow" = "Insights inteligentes";
 "aiPrivacy.policyLink" = "Política de Privacidade";
 "aiPrivacy.processingRow" = "Processamento (voz e imagem)";
@@ -1807,7 +1807,6 @@
 "insights.activateAIBody" = "Ative e personalize em Perfil > Funcionalidades com IA.";
 "insights.activateAITitle" = "Resumo inteligente disponível";
 "insights.activeSubscriptions" = "Assinaturas ativas";
-"insights.aiCaption" = "A OpenAI analisa os teus dados agregados para gerar análises personalizadas. Nenhum registo individual é enviado.";
 "insights.aiSectionTitle" = "Inteligência Artificial";
 "insights.aiTeaserPlaceholder1" = "Analisando seus padrões de gasto...";
 "insights.aiTeaserPlaceholder2" = "Identificando oportunidades de economia...";
@@ -2492,7 +2491,7 @@
 "profile.maxChars" = "Máximo 20 caracteres";
 "profile.minChars" = "Mínimo 3 caracteres";
 "profile.personalDetails" = "Detalhes pessoais";
-"profile.privacyDesc" = "Com a tua conta no teu iCloud privado, os teus dados ficam no teu dispositivo e no teu iCloud. Com a tua conta na nuvem, ficam nos servidores do Yala. O que registas num grupo, com o teu alias, fica nos servidores do Yala para que o grupo o veja. As funções de IA (voz, imagem e insights) são opcionais: o que lhes envias passa pelo nosso servidor até à OpenAI, que o processa.";
+"profile.privacyDesc" = "Com a tua conta no teu iCloud privado, os teus dados ficam no teu dispositivo e no teu iCloud. Com a tua conta na nuvem, ficam nos servidores do Yala. O que registas num grupo, com o teu alias, fica nos servidores do Yala para que o grupo o veja. As funções de IA (voz, imagem e insights) são opcionais: o que lhes envias passa pelo nosso servidor até um serviço de IA, que o processa. A Política de Privacidade indica qual é.";
 "profile.privacyTitle" = "Onde vivem os teus dados";
 "profile.proMember" = "Membro PRO";
 "profile.removeAvatar" = "Remover";

@@ -98,7 +98,6 @@
 "tutorials.createFavorites.step1.desc" = "Fill in the fields you want to be pre-filled. Next time, simply tap the favourite and watch all the fields fill in automatically.";
 "aiSettings.title" = "Customise AI";
 "aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service, only at that moment. It’s not used to train the AI.";
-"insights.aiCaption" = "OpenAI analyses your aggregated data to generate personalised analysis. No individual records are sent.";
 "whatsNew.v12.themes.description" = "Customise the app with new Minimalist and Translucent themes.";
 "setup.step1.title" = "Explore everything you can customise";
 "guide.accounts.title" = "Your money, organised";
@@ -798,7 +797,7 @@
 "aiConsent.privacyPolicy" = "Privacy Policy";
 "aiConsent.processingTitle" = "Yala records it for you";
 "aiPrivacy.chatRow" = "Pro Assistant";
-"aiPrivacy.footerHint" = "Your data is only sent when you use Insights, the Assistant or voice and image entries, and it reaches OpenAI through our server. We don't sell it or use it for advertising.";
+"aiPrivacy.footerHint" = "Your data is only sent when you use Insights, the Assistant or voice and image entries, and it reaches an AI service through our server. We don't sell it or use it for advertising.";
 "aiPrivacy.insightsRow" = "Smart Insights";
 "aiPrivacy.policyLink" = "Privacy Policy";
 "aiPrivacy.processingRow" = "Processing (voice & image)";
@@ -2519,7 +2518,7 @@
 "profile.maxChars" = "Maximum 20 characters";
 "profile.minChars" = "Minimum 3 characters";
 "profile.personalDetails" = "Personal Details";
-"profile.privacyDesc" = "With your account in your private iCloud, your data is stored on your device and in your iCloud. With your account in the cloud, it's stored on Yala's servers. What you add to a group, along with your alias, is stored on Yala's servers so the group can see it. AI features (voice, image and insights) are optional: what you send them goes through our server to OpenAI, which processes it.";
+"profile.privacyDesc" = "With your account in your private iCloud, your data is stored on your device and in your iCloud. With your account in the cloud, it's stored on Yala's servers. What you add to a group, along with your alias, is stored on Yala's servers so the group can see it. AI features (voice, image and insights) are optional: what you send them goes through our server to an AI service, which processes it. The Privacy Policy says which one.";
 "profile.privacyTitle" = "Where your data lives";
 "profile.proMember" = "PRO Member";
 "profile.removeAvatar" = "Remove";

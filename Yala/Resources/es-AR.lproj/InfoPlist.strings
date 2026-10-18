@@ -1,4 +1,4 @@
-"NSMicrophoneUsageDescription" = "Yala usa el micrófono para grabar tu voz y crear gastos. El audio se envía a OpenAI para transcripción.";
-"NSPhotoLibraryUsageDescription" = "Yala usa tus fotos para extraer detalles de gastos desde capturas y recibos. Las imágenes seleccionadas se envían a OpenAI.";
+"NSMicrophoneUsageDescription" = "Yala usa el micrófono para grabar tu voz y crear gastos. El audio se envía a un servicio de IA para transcribirlo.";
+"NSPhotoLibraryUsageDescription" = "Yala usa tus fotos para extraer detalles de gastos desde capturas y recibos. Las imágenes seleccionadas se envían a un servicio de IA.";
 "NSPhotoLibraryAddUsageDescription" = "Yala guarda en tus fotos los resúmenes de grupo que elijas guardar. No se guarda nada sin que lo pidas.";
-"NSCameraUsageDescription" = "Yala usa la cámara para fotografiar tus recibos y crear gastos. La foto se envía a OpenAI para leerla.";
+"NSCameraUsageDescription" = "Yala usa la cámara para fotografiar tus recibos y crear gastos. La foto se envía a un servicio de IA para leerla.";

@@ -13,10 +13,11 @@ import SwiftUI
 enum WidgetColors {
     // MARK: - Brand Colors (from UIHelpers.swift)
 
-    /// Primary brand color (Electric Indigo #6366F1)
-    static let primary = Color(hex: "6366F1")
+    /// Primary brand color (Electric Indigo #6063F1). Copia de `Color.electricIndigo` de la app: este target no la ve.
+    /// La paridad la fija `BrandAccentContrastTests`.
+    static let primary = Color(hex: "6063F1")
 
-    /// Electric Indigo - Primary accent, balance positive (#6366F1)
+    /// Electric Indigo - Primary accent, balance positive (#6063F1)
     static let electricIndigo = primary
 
     /// Hot Pink - Expenses (#FF0080)

@@ -21,11 +21,11 @@
 	<key>GIDClientID</key>
 	<string>$(GID_CLIENT_ID)</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Yala uses the microphone to record voice input for creating transactions. Your audio is sent to OpenAI for transcription.</string>
+	<string>Yala uses the microphone to record voice input for creating transactions. Your audio is sent to an AI service for transcription.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Yala uses the camera to photograph your receipts and create transactions. The photo is sent to OpenAI to be read.</string>
+	<string>Yala uses the camera to photograph your receipts and create transactions. The photo is sent to an AI service to be read.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Yala uses your photos to extract transaction details from screenshots and receipts. Selected images are sent to OpenAI for processing.</string>
+	<string>Yala uses your photos to extract transaction details from screenshots and receipts. Selected images are sent to an AI service for processing.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Yala saves the group summaries you choose to save to your photo library. Nothing is saved without you asking for it.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>

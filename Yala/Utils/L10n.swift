@@ -1519,7 +1519,6 @@ enum L10n {
         static var offlineNoCache: String { ls("insights.offlineNoCache", comment: "") }
         static var aiSectionTitle: String { ls("insights.aiSectionTitle", comment: "") }
         static var aiToggle: String { ls("insights.aiToggle", comment: "") }
-        static var aiCaption: String { ls("insights.aiCaption", comment: "") }
         static var metricsSection: String { ls("insights.metricsSection", comment: "") }
         static var chartsSection: String { ls("insights.chartsSection", comment: "") }
         static var analysisSection: String { ls("insights.analysisSection", comment: "") }

@@ -1143,7 +1143,7 @@
 "profile.aliasAvailable" = "Alias beschikbaar";
 "profile.aliasHelper" = "3-20 tekens. Alleen letters, cijfers en underscores.";
 "profile.privacyTitle" = "Waar je gegevens staan";
-"profile.privacyDesc" = "Met je account in je privé-iCloud worden je gegevens op je apparaat en in je iCloud bewaard. Met je account in de cloud worden ze op de servers van Yala bewaard. Wat je in een groep invoert, samen met je alias, wordt op de servers van Yala bewaard zodat de groep het ziet. AI-functies (spraak, afbeeldingen en inzichten) zijn optioneel: wat je ernaar stuurt, gaat via onze server naar OpenAI, dat het verwerkt.";
+"profile.privacyDesc" = "Met je account in je privé-iCloud worden je gegevens op je apparaat en in je iCloud bewaard. Met je account in de cloud worden ze op de servers van Yala bewaard. Wat je in een groep invoert, samen met je alias, wordt op de servers van Yala bewaard zodat de groep het ziet. AI-functies (spraak, afbeeldingen en inzichten) zijn optioneel: wat je ernaar stuurt, gaat via onze server naar een AI-dienst, die het verwerkt. Welke dat is, staat in het Privacybeleid.";
 "profile.aliasFutureNote" = "Let op: validatie van unieke aliassen komt beschikbaar zodra de functie gedeelde uitgaven actief is.";
 "profile.proMember" = "PRO-lid";
 "profile.choosePhoto" = "Kies foto";
@@ -2848,7 +2848,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Deze functie uitschakelen?";
 "aiPrivacy.revokeConfirmMessage" = "We stoppen met het verwerken van je AI-gegevens voor deze functie. Je kunt het altijd weer aanzetten.";
 "aiPrivacy.revokeConfirmAction" = "Uitschakelen";
-"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je Inzichten, Assistent of spraak- en afbeeldingsinvoer gebruikt, en gaan via onze server naar OpenAI. We verkopen ze niet en gebruiken ze niet voor advertenties.";
+"aiPrivacy.footerHint" = "Je gegevens worden alleen verstuurd wanneer je Inzichten, Assistent of spraak- en afbeeldingsinvoer gebruikt, en gaan via onze server naar een AI-dienst. We verkopen ze niet en gebruiken ze niet voor advertenties.";
 "aiPrivacy.policyLink" = "Privacybeleid";
 
 // MARK: - AI Consent
@@ -2865,7 +2865,6 @@
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Kunstmatige intelligentie";
 "insights.aiToggle" = "Slim overzicht";
-"insights.aiCaption" = "OpenAI analyseert je geaggregeerde gegevens om persoonlijke analyses te genereren. Er worden geen individuele boekingen verstuurd.";
 "insights.metricsSection" = "Metingen";
 "insights.chartsSection" = "Grafieken";
 "insights.analysisSection" = "Analyse";
