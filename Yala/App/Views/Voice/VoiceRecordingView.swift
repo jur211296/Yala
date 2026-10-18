@@ -791,7 +791,9 @@ struct VoiceRecordingView: View {
         var needsUserInputFields = ["account", "subcategory"]
 
         if let currencyHint = parsed.currencyHint, !currencyHint.isEmpty {
-            matchedAccount = findAccount(byCurrency: currencyHint)
+            // La regla común de las capturas (`DraftBuilder.findAccount`): la voz tenía su copia y no quitaba las cuentas de
+            // sistema de Grupos (entrega 3 de la tarjeta con varias divisas).
+            matchedAccount = DraftBuilder.findAccount(byCurrency: currencyHint, context: modelContext)
             if matchedAccount != nil {
                 needsUserInputFields.removeAll { $0 == "account" }
             }
@@ -991,27 +993,6 @@ struct VoiceRecordingView: View {
         }
 
         return (matched, newlyCreatedNames)
-    }
-
-    /// La cuenta de esa divisa, solo si hay exactamente una.
-    private func findAccount(byCurrency currencyCode: String) -> Account? {
-        let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        let descriptor = FetchDescriptor<Account>(
-            predicate: #Predicate<Account> { account in
-                account.isArchived == false
-            }
-        )
-        let accounts: [Account]
-        do {
-            accounts = try modelContext.fetch(descriptor)
-        } catch {
-            #if DEBUG
-            print("VoiceRecordingView: Error fetching accounts: \(error)")
-            #endif
-            return nil
-        }
-        let matches = accounts.filter { $0.currencyCode.uppercased() == normalizedCode }
-        return matches.count == 1 ? matches.first : nil
     }
 }
 

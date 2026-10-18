@@ -81,15 +81,23 @@ struct ApplePayDraftService {
             }
 
             // Resolver divisa ambigua ($/kr) por la última cuenta usada (App Group + cuentas reales).
+            // Tarjeta con varias divisas (entrega 3, decisión D7): si la última cuenta usada es de una tarjeta cuya divisa
+            // NO se escribe con ese símbolo, y la tarjeta tiene UNA cuenta que sí (`$` → su línea en dólares), el pago va a
+            // esa cuenta. Antes, con la tarjeta en soles, un pago en `$` quedaba en soles (§2.13 del análisis). Con la
+            // tarjeta en pesos (MXN, ARS, CLP…), `$` son pesos y manda la regla de siempre (review del 2026-10-18).
             var currency = parsed.currency
-            if parsed.ambiguousSymbol != nil,
-               let lastUsedID = LastUsedAccountStore.read(),
-               let resolved = currencyOfAccount(shortcutID: lastUsedID, in: realAccounts) {
-                currency = resolved
+            var cardAccount: Account?
+            if let symbol = parsed.ambiguousSymbol, let lastUsedID = LastUsedAccountStore.read() {
+                if let member = cardMember(lastUsedShortcutID: lastUsedID, ambiguousSymbol: symbol, in: realAccounts) {
+                    currency = member.currencyCode
+                    cardAccount = member
+                } else if let resolved = currencyOfAccount(shortcutID: lastUsedID, in: realAccounts) {
+                    currency = resolved
+                }
             }
 
-            // Cuenta por divisa (único match entre cuentas reales; nil si 0 ó 2+ → user elige).
-            let matchedAccount: Account? = currency.flatMap {
+            // Cuenta por divisa (único match entre cuentas reales; nil si 0 ó 2+ → user elige). La de la tarjeta, si la hay.
+            let matchedAccount: Account? = cardAccount ?? currency.flatMap {
                 DraftBuilder.findAccount(byCurrency: $0, in: realAccounts)
             }
 
@@ -167,6 +175,25 @@ struct ApplePayDraftService {
     }
 
     // MARK: - Helpers
+
+    /// La cuenta de la tarjeta de la última cuenta usada que se escribe con `ambiguousSymbol`, si es la ÚNICA de la tarjeta
+    /// y la última cuenta usada no se escribe ella misma con ese símbolo (`AccountCardLogic.route` hacia esa divisa). En
+    /// cualquier otro caso `nil`, y la regla de siempre (la divisa de la última cuenta usada) decide: una cuenta sin líneas,
+    /// una tarjeta en pesos con `$`, o dos líneas que se escriben igual.
+    static func cardMember(lastUsedShortcutID: String, ambiguousSymbol: String, in accounts: [Account]) -> Account? {
+        guard let lastUsed = UUID(uuidString: lastUsedShortcutID),
+              let lastUsedAccount = accounts.first(where: { $0.shortcutID == lastUsed }) else { return nil }
+        func writesWithSymbol(_ code: String) -> Bool {
+            CurrencyCode(rawValue: code.uppercased())?.symbol == ambiguousSymbol
+        }
+        guard !writesWithSymbol(lastUsedAccount.currencyCode) else { return nil }
+        let nodes = accounts.map { AccountLineNode($0) }
+        let candidates = AccountCardLogic.liveMembers(of: lastUsed, nodes: nodes).filter { writesWithSymbol($0.currencyCode) }
+        guard candidates.count == 1, let target = candidates.first,
+              let route = AccountCardLogic.route(chosenID: lastUsed, currencyCode: target.currencyCode, nodes: nodes),
+              !route.isFallback else { return nil }
+        return accounts.first { $0.shortcutID == route.accountID }
+    }
 
     /// Lookup de currencyCode por shortcutID contra una lista ya fetcheada (resuelve `$`/`kr`).
     private static func currencyOfAccount(shortcutID: String, in accounts: [Account]) -> String? {

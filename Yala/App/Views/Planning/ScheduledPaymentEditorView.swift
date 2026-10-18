@@ -632,7 +632,15 @@ struct ScheduledPaymentEditorView: View {
 
     /// Cuentas disponibles para el picker. En gasto compartido, filtradas a la moneda elegida.
     private var accountOptions: [Account] {
-        guard isGroupExpense else { return viewModel.activeAccounts }
+        // Tarjeta con varias divisas (entrega 3): cada línea justo detrás de su tarjeta, no donde caiga por nombre. Un menú
+        // no se sangra; el nombre de la línea («Visa · USD») ya dice de qué tarjeta es. El pago se guarda en la divisa de
+        // la cuenta elegida, y su borrador pasa por `ScheduledPaymentDraftService.draftAccount`.
+        guard isGroupExpense else {
+            let active = viewModel.activeAccounts
+            let roles = AccountLineLogic.resolve(active.map { AccountLineNode($0) })
+            return AccountCardLogic.cards(active, roles: roles, id: \.shortcutID, currencyCode: \.currencyCode)
+                .flatMap(\.members)
+        }
         return viewModel.activeAccounts.filter { $0.currencyCode == splitCurrency.rawValue }
     }
 

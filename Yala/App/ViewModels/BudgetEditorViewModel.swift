@@ -40,6 +40,19 @@ final class BudgetEditorViewModel {
         allTags.filter { $0.isActive }
     }
 
+    /// Las cuentas que ofrece el editor (tarjeta con varias divisas, entrega 3): cada tarjeta una vez, sin sus líneas, porque
+    /// el presupuesto de la tarjeta ya cuenta sus gastos (`Budget.spendingAccountIDs`). Una línea que el presupuesto ya
+    /// guarda sola sigue a la vista, detrás de su tarjeta, para poder quitarla.
+    func budgetAccounts(selected: Set<PersistentIdentifier>) -> [Account] {
+        let roles = AccountLineLogic.resolve(allAccounts.map { AccountLineNode($0) })
+        let active = activeAccounts
+        let heads = active.filter { !(roles[$0.shortcutID]?.isLine ?? false) }
+        let kept = active.filter { (roles[$0.shortcutID]?.isLine ?? false) && selected.contains($0.persistentModelID) }
+        guard !kept.isEmpty else { return heads }
+        return AccountCardLogic.cards(heads + kept, roles: roles, id: \.shortcutID, currencyCode: \.currencyCode)
+            .flatMap(\.members)
+    }
+
     // MARK: - Context Injection
 
     func setContext(_ context: ModelContext, deletionService: EntityDeletionService) {

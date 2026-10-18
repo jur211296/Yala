@@ -635,7 +635,7 @@ struct BudgetEditorView: View {
             icon: "creditcard",
             title: NSLocalizedString("settings.accounts", comment: ""),
             status: selectedAccountsText,
-            items: viewModel.activeAccounts,
+            items: viewModel.budgetAccounts(selected: selectedAccounts),
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -671,10 +671,11 @@ struct BudgetEditorView: View {
         if selectedAccounts.isEmpty {
             return NSLocalizedString("filters.all", comment: "")
         }
-        if selectedAccounts.count == viewModel.activeAccounts.count {
+        let offered = viewModel.budgetAccounts(selected: selectedAccounts)
+        if selectedAccounts.count == offered.count {
             return NSLocalizedString("filters.all", comment: "")
         }
-        return "\(selectedAccounts.count)/\(viewModel.activeAccounts.count)"
+        return "\(selectedAccounts.count)/\(offered.count)"
     }
 
     // MARK: - Categories Content

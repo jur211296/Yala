@@ -342,7 +342,8 @@ final class PanelViewModel {
     /// en modo excluir precarga justo la que el usuario acaba de excluir. Ticket:
     /// `panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo`.
     var selectedAccountID: PersistentIdentifier? {
-        get { SessionState.shared.selectedAccountIDs.first }
+        // La tarjeta y sus líneas van juntas en el conjunto (entrega 3): el representante es la tarjeta, no una línea.
+        get { SessionState.shared.representativeAccountID(in: SessionState.shared.selectedAccountIDs) }
         set {
             SessionState.shared.selectedAccountIDs.removeAll()
             if let id = newValue { SessionState.shared.selectedAccountIDs.insert(id) }
@@ -2427,8 +2428,8 @@ final class PanelViewModel {
 
         // Apply budget filters
 
-        // Account filter (CSV mirror SSOT con M2M fallback + auto-cura)
-        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
+        // Account filter (CSV mirror SSOT con M2M fallback + auto-cura). Con las líneas de las tarjetas que guarda (entrega 3).
+        if let accountUUIDs = budget.spendingAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
             filtered = filtered.filter { transaction in
                 if let account = transaction.account {
                     return accountUUIDs.contains(account.shortcutID)

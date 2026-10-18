@@ -25,12 +25,17 @@ struct DraftBuilder {
 
     /// Pure-logic match contra una lista ya fetcheada. Filtra archivadas internamente
     /// por si el caller no lo hizo. 1 match exacto → devuelve la cuenta; 0 ó 2+ → nil.
+    ///
+    /// La usan TODAS las capturas que eligen cuenta por la divisa dictada (chat, voz, imagen, Siri, Apple Pay). Una línea de
+    /// una tarjeta con varias divisas es una cuenta más de su divisa: con la tarjeta en soles y su línea en dólares como única
+    /// cuenta en USD, un importe en USD va a la línea (entrega 3). Las cuentas de sistema de Grupos no son elegibles: solo
+    /// las asigna el bridge (A0-Bridge), como en Siri y Apple Pay, que ya las quitaban antes de llamar.
     static func findAccount(byCurrency currencyCode: String, in accounts: [Account]) -> Account? {
         let normalizedCode = currencyCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedCode.isEmpty else { return nil }
 
         let matches = accounts
-            .filter { !$0.isArchived }
+            .filter { !$0.isArchived && !$0.isSystemAccount }
             .filter { $0.currencyCode.uppercased() == normalizedCode }
         return matches.count == 1 ? matches.first : nil
     }

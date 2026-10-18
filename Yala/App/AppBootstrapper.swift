@@ -112,6 +112,9 @@ final class AppBootstrapper {
         defer { SessionState.shared.isBootstrapSettled = true }
 
         let context = container.mainContext
+        // Tarjeta con varias divisas (entrega 3): el filtro de cuentas de sesión incluye las líneas de la tarjeta elegida, y
+        // para eso necesita leer las cuentas del contenedor montado. Antes de nada que pueda escribir un filtro.
+        SessionState.shared.installAccountLinesSource(context)
 
         let uiTestActive = UITestHooks.isActive
         // Nota: applyUITestHooksEarly (reset/pro/skip-onboarding) se aplica en

@@ -843,6 +843,26 @@ final class ChatAssistantViewModel {
         RouterEntryGate.shared.submit(.presentNewTransactionFromChatDraft(prefill))
     }
 
+    /// La cuenta de la tarjeta de `account` en `dictatedCurrency` si `account` es la cabeza de una tarjeta con líneas
+    /// (`AccountCardLogic.route`); si es una línea, una cuenta sin líneas o el fetch falla, `account` tal cual.
+    static func cardAccount(for account: Account, dictatedCurrency: String, in context: ModelContext) -> Account {
+        do {
+            let all = try context.fetch(FetchDescriptor<Account>())
+            let nodes = all.map { AccountLineNode($0) }
+            let roles = AccountLineLogic.resolve(nodes)
+            guard !(roles[account.shortcutID]?.isLine ?? false),
+                  let route = AccountCardLogic.route(
+                    chosenID: account.shortcutID, currencyCode: dictatedCurrency, nodes: nodes),
+                  let target = all.first(where: { $0.shortcutID == route.accountID }) else { return account }
+            return target
+        } catch {
+            #if DEBUG
+            print("ChatAssistantViewModel: Error: fetch de cuentas para la tarjeta: \(error)")
+            #endif
+            return account
+        }
+    }
+
     /// Update inline de un campo del draft (ej. user cambia monto en TextField, o
     /// elige otra cuenta en el menu picker). Recalcula `needsUserInput`.
     /// Permite update también desde `.failed` (el user puede ajustar antes de retry).
@@ -893,7 +913,12 @@ final class ChatAssistantViewModel {
             if let id = value, let context = modelContext,
                 let account = context.model(for: id) as? Account
             {
-                draft.currencyCode = account.currencyCode
+                // Tarjeta con varias divisas (entrega 3, decisión 6 de Jürgen): si se eligió la TARJETA, la divisa dictada
+                // decide la línea, y el borrador apunta a esa cuenta concreta. Sin línea en esa divisa, la principal y su
+                // divisa, como con cualquier cuenta. Una línea elegida a propósito se respeta.
+                let target = Self.cardAccount(for: account, dictatedCurrency: draft.currencyCode, in: context)
+                draft.accountID = target.persistentModelID
+                draft.currencyCode = target.currencyCode
             }
         }
         if case .some(let value) = subcategoryID {

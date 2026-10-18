@@ -308,12 +308,16 @@ struct ApproximateMarkSecondarySurfacesWiringTests {
 
         let hero = try Self.code("Yala/App/Views/Panel/HeroMonthView.swift")
         #expect(hero.contains("isEstimate: periodSummary.incomeApproximate"))
-        // `expenseApproximate` sale 5 veces: hero de Solo Gastos, pill de gasto, la etiqueta de
-        // accesibilidad, la cifra con «solo gastos» puesto y la línea «Entró − salió» (UX 2.2 · L3-1/L3-3).
-        // Es el MISMO número en todas, y ese es el punto: hasta hoy la pill lo pintaba exacto mientras
-        // el hero de al lado lo pintaba con «≈».
+        // `expenseApproximate` sale 4 veces: hero de Solo Gastos, pill de gasto, la etiqueta de
+        // accesibilidad y la cifra con «solo gastos» puesto (UX 2.2 · L3-1/L3-3). La línea «Entró − salió» se
+        // quitó el 18-oct (decisión de Jürgen). Es el MISMO número en todas, y ese es el punto: hasta hoy la
+        // pill lo pintaba exacto mientras el hero de al lado lo pintaba con «≈».
         let expense = hero.components(separatedBy: "periodSummary.expenseApproximate").count - 1
-        #expect(expense == 5, "se esperaban 5 y hay \(expense)")
+        #expect(expense == 4, "se esperaban 4 y hay \(expense)")
+        // La etiqueta de VoiceOver de cada pastilla lleva la marca de su importe: sin ella, VoiceOver leería exacto
+        // lo que en pantalla sale con «≈».
+        #expect(hero.contains("L10n.Panel.Hero.incomePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
+        #expect(hero.contains("L10n.Panel.Hero.expensePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))"))
     }
 
     /// El widget de inicio es el único donde la señal no existía: había que producirla.

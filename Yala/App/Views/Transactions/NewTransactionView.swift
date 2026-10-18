@@ -434,6 +434,9 @@ struct NewTransactionView: View {
                     selectedAccount: $viewModel.selectedAccount,
                     title: L10n.Transaction.account,
                     currencyFilter: isBridgedCasoA ? transactionToEdit?.currencyCode : nil,
+                    // Tarjeta con varias divisas (entrega 3): elegir la tarjeta guarda su línea en la divisa del importe. En
+                    // un gasto de grupo (Caso A) la divisa es la del grupo.
+                    routingCurrency: isBridgedCasoA ? transactionToEdit?.currencyCode : viewModel.currencyCode,
                     sizing: .mediumFirst
                 )
                 .onChange(of: viewModel.selectedAccount) { _, newAccount in
@@ -1128,9 +1131,14 @@ struct NewTransactionView: View {
                                 .foregroundStyle(DS.Semantic.errorForeground)
                         }
                     } else {
+                        // Tarjeta con varias divisas (entrega 3): la pastilla dice la tarjeta, y al lado van sus divisas.
+                        // En un gasto de grupo (Caso A) la divisa es la del grupo y no se cambia desde aquí (el selector ya se
+                        // filtra a ella): sin pastillas (review del 2026-10-18).
+                        let cardMembers = canEditBridgedAccount && !isBridgedCasoA
+                            ? viewModel.cardMembers(of: viewModel.selectedAccount) : []
                         SelectionChip(
                             icon: "creditcard",
-                            text: viewModel.selectedAccount?.name ?? L10n.Transaction.account,
+                            text: cardMembers.first?.name ?? viewModel.selectedAccount?.name ?? L10n.Transaction.account,
                             isSelected: viewModel.selectedAccount != nil,
                             color: viewModel.selectedAccount.map { Color(hex: $0.colorHex) }
                         ) {
@@ -1138,6 +1146,20 @@ struct NewTransactionView: View {
                             viewModel.showAccountSelector = true
                         }
                         .accessibilityIdentifier("new_transaction_account_chip")
+
+                        ForEach(cardMembers, id: \.persistentModelID) { member in
+                            let isChosen = member.persistentModelID == viewModel.selectedAccount?.persistentModelID
+                            SelectionChip(
+                                icon: "banknote",
+                                text: member.currencyCode,
+                                isSelected: isChosen,
+                                color: isChosen ? Color(hex: member.colorHex) : nil
+                            ) {
+                                viewModel.selectCardMember(member)
+                            }
+                            .accessibilityLabel(L10n.Account.Lines.cardCurrencyChip(member.currencyCode))
+                            .accessibilityIdentifier("new_transaction_card_currency_\(member.currencyCode)")
+                        }
                     }
                 }
                 .disabled(!canEditBridgedAccount)
@@ -1843,9 +1865,12 @@ struct NewTransactionView: View {
 
         // Set account if available
         if let account = favorite.account {
-            viewModel.selectedAccount = account
+            // Con una tarjeta, la divisa del favorito decide la línea (entrega 3). Hoy coincide con la de su cuenta; cuenta
+            // si la cuenta se vinculó después como línea o principal.
+            let target = viewModel.routed(account, toCurrency: favorite.currencyCode ?? account.currencyCode)
+            viewModel.selectedAccount = target
             viewModel.sourceAccount = account
-            viewModel.currencyCode = account.currencyCode
+            viewModel.currencyCode = target.currencyCode
         }
 
         // Set subcategory if available
