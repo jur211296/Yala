@@ -1,10 +1,10 @@
 ---
 id: scheduled-payments-period-wheel-closes-the-sheet
-status: backlog
+status: done
 priority: low
 area: "scheduled-payments, ui"
 created: 2026-10-17
-updated: 2026-10-17
+updated: 2026-10-18
 source: "implementación UX 2.2 · lote 9 (L9-8, mismo patrón fuera del lote)"
 ---
 
@@ -15,3 +15,7 @@ L9-8 cambió los dos selectores de período de Presupuestos (lista y gráficas) 
 ## Hecho cuando
 
 Pagos planificados elige período con `BudgetPeriodWheelSheet` (o la misma rueda nativa) y arrastrar la rueda no cierra la hoja.
+
+## Resolución (2026-10-18)
+
+Hecho en el lote 10 de la auditoría UX 2.2: `ScheduledPaymentPeriodSelectorSheet` envuelve `BudgetPeriodWheelSheet` (mensual, con su título). Arrastrar la rueda no cierra la hoja (`ScheduledPaymentsLote10UITests#test_periodSelector_isTheNativeWheel`).

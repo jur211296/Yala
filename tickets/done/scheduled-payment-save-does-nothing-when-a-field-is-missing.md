@@ -1,10 +1,10 @@
 ---
 id: scheduled-payment-save-does-nothing-when-a-field-is-missing
-status: backlog
+status: done
 area: scheduled-payments
 priority: medium
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-10-18
 source: auditoría UX 2.2, lote 5 (primeros días), encontrado fuera del lote — es del lote 10
 ---
 
@@ -30,3 +30,7 @@ Si (2) es el filtro de «Este mes» con el primer cobro el 1 del mes que viene, 
 Medido: (1) el ✓ sale gris (apagado) y tocarlo no hace nada; VoiceOver decía «Crea al menos una cuenta y una categoría». (2) es correcto en el cálculo —el primer pago cae el 1 del mes que viene— pero la lista mentía con «Aún no tienes pagos planificados», y el borrador de la Bandeja nacía el día de inicio porque el primer vencimiento se guardaba como la fecha de inicio.
 
 Arreglado en el PR del lote 10: B8 (VoiceOver dice lo que falta), B10 (el primer vencimiento es la primera fecha del pago) y B12 («Sin pagos este mes»). Lo de UX —que el ✓ lleve al campo que falta y que guardar diga cuándo es el primer pago— va como propuesta L10-4 y L10-5, con card para Jürgen.
+
+## Resolución (2026-10-18)
+
+Hecho en el lote 10: (1) el ✓ siempre se puede tocar y, con algo pendiente, lleva al campo y lo marca «Falta» (L10-4); cuenta y subcategoría van arriba y la cuenta llega precargada. (2) Tras guardar, «Listo. Primer pago: …» con «Ver» al mes del primer pago (L10-5), y el mes vacío ya decía «Sin pagos este mes» (B12). Test: `ScheduledPaymentsLote10UITests#test_saveWithSomethingMissing_marksWhatIsMissing`.
