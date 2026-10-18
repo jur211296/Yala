@@ -22,11 +22,6 @@ final class BudgetsViewModel {
         return f
     }()
 
-    private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
 
     private static let monthLabelFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -146,7 +141,7 @@ final class BudgetsViewModel {
                       calendar.isDate(selectedMonth, equalTo: nextMonth, toGranularity: .month) {
                 return L10n.Period.nextMonth
             } else {
-                return Self.monthYearFormatter.string(from: selectedMonth).capitalized
+                return BudgetPeriodTitleLogic.monthYear(selectedMonth, calendar: userConfiguredCalendar(), locale: AppLocale.current)
             }
 
         case .yearly:

@@ -4055,6 +4055,10 @@ struct MainTabView: View {
             case .planning:
                 navigation.selectMainTab(.planning)
             case .budgets:
+                // La alerta de un presupuesto lo abre en ESTA ventana, la que drenó el intent (UX 2.2 · L9-5).
+                if let budgetID = BudgetAlertRouting.shared.consume() {
+                    navigation.pendingBudgetID = budgetID
+                }
                 navigation.selectedPlanningTab = .budgets
                 navigation.selectMainTab(.planning)
             case .inbox:

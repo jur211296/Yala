@@ -43,16 +43,11 @@ final class BudgetsFavoritesSettingsViewModel {
 
         return BudgetPeriodType.allCases.compactMap { periodType in
             guard let budgets = grouped[periodType], !budgets.isEmpty else { return nil }
+            // Por nombre y nada más (UX 2.2 · L9-11): con los favoritos primero, marcar una estrella movía las filas bajo el
+            // dedo y el toque siguiente caía en otro presupuesto. El orden de los favoritos se ve en la vista previa y en
+            // «Reordenar».
             let sorted = budgets.sorted { a, b in
-                if a.isFavorite && b.isFavorite {
-                    return a.favoriteOrder < b.favoriteOrder
-                } else if a.isFavorite {
-                    return true
-                } else if b.isFavorite {
-                    return false
-                } else {
-                    return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
-                }
+                a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
             }
             return (periodType, sorted)
         }

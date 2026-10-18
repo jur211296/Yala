@@ -41,6 +41,11 @@ paths:
   valor de antes. Con un `@Observable` (Registros, `RecordsViewModel`) el mismo molde funciona. ⇒ **para presentar UN
   objeto, `.sheet(item:)`**; si hace falta encadenar otra presentación al cerrar, guarda el objeto en un estado aparte
   (`recordAwaitingEditor`) antes de vaciar el `item`. Pin: `UXAudit22Lote8CWiringTests`.
+- **El `onAppear` de un `ViewModifier` puede correr ANTES que el de la vista que lo lleva (medido el 2026-10-17, iOS 27.0,
+  lote 9).** `BudgetAlertOpening` (abrir el presupuesto de una alerta) buscaba en `viewModel.allBudgets` desde su
+  `onAppear`, y el `onAppear` de `BudgetsListView` —el que hace `setContext`— aún no había corrido: lista vacía, el
+  aviso consumido y nada abierto. Lo cazó un XCUITest en rojo. ⇒ **lo que un modificador lea al aparecer lo prepara él**
+  (aquí, `viewModel.setContext(modelContext)` idempotente antes de leer), no cuenta con el orden de los `onAppear`.
 - **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
   contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
   como contenido, sí (`FilterChipView`).

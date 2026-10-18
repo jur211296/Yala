@@ -284,6 +284,16 @@ extension Color {
     /// este tono da 5,2:1 sin dejar de ser el rosa de marca.
     static let emphasisPinkFill = Color(hex: "D6006B")
 
+    /// TEXTO de «te pasaste» de un presupuesto (UX 2.2 · L9-1): `hotPink` sobre tarjeta blanca da 3,77 y no llega al AA
+    /// de 4,5, así que en claro va el rosa profundo (#D6006B, 5,2) y en oscuro el de siempre, que ahí sí contrasta.
+    static let overBudgetText = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color.hotPink) : UIColor(Color.emphasisPinkFill)
+    })
+
+    /// Barra de un período que NO pasó el límite en el historial de un presupuesto (UX 2.2 · L9-7): neutra y sólida, para
+    /// que el rosa marque solo los que se pasaron.
+    static let budgetBarNeutral = Color(uiColor: .systemGray3) // A11Y-DM: gris de sistema, adapta claro/oscuro
+
     /// Rosa claro para texto sobre los rellenos índigo (lo que resta en la cuenta de la calculadora).
     static let pinkOnIndigo = Color(hex: "FF99CC")
 

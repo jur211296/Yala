@@ -771,6 +771,17 @@ final class UITestHooks {
     /// `-uitest-deeplink <target>`: simula un deeplink externo a un tab al arranque
     /// (panel/statistics/records/planning/budgets/groups/inbox/scheduledPayments/categories).
     /// Ejercita el wiring de routing a tabs ocultos (bug review-deeplinks).
+    /// `-uitest-budget-alert-tap <nombre>`: finge el TOQUE en la alerta de ese presupuesto (UX 2.2 · L9-5). El simulador
+    /// no deja a Yala mostrar notificaciones, así que se entra por el mismo `NotificationService.routeTap` que el toque.
+    nonisolated static var budgetAlertTapName: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-budget-alert-tap", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     nonisolated static var deeplinkTarget: String? {
         #if DEBUG
         guard isActive else { return nil }

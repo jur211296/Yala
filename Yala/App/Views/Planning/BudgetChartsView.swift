@@ -94,7 +94,7 @@ struct BudgetChartsView: View {
                       calendar.isDate(localSelectedMonth, equalTo: next, toGranularity: .month) {
                 return L10n.Period.nextMonth
             } else {
-                return Self.monthYearFormatter.string(from: localSelectedMonth).capitalized
+                return BudgetPeriodTitleLogic.monthYear(localSelectedMonth, calendar: userConfiguredCalendar(), locale: AppLocale.current)
             }
 
         case .yearly:
@@ -162,25 +162,27 @@ struct BudgetChartsView: View {
 
                     // 1. Compliance history (hidden for .unique)
                     if periodType != .unique {
+                        // Dice qué se mide en vez de «cumplimiento» (UX 2.2 · L9-7).
                         sectionWithHeader(
-                            title: L10n.Planning.BudgetCharts.historyTitle,
+                            title: L10n.UXL9.historyTitle(periodType),
                             hint: L10n.Planning.BudgetCharts.historyHint
                         ) {
                             complianceChartContent
                         }
                     }
 
-                    // 2. Local period navigation (hidden for .unique)
-                    if periodType != .unique {
-                        localPeriodNavigationHeader
-                    }
-
-                    // 3. Daily cumulative spending
+                    // 2. Gasto del período, con su selector de período como cabecera (UX 2.2 · L9-7): solo mueve esto y lo de
+                    // abajo, no el historial, así que va pegado a lo que controla y no encima de todo.
                     sectionWithHeader(
                         title: L10n.Planning.BudgetCharts.spendingTitle,
                         hint: L10n.Planning.BudgetCharts.spendingHint
                     ) {
-                        dailySpendingChartContent
+                        VStack(spacing: DS.Spacing.sm) {
+                            if periodType != .unique {
+                                localPeriodNavigationHeader
+                            }
+                            dailySpendingChartContent
+                        }
                     }
 
                     // 4. Category breakdown
@@ -304,7 +306,8 @@ struct BudgetChartsView: View {
                         x: .value("Period", item.label),
                         y: .value("Spent", item.spent)
                     )
-                    .foregroundStyle(item.spent >= item.limit ? Color.hotPink.gradient : Color.expenseGraph.gradient)
+                    // Tono neutro y rosa solo en los que pasaron el límite; sólidos, sin degradado (UX 2.2 · L9-7).
+                    .foregroundStyle(item.spent > item.limit ? Color.hotPink : Color.budgetBarNeutral)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
 
                     // Data label on top of each bar
@@ -316,11 +319,12 @@ struct BudgetChartsView: View {
                     .annotation(position: .top, spacing: DS.Spacing.xs) {
                         // `.annotation` no propaga environment objects — AmountText (lee
                         // @Environment(AppPreferences.self)) dispara SIGTRAP aquí. Text pre-resuelto.
-                        Text(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))
+                        // Cifra corta («3K»): con el importe entero se pisaban unas con otras (L9-7).
+                        Text(Self.shortK(item.spent))
                             .font(DS.Typography.labelTiny)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .fixedSize()
                             .accessibilityLabel("\(item.label): \(appPreferences.currency(item.spent, currencyCode: budget.currencyCode))")
                     }
 
@@ -381,13 +385,7 @@ struct BudgetChartsView: View {
                             y: .value("Cumulative", item.cumulative)
                         )
                         .interpolationMethod(.monotone)
-                        .foregroundStyle(
-                            .linearGradient(
-                                colors: [primaryColor.opacity(0.1), primaryColor.opacity(0.05)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                        .foregroundStyle(primaryColor.opacity(0.08))
 
                         LineMark(
                             x: .value("Date", item.date),
@@ -402,10 +400,11 @@ struct BudgetChartsView: View {
                     RuleMark(y: .value("Limit", budget.limitAmount))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                         .foregroundStyle(Color.hotPink.opacity(0.7))
-                        .annotation(position: .trailing, alignment: .trailing) {
-                            Text(YalaFormatter.axisK(budget.limitAmount))
+                        // Arriba a la izquierda de la línea: a la derecha se montaba sobre la etiqueta del eje (L9-7).
+                        .annotation(position: .top, alignment: .leading, spacing: DS.Spacing.xxs) {
+                            Text(L10n.UXL9.limitShort(Self.shortK(budget.limitAmount)))
                                 .font(DS.Typography.captionSmall)
-                                .foregroundStyle(Color.hotPink)
+                                .foregroundStyle(Color.overBudgetText)
                         }
 
                     // Scrub interaction
@@ -602,6 +601,18 @@ struct BudgetChartsView: View {
         }
     }
 
+    /// «1.5K», «12K», «850»: con un decimal por debajo de 10K. `axisK` redondea a miles y 1.450 y 1.600 salían «1K» y
+    /// «2K», lo mismo que un límite de 1.500 (UX 2.2 · L9-7).
+    static func shortK(_ value: Double) -> String {
+        let absValue = abs(value)
+        let sign = value < 0 ? "-" : ""
+        guard absValue >= 1000 else { return sign + String(format: "%.0f", absValue) }
+        let thousands = absValue / 1000
+        if thousands >= 10 { return sign + String(format: "%.0fK", thousands) }
+        let text = String(format: "%.1f", thousands)
+        return sign + (text.hasSuffix(".0") ? String(text.dropLast(2)) : text) + "K"
+    }
+
     // MARK: - Section with Header
 
     /// Title FUERA + InfoHintButton al lado + content en `.panelCard()`.
@@ -722,11 +733,6 @@ struct BudgetChartsView: View {
         return f
     }()
 
-    private static let monthYearFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM yyyy"
-        return f
-    }()
 
     private func dayLabel(_ date: Date) -> String {
         Self.dayLabelFormatter.string(from: date)

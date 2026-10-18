@@ -76,6 +76,9 @@ struct BudgetDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
         .onAppear { refreshSummary() }
+        // En ventana ancha la lista sigue a la vista y su ‹ › cambia el período: las cifras lo siguen, como el título
+        // (UX 2.2 · L9-6). Antes solo se recalculaban al abrir.
+        .onChange(of: listPeriodKey) { _, _ in refreshSummary() }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 YalaToolbarButton(systemName: "chevron.left", label: L10n.Action.back) {
@@ -135,26 +138,32 @@ struct BudgetDetailView: View {
                     .accessibilityHidden(true)
             }
 
-            // Amount spent
+            // El período que enseñan las cifras, en vez de «PEN» (UX 2.2 · L9-6): el detalle sigue el período elegido en
+            // la lista, y abierto desde octubre de 2025 se leía como si fuera de hoy.
             VStack(spacing: DS.Spacing.xs) {
-                Text(budget.currencyCode)
-                    .font(DS.Typography.caption)
+                Text(periodTitle)
+                    .font(DS.Typography.labelSmall)
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("budget_detail_period")
 
-                Text(spentText)
-                    .font(DS.Typography.largeTitle)
-                    // Crece con el texto del sistema y, si un importe largo no cabe en el ancho, se encoge en
-                    // vez de cortarse. Sustituye al tope en AX1, que lo dejaba pequeño a propósito.
+                // Lo que queda en grande, como la fila (L9-1); lo gastado en una línea gris.
+                BudgetRemainingFigure(
+                    limit: budget.limitAmount,
+                    spent: summary.spent,
+                    currencyCode: budget.currencyCode,
+                    alignment: .center,
+                    labelFont: DS.Typography.subheadline,
+                    amountFont: DS.Typography.largeTitle
+                )
+
+                Text(L10n.UXL9.spentOfLimit(spentText, limitText))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .primary)
+                    .minimumScaleFactor(0.7)
                     // Lo lee `AdaptiveNavigationUITests` para comprobar que, al abrir otro presupuesto en la columna
                     // de detalle, el gastado es el del presupuesto nuevo.
                     .accessibilityIdentifier("budget_detail_spent")
-
-                Text(String(format: NSLocalizedString("budgets.amount.of", comment: ""), limitText))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
             }
 
             // Progress bar
@@ -165,28 +174,55 @@ struct BudgetDetailView: View {
             )
             .padding(.horizontal, DS.Spacing.xl)
 
-            // Percentage + days remaining
+            // Porcentaje y lo que toca por día (o los días / «Cerrado» cuando ya no hay «al día»).
             HStack {
                 Text(String(format: NSLocalizedString("budgets.spent.percent", comment: ""), String(format: "%.0f%%", summary.percentage)))
                     .font(DS.Typography.label)
-                    .foregroundStyle(summary.status == .exceeded ? Color.hotPink : .secondary)
+                    .foregroundStyle(summary.status == .exceeded ? Color.overBudgetText : .secondary)
 
                 Spacer()
 
-                if summary.daysRemaining == -1 {
-                    Text(NSLocalizedString("budgets.period.past", comment: ""))
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text(L10n.Budgets.daysRemaining(summary.daysRemaining))
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.secondary)
-                }
+                Text(dayLine(summary))
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("budget_detail_day_line")
             }
             .padding(.horizontal, DS.Spacing.sm)
+
+            if budget.countsAllExpenses {
+                BudgetCountsAllExpensesNote(font: DS.Typography.caption)
+            }
         }
         .padding(DS.Spacing.xl)
         .solidCard(padding: 0, radius: DS.Panel.widgetRadius)
+    }
+
+    private var listPeriodKey: String {
+        "\(viewModel.selectedWeek.timeIntervalSince1970)|\(viewModel.selectedMonth.timeIntervalSince1970)|\(viewModel.selectedYear)"
+    }
+
+    /// «octubre de 2026», «13 – 19 oct», «2026» o las fechas del único: el período de la lista.
+    private var periodTitle: String {
+        guard let type = BudgetPeriodType(rawValue: budget.periodType) else { return "" }
+        return BudgetPeriodTitleLogic.title(
+            periodType: type,
+            week: viewModel.selectedWeek,
+            month: viewModel.selectedMonth,
+            year: viewModel.selectedYear,
+            uniqueStart: budget.startDate,
+            uniqueEnd: budget.endDate,
+            calendar: userConfiguredCalendar(),
+            locale: AppLocale.current
+        )
+    }
+
+    /// «Puedes gastar S/ 22.00 al día» mientras el período corre y queda algo; si no, los días o «Cerrado».
+    private func dayLine(_ summary: BudgetSummary) -> String {
+        let remaining = BudgetRemainingLogic.remaining(limit: budget.limitAmount, spent: summary.spent)
+        if let perDay = BudgetRemainingLogic.perDay(remaining: remaining, daysRemaining: summary.daysRemaining) {
+            return L10n.UXL9.perDay(appPreferences.currency(perDay, currencyCode: budget.currencyCode))
+        }
+        return L10n.UXL9.shortDays(summary.daysRemaining)
     }
 
     // MARK: - Info Section
@@ -312,9 +348,19 @@ struct BudgetDetailView: View {
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.secondary)
                     } trailing: {
-                        Text(alertThresholdsDescription)
-                            .font(DS.Typography.label)
-                            .foregroundStyle(.primary)
+                        // Con el interruptor general apagado no llega ningún aviso (UX 2.2 · L9-4): decirlo, en vez de
+                        // enseñar los umbrales como si fueran a llegar.
+                        if appPreferences.budgetAlertsEnabled {
+                            Text(alertThresholdsDescription)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.primary)
+                        } else {
+                            Text(L10n.UXL9.alertsOffInNotifications)
+                                .font(DS.Typography.label)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+                                .accessibilityIdentifier("budget_detail_alerts_off")
+                        }
                     }
                     .padding(.horizontal, DS.Spacing.lg)
                     .padding(.vertical, DS.Spacing.md)

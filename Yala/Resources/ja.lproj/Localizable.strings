@@ -518,7 +518,7 @@
 "planning.budgetCharts.byCategoryTitle" = "カテゴリ別";
 "planning.budgetCharts.spendingHint" = "日ごとの累積支出です。";
 "planning.budgetCharts.spendingTitle" = "期間の支出";
-"planning.budgetCharts.historyHint" = "過去6期間の実績を確認できます。";
+"planning.budgetCharts.historyHint" = "直近6期間。ピンクは上限を超えた期間、点線が上限です。";
 "planning.budgetCharts.historyTitle" = "履歴";
 
 // MARK: - Budgets
@@ -526,8 +526,8 @@
 "budgets.title" = "予算";
 "budgets.empty.title" = "予算はまだありません";
 "budgets.empty.message" = "支出をうまく管理するために予算を作成しましょう。";
-"budgets.includeSharedExpenses" = "シェア支出を含める";
-"budgets.includeSharedExpensesHint" = "オフにすると、個人の支出のみが対象になります";
+"budgets.includeSharedExpenses" = "グループ支出の自分の分を含める";
+"budgets.includeSharedExpensesHint" = "オフにすると、個人の支出のみが対象になります。";
 "budgets.widget.noFavorites.title" = "お気に入り予算がありません";
 "budgets.widget.noFavorites.message" = "ここに表示するには、設定 > 予算でお気に入りに登録してください。";
 "budgets.widget.selectFavorites" = "お気に入りを選択";
@@ -545,8 +545,7 @@
 "budgets.edit" = "予算を編集";
 "budgets.delete" = "予算を削除";
 "budgets.delete.confirm.title" = "予算を削除しますか？";
-"budgets.delete.confirm.message" = "この操作は取り消せません。";
-
+"budgets.delete.confirm.message" = "支出は削除されません。削除されるのはこの上限だけです。";
 // Budget Period Types
 "budgets.period.weekly" = "毎週";
 "budgets.period.monthly" = "毎月";
@@ -563,7 +562,7 @@
 // Budget Details
 "budgets.spent.percent" = "%@使用";
 "budgets.days.remaining" = "残り%@日";
-"budgets.period.past" = "過去";
+"budgets.period.past" = "終了";
 "budgets.amount.of" = "/ %@";
 "budgets.exceeded.encouragement" = "予算を超えました — 次回はうまくいきますよ！";
 
@@ -7144,3 +7143,39 @@
 "records.l8b.bulk.nothingPendingHint" = "先に変更する項目を選んでください。";
 "records.l8.bulkSaveFailed" = "保存できませんでした。何も変更されていません。もう一度お試しください。";
 "records.l8.duplicatesMatchedOn" = "%@が同じで、口座も同じです。";
+
+/* Auditoría UX 2.2 · lote 9 (presupuestos) */
+"budgets.l9.remainingLabel" = "残り";
+"budgets.l9.overLabel" = "超過額";
+"budgets.l9.spentOfLimit" = "%1$@ / %2$@";
+"budgets.l9.notStarted" = "まだ始まっていません";
+"budgets.l9.days.one" = "残り1日";
+"budgets.l9.days" = "残り%@日";
+"budgets.l9.perDay" = "1日あたり%@使えます";
+"budgets.l9.countsAllExpenses" = "すべての支出を対象にします";
+"budgets.l9.limitLabel" = "上限";
+"budgets.l9.whatCountsTitle" = "対象にする支出は？";
+"budgets.l9.allExpensesChip" = "すべての支出";
+"budgets.l9.chooseCategories" = "カテゴリを選ぶ";
+"budgets.l9.whatCountsAllHint" = "期間中のすべての支出を対象にします。一部だけにするにはカテゴリを選んでください。";
+"budgets.l9.whatCountsSomeHint" = "選んだカテゴリの支出だけが対象です。";
+"budgets.l9.typeHint.weekly" = "毎週リセット";
+"budgets.l9.typeHint.monthly" = "毎月リセット";
+"budgets.l9.typeHint.yearly" = "毎年リセット";
+"budgets.l9.typeHint.unique" = "2つの日付の間。繰り返しません";
+"budgets.l9.alertsOffHint" = "通知で予算アラートがオフになっているため、アラートは届きません。";
+"budgets.l9.activateAlerts" = "アラートをオンにする";
+"budgets.l9.alertsOffInNotifications" = "通知でアラートがオフ";
+"budgets.l9.showInWidget" = "ウィジェットに表示";
+"budgets.l9.showInWidgetHint" = "ホームの予算ウィジェットに表示されます。";
+"budgets.l9.hideFromWidget" = "ウィジェットから外す";
+"budgets.l9.deleteTitle" = "「%@」を削除しますか？";
+"budgets.l9.historyTitle.weekly" = "毎週の支出と上限の比較";
+"budgets.l9.historyTitle.monthly" = "毎月の支出と上限の比較";
+"budgets.l9.historyTitle.yearly" = "毎年の支出と上限の比較";
+"budgets.l9.limitShort" = "上限 %@";
+"budgets.l9.freePlanBanner" = "無料プランの有効な予算：%lld件";
+"budgets.l9.freePlanSheet" = "無料プランで有効にできる予算は%lld件です。1件をオフにするか、Proにアップグレードしてください。";
+"budgets.l9.seePro" = "Proを見る";
+"budgets.l9.chooseWhich" = "選ぶ";
+"budgets.l9.previewEmpty" = "スターを付けた予算（最大3件）がここにウィジェットとして表示されます。";
