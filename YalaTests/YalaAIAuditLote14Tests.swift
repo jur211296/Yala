@@ -42,10 +42,30 @@ struct YalaAIAuditLote14Tests {
         for locale in locales {
             let table = try Self.strings(locale)
             let own = try #require(table["chat.assistantName"], "\(locale) sin chat.assistantName")
-            for (key, value) in table where key.hasPrefix("yalaAI.onboarding.") {
+            for (key, value) in table where key.hasPrefix("yalaAI.onboarding.") || key.hasPrefix("chat.l14.") {
                 for name in names where name != own {
                     #expect(!value.contains(name), "\(locale) · \(key) dice «\(name)»; el chat dice «\(own)».")
                 }
+            }
+        }
+    }
+
+    /// UX 2.2 · L14-2: el paso «Antes de empezar» reparte el texto del aviso de permiso sin perder nada de lo que
+    /// decía: qué se envía (de los últimos 13 meses) y que no entrena a la IA. Y nombra la pantalla donde se apaga con un
+    /// solo hueco, que el código rellena con los títulos reales.
+    @Test func consentStep_keepsWhatTheAlertSaid_inEveryLocale() throws {
+        for locale in try Self.locales() {
+            let table = try Self.strings(locale)
+            let reads = try #require(table["yalaAI.onboarding.l14.consent.readsBody"], "\(locale) sin «Qué lee»")
+            #expect(reads.contains("13"), "\(locale): «Qué lee» perdió los 13 meses.")
+            let alert = try #require(table["aiConsent.chatMessage"], "\(locale) sin el aviso")
+            #expect(alert.contains("13"), "\(locale): el aviso dejó de decir 13 meses; revisa también «Qué lee».")
+            let decide = try #require(table["yalaAI.onboarding.l14.consent.decideBody"], "\(locale) sin «Tú decides»")
+            #expect(decide.components(separatedBy: "%@").count == 2, "\(locale): «Tú decides» debe tener un solo hueco.")
+            for key in ["yalaAI.onboarding.l14.consent.useBody", "yalaAI.onboarding.l14.consent.cta",
+                        "chat.l14.greetingTwoUses", "chat.l14.logBody"] {
+                let value = try #require(table[key], "\(locale) sin \(key)")
+                #expect(!value.isEmpty, "\(locale) · \(key) vacío")
             }
         }
     }

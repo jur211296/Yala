@@ -4170,26 +4170,15 @@
 "yalaAI.onboarding.step2.card2.body" = "Hoeveel aan koffie? Mijn duurste maand?";
 "yalaAI.onboarding.step2.card3.title" = "Ontvang suggesties";
 "yalaAI.onboarding.step2.card3.body" = "Patronen, afwijkingen, ideeën om te besparen.";
-"yalaAI.onboarding.step3.title" = "Kies de toon van Yala";
-"yalaAI.onboarding.step3.subtitle" = "Zo praat Yala met je in elk antwoord.";
 "yalaAI.onboarding.step3.toneNormalDescription" = "Evenwichtig en helder. De feiten, zonder franje.";
 "yalaAI.onboarding.step3.toneConsiderateDescription" = "Zacht en empathisch. Let op je stemming en viert je vooruitgang.";
 "yalaAI.onboarding.step3.toneSarcasticDescription" = "Direct met humor. Vertelt het je met een speelse knipoog.";
-"yalaAI.onboarding.step3.toneNormalQuote" = "Je hebt 3 koffies deze week gehad. Je zit goed met je budget.";
-"yalaAI.onboarding.step3.toneConsiderateQuote" = "Een koffie doet je goed. Past binnen je budget, alles in orde.";
-"yalaAI.onboarding.step3.toneSarcasticQuote" = "Nog drie koffies en we breken het record. Nog steeds binnen budget.";
-"yalaAI.onboarding.step4.title" = "Kies de stijl van Yala";
-"yalaAI.onboarding.step4.subtitle" = "Waar Yala op let bij jouw financiën.";
 "yalaAI.onboarding.step4.focusBalancedDescription" = "Kijkt evenveel naar uitgaven als inkomsten.";
 "yalaAI.onboarding.step4.focusSaverDescription" = "Helpt je elke maand meer opzij te zetten.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Waarschuwt bij elke afwijking, zodat je niets ontgaat.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Je inkomsten dekken de uitgaven van deze maand. Goed ritme.";
 "yalaAI.onboarding.step4.focusSaverQuote" = "10%% minder restaurants: %@ besparing per maand.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Let op: je gaat sneller dan vorige maand met bezorging.";
-"yalaAI.onboarding.step5.title" = "Helemaal klaar!";
-"yalaAI.onboarding.step5.subtitle" = "Vertel Yala wanneer je maar wilt wat je nodig hebt.";
-"yalaAI.onboarding.step5.tip" = "💡 Probeer: \"Leg een koffie van %@ vast\" of \"Hoeveel heb ik vandaag uitgegeven?\"";
-"yalaAI.onboarding.step5.cta" = "Beginnen met chatten";
 
 // MARK: - Stats Records polish
 
@@ -5455,7 +5444,6 @@
 "subscription.error.verificationFailed" = "We konden de aankoop niet bij Apple verifiëren. Probeer het opnieuw of gebruik Aankopen herstellen.";
 
 /* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
-"panel.aiPill" = "AI";
 
 /* Share-link button: group predates the backend channel — permanent, no link is possible */
 "groups.errors.inviteLegacyGroup" = "Deze groep komt uit een oudere versie van Yala en ondersteunt geen uitnodigingslinks. Maak een nieuwe groep om via een link uit te nodigen.";
@@ -7362,3 +7350,25 @@
 "groups.l13.youPayTo" = "Jij betaalt aan";
 "groups.l13.debtA11yMe" = "Jij betaalt aan %1$@: %2$@";
 "groups.l13.pending.rejectMessageOther" = "We halen deze betaling weg en de schuld blijft zoals hij was.";
+
+/* UX 2.2 · lote 14 (Yala IA) */
+"yalaAI.onboarding.l14.personalize.title" = "Maak het jouw manier";
+"yalaAI.onboarding.l14.personalize.subtitle" = "Je kunt dit altijd aanpassen.";
+"yalaAI.onboarding.l14.personalize.toneHeader" = "Hoe het met je praat";
+"yalaAI.onboarding.l14.personalize.focusHeader" = "Waar het op let";
+"yalaAI.onboarding.l14.toneOpener.considerate" = "Stap voor stap, je doet het goed.";
+"yalaAI.onboarding.l14.toneOpener.sarcastic" = "Laten we ter zake komen.";
+"yalaAI.onboarding.l14.consent.title" = "Voordat je begint";
+"yalaAI.onboarding.l14.consent.subtitle" = "Om je te antwoorden, leest Yala AI een samenvatting van je financiën.";
+"yalaAI.onboarding.l14.consent.readsTitle" = "Wat het leest";
+"yalaAI.onboarding.l14.consent.readsBody" = "Saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen van de afgelopen 13 maanden.";
+"yalaAI.onboarding.l14.consent.useTitle" = "Wat het niet doet";
+"yalaAI.onboarding.l14.consent.useBody" = "Het stuurt dit alleen naar een AI-dienst om je te antwoorden. Het wordt niet gebruikt om de AI te trainen.";
+"yalaAI.onboarding.l14.consent.decideTitle" = "Jij beslist";
+"yalaAI.onboarding.l14.consent.decideBody" = "Je zet het altijd uit in %@.";
+"yalaAI.onboarding.l14.consent.cta" = "Accepteren en beginnen";
+"chat.l14.greetingTwoUses" = "Hoi, ik ben Yala AI. Ik kan twee dingen voor je doen:";
+"chat.l14.logTitle" = "Leg een uitgave vast";
+"chat.l14.logBody" = "Typ of spreek hem in: ‘25 uitgegeven aan een taxi met de kaart’";
+"chat.l14.logHint" = "Opent het toetsenbord om hem te typen";
+"chat.l14.askTitle" = "Vraag naar je financiën";

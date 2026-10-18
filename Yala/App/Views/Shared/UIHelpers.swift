@@ -297,6 +297,13 @@ extension Color {
     /// Texto sobre `proGold`: casi negro. El blanco sobre ese dorado da 1,9:1 y no se lee; éste pasa de 11:1.
     static let proGoldInk = Color(hex: "1C1500")
 
+    /// Dorado de Yala IA cuando es TEXTO, icono o borde sobre la tarjeta (UX 2.2 · L14-5, la píldora «Yala IA» y su botón
+    /// flotante): `proGold` en oscuro (9,1:1 sobre la tarjeta) y, en claro, un dorado oscuro (#8A6100, 5,5:1 sobre
+    /// blanco): `proGold` sobre blanco da 1,8:1 y no se lee. Sólido, sin el degradado `proBadge` de antes.
+    static let proGoldOnCard = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor(Color.proGold) : UIColor(Color(hex: "8A6100"))
+    })
+
     /// TEXTO en el rosa de marca que tiene que leerse en los dos modos (UX 2.2 · L11-11, «Los lunes son tu día más caro»):
     /// el mismo par que `overBudgetText`, con nombre propio porque no habla de presupuestos.
     static let emphasisPinkText = overBudgetText

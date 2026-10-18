@@ -31,14 +31,12 @@ struct YalaAIOnboardingDemoAmountsTests {
         #expect(a.deliverySavingPerMonth == 1_400) // 1.376
         #expect(a.deliverySavingPerYear == 16_800)
         #expect(a.saverSavingPerMonth == 690)      // 688
-        #expect(a.tipCoffee == 86)
     }
 
     @Test func jpy_matchesWhatTheJapaneseCopyUsedToSay() {
         let a = YalaAIOnboardingDemoAmounts.amounts(for: .jpy)   // 1 USD = 150 JPY
         #expect(a.lunch == 1_800)
         #expect(a.deliverySavingPerMonth == 12_000)
-        #expect(a.tipCoffee == 750)
     }
 
     /// «son X al año» tiene que ser verdad en toda divisa: el anual es el mensual × 12.
@@ -46,7 +44,7 @@ struct YalaAIOnboardingDemoAmountsTests {
         for currency in CurrencyCode.allCases {
             let a = YalaAIOnboardingDemoAmounts.amounts(for: currency)
             let all = [a.lunch, a.coffeeThisMonth, a.coffeeAboveAverage,
-                       a.deliverySavingPerMonth, a.saverSavingPerMonth, a.tipCoffee]
+                       a.deliverySavingPerMonth, a.saverSavingPerMonth]
             #expect(all.allSatisfy { $0 >= 1 && $0.isFinite }, "\(currency)")
             #expect(a.deliverySavingPerYear == a.deliverySavingPerMonth * 12, "\(currency)")
         }
@@ -75,7 +73,6 @@ struct YalaAIOnboardingDemoAmountsTests {
         "yalaAI.onboarding.step1.demoScenario2Bot": 2,
         "yalaAI.onboarding.step1.demoScenario3Bot": 2,
         "yalaAI.onboarding.step4.focusSaverQuote": 1,
-        "yalaAI.onboarding.step5.tip": 1,
     ]
 
     /// `LocalizationParityTests.placeholders_matchAcrossLocales` no cuenta los `%@` sueltos, y un

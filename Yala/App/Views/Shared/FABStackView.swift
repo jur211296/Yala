@@ -16,7 +16,6 @@ struct FABStackView: View {
     let isVoiceLocked: Bool
     let isImageLocked: Bool
     let isChatLocked: Bool
-    let chatConsentAccepted: Bool
     let chatFABVisible: Bool
 
     // MARK: - Callbacks
@@ -28,7 +27,6 @@ struct FABStackView: View {
     let onUpgradeImage: () -> Void
     let onChatTap: () -> Void
     let onUpgradeChat: () -> Void
-    let onChatConsentNeeded: () -> Void
 
     // MARK: - Internal State
 
@@ -100,10 +98,11 @@ struct FABStackView: View {
     private var aiFAB: some View {
         Button {
             DS.Haptic.selection()
+            // Sin Pro, el paywall. Con Pro, quien monta el botón decide entre la presentación (que pide el permiso en
+            // su último paso, UX 2.2 · L14-2), el aviso de permiso y el chat (`YalaAIOnboardingLogic`). Antes este botón
+            // sacaba el aviso él mismo, ANTES de la presentación.
             if isChatLocked {
                 onUpgradeChat()
-            } else if !chatConsentAccepted {
-                onChatConsentNeeded()
             } else {
                 onChatTap()
             }
@@ -111,7 +110,7 @@ struct FABStackView: View {
             ZStack {
                 Image(systemName: "sparkles")
                     .font(DS.Typography.body.weight(.semibold))
-                    .foregroundStyle(sparklesForeground)
+                    .foregroundStyle(isChatLocked ? AnyShapeStyle(DS.Semantic.disabledForeground) : AnyShapeStyle(Color.proGoldOnCard))
 
                 if isChatLocked {
                     Image(systemName: "lock.fill")
@@ -121,34 +120,29 @@ struct FABStackView: View {
                 }
             }
             .frame(width: DS.Button.fabSize, height: DS.Button.fabSize)
+            // UX 2.2 · L14-5: el mismo acabado que la píldora «Yala IA» del Panel —cristal o tarjeta, con el borde y el
+            // icono en dorado SÓLIDO—, para que se lea como el mismo botón. Antes era un círculo teñido de naranja con
+            // el degradado `proBadge` y una sombra naranja. Sigue redondo, como el «+» de debajo: con texto taparía más
+            // la tarjeta «Resumen inteligente» de Estadísticas. El borde va ANTES del cristal, que tapa lo que se le
+            // cuelga después (`.claude/rules/swiftui-ds.md`).
+            .overlay {
+                if !isChatLocked {
+                    Circle().strokeBorder(Color.proGoldOnCard, lineWidth: 1.5)
+                }
+            }
             .modifier(FABSurfaceModifier(
-                base: isChatLocked ? DS.Semantic.disabledForeground : .orange,
-                glassTintOpacity: isChatLocked ? 0.4 : 0.5,
+                base: isChatLocked ? DS.Semantic.disabledForeground : theme.card,
+                glassTintOpacity: isChatLocked ? 0.4 : 0,
                 solidGradient: isChatLocked
                     ? [DS.Semantic.neutralBackground, DS.Semantic.neutralBackground]
-                    : DS.Gradients.proBadge
+                    : [theme.card, theme.card]
             ))
         }
         .fabButtonStyle(usesMaterial: theme.usesMaterial)
-        .shadow(color: (isChatLocked ? Color.gray : Color.orange).opacity(0.2), radius: DS.Shadow.medium.radius, x: 0, y: DS.Shadow.medium.y)
+        .dsFloatingShadow()
         .coachMarkAnchor("proChatFab")
         .accessibilityLabel(L10n.Chat.title)
         .accessibilityIdentifier("fab_chat")
-    }
-
-    /// Foreground del icono sparkles del FAB de IA: gris si está bloqueado; sobre
-    /// cristal usa el gradiente proBadge; sobre fondo sólido (que ya es proBadge)
-    /// vuelve a blanco para legibilidad.
-    private var sparklesForeground: AnyShapeStyle {
-        if isChatLocked {
-            return AnyShapeStyle(DS.Semantic.disabledForeground)
-        }
-        if theme.usesMaterial {
-            return AnyShapeStyle(
-                LinearGradient(colors: DS.Gradients.proBadge, startPoint: .topLeading, endPoint: .bottomTrailing)
-            )
-        }
-        return AnyShapeStyle(Color.white)
     }
 
     // MARK: - Transaction FAB

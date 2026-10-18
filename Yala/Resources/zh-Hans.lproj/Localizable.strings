@@ -4170,26 +4170,15 @@
 "yalaAI.onboarding.step2.card2.body" = "咖啡花了多少？最贵的月份是哪个？";
 "yalaAI.onboarding.step2.card3.title" = "获取建议";
 "yalaAI.onboarding.step2.card3.body" = "规律、异常、节省的想法。";
-"yalaAI.onboarding.step3.title" = "选择 Yala 的语气";
-"yalaAI.onboarding.step3.subtitle" = "Yala 在每次回复时与你交流的方式。";
 "yalaAI.onboarding.step3.toneNormalDescription" = "平衡清晰。直陈事实，不加修饰。";
 "yalaAI.onboarding.step3.toneConsiderateDescription" = "温柔贴心。关注你的情绪，为进步喝彩。";
 "yalaAI.onboarding.step3.toneSarcasticDescription" = "幽默直接。带点俏皮地把事情讲清楚。";
-"yalaAI.onboarding.step3.toneNormalQuote" = "本周喝了 3 杯咖啡。预算执行良好。";
-"yalaAI.onboarding.step3.toneConsiderateQuote" = "喝咖啡让你身心愉悦。在预算之内，一切都好。";
-"yalaAI.onboarding.step3.toneSarcasticQuote" = "再来三杯就破纪录了。不过仍在预算内。";
-"yalaAI.onboarding.step4.title" = "选择 Yala 的风格";
-"yalaAI.onboarding.step4.subtitle" = "Yala 在打理你的财务时关注的重点。";
 "yalaAI.onboarding.step4.focusBalancedDescription" = "同样关注支出与收入。";
 "yalaAI.onboarding.step4.focusSaverDescription" = "帮你削减开支，每月多攒一些。";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "任何偏差都会提醒你，避免被动。";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "本月收入足以覆盖支出。节奏不错。";
 "yalaAI.onboarding.step4.focusSaverQuote" = "餐饮开支减少 10%%，每月可省 %@。";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "注意：本月外卖花费比上月更快。";
-"yalaAI.onboarding.step5.title" = "全部就绪！";
-"yalaAI.onboarding.step5.subtitle" = "随时告诉 Yala 你需要什么。";
-"yalaAI.onboarding.step5.tip" = "💡 试试：\"记录一杯 %@ 的咖啡\" 或 \"今天我花了多少？\"";
-"yalaAI.onboarding.step5.cta" = "开始聊天";
 
 // MARK: - Stats Records polish
 
@@ -5455,7 +5444,6 @@
 "subscription.error.verificationFailed" = "无法向 Apple 验证这笔购买。请重试，或使用“恢复购买”。";
 
 /* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
-"panel.aiPill" = "AI";
 
 /* Share-link button: group predates the backend channel — permanent, no link is possible */
 "groups.errors.inviteLegacyGroup" = "此群组来自旧版 Yala，不支持邀请链接。如需通过链接邀请，请创建新群组。";
@@ -7362,3 +7350,25 @@
 "groups.l13.youPayTo" = "你付给";
 "groups.l13.debtA11yMe" = "你付给 %1$@：%2$@";
 "groups.l13.pending.rejectMessageOther" = "我们会删除这笔付款，欠款保持不变。";
+
+/* UX 2.2 · lote 14 (Yala IA) */
+"yalaAI.onboarding.l14.personalize.title" = "按你的方式来";
+"yalaAI.onboarding.l14.personalize.subtitle" = "随时可以更改。";
+"yalaAI.onboarding.l14.personalize.toneHeader" = "说话方式";
+"yalaAI.onboarding.l14.personalize.focusHeader" = "关注重点";
+"yalaAI.onboarding.l14.toneOpener.considerate" = "一步一步来，你做得很好。";
+"yalaAI.onboarding.l14.toneOpener.sarcastic" = "直说吧。";
+"yalaAI.onboarding.l14.consent.title" = "开始之前";
+"yalaAI.onboarding.l14.consent.subtitle" = "为了回答你，Yala AI 会读取你的财务摘要。";
+"yalaAI.onboarding.l14.consent.readsTitle" = "读取什么";
+"yalaAI.onboarding.l14.consent.readsBody" = "最近 13 个月的账户余额和名称、按类别的总计、常用商家、预算和定期付款。";
+"yalaAI.onboarding.l14.consent.useTitle" = "不做什么";
+"yalaAI.onboarding.l14.consent.useBody" = "仅为了回答你而发送给 AI 服务，不会用于训练 AI。";
+"yalaAI.onboarding.l14.consent.decideTitle" = "由你决定";
+"yalaAI.onboarding.l14.consent.decideBody" = "随时可以在“%@”中关闭。";
+"yalaAI.onboarding.l14.consent.cta" = "同意并开始";
+"chat.l14.greetingTwoUses" = "你好，我是 Yala AI。我可以为你做两件事：";
+"chat.l14.logTitle" = "记一笔支出";
+"chat.l14.logBody" = "输入或说出来：“刷卡打车花了 25”";
+"chat.l14.logHint" = "打开键盘输入";
+"chat.l14.askTitle" = "询问你的财务状况";

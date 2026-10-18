@@ -249,7 +249,6 @@ struct RecordsStandaloneView: View {
                                     isVoiceLocked: isVoiceLocked,
                                     isImageLocked: isImageLocked,
                                     isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                                    chatConsentAccepted: appPreferences.aiChatConsentAccepted,
                                     chatFABVisible: appPreferences.chatFABVisible,
                                     onVoiceTap: { showVoiceRecording = true },
                                     onImageTap: { showImageSelection = true },
@@ -266,8 +265,7 @@ struct RecordsStandaloneView: View {
                                         case .consent:    showChatConsentAlert = true
                                         }
                                     },
-                                    onUpgradeChat: { showUpgradeForChat = true },
-                                    onChatConsentNeeded: { showChatConsentAlert = true }
+                                    onUpgradeChat: { showUpgradeForChat = true }
                                 )
                             }
                         }
