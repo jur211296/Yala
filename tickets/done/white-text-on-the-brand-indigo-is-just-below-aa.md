@@ -1,6 +1,6 @@
 ---
 id: white-text-on-the-brand-indigo-is-just-below-aa
-status: backlog
+status: done
 priority: low
 area: "design-system, accesibilidad"
 created: 2026-10-17
@@ -37,3 +37,18 @@ las tarjetas oscuras: 3,8:1). Es una decisión de marca, no un arreglo de una pa
 ## Hecha cuando
 
 Hay decisión y, si es la 1, los botones rellenos con texto blanco miden ≥ 4,5:1.
+
+## Resolución (2026-10-17)
+
+**Decisión de Jürgen (17-oct 16:17):** «Oscurece un poco el acento de marca para que pase AA» (opción 2, en el token).
+
+- `electricIndigo` pasa de `#6366F1` a **`#6063F1`**: mismo tono y saturación, solo menos luminosidad (ΔE 2,2, no se
+  distingue). Blanco encima: **4,61:1** en los cinco temas índigo (Claro, Oscuro, Índigo, Traslúcido, Liquid Glass).
+- Mismo hex en sus copias: `AccentColor` (claro; el oscuro sigue en `#585BEC`), `LaunchBackground`,
+  `WidgetColors.primary` y el color «disponible» del Sankey. La alerta en claro sigue con texto negro: 4,55:1.
+- Como texto: sobre la tarjeta blanca pasa a AA (4,61); sobre negro sigue AA (4,55). Sobre los fondos de Liquid Glass y
+  Traslúcido baja de 4,51/4,39 a 4,37/4,25 — conflicto matemático con el blanco encima, en
+  `indigo-accent-as-small-text-on-dark-themes-is-below-aa`.
+- Rosa, Teal y Minimalista tienen otro acento: `white-text-on-the-rosa-teal-and-minimal-accents-is-below-aa`.
+- Los `#6366F1` que son datos (color por defecto de cuentas y categorías, paletas, seeds) no se tocan.
+- Test: `BrandAccentContrastTests` (contraste por tema resuelto y paridad de las copias).
