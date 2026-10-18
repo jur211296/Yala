@@ -3,9 +3,13 @@
 //  Yala
 //
 //  Pipeline LLM for Yala IA chat assistant — context-rich (Opción B).
-//  Single-step: build FullFinancialContext + 1 LLM call. No function calling.
+//  Single-step: build FullFinancialContext + 1 LLM call. No function calling en la app.
 //  El system prompt incluye TODA la data financiera del user en JSON, así que
 //  el LLM no necesita clasificar intent ni llamar tools.
+//
+//  Modo nube con el flag encendido (`YalaIAChatRouting`): la MISMA petición sale como `chat.explore`, y el gateway le
+//  da al modelo herramientas que leen las tablas del usuario. La app no ejecuta nada: solo cambia la tarea, añade dos
+//  cabeceras y espera más. En privado, nada de esto se toca.
 //
 
 import Foundation
@@ -34,7 +38,8 @@ final class ChatAssistantService {
     private static let rateLimitInterval: TimeInterval = 5
     static let dailyLimit = 75
     private static let maxQuestionLength = 500
-    private static let timeoutSeconds: TimeInterval = 20  // mini con context grande puede tardar más
+    // El tiempo de espera de la respuesta lo da la ruta (`YalaIAChatRoute.timeout`): 20 s el de siempre, 30 s el camino
+    // ampliado de la nube.
 
     // MARK: - Daily Counter
 
@@ -82,9 +87,20 @@ final class ChatAssistantService {
         forceIntent: ChatIntent? = nil
     ) async throws -> ChatAssistantResponse {
         // === Common guards (apply to all 3 paths) ===
+        // Por qué camino sale la pregunta: en privado, siempre `chat.answer` (ni se mira el flag ni la sesión).
+        let route = await YalaIAChatRouting.resolve()
         let client: OpenAI
         do {
-            client = try await ProxyClientFactory.makeOpenAI(task: .chatAnswer)
+            switch route {
+            case .standard:
+                client = try await ProxyClientFactory.makeOpenAI(task: .chatAnswer)
+            case .cloudExplore:
+                client = try await ProxyClientFactory.makeOpenAI(
+                    task: .chatExplore,
+                    extraHeaders: route.extraHeaders,
+                    timeout: route.timeout
+                )
+            }
         } catch {
             throw ChatAssistantError.networkError(error)
         }
@@ -119,7 +135,8 @@ final class ChatAssistantService {
                 currencyCode: currencyCode,
                 converter: converter,
                 includeGroupsInTotal: includeGroupsInTotal,
-                client: client
+                client: client,
+                timeout: route.timeout
             )
             return ChatAssistantResponse(text: text, attachments: nil, intent: .ask)
 
@@ -144,7 +161,8 @@ final class ChatAssistantService {
         currencyCode: String,
         converter: CurrencyConverting,
         includeGroupsInTotal: Bool,
-        client: OpenAI
+        client: OpenAI,
+        timeout: TimeInterval
     ) async throws -> String {
         let needsAnomalies = AnomalyKeywords.matches(question)
 
@@ -192,7 +210,7 @@ final class ChatAssistantService {
             stream: false
         )
 
-        let result = try await callWithTimeout(query, client: client)
+        let result = try await callWithTimeout(query, client: client, timeout: timeout)
         guard let content = result.choices.first?.message.content else {
             throw ChatAssistantError.parseFailed
         }
@@ -332,11 +350,11 @@ final class ChatAssistantService {
 
     // MARK: - Helpers
 
-    private func callWithTimeout(_ query: ChatQuery, client: OpenAI) async throws -> ChatResult {
+    private func callWithTimeout(_ query: ChatQuery, client: OpenAI, timeout: TimeInterval) async throws -> ChatResult {
         try await withThrowingTaskGroup(of: ChatResult.self) { group in
             group.addTask { try await client.chats(query: query) }
             group.addTask {
-                try await Task.sleep(for: .seconds(Self.timeoutSeconds))
+                try await Task.sleep(for: .seconds(timeout))
                 throw ChatAssistantError.timeout
             }
             guard let first = try await group.next() else {

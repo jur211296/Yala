@@ -48,6 +48,9 @@ nonisolated struct RemoteFlagsSnapshot: Codable, Equatable {
     /// `photo.read` del gateway. Optional con default: snapshots viejos decodifican a nil (`PhotoUploadSizing` cae a
     /// su valor por defecto).
     var photoMaxEdge: Int? = nil
+    /// Yala IA en modo nube con herramientas (`chat.explore`). Optional con default: snapshots viejos decodifican a
+    /// nil, y nil es APAGADO en todos los builds (`CloudRemoteFlags.aiCloudExploreEnabled`).
+    var aiCloudExploreRolloutPercent: Int? = nil
     var fetchedAt: Date
 }
 
@@ -57,6 +60,7 @@ nonisolated struct RemoteConfigWireResponse: Codable {
         var cloudModeRolloutPercent: Int?
         var cloudOnboardingChoiceRolloutPercent: Int?
         var groupsBackendRolloutPercent: Int?
+        var aiCloudExploreRolloutPercent: Int?
     }
 
     struct ForceUpdate: Codable {
@@ -159,6 +163,21 @@ nonisolated enum CloudRemoteFlags {
         return decide(\.groupsBackendRolloutPercent)
     }
 
+    /// Yala IA en modo nube con el camino ampliado (`docs/ai-cloud-vs-private-2026-10.md`). **Falla cerrado en TODOS los
+    /// builds**, a diferencia de los tres de arriba: no hereda el «ausente = encendido» de DEV, porque encenderlo
+    /// cambia qué datos llegan al servicio de IA y eso solo lo enciende el servidor a propósito. Bajo test, el override
+    /// o apagado.
+    static var aiCloudExploreEnabled: Bool {
+        if let override = aiCloudExploreEnabledTestOverride { return override }
+        if isRunningTests || isUITestHost { return false }
+        guard let snapshot = CloudRemoteConfigStore.readSnapshot() else { return false }
+        return RemoteFlagDecisionLogic.isEnabled(
+            percent: snapshot.aiCloudExploreRolloutPercent,
+            bucket: RemoteFlagDecisionLogic.stableBucket(seed: CloudRemoteConfigStore.bucketSeed()),
+            absentDefault: false
+        )
+    }
+
     /// **¿Hemos llegado a hablar con el servidor en esta instalación?** No es un flag más: es el término
     /// que separa «la nube está apagada» de «no lo sabemos». Los tres getters de arriba colapsan los dos
     /// casos en `absentDefault` porque un gate cerrado de más no hace daño; un MENSAJE sí, y por eso
@@ -214,21 +233,25 @@ nonisolated enum CloudRemoteFlags {
     nonisolated(unsafe) private static var cloudModeEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var cloudOnboardingChoiceEnabledTestOverride: Bool?
     nonisolated(unsafe) private static var groupsBackendEnabledTestOverride: Bool?
+    nonisolated(unsafe) private static var aiCloudExploreEnabledTestOverride: Bool?
 
     static func _testSetOverrides(
         cloudMode: Bool? = nil,
         onboardingChoice: Bool? = nil,
-        groupsBackend: Bool? = nil
+        groupsBackend: Bool? = nil,
+        aiCloudExplore: Bool? = nil
     ) {
         cloudModeEnabledTestOverride = cloudMode
         cloudOnboardingChoiceEnabledTestOverride = onboardingChoice
         groupsBackendEnabledTestOverride = groupsBackend
+        aiCloudExploreEnabledTestOverride = aiCloudExplore
     }
 
     static func _testResetOverrides() {
         cloudModeEnabledTestOverride = nil
         cloudOnboardingChoiceEnabledTestOverride = nil
         groupsBackendEnabledTestOverride = nil
+        aiCloudExploreEnabledTestOverride = nil
     }
 }
 
@@ -349,6 +372,7 @@ final class RemoteConfigClient {
                 groupsBackendRolloutPercent: wire.flags?.groupsBackendRolloutPercent,
                 minSupportedBuild: wire.forceUpdate?.minSupportedBuild,
                 photoMaxEdge: wire.ai?.photoMaxEdge,
+                aiCloudExploreRolloutPercent: wire.flags?.aiCloudExploreRolloutPercent,
                 fetchedAt: now
             )
             CloudRemoteConfigStore.writeSnapshot(snapshot, defaults: defaults)

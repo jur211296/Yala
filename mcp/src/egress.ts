@@ -15,7 +15,7 @@
  * - Auth, como cliente OAuth del Worker: canjear el código y refrescar.
  * - Auth, con la sesión de solo lectura: `GET /user`, para saber si sigue viva (revocación al momento).
  */
-import type { Env } from "./env";
+import type { SupabaseEnv } from "./supabaseEnv";
 
 export type Fetcher = (input: Request | string | URL, init?: RequestInit) => Promise<Response>;
 
@@ -58,7 +58,7 @@ function describe(input: Request | string | URL, init?: RequestInit): { method: 
   return { method, url: new URL(raw) };
 }
 
-export function isAllowedEgress(env: Env, method: string, url: URL): boolean {
+export function isAllowedEgress(env: SupabaseEnv, method: string, url: URL): boolean {
   if (url.origin !== new URL(env.SUPABASE_URL).origin) return false;
   if (url.username || url.password || url.hash) return false;
   return EGRESS_RULES.some((r) => {
@@ -70,7 +70,7 @@ export function isAllowedEgress(env: Env, method: string, url: URL): boolean {
 }
 
 /** Envuelve el `fetch` de salida: lo que no está en la lista lanza `EgressDenied` sin tocar la red. */
-export function guardSupabase(env: Env, base: Fetcher): Fetcher {
+export function guardSupabase(env: SupabaseEnv, base: Fetcher): Fetcher {
   return async (input, init) => {
     const { method, url } = describe(input, init);
     if (!isAllowedEgress(env, method, url)) throw new EgressDenied(method, `${url.origin}${url.pathname}`);
