@@ -6,7 +6,7 @@
 //  RELLENO del `AccentColor` del catálogo y su TEXTO del tinte de quien la presenta; si el tinte coincide con el relleno,
 //  el texto sale negro (medido en píxeles el 2026-10-17). `alertActionTint` es blanco en oscuro y `electricIndigo` en
 //  claro, así que el catálogo tiene que valer `alertActionIndigo` en oscuro (blanco encima, AA) y `electricIndigo` en
-//  claro (coincide con el tinte: negro encima, 4,70:1, AA). Si divergen, el texto sale del color del tinte sobre un
+//  claro (coincide con el tinte: negro encima, 4,55:1, AA). Si divergen, el texto sale del color del tinte sobre un
 //  relleno casi igual, y no se lee.
 //
 
@@ -32,10 +32,10 @@ struct AlertActionIndigoParityTests {
         return [(value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF]
     }
 
-    /// `(r, g, b)` de 0 a 255 de cada variante del `AccentColor.colorset`, por apariencia (`any` o `dark`). Xcode escribe
-    /// los canales en hex («0x58») o en fracción («0.345»).
-    static func assetRGB() throws -> [String: [Int]] {
-        let url = repoRoot.appendingPathComponent("Yala/Resources/Assets.xcassets/AccentColor.colorset/Contents.json")
+    /// `(r, g, b)` de 0 a 255 de cada variante de un colorset del catálogo (por defecto `AccentColor`), por apariencia
+    /// (`any` o `dark`). Xcode escribe los canales en hex («0x58») o en fracción («0.345»).
+    static func assetRGB(colorset: String = "AccentColor") throws -> [String: [Int]] {
+        let url = repoRoot.appendingPathComponent("Yala/Resources/Assets.xcassets/\(colorset).colorset/Contents.json")
         let data = try Data(contentsOf: url)
         let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         let colors = try #require(json["colors"] as? [[String: Any]])

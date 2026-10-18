@@ -225,7 +225,10 @@ extension Color {
     // MARK: - Primary Brand Colors
 
     /// Electric Indigo: El equilibrio entre la seriedad bancaria y la tecnología moderna.
-    static let electricIndigo = Color(hex: "6366F1")
+    /// Es el acento de los temas índigo, y los botones rellenos llevan texto blanco encima: #6063F1 da 4,61:1 (AA).
+    /// Hasta el 2026-10-17 era #6366F1 (4,47:1); se oscureció solo la luminosidad, mismo tono (ΔE 2,2). Lo fija
+    /// `BrandAccentContrastTests`, junto con las copias del hex (widgets, `AccentColor`, `LaunchBackground`, Sankey).
+    static let electricIndigo = Color(hex: "6063F1")
 
     /// Neon Cyan: Representa el 'dinero digital' y el optimismo.
     static let neonCyan = Color(hex: "00F3FF")
@@ -257,12 +260,12 @@ extension Color {
     // MARK: - Rellenos sólidos del onboarding (UX 2.2 · L1UI, variante 2 elegida por Jürgen el 2026-10-13)
 
     /// Índigo profundo: la tarjeta ELEGIDA del onboarding y las fichas de resultado de la calculadora del saldo.
-    /// Texto blanco encima con contraste AA (#3D36B3). `electricIndigo` con blanco no llega a 4,5.
+    /// Texto blanco encima con contraste AA holgado (#3D36B3, 8,8:1); `electricIndigo` lo pasa justo (4,61:1).
     static let selectedIndigoFill = Color(hex: "3D36B3")
 
     /// Relleno del botón destacado de una alerta del sistema (el «Activar» del aviso de voz y foto) en el modo OSCURO.
     /// La alerta lo toma del `AccentColor` del catálogo, que en oscuro tiene que valer esto y en claro `electricIndigo`
-    /// (lo fija `AlertActionIndigoParityTests`). Con blanco encima da 5,09:1, AA; `electricIndigo` (#6366F1) daba 4,47:1.
+    /// (lo fija `AlertActionIndigoParityTests`). Con blanco encima da 5,09:1, AA (`electricIndigo`, #6063F1, da 4,61:1).
     static let alertActionIndigo = Color(hex: "585BEC")
 
     /// Tinte con el que se presenta esa alerta. Medido en píxeles el 2026-10-17 (iOS 27.0): el texto del botón destacado
@@ -270,7 +273,7 @@ extension Color {
     /// y en oscuro, sea cual sea el relleno (también sobre #3D36B3). No responde a `.tint` ni a `foregroundStyle` en el
     /// propio botón, y el mismo tinte colorea «Política de privacidad» y «Cancelar».
     /// - Oscuro: blanco. El texto del botón sale blanco (5,09:1) y los otros dos también, sobre cristal oscuro.
-    /// - Claro: el mismo `electricIndigo` del relleno, así que el sistema pone negro (4,70:1, AA). Blanco obligaría a
+    /// - Claro: el mismo `electricIndigo` del relleno, así que el sistema pone negro (4,55:1, AA). Blanco obligaría a
     ///   pintar en blanco los otros dos botones sobre el cristal claro, donde no se leen. Es un límite de la alerta del
     ///   sistema; solo lo usa el tema Claro (y Sistema de día): el resto de temas son oscuros.
     static let alertActionTint = Color(uiColor: UIColor { traits in

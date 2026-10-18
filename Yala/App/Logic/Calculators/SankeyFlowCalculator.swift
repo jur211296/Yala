@@ -16,7 +16,7 @@ struct SankeyFlowCalculator {
 
     private static let otherColor = "#8E8E93"
     private static let expensePoolColor = "#FF0080"     // hotPink
-    private static let availableColor = "#6366F1"       // electricIndigo
+    private static let availableColor = "#6063F1"       // electricIndigo (paridad: BrandAccentContrastTests)
     private static let plannedColor = "#A78BFA"         // violet (between hotPink and indigo)
     private static let plannedRecurringColor = "#A78BFA"
     private static let plannedSubscriptionColor = "#C084FC"  // lighter purple
