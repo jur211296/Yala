@@ -7,7 +7,8 @@
  *   (`firstWeekday`, lunes por defecto), mes, año, o las fechas del presupuesto si es «único».
  * - Gasto: port de `BudgetsViewModel.filterTransactions` + `calculateSpending`
  *   (Yala/App/ViewModels/BudgetsViewModel.swift:540, 615). Igual que esa pantalla, NO quita movimientos futuros
- *   ni de cuentas excluidas (el chat de la app sí; la pantalla no). Filtros: cuentas, subcategorías,
+ *   ni de cuentas excluidas (el chat de la app sí; la pantalla no). Filtros: cuentas (con las líneas de una tarjeta
+ *   con varias divisas: `Budget.spendingAccountIDs`, ver accountLines.ts), subcategorías,
  *   etiquetas (basta una en común), naturaleza y gastos compartidos. Solo movimientos con categoría que no sea de
  *   ingreso. Suma de valores absolutos en la divisa del presupuesto, con la tasa de HOY (`convertWithLatestRate`) si
  *   hace falta. Un gasto de grupo cuenta por «tu parte» y su pata de préstamo no cuenta (ver groups.ts).
@@ -20,6 +21,7 @@
  * Diferencia deliberada: el periodo es por días inclusivos. La app termina en el INICIO del periodo siguiente y
  * `DateInterval.contains` lo incluye (ticket `budget-interval-counts-next-period-midnight`). Aquí no.
  */
+import { linesByHead, spendingAccountIds } from "./accountLines";
 import { categoryOf, type Lookup } from "./lookup";
 import { convertOn, type RateBook } from "./fx";
 import { NO_GROUP_ADJUSTMENT, type GroupAdjustment } from "./groups";
@@ -116,6 +118,9 @@ export function budgetStatuses(
     if (day) eligible.push({ tx, day });
   }
 
+  // Una tarjeta con varias divisas: el presupuesto que la guarda cuenta también el gasto de sus líneas.
+  const cardLines = linesByHead(lookup.accounts.values());
+
   const out: BudgetStatus[] = [];
   for (const b of budgets) {
     const active = isBudgetActive(b);
@@ -123,7 +128,7 @@ export function budgetStatuses(
     const currency = (b.currency_code ?? "USD").toUpperCase();
     const limit = num(b.limit_amount) ?? 0;
     const period = budgetPeriod(b, ctx.today, ctx.tz, ctx.firstWeekday);
-    const accounts = new Set(b.account_ids ?? []);
+    const accounts = spendingAccountIds(b.account_ids ?? [], cardLines);
     const subs = new Set(b.subcategory_ids ?? []);
     const tags = new Set(b.tag_refs ?? []);
     const rawNatures = (b.natures ?? []).map((n) => n.trim()).filter((n) => n.length > 0);
@@ -140,7 +145,7 @@ export function budgetStatuses(
       if (day < period.desde || day > period.hasta) continue;
       const category = categoryOf(lookup, tx);
       if (!category || category.is_income === true) continue;
-      if (accounts.size > 0 && !(tx.account_ref && accounts.has(tx.account_ref))) continue;
+      if (accounts.size > 0 && !(tx.account_ref && accounts.has(tx.account_ref.trim().toLowerCase()))) continue;
       if (subs.size > 0 && !(tx.subcategory_ref && subs.has(tx.subcategory_ref))) continue;
       if (tags.size > 0 && !(tx.tag_refs ?? []).some((t) => tags.has(t))) continue;
       if (rawNatures.length > 0 && !natures.includes(effectiveNeed(tx, lookup))) continue;
@@ -188,7 +193,8 @@ export function budgetStatuses(
       estado,
       activo: active,
       filtros: {
-        cuentas: accounts.size,
+        // Las que guarda el presupuesto, como en su editor: las líneas que se cuentan solas no son otra cuenta elegida.
+        cuentas: new Set(b.account_ids ?? []).size,
         subcategorias: subs.size,
         etiquetas: tags.size,
         naturalezas: natures,

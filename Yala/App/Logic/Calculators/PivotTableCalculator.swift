@@ -18,6 +18,9 @@ struct PivotTableCalculator {
     ///   - previousTransactions: Transactions in the previous period (for comparison)
     ///   - hierarchy: Ordered grouping dimensions
     ///   - preferredCurrency: User's preferred currency code
+    ///   - accountGrouping: con `.byCard`, la dimensión de cuenta junta cada tarjeta con varias divisas en una fila,
+    ///     convertida a `preferredCurrency` (entrega 4). Con `.byLine`, cada línea sale como su cuenta, como antes.
+    ///   - cards: a qué tarjeta pertenece cada cuenta (`AccountCardIndex`). Vacío = ninguna cuenta tiene líneas.
     /// - Returns: Root-level pivot nodes
     static func buildTree(
         currentTransactions: [TransactionItem],
@@ -26,7 +29,9 @@ struct PivotTableCalculator {
         preferredCurrency: String,
         allTags: [Tag],
         adjustment: GroupBridgeStatsAdjustment = .none,
-        converter: CurrencyConverting = CurrencyConverter.shared
+        converter: CurrencyConverting = CurrencyConverter.shared,
+        accountGrouping: AccountCardGrouping = .byLine,
+        cards: AccountCardIndex = .empty
     ) -> [PivotNode] {
         guard !hierarchy.isEmpty else { return [] }
 
@@ -39,8 +44,9 @@ struct PivotTableCalculator {
         let currentInput = currentTransactions.filter { !adjustment.isSuppressed($0) }
         let previousInput = previousTransactions.filter { !adjustment.isSuppressed($0) }
 
-        let currentGroups = group(transactions: currentInput, by: dimension, allTags: allTags)
-        let previousGroups = group(transactions: previousInput, by: dimension, allTags: allTags)
+        let cardsForGrouping = accountGrouping == .byCard ? cards : .empty
+        let currentGroups = group(transactions: currentInput, by: dimension, allTags: allTags, cards: cardsForGrouping)
+        let previousGroups = group(transactions: previousInput, by: dimension, allTags: allTags, cards: cardsForGrouping)
 
         // Collect all keys from both periods
         let allKeys = Set(currentGroups.keys).union(previousGroups.keys)
@@ -53,7 +59,15 @@ struct PivotTableCalculator {
             // Los montos pasan por el adjustment (pata real Caso A neteada a `-myShare`). El
             // preferido se resuelve con `CashFlowCalculator.resolvedAmount`: una fila guardada en
             // otra divisa principal se reconvierte en vez de sumarse en su escala.
-            let useOriginalAmount = (dimension == .divisa || dimension == .cuenta)
+            //
+            // Una tarjeta con varias divisas («Por tarjeta», entrega 4) es la excepción de la cuenta: sus líneas están en
+            // divisas distintas y sumarlas en nativo mezclaría soles con dólares, así que se resuelve en la preferida y
+            // la fila lleva «≈» si algún movimiento se convirtió.
+            // Solo si de verdad mezcla divisas: bajo un nodo de divisa (Divisa › Cuenta), o con todos sus movimientos en una,
+            // la tarjeta suma en esa divisa como cualquier cuenta, sin «≈» (review del 2026-10-18).
+            let rowCurrencies = Set((currentTxns + previousTxns).map { normalizeCurrencyCode($0.currencyCode) })
+            let convertsCard = key.isAccountCard && rowCurrencies.count > 1
+            let useOriginalAmount = dimension == .divisa || (dimension == .cuenta && !convertsCard)
             let amountOf: (TransactionItem) -> Double = { tx in
                 useOriginalAmount
                     ? adjustment.amount(tx)
@@ -75,6 +89,8 @@ struct PivotTableCalculator {
             let nodeCurrency: String?
             if dimension == .divisa {
                 nodeCurrency = key.label  // The currency code IS the group label
+            } else if dimension == .cuenta && convertsCard {
+                nodeCurrency = preferredCurrency
             } else if dimension == .cuenta {
                 nodeCurrency = currentTxns.first?.currencyCode ?? previousTxns.first?.currencyCode
             } else {
@@ -93,7 +109,9 @@ struct PivotTableCalculator {
                     preferredCurrency: preferredCurrency,
                     allTags: allTags,
                     adjustment: adjustment,
-                    converter: converter
+                    converter: converter,
+                    accountGrouping: accountGrouping,
+                    cards: cards
                 )
             }
 
@@ -107,7 +125,11 @@ struct PivotTableCalculator {
                 currencyCode: nodeCurrency,
                 children: children,
                 isIncome: key.isIncome,
-                dimension: dimension
+                dimension: dimension,
+                isApproximate: convertsCard
+                    && AccountCardReportLogic.convertsAny(currentTxns.map(\.currencyCode), to: preferredCurrency),
+                previousIsApproximate: convertsCard
+                    && AccountCardReportLogic.convertsAny(previousTxns.map(\.currencyCode), to: preferredCurrency)
             )
         }
 
@@ -159,20 +181,24 @@ struct PivotTableCalculator {
         let iconName: String?
         let colorHex: String?
         let isIncome: Bool
+        /// La fila es una tarjeta con varias divisas entera («Por tarjeta»): se suma en la divisa preferida.
+        var isAccountCard: Bool = false
     }
 
     /// Group transactions by a given dimension.
     /// `allTags`: required Tag catalog for CSV mirror resolution (case `.etiqueta`).
+    /// `cards`: con alguna tarjeta, la cuenta de cada movimiento se cambia por su tarjeta (case `.cuenta`).
     static func group(
         transactions: [TransactionItem],
         by dimension: ReportGroupingDimension,
-        allTags: [Tag]
+        allTags: [Tag],
+        cards: AccountCardIndex = .empty
     ) -> [GroupKey: [TransactionItem]] {
         var groups: [GroupKey: [TransactionItem]] = [:]
         let tagsByID = Tag.byIDLookup(allTags)
 
         for tx in transactions {
-            let keys = groupKeys(for: tx, dimension: dimension, tagsByID: tagsByID)
+            let keys = groupKeys(for: tx, dimension: dimension, tagsByID: tagsByID, cards: cards)
             for key in keys {
                 groups[key, default: []].append(tx)
             }
@@ -185,7 +211,8 @@ struct PivotTableCalculator {
     private static func groupKeys(
         for tx: TransactionItem,
         dimension: ReportGroupingDimension,
-        tagsByID: [UUID: Tag]
+        tagsByID: [UUID: Tag],
+        cards: AccountCardIndex
     ) -> [GroupKey] {
         switch dimension {
         case .tipo:
@@ -226,6 +253,11 @@ struct PivotTableCalculator {
             }
 
         case .cuenta:
+            if let card = cards.card(of: tx.account) {
+                return [GroupKey(
+                    label: card.name, iconName: card.iconName, colorHex: card.colorHex,
+                    isIncome: tx.category?.isIncome ?? false, isAccountCard: true)]
+            }
             let label = tx.account?.name ?? L10n.Report.noAccount
             let icon = tx.account?.iconName
             let color = tx.account?.colorHex

@@ -6762,3 +6762,10 @@
 
 /* Alert button: archive only the card, lines stay as standalone accounts */
 "account.lines.archiveOnlyCard" = "Only the card";
+
+/* Tarjeta con varias divisas, entrega 4: informes, flujo de caja y export por tarjeta */
+"accountCardGrouping.byCard" = "By card";
+"accountCardGrouping.byLine" = "By line";
+"accountCardGrouping.label" = "Cards with several currencies";
+"export.column.card" = "Card";
+"export.column.card.description" = "Card name, if the account is part of a card with several currencies.";

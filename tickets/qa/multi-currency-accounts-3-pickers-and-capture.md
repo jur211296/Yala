@@ -16,7 +16,7 @@ Al registrar un gasto elige «Visa BCP» y la app lo apunta en la línea de la d
 gasto en dólares va a la línea en dólares sin que tenga que pensarlo (decisión 6). En ningún selector,
 filtro ni presupuesto ve su tarjeta partida en dos cuentas.
 
-Contexto y decisiones: [`multi-currency-accounts`](../backlog/multi-currency-accounts.md) y
+Contexto y decisiones: [`multi-currency-accounts`](multi-currency-accounts.md) y
 [`docs/multi-currency-accounts-impact-2026-10.md`](../../docs/multi-currency-accounts-impact-2026-10.md),
 secciones 2.4, 2.8, 2.13-2.15 y 4-6.
 

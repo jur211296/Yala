@@ -15,6 +15,11 @@ export interface AccountRow {
   is_archived: boolean | null;
   exclude_from_statistics: boolean | null;
   is_system_account: boolean | null;
+  /**
+   * Tarjeta con varias divisas: el `sync_id` de la principal si esta cuenta es una LÍNEA (otra divisa de la misma
+   * tarjeta). Nulo en una cuenta normal o en la principal. Opcional porque los fixtures anteriores no lo traen.
+   */
+  parent_account_id?: string | null;
 }
 
 export interface CategoryRow {

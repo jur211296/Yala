@@ -7460,3 +7460,10 @@
 
 /* Alert button: archive only the card, lines stay as standalone accounts */
 "account.lines.archiveOnlyCard" = "Alleen de kaart";
+
+/* Tarjeta con varias divisas, entrega 4: informes, flujo de caja y export por tarjeta */
+"accountCardGrouping.byCard" = "Per kaart";
+"accountCardGrouping.byLine" = "Per lijn";
+"accountCardGrouping.label" = "Kaarten met meerdere valuta's";
+"export.column.card" = "Kaart";
+"export.column.card.description" = "Naam van de kaart, als de rekening bij een kaart met meerdere valuta's hoort.";

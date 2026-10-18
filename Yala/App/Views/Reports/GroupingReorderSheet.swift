@@ -59,6 +59,7 @@ struct GroupingReorderSheet: View {
                                 }
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("report_grouping_add_\(dimension.rawValue)")
                         }
                     }
                 }

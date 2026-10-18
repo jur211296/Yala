@@ -16,7 +16,7 @@ Su tarjeta «Visa BCP» sale una sola vez, con una línea por divisa («S/ −1.
 en su divisa preferida («≈ S/ −1.548»). Puede añadir una línea en otra divisa a cualquier cuenta, y
 unir dos cuentas que ya tenía partidas sin que ningún movimiento cambie.
 
-Contexto y decisiones: [`multi-currency-accounts`](../backlog/multi-currency-accounts.md) y
+Contexto y decisiones: [`multi-currency-accounts`](multi-currency-accounts.md) y
 [`docs/multi-currency-accounts-impact-2026-10.md`](../../docs/multi-currency-accounts-impact-2026-10.md),
 secciones 3 (A), 4-6.
 

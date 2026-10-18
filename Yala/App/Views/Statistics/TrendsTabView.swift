@@ -71,6 +71,9 @@ struct TrendsTabView: View {
     @State private var cashFlowViewType: CashFlowViewType = .total
     @State private var accountCarouselPosition: PersistentIdentifier?
     @State private var currencyCarouselPosition: String?
+    /// La vista por cuenta con una tarjeta con varias divisas: entera o línea a línea (entrega 4, Paso 0 D1-D2).
+    @State private var cashFlowAccountGrouping: AccountCardGrouping = .byCard
+    @State private var hasAccountCards = false
 
     // Period Comparison State
     @State private var currentPeriodPoints: [BarPoint] = []
@@ -1093,6 +1096,7 @@ struct TrendsTabView: View {
                 }
 
             case .byAccount:
+                cashFlowAccountGroupingPicker
                 if cashFlowByAccount.isEmpty {
                     cashFlowEmptyState
                 } else {
@@ -1107,6 +1111,21 @@ struct TrendsTabView: View {
                 }
             }
         }
+    }
+
+    /// «Por tarjeta · Por línea»: solo con alguna tarjeta con líneas. El `onChange` cuelga de aquí y no del `body`.
+    @ViewBuilder
+    private var cashFlowAccountGroupingPicker: some View {
+        if hasAccountCards {
+            AccountCardGroupingPicker(selection: $cashFlowAccountGrouping)
+                .onChange(of: cashFlowAccountGrouping) { _, _ in regroupCashFlowByAccount() }
+        }
+    }
+
+    /// Recalcula con la otra agrupación y vuelve a la primera página: la que estaba puede no existir en la otra.
+    private func regroupCashFlowByAccount() {
+        calculateCashFlowData()
+        accountCarouselPosition = sortedAccountIDs(Array(cashFlowByAccount.keys)).first
     }
 
     private var cashFlowEmptyState: some View {
@@ -1173,6 +1192,7 @@ struct TrendsTabView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(viewType.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("cashflow_view_\(viewType.rawValue)")
     }
 
     @ViewBuilder
@@ -1194,7 +1214,7 @@ struct TrendsTabView: View {
                                     summary: summary,
                                     previousSummary: previousCashFlowByAccount[accountID],
                                     title: account.name,
-                                    currencyCode: account.currencyCode
+                                    currencyCode: summary.currencyCode
                                 )
                                 .containerRelativeFrame(.horizontal)
                             }
@@ -1566,6 +1586,8 @@ struct TrendsTabView: View {
     // MARK: - Cash Flow Data Calculation
 
     private func calculateCashFlowData() {
+        let cards = AccountCardIndex(accounts: accounts)
+        if cards.hasCards != hasAccountCards { hasAccountCards = cards.hasCards }
         // Skip if no transactions (likely during data wipe)
         guard !allTransactions.isEmpty else {
             cashFlowSummary = nil
@@ -1632,19 +1654,7 @@ struct TrendsTabView: View {
         if newCashFlow != cashFlowSummary { cashFlowSummary = newCashFlow }
 
         // 2. Calculate cash flow BY ACCOUNT (single-pass grouping: O(n) instead of O(a×n))
-        let groupedByAccount = Dictionary(grouping: filtered) { $0.account?.persistentModelID }
-        var byAccount: [PersistentIdentifier: CashFlowSummary] = [:]
-        for account in accounts {
-            let accountTransactions = groupedByAccount[account.persistentModelID] ?? []
-            let summary = CashFlowCalculator.calculateCashFlow(
-                transactions: accountTransactions,
-                interval: interval,
-                grouping: cashFlowGrouping,
-                currencyCode: account.currencyCode,
-                adjustment: adjustment
-            )
-            byAccount[account.persistentModelID] = summary
-        }
+        let byAccount = cashFlowByAccountSummaries(filtered, interval: interval, adjustment: adjustment, cards: cards)
         if byAccount != cashFlowByAccount { cashFlowByAccount = byAccount }
 
         // 3. Calculate cash flow BY CURRENCY (single-pass grouping: O(n) instead of O(c×n))
@@ -1668,6 +1678,32 @@ struct TrendsTabView: View {
             currentFiltered: filtered,
             currentInterval: interval
         )
+    }
+
+    /// El flujo de caja de cada cuenta (`AccountCardReportLogic.cashFlowByAccount`): con «Por tarjeta», cada tarjeta con
+    /// varias divisas una vez, convertida a la divisa preferida.
+    private func cashFlowByAccountSummaries(
+        _ transactions: [TransactionItem],
+        interval: DateInterval,
+        adjustment: GroupBridgeStatsAdjustment,
+        cards: AccountCardIndex
+    ) -> [PersistentIdentifier: CashFlowSummary] {
+        AccountCardReportLogic.cashFlowByAccount(
+            transactions: transactions,
+            accounts: accounts,
+            cards: cards,
+            grouping: cashFlowAccountGrouping,
+            preferredCurrency: defaultCurrencyCode,
+            id: \.persistentModelID
+        ) { accountTransactions, currencyCode in
+            CashFlowCalculator.calculateCashFlow(
+                transactions: accountTransactions,
+                interval: interval,
+                grouping: cashFlowGrouping,
+                currencyCode: currencyCode,
+                adjustment: adjustment
+            )
+        }
     }
 
     /// Calculate previous period cash flow summary for VariationChip.
@@ -1739,20 +1775,8 @@ struct TrendsTabView: View {
         )
 
         // 2. Calculate previous period cash flow BY ACCOUNT (single-pass grouping)
-        let prevGroupedByAccount = Dictionary(grouping: previousFiltered) { $0.account?.persistentModelID }
-        var byAccount: [PersistentIdentifier: CashFlowSummary] = [:]
-        for account in accounts {
-            let accountTransactions = prevGroupedByAccount[account.persistentModelID] ?? []
-            let summary = CashFlowCalculator.calculateCashFlow(
-                transactions: accountTransactions,
-                interval: previousInterval,
-                grouping: cashFlowGrouping,
-                currencyCode: account.currencyCode,
-                adjustment: adjustment
-            )
-            byAccount[account.persistentModelID] = summary
-        }
-        previousCashFlowByAccount = byAccount
+        previousCashFlowByAccount = cashFlowByAccountSummaries(
+            previousFiltered, interval: previousInterval, adjustment: adjustment, cards: AccountCardIndex(accounts: accounts))
 
         // 3. Calculate previous period cash flow BY CURRENCY (single-pass grouping)
         let prevGroupedByCurrency = Dictionary(grouping: previousFiltered) { $0.currencyCode }

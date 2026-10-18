@@ -233,6 +233,7 @@ struct FinancialReportView: View {
             VStack(spacing: DS.Spacing.xl) {
                 filterBar
                 GroupingChipsBar(state: $viewModel.groupingState)
+                accountCardGroupingPicker
 
                 if viewModel.hasData {
                     pivotTable
@@ -257,6 +258,16 @@ struct FinancialReportView: View {
             .yalaSafeBottomPadding()
         }
         .scrollViewGlassEdges()
+    }
+
+    /// «Por tarjeta · Por línea» (entrega 4): solo con la agrupación por cuenta puesta y alguna tarjeta con líneas. El
+    /// `onChange` cuelga de aquí y no del `body`, que está al límite del type-checker.
+    @ViewBuilder
+    private var accountCardGroupingPicker: some View {
+        if viewModel.hasAccountCards && viewModel.groupingState.isActive(.cuenta) {
+            AccountCardGroupingPicker(selection: $viewModel.accountCardGrouping)
+                .onChange(of: viewModel.accountCardGrouping) { _, _ in recalculate() }
+        }
     }
 
     private var pivotTable: some View {

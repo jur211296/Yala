@@ -49,7 +49,8 @@ struct PivotRowView: View {
                     font: level == 0
                         ? DS.Typography.label.weight(.semibold)
                         : DS.Typography.labelSmall.weight(.medium),
-                    tint: node.isIncome ? .color(Color.electricIndigo) : .primary
+                    tint: node.isIncome ? .color(Color.electricIndigo) : .primary,
+                    isEstimate: node.isApproximate
                 )
 
                 if let previousAmount = node.previousAmount {
@@ -58,11 +59,15 @@ struct PivotRowView: View {
                         currencyCode: displayCurrency,
                         font: DS.Typography.captionSmall,
                         secondaryFont: DS.Typography.captionSmall,
-                        tint: .secondary
+                        tint: .secondary,
+                        isEstimate: node.previousIsApproximate
                     )
                 }
             }
             .frame(minWidth: 80, alignment: .trailing)
+            // Con la fila justa (texto grande) cede el nombre y no la cifra: el «≈» de una tarjeta con varias divisas
+            // (entrega 4) la alarga, y sin esto salía «≈ S/ -1,5…80».
+            .layoutPriority(1)
 
             // Variation chip
             if showVariations && showsComparison {
@@ -80,6 +85,7 @@ struct PivotRowView: View {
         .padding(.vertical, DS.Spacing.sm)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("pivot_row_\(node.dimension.rawValue)_\(node.label)")
     }
 
     // MARK: - Icon View

@@ -79,6 +79,8 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
     case amount
     case currency
     case account
+    /// La tarjeta con varias divisas de la cuenta (entrega 4). Solo se ofrece si hay alguna tarjeta con líneas.
+    case card
     case category
     case subcategory
     case tags
@@ -96,6 +98,7 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .amount: return "amount"
         case .currency: return "currency"
         case .account: return "account"
+        case .card: return "card"
         case .category: return "category"
         case .subcategory: return "subcategory"
         case .tags: return "tags"
@@ -112,6 +115,7 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .amount: return L10n.Export.columnAmount
         case .currency: return L10n.Export.columnCurrency
         case .account: return L10n.Export.columnAccount
+        case .card: return L10n.Export.columnCard
         case .category: return L10n.Export.columnCategory
         case .subcategory: return L10n.Export.columnSubcategory
         case .tags: return L10n.Export.columnTags
@@ -128,6 +132,7 @@ enum ExportColumn: String, CaseIterable, Hashable, Identifiable {
         case .amount: return L10n.Export.columnAmountDesc
         case .currency: return L10n.Export.columnCurrencyDesc
         case .account: return L10n.Export.columnAccountDesc
+        case .card: return L10n.Export.columnCardDesc
         case .category: return L10n.Export.columnCategoryDesc
         case .subcategory: return L10n.Export.columnSubcategoryDesc
         case .tags: return L10n.Export.columnTagsDesc
@@ -148,9 +153,16 @@ struct ExportColumns: Equatable {
     /// Orden base para construir el encabezado del CSV.
     static let defaultOrder: [ExportColumn] = ExportColumn.allCases
 
-    /// Estado por defecto: todas las columnas activas.
+    /// Estado por defecto: todas las columnas activas menos la de tarjeta, que solo existe para quien tiene una tarjeta
+    /// con varias divisas: el asistente la enciende al ver una (`ExportColumnsStepView`). Sin tarjetas, el fichero es el
+    /// de siempre, también en la copia de «exportar todo» del cierre de sesión.
     static var `default`: ExportColumns {
-        ExportColumns(activeColumns: Set(ExportColumn.allCases))
+        ExportColumns(activeColumns: Set(ExportColumn.allCases).subtracting([.card]))
+    }
+
+    /// Las columnas que el asistente ofrece, en su orden: sin tarjetas, la de tarjeta no sale.
+    static func offeredOrder(hasAccountCards: Bool) -> [ExportColumn] {
+        hasAccountCards ? defaultOrder : defaultOrder.filter { $0 != .card }
     }
 
     /// Inicializador principal.

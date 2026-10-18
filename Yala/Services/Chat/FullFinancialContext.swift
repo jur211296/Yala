@@ -92,9 +92,29 @@ extension FullFinancialContext {
         }
     }
 
+    /// Una cuenta. Si es una tarjeta con varias divisas (entrega 4), `balance` y `currency` son los de su principal,
+    /// `lines` trae las demás divisas y `card_total` lo suma todo en la divisa preferida. En una cuenta sin líneas los
+    /// tres campos nuevos no se escriben y el JSON es el de siempre.
     struct AccountEntry: Codable, Equatable {
         let name: String
         let type: String
+        let balance: Double
+        let currency: String
+        var lines: [LineEntry]? = nil
+        /// Principal y líneas convertidas a la divisa preferida con la tasa más reciente: un total aproximado.
+        var cardTotal: Double? = nil
+        var cardTotalIsApproximate: Bool? = nil
+
+        enum CodingKeys: String, CodingKey {
+            case name, type, balance, currency, lines
+            case cardTotal = "card_total"
+            case cardTotalIsApproximate = "card_total_is_approximate"
+        }
+    }
+
+    /// Una línea de una tarjeta: su saldo en su divisa.
+    struct LineEntry: Codable, Equatable {
+        let name: String
         let balance: Double
         let currency: String
     }

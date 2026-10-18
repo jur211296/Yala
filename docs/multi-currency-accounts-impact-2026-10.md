@@ -1,6 +1,6 @@
 # Una cuenta con más de una divisa: análisis de impacto (2026-10-08)
 
-Ticket: [`multi-currency-accounts`](../tickets/backlog/multi-currency-accounts.md). Medido sobre el
+Ticket: [`multi-currency-accounts`](../tickets/qa/multi-currency-accounts.md). Medido sobre el
 árbol `e755b0d64` (`2.1` tras el PR #400). **No se ha tocado código ni se ha compilado nada.**
 
 > **Decidido (2026-10-10).** Jürgen eligió **A1** el 2026-10-09 a las 16:19 (Lima) y contestó las
@@ -767,7 +767,7 @@ la 3 y la 4 dependen de la 1.
    - Filtros y presupuestos que incluyen las líneas al elegir la tarjeta.
    - Formulario, chat, voz, imagen, Siri y Apple Pay: se elige la tarjeta y la divisa del importe
      decide la línea.
-4. **[`multi-currency-accounts-4-reports-and-export`](../tickets/backlog/multi-currency-accounts-4-reports-and-export.md):
+4. **[`multi-currency-accounts-4-reports-and-export`](../tickets/qa/multi-currency-accounts-4-reports-and-export.md):
    informes.** Prioridad `medium`.
    - Tabla de informes y flujo de caja por tarjeta o por línea.
    - Columna de tarjeta en el export.

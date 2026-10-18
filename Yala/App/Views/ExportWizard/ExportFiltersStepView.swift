@@ -199,7 +199,7 @@ struct ExportFiltersStepView: View {
 
     private func syncAccountsSelection() {
         if !hasInitializedAccounts && !viewModel.allAccounts.isEmpty {
-            selectedAccounts = Set(viewModel.allAccounts.map { $0.persistentModelID })
+            selectedAccounts = viewModel.initialAccountSelection
             hasInitializedAccounts = true
         }
     }
@@ -230,7 +230,7 @@ struct ExportFiltersStepView: View {
             icon: "creditcard",
             title: L10n.Settings.accounts,
             status: selectedAccountsText,
-            items: viewModel.allAccounts,
+            items: viewModel.offeredAccounts,
             showEmptyPlaceholder: false
         ) { account in
             accountChip(account)
@@ -239,14 +239,8 @@ struct ExportFiltersStepView: View {
             syncAccountsSelection()
         }
         .onChange(of: selectedAccounts) { _, newAccountIDs in
-            if newAccountIDs.isEmpty {
-                selectedCurrencies = Set(CurrencyCode.allCases)
-            } else {
-                let selected = viewModel.allAccounts.filter { newAccountIDs.contains($0.persistentModelID) }
-                let available = Set(
-                    selected.map { CurrencyCode(rawValue: $0.currencyCode) ?? .pen })
-                selectedCurrencies = available
-            }
+            // Las divisas de todo lo que se exporta: elegir la tarjeta ofrece las de todas sus líneas.
+            selectedCurrencies = Set(viewModel.availableCurrencies(selectedAccounts: newAccountIDs))
         }
     }
 
@@ -254,11 +248,7 @@ struct ExportFiltersStepView: View {
         let isSelected = selectedAccounts.contains(account.persistentModelID)
 
         return Button {
-            if isSelected {
-                selectedAccounts.remove(account.persistentModelID)
-            } else {
-                selectedAccounts.insert(account.persistentModelID)
-            }
+            selectedAccounts = viewModel.toggling(account, in: selectedAccounts)
         } label: {
             Text(account.name)
                 .font(DS.Typography.subheadline)
@@ -273,6 +263,8 @@ struct ExportFiltersStepView: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("export_account_chip_\(account.name)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var categoriesContent: some View {
@@ -393,6 +385,7 @@ struct ExportFiltersStepView: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("export_currency_chip_\(currency.rawValue)")
     }
 
     private var availableCurrencies: [CurrencyCode] {

@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (957)
+## Index (960)
 
 | id | status | path |
 |---|---|---|
@@ -336,8 +336,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | exchange-rate-detail-shows-zero-for-low-denomination-currencies | done | tickets/done/exchange-rate-detail-shows-zero-for-low-denomination-currencies.md |
 | export-anchor-accepts-events-from-any-container | backlog | tickets/backlog/export-anchor-accepts-events-from-any-container.md |
 | export-errors-are-hardcoded-in-spanish | done | tickets/done/export-errors-are-hardcoded-in-spanish.md |
+| export-filters-reset-when-the-text-size-changes | backlog | tickets/backlog/export-filters-reset-when-the-text-size-changes.md |
 | export-filters-say-1-seleccionadas | backlog | tickets/backlog/export-filters-say-1-seleccionadas.md |
 | exportable-insights | backlog | tickets/backlog/exportable-insights.md |
+| exported-csv-cannot-be-imported-back | backlog | tickets/backlog/exported-csv-cannot-be-imported-back.md |
 | external-entry-panel-link-loses-the-typed-amount-intermittently | backlog | tickets/backlog/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | faq-says-long-press-starts-bulk-edit | done | tickets/done/faq-says-long-press-starts-bulk-edit.md |
@@ -619,11 +621,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
 | month-year-titles-capitalize-every-word | backlog | tickets/backlog/month-year-titles-capitalize-every-word.md |
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
-| multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
+| multi-currency-accounts | qa | tickets/qa/multi-currency-accounts.md |
 | multi-currency-accounts-1-model-and-sync | done | tickets/done/multi-currency-accounts-1-model-and-sync.md |
 | multi-currency-accounts-2-card-view | qa | tickets/qa/multi-currency-accounts-2-card-view.md |
 | multi-currency-accounts-3-pickers-and-capture | qa | tickets/qa/multi-currency-accounts-3-pickers-and-capture.md |
-| multi-currency-accounts-4-reports-and-export | backlog | tickets/backlog/multi-currency-accounts-4-reports-and-export.md |
+| multi-currency-accounts-4-reports-and-export | qa | tickets/qa/multi-currency-accounts-4-reports-and-export.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
 | needsrelaunch-hides-the-groups-section | done | tickets/done/needsrelaunch-hides-the-groups-section.md |
 | neutral-boot-hands-owner-prefs-to-whoever-signs-in-next | done | tickets/done/neutral-boot-hands-owner-prefs-to-whoever-signs-in-next.md |
@@ -754,6 +756,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reopened-balance-calculator-reads-a-grouped-amount-as-zero | backlog | tickets/backlog/reopened-balance-calculator-reads-a-grouped-amount-as-zero.md |
 | repair-queue-has-no-exit-for-partial-rate-rows | done | tickets/done/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | done | tickets/done/reparacion-de-tasas-no-avisa-al-panel.md |
+| report-grouping-sheet-row-center-does-not-respond | backlog | tickets/backlog/report-grouping-sheet-row-center-does-not-respond.md |
 | rescue-discarded-groups-pull | discarded | tickets/discarded/rescue-discarded-groups-pull.md |
 | resolved-amount-trusts-a-zero-converted-amount | done | tickets/done/resolved-amount-trusts-a-zero-converted-amount.md |
 | restore-back-and-reenter-closes-the-live-session-window | done | tickets/done/restore-back-and-reenter-closes-the-live-session-window.md |
