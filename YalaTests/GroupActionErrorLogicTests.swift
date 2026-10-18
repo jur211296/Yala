@@ -163,15 +163,28 @@ struct GroupsLot12WiringTests {
         #expect(!src.contains("ErrorMessage = error.localizedDescription"), "\(ruta) volvió a pintar el error crudo")
     }
 
-    /// Las dos superficies que acuñan el enlace clasifican el fallo en vez de culpar siempre a la conexión.
+    /// Las dos superficies que acuñan el enlace clasifican el fallo en vez de culpar siempre a la conexión. Desde la
+    /// auditoría UX 2.2 (L12-10) la de Miembros acuña por `GroupInviteLinkMaker`, que comparte con la hoja de grupo
+    /// recién creado.
     @Test(arguments: [
-        "Yala/App/Views/Groups/GroupMembersView.swift",
+        "Yala/Services/Groups/GroupInviteLinkMaker.swift",
         "Yala/App/ViewModels/GroupDetailViewModel.swift",
     ])
     func inviteSurfaces_classifyTheFailure(ruta: String) throws {
         let src = try fuente(ruta)
-        #expect(src.contains("createShareLink"), "\(ruta) ya no acuña el enlace")
+        #expect(src.contains("createInviteLink("), "\(ruta) ya no acuña el enlace")
         #expect(src.contains("GroupActionErrorLogic.inviteMessage(for: error)"))
+    }
+
+    /// Miembros y la hoja «está listo» acuñan por el mismo sitio: una copia propia del guard divergiría.
+    @Test(arguments: [
+        "Yala/App/Views/Groups/GroupMembersView.swift",
+        "Yala/App/Views/Groups/GroupCreatedInviteSheet.swift",
+    ])
+    func inviteCallers_goThroughTheSharedMaker(ruta: String) throws {
+        let src = try fuente(ruta)
+        #expect(src.contains("GroupInviteLinkMaker.make(for: group"), "\(ruta) no acuña por el sitio común")
+        #expect(!src.contains("GroupBackendInviteService("), "\(ruta) volvió a acuñar por su cuenta")
     }
 
     /// El estado vacío de la pestaña escucha el aviso del consent y lo lee al decidirse.

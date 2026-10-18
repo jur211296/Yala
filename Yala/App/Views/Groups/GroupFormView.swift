@@ -19,6 +19,9 @@ struct GroupFormView: View {
     // MARK: - Input
 
     let group: SplitGroup?
+    /// Solo al CREAR: el grupo recién nacido, antes de cerrar la hoja. Quien la presentó lo usa para proponer invitar
+    /// en cuanto la hoja se cierre (auditoría UX 2.2 · L12-10).
+    var onCreated: ((SplitGroup) -> Void)? = nil
 
     // MARK: - Form State
 
@@ -295,7 +298,7 @@ struct GroupFormView: View {
                     // → yala_bad_input permanente si vacío).
                     let profile = UserDefaults.standard.string(forKey: "userName") ?? ""
                     let displayName = profile.isEmpty ? L10n.Profile.defaultName : profile
-                    _ = try await GroupBackendMembershipService(
+                    let created = try await GroupBackendMembershipService(
                         client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
                         .createGroup(
                             name: trimmedName,
@@ -313,6 +316,8 @@ struct GroupFormView: View {
                     // GroupService.createGroup) — replicarlos aquí para no regresionar la UX.
                     SessionState.shared.incrementDataVersion()
                     NudgeService.shared.recordGroupJoinIfNeeded()
+                    // Antes de cerrar la hoja: su `onDismiss` tiene que encontrar el grupo ya apuntado.
+                    onCreated?(created)
                 case .needsConsent:
                     dismiss()
                     RouterEntryGate.shared.submit(.presentGroupsConsent(pendingJoin: ""))

@@ -71,6 +71,13 @@ struct GroupsContainerView: View {
     /// Sube cuando el consent de Grupos cambia en disco (`GroupsConsentState.didChangeNotification`). El estado vacío lo
     /// lee para volver a decidirse: `GroupsConsentState.isAccepted` es `UserDefaults` y no repinta nada por sí solo.
     @State private var consentRevision = 0
+    /// L12-10 · el grupo que el formulario acaba de crear, apuntado ANTES de que la hoja se cierre. Al cerrarse pasa a
+    /// `groupReadyToInvite` (encadenado por su `onDismiss`: dos hojas del mismo ancla a la vez no se presentan).
+    @State private var groupAwaitingInviteSheet: SplitGroup?
+    @State private var groupReadyToInvite: SplitGroup?
+    #if DEBUG
+    @State private var didPresentUITestCreatedSheet = false
+    #endif
 
     // MARK: - Body
 
@@ -98,11 +105,19 @@ struct GroupsContainerView: View {
                     ProgressView()
                         .accessibilityIdentifier("groups_loading_spinner")
                 } else if viewModel.activeGroups.isEmpty && viewModel.archivedGroups.isEmpty {
-                    emptyState(standardAccessibilityID: "groups_empty_state")
+                    // L12-2: la tarjeta con los pasos es más alta que el estado vacío de antes; con el texto grande o en
+                    // un SE no cabe sin desplazarse. Cuando cabe, queda centrada y sin scroll.
+                    GeometryReader { proxy in
+                        ScrollView {
+                            emptyState(standardAccessibilityID: "groups_empty_state", hasArchivedGroups: false)
+                                .frame(minHeight: proxy.size.height)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
+                    }
                 } else if viewModel.activeGroups.isEmpty {
                     // Only archived groups exist
                     VStack(spacing: DS.Spacing.xl) {
-                        emptyState(standardAccessibilityID: nil)
+                        emptyState(standardAccessibilityID: nil, hasArchivedGroups: true)
                         archivedGroupsSection
                             .padding(.horizontal, DS.Spacing.lg)
                     }
@@ -227,8 +242,16 @@ struct GroupsContainerView: View {
             }
             .sheet(isPresented: $viewModel.showCreateGroup, onDismiss: {
                 viewModel.loadData()
+                presentCreatedGroupInviteIfPending()
             }) {
-                GroupFormView(group: nil)
+                GroupFormView(group: nil, onCreated: { receiveCreatedGroup($0) })
+            }
+            .sheet(item: $groupReadyToInvite, onDismiss: {
+                // El aviso de notificaciones de grupo esperó a esta hoja (salta con el primer grupo): ahora sí.
+                maybeShowGroupsNotificationPrompt()
+            }) { group in
+                GroupCreatedInviteSheet(group: group, members: viewModel.activeMembers(for: group))
+                    .yalaSheetDetents([.medium])
             }
             .sheet(item: $expenseComposerPayload, onDismiss: {
                 // El prompt de notificaciones se difirió para no colisionar con este
@@ -343,6 +366,7 @@ struct GroupsContainerView: View {
             .onChange(of: viewModel.groups.count, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
                 openExpenseComposerIfRequested()
+                presentUITestCreatedSheetIfRequested()
             }
             .alert(L10n.Groups.Notifications.promptTitle, isPresented: $showNotificationPrompt) {
                 Button(L10n.Groups.Notifications.promptEnable) {
@@ -460,37 +484,71 @@ struct GroupsContainerView: View {
     /// va en el CONTENEDOR y pisa el del botón interior** (regla medida en `testing.md`): un XCUITest que
     /// busque el id declarado en `YalaEmptyState` no lo encuentra en el árbol.
     @ViewBuilder
-    private func emptyState(standardAccessibilityID: String?) -> some View {
+    private func emptyState(standardAccessibilityID: String?, hasArchivedGroups: Bool) -> some View {
         // Dependencia explícita del consent: sin esta lectura el `switch` no se re-evalúa al aceptarlo.
         let _ = consentRevision
-        switch GroupsEmptyStateLogic.decide(
+        let kind = GroupsEmptyStateLogic.decide(
             flagOn: CloudSyncFlags.groupsBackendEnabled,
             hasSeenEducational: hasSeenGroupsEducational,
             hadSessionEver: GroupsSessionHistoryMarker.hadSessionEver(),
             hasSession: CloudAuthService.shared.hasSession,
             isConsented: GroupsConsentState.isAccepted,
             hasAssociatedAccount: GroupsAccountAssociation.shared.hasAssociation
-        ) {
+        )
+        // L12-2: los cinco estados comparten la tarjeta; los del camino hacia el primer grupo marcan su paso.
+        let card = GroupsEmptyStepsLogic.card(
+            for: kind,
+            flagOn: CloudSyncFlags.groupsBackendEnabled,
+            hasArchivedGroups: hasArchivedGroups,
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted
+        )
+        switch kind {
         case .standard:
-            let base = YalaEmptyState.noGroups { Task { await requestCreateGroup() } }
+            let base = GroupsEmptyStepsCard(
+                card: card,
+                title: L10n.Groups.Empty.title,
+                message: L10n.Groups.Empty.message,
+                actionTitle: L10n.Groups.Empty.action
+            ) { Task { await requestCreateGroup() } }
             if let standardAccessibilityID {
                 base.accessibilityIdentifier(standardAccessibilityID)
             } else {
                 base
             }
         case .needsEducational:
-            YalaEmptyState.groupsNeedsEducational { showGroupsOnboarding = true }
+            GroupsEmptyStepsCard(
+                card: card,
+                title: L10n.Groups.Empty.NeedsEducational.title,
+                message: L10n.Groups.Empty.NeedsEducational.message,
+                actionTitle: L10n.UXL12.stepsTellMe
+            ) { showGroupsOnboarding = true }
                 .accessibilityIdentifier("groups_empty_state_educational")
         case .signInToView:
-            YalaEmptyState.groupsSignedOut { requestGroupsSignIn() }
+            GroupsEmptyStepsCard(
+                card: card,
+                title: L10n.Groups.Empty.SignedOut.title,
+                message: L10n.Groups.Empty.SignedOut.message,
+                actionTitle: L10n.Groups.Empty.SignedOut.action
+            ) { requestGroupsSignIn() }
                 .accessibilityIdentifier("groups_empty_state_signin")
         case .createAccount:
             // Mismo intent que la re-entrada: `GroupsSignInView` es la pantalla que CREA la cuenta además
             // de recuperarla. Lo que cambia es el copy, que es justo lo que estaba mal.
-            YalaEmptyState.groupsCreateAccount { requestGroupsSignIn() }
+            GroupsEmptyStepsCard(
+                card: card,
+                title: L10n.Groups.Empty.CreateAccount.title,
+                message: L10n.Groups.Empty.CreateAccount.message,
+                actionTitle: L10n.Groups.Empty.CreateAccount.action
+            ) { requestGroupsSignIn() }
                 .accessibilityIdentifier("groups_empty_state_create_account")
         case .needsConsent:
-            YalaEmptyState.groupsNeedsConsent { requestGroupsConsent() }
+            GroupsEmptyStepsCard(
+                card: card,
+                title: L10n.Groups.Empty.NeedsConsent.title,
+                message: L10n.Groups.Empty.NeedsConsent.message,
+                actionTitle: L10n.UXL12.stepsTellMe
+            ) { requestGroupsConsent() }
                 .accessibilityIdentifier("groups_empty_state_consent")
         }
     }
@@ -628,9 +686,38 @@ struct GroupsContainerView: View {
         guard !appPreferences.hasSeenGroupsNotificationPrompt,
               !viewModel.activeGroups.isEmpty,
               !navigation.pendingNewGroupExpense,
-              expenseComposerPayload == nil
+              expenseComposerPayload == nil,
+              // L12-10: con un grupo recién creado la hoja «está listo» va primero; el aviso espera a su `onDismiss`.
+              groupAwaitingInviteSheet == nil,
+              groupReadyToInvite == nil
         else { return }
         showNotificationPrompt = true
+    }
+
+    /// L12-10 · el formulario acaba de crear un grupo. Lo normal es que siga abierto (el grupo espera a su `onDismiss`);
+    /// si la persona lo cerró mientras se guardaba, ese `onDismiss` ya pasó y la hoja se abre aquí.
+    private func receiveCreatedGroup(_ group: SplitGroup) {
+        if viewModel.showCreateGroup {
+            groupAwaitingInviteSheet = group
+        } else {
+            groupReadyToInvite = group
+        }
+    }
+
+    /// L12-10 · al cerrarse el formulario: si creó un grupo, la hoja que propone invitar. Cancelar no dispara nada.
+    private func presentCreatedGroupInviteIfPending() {
+        guard let created = groupAwaitingInviteSheet else { return }
+        groupAwaitingInviteSheet = nil
+        groupReadyToInvite = created
+    }
+
+    private func presentUITestCreatedSheetIfRequested() {
+        #if DEBUG
+        guard UITestHooks.presentGroupCreatedSheet, !didPresentUITestCreatedSheet,
+              let first = viewModel.activeGroups.first else { return }
+        didPresentUITestCreatedSheet = true
+        groupReadyToInvite = first
+        #endif
     }
 
     private func handleNudgeAction(_ nudge: NudgeType) {

@@ -31,7 +31,14 @@ struct GroupMembersView: View {
     // GroupDetailView y quedaría oculto detrás de esta sheet.
     @State private var isCreatingShare = false
     @State private var shareURL: URL?
-    @State private var showShareSheet = false
+    /// `.sheet(item:)`: con `isPresented` y el enlace en otro `@State`, la hoja de compartir puede salir vacía (regla de
+    /// `swiftui-ds.md`).
+    @State private var shareItem: ShareItem?
+
+    private struct ShareItem: Identifiable {
+        let id = UUID()
+        let url: URL
+    }
     @State private var showShareError = false
     @State private var shareErrorMessage: String = ""
 
@@ -84,10 +91,8 @@ struct GroupMembersView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showShareSheet) {
-                if let url = shareURL {
-                    ActivityView(activityItems: [url])
-                }
+            .sheet(item: $shareItem) { item in
+                ActivityView(activityItems: [item.url])
             }
             .sheet(isPresented: $showOpeningBalanceEditor, onDismiss: { viewModel.loadData() }) {
                 GroupOpeningBalanceFormView(
@@ -185,6 +190,13 @@ struct GroupMembersView: View {
         let offersRoleChange = GroupService.shared.offersRoleChange(in: group)
         return SectionBox(title: L10n.Groups.Settings.members) {
             VStack(spacing: DS.Spacing.none) {
+                // L12-13 (decisión de Jürgen del 15-oct, variante 2): invitar es lo primero que se ve al abrir
+                // Miembros, con lo que pasa al tocar. Antes era la última fila, en texto, con un aviso de un «acceso por
+                // enlace» que no se puede apagar en ningún sitio.
+                if group.isOwner && canActAsAdmin {
+                    inviteCard
+                }
+
                 ForEach(viewModel.visibleMembers, id: \.id) { member in
                     GroupMemberRow(
                         member: member,
@@ -220,45 +232,41 @@ struct GroupMembersView: View {
                             .padding(.leading, DS.FormRow.paddingH)
                     }
                 }
-
-                // Invite by link
-                if group.isOwner && canActAsAdmin {
-                    Divider()
-                    Button {
-                        DS.Haptic.light()
-                        Task { await createShareLink() }
-                    } label: {
-                        HStack(spacing: DS.Spacing.md) {
-                            Image(systemName: "link.badge.plus")
-                                .font(DS.Typography.title2)
-                                .foregroundStyle(.thAccent)
-
-                            Text(isCreatingShare ? L10n.Groups.Settings.generatingInvite : L10n.Groups.Settings.invite)
-                                .font(DS.Typography.body)
-                                .foregroundStyle(.thAccent)
-
-                            Spacer()
-
-                            if isCreatingShare {
-                                ProgressView()
-                            }
-                        }
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.vertical, DS.FormRow.paddingV)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isCreatingShare)
-
-                    Text(L10n.Groups.Settings.inviteLinkHint)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, DS.FormRow.paddingH)
-                        .padding(.bottom, DS.Spacing.sm)
-                }
             }
         }
+    }
+
+    /// L12-13 · la tarjeta de invitar: pregunta, qué pasa al tocar y un solo botón relleno.
+    private var inviteCard: some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                Image(systemName: "link.badge.plus")
+                    .font(DS.Typography.title2)
+                    .foregroundStyle(Color.electricIndigo)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.UXL12.inviteTitle)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.primary)
+                    Text(L10n.UXL12.inviteMessage)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            YalaPrimaryButton(
+                isCreatingShare ? L10n.Groups.Settings.generatingInvite : L10n.UXL12.inviteShare,
+                isLoading: isCreatingShare
+            ) {
+                DS.Haptic.light()
+                Task { await createShareLink() }
+            }
+            .accessibilityIdentifier("group_members_invite_share")
+        }
+        .padding(DS.Spacing.lg)
+        .background(Color.electricIndigo.opacity(0.16), in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.card, style: .continuous))
+        .padding(DS.FormRow.paddingH)
     }
 
     // MARK: - A3: Pending Approval Actions
@@ -458,52 +466,22 @@ struct GroupMembersView: View {
         guard !isCreatingShare else { return }
 
         // Return cached URL if available
-        if shareURL != nil {
-            showShareSheet = true
+        if let cached = shareURL {
+            shareItem = ShareItem(url: cached)
             return
         }
 
         isCreatingShare = true
-        do {
-            // Fase 3: el `else` era el CKShare y ya no existe canal que lo sirva. El guard se conserva
-            // ENTERO —flag + zona backend— y su rama negativa informa: un grupo legacy no se puede invitar
-            // por ninguna vía, y dejar el botón mudo sería el apagón silencioso que la re-medición marca
-            // como peor modo de fallo (§S5.2).
-            // Qué dice esa rama lo decide `GroupInviteLinkCreationLogic`: las DOS causas que cubre el
-            // `else` (grupo legacy, permanente · canal apagado, transitorio) piden consejos opuestos, y
-            // ninguna de las dos es la conexión del admin.
-            if CloudSyncFlags.groupsBackendEnabled && group.isBackendGroup {
-                // C4: grupo backend → invite por TOKEN RPC (link ya branded). Cache in-VM (`shareURL != nil`,
-                // arriba) conservado. Nota A1: el flag cubre "no emitir hasta que el parser esté desplegado".
-                let name = UserDefaults.standard.string(forKey: "userName") ?? ""
-                let inviterName = name.isEmpty ? L10n.Profile.defaultName : name
-                shareURL = try await GroupBackendInviteService(
-                    membership: GroupBackendMembershipService(
-                        client: GroupsMembershipClient(attestProvider: AttestSessionProvider.live))
-                ).createInviteLink(for: group, inviterName: inviterName, members: viewModel.activeMembers)
-            } else {
-                isCreatingShare = false
-                shareErrorMessage = switch GroupInviteLinkCreationLogic.blocker(
-                    backendEnabled: CloudSyncFlags.groupsBackendEnabled,
-                    isBackendGroup: group.isBackendGroup
-                ) {
-                case .legacyGroup: L10n.Groups.Errors.inviteLegacyGroup
-                case .channelOff: L10n.Groups.Errors.inviteChannelOff
-                // No alcanzable: este `else` es la negación exacta del guard que la logic evalúa.
-                // El copy de red es el fallback correcto si algún día dejan de ser el mismo predicado.
-                case nil: L10n.Groups.Errors.inviteFailed
-                }
-                showShareError = true
-                return
-            }
-            isCreatingShare = false
-            if shareURL != nil {
-                showShareSheet = true
-            }
-        } catch {
-            isCreatingShare = false
-            // Por causa: «revisa tu conexión» solo cuando la petición no salió del teléfono.
-            shareErrorMessage = GroupActionErrorLogic.inviteMessage(for: error)
+        // El guard del canal y la clasificación del fallo viven en `GroupInviteLinkMaker`, que comparte con la hoja
+        // «está listo» de crear un grupo (L12-10).
+        let outcome = await GroupInviteLinkMaker.make(for: group, members: viewModel.activeMembers)
+        isCreatingShare = false
+        switch outcome {
+        case .link(let url):
+            shareURL = url
+            shareItem = ShareItem(url: url)
+        case .failed(let message):
+            shareErrorMessage = message
             showShareError = true
         }
     }

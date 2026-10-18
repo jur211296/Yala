@@ -976,7 +976,9 @@ struct GroupExpenseFormView: View {
     }
 
     /// Construye el payload de la pantalla de éxito desde el estado actual del VM (post-save).
-    private func buildSuccessData() -> GroupExpenseSuccessData {
+    /// - Parameter optInDraftCreated: la respuesta al aviso «¿Lo registramos?» cuando se hizo; con ella la línea de «qué
+    ///   pasó con tu dinero» (L13-3) dice si el gasto espera en la Bandeja.
+    private func buildSuccessData(optInDraftCreated: Bool? = nil) -> GroupExpenseSuccessData {
         let shares = viewModel.calculatedShares ?? []
         let participants = shares.map { share in
             GroupExpenseSuccessData.Participant(
@@ -1009,7 +1011,19 @@ struct GroupExpenseFormView: View {
             // `viewModel.isEditMode` ya es true aquí incluso tras CREAR (save() vincula
             // editingExpense al gasto nuevo). El discriminante de ESTE save es
             // lastCreatedExpenseID: non-nil solo en la rama de creación.
-            isEditMode: viewModel.lastCreatedExpenseID == nil
+            isEditMode: viewModel.lastCreatedExpenseID == nil,
+            currentUserMemberID: viewModel.currentUserMemberID,
+            personalOutcome: GroupExpenseSuccessLogic.personalOutcome(
+                isCaseA: viewModel.isCaseA,
+                isGroupsOnlySession: viewModel.isGroupsOnlySession,
+                bridgeEnabled: viewModel.effectiveBridgeEnabled,
+                accountName: viewModel.selectedAccount?.name,
+                isCreation: viewModel.lastCreatedExpenseID != nil,
+                optInDraftCreated: optInDraftCreated,
+                myShare: viewModel.currentUserMemberID.flatMap { me in
+                    shares.first(where: { $0.memberID == me })?.amount
+                } ?? 0
+            )
         )
     }
 
@@ -1028,23 +1042,28 @@ struct GroupExpenseFormView: View {
     /// Crea el draft opt-in y continúa. Llamado desde el alert "Sí".
     private func confirmOptIn() {
         guard let expenseID = pendingOptInExpenseID else { return }
+        var draftCreated = false
         do {
             try DraftService.shared.createGroupExpenseOptInDraft(
                 splitExpenseID: expenseID,
                 groupZoneID: group.cloudKitZoneID
             )
+            draftCreated = true
         } catch {
             #if DEBUG
             print("GroupExpenseFormView: createGroupExpenseOptInDraft failed: \(error)")
             #endif
         }
         pendingOptInExpenseID = nil
+        // L13-3: la pantalla de éxito dice lo que pasó de verdad — en la Bandeja solo si el borrador se creó.
+        if presentsSuccessScreen { successData = buildSuccessData(optInDraftCreated: draftCreated) }
         resolveAfterOptIn()
     }
 
     /// User dice "No" al alert opt-in: continúa sin crear draft.
     private func declineOptIn() {
         pendingOptInExpenseID = nil
+        if presentsSuccessScreen { successData = buildSuccessData(optInDraftCreated: false) }
         resolveAfterOptIn()
     }
 

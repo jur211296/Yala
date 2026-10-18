@@ -72,6 +72,10 @@ extension XCUIApplication {
         groupsGateMirrorLive: Bool = false,
         groupsGateWipeFailed: Bool = false,
         settlementAmountChange: Bool = false,
+        // UX 2.2 · L12-10 y L13-2: la hoja «está listo» del primer grupo, y un pago de Ana por confirmar en el perfil
+        // `grupos`. NOMBRADOS por lo mismo que sus vecinos.
+        groupCreatedSheet: Bool = false,
+        pendingSettlement: Bool = false,
         lateNoticeKeptGroups: Bool = false,
         welcomeAfterAdoptExit: Bool = false,
         // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
@@ -102,6 +106,8 @@ extension XCUIApplication {
         // Liquidación aprobada cuyo importe cambia después (`DevSeedSettlementAmountChange`). NOMBRADO por lo mismo que
         // sus vecinos: un typo dejaría el Inbox sin aviso y el rojo culparía a la pantalla.
         if settlementAmountChange { args.append("-uitest-seed-settlement-amount-change") }
+        if groupCreatedSheet { args.append("-uitest-group-created-sheet") }
+        if pendingSettlement { args.append("-uitest-seed-pending-settlement") }
         // La marca de los grupos que conservó el aviso tardío (`LateNoticeKeptGroupsMark`). NOMBRADO por lo mismo que sus
         // vecinos, y con su agravante: el caso del handover real se lanza SIN él, así que un typo que lo dejara fuera
         // pondría verde el control y rojo el caso, culpando al Welcome.
