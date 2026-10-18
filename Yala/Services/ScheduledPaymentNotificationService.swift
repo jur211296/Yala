@@ -463,9 +463,11 @@ final class ScheduledPaymentNotificationService {
     }
 
     private func sendPaymentNotification(payment: ScheduledPayment, type: PaymentNotificationType) async -> Bool {
-        let currencySymbol = CurrencyUtils.symbol(for: payment.currencyCode)
-        let estimatePrefix = payment.isVariableAmount ? "≈ " : ""
-        let formattedAmount = "\(estimatePrefix)\(currencySymbol)\(payment.amount.formatted(.number.precision(.fractionLength(0...2))))"
+        // El formato de montos de la app (símbolo o código según la preferencia, espacio y decimales), no el símbolo
+        // pegado a mano: con «PEN» elegido el aviso decía «S/2,200» (UX 2.2 · L10-13).
+        let formattedAmount = YalaFormatterStatic.currency(
+            value: payment.amount, currencyCode: payment.currencyCode, isEstimate: payment.isVariableAmount
+        )
         let isIncome = payment.transactionType == "income"
 
         let message: String
@@ -489,7 +491,8 @@ final class ScheduledPaymentNotificationService {
                 : L10n.Notifications.ScheduledPayment.overdue(payment.name, formattedAmount)
         }
 
-        return await send(title: payment.name, body: message, deepLink: "scheduledPayments")
+        // Lleva el id: tocarlo abre el detalle de ESTE pago, donde se marca pagado o se salta (L10-13).
+        return await send(title: payment.name, body: message, deepLink: AlertDeepLink.scheduledPayment.deepLink(for: payment.id))
     }
 
     // MARK: - Credit Card Payment Notifications
@@ -523,7 +526,8 @@ final class ScheduledPaymentNotificationService {
             guard !tracker.hasNotifiedCreditCard(accountID: account.shortcutID, date: today) else { continue }
 
             let message = L10n.Account.CreditCard.paymentNotification(account.name)
-            guard await send(title: account.name, body: message, deepLink: "accounts") else { continue }
+            // Lleva el id de la tarjeta: tocarlo abre su ficha, con el saldo a pagar (L10-14).
+            guard await send(title: account.name, body: message, deepLink: AlertDeepLink.account.deepLink(for: account.shortcutID)) else { continue }
 
             tracker.markNotifiedCreditCard(accountID: account.shortcutID, date: today)
         }

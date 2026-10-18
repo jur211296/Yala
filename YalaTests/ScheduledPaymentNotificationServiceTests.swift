@@ -91,6 +91,34 @@ struct ScheduledPaymentNotificationServiceTests {
         return payment
     }
 
+    // MARK: - UX 2.2 · L10-13: el aviso lleva el pago y el formato de la app
+
+    @MainActor
+    private final class SentBody {
+        var body: String?
+        var deepLink: String?
+    }
+
+    @Test func dueToday_carriesThePaymentID_andTheAppAmountFormat() async throws {
+        let context = try makeTestContext()
+        let (service, _) = try makeService(context: context)
+        let sent = SentBody()
+        service.sendOverride = { _, body, deepLink in
+            sent.body = body
+            sent.deepLink = deepLink
+            return true
+        }
+        let payment = try seedDueTodayPaymentWithDraft(context: context)
+
+        await service.checkAllPaymentNotifications()
+
+        // Tocarlo abre el detalle de ESTE pago, no la lista.
+        #expect(sent.deepLink == AlertDeepLink.scheduledPayment.deepLink(for: payment.id))
+        // El monto con el formato de la app (con espacio y la preferencia de símbolo o código), no «$15».
+        let formatted = YalaFormatterStatic.currency(value: 15, currencyCode: "USD")
+        #expect(sent.body?.contains(formatted) == true, "cuerpo: \(sent.body ?? "nil") · esperado: \(formatted)")
+    }
+
     // MARK: - (1) markNotified solo con entrega confirmada
 
     @Test func dueToday_sendFails_doesNotMarkDedup() async throws {
@@ -240,7 +268,8 @@ struct ScheduledPaymentNotificationServiceTests {
         // La tarjeta tiene opt-in propio per-account: el toggle de pagos no la silencia.
         await service.checkAndNotifyCreditCardPayments()
         #expect(log.count == 1)
-        #expect(log.entries.last?.deepLink == "accounts")
+        // Lleva el id de la tarjeta: tocarlo abre su ficha (UX 2.2 · L10-14).
+        #expect(log.entries.last?.deepLink == AlertDeepLink.account.deepLink(for: account.shortcutID))
     }
 
     @Test func activeItemWithFutureHour_defersCreditCardToo() async throws {

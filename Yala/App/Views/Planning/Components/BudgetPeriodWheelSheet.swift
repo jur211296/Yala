@@ -8,7 +8,7 @@
 //  se queda con su gesto y no compite con el de cerrar.
 //
 //  Mensual = el selector de mes y año de iOS (`UIDatePicker`, `.yearAndMonth`). Semanal y anual = `Picker` en rueda.
-//  Lo comparten la lista de Presupuestos y las gráficas de un presupuesto.
+//  Lo comparten la lista de Presupuestos, las gráficas de un presupuesto y Pagos planificados (mensual).
 //
 
 import SwiftUI
@@ -23,6 +23,8 @@ struct BudgetPeriodWheelSheet: View {
     let initialYear: Int
     /// El movimiento más antiguo guardado: la rueda empieza en su período.
     var oldestRecordDate: Date?
+    /// Título propio: Pagos planificados reusa esta hoja con su «Seleccionar mes».
+    var title: String?
     let onConfirm: (_ week: Date, _ month: Date, _ year: Int) -> Void
 
     @State private var week: Date = .now
@@ -72,7 +74,7 @@ struct BudgetPeriodWheelSheet: View {
 
     /// Solo el título: la hoja es de media altura y el icono de antes quedaba cortado bajo el asa.
     private var header: some View {
-        Text(periodSelectorTitle)
+        Text(title ?? periodSelectorTitle)
             .font(DS.Typography.title)
             .foregroundStyle(.primary)
             .padding(.top, DS.Spacing.xxl)

@@ -418,13 +418,10 @@
 "scheduled.paid" = "支払い済み";
 "scheduled.overdue" = "期限超過";
 "scheduled.skip" = "スキップ";
-"scheduled.skip.undo" = "スキップを取り消す";
-"scheduled.skip.confirm.title" = "今回の支払いをスキップしますか？";
-"scheduled.skip.confirm.message" = "支出として記録されません。あとで取り消すこともできます。";
-"scheduled.skip.overdue.title" = "期限超過の支払いをスキップ";
+"scheduled.skip.undo" = "スキップしない";
 "scheduled.status.skipped" = "スキップ済み";
 "scheduled.status.paid" = "支払い済み";
-"scheduled.unlink" = "記録のリンクを解除";
+"scheduled.unlink" = "未払いに戻す";
 "scheduled.status.overdue" = "期限超過";
 "scheduled.draftCreatedTitle" = "未払いの支払いがあります！";
 "scheduled.draftCreatedMessage" = "%d件の予定支払いが受信箱に追加されました。準備できたら確認してください。";
@@ -783,7 +780,7 @@
 "scheduled.widget.empty.title" = "予定の支払いはありません";
 "scheduled.widget.empty.message" = "予定の支払いはここに表示されます";
 "scheduled.widget.tomorrow" = "明日";
-"scheduled.widget.smallTitle" = "予定";
+"scheduled.widget.smallTitle" = "予定支払い";
 "scheduled.widget.largeTitle.recurring" = "定期支払い";
 "scheduled.widget.smallToPay" = "支払予定";
 "scheduled.widget.smallPaidAmount" = "%@支払い済み";
@@ -1543,7 +1540,7 @@
 
 // Recurrence - New logic
 "scheduled.recurrence.onetime" = "1回限り";
-"scheduled.recurrence.recurring" = "定期";
+"scheduled.recurrence.recurring" = "繰り返し";
 "scheduled.recurrence.daily" = "毎日";
 "scheduled.recurrence.day" = "日";
 "scheduled.recurrence.week" = "週";
@@ -2797,7 +2794,7 @@
 "scheduled.associate.paymentHeader" = "予定支払い";
 "scheduled.associate.candidatesHeader" = "近い時期の支出";
 "scheduled.associate.already" = "この支出はすでにリンクされています";
-"scheduled.advance" = "前倒し支払い";
+"scheduled.advance" = "今すぐ支払う";
 "scheduled.view.record" = "記録を表示";
 
 // MARK: - Siri Shortcuts
@@ -7179,3 +7176,73 @@
 "budgets.l9.seePro" = "Proを見る";
 "budgets.l9.chooseWhich" = "選ぶ";
 "budgets.l9.previewEmpty" = "スターを付けた予算（最大3件）がここにウィジェットとして表示されます。";
+
+/* Auditoría UX 2.2 · lote 10 (pagos planificados) */
+"scheduled.l10.state.overdue" = "期限切れ";
+"scheduled.l10.state.today" = "今日";
+"scheduled.l10.state.tomorrow" = "明日";
+"scheduled.l10.state.inDays" = "%d日後";
+"scheduled.l10.state.paid" = "支払済み";
+"scheduled.l10.state.received" = "受取済み";
+"scheduled.l10.state.skipped" = "スキップ";
+"scheduled.l10.state.paused" = "一時停止中";
+"scheduled.l10.state.finished" = "終了";
+"scheduled.l10.state.pending" = "未払い";
+"scheduled.l10.due.overdue" = "期限切れ";
+"scheduled.l10.due.today" = "今日が期限";
+"scheduled.l10.due.tomorrow" = "明日が期限";
+"scheduled.l10.due.inDays" = "%d日後が期限";
+"scheduled.l10.section.toPay" = "支払い予定";
+"scheduled.l10.section.paid" = "支払済み";
+"scheduled.l10.section.skipped" = "スキップ";
+"scheduled.l10.section.paused" = "一時停止中";
+"scheduled.l10.view.list" = "リスト";
+"scheduled.l10.view.timeline" = "タイムライン";
+"scheduled.l10.view.calendar" = "カレンダー";
+"scheduled.l10.hero.toPay" = "残りの支払い";
+"scheduled.l10.hero.paidOf" = "%2$@のうち%1$@を支払い済み";
+"scheduled.l10.hero.scope" = "収入と一時停止中の支払いは含みません";
+"scheduled.l10.detail.monthPaid" = "%@は支払済みです";
+"scheduled.l10.action.paid" = "支払った";
+"scheduled.l10.action.received" = "受け取った";
+"scheduled.l10.action.skipMonth" = "今月はスキップ";
+"scheduled.l10.action.skipHelp" = "何も記録されず、他の月はそのままです";
+"scheduled.l10.action.pause" = "この支払いを一時停止";
+"scheduled.l10.action.resume" = "再開";
+"scheduled.l10.action.pauseHelp" = "再開するまで通知も集計もしません";
+"scheduled.l10.action.skip" = "スキップ";
+"scheduled.l10.dateActions" = "この日の操作";
+"scheduled.l10.skipped" = "%@の支払いをスキップしました";
+"scheduled.l10.paid.recordNow" = "今すぐ記録";
+"scheduled.l10.paid.recordNowHelp" = "%@に記録します。金額は変更できます。";
+"scheduled.l10.paid.recordButton" = "%@を記録";
+"scheduled.l10.paid.alreadyRecorded" = "記録済み";
+"scheduled.l10.paid.alreadyRecordedHelp" = "記録を選ぶと支払済みにします。";
+"scheduled.l10.paid.candidatesExpenses" = "その前後の支出";
+"scheduled.l10.paid.candidatesIncome" = "その前後の収入";
+"scheduled.l10.paid.candidatesEmpty" = "その前後に記録はありません";
+"scheduled.l10.paid.confirmTitle" = "これは%@の支払いですか？";
+"scheduled.l10.paid.confirmMessage" = "この記録で支払済みにします。新しい記録は作成されません。";
+"scheduled.l10.paid.confirmYes" = "はい、これです";
+"scheduled.l10.payNow.title" = "%@の分を今支払う";
+"scheduled.l10.record.title" = "%@の分を記録";
+"scheduled.l10.saved.firstPayment" = "完了。初回の支払い：%@";
+"scheduled.l10.saved.view" = "表示";
+"scheduled.l10.delete.title" = "「%@」を削除しますか？";
+"scheduled.l10.delete.keepsRecords" = "記録は削除されません。";
+"scheduled.l10.deleted" = "「%@」を削除しました";
+"scheduled.l10.editor.moreOptions" = "その他のオプション";
+"scheduled.l10.editor.when" = "いつ";
+"scheduled.l10.editor.optional" = "任意";
+"scheduled.l10.editor.missing" = "未入力";
+"scheduled.l10.summary.today" = "今日";
+"scheduled.l10.summary.once" = "%1$@を1回のみ、%2$@に。";
+"scheduled.l10.summary.recurring" = "%1$@を%2$@。初回：%3$@。";
+"scheduled.l10.cadence.month" = "毎月%d日";
+"scheduled.l10.cadence.months" = "%1$dか月ごと、%2$d日";
+"scheduled.l10.cadence.week" = "毎週";
+"scheduled.l10.cadence.weeks" = "%d週間ごと";
+"scheduled.l10.cadence.day" = "毎日";
+"scheduled.l10.cadence.days" = "%d日ごと";
+"scheduled.l10.cadence.year" = "毎年%@";
+"scheduled.l10.cadence.years" = "%1$d年ごと、%2$@";

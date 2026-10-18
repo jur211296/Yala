@@ -74,6 +74,29 @@ final class ScheduledPaymentEditorViewModel {
         }
     }
 
+    // MARK: - Cuenta por defecto (UX 2.2 · L10-4)
+
+    /// La cuenta del último registro apuntado que siga activa; si no hay, la única cuenta activa. `nil` si hay varias y
+    /// ningún registro: la persona elige.
+    func lastUsedAccount() -> Account? {
+        let active = activeAccounts
+        guard let context = modelContext, !active.isEmpty else { return nil }
+        var descriptor = FetchDescriptor<TransactionItem>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        descriptor.fetchLimit = 30 // Perf: solo hace falta el último con una cuenta activa
+        do {
+            let recent = try context.fetch(descriptor)
+            let activeIDs = Set(active.map(\.persistentModelID))
+            if let account = recent.lazy.compactMap(\.account).first(where: { activeIDs.contains($0.persistentModelID) }) {
+                return account
+            }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentEditorViewModel: Error fetching last used account: \(error)")
+            #endif
+        }
+        return active.count == 1 ? active.first : nil
+    }
+
     // MARK: - Save Operation
 
     func savePayment(

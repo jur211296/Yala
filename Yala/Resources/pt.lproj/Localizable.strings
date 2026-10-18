@@ -416,13 +416,10 @@
 "scheduled.paid" = "Pago";
 "scheduled.overdue" = "Vencido";
 "scheduled.skip" = "Pular";
-"scheduled.skip.undo" = "Desfazer";
-"scheduled.skip.confirm.title" = "Pular esta ocorrência?";
-"scheduled.skip.confirm.message" = "Não será registrada como despesa. Você pode desfazer depois.";
-"scheduled.skip.overdue.title" = "Pular ocorrência vencida";
+"scheduled.skip.undo" = "Não pular";
 "scheduled.status.skipped" = "Pulado";
 "scheduled.status.paid" = "Pago";
-"scheduled.unlink" = "Desvincular registro";
+"scheduled.unlink" = "Não está mais pago";
 "scheduled.status.overdue" = "Vencido";
 "scheduled.draftCreatedTitle" = "Você tem pagamentos pendentes!";
 "scheduled.draftCreatedMessage" = "%d pagamentos agendados foram adicionados à sua caixa. Confira quando quiser.";
@@ -781,7 +778,7 @@
 "scheduled.widget.empty.title" = "Sem pagamentos";
 "scheduled.widget.empty.message" = "Adicione pagamentos agendados para vê-los aqui";
 "scheduled.widget.tomorrow" = "Amanhã";
-"scheduled.widget.smallTitle" = "Agendados";
+"scheduled.widget.smallTitle" = "Pagamentos agendados";
 "scheduled.widget.largeTitle.recurring" = "Pagamentos recorrentes";
 "scheduled.widget.smallToPay" = "a pagar";
 "scheduled.widget.smallPaidAmount" = "Você pagou %@";
@@ -1544,7 +1541,7 @@
 
 // Recurrence - New logic
 "scheduled.recurrence.onetime" = "Uma vez";
-"scheduled.recurrence.recurring" = "Recorrente";
+"scheduled.recurrence.recurring" = "Repetir";
 "scheduled.recurrence.daily" = "Diário";
 "scheduled.recurrence.day" = "Dia";
 "scheduled.recurrence.week" = "Semana";
@@ -2793,7 +2790,7 @@
 "scheduled.associate.paymentHeader" = "Pagamento agendado";
 "scheduled.associate.candidatesHeader" = "Despesas próximas";
 "scheduled.associate.already" = "Esta despesa já está vinculada";
-"scheduled.advance" = "Adiantar pagamento";
+"scheduled.advance" = "Pagar agora";
 "scheduled.view.record" = "Ver registro";
 
 // MARK: - Siri Shortcuts
@@ -7167,3 +7164,73 @@
 "budgets.l9.seePro" = "Ver Pro";
 "budgets.l9.chooseWhich" = "Escolher quais";
 "budgets.l9.previewEmpty" = "Marque até 3 orçamentos com a estrela e você verá seu widget aqui.";
+
+/* Auditoría UX 2.2 · lote 10 (pagos planificados) */
+"scheduled.l10.state.overdue" = "Vencido";
+"scheduled.l10.state.today" = "Vence hoje";
+"scheduled.l10.state.tomorrow" = "Amanhã";
+"scheduled.l10.state.inDays" = "Em %d dias";
+"scheduled.l10.state.paid" = "Pago";
+"scheduled.l10.state.received" = "Recebido";
+"scheduled.l10.state.skipped" = "Pulado";
+"scheduled.l10.state.paused" = "Pausado";
+"scheduled.l10.state.finished" = "Encerrado";
+"scheduled.l10.state.pending" = "Pendente";
+"scheduled.l10.due.overdue" = "Vencido";
+"scheduled.l10.due.today" = "Vence hoje";
+"scheduled.l10.due.tomorrow" = "Vence amanhã";
+"scheduled.l10.due.inDays" = "Vence em %d dias";
+"scheduled.l10.section.toPay" = "A pagar";
+"scheduled.l10.section.paid" = "Pagos";
+"scheduled.l10.section.skipped" = "Pulados";
+"scheduled.l10.section.paused" = "Pausados";
+"scheduled.l10.view.list" = "Lista";
+"scheduled.l10.view.timeline" = "Linha do tempo";
+"scheduled.l10.view.calendar" = "Calendário";
+"scheduled.l10.hero.toPay" = "Falta pagar";
+"scheduled.l10.hero.paidOf" = "Você pagou %1$@ de %2$@";
+"scheduled.l10.hero.scope" = "Sem receitas nem pagamentos pausados";
+"scheduled.l10.detail.monthPaid" = "%@ já está pago";
+"scheduled.l10.action.paid" = "Já paguei";
+"scheduled.l10.action.received" = "Já recebi";
+"scheduled.l10.action.skipMonth" = "Pular este mês";
+"scheduled.l10.action.skipHelp" = "Nada é registrado; os outros meses continuam iguais";
+"scheduled.l10.action.pause" = "Pausar este pagamento";
+"scheduled.l10.action.resume" = "Retomar";
+"scheduled.l10.action.pauseHelp" = "Não vamos te avisar nem contar até você retomar";
+"scheduled.l10.action.skip" = "Pular";
+"scheduled.l10.dateActions" = "Ações desta data";
+"scheduled.l10.skipped" = "Você pulou o pagamento de %@";
+"scheduled.l10.paid.recordNow" = "Registrar agora";
+"scheduled.l10.paid.recordNowHelp" = "Registramos em %@. Você pode mudar o valor.";
+"scheduled.l10.paid.recordButton" = "Registrar %@";
+"scheduled.l10.paid.alreadyRecorded" = "Já registrei";
+"scheduled.l10.paid.alreadyRecordedHelp" = "Escolha o registro e marcamos como pago.";
+"scheduled.l10.paid.candidatesExpenses" = "Seus gastos dessas datas";
+"scheduled.l10.paid.candidatesIncome" = "Suas receitas dessas datas";
+"scheduled.l10.paid.candidatesEmpty" = "Não há registros perto dessa data";
+"scheduled.l10.paid.confirmTitle" = "Este é o pagamento de %@?";
+"scheduled.l10.paid.confirmMessage" = "Marcamos como pago com este registro. Nada novo é criado.";
+"scheduled.l10.paid.confirmYes" = "Sim, é este";
+"scheduled.l10.payNow.title" = "Pagar agora o de %@";
+"scheduled.l10.record.title" = "Registrar o de %@";
+"scheduled.l10.saved.firstPayment" = "Pronto. Primeiro pagamento: %@";
+"scheduled.l10.saved.view" = "Ver";
+"scheduled.l10.delete.title" = "Excluir “%@”?";
+"scheduled.l10.delete.keepsRecords" = "Seus registros não são excluídos.";
+"scheduled.l10.deleted" = "Você excluiu “%@”";
+"scheduled.l10.editor.moreOptions" = "Mais opções";
+"scheduled.l10.editor.when" = "Quando";
+"scheduled.l10.editor.optional" = "Opcional";
+"scheduled.l10.editor.missing" = "Falta";
+"scheduled.l10.summary.today" = "hoje";
+"scheduled.l10.summary.once" = "%1$@ uma única vez, em %2$@.";
+"scheduled.l10.summary.recurring" = "%1$@ %2$@. Primeiro pagamento: %3$@.";
+"scheduled.l10.cadence.month" = "todo mês, no dia %d";
+"scheduled.l10.cadence.months" = "a cada %1$d meses, no dia %2$d";
+"scheduled.l10.cadence.week" = "toda semana";
+"scheduled.l10.cadence.weeks" = "a cada %d semanas";
+"scheduled.l10.cadence.day" = "todo dia";
+"scheduled.l10.cadence.days" = "a cada %d dias";
+"scheduled.l10.cadence.year" = "todo ano, em %@";
+"scheduled.l10.cadence.years" = "a cada %1$d anos, em %2$@";

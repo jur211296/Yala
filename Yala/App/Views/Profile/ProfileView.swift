@@ -1000,8 +1000,6 @@ struct ProfileView: View {
                 FavoritesListView(mode: .manage)
             case .budgets:
                 BudgetsFavoritesSettingsView()
-            case .planned:
-                ScheduledPaymentsSettingsView()
             case .userDataReset:
                 UserDataResetView(onRequestCloseSettings: {
                     dismiss()
@@ -1254,11 +1252,15 @@ struct ProfileView: View {
                     destination: .budgets)
                     .coachMarkAnchor("settingsBudgets")
                 SubsectionDivider()
-                profileRow(
-                    icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments,
-                    iconColor: .cyan,
-                    destination: .planned
-                )
+                // Una sola lista de pagos planificados (UX 2.2 · L10-15): la fila cierra Ajustes y abre Planificación ›
+                // Pagos planificados. Antes abría otra lista de lo mismo, con otro formato y borrado sin confirmar.
+                Button {
+                    dismiss()
+                    RouterEntryGate.shared.submit(.navigate(.scheduledPayments))
+                } label: {
+                    settingsRowContent(icon: "calendar.badge.clock", title: L10n.Settings.plannedPayments, iconColor: .cyan)
+                }
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("profile_planned")
                 .coachMarkAnchor("settingsPlanned")
                 SubsectionDivider()

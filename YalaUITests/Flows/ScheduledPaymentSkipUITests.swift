@@ -75,25 +75,23 @@ final class ScheduledPaymentSkipUITests: XCTestCase {
 
         openFirstPaymentDetail(app)
 
-        // Abrir el diálogo de la primera ocurrencia y saltarla.
+        // Abrir el menú de acciones de la primera fecha y saltarla (desde UX 2.2 · L10-8 cada fecha lleva su menú).
         let occurrence = app.buttons["scheduled_occurrence"].firstMatch
         XCTAssertTrue(occurrence.waitForExistence(timeout: 5), "No apareció ninguna ocurrencia.")
         occurrence.tap()
 
-        // Cada ocurrencia monta su propio confirmationDialog (mismo ID); el action sheet
-        // presentado es el único en `app.sheets`, así que desambiguamos por ahí.
-        let skipButton = app.sheets.buttons["scheduled_skip_button"].firstMatch
-        XCTAssertTrue(skipButton.waitForExistence(timeout: 5), "No apareció la opción Saltar en el diálogo.")
+        let skipButton = app.buttons["scheduled_skip_button"].firstMatch
+        XCTAssertTrue(skipButton.waitForExistence(timeout: 5), "No apareció la opción Saltar en el menú de la fecha.")
         skipButton.tap()
 
-        // Reabrir la misma ocurrencia: ahora debe ofrecer "Deshacer salto" (quedó saltada).
+        // Reabrir la misma fecha: ahora debe ofrecer «No saltar» (quedó saltada).
         let occurrenceAgain = app.buttons["scheduled_occurrence"].firstMatch
         XCTAssertTrue(occurrenceAgain.waitForExistence(timeout: 5), "La ocurrencia desapareció tras saltar.")
         occurrenceAgain.tap()
 
         XCTAssertTrue(
-            app.sheets.buttons["scheduled_unskip_button"].firstMatch.waitForExistence(timeout: 5),
-            "Tras saltar, el diálogo no ofreció Deshacer salto — la ocurrencia no quedó saltada."
+            app.buttons["scheduled_unskip_button"].firstMatch.waitForExistence(timeout: 5),
+            "Tras saltar, el menú no ofreció «No saltar» — la ocurrencia no quedó saltada."
         )
     }
 }

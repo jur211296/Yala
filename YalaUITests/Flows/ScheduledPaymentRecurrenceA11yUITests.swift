@@ -35,11 +35,10 @@ final class ScheduledPaymentRecurrenceA11yUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.openProfile()
-        app.openSettingsSection("profile_planned")
+        app.openScheduledPaymentsList()
 
-        let addButton = app.buttons["scheduled_add_button"]
-        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció scheduled_add_button.")
+        let addButton = app.buttons["scheduled_payments_create_fab"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció el + de Pagos planificados.")
         addButton.tap()
 
         XCTAssertTrue(

@@ -184,6 +184,16 @@ enum ScheduledPaymentDateText {
         return f.string(from: date)
     }
 
+    /// «15 oct». La fecha bajo el nombre en la lista (L10-1).
+    static func dayMonth(_ date: Date, locale: Locale = AppLocale.current) -> String {
+        formatter(template: "dMMM", locale: locale).string(from: date)
+    }
+
+    /// «15 de octubre». En la píldora del detalle, el aviso tras guardar y los títulos de «Pagar ahora».
+    static func dayMonthLong(_ date: Date, locale: Locale = AppLocale.current) -> String {
+        formatter(template: "dMMMM", locale: locale).string(from: date)
+    }
+
     /// «OCT».
     static func monthAbbreviation(_ date: Date, locale: Locale = AppLocale.current) -> String {
         formatter(template: "MMM", locale: locale).string(from: date).uppercased(with: locale)

@@ -111,6 +111,12 @@ struct ScheduledPaymentEditorView: View {
     /// El permiso de notificaciones al guardar el primer pago (UX 2.2 · L5-14).
     @State private var showNotificationPrimer = false
     @State private var isFinishingSave = false
+    /// «Más opciones» desplegado (UX 2.2 · L10-4): compartido, suscripción, avisos, nota, etiquetas, fin y activo.
+    @State private var showMoreOptions = false
+    /// Tras tocar ✓ con algo pendiente: los campos que faltan se marcan (L10-4).
+    @State private var highlightMissing = false
+    /// Sube en cada ✓ con algo pendiente: el `ScrollViewReader` lleva al primer campo que falta.
+    @State private var missingFieldScrollToken = 0
 
     // Focus state
     @FocusState private var isNameFieldFocused: Bool
@@ -198,14 +204,21 @@ struct ScheduledPaymentEditorView: View {
             : NSLocalizedString("scheduled.edit", comment: "")
     }
 
+    /// «¿Eliminar «Matrícula»?» (L10-15): nombra el pago. El mensaje dice que los registros se quedan.
     private var deleteAlertTitle: String {
-        NSLocalizedString("scheduled.delete.confirm.title", comment: "")
+        L10n.UXL10.deleteTitle(payment?.name ?? name)
     }
 
     private var editorScrollView: some View {
-        ScrollView {
-            editorContent
-                .dismissKeyboardOnTap()
+        ScrollViewReader { proxy in
+            ScrollView {
+                editorContent
+                    .dismissKeyboardOnTap()
+            }
+            .onChange(of: missingFieldScrollToken) { _, _ in
+                guard let target = firstMissingField else { return }
+                dsWithAnimation(false) { proxy.scrollTo(target, anchor: .center) }
+            }
         }
         .scrollViewGlassEdges()
         .scrollDismissesKeyboard(.interactively)
@@ -220,13 +233,17 @@ struct ScheduledPaymentEditorView: View {
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
-            YalaSaveButton(action: savePayment, isDisabled: !canSave, disabledHint: saveMissingHint)
+            // Siempre tocable (L10-4): con algo pendiente no guarda, lleva al campo que falta y lo marca. El ✓ gris no
+            // hacía nada ni decía qué faltaba. VoiceOver lo sigue diciendo con el hint.
+            YalaSaveButton(action: saveOrRevealMissing, disabledHint: saveMissingHint)
+                .accessibilityHint(saveMissingHint)
         }
     }
 
     private func handleOnAppear() {
         viewModel.setContext(modelContext, deletionService: deletionService)
         loadPaymentData()
+        applyNewPaymentDefaults()
         if sessionState.isExpensesOnlyMode {
             transactionType = "expense"
         }
@@ -241,20 +258,19 @@ struct ScheduledPaymentEditorView: View {
 
     // MARK: - Editor Content
 
+    /// UX 2.2 · L10-4 B (Jürgen, 2026-10-15, «abierto a rediseñar para simplificar»): arriba solo lo que define el
+    /// pago —nombre, monto, subcategoría, cuenta (la última usada) y cuándo (hoy por defecto)— con una línea que lo
+    /// resume; lo demás, plegado en «Más opciones». Un pago se crea sin desplazarse.
     private var editorContent: some View {
         VStack(spacing: DS.Spacing.xxl) {
             // Sin banner «¿Qué es un pago planificado?» (UX 2.2 · L5-6, opción A): Planificación ya lo explica.
             basicInfoSection
-            togglesSection
+            classificationSection
             if isGroupExpense {
                 groupExpenseConfigSection
             }
-            classificationSection
             recurrenceSection
-            if isRecurring {
-                recurrencePreviewSection
-            }
-            notificationsSection
+            moreOptionsSection
             if payment != nil {
                 deleteSection
             }
@@ -291,8 +307,10 @@ struct ScheduledPaymentEditorView: View {
                     .textContentType(.name)
                     .focused($isNameFieldFocused)
                     .accessibilityIdentifier("scheduled_name_field")
+                    missingBadge(name.isEmpty)
                 }
                 .padding()
+                .id(EditorField.name)
 
                 SubsectionDivider()
 
@@ -331,111 +349,158 @@ struct ScheduledPaymentEditorView: View {
                                     amount = filtered
                                 }
                             }
+                        missingBadge(amount.isEmpty || AmountInputHelper.parseDecimal(amount) <= 0)
                     }
                 }
                 .padding()
+                .id(EditorField.amount)
 
-                SubsectionDivider()
-
-                // Variable Amount Toggle
-                Toggle(isOn: $isVariableAmount) {
-                    HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "plusminus")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24)
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                            Text(L10n.Scheduled.VariableAmount.toggle)
-                            if isVariableAmount {
-                                Text(L10n.Scheduled.VariableAmount.helper)
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-                .padding()
-
-                SubsectionDivider()
-
-                // Note Field
-                HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: "note.text")
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    TextField(
-                        NSLocalizedString("scheduled.editor.note.placeholder", comment: ""),
-                        text: $note
-                    )
-                    .focused($isNoteFieldFocused)
-                }
-                .padding()
             }
         }
     }
 
-    // MARK: - Toggles Section
+    // MARK: - Más opciones (L10-4)
 
-    private var togglesSection: some View {
-        SectionBox(title: NSLocalizedString("scheduled.editor.options", comment: "")) {
-            VStack(spacing: DS.Spacing.none) {
-                // Active Toggle
-                Toggle(isOn: $isActive) {
-                    HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "checkmark.circle")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24)
-                            .accessibilityHidden(true)
-                        Text(L10n.Scheduled.Editor.active)
-                    }
+    /// Lo que no define el pago, plegado: monto estimado, nota, etiquetas, suscripción, gasto compartido, avisos, fecha
+    /// de fin y «Activo». Antes iba entre el nombre y la cuenta, y lo obligatorio quedaba fuera de pantalla.
+    private var moreOptionsSection: some View {
+        VStack(spacing: DS.Spacing.none) {
+            Button {
+                dsWithAnimation(false) { showMoreOptions.toggle() }
+            } label: {
+                HStack(spacing: DS.Spacing.md) {
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 24)
+                        .accessibilityHidden(true)
+                    Text(L10n.UXL10.moreOptions)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(DS.Typography.indicator)
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(showMoreOptions ? 180 : 0))
+                        .accessibilityHidden(true)
                 }
-
                 .padding()
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(showMoreOptions ? .isSelected : [])
+            .accessibilityIdentifier("scheduled_more_options")
 
+            if showMoreOptions {
                 SubsectionDivider()
-
-                // Group Shared Expense Toggle (F3) — entre Activo y Suscripción
-                Toggle(isOn: $isGroupExpense) {
-                    HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "person.2")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24)
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                            Text(L10n.Scheduled.GroupExpense.toggle)
-                            if isGroupExpense {
-                                Text(L10n.Scheduled.GroupExpense.toggleHelper)
-                                    .font(DS.Typography.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-                .padding()
-                .accessibilityIdentifier("scheduled_group_expense_toggle")
-                .onChange(of: isGroupExpense) { _, on in
-                    if on {
-                        transactionType = "expense"   // gasto compartido = siempre gasto
-                        loadAvailableGroups()
-                    }
-                }
-
+                variableAmountRow
                 SubsectionDivider()
-
-                // Subscription Toggle
-                Toggle(isOn: $isSubscription) {
-                    HStack(spacing: DS.Spacing.md) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 24)
-                            .accessibilityHidden(true)
-                        Text(NSLocalizedString("scheduled.is.subscription", comment: ""))
-                    }
+                noteRow
+                if !isGroupExpense {
+                    SubsectionDivider()
+                    tagsContent
                 }
-
-                .padding()
+                SubsectionDivider()
+                subscriptionToggle
+                SubsectionDivider()
+                groupExpenseToggle
+                SubsectionDivider()
+                notificationRows
+                if isRecurring {
+                    SubsectionDivider()
+                    endDateSection
+                }
+                SubsectionDivider()
+                activeToggle
             }
         }
+        .solidCard()
+    }
+
+    private var variableAmountRow: some View {
+        Toggle(isOn: $isVariableAmount) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "plusminus")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Scheduled.VariableAmount.toggle)
+                    if isVariableAmount {
+                        Text(L10n.Scheduled.VariableAmount.helper)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding()
+    }
+
+    private var noteRow: some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "note.text")
+                .foregroundStyle(.secondary)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            TextField(
+                NSLocalizedString("scheduled.editor.note.placeholder", comment: ""),
+                text: $note
+            )
+            .focused($isNoteFieldFocused)
+        }
+        .padding()
+    }
+
+    private var activeToggle: some View {
+        Toggle(isOn: $isActive) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                Text(L10n.Scheduled.Editor.active)
+            }
+        }
+        .padding()
+    }
+
+    private var groupExpenseToggle: some View {
+        Toggle(isOn: $isGroupExpense) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "person.2")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.Scheduled.GroupExpense.toggle)
+                    if isGroupExpense {
+                        Text(L10n.Scheduled.GroupExpense.toggleHelper)
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding()
+        .accessibilityIdentifier("scheduled_group_expense_toggle")
+        .onChange(of: isGroupExpense) { _, on in
+            if on {
+                transactionType = "expense"   // gasto compartido = siempre gasto
+                loadAvailableGroups()
+            }
+        }
+    }
+
+    private var subscriptionToggle: some View {
+        Toggle(isOn: $isSubscription) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                    .accessibilityHidden(true)
+                Text(NSLocalizedString("scheduled.is.subscription", comment: ""))
+            }
+        }
+        .padding()
     }
 
     // MARK: - Group Shared Expense Config Section (F3)
@@ -483,6 +548,7 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .id(EditorField.group)
         .accessibilityIdentifier("scheduled_group_row")
     }
 
@@ -540,6 +606,7 @@ struct ScheduledPaymentEditorView: View {
         }
         .buttonStyle(.plain)
         .disabled(selectedGroup == nil)
+        .id(EditorField.division)
         .accessibilityIdentifier("scheduled_split_division_row")
     }
 
@@ -556,19 +623,9 @@ struct ScheduledPaymentEditorView: View {
     private var classificationSection: some View {
         SectionBox(title: NSLocalizedString("scheduled.editor.classification", comment: "")) {
             VStack(spacing: DS.Spacing.none) {
-                // Account selector
-                accountRow
-
-                SubsectionDivider()
-
-                // Subcategory selector
                 subcategoryRow
-
-                // Tags — ocultas en gasto compartido (los gastos de grupo no manejan etiquetas)
-                if !isGroupExpense {
-                    SubsectionDivider()
-                    tagsContent
-                }
+                SubsectionDivider()
+                accountRow
             }
         }
     }
@@ -613,8 +670,12 @@ struct ScheduledPaymentEditorView: View {
                         Text(account.name)
                             .foregroundStyle(.secondary)
                     }
+                } else if isGroupExpense {
+                    // En un pago compartido la cuenta es solo un prefill: no hace falta para guardar (L10-16).
+                    Text(L10n.UXL10.optional)
+                        .foregroundStyle(.secondary)
                 } else {
-                    Text(NSLocalizedString("common.select", comment: ""))
+                    Text(highlightMissing ? L10n.UXL10.missing : NSLocalizedString("common.select", comment: ""))
                         .foregroundStyle(Color.hotPink.opacity(0.8))
                 }
 
@@ -631,6 +692,8 @@ struct ScheduledPaymentEditorView: View {
         .accessibilityHint(accountOptions.isEmpty ? L10n.Accessibility.createAccountFirst : "")
         .accessibilityIdentifier("scheduled_account_menu")
         .disabled(accountOptions.isEmpty)
+        .background(missingRowTint(selectedAccount == nil && !isGroupExpense))
+        .id(EditorField.account)
     }
 
     private var subcategoryRow: some View {
@@ -656,7 +719,7 @@ struct ScheduledPaymentEditorView: View {
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    Text(NSLocalizedString("common.select", comment: ""))
+                    Text(highlightMissing ? L10n.UXL10.missing : NSLocalizedString("common.select", comment: ""))
                         .foregroundStyle(Color.hotPink.opacity(0.8))
                 }
 
@@ -668,6 +731,8 @@ struct ScheduledPaymentEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .background(missingRowTint(selectedSubcategory == nil && !isGroupExpense))
+        .id(EditorField.subcategory)
         .accessibilityIdentifier("scheduled_subcategory_row")
     }
 
@@ -734,7 +799,7 @@ struct ScheduledPaymentEditorView: View {
     private var recurrenceSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack {
-                Text(L10n.Scheduled.Editor.recurrence)
+                Text(L10n.UXL10.when)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.thSecondaryText)
                 InfoHintButton(
@@ -791,11 +856,17 @@ struct ScheduledPaymentEditorView: View {
 
                     // Start date
                     startDateRow
+                }
 
+                // «S/ 45.00 cada mes, el día 14. Primer pago: hoy.» (L10-4): explica la recurrencia sin pasos extra.
+                if let summary = scheduleSummary {
                     SubsectionDivider()
-
-                    // End date (optional)
-                    endDateSection
+                    Text(summary)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .accessibilityIdentifier("scheduled_schedule_summary")
                 }
             }
             .solidCard()
@@ -1090,54 +1161,9 @@ struct ScheduledPaymentEditorView: View {
         previewDates = Array(Set(allDates)).sorted().prefix(5).map { $0 }
     }
 
-    @ViewBuilder
-    private var recurrencePreviewSection: some View {
-        if !previewDates.isEmpty {
-            SectionBox(title: L10n.Scheduled.Editor.preview) {
-                VStack(spacing: DS.Spacing.none) {
-                    ForEach(Array(previewDates.enumerated()), id: \.offset) { index, date in
-                        previewDateRow(date, index: index + 1)
-
-                        if index < previewDates.count - 1 {
-                            SubsectionDivider()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func previewDateRow(_ date: Date, index: Int) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            VStack(spacing: DS.Spacing.xxs) {
-                Text(date, format: .dateTime.day())
-                    .font(DS.Typography.title3.weight(.bold))
-                    .foregroundStyle(.primary)
-                Text(date, format: .dateTime.month(.abbreviated))
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(width: 40)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(date, format: .dateTime.weekday(.wide).day().month(.wide).year())
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
-                Text("#\(index)")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal)
-        .padding(.vertical, DS.Spacing.sm)
-    }
-
     // MARK: - Notifications Section
 
-    private var notificationsSection: some View {
-        SectionBox(title: NSLocalizedString("scheduled.editor.notifications", comment: "")) {
+    private var notificationRows: some View {
             VStack(spacing: DS.Spacing.none) {
                 // Notify on due date
                 Toggle(isOn: $notifyOnDueDate) {
@@ -1181,7 +1207,6 @@ struct ScheduledPaymentEditorView: View {
                 }
                 .padding()
             }
-        }
     }
 
     // MARK: - Delete Section
@@ -1356,6 +1381,119 @@ struct ScheduledPaymentEditorView: View {
         splitValues = [:]
         splitMyShare = 0
         splitConfigType = .equal
+    }
+
+    // MARK: - Lo que falta (L10-4)
+
+    /// Los campos a los que lleva el ✓ cuando falta algo.
+    enum EditorField: Hashable {
+        case name, amount, subcategory, account, group, division
+    }
+
+    /// El primero que falta, en el orden de la pantalla.
+    private var firstMissingField: EditorField? {
+        if name.isEmpty { return .name }
+        if amount.isEmpty || AmountInputHelper.parseDecimal(amount) <= 0 { return .amount }
+        if isGroupExpense {
+            if selectedGroup == nil { return .group }
+            if !splitConfigured || splitParticipantIDs.isEmpty { return .division }
+            return nil
+        }
+        if selectedSubcategory == nil { return .subcategory }
+        if selectedAccount == nil { return .account }
+        return nil
+    }
+
+    /// Con todo, guarda. Con algo pendiente, marca lo que falta y lleva al primero (y al teclado si es un texto).
+    private func saveOrRevealMissing() {
+        guard !canSave, let missing = firstMissingField else {
+            savePayment()
+            return
+        }
+        highlightMissing = true
+        missingFieldScrollToken += 1
+        DS.Haptic.light()
+        switch missing {
+        case .name: isNameFieldFocused = true
+        case .amount: isAmountFieldFocused = true
+        default: dismissEditorKeyboard()
+        }
+    }
+
+    /// «Falta» junto a un campo de texto vacío, solo tras tocar ✓.
+    @ViewBuilder
+    private func missingBadge(_ isMissing: Bool) -> some View {
+        if highlightMissing && isMissing {
+            Text(L10n.UXL10.missing)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(Color.hotPink)
+                .accessibilityIdentifier("scheduled_missing_badge")
+        }
+    }
+
+    /// Un fondo rosa suave en la fila que falta, solo tras tocar ✓.
+    private func missingRowTint(_ isMissing: Bool) -> Color {
+        highlightMissing && isMissing ? Color.hotPink.opacity(0.10) : Color.clear
+    }
+
+    // MARK: - Línea resumen (L10-4)
+
+    /// «S/ 45.00 cada mes, el día 14. Primer pago: hoy.» Sin monto todavía, no hay frase que resumir.
+    private var scheduleSummary: String? {
+        let value = AmountInputHelper.parseDecimal(amount)
+        guard value > 0 else { return nil }
+        let code = isGroupExpense
+            ? splitCurrency.rawValue
+            : (selectedAccount?.currencyCode ?? appPreferences.defaultCurrencyCode.rawValue)
+        let amountText = appPreferences.currency(value, currencyCode: code, forceFullPrecision: true, isEstimate: isVariableAmount)
+        guard isRecurring else {
+            return L10n.UXL10.summaryOnce(amountText, ScheduledPaymentDateText.dayMonthLong(paymentDate))
+        }
+        let weekdaysStr = selectedWeekdays.sorted().map { String($0) }.joined(separator: ",")
+        let first = ScheduledPaymentEditorViewModel.firstDueDate(
+            start: paymentDate, recurrenceType: recurrenceType, recurrenceInterval: recurrenceInterval,
+            dayOfMonth: dayOfMonth, weekdays: weekdaysStr, yearlyMonth: yearlyMonth, yearlyDay: yearlyDay,
+            endDate: hasEndDate ? endDate : nil
+        )
+        let cadence: String
+        switch recurrenceType {
+        case .daily: cadence = L10n.UXL10.cadenceDaily(interval: recurrenceInterval)
+        case .weekly: cadence = L10n.UXL10.cadenceWeekly(interval: recurrenceInterval)
+        case .monthly: cadence = L10n.UXL10.cadenceMonthly(interval: recurrenceInterval, day: dayOfMonth)
+        case .yearly:
+            var components = DateComponents()
+            components.month = yearlyMonth
+            components.day = yearlyDay
+            components.year = 2024 // bisiesto: el 29 de febrero también tiene nombre
+            let date = Calendar.current.date(from: components) ?? paymentDate
+            cadence = L10n.UXL10.cadenceYearly(interval: recurrenceInterval, date: ScheduledPaymentDateText.dayMonthLong(date))
+        }
+        return L10n.UXL10.summaryRecurring(amountText, cadence, summaryDate(first))
+    }
+
+    /// «hoy» o «1 de noviembre».
+    private func summaryDate(_ date: Date) -> String {
+        Calendar.current.isDateInToday(date) ? L10n.UXL10.today : ScheduledPaymentDateText.dayMonthLong(date)
+    }
+
+    // MARK: - Valores por defecto de un pago nuevo (L10-4)
+
+    /// Hoy por defecto (el día del mes, el día de la semana y la fecha anual de hoy, no el día 1) y la última cuenta
+    /// usada. Antes arrancaba en «Cada 1 Mes, Día del mes 1» aunque hoy fuera 14, y el primer pago caía el mes que viene
+    /// sin decirlo.
+    private func applyNewPaymentDefaults() {
+        guard payment == nil else { return }
+        if prefill == nil {
+            let calendar = Calendar.current
+            let now = Date.now
+            dayOfMonth = calendar.component(.day, from: now)
+            selectedWeekdays = [calendar.component(.weekday, from: now)]
+            yearlyMonth = calendar.component(.month, from: now)
+            yearlyDay = calendar.component(.day, from: now)
+        }
+        if selectedAccount == nil {
+            selectedAccount = viewModel.lastUsedAccount()
+        }
     }
 
     // MARK: - Validation
@@ -1593,12 +1731,14 @@ struct ScheduledPaymentEditorView: View {
         isNoteFieldFocused = false
     }
 
+    /// Cierra y deja el borrado unos segundos en espera con «Deshacer» (L10-15).
     private func deletePayment() {
         guard let payment = payment else { return }
-
-        if viewModel.deletePayment(payment) {
-            dismiss()
-            onDelete?()
+        let editorViewModel = viewModel
+        dismiss()
+        onDelete?()
+        ScheduledPaymentPendingDeletion.shared.request(paymentID: payment.id, name: payment.name) {
+            _ = editorViewModel.deletePayment(payment)
         }
     }
 }
@@ -1676,7 +1816,11 @@ private extension ScheduledPaymentEditorView {
                         groups: availableGroups,
                         selectedGroupID: selectedGroupID,
                         memberCount: { memberCount($0) },
-                        onSelect: { group in onSelectGroup(group) }
+                        // Elegir un grupo cierra la hoja (L10-16): antes lo marcaba y la dejaba abierta.
+                        onSelect: { group in
+                            onSelectGroup(group)
+                            showGroupPicker = false
+                        }
                     )
                 }
                 .sheet(isPresented: $showSplitCurrencyPicker) {
@@ -1709,7 +1853,7 @@ private extension ScheduledPaymentEditorView {
                         onConfirmDelete()
                     }
                 } message: {
-                    Text(NSLocalizedString("scheduled.delete.confirm.message", comment: ""))
+                    Text(L10n.UXL10.deleteKeepsRecords)
                 }
                 .onChange(of: saveErrorFlag) { _, new in if new { showSaveError = true } }
                 .alert(

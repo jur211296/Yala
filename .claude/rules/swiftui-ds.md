@@ -46,6 +46,12 @@ paths:
   `onAppear`, y el `onAppear` de `BudgetsListView` —el que hace `setContext`— aún no había corrido: lista vacía, el
   aviso consumido y nada abierto. Lo cazó un XCUITest en rojo. ⇒ **lo que un modificador lea al aparecer lo prepara él**
   (aquí, `viewModel.setContext(modelContext)` idempotente antes de leer), no cuenta con el orden de los `onAppear`.
+- **Un empuje con `navigationDestination(item:)` pedido en el PRIMER `onAppear` de una vista que se está montando por un
+  cambio de chip se pierde sin aviso (medido el 2026-10-17, iOS 27.0, lote 10).** El recordatorio de un pago cambia
+  Planificación al chip de Pagos y, en el mismo instante, `ScheduledPaymentAlertOpening` ponía el `item`: encontraba el
+  pago y no empujaba nada. Puesto una vuelta del main actor después (`Task { @MainActor in item = … }`), empuja. Con la
+  vista ya montada (el caso de presupuestos, L9-5) no hace falta. Lo cazó
+  `ScheduledPaymentsLote10UITests#test_reminderTap_opensThatPaymentsDetail` en rojo.
 - **Un `.overlay` colgado DESPUÉS de `.glassEffect` no se ve: el cristal lo tapa (medido el 2026-10-17, iOS 27.0).** El
   contorno rojo de la cápsula de un filtro oculto estaba en el código y no salía en pantalla. Antes del `.glassEffect`,
   como contenido, sí (`FilterChipView`).

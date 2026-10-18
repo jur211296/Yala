@@ -3,9 +3,9 @@
 //  YalaUITests
 //
 //  Cobertura XCUITest del área `scheduled-payments` (escenarios 7.x): navegación
-//  Perfil → Pagos planificados y creación de un pago (nombre + monto + cuenta vía
-//  Menu + subcategoría vía sheet compartido + frecuencia por defecto). Reusa el
-//  selector de subcategoría establecido (subcategory_selector_row). Seed `minimal`.
+//  Perfil → Pagos planificados (desde UX 2.2 · L10-15 abre Planificación: una sola lista) y
+//  creación de un pago desde el + de la lista (nombre + monto + cuenta vía Menu + subcategoría
+//  vía sheet compartido + frecuencia por defecto). Seed `minimal`.
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
 
@@ -17,7 +17,7 @@ final class ScheduledPaymentsCrudUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// Navegación Perfil → Pagos planificados.
+    /// Perfil → Pagos planificados abre la pantalla de Planificación, no otra lista (UX 2.2 · L10-15).
     func test_opensScheduledListFromProfile() {
         let app = XCUIApplication()
         app.launchForUITest()
@@ -27,9 +27,10 @@ final class ScheduledPaymentsCrudUITests: XCTestCase {
         app.openSettingsSection("profile_planned")
 
         XCTAssertTrue(
-            app.buttons["scheduled_add_button"].waitForExistence(timeout: 5),
-            "No se montó ScheduledPaymentsSettingsView tras tocar profile_planned."
+            app.descendants(matching: .any)["scheduled_hero_pending"].waitForExistence(timeout: 10),
+            "Perfil › Pagos planificados no llevó a la lista de Planificación."
         )
+        XCTAssertFalse(app.buttons["scheduled_add_button"].exists, "Volvió a montarse la lista duplicada de Ajustes.")
     }
 
     /// CRUD — crear un pago planificado y verificar que aparece en la lista.
@@ -38,11 +39,10 @@ final class ScheduledPaymentsCrudUITests: XCTestCase {
         app.launchForUITest()
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
-        app.openProfile()
-        app.openSettingsSection("profile_planned")
+        app.openScheduledPaymentsList()
 
-        let addButton = app.buttons["scheduled_add_button"]
-        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció scheduled_add_button.")
+        let addButton = app.buttons["scheduled_payments_create_fab"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "No apareció el + de Pagos planificados.")
         addButton.tap()
 
         // Nombre
@@ -74,24 +74,17 @@ final class ScheduledPaymentsCrudUITests: XCTestCase {
         XCTAssertTrue(firstSubcat.waitForExistence(timeout: 5), "No se montó SubcategorySelectorSheet con filas.")
         firstSubcat.tap()
 
-        // Guardar (frecuencia usa el valor por defecto).
+        // Guardar (frecuencia usa el valor por defecto: hoy).
         let saveButton = app.buttons["toolbar_save_button"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "No apareció toolbar_save_button.")
-        XCTAssertTrue(saveButton.isEnabled, "El botón guardar está deshabilitado (faltan campos requeridos).")
         saveButton.tap()
 
-        // Tras guardar, el dismiss del editor (sheet dentro de NavigationStack dentro de
-        // sheet) cierra el Perfil entero y vuelve al Panel. Re-navegar a la lista para
-        // verificar la persistencia, manejando el estado en que quedemos.
-        if !app.buttons["scheduled_add_button"].waitForExistence(timeout: 5) {
-            if app.buttons["profile_avatar"].exists {
-                app.openProfile()
-            }
-            app.openSettingsSection("profile_planned")
-        }
+        // El primer pago cae hoy, así que sale en «Este mes», y el aviso dice cuándo (UX 2.2 · L10-5).
         XCTAssertTrue(
-            app.buttons["scheduled_row_\(paymentName)"].waitForExistence(timeout: 5),
-            "El pago planificado creado no apareció en la lista."
+            app.descendants(matching: .any)["scheduled_saved_notice"].waitForExistence(timeout: 5),
+            "Tras guardar no salió «Listo. Primer pago: …»."
         )
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", paymentName)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "El pago planificado creado no apareció en la lista.")
     }
 }

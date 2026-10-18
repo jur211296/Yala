@@ -95,6 +95,10 @@ struct InboxDraftEditSheet: View {
     /// aprobarlo como `TransactionItem`. `groups` = grupos elegibles ya resueltos (≥1). `InboxView`
     /// es dueño del ruteo (1 grupo → form directo; >1 → picker). Ver Approach A del feature.
     var onConvertToGroupExpense: ((InboxDraft, [SplitGroup]) -> Void)?
+    /// Abierto desde un pago planificado para pagar una fecha concreta (UX 2.2 · L10-9, L10-11): el título dice qué fecha
+    /// se paga («Pagar ahora el del 18 de octubre»), y al guardar vuelve al detalle del pago, sin la pantalla de éxito ni
+    /// «Aprobar siguiente», que llevaban a otros borradores de la Bandeja.
+    var payNowTitle: String?
 
     // MARK: - Computed
 
@@ -221,7 +225,7 @@ struct InboxDraftEditSheet: View {
     private var mainNavigationStack: some View {
         NavigationStack {
             mainContent
-                .navigationTitle(L10n.Inbox.editDraft)
+                .navigationTitle(payNowTitle ?? L10n.Inbox.editDraft)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar { toolbarContent }
                 .sheet(isPresented: $showAccountSelector) { accountSheet }
@@ -376,7 +380,7 @@ struct InboxDraftEditSheet: View {
                         .foregroundStyle(DS.Semantic.errorForeground)
                 }
                 .accessibilityLabel(L10n.Action.delete)
-            } else if canDiscard || canDeleteForever {
+            } else if payNowTitle == nil, canDiscard || canDeleteForever {
                 // Pendiente: lo que destruye va en un menú «⋯» con texto, y arriba queda una sola X, la que cierra
                 // (UX 2.2 · L4-5, variante 2). Antes era una ⓧ roja sin texto que se leía como «cerrar» o «borrar».
                 Menu {
@@ -735,8 +739,9 @@ struct InboxDraftEditSheet: View {
             }
 
             HStack(spacing: DS.Spacing.md) {
-                // Save button (secondary) - "Aprobar luego" - only for pending drafts
-                if initialStatus == .pending {
+                // Save button (secondary) - "Aprobar luego" - only for pending drafts. Desde un pago planificado no: dejaría
+                // en la Bandeja un borrador de una fecha que la persona venía a pagar ahora (L10-11).
+                if initialStatus == .pending && payNowTitle == nil {
                     Button {
                         saveDraft()
                         dismiss()
@@ -790,7 +795,7 @@ struct InboxDraftEditSheet: View {
             // subcategoría ni cuenta personal (se definen en el form de grupo), así que un draft
             // de Apple Pay sin clasificar también puede convertirse. saveDraft() primero para que
             // el template refleje los edits vivos; si el usuario cancela el form, el draft queda igual.
-            if DraftConversionEligibilityLogic.canOffer(
+            if payNowTitle == nil, DraftConversionEligibilityLogic.canOffer(
                 sourceType: draft.sourceType,
                 isExpense: isExpense,
                 hasAmount: amount != nil,
@@ -1070,6 +1075,12 @@ struct InboxDraftEditSheet: View {
                 isExpense: isExpense
             )
 
+            // Desde un pago planificado se vuelve a su detalle: ni pantalla de éxito ni «Aprobar siguiente» (L10-11).
+            if payNowTitle != nil {
+                onApproved?()
+                dismiss()
+                return
+            }
             // Show success view with animation
             dsWithAnimation(reduceMotion) {
                 showSuccessView = true

@@ -29,6 +29,8 @@ extension XCUIApplication {
         deeplink: String? = nil,
         deeplinkURL: String? = nil,
         budgetAlertTap: String? = nil,
+        scheduledAlertTap: String? = nil,
+        accountAlertTap: String? = nil,
         seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
@@ -118,6 +120,15 @@ extension XCUIApplication {
         if let budgetAlertTap {
             args.append("-uitest-budget-alert-tap")
             args.append(budgetAlertTap)
+        }
+        // Toque fingido en el recordatorio de un pago y en el aviso de una tarjeta (UX 2.2 · L10-13, L10-14).
+        if let scheduledAlertTap {
+            args.append("-uitest-scheduled-alert-tap")
+            args.append(scheduledAlertTap)
+        }
+        if let accountAlertTap {
+            args.append("-uitest-account-alert-tap")
+            args.append(accountAlertTap)
         }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
@@ -342,6 +353,18 @@ extension XCUIApplication {
         let row = buttons[rowID]
         XCTAssertTrue(row.waitForExistence(timeout: timeout), "No apareció la fila de ajustes '\(rowID)'.")
         row.tap()
+    }
+
+    /// Planificación › Pagos planificados por la barra de pestañas (desde UX 2.2 · L10-15 es la única lista de pagos).
+    func openScheduledPaymentsList(timeout: TimeInterval = 10) {
+        tabBars.buttons.element(boundBy: 2).tap()
+        let chip = buttons["planning_chip_scheduledPayments"]
+        XCTAssertTrue(chip.waitForExistence(timeout: timeout), "No apareció el chip de Pagos planificados.")
+        chip.tap()
+        XCTAssertTrue(
+            descendants(matching: .any)["scheduled_hero_pending"].waitForExistence(timeout: timeout),
+            "No se montó la lista de Pagos planificados."
+        )
     }
 
     // MARK: - Transacciones

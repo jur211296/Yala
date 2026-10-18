@@ -418,13 +418,10 @@
 "scheduled.paid" = "已付款";
 "scheduled.overdue" = "已逾期";
 "scheduled.skip" = "跳过";
-"scheduled.skip.undo" = "撤销跳过";
-"scheduled.skip.confirm.title" = "跳过这次发生?";
-"scheduled.skip.confirm.message" = "它不会被记录为支出。你之后可以撤销。";
-"scheduled.skip.overdue.title" = "跳过逾期发生";
+"scheduled.skip.undo" = "不跳过";
 "scheduled.status.skipped" = "已跳过";
 "scheduled.status.paid" = "已付款";
-"scheduled.unlink" = "取消关联记录";
+"scheduled.unlink" = "改为未支付";
 "scheduled.status.overdue" = "已逾期";
 "scheduled.draftCreatedTitle" = "你有待处理的付款!";
 "scheduled.draftCreatedMessage" = "%d 笔计划付款已添加到你的收件箱。准备好后查看它们。";
@@ -783,7 +780,7 @@
 "scheduled.widget.empty.title" = "无即将到期的付款";
 "scheduled.widget.empty.message" = "你的即将到期付款将显示在这里";
 "scheduled.widget.tomorrow" = "明天";
-"scheduled.widget.smallTitle" = "已计划";
+"scheduled.widget.smallTitle" = "计划付款";
 "scheduled.widget.largeTitle.recurring" = "周期付款";
 "scheduled.widget.smallToPay" = "待付款";
 "scheduled.widget.smallPaidAmount" = "你已付款 %@";
@@ -1543,7 +1540,7 @@
 
 // Recurrence - New logic
 "scheduled.recurrence.onetime" = "一次性";
-"scheduled.recurrence.recurring" = "周期性";
+"scheduled.recurrence.recurring" = "重复";
 "scheduled.recurrence.daily" = "每日";
 "scheduled.recurrence.day" = "日";
 "scheduled.recurrence.week" = "周";
@@ -2797,7 +2794,7 @@
 "scheduled.associate.paymentHeader" = "计划付款";
 "scheduled.associate.candidatesHeader" = "近期支出";
 "scheduled.associate.already" = "此支出已关联";
-"scheduled.advance" = "提前付款";
+"scheduled.advance" = "立即支付";
 "scheduled.view.record" = "查看记录";
 
 // MARK: - Siri Shortcuts
@@ -7179,3 +7176,73 @@
 "budgets.l9.seePro" = "查看 Pro";
 "budgets.l9.chooseWhich" = "选择";
 "budgets.l9.previewEmpty" = "用星标标记最多 3 个预算,就能在这里看到你的小组件。";
+
+/* Auditoría UX 2.2 · lote 10 (pagos planificados) */
+"scheduled.l10.state.overdue" = "已逾期";
+"scheduled.l10.state.today" = "今天到期";
+"scheduled.l10.state.tomorrow" = "明天";
+"scheduled.l10.state.inDays" = "%d天后";
+"scheduled.l10.state.paid" = "已支付";
+"scheduled.l10.state.received" = "已收到";
+"scheduled.l10.state.skipped" = "已跳过";
+"scheduled.l10.state.paused" = "已暂停";
+"scheduled.l10.state.finished" = "已结束";
+"scheduled.l10.state.pending" = "待支付";
+"scheduled.l10.due.overdue" = "已逾期";
+"scheduled.l10.due.today" = "今天到期";
+"scheduled.l10.due.tomorrow" = "明天到期";
+"scheduled.l10.due.inDays" = "%d天后到期";
+"scheduled.l10.section.toPay" = "待支付";
+"scheduled.l10.section.paid" = "已支付";
+"scheduled.l10.section.skipped" = "已跳过";
+"scheduled.l10.section.paused" = "已暂停";
+"scheduled.l10.view.list" = "列表";
+"scheduled.l10.view.timeline" = "时间线";
+"scheduled.l10.view.calendar" = "日历";
+"scheduled.l10.hero.toPay" = "还需支付";
+"scheduled.l10.hero.paidOf" = "已支付 %1$@，共 %2$@";
+"scheduled.l10.hero.scope" = "不含收入和已暂停的付款";
+"scheduled.l10.detail.monthPaid" = "%@ 已付清";
+"scheduled.l10.action.paid" = "我已支付";
+"scheduled.l10.action.received" = "我已收到";
+"scheduled.l10.action.skipMonth" = "跳过本月";
+"scheduled.l10.action.skipHelp" = "不会记录任何内容，其他月份保持不变";
+"scheduled.l10.action.pause" = "暂停此付款";
+"scheduled.l10.action.resume" = "恢复";
+"scheduled.l10.action.pauseHelp" = "恢复之前不会提醒你，也不会计入";
+"scheduled.l10.action.skip" = "跳过";
+"scheduled.l10.dateActions" = "此日期的操作";
+"scheduled.l10.skipped" = "已跳过 %@ 的付款";
+"scheduled.l10.paid.recordNow" = "立即记录";
+"scheduled.l10.paid.recordNowHelp" = "将记录到 %@。你可以修改金额。";
+"scheduled.l10.paid.recordButton" = "记录 %@";
+"scheduled.l10.paid.alreadyRecorded" = "我已记录";
+"scheduled.l10.paid.alreadyRecordedHelp" = "选择记录，我们会将其标记为已支付。";
+"scheduled.l10.paid.candidatesExpenses" = "那几天的支出";
+"scheduled.l10.paid.candidatesIncome" = "那几天的收入";
+"scheduled.l10.paid.candidatesEmpty" = "那天前后没有记录";
+"scheduled.l10.paid.confirmTitle" = "这是 %@ 的付款吗？";
+"scheduled.l10.paid.confirmMessage" = "我们会用这条记录将其标记为已支付，不会新建任何内容。";
+"scheduled.l10.paid.confirmYes" = "是的，就是这个";
+"scheduled.l10.payNow.title" = "立即支付 %@ 的这笔";
+"scheduled.l10.record.title" = "记录 %@ 的这笔";
+"scheduled.l10.saved.firstPayment" = "完成。首次付款：%@";
+"scheduled.l10.saved.view" = "查看";
+"scheduled.l10.delete.title" = "删除“%@”？";
+"scheduled.l10.delete.keepsRecords" = "你的记录不会被删除。";
+"scheduled.l10.deleted" = "已删除“%@”";
+"scheduled.l10.editor.moreOptions" = "更多选项";
+"scheduled.l10.editor.when" = "时间";
+"scheduled.l10.editor.optional" = "可选";
+"scheduled.l10.editor.missing" = "缺少";
+"scheduled.l10.summary.today" = "今天";
+"scheduled.l10.summary.once" = "%1$@，仅一次，%2$@。";
+"scheduled.l10.summary.recurring" = "%1$@，%2$@。首次付款：%3$@。";
+"scheduled.l10.cadence.month" = "每月%d日";
+"scheduled.l10.cadence.months" = "每%1$d个月，%2$d日";
+"scheduled.l10.cadence.week" = "每周";
+"scheduled.l10.cadence.weeks" = "每%d周";
+"scheduled.l10.cadence.day" = "每天";
+"scheduled.l10.cadence.days" = "每%d天";
+"scheduled.l10.cadence.year" = "每年%@";
+"scheduled.l10.cadence.years" = "每%1$d年，%2$@";

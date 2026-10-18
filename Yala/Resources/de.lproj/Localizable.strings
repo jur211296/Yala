@@ -416,13 +416,10 @@
 "scheduled.paid" = "Bezahlt";
 "scheduled.overdue" = "Überfällig";
 "scheduled.skip" = "Überspringen";
-"scheduled.skip.undo" = "Rückgängig";
-"scheduled.skip.confirm.title" = "Dieses Ereignis überspringen?";
-"scheduled.skip.confirm.message" = "Es wird nicht als Ausgabe erfasst. Du kannst dies später rückgängig machen.";
-"scheduled.skip.overdue.title" = "Überfälliges Ereignis überspringen";
+"scheduled.skip.undo" = "Nicht überspringen";
 "scheduled.status.skipped" = "Übersprungen";
 "scheduled.status.paid" = "Bezahlt";
-"scheduled.unlink" = "Eintrag trennen";
+"scheduled.unlink" = "Doch nicht bezahlt";
 "scheduled.status.overdue" = "Überfällig";
 "scheduled.draftCreatedTitle" = "Du hast ausstehende Zahlungen!";
 "scheduled.draftCreatedMessage" = "%d geplante Zahlungen wurden zu deinem Posteingang hinzugefügt. Schau sie dir an, wenn du bereit bist.";
@@ -781,7 +778,7 @@
 "scheduled.widget.empty.title" = "Keine Zahlungen";
 "scheduled.widget.empty.message" = "Füge geplante Zahlungen hinzu um sie hier zu sehen";
 "scheduled.widget.tomorrow" = "Morgen";
-"scheduled.widget.smallTitle" = "Geplant";
+"scheduled.widget.smallTitle" = "Geplante Zahlungen";
 "scheduled.widget.largeTitle.recurring" = "Wiederkehrende Zahlungen";
 "scheduled.widget.smallToPay" = "zu zahlen";
 "scheduled.widget.smallPaidAmount" = "Du hast %@ bezahlt";
@@ -1544,7 +1541,7 @@
 
 // Recurrence - New logic
 "scheduled.recurrence.onetime" = "Einmalig";
-"scheduled.recurrence.recurring" = "Wiederkehrend";
+"scheduled.recurrence.recurring" = "Wiederholen";
 "scheduled.recurrence.daily" = "Täglich";
 "scheduled.recurrence.day" = "Tag";
 "scheduled.recurrence.week" = "Woche";
@@ -2793,7 +2790,7 @@
 "scheduled.associate.paymentHeader" = "Geplante Zahlung";
 "scheduled.associate.candidatesHeader" = "Zeitnahe Ausgaben";
 "scheduled.associate.already" = "Diese Ausgabe ist bereits verknüpft";
-"scheduled.advance" = "Zahlung vorziehen";
+"scheduled.advance" = "Jetzt zahlen";
 "scheduled.view.record" = "Eintrag anzeigen";
 
 // MARK: - Siri Shortcuts
@@ -7167,3 +7164,73 @@
 "budgets.l9.seePro" = "Pro ansehen";
 "budgets.l9.chooseWhich" = "Auswählen";
 "budgets.l9.previewEmpty" = "Markiere bis zu 3 Budgets mit dem Stern, dann siehst du hier dein Widget.";
+
+/* Auditoría UX 2.2 · lote 10 (pagos planificados) */
+"scheduled.l10.state.overdue" = "Überfällig";
+"scheduled.l10.state.today" = "Heute fällig";
+"scheduled.l10.state.tomorrow" = "Morgen";
+"scheduled.l10.state.inDays" = "In %d Tagen";
+"scheduled.l10.state.paid" = "Bezahlt";
+"scheduled.l10.state.received" = "Erhalten";
+"scheduled.l10.state.skipped" = "Übersprungen";
+"scheduled.l10.state.paused" = "Pausiert";
+"scheduled.l10.state.finished" = "Beendet";
+"scheduled.l10.state.pending" = "Offen";
+"scheduled.l10.due.overdue" = "Überfällig";
+"scheduled.l10.due.today" = "Heute fällig";
+"scheduled.l10.due.tomorrow" = "Morgen fällig";
+"scheduled.l10.due.inDays" = "In %d Tagen fällig";
+"scheduled.l10.section.toPay" = "Offen";
+"scheduled.l10.section.paid" = "Bezahlt";
+"scheduled.l10.section.skipped" = "Übersprungen";
+"scheduled.l10.section.paused" = "Pausiert";
+"scheduled.l10.view.list" = "Liste";
+"scheduled.l10.view.timeline" = "Zeitachse";
+"scheduled.l10.view.calendar" = "Kalender";
+"scheduled.l10.hero.toPay" = "Noch zu zahlen";
+"scheduled.l10.hero.paidOf" = "Du hast %1$@ von %2$@ bezahlt";
+"scheduled.l10.hero.scope" = "Ohne Einnahmen und pausierte Zahlungen";
+"scheduled.l10.detail.monthPaid" = "%@ ist bereits bezahlt";
+"scheduled.l10.action.paid" = "Schon bezahlt";
+"scheduled.l10.action.received" = "Schon erhalten";
+"scheduled.l10.action.skipMonth" = "Diesen Monat überspringen";
+"scheduled.l10.action.skipHelp" = "Es wird nichts erfasst; die anderen Monate bleiben gleich";
+"scheduled.l10.action.pause" = "Diese Zahlung pausieren";
+"scheduled.l10.action.resume" = "Fortsetzen";
+"scheduled.l10.action.pauseHelp" = "Wir erinnern dich nicht und zählen sie nicht, bis du sie fortsetzt";
+"scheduled.l10.action.skip" = "Überspringen";
+"scheduled.l10.dateActions" = "Aktionen für dieses Datum";
+"scheduled.l10.skipped" = "Zahlung vom %@ übersprungen";
+"scheduled.l10.paid.recordNow" = "Jetzt erfassen";
+"scheduled.l10.paid.recordNowHelp" = "Wir erfassen es in %@. Du kannst den Betrag ändern.";
+"scheduled.l10.paid.recordButton" = "%@ erfassen";
+"scheduled.l10.paid.alreadyRecorded" = "Schon erfasst";
+"scheduled.l10.paid.alreadyRecordedHelp" = "Wähle den Eintrag und wir markieren sie als bezahlt.";
+"scheduled.l10.paid.candidatesExpenses" = "Deine Ausgaben um dieses Datum";
+"scheduled.l10.paid.candidatesIncome" = "Deine Einnahmen um dieses Datum";
+"scheduled.l10.paid.candidatesEmpty" = "Keine Einträge um dieses Datum";
+"scheduled.l10.paid.confirmTitle" = "Ist das die Zahlung für %@?";
+"scheduled.l10.paid.confirmMessage" = "Wir markieren sie mit diesem Eintrag als bezahlt. Es wird nichts Neues erstellt.";
+"scheduled.l10.paid.confirmYes" = "Ja, diese";
+"scheduled.l10.payNow.title" = "Die vom %@ jetzt zahlen";
+"scheduled.l10.record.title" = "Die vom %@ erfassen";
+"scheduled.l10.saved.firstPayment" = "Fertig. Erste Zahlung: %@";
+"scheduled.l10.saved.view" = "Ansehen";
+"scheduled.l10.delete.title" = "„%@“ löschen?";
+"scheduled.l10.delete.keepsRecords" = "Deine Einträge werden nicht gelöscht.";
+"scheduled.l10.deleted" = "„%@“ gelöscht";
+"scheduled.l10.editor.moreOptions" = "Weitere Optionen";
+"scheduled.l10.editor.when" = "Wann";
+"scheduled.l10.editor.optional" = "Optional";
+"scheduled.l10.editor.missing" = "Fehlt";
+"scheduled.l10.summary.today" = "heute";
+"scheduled.l10.summary.once" = "%1$@ einmalig, am %2$@.";
+"scheduled.l10.summary.recurring" = "%1$@ %2$@. Erste Zahlung: %3$@.";
+"scheduled.l10.cadence.month" = "jeden Monat am %d.";
+"scheduled.l10.cadence.months" = "alle %1$d Monate am %2$d.";
+"scheduled.l10.cadence.week" = "jede Woche";
+"scheduled.l10.cadence.weeks" = "alle %d Wochen";
+"scheduled.l10.cadence.day" = "jeden Tag";
+"scheduled.l10.cadence.days" = "alle %d Tage";
+"scheduled.l10.cadence.year" = "jedes Jahr am %@";
+"scheduled.l10.cadence.years" = "alle %1$d Jahre am %2$@";

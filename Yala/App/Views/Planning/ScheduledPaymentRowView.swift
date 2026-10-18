@@ -2,7 +2,10 @@
 //  ScheduledPaymentRowView.swift
 //  Yala
 //
-//  Individual scheduled payment card component
+//  Fila de un pago planificado. Auditoría UX 2.2 · L10-1 B (Jürgen, 2026-10-15): bajo el nombre, una píldora rellena con
+//  el estado de la fecha («Vence hoy», «En 4 días», «Vencido», «Pagado») y la fecha; el importe en color de texto y en
+//  rosa solo si está vencido. Ya no dice «Mensual» en cada fila (el dato que menos cambia) ni esconde el estado en
+//  letra de 11 pt.
 //
 
 import SwiftData
@@ -12,41 +15,48 @@ struct ScheduledPaymentRowView: View {
     let summary: ScheduledPaymentSummary
     let currencyCode: String
 
-    @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
 
     var body: some View {
+        let state = summary.rowState
         NavigationLink(value: summary.payment.persistentModelID) {
             HStack(spacing: DS.Spacing.md) {
-                // Icon badge
                 paymentIcon
+                    // Lo hecho, saltado o pausado, atenuado: lo que falta es lo que llama la atención.
+                    .opacity(ScheduledPaymentListLogic.section(for: state) == .toPay ? 1 : 0.55)
 
-                // Payment info
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                     Text(summary.payment.name)
                         .font(DS.Typography.label)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    // Due date info
-                    dueInfo
+                    HStack(spacing: DS.Spacing.xs) {
+                        ScheduledPaymentStatusPill(state: state, isIncome: summary.payment.isIncome)
+                        Text(ScheduledPaymentDateText.dayMonth(summary.dueDate))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        if summary.payment.isGroupPayment {
+                            // Gasto compartido (F6): la cuenta es solo un prefill, así que se dice que es compartido.
+                            Image(systemName: "person.2.fill")
+                                .font(DS.Typography.captionSmall)
+                                .foregroundStyle(.secondary)
+                                .accessibilityLabel(L10n.Scheduled.GroupExpense.sharedBadge)
+                        }
+                    }
                 }
 
-                Spacer()
+                Spacer(minLength: DS.Spacing.sm)
 
-                // Amount (right-aligned)
-                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                    Text(formattedAmount)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(amountColor)
-
-                    // Recurrence badge
-                    recurrenceBadge
-                }
+                Text(Self.amountText(summary, appPreferences: appPreferences))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(Self.amountColor(state: state, isIncome: summary.payment.isIncome))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             .contentShape(Rectangle())
             .panelCard(small: true)
-            .opacity(summary.isPaidForMonth || summary.isSkippedForMonth || !summary.payment.isActive ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("scheduled_payment_row")
@@ -64,133 +74,28 @@ struct ScheduledPaymentRowView: View {
                 .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
+        .accessibilityHidden(true)
     }
 
-    private var dueInfo: some View {
-        HStack(spacing: DS.Spacing.xs) {
-            // Pago pausado y sin pagar este mes: no cuenta en lo pendiente, y la fila lo dice en vez de «En 6 días».
-            // `isActive == false` también marca un pago ya completado (una sola vez aprobada): ese sale «Pagado».
-            if !summary.payment.isActive && !summary.isPaidForMonth && !summary.isSkippedForMonth {
-                Image(systemName: "pause.circle")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
+    // MARK: - Shared formatting (lista y línea de tiempo)
 
-                Text(NSLocalizedString("scheduled.inactive", comment: ""))
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.secondary)
-            }
-            // Skipped badge
-            else if summary.isSkippedForMonth {
-                Image(systemName: "arrow.uturn.forward.circle")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-
-                Text(NSLocalizedString("scheduled.status.skipped", comment: ""))
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(.secondary)
-            }
-            // Paid badge (if paid for current cycle)
-            else if summary.isPaidForMonth {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(theme.accent)
-
-                Text(L10n.Scheduled.paid)
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(theme.accent)
-            } else {
-                // Due status indicator (only for past due)
-                if summary.dueStatus == .past {
-                    Circle()
-                        .fill(Color.hotPink)
-                        .frame(width: 6, height: 6)
-                        .accessibilityHidden(true)
-
-                    Text(NSLocalizedString("scheduled.overdue", comment: "Overdue label"))
-                        .font(DS.Typography.badgeLabel)
-                        .foregroundStyle(Color.hotPink)
-                }
-
-                Text(dueText)
-                    .font(DS.Typography.labelTiny)
-                    .foregroundStyle(summary.dueStatus == .past ? Color.hotPink : .secondary)
-            }
-
-            if summary.payment.isGroupPayment {
-                // Gasto compartido (F6): chip de grupo en lugar de la cuenta (la cuenta es prefill).
-                Text("•")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary.opacity(0.5))
-
-                Image(systemName: "person.2.fill")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(Color.hotPink)
-                    .accessibilityHidden(true)
-
-                Text(L10n.Scheduled.GroupExpense.sharedBadge)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(Color.hotPink)
-                    .lineLimit(1)
-            } else if let accountName = summary.payment.account?.name {
-                Text("•")
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary.opacity(0.5))
-
-                Text(accountName)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-        }
-    }
-
-    /// «Una sola vez», «Mensual» o «Cada 2 meses». Antes pintaba el tipo sin mirar `isRecurring` ni el intervalo.
-    private var recurrenceBadge: some View {
-        Text(ScheduledPaymentDetailLogic.frequencyText(
-            isRecurring: summary.payment.isRecurring,
-            recurrenceType: summary.payment.recurrenceType,
-            interval: summary.payment.recurrenceInterval
-        ))
-            .font(DS.Typography.captionSmall)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-    }
-
-    // MARK: - Computed Properties
-
-    private var dueText: String {
-        switch summary.dueStatus {
-        case .past:
-            let days = abs(summary.daysUntilDue)
-            if days == 1 {
-                return NSLocalizedString("scheduled.due.yesterday", comment: "Yesterday")
-            } else {
-                return String(format: NSLocalizedString("scheduled.due.days.ago", comment: ""), days)
-            }
-        case .today:
-            return NSLocalizedString("scheduled.due.today", comment: "Today")
-        case .upcoming:
-            if summary.daysUntilDue == 1 {
-                return NSLocalizedString("scheduled.due.tomorrow", comment: "Tomorrow")
-            } else {
-                return String(format: NSLocalizedString("scheduled.due.in.days", comment: ""), summary.daysUntilDue)
-            }
-        }
-    }
-
-
-    private var amountColor: Color {
-        if summary.payment.transactionType == "income" {
-            return Color.priorityNeed
-        }
-        return summary.dueStatus == .past ? Color.hotPink.opacity(0.8) : Color.hotPink
-    }
-
-    private var formattedAmount: String {
-        let prefix = summary.payment.transactionType == "income" ? "+" : "-"
+    /// «-S/ 45.00» (o «+» en un ingreso); con «≈» si el monto es estimado y aún no se pagó.
+    static func amountText(_ summary: ScheduledPaymentSummary, appPreferences: AppPreferences) -> String {
+        let prefix = summary.payment.isIncome ? "+" : "-"
         let isEstimate = summary.paidAmount == nil && summary.payment.isVariableAmount
-        return prefix + appPreferences.currency(summary.displayAmount, currencyCode: summary.displayCurrencyCode, forceFullPrecision: true, isEstimate: isEstimate)
+        return prefix + appPreferences.currency(
+            summary.displayAmount, currencyCode: summary.displayCurrencyCode,
+            forceFullPrecision: true, isEstimate: isEstimate
+        )
+    }
+
+    /// Color de texto; rosa solo lo vencido (L10-1). Un ingreso conserva su tono, el único que se colorea en una lista
+    /// de movimientos. Lo pagado o saltado, en gris.
+    static func amountColor(state: ScheduledPaymentRowState, isIncome: Bool) -> Color {
+        switch state {
+        case .paid, .skipped, .paused: return .secondary
+        case .overdue: return isIncome ? Color.incomeAmount : Color.hotPink
+        case .dueToday, .dueTomorrow, .dueInDays: return isIncome ? Color.incomeAmount : .primary
+        }
     }
 }
