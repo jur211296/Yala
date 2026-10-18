@@ -725,7 +725,6 @@ struct PanelView: View {
                             isVoiceLocked: isVoiceLocked,
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
-                            chatConsentAccepted: appPreferences.aiChatConsentAccepted,
                             chatFABVisible: appPreferences.chatFABVisible,
                             onVoiceTap: { sheets.showVoiceRecording = true },
                             onImageTap: { sheets.showImageSelection = true },
@@ -737,8 +736,7 @@ struct PanelView: View {
                             // de llamar aquí y `startChat()` lo vuelve a comprobar
                             // sin efecto, para que la fila pueda usar el helper.
                             onChatTap: { startChat() },
-                            onUpgradeChat: { sheets.showUpgradeForChat = true },
-                            onChatConsentNeeded: { sheets.showChatConsentAlert = true }
+                            onUpgradeChat: { sheets.showUpgradeForChat = true }
                         )
                     }
                 }

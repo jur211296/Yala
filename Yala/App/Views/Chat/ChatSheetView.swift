@@ -18,6 +18,8 @@ struct ChatSheetView: View {
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
+    /// La ficha «Apunta un gasto» del saludo pone aquí el foco: el gasto se escribe en la caja de siempre.
+    @FocusState private var isInputFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Cómo está montado el chat. `.sheet`: la hoja de siempre, con su barra de navegación (iPhone, ventana
@@ -174,10 +176,12 @@ struct ChatSheetView: View {
                     ChatGreetingBubble(suggestions: [], isPreparing: false, onSelect: sendSuggestion)
                     unavailableState
                 } else {
-                    ChatGreetingBubble(
+                    // UX 2.2 · L14-4: el saludo dice las dos cosas que hace, apuntar y preguntar.
+                    ChatTwoUsesGreeting(
                         suggestions: Array(viewModel.suggestions.prefix(3)),
                         isPreparing: viewModel.suggestions.isEmpty && viewModel.suggestionsLoading,
-                        onSelect: sendSuggestion
+                        onSelect: sendSuggestion,
+                        onLogExpense: { isInputFocused = true }
                     )
                 }
             }
@@ -396,6 +400,7 @@ struct ChatSheetView: View {
                     .textFieldStyle(.plain)
                     .frame(minHeight: inputControlSize)
                     .disabled(!viewModel.isAIAvailable)
+                    .focused($isInputFocused)
                     .accessibilityIdentifier("chat_input")
 
                 if hasTypedText {

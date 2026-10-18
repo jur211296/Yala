@@ -137,16 +137,16 @@ struct PanelQuickActionsRow: View {
                 }
                 .coachMarkAnchor(ProTourSteps.panelVoiceImageAnchor)
                 if isChatVisible {
-                    // Dorado como el FAB de IA (`DS.Gradients.proBadge`), y con
-                    // texto: es la única de las tres asistidas que se anuncia,
-                    // porque es la que no se adivina por el icono. El label
-                    // accesible sigue siendo el nombre largo del chat.
+                    // UX 2.2 · L14-5 (variante 3, Jürgen 2026-10-15): la píldora de cristal de siempre, ahora con el
+                    // nombre de la función, «Yala IA» (antes decía solo «IA»), y el dorado SÓLIDO en borde, icono y
+                    // texto (antes, el degradado amarillo-naranja `proBadge`). «Nuevo registro» sigue siendo lo único
+                    // relleno de la fila. VoiceOver lee lo que se ve.
                     pill(
-                        text: L10n.Panel.aiPill,
+                        text: L10n.Chat.assistantName,
                         icon: "sparkles",
                         isLocked: isChatLocked,
-                        accessibilityLabel: L10n.Chat.title,
                         isGold: true,
+                        compactPadding: true,
                         identifier: "panel_action_ai",
                         action: onChatTap
                     )
@@ -170,8 +170,8 @@ struct PanelQuickActionsRow: View {
         icon: String,
         isPrimary: Bool = false,
         isLocked: Bool,
-        accessibilityLabel: String? = nil,
         isGold: Bool = false,
+        compactPadding: Bool = false,
         identifier: String,
         action: @escaping () -> Void
     ) -> some View {
@@ -210,7 +210,9 @@ struct PanelQuickActionsRow: View {
                                 .lineLimit(1)
                         }
                     }
-                    .padding(.horizontal, text == nil ? DS.Spacing.md : DS.Spacing.lg)
+                    // «Yala IA» va con el margen corto: con el largo, la fila no cabía en un iPhone 17 Pro en español
+                    // y la píldora quedaba cortada contra el borde (medido en el lote 14).
+                    .padding(.horizontal, text == nil || compactPadding ? DS.Spacing.md : DS.Spacing.lg)
                 }
             }
             .frame(minHeight: Self.pillHeight)
@@ -222,14 +224,7 @@ struct PanelQuickActionsRow: View {
                         .fill(theme.card)
                         .overlay {
                             if usaDorado {
-                                Capsule().strokeBorder(
-                                    LinearGradient(
-                                        colors: DS.Gradients.proBadge,
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.5
-                                )
+                                Capsule().strokeBorder(Color.proGoldOnCard, lineWidth: 1.5)
                             }
                         }
                 }
@@ -246,7 +241,7 @@ struct PanelQuickActionsRow: View {
             y: DS.Shadow.small.y
         )
         // VoiceOver lee lo mismo que se ve: «Voz», «Foto» (el nombre accesible contiene la etiqueta visible).
-        .accessibilityLabel(accessibilityLabel ?? text ?? caption ?? "")
+        .accessibilityLabel(text ?? caption ?? "")
         .accessibilityIdentifier(identifier)
     }
 
@@ -266,19 +261,11 @@ struct PanelQuickActionsRow: View {
         }
     }
 
-    /// Blanco sobre la píldora principal, degradado `proBadge` en la de IA —el
-    /// mismo del FAB, para que se lean como el mismo botón— y tinta en el resto.
+    /// Blanco sobre la píldora principal, dorado sólido en la de Yala IA —el mismo del botón flotante, para que se lean
+    /// como el mismo botón— y tinta en el resto.
     private func iconStyle(isPrimary: Bool, usaDorado: Bool) -> AnyShapeStyle {
         if isPrimary { return AnyShapeStyle(Color.white) }
-        if usaDorado {
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: DS.Gradients.proBadge,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        }
+        if usaDorado { return AnyShapeStyle(Color.proGoldOnCard) }
         return AnyShapeStyle(Color.primary)
     }
 }

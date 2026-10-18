@@ -394,26 +394,15 @@
 "yalaAI.onboarding.step2.card2.body" = "¿Cuánto gasté en café? ¿Mi mes más caro?";
 "yalaAI.onboarding.step2.card3.title" = "Recibí sugerencias";
 "yalaAI.onboarding.step2.card3.body" = "Patrones, anomalías, ideas para ahorrar.";
-"yalaAI.onboarding.step3.title" = "Elegí el tono de Yala";
-"yalaAI.onboarding.step3.subtitle" = "Es la forma en que te habla en cada respuesta.";
 "yalaAI.onboarding.step3.toneNormalDescription" = "Equilibrado y claro. Datos sin adornos.";
 "yalaAI.onboarding.step3.toneConsiderateDescription" = "Suave y empático. Cuida tu ánimo y celebra los avances.";
 "yalaAI.onboarding.step3.toneSarcasticDescription" = "Directo con humor. Te dice las cosas con un toque pícaro.";
-"yalaAI.onboarding.step3.toneNormalQuote" = "Llevás 3 cafés esta semana. Vas bien con el presupuesto.";
-"yalaAI.onboarding.step3.toneConsiderateQuote" = "Tomarte un café te hace bien. Va dentro de tu presupuesto, todo en orden.";
-"yalaAI.onboarding.step3.toneSarcasticQuote" = "Tres cafés más y rompemos la marca. Aún caben en el presupuesto.";
-"yalaAI.onboarding.step4.title" = "Elegí el estilo de Yala";
-"yalaAI.onboarding.step4.subtitle" = "En qué pone el foco al ayudarte con tus finanzas.";
 "yalaAI.onboarding.step4.focusBalancedDescription" = "Mira tanto los gastos como los ingresos por igual.";
 "yalaAI.onboarding.step4.focusSaverDescription" = "Te ayuda a recortar y a guardar más cada mes.";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "Te avisa ante cualquier desvío para que no te pase nada.";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "Tus ingresos cubren los gastos del mes. Buen ritmo.";
 "yalaAI.onboarding.step4.focusSaverQuote" = "Si bajás un 10%% en restaurantes, ahorrás %@ al mes.";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "Atento: vas más rápido que el mes pasado en delivery.";
-"yalaAI.onboarding.step5.title" = "¡Todo listo!";
-"yalaAI.onboarding.step5.subtitle" = "Cuando quieras, decile a Yala lo que necesitás.";
-"yalaAI.onboarding.step5.tip" = "💡 Probá: \"Registrá un café de %@\" o \"¿Cuánto gasté hoy?\"";
-"yalaAI.onboarding.step5.cta" = "Empezar a chatear";
 
 "onboarding.startUsingYala" = "Empezá a usar Yala";
 
@@ -4727,7 +4716,6 @@
 "subscription.error.verificationFailed" = "No pudimos verificar la compra con Apple. Intentá de nuevo o usá Restaurar compras.";
 
 /* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
-"panel.aiPill" = "IA";
 
 /* Share-link button: group predates the backend channel — permanent, no link is possible */
 "groups.errors.inviteLegacyGroup" = "Este grupo es de una versión anterior de Yala y no admite enlaces de invitación. Para invitar por enlace, creá un grupo nuevo.";
@@ -6673,3 +6661,25 @@
 "groups.l13.youPayTo" = "Tú pagas a";
 "groups.l13.debtA11yMe" = "Pagas a %1$@: %2$@";
 "groups.l13.pending.rejectMessageOther" = "Quitamos este pago y la deuda sigue como estaba.";
+
+/* UX 2.2 · lote 14 (Yala IA) */
+"yalaAI.onboarding.l14.personalize.title" = "Hacela a tu manera";
+"yalaAI.onboarding.l14.personalize.subtitle" = "Podés cambiarlo cuando quieras.";
+"yalaAI.onboarding.l14.personalize.toneHeader" = "Cómo te habla";
+"yalaAI.onboarding.l14.personalize.focusHeader" = "En qué se fija";
+"yalaAI.onboarding.l14.toneOpener.considerate" = "Paso a paso, lo estás haciendo bien.";
+"yalaAI.onboarding.l14.toneOpener.sarcastic" = "Vamos al grano.";
+"yalaAI.onboarding.l14.consent.title" = "Antes de empezar";
+"yalaAI.onboarding.l14.consent.subtitle" = "Para responderte, Yala IA lee un resumen de tus finanzas.";
+"yalaAI.onboarding.l14.consent.readsTitle" = "Qué lee";
+"yalaAI.onboarding.l14.consent.readsBody" = "Saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos y pagos recurrentes de los últimos 13 meses.";
+"yalaAI.onboarding.l14.consent.useTitle" = "Qué no hace";
+"yalaAI.onboarding.l14.consent.useBody" = "Lo envía a un servicio de IA solo para responderte. No se usa para entrenar a la IA.";
+"yalaAI.onboarding.l14.consent.decideTitle" = "Vos decidís";
+"yalaAI.onboarding.l14.consent.decideBody" = "Lo apagás cuando quieras en %@.";
+"yalaAI.onboarding.l14.consent.cta" = "Aceptar y empezar";
+"chat.l14.greetingTwoUses" = "Hola, soy Yala IA. Puedo hacer dos cosas por vos:";
+"chat.l14.logTitle" = "Anotá un gasto";
+"chat.l14.logBody" = "Escribilo o dictalo: «Gasté 25 en taxi con la tarjeta»";
+"chat.l14.logHint" = "Abre el teclado para escribirlo";
+"chat.l14.askTitle" = "Preguntá por tus finanzas";

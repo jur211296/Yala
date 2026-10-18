@@ -144,17 +144,18 @@ final class DemoIAPizzaUITests: XCTestCase {
         /// El importe que escribe y que contesta Yala IA (`DevSeedFicha.Cifras.pizza` de esa divisa).
         let amount: String
         let restaurants: String
+        /// `chat.draft.savedBadge` de ese idioma. Era «Registrado» hasta los lotes 3 y 4 de la auditoría UX 2.2.
         let savedBadge: String
 
         static let esMX = DemoIdioma(
             seed: "ficha-mx-vida", appleLanguages: "(es-MX)", appleLocale: "es_MX", currency: "MXN",
-            typedText: "Pizza con amigos 280", amount: "280", restaurants: "Restaurantes", savedBadge: "Registrado")
+            typedText: "Pizza con amigos 280", amount: "280", restaurants: "Restaurantes", savedBadge: "Guardado")
         static let en = DemoIdioma(
             seed: "ficha", appleLanguages: "(en-US)", appleLocale: "en_US", currency: "USD",
             typedText: "Pizza with friends 28", amount: "28", restaurants: "Restaurants", savedBadge: "Saved")
         static let ptBR = DemoIdioma(
             seed: "ficha", appleLanguages: "(pt-BR)", appleLocale: "pt_BR", currency: "BRL",
-            typedText: "Pizza com os amigos 90", amount: "90", restaurants: "Restaurantes", savedBadge: "Registrado")
+            typedText: "Pizza com os amigos 90", amount: "90", restaurants: "Restaurantes", savedBadge: "Salvo")
 
         static var actual: DemoIdioma {
             switch ProcessInfo.processInfo.environment["YALA_DEMO_IDIOMA"] {

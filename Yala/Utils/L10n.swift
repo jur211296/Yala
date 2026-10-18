@@ -990,7 +990,6 @@ enum L10n {
         /// Botón rosa del Panel sin cuentas, en lugar de la fila de acciones apagada (UX 2.2 · L3-10).
         static var createFirstAccount: String { ls("panel.createFirstAccount", comment: "Panel with no accounts: pink button that creates the first account") }
         static var createFirstAccountHint: String { ls("panel.createFirstAccountHint", comment: "Line under the create-first-account button on the Panel") }
-        static var aiPill: String { ls("panel.aiPill", comment: "Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale)") }
 
         /// Palabra bajo el icono de voz y de foto en la fila de acciones del Panel (UX 2.2 · L4-1). Corta a
         /// propósito: va debajo del icono, dentro del mismo botón, y no puede ensanchar la fila.
@@ -8778,31 +8777,18 @@ enum L10n {
             static var step2Card3Title: String { ls("yalaAI.onboarding.step2.card3.title", comment: "") }
             static var step2Card3Body: String { ls("yalaAI.onboarding.step2.card3.body", comment: "") }
 
-            // Step 3 — Tone (3 options + quote in preview)
-            static var step3Title: String { ls("yalaAI.onboarding.step3.title", comment: "") }
-            static var step3Subtitle: String { ls("yalaAI.onboarding.step3.subtitle", comment: "") }
+            // Step 3 — Tone (descripción de cada opción; el paso «Hazla a tu manera» vive en L10n+UXAudit22Lote14)
             static var step3ToneNormalDescription: String { ls("yalaAI.onboarding.step3.toneNormalDescription", comment: "") }
             static var step3ToneConsiderateDescription: String { ls("yalaAI.onboarding.step3.toneConsiderateDescription", comment: "") }
             static var step3ToneSarcasticDescription: String { ls("yalaAI.onboarding.step3.toneSarcasticDescription", comment: "") }
-            static var step3ToneNormalQuote: String { ls("yalaAI.onboarding.step3.toneNormalQuote", comment: "") }
-            static var step3ToneConsiderateQuote: String { ls("yalaAI.onboarding.step3.toneConsiderateQuote", comment: "") }
-            static var step3ToneSarcasticQuote: String { ls("yalaAI.onboarding.step3.toneSarcasticQuote", comment: "") }
 
-            // Step 4 — Focus / style (3 options + quote in preview)
-            static var step4Title: String { ls("yalaAI.onboarding.step4.title", comment: "") }
-            static var step4Subtitle: String { ls("yalaAI.onboarding.step4.subtitle", comment: "") }
+            // Step 3 — Focus / style (descripción y frase de ejemplo de cada opción)
             static var step4FocusBalancedDescription: String { ls("yalaAI.onboarding.step4.focusBalancedDescription", comment: "") }
             static var step4FocusSaverDescription: String { ls("yalaAI.onboarding.step4.focusSaverDescription", comment: "") }
             static var step4FocusCautiousDescription: String { ls("yalaAI.onboarding.step4.focusCautiousDescription", comment: "") }
             static var step4FocusBalancedQuote: String { ls("yalaAI.onboarding.step4.focusBalancedQuote", comment: "") }
             static func step4FocusSaverQuote(_ perMonth: String) -> String { String(format: ls("yalaAI.onboarding.step4.focusSaverQuote", comment: ""), perMonth) }
             static var step4FocusCautiousQuote: String { ls("yalaAI.onboarding.step4.focusCautiousQuote", comment: "") }
-
-            // Step 5 — Done
-            static var step5Title: String { ls("yalaAI.onboarding.step5.title", comment: "") }
-            static var step5Subtitle: String { ls("yalaAI.onboarding.step5.subtitle", comment: "") }
-            static func step5Tip(_ coffee: String) -> String { String(format: ls("yalaAI.onboarding.step5.tip", comment: ""), coffee) }
-            static var step5CTA: String { ls("yalaAI.onboarding.step5.cta", comment: "") }
         }
     }
 

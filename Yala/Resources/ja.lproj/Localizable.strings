@@ -4170,26 +4170,15 @@
 "yalaAI.onboarding.step2.card2.body" = "コーヒーにいくら使いましたか？最も高かった月は？";
 "yalaAI.onboarding.step2.card3.title" = "提案を受け取る";
 "yalaAI.onboarding.step2.card3.body" = "パターン、異常、節約のためのアイデア。";
-"yalaAI.onboarding.step3.title" = "Yalaのトーンを選んでください";
-"yalaAI.onboarding.step3.subtitle" = "Yalaが返答するときの話し方です。";
 "yalaAI.onboarding.step3.toneNormalDescription" = "バランスよく明確に。事実を飾らずにお伝えします。";
 "yalaAI.onboarding.step3.toneConsiderateDescription" = "やさしく寄り添う口調で。気分に配慮し、進歩を称えます。";
 "yalaAI.onboarding.step3.toneSarcasticDescription" = "ユーモアを交えて率直に。少し茶目っ気のある言い回しでお伝えします。";
-"yalaAI.onboarding.step3.toneNormalQuote" = "今週はコーヒーを3杯飲みました。予算内で順調です。";
-"yalaAI.onboarding.step3.toneConsiderateQuote" = "コーヒーは気分転換になります。予算内に収まっていますよ。";
-"yalaAI.onboarding.step3.toneSarcasticQuote" = "あと3杯で記録を更新ですね。それでも予算内です。";
-"yalaAI.onboarding.step4.title" = "Yalaのスタイルを選んでください";
-"yalaAI.onboarding.step4.subtitle" = "家計を見るときに重視するポイントです。";
 "yalaAI.onboarding.step4.focusBalancedDescription" = "支出と収入を同じ重みで見ます。";
 "yalaAI.onboarding.step4.focusSaverDescription" = "毎月、より多く節約できるようサポートします。";
 "yalaAI.onboarding.step4.focusCautiousDescription" = "ずれがあればお知らせし、見落としを防ぎます。";
 "yalaAI.onboarding.step4.focusBalancedQuote" = "今月の支出は収入でカバーできています。良いペースです。";
 "yalaAI.onboarding.step4.focusSaverQuote" = "外食を10%%減らすと、月%@の節約になります。";
 "yalaAI.onboarding.step4.focusCautiousQuote" = "注意：デリバリーのペースが先月より速くなっています。";
-"yalaAI.onboarding.step5.title" = "準備完了！";
-"yalaAI.onboarding.step5.subtitle" = "いつでもYalaに必要なことを伝えてください。";
-"yalaAI.onboarding.step5.tip" = "💡 例：「%@のコーヒーを記録して」「今日いくら使った？」";
-"yalaAI.onboarding.step5.cta" = "チャットを始める";
 
 // MARK: - Stats Records polish
 
@@ -5455,7 +5444,6 @@
 "subscription.error.verificationFailed" = "Appleで購入を確認できませんでした。もう一度お試しいただくか、「購入を復元」を使ってください。";
 
 /* Panel quick actions — short label for the AI assistant pill (IA/AI/KI per locale) */
-"panel.aiPill" = "AI";
 
 /* Share-link button: group predates the backend channel — permanent, no link is possible */
 "groups.errors.inviteLegacyGroup" = "このグループは以前のバージョンのYalaのもので、招待リンクに対応していません。リンクで招待するには、新しいグループを作成してください。";
@@ -7362,3 +7350,25 @@
 "groups.l13.youPayTo" = "あなた →";
 "groups.l13.debtA11yMe" = "あなた → %1$@：%2$@";
 "groups.l13.pending.rejectMessageOther" = "この支払いを削除します。借りはそのままです。";
+
+/* UX 2.2 · lote 14 (Yala IA) */
+"yalaAI.onboarding.l14.personalize.title" = "あなた好みに";
+"yalaAI.onboarding.l14.personalize.subtitle" = "あとからいつでも変更できます。";
+"yalaAI.onboarding.l14.personalize.toneHeader" = "話し方";
+"yalaAI.onboarding.l14.personalize.focusHeader" = "注目するポイント";
+"yalaAI.onboarding.l14.toneOpener.considerate" = "一歩ずつ、ちゃんとできていますよ。";
+"yalaAI.onboarding.l14.toneOpener.sarcastic" = "単刀直入に言いますね。";
+"yalaAI.onboarding.l14.consent.title" = "始める前に";
+"yalaAI.onboarding.l14.consent.subtitle" = "回答のために、Yala AIはあなたのお金の概要を読み取ります。";
+"yalaAI.onboarding.l14.consent.readsTitle" = "読み取るもの";
+"yalaAI.onboarding.l14.consent.readsBody" = "直近13か月の口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い。";
+"yalaAI.onboarding.l14.consent.useTitle" = "しないこと";
+"yalaAI.onboarding.l14.consent.useBody" = "回答のためだけにAIサービスに送ります。AIの学習には使われません。";
+"yalaAI.onboarding.l14.consent.decideTitle" = "決めるのはあなた";
+"yalaAI.onboarding.l14.consent.decideBody" = "%@でいつでもオフにできます。";
+"yalaAI.onboarding.l14.consent.cta" = "同意して始める";
+"chat.l14.greetingTwoUses" = "こんにちは、Yala AIです。2つのことができます：";
+"chat.l14.logTitle" = "支出を記録する";
+"chat.l14.logBody" = "入力するか話しかけてください：「カードでタクシーに25使った」";
+"chat.l14.logHint" = "キーボードを開いて入力します";
+"chat.l14.askTitle" = "お金について質問する";
