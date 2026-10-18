@@ -436,6 +436,7 @@ struct GroupDetailView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("group_detail_tab_\(tab.rawValue)")
     }
 
     // MARK: - Tab Content
@@ -486,6 +487,8 @@ struct GroupDetailView: View {
                 debts: viewModel.debts,
                 settlements: viewModel.settlements,
                 memberNameLookup: viewModel.memberNameLookup,
+                currentUserMemberID: viewModel.currentUserMember?.id.uuidString,
+                groupColorHex: group.colorHex,
                 balancesWereConverted: viewModel.balancesWereConverted,
                 debtsWereConverted: viewModel.debtsWereConverted,
                 onSettleDebt: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .settlement($0) } : nil,

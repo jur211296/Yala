@@ -102,6 +102,17 @@ enum DevSeedGroups {
             }
         }
 
+        // UX 2.2 · L13-2: un pago que Ana apuntó y que me toca confirmar. Pendiente a propósito: los que crea la app iOS
+        // nacen confirmados, así que solo llega uno así desde otro dispositivo.
+        if UITestHooks.seedPendingSettlement {
+            let pending = SplitSettlement(
+                groupZoneID: zoneID, fromMemberID: ana.id.uuidString, toMemberID: me.id.uuidString,
+                amount: 50, currencyCode: "PEN", date: Date.now
+            )
+            pending.recordedByMemberID = ana.id.uuidString
+            context.insert(pending)
+        }
+
         // ── 2º grupo "Viaje a Lima" (yo owner/activo). Habilita el chip EDITABLE del
         //    composer "Nuevo gasto" (>1 grupo elegible) y el cambio de grupo en el picker.
         //    Ordena DESPUÉS de "Viaje a Cusco" (Cusco < Lima) → no altera el primer

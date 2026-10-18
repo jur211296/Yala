@@ -620,6 +620,16 @@ final class UITestHooks {
     /// importe cambiado (`settlement-amount-edited-after-approval-leaves-the-bank-stale`).
     nonisolated static var seedSettlementAmountChange: Bool { hasArg("-uitest-seed-settlement-amount-change") }
 
+    /// `-uitest-group-created-sheet`: al cargar la pestaña Grupos, abre la hoja «está listo» (UX 2.2 · L12-10) del primer
+    /// grupo, como si acabara de crearse. Crear un grupo exige el backend y el simulador no tiene sesión real; el
+    /// cableado del formulario con la hoja lo fija `UXAudit22Lote12y13WiringTests`.
+    nonisolated static var presentGroupCreatedSheet: Bool { hasArg("-uitest-group-created-sheet") }
+
+    /// `-uitest-seed-pending-settlement`: con el perfil `grupos`, Ana apunta en «Viaje a Cusco» que me pagó S/ 50 y queda
+    /// pendiente de que yo lo confirme (UX 2.2 · L13-2). La app iOS crea los pagos ya confirmados; uno pendiente solo
+    /// llega de otro dispositivo.
+    nonisolated static var seedPendingSettlement: Bool { hasArg("-uitest-seed-pending-settlement") }
+
     /// `-uitest-scheduled-due-today`: añade al seed UN pago planificado «una sola vez» que vence
     /// HOY (`DevSeedScheduledPayments.dueTodayName`). Los 8 del fixture base se reparten por el
     /// mes y `min(day, 28)` capa los días 29-31, así que NINGUNO vence hoy de forma garantizada.

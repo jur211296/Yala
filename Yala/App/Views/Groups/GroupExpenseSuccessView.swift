@@ -29,6 +29,9 @@ struct GroupExpenseSuccessData {
     let participants: [Participant]
     let debt: GroupExpenseDebt
     let isEditMode: Bool
+    /// Auditoría UX 2.2 · L13-3: quién eres (para decir quién te debe sin contarte) y qué apuntó Yala en tus finanzas.
+    var currentUserMemberID: String? = nil
+    var personalOutcome: GroupExpensePersonalOutcome = .none
 
     /// Participante con su parte del gasto. `id` estable = memberID (los nombres pueden repetirse).
     struct Participant: Identifiable {
@@ -50,6 +53,7 @@ struct GroupExpenseSuccessView: View {
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .body) private var infoIconSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
 
     let data: GroupExpenseSuccessData
     let onAccept: () -> Void
@@ -165,8 +169,13 @@ struct GroupExpenseSuccessView: View {
             .scaleEffect(showAmount ? 1.0 : 0.8)
             .opacity(showAmount ? 1.0 : 0.0)
 
-            debtIndicator
-                .opacity(showAmount ? 1.0 : 0.0)
+            // L13-3 (decisión de Jürgen del 15-oct, variante 1): dos líneas que dicen qué pasó con tu dinero — quién te
+            // debe (o a quién debes) y qué apuntamos en tus finanzas, y de qué cuenta salió.
+            VStack(spacing: DS.Spacing.md) {
+                debtLine
+                moneyLine
+            }
+            .opacity(showAmount ? 1.0 : 0.0)
         }
     }
 
@@ -220,26 +229,96 @@ struct GroupExpenseSuccessView: View {
         }
     }
 
-    @ViewBuilder
-    private var debtIndicator: some View {
+    private var debtLine: some View {
+        let format = { (value: Double) in appPreferences.currency(value, currencyCode: data.currencyCode) }
         switch data.debt {
         case .theyOweMe(let amount):
-            debtLabel(L10n.Groups.Summary.owedToMe, amount: amount, color: DS.Semantic.successForeground)
+            return infoRow(icon: "person.2.fill", color: DS.Semantic.successForeground,
+                           title: L10n.UXL13.successOwedTitle(format(amount)), detail: debtorsDetail)
+                .accessibilityIdentifier("group_expense_success_debt_line")
         case .iOwe(let amount):
-            debtLabel(L10n.Groups.Summary.iOwe, amount: amount, color: .hotPink)
+            return infoRow(icon: "person.2.fill", color: .hotPink,
+                           title: L10n.UXL13.successIOweTitle(format(amount)),
+                           detail: L10n.UXL13.successIOweTo(data.paidByName))
+                .accessibilityIdentifier("group_expense_success_debt_line")
         case .settled:
+            return infoRow(icon: "checkmark", color: .secondary, title: L10n.UXL13.successSettledTitle, detail: nil)
+                .accessibilityIdentifier("group_expense_success_debt_line")
+        }
+    }
+
+    /// «Ana y Beto, S/ 50.00 cada uno» si todos deben lo mismo; si no, cada uno con lo suyo.
+    private var debtorsDetail: String? {
+        let debtors = GroupExpenseSuccessLogic.debtors(
+            participants: data.participants.map { (id: $0.id, name: $0.name, amount: $0.amount) },
+            currentUserMemberID: data.currentUserMemberID
+        )
+        guard !debtors.isEmpty else { return nil }
+        if debtors.count == 1 { return debtors[0].name }
+        if GroupExpenseSuccessLogic.allEqual(debtors.map(\.amount)) {
+            let formatter = ListFormatter()
+            formatter.locale = AppLocale.current
+            let names = formatter.string(from: debtors.map(\.name)) ?? debtors.map(\.name).joined(separator: ", ")
+            return L10n.UXL13.successOwedEach(
+                names: names,
+                amount: appPreferences.currency(debtors[0].amount, currencyCode: data.currencyCode)
+            )
+        }
+        return debtors
+            .map { "\($0.name) \(appPreferences.currency($0.amount, currencyCode: data.currencyCode))" }
+            .joined(separator: " · ")
+    }
+
+    @ViewBuilder
+    private var moneyLine: some View {
+        let format = { (value: Double) in appPreferences.currency(value, currencyCode: data.currencyCode) }
+        switch data.personalOutcome {
+        case .chargedToAccount(let accountName):
+            infoRow(icon: "creditcard.fill", color: .electricIndigo,
+                    title: L10n.UXL13.successAccountTitle(amount: format(data.totalAmount), account: accountName),
+                    detail: L10n.UXL13.successAccountDetail)
+                .accessibilityIdentifier("group_expense_success_money_line")
+        case .waitingInInbox:
+            infoRow(icon: "tray.full.fill", color: .electricIndigo,
+                    title: L10n.UXL13.successInboxTitle,
+                    detail: L10n.UXL13.successInboxDetail(format(data.totalAmount)))
+                .accessibilityIdentifier("group_expense_success_money_line")
+        case .shareAsGroupExpense(let amount):
+            infoRow(icon: "chart.pie.fill", color: .electricIndigo,
+                    title: L10n.UXL13.successShareTitle(format(amount)),
+                    detail: L10n.UXL13.successShareDetail)
+                .accessibilityIdentifier("group_expense_success_money_line")
+        case .none:
             EmptyView()
         }
     }
 
-    private func debtLabel(_ label: String, amount: Double, color: Color) -> some View {
-        HStack(spacing: DS.Spacing.xs) {
-            Text(label)
-            Text(appPreferences.currency(amount, currencyCode: data.currencyCode))
-                .fontWeight(.semibold)
+    private func infoRow(icon: String, color: Color, title: String, detail: String?) -> some View {
+        HStack(spacing: DS.Spacing.md) {
+            Image(systemName: icon)
+                .font(DS.Typography.subheadlineEmphasized)
+                .foregroundStyle(.white)
+                .frame(width: infoIconSize, height: infoIconSize)
+                .background(color, in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(title)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let detail {
+                    Text(detail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 0)
         }
-        .font(DS.Typography.subheadline)
-        .foregroundStyle(color)
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Details
@@ -257,7 +336,8 @@ struct GroupExpenseSuccessView: View {
                 detailRow(icon: "tag", label: L10n.Transaction.category, value: subcategory)
             }
 
-            if let account = data.accountName {
+            // Con la línea «−S/ 150 en Cuenta» arriba, la fila de la cuenta repetiría lo mismo.
+            if let account = data.accountName, !isChargedToAccount {
                 detailRow(icon: "creditcard", label: L10n.Transaction.account,
                           value: account, dotColorHex: data.accountColorHex)
             }
@@ -387,6 +467,11 @@ struct GroupExpenseSuccessView: View {
     }
 
     // MARK: - Helpers
+
+    private var isChargedToAccount: Bool {
+        if case .chargedToAccount = data.personalOutcome { return true }
+        return false
+    }
 
     private var formattedDate: String {
         Self.dateFormatter.string(from: data.date)
