@@ -446,10 +446,10 @@
 "settings.favorites" = "Paiements favoris";
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budgets favoris";
-"settings.budgetsFavoritesInfo" = "Les budgets favoris apparaissent dans le widget Budgets (3 en moyen, 5 en grand).";
+"settings.budgetsFavoritesInfo" = "Les budgets favoris apparaissent dans la carte Budgets de l’Accueil (3 en moyen, 5 en grand).";
 "settings.budgetsFavoritesEmptyHint" = "Créez des budgets dans l'onglet Planification.";
 "settings.budgetsFavoritesReorder" = "Réordonner les favoris";
-"budgets.favorites.previewTitle" = "Voici à quoi ressemblera votre widget";
+"budgets.favorites.previewTitle" = "Voici l’aperçu dans l’Accueil";
 "budgets.favorites.previewEmpty" = "Sélectionnez des favoris pour voir l'aperçu";
 "settings.tabBarConfig" = "Personnaliser la navigation";
 "settings.tabBarConfigInfo" = "Choisissez quelles sections afficher dans la barre inferieure. Minimum 1, maximum 3.";
@@ -7164,7 +7164,7 @@
 "budgets.l9.freePlanSheet" = "Avec l’offre gratuite, tu as %lld budgets actifs. Désactive-en un ou passe à Pro.";
 "budgets.l9.seePro" = "Voir Pro";
 "budgets.l9.chooseWhich" = "Choisir lesquels";
-"budgets.l9.previewEmpty" = "Marque jusqu’à 3 budgets d’une étoile pour voir ton widget ici.";
+"budgets.l9.previewEmpty" = "Marque jusqu’à 3 budgets d’une étoile pour voir ici ta carte de l’Accueil.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "En retard";
@@ -7235,3 +7235,69 @@
 "scheduled.l10.cadence.days" = "tous les %d jours";
 "scheduled.l10.cadence.year" = "chaque année, le %@";
 "scheduled.l10.cadence.years" = "tous les %1$d ans, le %2$@";
+
+/* UX 2.2 · lotes 11 y 16 (implementación) */
+/* Estadísticas: flecha que pasa al período anterior (accesibilidad) */
+"stats.l11.period.previous" = "Période précédente";
+/* Estadísticas: flecha que pasa al período siguiente (accesibilidad) */
+"stats.l11.period.next" = "Période suivante";
+/* Estadísticas: los días que cubre el período (accesibilidad); %@ = «1–18 oct» */
+"stats.l11.period.rangeA11y" = "Jours couverts : %@";
+/* Estadísticas: con qué se comparan las cifras; %@ = «1–15 de septiembre» */
+"stats.l11.compare.with" = "Comparé au %@";
+/* Estadísticas: ayuda de accesibilidad del botón de comparación */
+"stats.l11.compare.hint" = "Choisis de comparer avec la période précédente ou celle de l’an dernier";
+/* Estadísticas: opción de comparación con la semana anterior */
+"stats.l11.compare.previousWeek" = "Semaine précédente";
+/* Estadísticas: opción de comparación con los 7 días anteriores */
+"stats.l11.compare.previous7Days" = "Les 7 jours précédents";
+/* Estadísticas: opción de comparación con los 30 días anteriores */
+"stats.l11.compare.previous30Days" = "Les 30 jours précédents";
+/* Estadísticas: opción de comparación con el mes anterior */
+"stats.l11.compare.previousMonth" = "Mois précédent";
+/* Estadísticas: opción de comparación con el período anterior (rango propio) */
+"stats.l11.compare.previousPeriod" = "Période précédente";
+/* Estadísticas: opción de comparación con el mismo período del año pasado */
+"stats.l11.compare.previousYear" = "Année précédente";
+/* Tendencias: título de la tarjeta del gasto por día de la semana */
+"stats.l11.weekday.title" = "Dépenses par jour de la semaine";
+/* Tendencias: rótulo de la cifra semanal (suma del gasto medio de cada día de la semana) */
+"stats.l11.weekday.weeklyCaption" = "En une semaine, tu dépenses";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.1" = "Le dimanche est ton jour le plus cher";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.2" = "Le lundi est ton jour le plus cher";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.3" = "Le mardi est ton jour le plus cher";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.4" = "Le mercredi est ton jour le plus cher";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.5" = "Le jeudi est ton jour le plus cher";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.6" = "Le vendredi est ton jour le plus cher";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.7" = "Le samedi est ton jour le plus cher";
+
+/* UX 2.2 · lotes 11 y 16 (implementación) */
+/* Ajustes › Temas / Icono: etiqueta de la opción elegida */
+"settings.l16.inUse" = "Utilisé";
+/* Ajustes › Moneda: título de la hoja que confirma el cambio de moneda principal; %@ = nombre de la moneda («Euro») */
+"settings.l16.currencyChange.title" = "Passer ta devise principale en %@ ?";
+/* Ajustes › Moneda: rótulo del saldo de hoy en la moneda actual */
+"settings.l16.currencyChange.today" = "Ton solde aujourd’hui";
+/* Ajustes › Moneda: rótulo del saldo convertido; %@ = código de la moneda nueva («EUR») */
+"settings.l16.currencyChange.in" = "En %@";
+/* Ajustes › Moneda: qué cambia; %@ = código de la moneda nueva */
+"settings.l16.currencyChange.totals" = "Les totaux, graphiques et budgets s’afficheront en %@";
+/* Ajustes › Moneda: cómo se convierte cada registro */
+"settings.l16.currencyChange.rates" = "Chaque opération est convertie au taux de change de son jour";
+/* Ajustes › Moneda: qué no cambia */
+"settings.l16.currencyChange.recordsKeep" = "Chaque opération garde la devise dans laquelle tu l’as saisie";
+/* Ajustes › Moneda: se puede volver; %@ = código de la moneda actual */
+"settings.l16.currencyChange.canReturn" = "Tu peux revenir à %@ quand tu veux";
+/* Ajustes › Moneda: botón que confirma; %@ = código de la moneda nueva */
+"settings.l16.currencyChange.confirm" = "Passer en %@";
+/* Ajustes › Moneda: el cambio falló; %@ = código de la moneda que se eligió */
+"settings.l16.currencyChange.failedTitle" = "Impossible de passer en %@";
+/* Ajustes › Moneda: qué quedó tras el fallo; %@ = código de la moneda principal, que no cambió */
+"settings.l16.currencyChange.failedMessage" = "Tes opérations restent en %@, comme avant. Réessaie dans un instant.";

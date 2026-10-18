@@ -82,24 +82,15 @@ struct ProfileToolbarButton: View {
         .clipShape(Circle())
         .overlay {
             Circle()
-                .strokeBorder(ringGradient, lineWidth: ringWidth)
+                .strokeBorder(ringColor, lineWidth: ringWidth)
         }
     }
 
-    // MARK: - Ring Gradient
+    // MARK: - Ring
 
-    private var ringGradient: LinearGradient {
-        isProUser
-            ? LinearGradient(
-                colors: DS.Gradients.proBadge,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-              )
-            : LinearGradient(
-                colors: [theme.accent, theme.accent.opacity(0.6)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-              )
+    /// Aro sólido, el mismo que la cabecera de Ajustes (UX 2.2 · L16-12): dorado con Pro, color de acento sin él.
+    private var ringColor: Color {
+        isProUser ? Color.proGold : theme.accent
     }
 
     // MARK: - Spark Badge

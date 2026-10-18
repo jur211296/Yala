@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: testing
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-18
 source: gate del lote 15 de la auditoría UX 2.2 (encargo 2026-10-15-auditoria-ux-2-2-lote-15-desde-fuera)
 ---
 
@@ -27,3 +27,9 @@ no llega entero al campo antes de salir a segundo plano. Si es eso, es el test y
 
 - Se mide si el valor se pierde en la app (el campo vacío tras volver) o en la escritura del test, con N corridas.
 - Arreglado el que toque, o en la Lista Negra con dueño y fecha.
+
+## 2026-10-18 · otra vez, en el caso de voz
+
+Gate de los lotes 11 y 16 (batería completa, centinela «estuviste solo»): rojo en
+`test_halfFilledFormInAnotherTab_voiceEntry_keepsTheFormAndOpensOnThePanelWhenClosed` (`:111`, «0.00»); aislado justo
+después, verde (34,6 s). Mismo patrón que el del 15-oct en el caso del enlace.

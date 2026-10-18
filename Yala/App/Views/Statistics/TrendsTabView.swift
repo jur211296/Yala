@@ -225,13 +225,7 @@ struct TrendsTabView: View {
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } period: {
-            TrendsPeriodMenu(
-                selectedPeriod: trendsViewModel.detailPeriod,
-                customDateRange: sessionState.customDateRange,
-                onSelect: { sessionState.selectedPeriod = $0 },
-                onCustomTapped: { showCustomPeriodPicker = true }
-            )
-            .equatable()
+            StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
         } content: {
             if hasRecords, let summary {
                 // KPI period-specific (matches Insights hero). Card interno + chart
@@ -528,14 +522,18 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var comparisonChartSection: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Title FUERA del card + M/A selector a la derecha
-            HStack {
+            // Título FUERA de la tarjeta y, debajo, con qué se compara en una frase (UX 2.2 · L11-4).
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 Text(L10n.Stats.Trends.comparisonTitle)
                     .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-                Spacer()
-                ComparisonModeSelector()
+                ComparisonModeSelector(
+                    period: trendsViewModel.detailPeriod,
+                    customRange: sessionState.customDateRange,
+                    dataEnd: currentPeriodPoints.last(where: { $0.value != 0 })?.date
+                )
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             comparisonChartBody
                 .panelCard()
@@ -1506,9 +1504,10 @@ struct TrendsTabView: View {
     private var weekdayChartSection: some View {
         if weekdaySpending.contains(where: { $0.average > 0 }) {
             VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                // Title de sección FUERA del card (consistencia con Tendencias/Comparativa)
+                // Title de sección FUERA del card (consistencia con Tendencias/Comparativa). «Gasto por día de la
+                // semana»: lo que se ve (UX 2.2 · L11-11). Antes «Gasto promedio por día», sobre una cifra semanal.
                 HStack(spacing: DS.Spacing.xs) {
-                    Text(L10n.Insights.weekdayAverage)
+                    Text(L10n.UXL11.weekdayTitle)
                         .font(DS.Typography.headline)
                         .foregroundStyle(.primary)
                     Spacer()
@@ -1522,61 +1521,45 @@ struct TrendsTabView: View {
 
     @ViewBuilder
     private var weekdayCardBody: some View {
-        // Promedio semanal = suma de averages por día (mismo cálculo que Panel small).
+        // Gasto de una semana tipo = suma del promedio de cada día (mismo cálculo que el widget del Panel).
         let weeklyAverage = weekdaySpending.reduce(0) { $0 + $1.average }
         let topDay = weekdaySpending.filter { $0.average > 0 }.max(by: { $0.average < $1.average })
 
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header interno simétrico a Trend + Comparativa
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Text(L10n.Panel.WeekdayBar.smallTitle)
-                            .font(DS.Typography.subheadlineEmphasized)
-                            .foregroundStyle(.thPrimaryText)
+        // UX 2.2 · L11-11 (variante 1, decisión de Jürgen del 2026-10-15): «En una semana gastas S/ 2,425» en vez de
+        // «Promedio diario S/ 2,425 /semana»; barras con su importe en moneda y sin decimales, el día más caro en rosa,
+        // y la frase que lo dice. Antes, a la derecha, «Lunes S/ 1,184.50» sin decir qué era.
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                HStack(spacing: DS.Spacing.xs) {
+                    Text(L10n.UXL11.weekdayWeeklyCaption)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thSecondaryText)
 
-                        WidgetInfoButton(kind: .weekdayBar)
-                    }
-
-                    HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                        AmountText(
-                            value: weeklyAverage,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.headline, secondaryFont: DS.Typography.caption
-                        )
-                        Text(L10n.Panel.WeekdayBar.perWeekSuffix)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.thSecondaryText)
-                    }
+                    WidgetInfoButton(kind: .weekdayBar)
                 }
 
-                Spacer()
-
-                // Día pico top-right como info secundaria (paralelo a VariationChip+caption)
-                if let top = topDay {
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        Text(top.weekdayLongName.capitalized)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.thPrimaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                        AmountText(
-                            value: top.average,
-                            currencyCode: defaultCurrencyCode,
-                            font: DS.Typography.caption, secondaryFont: DS.Typography.captionSmall,
-                            tint: .secondary
-                        )
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(L10n.Panel.WeekdayBar.smallTitle): \(top.weekdayLongName.capitalized)")
-                }
+                AmountText(
+                    value: weeklyAverage,
+                    currencyCode: defaultCurrencyCode,
+                    font: DS.Typography.title, secondaryFont: DS.Typography.headline
+                )
             }
+            .accessibilityElement(children: .combine)
 
             WeekdayBarChart(
                 data: weekdaySpending,
                 currencyCode: defaultCurrencyCode,
-                chartHeight: 140
+                showYAxis: false,
+                chartHeight: 140,
+                annotationStyle: .wholeCurrency
             )
+
+            if let top = topDay {
+                Label(L10n.UXL11.priciestWeekday(top.weekday), systemImage: "flame.fill")
+                    .font(DS.Typography.caption.weight(.semibold))
+                    .foregroundStyle(Color.emphasisPinkText)
+                    .accessibilityIdentifier("weekday_priciest_line")
+            }
         }
     }
 

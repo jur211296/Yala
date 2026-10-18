@@ -145,6 +145,16 @@ struct ReportNotificationServiceTests {
         #expect(duration < 8 * 86400)
     }
 
+    /// El semanal cuenta los mismos días que «Últimos 7 días», que es lo que abre al tocarlo (UX 2.2 · L11-2): desde
+    /// la medianoche de hace seis días. Antes eran 168 h hacia atrás y tocaban ocho días de calendario.
+    @Test @MainActor func getIntervalForReportType_weekly_startsWhereLast7DaysStarts() {
+        let config = ReportConfig(dataType: .expenses, dayPreference: .sunday)
+        let interval = ReportNotificationService.getIntervalForReportType(config, type: .weeklyReport)
+        let calendar = Calendar.current
+        let expectedStart = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: .now))
+        #expect(interval.start == expectedStart)
+    }
+
     @Test @MainActor func getIntervalForReportType_monthly_firstDay_previousMonth() {
         let config = ReportConfig(dataType: .expenses, dayPreference: .firstDay)
         let interval = ReportNotificationService.getIntervalForReportType(config, type: .monthlyReport)

@@ -239,20 +239,16 @@ struct RecordsTabView: View {
     // MARK: - Period Selector (inline en la fila "Saldo · ...")
 
     private var periodSelector: some View {
-        TrendsPeriodMenu(
-            selectedPeriod: viewModel.period,
-            customDateRange: sessionState.customDateRange,
-            onSelect: { period in
+        // Flechas y rango (UX 2.2 · L11-3), como las otras pestañas. La lista lleva su propia copia del período: la
+        // pone al día cada elección.
+        StatisticsPeriodControl(
+            onCustomTapped: { showCustomPeriodPicker = true },
+            onChosen: {
                 withTransaction(Transaction(animation: nil)) {
-                    viewModel.period = period
-                    sessionState.selectedPeriod = period
+                    viewModel.period = sessionState.selectedPeriod
                 }
-            },
-            onCustomTapped: {
-                showCustomPeriodPicker = true
             }
         )
-        .equatable()
     }
 
     // MARK: - Hero Summary

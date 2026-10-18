@@ -15,6 +15,35 @@ final class CurrencyChangeService {
 
     private init() {}
 
+    /// Seams de test: sustituyen la petición de tasas (que en un test saldría a la red) y el `save()` final (para
+    /// forzar su fallo). `nil` en producción.
+    var ensureRatesOverride: ((DateInterval, ModelContext) async -> Void)?
+    var saveOverride: ((ModelContext) throws -> Void)?
+
+    /// Lo que la migración reescribe de un registro, para devolverlo tal cual si el guardado falla.
+    private struct Snapshot {
+        let transaction: TransactionItem
+        let amountInPreferredCurrency: Double
+        let exchangeRate: Double
+        let preferredCurrencyCode: String
+        let isExchangeRateProvisional: Bool
+
+        init(_ transaction: TransactionItem) {
+            self.transaction = transaction
+            amountInPreferredCurrency = transaction.amountInPreferredCurrency
+            exchangeRate = transaction.exchangeRate
+            preferredCurrencyCode = transaction.preferredCurrencyCode
+            isExchangeRateProvisional = transaction.isExchangeRateProvisional
+        }
+
+        func restore() {
+            transaction.amountInPreferredCurrency = amountInPreferredCurrency
+            transaction.exchangeRate = exchangeRate
+            transaction.preferredCurrencyCode = preferredCurrencyCode
+            transaction.isExchangeRateProvisional = isExchangeRateProvisional
+        }
+    }
+
     /// Updates all transactions in the database to reflect the new preferred currency.
     /// This involves re-fetching historical rates and recalculating `amountInPreferredCurrency`.
     ///
@@ -42,10 +71,18 @@ final class CurrencyChangeService {
             let dateInterval = DateInterval(start: minDate, end: maxDate)
             // Ensure we have rates for the new target currency for this range
             // (ExchangeRateService handles fetching missing rates from API)
-            await ExchangeRateService.shared.ensureRates(for: dateInterval, context: context)
+            if let ensureRatesOverride {
+                await ensureRatesOverride(dateInterval, context)
+            } else {
+                await ExchangeRateService.shared.ensureRates(for: dateInterval, context: context)
+            }
         }
 
         let total = Double(allTransactions.count)
+
+        // Lo que había antes de tocar nada: si el guardado falla, se devuelve registro a registro. No vale
+        // `context.rollback()`, que tiraría también los cambios pendientes de otras pantallas.
+        let snapshots = allTransactions.map(Snapshot.init)
 
         // 3. Iterate and Update
         for (index, transaction) in allTransactions.enumerated() {
@@ -92,8 +129,19 @@ final class CurrencyChangeService {
             transaction.isExchangeRateProvisional = !outcome.quality.isExact
         }
 
-        // Save changes
-        try context.save()
+        // Si el guardado falla, los registros vuelven a estar como estaban. Antes los cambios se quedaban pendientes en el
+        // contexto y los escribía el siguiente guardado de cualquier pantalla, con la moneda principal todavía en la vieja
+        // (ticket `currency-change-failure-is-silent-and-half-applied`).
+        do {
+            if let saveOverride {
+                try saveOverride(context)
+            } else {
+                try context.save()
+            }
+        } catch {
+            snapshots.forEach { $0.restore() }
+            throw error
+        }
         onProgress?(1.0)
     }
 }

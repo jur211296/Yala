@@ -27,7 +27,8 @@ struct PanelHeroSection: View {
                 currencyCode: viewModel.defaultCurrencyCode,
                 selectedPeriod: sessionState.selectedPeriod,
                 customDateRange: sessionState.customDateRange,
-                onSelectPeriod: { sessionState.selectedPeriod = $0 },
+                // Una elección de la persona: cierra la visita de un informe, si la hay (UX 2.2 · L11-2).
+                onSelectPeriod: { sessionState.choosePeriod($0) },
                 onCustomPeriodTapped: { showCustomPeriodPicker = true },
                 periodSummary: viewModel.heroPeriodWidget,
                 totalBalance: viewModel.accounts.isEmpty ? nil : viewModel.panelTotalBalance,

@@ -85,8 +85,9 @@ struct DetailPeriodDateIntervalMoreTests {
 
     // MARK: - .last7Days
 
-    @Test func dateInterval_last7Days_starts7DaysBeforeStartOfToday() {
-        let expectedStart = Calendar.current.date(byAdding: .day, value: -7, to: startOfToday)!
+    /// «Últimos 7 días» = hoy y los seis anteriores. Antes arrancaba en −7 y cubría ocho días de calendario.
+    @Test func dateInterval_last7Days_startsSixDaysBeforeStartOfToday() {
+        let expectedStart = Calendar.current.date(byAdding: .day, value: -6, to: startOfToday)!
 
         let interval = DetailPeriod.last7Days.dateInterval(now: now)
         #expect(interval.start == expectedStart)
@@ -94,7 +95,7 @@ struct DetailPeriodDateIntervalMoreTests {
     }
 
     @Test func dateInterval_last7Days_startIsAtMidnight() {
-        // El start es startOfDay(-7) → medianoche exacta, sin arrastrar la hora de `now`.
+        // El start es startOfDay(-6) → medianoche exacta, sin arrastrar la hora de `now`.
         let cal = Calendar.current
         let interval = DetailPeriod.last7Days.dateInterval(now: now)
         let comps = cal.dateComponents([.hour, .minute, .second], from: interval.start)
@@ -105,8 +106,8 @@ struct DetailPeriodDateIntervalMoreTests {
 
     // MARK: - .last30Days
 
-    @Test func dateInterval_last30Days_starts30DaysBeforeStartOfToday() {
-        let expectedStart = Calendar.current.date(byAdding: .day, value: -30, to: startOfToday)!
+    @Test func dateInterval_last30Days_starts29DaysBeforeStartOfToday() {
+        let expectedStart = Calendar.current.date(byAdding: .day, value: -29, to: startOfToday)!
 
         let interval = DetailPeriod.last30Days.dateInterval(now: now)
         #expect(interval.start == expectedStart)
@@ -120,6 +121,19 @@ struct DetailPeriodDateIntervalMoreTests {
         #expect(comps.hour == 0)
         #expect(comps.minute == 0)
         #expect(comps.second == 0)
+    }
+
+    /// Lo que ve la persona: cuántos días de calendario con movimientos posibles caben en el período. Un registro
+    /// a mediodía de cada día desde hace 40 días: entran 7 (o 30), hoy incluido, y no el de hace 7 (o 30).
+    @Test(arguments: [(DetailPeriod.last7Days, 7), (DetailPeriod.last30Days, 30)])
+    func rollingPeriod_coversExactlyItsDays(period: DetailPeriod, days: Int) {
+        let cal = Calendar.current
+        let interval = period.dateInterval(now: now)
+        let noonToday = cal.date(bySettingHour: 12, minute: 0, second: 0, of: startOfToday)!
+        let covered = (0..<40).filter { offset in
+            interval.contains(cal.date(byAdding: .day, value: -offset, to: noonToday)!)
+        }
+        #expect(covered == Array(0..<days))
     }
 
     // MARK: - .thisYear

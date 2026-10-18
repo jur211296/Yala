@@ -2575,13 +2575,12 @@ final class AppBootstrapper {
             }
 
         case "statistics":
-            if url.pathComponents.contains("records") {
-                setOrDeferDeepLink(.records)
-            } else if url.pathComponents.contains("categories") {
-                setOrDeferDeepLink(.categories)
-            } else {
-                setOrDeferDeepLink(.statistics)
+            // `statistics/<pestaña>[/<período>]` con las cuatro pestañas (UX 2.2 · L11-2): antes solo se entendían
+            // `records` y `categories`, y `statistics/trends` se quedaba en la última pestaña usada.
+            if let request = StatisticsDeepLink.request(fromComponents: url.pathComponents) {
+                StatisticsDeepLinkTarget.shared.request(request)
             }
+            setOrDeferDeepLink(.statistics)
 
         case "planning":
             // `planning/scheduled-payments` lo usan los widgets de pagos («Próximos pagos» y «Próximo pago»): sin la

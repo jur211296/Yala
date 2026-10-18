@@ -126,7 +126,12 @@ final class ReportNotificationService {
             let delivered = await send(
                 title: report.localizedName,
                 body: Self.formatReportBody(effectiveConfig, reportType: report.notificationType, data: data),
-                deepLink: "statistics"
+                // La pestaña y el período del aviso: el número que dice es el primero que se ve al tocarlo (UX 2.2 ·
+                // L11-2). Antes abría Estadísticas donde estuviera, con otro período y otra cifra.
+                deepLink: StatisticsDeepLink.reportDeepLink(
+                    type: report.notificationType,
+                    dayPreference: report.reportConfig.dayPreference
+                )
             )
 
             // Marca de dedup SOLO con entrega confirmada por iOS (paridad con
@@ -356,8 +361,11 @@ final class ReportNotificationService {
         // Weekly/Monthly: use config.dayPreference
         switch config.dayPreference {
         case .sunday, .monday:
-            // Weekly: last 7 days
-            let weekStart = calendar.date(byAdding: .day, value: -7, to: now) ?? now
+            // Semanal: hoy y los seis días anteriores, los mismos que «Últimos 7 días», que es lo que abre el aviso
+            // (UX 2.2 · L11-2). Antes eran 168 h hacia atrás desde ahora: tocaban ocho días de calendario y el número
+            // del aviso no era el de la pantalla.
+            let startOfToday = calendar.startOfDay(for: now)
+            let weekStart = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: weekStart, end: now)
         case .firstDay:
             // First day of month: report previous month

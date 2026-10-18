@@ -4,6 +4,10 @@
 //
 //  7 BarMarks (Mon-Sun), highlight max with accent color.
 //
+//  UX 2.2 · L11-11: barras de color sólido —el día más caro en rosa y el resto en el color de acento suave— en vez del
+//  degradado rosa, y en Tendencias el importe de cada barra con su moneda y sin decimales («S/ 1,185») en vez de
+//  «1.2 K» junto a «174.5».
+//
 
 import Charts
 import SwiftUI
@@ -17,6 +21,14 @@ struct WeekdayBarChart: View {
     /// Passing nil annotates every bar with a non-zero value (default).
     var annotationTopCount: Int? = nil
     var chartHeight: CGFloat? = 200
+    /// Cómo se escribe el importe encima de cada barra: compacto («1.2 K», el widget pequeño del Panel) o con la moneda
+    /// y sin decimales («S/ 1,185», Tendencias).
+    var annotationStyle: AnnotationStyle = .compact
+
+    enum AnnotationStyle {
+        case compact
+        case wholeCurrency
+    }
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
@@ -49,19 +61,37 @@ struct WeekdayBarChart: View {
         Calendar.orderedWeekdays(firstWeekday: firstWeekday)
     }
 
+    private func annotationText(_ value: Double) -> String {
+        switch annotationStyle {
+        case .compact:
+            return YalaFormatter.compactCurrency(value: value)
+        case .wholeCurrency:
+            return CurrencyFormattingHelper.currency(
+                value.rounded(),
+                decimals: 0,
+                identifier: appPreferences.currencyIdentifier(for: currencyCode),
+                forceSign: false,
+                isEstimate: false
+            )
+        }
+    }
+
     var body: some View {
         Chart(orderedData) { item in
             BarMark(
                 x: .value("Day", item.axisLabel),
                 y: .value("Amount", item.average)
             )
-            .foregroundStyle(item.weekday == maxWeekday ? Color.expenseGraph.gradient : Color.expenseGraph.opacity(0.3).gradient)
+            .foregroundStyle(item.weekday == maxWeekday ? Color.expenseGraph : theme.accent.opacity(0.45))
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
             .annotation(position: .top, spacing: 2) {
+                // Texto ya resuelto: una anotación de Swift Charts no recibe el entorno (`AppPreferences`).
                 if showBarAnnotations, item.average > 0, item.average >= annotationThreshold {
-                    Text(YalaFormatter.compactCurrency(value: item.average))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.secondary)
+                    Text(annotationText(item.average))
+                        .font(DS.Typography.captionSmall.weight(item.weekday == maxWeekday ? .bold : .regular))
+                        .foregroundStyle(item.weekday == maxWeekday ? Color.emphasisPinkText : Color.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
             }
         }

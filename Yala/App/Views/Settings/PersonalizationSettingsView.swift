@@ -249,7 +249,9 @@ struct PersonalizationSettingsView: View {
                 selectedPeriod: appPreferences.defaultPeriod,
                 onSelect: { period in
                     appPreferences.defaultPeriod = period
-                    sessionState.selectedPeriod = period
+                    // `choosePeriod`: es una elección de la persona, y si había abierto Estadísticas desde un informe, el
+                    // período que acaba de elegir no se le cambia por el de antes del aviso al salir (UX 2.2 · L11-2).
+                    sessionState.choosePeriod(period)
                     showingPeriodPicker = false
                 }
             )
@@ -423,7 +425,7 @@ private struct PeriodPickerSheet: View {
         } label: {
             HStack {
                 Text(period.displayName)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(.thPrimaryText)
 
                 Spacer()
@@ -436,9 +438,14 @@ private struct PeriodPickerSheet: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if period != availablePeriods.last {
             Divider()
@@ -493,7 +500,7 @@ private struct WeekdayPickerSheet: View {
         } label: {
             HStack {
                 Text(weekday.displayName)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(.thPrimaryText)
 
                 Spacer()
@@ -506,9 +513,14 @@ private struct WeekdayPickerSheet: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if weekday != FirstWeekday.allCases.last {
             Divider()
@@ -570,7 +582,7 @@ private struct DecimalsPickerSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Text(option.example)
@@ -588,9 +600,14 @@ private struct DecimalsPickerSheet: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option.value != 2 {
             Divider()
@@ -651,7 +668,7 @@ private struct CurrencyFormatPickerSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Text(option.example)
@@ -669,9 +686,14 @@ private struct CurrencyFormatPickerSheet: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option.value != "symbol" {
             Divider()
@@ -727,7 +749,7 @@ private struct LanguagePickerSheet: View {
                         .font(DS.Typography.title)
 
                     Text(lang.nativeName)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Spacer()
@@ -740,9 +762,14 @@ private struct LanguagePickerSheet: View {
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
+                // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+                .selectedOptionFill(isSelected)
+                .padding(.horizontal, DS.Spacing.xs)
+                .padding(.vertical, DS.Spacing.xxs)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
 
             if lang.code != LanguageManager.supportedLanguages.last?.code {
                 Divider()
@@ -805,7 +832,7 @@ private struct AverageLinePickerSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(option.label)
-                        .font(DS.Typography.body)
+                        .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                         .foregroundStyle(.thPrimaryText)
 
                     Text(option.description)
@@ -823,9 +850,14 @@ private struct AverageLinePickerSheet: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option.value != 2 {
             Divider()
@@ -882,7 +914,7 @@ private struct AutoFocusPickerSheet: View {
         } label: {
             HStack {
                 Text(option.displayName)
-                    .font(DS.Typography.body)
+                    .font(DS.Typography.body.weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(.thPrimaryText)
 
                 Spacer()
@@ -895,9 +927,14 @@ private struct AutoFocusPickerSheet: View {
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
+            // Lo elegido, relleno (UX 2.2 · L16-9): antes solo un ✓ a la derecha.
+            .selectedOptionFill(isSelected)
+            .padding(.horizontal, DS.Spacing.xs)
+            .padding(.vertical, DS.Spacing.xxs)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
 
         if option != .description {
             Divider()

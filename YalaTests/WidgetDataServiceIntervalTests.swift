@@ -92,11 +92,11 @@ struct WidgetDataServiceIntervalTests {
             return DateInterval(start: startOfWeek, end: endOfToday)
 
         case .last7Days:
-            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -29, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .thisMonth:

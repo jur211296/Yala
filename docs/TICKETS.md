@@ -259,7 +259,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | csv-import-leaves-no-origin-mark-and-reuses-opposite-categories | backlog | tickets/backlog/csv-import-leaves-no-origin-mark-and-reuses-opposite-categories.md |
 | csv-import-rows-fall-in-the-chat-sign-sweep | done | tickets/done/csv-import-rows-fall-in-the-chat-sign-sweep.md |
 | currency-change-asks-rates-for-the-old-currency | backlog | tickets/backlog/currency-change-asks-rates-for-the-old-currency.md |
-| currency-change-failure-is-silent-and-half-applied | backlog | tickets/backlog/currency-change-failure-is-silent-and-half-applied.md |
+| currency-change-failure-is-silent-and-half-applied | done | tickets/done/currency-change-failure-is-silent-and-half-applied.md |
 | currency-change-service-tests-mirror-the-logic | backlog | tickets/backlog/currency-change-service-tests-mirror-the-logic.md |
 | cutover-marker-without-a-session-locks-out-the-second-device | backlog | tickets/backlog/cutover-marker-without-a-session-locks-out-the-second-device.md |
 | dangling-ref-pass-overwrites-a-pending-local-edit | backlog | tickets/backlog/dangling-ref-pass-overwrites-a-pending-local-edit.md |
@@ -270,6 +270,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | debug-panel-shows-a-counter-the-reverse-no-longer-moves | backlog | tickets/backlog/debug-panel-shows-a-counter-the-reverse-no-longer-moves.md |
 | declining-ai-consent-keeps-a-dropped-or-shared-photo-pending | backlog | tickets/backlog/declining-ai-consent-keeps-a-dropped-or-shared-photo-pending.md |
 | deleting-an-account-asks-nothing | done | tickets/done/deleting-an-account-asks-nothing.md |
+| demo-pizza-uitest-misses-the-registered-badge | backlog | tickets/backlog/demo-pizza-uitest-misses-the-registered-badge.md |
 | detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait | done | tickets/done/detach-blocked-phase-is-stranded-when-the-storage-sheet-closes-mid-wait.md |
 | detach-does-not-verify-the-cloud-session-actually-closed | done | tickets/done/detach-does-not-verify-the-cloud-session-actually-closed.md |
 | detach-failure-looks-like-success | done | tickets/done/detach-failure-looks-like-success.md |
@@ -499,7 +500,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | hidden-single-currency-still-filters-the-amount-in-it | backlog | tickets/backlog/hidden-single-currency-still-filters-the-amount-in-it.md |
 | history-token-guard-echo-blind-spot | discarded | tickets/discarded/history-token-guard-echo-blind-spot.md |
 | hoja-del-saldo-vivo-ignora-los-filtros-de-sesion | backlog | tickets/backlog/hoja-del-saldo-vivo-ignora-los-filtros-de-sesion.md |
-| home-screen-budgets-widget-ignores-favorites | backlog | tickets/backlog/home-screen-budgets-widget-ignores-favorites.md |
+| home-screen-budgets-widget-ignores-favorites | done | tickets/done/home-screen-budgets-widget-ignores-favorites.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
@@ -723,6 +724,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency | backlog | tickets/backlog/record-row-voiceover-reads-a-foreign-amount-in-the-preferred-currency.md |
 | record-selectors-open-at-medium-detent | done | tickets/done/record-selectors-open-at-medium-detent.md |
 | record-selectors-uitest-taps-the-tags-chip-off-screen | backlog | tickets/backlog/record-selectors-uitest-taps-the-tags-chip-off-screen.md |
+| records-delete-uitest-counts-only-visible-rows | backlog | tickets/backlog/records-delete-uitest-counts-only-visible-rows.md |
 | records-orphaned-by-earlier-account-deletions-stay-invisible | qa | tickets/qa/records-orphaned-by-earlier-account-deletions-stay-invisible.md |
 | records-standalone-amount-discrepancy | backlog | tickets/backlog/records-standalone-amount-discrepancy.md |
 | records-summary-approximate-mark-fails-only-alongside-group-suites | backlog | tickets/backlog/records-summary-approximate-mark-fails-only-alongside-group-suites.md |

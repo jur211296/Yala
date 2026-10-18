@@ -125,6 +125,55 @@ class SessionState {
         }
     }
 
+    // MARK: - Elegir el período
+
+    /// Pone a la vez el tipo de período y, si es `.custom`, su rango. El rango va primero porque `selectedPeriod`
+    /// calcula el intervalo con el rango que haya en ese momento.
+    private func applyPeriod(_ period: DetailPeriod, customRange: DateInterval?) {
+        if period == .custom, let customRange {
+            customDateRange = customRange
+        }
+        selectedPeriod = period
+    }
+
+    /// El período que elige la persona (menú, flechas, rango propio). Si un aviso había puesto el suyo para esa
+    /// visita (`applyVisitPeriod`), desde aquí el período ya es de ella y no se le devuelve el anterior al salir.
+    func choosePeriod(_ period: DetailPeriod, customRange: DateInterval? = nil, stepUnit: PeriodStepLogic.Unit? = nil) {
+        periodBeforeVisit = nil
+        periodStepUnit = stepUnit
+        applyPeriod(period, customRange: customRange)
+    }
+
+    /// El tamaño de paso con el que las flechas de Estadísticas llegaron al rango propio de ahora (UX 2.2 · L11-3).
+    /// Cualquier otra elección lo borra.
+    private(set) var periodStepUnit: PeriodStepLogic.Unit?
+
+    // MARK: - Período de una visita (UX 2.2 · L11-2)
+
+    /// Lo que tenía puesto la persona antes de que un aviso abriera Estadísticas con su propio período. Se le devuelve
+    /// al salir de Estadísticas (`endVisitPeriod`); `nil` si no hay ninguna visita en curso.
+    private(set) var periodBeforeVisit: PeriodStepLogic.Selection?
+
+    /// El informe abre Estadísticas con el período del que habla. Vale para esa visita: el de antes se guarda una vez
+    /// —dos avisos seguidos no pisan el original— y vuelve con `endVisitPeriod`.
+    func applyVisitPeriod(_ period: DetailPeriod, customRange: DateInterval? = nil) {
+        if periodBeforeVisit == nil {
+            periodBeforeVisit = PeriodStepLogic.Selection(period: selectedPeriod, customRange: customDateRange)
+        }
+        periodStepUnit = nil
+        applyPeriod(period, customRange: customRange)
+    }
+
+    /// Al salir de Estadísticas: vuelve el período que había antes del aviso, si lo hay.
+    func endVisitPeriod() {
+        guard let saved = periodBeforeVisit else { return }
+        periodBeforeVisit = nil
+        periodStepUnit = nil
+        // También sin rango: si no había uno propio, el «hoy» del informe diario no se queda guardado como tal.
+        customDateRange = saved.customRange
+        selectedPeriod = saved.period
+    }
+
     // MARK: - Trend Metric State
 
     /// The currently selected trend metric (Balance/Income/Expense), synchronized across Panel and Statistics
@@ -393,6 +442,9 @@ class SessionState {
 
     /// Reset to default state
     func resetToDefaults() {
+        // Primero, olvidar la visita de un informe: el cambio de pestaña de abajo la cerraría y devolvería el período
+        // de antes del borrado encima del de fábrica.
+        periodBeforeVisit = nil
         selectedPeriod = .allTime
         customDateRange = nil
         clearFilters()

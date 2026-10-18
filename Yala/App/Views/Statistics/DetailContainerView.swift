@@ -480,15 +480,22 @@ struct DetailContainerView: View {
                 selectedTab = tab
             }
         } label: {
+            // Cuatro chips con icono y solo el elegido con su nombre (UX 2.2 · L11-1, decisión de Jürgen del
+            // 2026-10-15). Con los cuatro nombres, «Distribución» salía cortada y «Registros» quedaba entera fuera de
+            // la pantalla de un iPhone 17 Pro, sin nada que dijera que la fila se desliza.
             HStack(spacing: DS.Spacing.sm) {
                 Image(systemName: tab.icon)
                     .font(DS.Typography.subheadline)
                     .accessibilityHidden(true)
-                Text(tab.title)
-                    .font(DS.Typography.label)
+                if isSelected {
+                    Text(tab.title)
+                        .font(DS.Typography.label)
+                        .lineLimit(1)
+                }
             }
-            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.horizontal, isSelected ? DS.Spacing.lg : DS.Spacing.md)
             .padding(.vertical, DS.Spacing.sm)
+            .frame(minWidth: 44)
             .foregroundStyle(isSelected ? .white : .primary)
             .background(
                 Capsule()
@@ -497,6 +504,9 @@ struct DetailContainerView: View {
             .glassEffect(isSelected ? .clear : .regular.interactive(), in: .capsule)
         }
         .buttonStyle(.plain)
+        // El nombre se lee aunque el chip enseñe solo el icono.
+        .accessibilityLabel(tab.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("detail_chip_\(tab.rawValue.lowercased())")
     }
 

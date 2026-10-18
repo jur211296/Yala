@@ -140,11 +140,12 @@ enum ChatDateRange: String, Codable {
         case .thisYear:
             let yearStart = calendar.dateInterval(of: .year, for: now)?.start ?? startOfToday
             return DateInterval(start: yearStart, end: now)
+        // Hoy y los 6 (o 29) anteriores: los mismos días que «Últimos 7/30 días» en Estadísticas.
         case .last7Days:
-            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: now)
         case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -29, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: now)
         case .custom:
             let formatter = ISO8601DateFormatter()
