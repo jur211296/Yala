@@ -1143,7 +1143,7 @@
 "profile.aliasAvailable" = "このエイリアスは利用可能です";
 "profile.aliasHelper" = "3〜20文字。英数字とアンダースコアのみ。";
 "profile.privacyTitle" = "データの保存先";
-"profile.privacyDesc" = "プライベートなiCloudのアカウントでは、データはこの端末とあなたのiCloudに保存されます。クラウドのアカウントでは、Yalaのサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してOpenAIに届き、そこで処理されます。";
+"profile.privacyDesc" = "プライベートなiCloudのアカウントでは、データはこの端末とあなたのiCloudに保存されます。クラウドのアカウントでは、Yalaのサーバーに保存されます。グループに記録した内容はニックネームとともにYalaのサーバーに保存され、グループのメンバーが見られるようになります。AI機能(音声、画像、インサイト)は任意です。送信した内容は当社のサーバーを経由してAIサービスに届き、そこで処理されます。どのサービスかはプライバシーポリシーに記載しています。";
 "profile.aliasFutureNote" = "備考: エイリアスの一意性チェックは、シェア支出機能の実装時に利用可能になります。";
 "profile.proMember" = "PROメンバー";
 "profile.choosePhoto" = "写真を選ぶ";
@@ -2848,7 +2848,7 @@
 "aiPrivacy.revokeConfirmTitle" = "この機能を無効にしますか？";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
 "aiPrivacy.revokeConfirmAction" = "無効化";
-"aiPrivacy.footerHint" = "データが送信されるのは、インサイト、アシスタント、音声・画像入力を使うときだけで、当社のサーバーを経由してOpenAIに届きます。データを販売したり、広告に使ったりすることはありません。";
+"aiPrivacy.footerHint" = "データが送信されるのは、インサイト、アシスタント、音声・画像入力を使うときだけで、当社のサーバーを経由してAIサービスに届きます。データを販売したり、広告に使ったりすることはありません。";
 "aiPrivacy.policyLink" = "プライバシーポリシー";
 
 // MARK: - AI Consent
@@ -2865,7 +2865,6 @@
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "人工知能";
 "insights.aiToggle" = "スマート概要";
-"insights.aiCaption" = "OpenAIが集計データを分析して個別化された分析を生成します。個別の記録は送信されません。";
 "insights.metricsSection" = "指標";
 "insights.chartsSection" = "グラフ";
 "insights.analysisSection" = "分析";

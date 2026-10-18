@@ -1143,7 +1143,7 @@
 "profile.aliasAvailable" = "别名可用";
 "profile.aliasHelper" = "3-20 个字符。只能包含字母、数字和下划线。";
 "profile.privacyTitle" = "你的数据存放在哪里";
-"profile.privacyDesc" = "使用私人 iCloud 账户时，你的数据保存在你的设备和你的 iCloud 中。使用云端账户时，数据保存在 Yala 的服务器上。你在群组中记录的内容会连同你的昵称保存在 Yala 的服务器上，以便群组成员查看。AI 功能(语音、图片和洞察)是可选的：你发送的内容会经由我们的服务器传到 OpenAI 进行处理。";
+"profile.privacyDesc" = "使用私人 iCloud 账户时，你的数据保存在你的设备和你的 iCloud 中。使用云端账户时，数据保存在 Yala 的服务器上。你在群组中记录的内容会连同你的昵称保存在 Yala 的服务器上，以便群组成员查看。AI 功能(语音、图片和洞察)是可选的：你发送的内容会经由我们的服务器传到 AI 服务进行处理。具体是哪项服务，请见隐私政策。";
 "profile.aliasFutureNote" = "注意:别名唯一性验证将在共享支出功能上线时可用。";
 "profile.proMember" = "PRO 会员";
 "profile.choosePhoto" = "选择照片";
@@ -2848,7 +2848,7 @@
 "aiPrivacy.revokeConfirmTitle" = "禁用此功能?";
 "aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
 "aiPrivacy.revokeConfirmAction" = "禁用";
-"aiPrivacy.footerHint" = "只有在你使用洞察、助理或语音/图片输入时，你的数据才会被发送，并经由我们的服务器传给 OpenAI。我们不会出售你的数据，也不会将其用于广告。";
+"aiPrivacy.footerHint" = "只有在你使用洞察、助理或语音/图片输入时，你的数据才会被发送，并经由我们的服务器传给 AI 服务。我们不会出售你的数据，也不会将其用于广告。";
 "aiPrivacy.policyLink" = "隐私政策";
 
 // MARK: - AI Consent
@@ -2865,7 +2865,6 @@
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "人工智能";
 "insights.aiToggle" = "智能概览";
-"insights.aiCaption" = "OpenAI 分析你的汇总数据来生成个性化分析。不会发送任何单条记录。";
 "insights.metricsSection" = "指标";
 "insights.chartsSection" = "图表";
 "insights.analysisSection" = "分析";

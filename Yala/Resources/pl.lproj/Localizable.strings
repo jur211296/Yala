@@ -1143,7 +1143,7 @@
 "profile.aliasAvailable" = "Alias dostępny";
 "profile.aliasHelper" = "3-20 znaków. Tylko litery, cyfry i podkreślenia.";
 "profile.privacyTitle" = "Gdzie są Twoje dane";
-"profile.privacyDesc" = "Z kontem w Twoim prywatnym iCloud Twoje dane są przechowywane na urządzeniu i w Twoim iCloud. Z kontem w chmurze są przechowywane na serwerach Yala. To, co dodajesz w grupie, razem z Twoim pseudonimem, jest przechowywane na serwerach Yala, żeby grupa to widziała. Funkcje AI (głos, obraz, obserwacje) są opcjonalne: to, co do nich wysyłasz, trafia przez nasz serwer do OpenAI, które to przetwarza.";
+"profile.privacyDesc" = "Z kontem w Twoim prywatnym iCloud Twoje dane są przechowywane na urządzeniu i w Twoim iCloud. Z kontem w chmurze są przechowywane na serwerach Yala. To, co dodajesz w grupie, razem z Twoim pseudonimem, jest przechowywane na serwerach Yala, żeby grupa to widziała. Funkcje AI (głos, obraz, obserwacje) są opcjonalne: to, co do nich wysyłasz, trafia przez nasz serwer do usługi AI, która to przetwarza. Nazwę usługi podaje Polityka prywatności.";
 "profile.aliasFutureNote" = "Uwaga: walidacja unikalności aliasu będzie dostępna, gdy zostanie wdrożona funkcja wydatków współdzielonych.";
 "profile.proMember" = "Członek PRO";
 "profile.choosePhoto" = "Wybierz zdjęcie";
@@ -2848,7 +2848,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Wyłączyć tę funkcję?";
 "aiPrivacy.revokeConfirmMessage" = "Przestaniemy przetwarzać twoje dane AI dla tej funkcji. Możesz ją włączyć ponownie w każdej chwili.";
 "aiPrivacy.revokeConfirmAction" = "Wyłącz";
-"aiPrivacy.footerHint" = "Twoje dane są wysyłane tylko podczas korzystania z Obserwacji, Asystenta lub wpisów głosowych/obrazowych i trafiają do OpenAI przez nasz serwer. Nie sprzedajemy ich ani nie używamy do reklam.";
+"aiPrivacy.footerHint" = "Twoje dane są wysyłane tylko podczas korzystania z Obserwacji, Asystenta lub wpisów głosowych/obrazowych i trafiają do usługi AI przez nasz serwer. Nie sprzedajemy ich ani nie używamy do reklam.";
 "aiPrivacy.policyLink" = "Polityka prywatności";
 
 // MARK: - AI Consent
@@ -2865,7 +2865,6 @@
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Sztuczna inteligencja";
 "insights.aiToggle" = "Inteligentny przegląd";
-"insights.aiCaption" = "OpenAI analizuje zagregowane dane, aby wygenerować spersonalizowaną analizę. Pojedyncze wpisy nie są wysyłane.";
 "insights.metricsSection" = "Wskaźniki";
 "insights.chartsSection" = "Wykresy";
 "insights.analysisSection" = "Analiza";

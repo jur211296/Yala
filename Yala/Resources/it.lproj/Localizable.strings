@@ -1145,7 +1145,7 @@
 "profile.aliasAvailable" = "Alias disponibile";
 "profile.aliasHelper" = "3-20 caratteri. Solo lettere, numeri e underscore.";
 "profile.privacyTitle" = "Dove si trovano i tuoi dati";
-"profile.privacyDesc" = "Con il tuo account nel tuo iCloud privato, i tuoi dati sono salvati sul tuo dispositivo e nel tuo iCloud. Con il tuo account nel cloud, sono salvati sui server di Yala. Ciò che aggiungi in un gruppo, insieme al tuo alias, è salvato sui server di Yala perché il gruppo lo veda. Le funzioni IA (voce, immagine e insights) sono opzionali: ciò che invii passa dal nostro server fino a OpenAI, che lo elabora.";
+"profile.privacyDesc" = "Con il tuo account nel tuo iCloud privato, i tuoi dati sono salvati sul tuo dispositivo e nel tuo iCloud. Con il tuo account nel cloud, sono salvati sui server di Yala. Ciò che aggiungi in un gruppo, insieme al tuo alias, è salvato sui server di Yala perché il gruppo lo veda. Le funzioni IA (voce, immagine e insights) sono opzionali: ciò che invii passa dal nostro server fino a un servizio di IA, che lo elabora. L'Informativa sulla privacy indica quale.";
 "profile.aliasFutureNote" = "Nota: La validazione dell'unicita dell'alias sara disponibile quando verra implementata la funzionalita di spese condivise.";
 "profile.proMember" = "Membro PRO";
 "profile.choosePhoto" = "Scegli foto";
@@ -2846,7 +2846,7 @@
 "aiPrivacy.revokeConfirmTitle" = "Disattivare questa funzione?";
 "aiPrivacy.revokeConfirmMessage" = "Smetteremo di elaborare i tuoi dati IA per questa funzione. Puoi riattivarla quando vuoi.";
 "aiPrivacy.revokeConfirmAction" = "Disattiva";
-"aiPrivacy.footerHint" = "I tuoi dati vengono inviati solo quando usi Insights, l'Assistente o le registrazioni con voce e immagine, e arrivano a OpenAI tramite il nostro server. Non li vendiamo né li usiamo per la pubblicità.";
+"aiPrivacy.footerHint" = "I tuoi dati vengono inviati solo quando usi Insights, l'Assistente o le registrazioni con voce e immagine, e arrivano a un servizio di IA tramite il nostro server. Non li vendiamo né li usiamo per la pubblicità.";
 "aiPrivacy.policyLink" = "Informativa sulla privacy";
 
 // MARK: - AI Consent
@@ -2863,7 +2863,6 @@
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Intelligenza Artificiale";
 "insights.aiToggle" = "Panoramica intelligente";
-"insights.aiCaption" = "OpenAI analizza i tuoi dati aggregati per generare analisi personalizzate. Nessuna registrazione individuale viene inviata.";
 "insights.metricsSection" = "Metriche";
 "insights.chartsSection" = "Grafici";
 "insights.analysisSection" = "Analisi";
