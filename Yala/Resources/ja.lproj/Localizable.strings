@@ -7460,3 +7460,10 @@
 
 /* Alert button: archive only the card, lines stay as standalone accounts */
 "account.lines.archiveOnlyCard" = "カードのみ";
+
+/* Tarjeta con varias divisas, entrega 4: informes, flujo de caja y export por tarjeta */
+"accountCardGrouping.byCard" = "カードごと";
+"accountCardGrouping.byLine" = "明細ごと";
+"accountCardGrouping.label" = "複数通貨のカード";
+"export.column.card" = "カード";
+"export.column.card.description" = "口座が複数通貨のカードに含まれる場合、そのカード名。";

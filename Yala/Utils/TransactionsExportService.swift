@@ -210,6 +210,9 @@ struct TransactionsExportService {
         }
         let tagCatalog = Tag.byIDLookup(allTags)
 
+        // La tarjeta de cada cuenta, solo si se pidió su columna. Un fetch fallido la deja vacía (no aborta el export).
+        let cardNames = columns.activeColumns.contains(.card) ? cardNamesByAccount(in: modelContext) : [:]
+
         // 2) Aplicamos el resto de filtros en memoria.
         let filteredTransactions = applyInMemoryFilters(
             fetchedTransactions,
@@ -228,12 +231,12 @@ struct TransactionsExportService {
             switch format {
             case .csv:
                 let csvData = makeCSVData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog,
-                                          scheduleTagBackfill: scheduleTagBackfill)
+                                          scheduleTagBackfill: scheduleTagBackfill, cardNames: cardNames)
                 fileURL = try writeToTemporaryFile(data: csvData, extension: "csv")
 
             case .xlsx:
                 let (headers, rows) = makeExportData(transactions: filteredTransactions, columns: columns, tagCatalog: tagCatalog,
-                                                     scheduleTagBackfill: scheduleTagBackfill)
+                                                     scheduleTagBackfill: scheduleTagBackfill, cardNames: cardNames)
                 fileURL = try writeXLSXToTemporaryFile(headers: headers, rows: rows)
             }
         } catch {
@@ -246,6 +249,23 @@ struct TransactionsExportService {
         )
 
         return result
+    }
+
+    // MARK: - Tarjetas con varias divisas
+
+    /// El nombre de la tarjeta de cada cuenta que es parte de una (la principal y sus líneas), por `shortcutID`: el valor
+    /// de la columna `card`. Una cuenta sin líneas no está y su celda sale vacía.
+    @MainActor
+    static func cardNamesByAccount(in modelContext: ModelContext) -> [UUID: String] {
+        do {
+            let accounts = try modelContext.fetch(FetchDescriptor<Account>())
+            return AccountCardIndex(accounts: accounts).cardNamesByMember
+        } catch {
+            #if DEBUG
+            print("TransactionsExportService: Error: fetch de cuentas para la columna de tarjeta: \(error)")
+            #endif
+            return [:]
+        }
     }
 
     // MARK: - Construcción de FetchDescriptor (filtro por fecha)
@@ -402,7 +422,8 @@ struct TransactionsExportService {
         transactions: [TransactionItem],
         columns: ExportColumns,
         tagCatalog: [UUID: Tag] = [:],
-        scheduleTagBackfill: Bool = true
+        scheduleTagBackfill: Bool = true,
+        cardNames: [UUID: String] = [:]
     ) -> Data {
 
         // 1) Encabezado.
@@ -449,6 +470,9 @@ struct TransactionsExportService {
 
                 case .account:
                     value = transaction.account?.name ?? ""
+
+                case .card:
+                    value = transaction.account.flatMap { cardNames[$0.shortcutID] } ?? ""
 
                 case .category:
                     value = transaction.category?.name ?? ""
@@ -546,7 +570,8 @@ struct TransactionsExportService {
         transactions: [TransactionItem],
         columns: ExportColumns,
         tagCatalog: [UUID: Tag] = [:],
-        scheduleTagBackfill: Bool = true
+        scheduleTagBackfill: Bool = true,
+        cardNames: [UUID: String] = [:]
     ) -> (headers: [String], rows: [[String]]) {
 
         let orderedColumns = columns.orderedActiveColumns
@@ -583,6 +608,8 @@ struct TransactionsExportService {
                     value = normalizeCurrencyCode(transaction.currencyCode)
                 case .account:
                     value = transaction.account?.name ?? ""
+                case .card:
+                    value = transaction.account.flatMap { cardNames[$0.shortcutID] } ?? ""
                 case .category:
                     value = transaction.category?.name ?? ""
                 case .subcategory:

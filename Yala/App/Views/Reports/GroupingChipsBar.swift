@@ -86,5 +86,6 @@ struct GroupingChipsBar: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.Report.Grouping.drillDown)
+        .accessibilityIdentifier("report_grouping_drill_down")
     }
 }

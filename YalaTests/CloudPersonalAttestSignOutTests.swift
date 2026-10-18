@@ -417,7 +417,8 @@ struct CloudPersonalAttestExportTests {
         #expect(filtros.amountCondition == .any)
         #expect(filtros.noteContains == nil)
         #expect(!filtros.isExcludeMode)
-        #expect(ExportColumns.default.activeColumns.count == ExportColumn.allCases.count)
+        // Todas menos la de tarjeta (entrega 4): esa copia no la añade; el nombre de cada línea ya va en `account`.
+        #expect(ExportColumns.default.activeColumns == Set(ExportColumn.allCases).subtracting([.card]))
     }
 }
 

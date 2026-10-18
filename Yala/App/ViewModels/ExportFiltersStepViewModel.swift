@@ -95,16 +95,59 @@ final class ExportFiltersStepViewModel {
         }
     }
 
+    // MARK: - Cuentas (tarjeta con varias divisas, entrega 4 · Paso 0 D4)
+
+    /// Las cuentas que ofrece el filtro: cada tarjeta una vez (sin sus líneas, que entran solas al elegirla) y sin las
+    /// cuentas de Grupos, como el resto de selectores. En el orden por nombre de siempre. Sin ninguna cuenta propia
+    /// (solo las de Grupos), ofrece las de Grupos como antes: si no, «Siguiente» quedaría apagado sin nada que marcar.
+    var offeredAccounts: [Account] {
+        let own = allAccounts.filter { !$0.isSystemAccount }.accountCards(roles: allAccounts.lineRoles).map(\.head)
+        return own.isEmpty ? allAccounts.filter(\.isSystemAccount) : own
+    }
+
+    /// Las líneas de cada tarjeta, por `PersistentIdentifier` (las archivadas también: siguen siendo de la tarjeta).
+    private var linesByHead: [PersistentIdentifier: Set<PersistentIdentifier>] {
+        AccountCardLogic.linesByHead(allAccounts, node: { AccountLineNode($0) }, id: { $0.persistentModelID })
+    }
+
+    /// La selección de partida: todo lo que se ofrece, con las líneas de cada tarjeta.
+    var initialAccountSelection: Set<PersistentIdentifier> {
+        AccountCardLogic.includingLines(Set(offeredAccounts.map(\.persistentModelID)), linesByHead: linesByHead)
+    }
+
+    /// La selección tras tocar el chip de `account`: poner o quitar una tarjeta pone o quita sus líneas.
+    func toggling(_ account: Account, in selection: Set<PersistentIdentifier>) -> Set<PersistentIdentifier> {
+        var new = selection
+        let id = account.persistentModelID
+        if new.contains(id) { new.remove(id) } else { new.insert(id) }
+        return AccountCardLogic.normalizedSelection(old: selection, new: new, linesByHead: linesByHead)
+    }
+
+    /// Las cuentas que se exportan con esta selección. Las de Grupos no tienen chip: entran cuando están marcadas TODAS
+    /// las que se ofrecen (la partida, y la copia de «Exportar antes» de vaciar datos), y no al elegir una cuenta
+    /// concreta. Así la copia completa sigue siendo completa.
+    func exportedAccounts(selectedAccounts: Set<PersistentIdentifier>) -> [Account] {
+        let offered = offeredAccounts
+        let coversAll = !offered.isEmpty && offered.allSatisfy { selectedAccounts.contains($0.persistentModelID) }
+        let systemHasChips = offered.contains(where: \.isSystemAccount)
+        return allAccounts.filter { account in
+            account.isSystemAccount && !systemHasChips ? coversAll : selectedAccounts.contains(account.persistentModelID)
+        }
+    }
+
     // MARK: - Helper Methods
 
+    /// Cuenta tarjetas, no líneas: con la tarjeta marcada, sus líneas van en el conjunto pero no son otra cuenta.
     func selectedAccountsText(selectedAccounts: Set<PersistentIdentifier>) -> String {
-        if selectedAccounts.isEmpty {
+        let offered = offeredAccounts
+        let marked = offered.filter { selectedAccounts.contains($0.persistentModelID) }.count
+        if marked == 0 {
             return L10n.Filters.noneSelected
         }
-        if selectedAccounts.count == allAccounts.count {
+        if marked == offered.count {
             return L10n.Filters.allAccounts
         }
-        return L10n.Filters.selectedCount(selectedAccounts.count)
+        return L10n.Filters.selectedCount(marked)
     }
 
     func selectedCategoriesText(selectedSubcategories: Set<PersistentIdentifier>) -> String {
@@ -135,7 +178,7 @@ final class ExportFiltersStepViewModel {
         if selectedAccounts.isEmpty {
             return CurrencyCode.allCases
         }
-        let selected = allAccounts.filter { selectedAccounts.contains($0.persistentModelID) }
+        let selected = exportedAccounts(selectedAccounts: selectedAccounts)
         let accountCurrencies = Set(selected.map { CurrencyCode(rawValue: $0.currencyCode) ?? .pen })
         return CurrencyCode.allCases.filter { accountCurrencies.contains($0) }
     }
@@ -200,7 +243,7 @@ final class ExportFiltersStepViewModel {
         }
 
         return ExportFilters(
-            selectedAccounts: allAccounts.filter { selectedAccounts.contains($0.persistentModelID) },
+            selectedAccounts: exportedAccounts(selectedAccounts: selectedAccounts),
             selectedCategories: Array(finalCategories),
             selectedSubcategories: selectedSubcategoryObjects,
             selectedTagNames: selectedTagNames,

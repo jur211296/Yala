@@ -271,6 +271,14 @@ enum L10n {
         }
     }
 
+    /// «Por tarjeta · Por línea» en la tabla de informes y en el flujo de caja por cuenta (tarjeta con varias divisas,
+    /// entrega 4).
+    enum AccountCardGrouping {
+        static var byCard: String { ls("accountCardGrouping.byCard", comment: "Report and cash flow by account: show a card with several currencies as one row, converted") }
+        static var byLine: String { ls("accountCardGrouping.byLine", comment: "Report and cash flow by account: show each line of a card in its own currency") }
+        static var label: String { ls("accountCardGrouping.label", comment: "Accessibility label of the By card / By line segmented control") }
+    }
+
     /// Vista de una cuenta (la hoja que abre el toque en su tarjeta del Panel).
     enum AccountDetail {
         static var moneyIn: String { ls("accountDetail.moneyIn", comment: "Money that came into the account in the period") }
@@ -4375,6 +4383,9 @@ enum L10n {
         static var columnAmountDesc: String { ls("export.column.amount.description", comment: "") }
         static var columnCurrencyDesc: String { ls("export.column.currency.description", comment: "") }
         static var columnAccountDesc: String { ls("export.column.account.description", comment: "") }
+        /// Columna con la tarjeta con varias divisas de la cuenta (entrega 4).
+        static var columnCard: String { ls("export.column.card", comment: "Export column with the card the account belongs to") }
+        static var columnCardDesc: String { ls("export.column.card.description", comment: "Description of the card export column") }
         static var columnCategoryDesc: String { ls("export.column.category.description", comment: "") }
         static var columnSubcategoryDesc: String { ls("export.column.subcategory.description", comment: "") }
         static var columnTagsDesc: String { ls("export.column.tags.description", comment: "") }

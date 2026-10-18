@@ -94,10 +94,13 @@ struct TransactionsExportModelsTests {
 
     // MARK: - ExportColumns
 
-    @Test func exportColumns_default_hasAllColumns() {
+    /// Todas menos la de tarjeta, que solo se ofrece con una tarjeta con varias divisas (entrega 4): sin tarjetas, el
+    /// fichero es el de siempre (`AccountCardReportTests.exportColumns_cardOnlyWithCards`).
+    @Test func exportColumns_default_hasAllColumnsButTheCardOne() {
         let columns = ExportColumns.default
         #expect(columns.hasAtLeastOneActiveColumn == true)
-        #expect(columns.orderedActiveColumns.count == ExportColumn.allCases.count)
+        #expect(columns.orderedActiveColumns.count == ExportColumn.allCases.count - 1)
+        #expect(!columns.orderedActiveColumns.contains(.card))
     }
 
     @Test func exportColumns_empty_hasNoActiveColumn() {

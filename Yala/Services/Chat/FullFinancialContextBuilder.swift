@@ -176,6 +176,7 @@ final class FullFinancialContextBuilder {
 
         let balances = buildBalances(
             accounts: PanelTotalAccountsLogic.countableAccounts(allAccounts),
+            lineRoles: allAccounts.lineRoles,
             includeGroupsInTotal: includeGroupsInTotal,
             allRawTx: allTx,
             preferredCurrency: currencyCode,
@@ -438,19 +439,26 @@ final class FullFinancialContextBuilder {
     /// con «Grupos en el total» apagado, `accountsForTotal` quita las cuentas sistema de Grupos solo de la suma.
     private func buildBalances(
         accounts: [Account],
+        lineRoles: [UUID: AccountLineRole],
         includeGroupsInTotal: Bool,
         allRawTx: [TransactionItem],
         preferredCurrency: String,
         converter: CurrencyConverting
     ) -> FullFinancialContext.BalancesSection {
-        let entries = accounts.map { account in
-            let balance = InitialBalanceService.currentBalance(for: account, allTransactions: allRawTx)
-            return FullFinancialContext.AccountEntry(
-                name: account.name,
-                type: account.type,
-                balance: safeDouble(balance),
-                currency: account.currencyCode
-            )
+        // Una tarjeta con varias divisas sale una vez, con sus líneas dentro (entrega 4): suelta, el modelo las leía como
+        // dos cuentas y podía sumarlas en crudo. Como la tarjeta del Panel (`PanelViewModel.orderedActiveAccountCards`):
+        // los roles salen de TODAS las cuentas, y una línea archivada no entra en la tarjeta ni en su total. Aquí sigue
+        // listada aparte, porque cuenta en `total_balance` (archivar no decide la suma). Una línea cuya principal no
+        // cuenta sale suelta, como en el resto de la app.
+        var entries: [FullFinancialContext.AccountEntry] = []
+        for card in accounts.accountCards(roles: lineRoles) {
+            let live = AccountCard(head: card.head, lines: card.lines.filter { !$0.isArchived })
+            entries.append(accountEntry(live, allRawTx: allRawTx, preferredCurrency: preferredCurrency, converter: converter))
+            for archived in card.lines where archived.isArchived {
+                entries.append(accountEntry(
+                    AccountCard(head: archived, lines: []), allRawTx: allRawTx, preferredCurrency: preferredCurrency,
+                    converter: converter))
+            }
         }
         // Balance enviado al LLM: TC actual sobre saldo nativo (LiveBalanceCalculator)
         // en vez de suma de snapshots históricos — el LLM debe ver el saldo
@@ -470,6 +478,40 @@ final class FullFinancialContextBuilder {
             totalBalance: safeDouble(total),
             totalIncludesGroups: includeGroupsInTotal
         )
+    }
+
+    private func accountEntry(
+        _ card: AccountCard<Account>,
+        allRawTx: [TransactionItem],
+        preferredCurrency: String,
+        converter: CurrencyConverting
+    ) -> FullFinancialContext.AccountEntry {
+        func balance(_ account: Account) -> Double {
+            InitialBalanceService.currentBalance(for: account, allTransactions: allRawTx)
+        }
+        var entry = FullFinancialContext.AccountEntry(
+            name: card.head.name,
+            type: card.head.type,
+            balance: safeDouble(balance(card.head)),
+            currency: card.head.currencyCode
+        )
+        guard card.hasLines else { return entry }
+        entry.lines = card.lines.map { line in
+            FullFinancialContext.LineEntry(name: line.name, balance: safeDouble(balance(line)), currency: line.currencyCode)
+        }
+        // El mismo total que la tarjeta del Panel (`AccountCardView.cardTotal`): tasa más reciente y «≈» si algo se convirtió.
+        let total = AccountCardLogic.total(
+            card.members.map {
+                AccountCardLogic.LineAmount(value: balance($0), currencyCode: normalizeCurrencyCode($0.currencyCode))
+            },
+            in: normalizeCurrencyCode(preferredCurrency)
+        ) { value, code in
+            let outcome = converter.convertCheckedWithLatestRate(Decimal(value), from: code, to: preferredCurrency)
+            return (outcome.amount as NSDecimalNumber).doubleValue
+        }
+        entry.cardTotal = safeDouble(total.value)
+        entry.cardTotalIsApproximate = total.isConverted
+        return entry
     }
 
     private func buildPeriods(

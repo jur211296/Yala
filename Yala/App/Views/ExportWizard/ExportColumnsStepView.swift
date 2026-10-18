@@ -28,6 +28,15 @@ struct ExportColumnsStepView: View {
     /// Los grupos existen HOY vía CloudKit (sin gate por flag — el export es read-only).
     @State private var hasExportableGroups: Bool = false
 
+    /// Tarjeta con varias divisas (entrega 4): la columna de tarjeta solo se ofrece, y sale activada, si lo que se exporta
+    /// incluye alguna tarjeta con líneas. Sin tarjetas, el paso y el fichero son los de siempre.
+    @State private var hasAccountCards: Bool = false
+    @State private var hasMeasuredAccountCards = false
+
+    private var offeredColumns: [ExportColumn] {
+        ExportColumns.offeredOrder(hasAccountCards: hasAccountCards)
+    }
+
     /// Callback opcional para cuando el usuario termina el asistente.
     let onFinish: (() -> Void)?
 
@@ -60,6 +69,7 @@ struct ExportColumnsStepView: View {
         .swipeBack()
         .onAppear {
             hasExportableGroups = GroupsExportBuilder.hasExportableGroups(in: modelContext)
+            measureAccountCards()
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -102,17 +112,26 @@ struct ExportColumnsStepView: View {
     private var columnsListSection: some View {
         SectionBox(title: L10n.Export.availableColumns) {
             VStack(spacing: DS.Spacing.none) {
-                ForEach(Array(ExportColumns.defaultOrder.enumerated()), id: \.element.id) {
+                ForEach(Array(offeredColumns.enumerated()), id: \.element.id) {
                     index, column in
                     columnRow(for: column)
 
-                    if index < ExportColumns.defaultOrder.count - 1 {
+                    if index < offeredColumns.count - 1 {
                         Divider()
                             .padding(.leading, DS.Spacing.lg)
                     }
                 }
             }
         }
+    }
+
+    /// Una sola vez por visita al paso: volver desde el resumen no vuelve a encender una columna que el usuario apagó.
+    private func measureAccountCards() {
+        guard !hasMeasuredAccountCards else { return }
+        hasMeasuredAccountCards = true
+        // Lo que se exporta, no todas las cuentas: sin ninguna tarjeta en el filtro, la columna saldría vacía.
+        hasAccountCards = AccountCardIndex(accounts: exportFilters.selectedAccounts).hasCards
+        if hasAccountCards { exportColumns.activate(.card) }
     }
 
     /// G5-D2: toggle para añadir un CSV aparte con los grupos del usuario.
@@ -159,6 +178,7 @@ struct ExportColumnsStepView: View {
         }
         .toggleStyle(.switch)
         .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityIdentifier("export_column_\(column.rawValue)")
     }
 }
 

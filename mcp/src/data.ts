@@ -84,7 +84,7 @@ export class YalaReader {
 }
 
 export const COLUMNS = {
-  accounts: "sync_id,name,currency_code,type,is_archived,exclude_from_statistics,is_system_account",
+  accounts: "sync_id,name,currency_code,type,is_archived,exclude_from_statistics,is_system_account,parent_account_id",
   categories: "sync_id,name,is_income,is_visible,sort_order",
   subcategories: "sync_id,name,category_ref,nature_raw_value,is_visible,sort_order,is_system,is_default_seed",
   tags: "sync_id,name",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeBalances } from "../src/logic/balances";
+import { linesByHead, lineNode, resolveLines, spendingAccountIds } from "../src/logic/accountLines";
 import { budgetStatuses } from "../src/logic/budgets";
 import { buildRateBook, convertOn, resolveRates } from "../src/logic/fx";
 import { buildGroupAdjustment } from "../src/logic/groups";
@@ -477,5 +478,91 @@ describe("recurrentes (port de monthlyMultiplier y monthlyTotal)", () => {
     expect(flags.Sueldo).toEqual([]);
     expect(r.a_revisar).toBe(2);
     expect(JSON.stringify(r)).not.toMatch(/sin usar/i);
+  });
+});
+
+describe("tarjeta con varias divisas (port de AccountLineLogic.resolve y Budget.spendingAccountIDs)", () => {
+  const card = uuid(3501);
+  const usdLine = uuid(3502);
+  const loose = uuid(3503);
+  const food = uuid(3511);
+  const ctx = { today: "2026-09-26", todayUtc: TODAY_UTC, tz: "America/Lima", rates: RATES, firstWeekday: 2 as const, soloActivos: true };
+  const e = (p: Parameters<typeof tx>[0]) => tx({ category_ref: food, ...p });
+
+  it("resuelve la principal y su línea; una línea en la divisa de la principal o huérfana se lee suelta", () => {
+    const roles = resolveLines([
+      lineNode(account({ sync_id: card, currency_code: "PEN" })),
+      lineNode(account({ sync_id: usdLine, currency_code: "USD", parent_account_id: card })),
+      lineNode(account({ sync_id: loose, currency_code: "PEN", parent_account_id: card })),
+      lineNode(account({ sync_id: uuid(3504), currency_code: "EUR", parent_account_id: uuid(3599) })),
+    ]);
+    expect(roles.get(card)).toEqual({ kind: "principal", lineIds: [usdLine] });
+    expect(roles.get(usdLine)).toEqual({ kind: "line", principalId: card });
+    expect(roles.get(loose)).toEqual({ kind: "broken", reason: "sameCurrencyAsPrincipal" });
+    expect(roles.get(uuid(3504))).toEqual({ kind: "broken", reason: "orphan" });
+  });
+
+  it("dos líneas vivas en la misma divisa: gana el menor id, como en la app", () => {
+    const a = "00000000-0000-4000-8000-00000000000a";
+    const b = "00000000-0000-4000-8000-000000000009";
+    const roles = resolveLines([
+      lineNode(account({ sync_id: card, currency_code: "PEN" })),
+      lineNode(account({ sync_id: a, currency_code: "USD", parent_account_id: card })),
+      lineNode(account({ sync_id: b, currency_code: "USD", parent_account_id: card })),
+    ]);
+    expect(roles.get(b)).toEqual({ kind: "line", principalId: card });
+    expect(roles.get(a)).toEqual({ kind: "broken", reason: "duplicateCurrency" });
+  });
+
+  it("el presupuesto de la tarjeta cuenta su línea convertida; el de la línea, solo la línea", () => {
+    const lookup = buildLookup({
+      accounts: [
+        account({ sync_id: card, currency_code: "PEN" }),
+        account({ sync_id: usdLine, currency_code: "USD", parent_account_id: card }),
+        account({ sync_id: loose, currency_code: "PEN" }),
+      ],
+      categories: [category({ sync_id: food, name: "Comida" })],
+    });
+    const txs = [
+      e({ account_ref: card, amount: -100 }),
+      e({ account_ref: usdLine, amount: -10, currency_code: "USD" }), // 34 PEN con la tasa de hoy
+      e({ account_ref: loose, amount: -7 }),
+    ];
+    const r = budgetStatuses(
+      [
+        budget({ sync_id: uuid(3521), account_ids: [card], limit_amount: 1000 }),
+        budget({ sync_id: uuid(3522), account_ids: [usdLine], limit_amount: 1000 }),
+      ],
+      txs,
+      lookup,
+      ctx,
+    );
+    const byId = new Map(r.presupuestos.map((b) => [b.id, b]));
+    expect(byId.get(uuid(3521))?.gastado).toBeCloseTo(134);
+    expect(byId.get(uuid(3521))?.movimientos).toBe(2);
+    // Lo guardado no cambia: el filtro sigue diciendo una cuenta.
+    expect(byId.get(uuid(3521))?.filtros.cuentas).toBe(1);
+    expect(byId.get(uuid(3522))?.gastado).toBeCloseTo(34);
+  });
+
+  it("sin `parent_account_id` (filas de antes) nada cambia", () => {
+    const lookup = buildLookup({
+      accounts: [account({ sync_id: card }), account({ sync_id: usdLine, currency_code: "USD" })],
+      categories: [category({ sync_id: food })],
+    });
+    const r = budgetStatuses(
+      [budget({ sync_id: uuid(3531), account_ids: [card], limit_amount: 1000 })],
+      [e({ account_ref: card, amount: -100 }), e({ account_ref: usdLine, amount: -10, currency_code: "USD" })],
+      lookup,
+      ctx,
+    );
+    expect(r.presupuestos[0]?.gastado).toBeCloseTo(100);
+  });
+
+  it("los ids se comparan sin mayúsculas", () => {
+    expect(spendingAccountIds([card.toUpperCase()], linesByHead([
+      account({ sync_id: card, currency_code: "PEN" }),
+      account({ sync_id: usdLine.toUpperCase(), currency_code: "USD", parent_account_id: card.toUpperCase() }),
+    ]))).toEqual(new Set([card, usdLine]));
   });
 });

@@ -7458,3 +7458,10 @@
 
 /* Alert button: archive only the card, lines stay as standalone accounts */
 "account.lines.archiveOnlyCard" = "Solo la carta";
+
+/* Tarjeta con varias divisas, entrega 4: informes, flujo de caja y export por tarjeta */
+"accountCardGrouping.byCard" = "Per carta";
+"accountCardGrouping.byLine" = "Per linea";
+"accountCardGrouping.label" = "Carte con più valute";
+"export.column.card" = "Carta";
+"export.column.card.description" = "Nome della carta, se il conto fa parte di una carta con più valute.";

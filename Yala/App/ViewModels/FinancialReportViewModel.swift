@@ -16,6 +16,13 @@ final class FinancialReportViewModel: Filterable {
 
     var groupingState = ReportGroupingState()
 
+    /// Con la agrupación por cuenta, cómo sale una tarjeta con varias divisas (entrega 4, Paso 0 D1): entera, convertida
+    /// a la divisa preferida, o línea a línea. Como el resto de la agrupación, no se guarda entre sesiones.
+    var accountCardGrouping: AccountCardGrouping = .byCard
+
+    /// Si alguna cuenta tiene líneas: sin ninguna, la pantalla no enseña el selector «Por tarjeta · Por línea».
+    private(set) var hasAccountCards = false
+
     // MARK: - Sheet State
 
     var showFiltersSheet = false
@@ -213,6 +220,8 @@ final class FinancialReportViewModel: Filterable {
 
         // Build pivot tree
         let hierarchy = groupingState.activeDimensions
+        let cards = AccountCardIndex(accounts: accounts)
+        hasAccountCards = cards.hasCards
         rootNodes = PivotTableCalculator.buildTree(
             currentTransactions: currentTxns,
             previousTransactions: previousTxns,
@@ -220,7 +229,9 @@ final class FinancialReportViewModel: Filterable {
             preferredCurrency: preferredCurrency,
             allTags: allTags,
             adjustment: adjustment,
-            converter: converter
+            converter: converter,
+            accountGrouping: accountCardGrouping,
+            cards: cards
         )
 
         // Flatten for rendering

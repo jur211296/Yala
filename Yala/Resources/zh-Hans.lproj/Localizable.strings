@@ -7460,3 +7460,10 @@
 
 /* Alert button: archive only the card, lines stay as standalone accounts */
 "account.lines.archiveOnlyCard" = "仅卡片";
+
+/* Tarjeta con varias divisas, entrega 4: informes, flujo de caja y export por tarjeta */
+"accountCardGrouping.byCard" = "按卡片";
+"accountCardGrouping.byLine" = "按子账户";
+"accountCardGrouping.label" = "多币种卡片";
+"export.column.card" = "卡片";
+"export.column.card.description" = "如果该账户属于多币种卡片，则为卡片名称。";

@@ -162,6 +162,13 @@ struct PivotNode: Identifiable {
     /// The grouping dimension that produced this node
     let dimension: ReportGroupingDimension
 
+    /// La cifra salió de convertir movimientos de otra divisa: una tarjeta con varias divisas «Por tarjeta» (entrega 4).
+    /// Se pinta con «≈», como el total de la tarjeta en el Panel.
+    var isApproximate: Bool = false
+
+    /// Lo mismo para la cifra del período anterior.
+    var previousIsApproximate: Bool = false
+
     /// Whether this node represents a leaf (no children)
     var isLeaf: Bool { children.isEmpty }
 }

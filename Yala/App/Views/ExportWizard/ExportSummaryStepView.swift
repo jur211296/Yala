@@ -227,7 +227,7 @@ struct ExportSummaryStepView: View {
         if exportFilters.selectedAccounts.isEmpty {
             return L10n.Export.noneSelected
         }
-        return L10n.Export.accountsSelected(exportFilters.selectedAccounts.count)
+        return L10n.Export.accountsSelected(ExportAccountCount.shown(exportFilters.selectedAccounts))
     }
 
     // MARK: - Static Formatters
