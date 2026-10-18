@@ -20,3 +20,7 @@ que reponer dos párrafos a mano. Lee el bloque `/^note/,/^<campo siguiente>/` e
 **Y `--enlace` también sustituye (2026-10-11):** al apuntar el PR #458 con un solo `--enlace`, las dos tarjetas
 perdieron el enlace al ticket y al PR #438. Se repusieron pasando los tres `--enlace` en la misma llamada (es
 repetible). Antes de `--enlace`, `tablero ver <id>` y repite los que ya tenía.
+
+**Y el formato tiene dos trampas que no avisan hasta el final (2026-10-18):** `--enlace` va como `"titulo|url"` (con `—`
+lo rechaza, y `mover`/`asignar` de la misma línea sí se aplican: la tarjeta queda a medias), y `--agente frank` va DETRÁS
+del subcomando (`tablero editar <id> --agente frank …`); delante, `tablero` lo lee como comando y falla.
