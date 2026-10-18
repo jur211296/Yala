@@ -159,6 +159,19 @@ extension CloudSyncEngine {
     ) async -> (PullApplyOutcome, Int) {
         var pagesApplied = 0
         while pagesApplied < maxPages {
+            // `SyncCapability`: la subida de versión se cumple ANTES de pedir la página siguiente (reemitir lo que no
+            // subió y volver el cursor a 0). La página que la anunció bajó con la versión vieja: se aplica igual —no
+            // trae la columna nueva, así que no pisa nada— y la re-bajada desde 0 trae lo que le faltaba. Si falla,
+            // no se pide nada más: re-bajar sin haber encolado esos enlaces los pisaría.
+            do {
+                try applyCapabilityUpgradeIfPending(context: context, now: now)
+            } catch {
+                #if DEBUG
+                print("CloudSyncEngine.pullAndApplyOnce: subida de versión falló: \(error)")
+                #endif
+                CloudSyncBreadcrumb.capabilityUpgradeFailed(errorType: String(describing: type(of: error)))
+                return (.transient(pagesApplied: pagesApplied), pagesApplied)
+            }
             let since: Int64
             do {
                 since = try loadOrCreateCursor(context).serverSeqCursor
@@ -172,8 +185,10 @@ extension CloudSyncEngine {
             let outcome = await client.pull(since: since, limit: pageLimit)
             switch outcome {
             case .page(let page):
-                // Página vacía = cola agotada (nada nuevo desde `since`) → sin avanzar cursor.
+                // Página vacía = cola agotada (nada nuevo desde `since`) → sin avanzar cursor. Salvo que esta respuesta
+                // haya pedido una subida de versión: el pull no termina con ella pendiente (ver abajo).
                 guard !page.deltas.isEmpty else {
+                    if SyncCapability.upgradeDue { continue }
                     return (.completed(pagesApplied: pagesApplied), pagesApplied)
                 }
                 // F-1: RE-drenar SÍNCRONO inmediatamente antes del apply — sin `await` entre medio.
@@ -199,8 +214,12 @@ extension CloudSyncEngine {
                     return (.transient(pagesApplied: pagesApplied), pagesApplied)
                 }
                 pagesApplied += 1
-                // Última página (menos deltas que el límite) → agotado.
+                // Última página (menos deltas que el límite) → agotado. Salvo que esta página haya pedido una subida de
+                // versión (`SyncCapability`): terminar aquí dejaría la re-bajada para el ciclo siguiente, y quien llama
+                // puede comparar el Merkle ahora mismo (la verificación de una migración lo hace) con filas que bajaron
+                // sin la columna nueva y enlaces sin subir. La vuelta siguiente cumple la subida y re-baja desde 0.
                 if page.deltas.count < pageLimit {
+                    if SyncCapability.upgradeDue { continue }
                     return (.completed(pagesApplied: pagesApplied), pagesApplied)
                 }
                 // Página llena → puede haber más: siguiente vuelta con el cursor ya avanzado.

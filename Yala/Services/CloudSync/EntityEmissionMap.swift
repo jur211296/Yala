@@ -121,11 +121,17 @@ nonisolated enum Emit {
 struct ColumnEmitter<Model: AnyObject> {
     let column: String
     let group: String?
+    /// Versión del manifest que estrena la columna (`since` en `capability_manifest.json`). Una columna con
+    /// `since` mayor que la versión que habla el teléfono (`SyncCapability.declaredLevel`) ni se emite ni se
+    /// hashea: el backend aún no la conoce. Las de antes de que existiera esto son 1.
+    let since: Int
     let build: (Model, Calendar) -> CanonValue
 
-    init(_ column: String, group: String? = nil, _ build: @escaping (Model, Calendar) -> CanonValue) {
+    init(_ column: String, group: String? = nil, since: Int = 1,
+         _ build: @escaping (Model, Calendar) -> CanonValue) {
         self.column = column
         self.group = group
+        self.since = since
         self.build = build
     }
 }
@@ -152,8 +158,15 @@ struct EntityEmission<Model: AnyObject> {
         self.columnKeyPaths = columnKeyPaths
     }
 
-    /// Set de columnas emitidas (para el parity contra el manifest).
+    /// Set de columnas emitidas (para el parity contra el manifest). TODAS, con cualquier `since`.
     var columns: Set<String> { Set(emitters.map(\.column)) }
+
+    /// Los emisores que existen en la versión `level` del manifest (`since <= level`). Lo que viaja y lo que
+    /// se hashea sale de aquí, nunca de `emitters` a secas.
+    func emitters(upTo level: Int) -> [ColumnEmitter<Model>] { emitters.filter { $0.since <= level } }
+
+    /// Columnas que existen en la versión `level` del manifest.
+    func columns(upTo level: Int) -> Set<String> { Set(emitters(upTo: level).map(\.column)) }
 
     /// columna → group_key (solo las columnas agrupadas). Para el parity y la expansión de grupos.
     var groupByColumn: [String: String] {
@@ -543,6 +556,12 @@ enum EntityEmissionMap {
             ColumnEmitter("is_system_account") { m, _ in .bool(m.isSystemAccount) },
             ColumnEmitter("credit_card_payment_reminder") { m, _ in .bool(m.creditCardPaymentReminder) },
             ColumnEmitter("credit_card_payment_day") { m, _ in .int(m.creditCardPaymentDay) },
+            // Tarjeta con varias divisas: el `shortcutID` de la principal, que ES su sync_id (`sync_id_source =
+            // Account.shortcutID`). Viaja como una referencia, pero cruda: si la principal aún no ha llegado, el
+            // UUID se guarda igual y la línea se lee suelta hasta que llegue (`AccountLineLogic`).
+            ColumnEmitter("parent_account_id", since: SyncCapability.accountLinksSince) { m, _ in
+                Emit.ref(m.parentAccountID)
+            },
         ],
         columnKeyPaths: [
             \Account.name: ["name"],
@@ -557,6 +576,7 @@ enum EntityEmissionMap {
             \Account.isSystemAccount: ["is_system_account"],
             \Account.creditCardPaymentReminder: ["credit_card_payment_reminder"],
             \Account.creditCardPaymentDay: ["credit_card_payment_day"],
+            \Account.parentAccountID: ["parent_account_id"],
         ]
     )
 
@@ -803,5 +823,23 @@ enum EntityEmissionMap {
             cashFlowOverride.table: (cashFlowOverride.columns, cashFlowOverride.groupByColumn),
             groupBridgePreference.table: (groupBridgePreference.columns, groupBridgePreference.groupByColumn),
         ]
+    }
+
+    /// tabla Postgres → (columna → `since`), solo las columnas posteriores a la versión 1. Para el test que lo ata
+    /// al `since` del manifest (`SyncCapability`): una columna con `since` solo en el JSON se emitiría en `v1` y el
+    /// Worker viejo rechazaría la fila entera.
+    static var sinceCatalog: [String: [String: Int]] {
+        func later<M>(_ e: EntityEmission<M>) -> [String: Int] {
+            Dictionary(uniqueKeysWithValues: e.emitters.filter { $0.since > 1 }.map { ($0.column, $0.since) })
+        }
+        return [
+            transactionItem.table: later(transactionItem), scheduledPayment.table: later(scheduledPayment),
+            budget.table: later(budget), inboxDraft.table: later(inboxDraft), category.table: later(category),
+            favoritePayment.table: later(favoritePayment), merchantMemory.table: later(merchantMemory),
+            exchangeRate.table: later(exchangeRate), account.table: later(account), subcategory.table: later(subcategory),
+            tag.table: later(tag), notificationItem.table: later(notificationItem), cashFlowPlan.table: later(cashFlowPlan),
+            cashFlowLine.table: later(cashFlowLine), cashFlowOverride.table: later(cashFlowOverride),
+            groupBridgePreference.table: later(groupBridgePreference),
+        ].filter { !$0.value.isEmpty }
     }
 }

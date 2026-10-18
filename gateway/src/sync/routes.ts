@@ -24,6 +24,7 @@ import {
   verifyUserToken,
 } from "./userauth";
 import {
+  MANIFEST_VERSION,
   SYNCABLE_ENTITIES,
   isSyncableEntity,
   manifest,
@@ -330,7 +331,7 @@ export async function handleSyncPull(c: Ctx): Promise<Response> {
     };
   });
   const maxSeq = page.length > 0 ? page[page.length - 1].server_seq : since;
-  const resp: SyncPullResponse = { deltas, max_server_seq: maxSeq };
+  const resp: SyncPullResponse = { deltas, max_server_seq: maxSeq, manifest_version: MANIFEST_VERSION };
   return c.json(resp);
 }
 
@@ -407,6 +408,7 @@ export async function handleSyncMerkle(c: Ctx): Promise<Response> {
   return c.json({
     canon_version: manifest.canon_version,
     capability_set: rawCap ?? "full",
+    manifest_version: MANIFEST_VERSION,
     root: hex(await merkleRoot(channel1)),
     entities,
     channel2_root: hex(await merkleRoot(channel2)),

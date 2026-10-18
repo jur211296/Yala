@@ -21,6 +21,9 @@ interface ConfigBody {
   ai: {
     photoMaxEdge: number | null;
   };
+  sync: {
+    manifestVersion: number;
+  };
 }
 
 function getConfig(env: Record<string, string>): Response | Promise<Response> {
@@ -50,6 +53,9 @@ describe("GET /config — shape y semántica fail-closed", () => {
       // Sale de la fila photo.read (sesión 2): la app reduce la foto a esto antes de subirla.
       ai: {
         photoMaxEdge: 1536,
+      },
+      sync: {
+        manifestVersion: 2,
       },
     });
   });

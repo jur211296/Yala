@@ -147,6 +147,21 @@ enum CloudSyncBreadcrumb {
         logger.error("CloudSyncIdentityRemap aborted reason=\(reason, privacy: .public) — rollback de la regeneración; se difiere al próximo run del dedup")
     }
 
+    /// El teléfono pasó a hablar una versión mayor del manifest porque el backend la anunció (`SyncCapability`).
+    nonisolated static func capabilityUpgraded(from: Int, to: Int) {
+        logger.notice("CloudSyncCapability upgraded v\(from, privacy: .public) → v\(to, privacy: .public)")
+    }
+
+    /// Subida de versión cumplida: enlaces de tarjeta reemitidos y cursor del pull a 0 (`applyCapabilityUpgradeIfPending`).
+    static func capabilityUpgradeApplied(reemittedLinks: Int) {
+        logger.notice("CloudSyncCapability upgradeApplied reemittedLinks=\(reemittedLinks, privacy: .public) cursor=0")
+    }
+
+    /// La subida de versión no se pudo cumplir (leer, encolar o mover el cursor): el pull se corta y la reintenta.
+    static func capabilityUpgradeFailed(errorType: String) {
+        logger.error("CloudSyncCapability upgradeFailed error=\(errorType, privacy: .public) — pull cortado, se reintenta")
+    }
+
     /// RED (I8c): el emisor produjo un grupo de coherencia incompleto tras la expansión. No debe ocurrir.
     static func coherenceGroupPartial(entity: String, group: String) {
         logger.notice("CloudSyncCoherenceGroupPartial \(entity, privacy: .public) group=\(group, privacy: .public)")
@@ -3036,6 +3051,15 @@ final class CloudSyncEngine {
                     changedColumns.formUnion(columns)
                 }
             }
+            // Una columna que el backend aún no conoce (`SyncCapability`) no viaja: si era lo único que cambió, no
+            // sale ninguna fila (un upsert sin campos movería el HLC de la fila sin traer nada). El enlace de tarjeta
+            // que se queda fuera se APUNTA, con cualquier valor (un desvínculo también): al subir de versión se emite.
+            let level = SyncCapability.declaredLevel
+            if level < SyncCapability.accountLinksSince, changedColumns.contains("parent_account_id"),
+               let account = model as? Account {
+                SyncCapability.noteSuppressedAccountLink(account.shortcutID)
+            }
+            changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,
                              changedColumns: changedColumns, tx: tx, rows: &rows, seen: &seen)
@@ -3523,7 +3547,7 @@ final class CloudSyncEngine {
 
     /// Serializa el `field_hlcs` (mapa unidad-de-coherencia → HLC) como JSON plano `{unit:hlc}` con
     /// claves ordenadas (determinista). Vacío → `"{}"` (no ocurre en upserts: siempre hay ≥1 unidad).
-    private func encodeFieldHlcs(_ fieldHlcs: [String: String]) -> String {
+    func encodeFieldHlcs(_ fieldHlcs: [String: String]) -> String {
         guard !fieldHlcs.isEmpty else { return "{}" }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]

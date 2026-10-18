@@ -60,6 +60,23 @@ enum AccountTagMergeService {
         in context: ModelContext,
         lastUsedDefaults: UserDefaults? = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)
     ) -> Int {
+        // Por pasadas hasta que una no funda nada (tarjeta con varias divisas, review del 2026-10-18): la identidad
+        // de una línea incluye su principal, así que dos copias de la misma línea, enlazadas a dos copias de la misma
+        // principal, solo se reconocen como duplicadas DESPUÉS de fundir las principales. El tope cubre principal y
+        // línea con margen; un nivel más no existe (`AccountLineLogic`).
+        var total = 0
+        for _ in 0..<3 {
+            let merged = mergeDuplicateAccountsOnce(in: context, lastUsedDefaults: lastUsedDefaults)
+            total += merged
+            if merged == 0 { break }
+        }
+        return total
+    }
+
+    private static func mergeDuplicateAccountsOnce(
+        in context: ModelContext,
+        lastUsedDefaults: UserDefaults?
+    ) -> Int {
         let accounts: [Account]
         do {
             accounts = try context.fetch(FetchDescriptor<Account>())
@@ -95,6 +112,12 @@ enum AccountTagMergeService {
                 for sched in loser.scheduledPayments ?? [] { sched.account = winner }
                 for fav in loser.favoritePayments ?? [] { fav.account = winner }
                 for draft in loser.inboxDrafts ?? [] { draft.account = winner }
+                // Tarjeta con varias divisas: las líneas del perdedor pasan al ganador; sin esto quedarían huérfanas
+                // (el enlace es el `shortcutID` crudo, no una relación que el borrado anule). Si así una tarjeta acaba
+                // con dos líneas en la misma divisa, `AccountLineLogic.resolve` lee una como línea y la otra suelta.
+                for line in accounts where line.parentAccountID == loser.shortcutID {
+                    line.parentAccountID = winner.shortcutID
+                }
 
                 // M2M Budget.accounts: añadir winner si falta (el cascade `.nullify` quita al loser
                 // al borrarlo). Guard anti-doble-append. Track para resync CSV POST-save.

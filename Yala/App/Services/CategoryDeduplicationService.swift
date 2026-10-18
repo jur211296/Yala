@@ -350,12 +350,21 @@ enum CategoryDeduplicationService {
                 return candidate
             }
 
+            // Tarjeta con varias divisas: las líneas que apuntan a un valor que se va a regenerar, leídas ANTES.
+            // Sin reenlazarlas quedarían huérfanas para siempre: ninguna cuenta conserva el valor viejo.
+            let linesToRelink = accounts.filter { account in
+                guard let parentID = account.parentAccountID else { return false }
+                return oldAccIDs.contains(parentID)
+            }
+            var regeneratedAccounts: [(account: Account, oldID: UUID)] = []
             var remapPairs: [IdentityRemapPair] = []
             for account in collidedAccounts {
                 let old = account.shortcutID
                 account.shortcutID = freshIdentityID()
+                regeneratedAccounts.append((account, old))
                 remapPairs.append(IdentityRemapPair(entityType: SyncEntityType.account, oldID: old, newID: account.shortcutID))
             }
+            AccountLineService.relinkAfterIdentityRegeneration(linesBefore: linesToRelink, regenerated: regeneratedAccounts)
             for sub in collidedSubs {
                 let old = sub.shortcutID
                 sub.shortcutID = freshIdentityID()

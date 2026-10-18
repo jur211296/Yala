@@ -1759,6 +1759,31 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
 
+## g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)
+
+**Aplicada en STAGING el 2026-10-18; PRODUCCIÓN PENDIENTE (la aplica Jürgen, card «Aplicar en producción el DDL de
+parentAccountID de Modo Nube»).** Fichero: `qa/cloud/g18_01_account_parent_account_id.sql`; marcha atrás
+`qa/cloud/g18_01_rollback.sql` (solo sin enlaces, bajo lock); sonda `bash qa/cloud/g18_01-staging-probe.sh` (10/10 el
+2026-10-18, contra el Worker de staging `af424141`). Ticket `multi-currency-accounts-1-model-and-sync`.
+
+Qué cambia: una columna `uuid` nullable, sin FK, con el `shortcutID` de la cuenta principal cuando la cuenta es una línea
+en otra divisa. Grants heredados (los de las tablas personales son de tabla; la migración lo comprueba). No toca ningún
+RPC: `apply_delta` escribe con `jsonb_populate_record`.
+
+**Va con el primer `since` del manifest.** La columna es la primera personal añadida después del lanzamiento, y hasta hoy
+`v1` —lo que manda todo iOS hasta 2.1— era el set completo. Con la columna en el manifest a secas, el Merkle de `accounts`
+de cada teléfono 2.1 habría divergido para siempre (el canon serializa el NULL como `key:null` y la hoja del teléfono no la
+lleva). Ahora la columna lleva `"since": 2`, el manifest `manifest_version: 2`, `v1` proyecta sin ella y el Worker anuncia
+su versión en `/sync/pull` y `/sync/merkle`. El cliente declara la menor entre la suya y la anunciada
+(`Yala/Services/CloudSync/SyncCapability.swift`). Al subir de versión, el teléfono encola los enlaces que cambió
+hablando `v1` (y nunca subieron) y re-baja todo desde 0 con la versión nueva (`applyCapabilityUpgradeIfPending`). Lo
+fijan `gateway/test/manifest.capability.test.ts` (offline) y la sonda. `/config` publica `sync.manifestVersion` para el
+guard de despliegue (`gateway/scripts/check-manifest-not-older.mjs`), que no deja bajar el manifest de un entorno.
+
+**El orden: DDL → Worker → app.** El Worker con `manifest_version: 2` pide la columna en el select del Merkle cuando el
+teléfono pide `v2`: desplegado sin la columna, cada verificación de cada teléfono 2.2 da 502 (los 2.1 no lo notan). La app puede salir antes que los dos (sin anuncio
+habla `v1` y no emite la columna), pero no el Worker antes que el DDL.
+
 ## g17_01 — el claim de la vuelta conserva `reverted_at` en una cuenta que ya volvió (2026-10-09)
 
 **PREPARADA, NO APLICADA en ningún entorno** (la sesión no tenía acceso de escritura; los pasos están en

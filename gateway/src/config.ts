@@ -1,3 +1,4 @@
+import { MANIFEST_VERSION } from "./sync/manifest";
 import type { Context } from "hono";
 import type { Env } from "./env";
 import { ROUTES } from "./ai/routes";
@@ -80,6 +81,12 @@ export function handleConfig(c: Ctx): Response {
     // IA: lo que la app necesita saber de la tabla tarea → modelo para preparar la petición (sesión 2).
     ai: {
       photoMaxEdge: photoMaxEdge(),
+    },
+    // Versión del capability_manifest de ESTE Worker. La app la lee del pull y del Merkle, no de aquí; aquí la lee
+    // el guard de despliegue (`scripts/check-manifest-not-older.mjs`), que no deja desplegar un Worker con un
+    // manifest más viejo que el que ya está: los teléfonos que hablan la versión nueva verían rechazadas sus filas.
+    sync: {
+      manifestVersion: MANIFEST_VERSION,
     },
   };
   return new Response(JSON.stringify(body), {

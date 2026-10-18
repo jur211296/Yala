@@ -2402,7 +2402,20 @@ final class AppBootstrapper {
                     CloudSyncBreadcrumb.identityRemapRegenSkippedInCloud(tags: tags.count)
                 }
             } else {
+                // Tarjeta con varias divisas: lo de antes de regenerar, para reenlazar las líneas cuya principal
+                // cambia de `shortcutID` (mismo reenlace que `repairCollapsedIdentityUUIDs`).
+                let oldAccountIDs = accounts.map(\.shortcutID)
+                let collidedAccountIDs = Set(collidedUUIDItems(accounts, keyPath: \.shortcutID).map(\.shortcutID))
+                let linesToRelink = accounts.filter { account in
+                    guard let parentID = account.parentAccountID else { return false }
+                    return collidedAccountIDs.contains(parentID)
+                }
                 accountsRegen = regenerateDuplicateUUIDs(accounts, keyPath: \.shortcutID)
+                let regeneratedAccounts = zip(accounts, oldAccountIDs)
+                    .filter { $0.0.shortcutID != $0.1 }
+                    .map { (account: $0.0, oldID: $0.1) }
+                AccountLineService.relinkAfterIdentityRegeneration(linesBefore: linesToRelink,
+                                                                   regenerated: regeneratedAccounts)
                 subsRegen = regenerateDuplicateUUIDs(subcategories, keyPath: \.shortcutID)
                 tagsRegen = regenerateAllUUIDs(tags, keyPath: \.id)
             }
