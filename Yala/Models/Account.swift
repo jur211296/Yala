@@ -40,6 +40,15 @@ final class Account {
     var creditCardPaymentReminder: Bool = false
     var creditCardPaymentDay: Int = 1
 
+    /// Tarjeta con varias divisas: si esta cuenta es una LÍNEA en otra divisa, el `shortcutID` de la cuenta
+    /// principal de la tarjeta. `nil` = cuenta normal o principal. UUID crudo y no relación, a propósito: una
+    /// línea que llega antes que su principal conserva el enlace (no hay `SyncDanglingRef` que lo guarde).
+    /// Qué es cada cuenta lo decide SOLO `AccountLineLogic.resolve`: un enlace inválido o huérfano se lee como
+    /// cuenta suelta. NUNCA `isSystemAccount` para esto: el bridge de Grupos tomaría la línea por pata virtual.
+    /// CloudKit: campo nuevo `CD_parentAccountID` (los cuatro `.ckdb`), desplegado a Production antes de que
+    /// un build lo escriba. Modo Nube: columna `accounts.parent_account_id`, `since: 2` en el manifest.
+    var parentAccountID: UUID?
+
     /// Relación inversa con budgets (muchos-a-muchos) - CloudKit: must be optional
     @Relationship(deleteRule: .nullify)
     var budgets: [Budget]?
@@ -93,10 +102,23 @@ extension Account {
     /// el usuario no las creó y no puede eliminarlas. Las archivadas tampoco.
     /// SSOT del predicado — el bug 2026-07-22 (3 call-sites divergidos) es la prueba
     /// de que repetirlo a mano diverge. NUNCA re-implementar el filtro inline.
-    var isBillableUserAccount: Bool { !isArchived && !isSystemAccount }
+    ///
+    /// Las LÍNEAS de una tarjeta con varias divisas tampoco cuentan (decisión de Jürgen del 2026-10-10): la
+    /// tarjeta cuenta una vez, por su principal. Una cuenta sola no sabe si su principal existe, así que aquí
+    /// basta con declarar el enlace; la lista (`billableUserAccounts`) vuelve a contar la línea que no resuelve
+    /// como tal (huérfana, inválida, duplicada), porque esa se ve como cuenta suelta.
+    var isBillableUserAccount: Bool { !isArchived && !isSystemAccount && parentAccountID == nil }
 }
 
 extension Array where Element == Account {
-    /// Cuentas que consumen el límite Free (ver `isBillableUserAccount`).
-    var billableUserAccounts: [Account] { filter(\.isBillableUserAccount) }
+    /// Cuentas que consumen el límite Free (ver `isBillableUserAccount`). Una cuenta con enlace cuenta si
+    /// `AccountLineLogic` no la reconoce como línea entre las cuentas de ESTA lista: falla cerrado.
+    var billableUserAccounts: [Account] {
+        let roles = AccountLineLogic.resolve(map { AccountLineNode($0) })
+        return filter { account in
+            if account.isBillableUserAccount { return true }
+            guard !account.isArchived, !account.isSystemAccount, account.parentAccountID != nil else { return false }
+            return !(roles[account.shortcutID]?.isLine ?? false)
+        }
+    }
 }

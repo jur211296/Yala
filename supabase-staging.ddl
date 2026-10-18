@@ -34,6 +34,7 @@ CREATE TABLE accounts (
   server_seq BIGINT NOT NULL,
   schema_version INTEGER NOT NULL DEFAULT 1,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  parent_account_id UUID,  -- g18_01 (2026-10-18): tarjeta con varias divisas; sin FK a propósito
   PRIMARY KEY (user_id, sync_id)
 );
 

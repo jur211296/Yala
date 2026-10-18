@@ -28,6 +28,7 @@ DEFINE SCHEMA
         CD_isArchived                INT64 QUERYABLE SORTABLE,
         CD_isSystemAccount           INT64 QUERYABLE SORTABLE,
         CD_name                      STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_parentAccountID           STRING,
         CD_shortcutID                STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_type                      STRING QUERYABLE SEARCHABLE SORTABLE,
         "___createTime"              TIMESTAMP,

@@ -116,6 +116,12 @@ private enum Apply {
     static func boolOpt<M>(_ kp: ReferenceWritableKeyPath<M, Bool?>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.bool(v) }
     }
+    /// uuid → `UUID?` crudo (no se resuelve a un objeto). `null` o un string que no es UUID → `nil`. Para un enlace
+    /// que se guarda como UUID y no como relación (`Account.parentAccountID`): no hay nada que resolver ni que
+    /// apuntar como colgado, el UUID se conserva aunque el destino no haya llegado.
+    static func uuidOpt<M>(_ kp: ReferenceWritableKeyPath<M, UUID?>) -> ColumnApplier<M> {
+        ColumnApplier { m, v, _ in m[keyPath: kp] = WireValueDecoder.uuid(v) }
+    }
     static func intReq<M>(_ kp: ReferenceWritableKeyPath<M, Int>) -> ColumnApplier<M> {
         ColumnApplier { m, v, _ in if let i = WireValueDecoder.int(v) { m[keyPath: kp] = i } }
     }
@@ -532,6 +538,8 @@ enum EntityApplyMap {
             "is_system_account": Apply.boolReq(\.isSystemAccount),
             "credit_card_payment_reminder": Apply.boolReq(\.creditCardPaymentReminder),
             "credit_card_payment_day": Apply.intReq(\.creditCardPaymentDay),
+            // Tarjeta con varias divisas (`since: 2`): solo llega si este teléfono pidió `v2` (`SyncCapability`).
+            "parent_account_id": Apply.uuidOpt(\.parentAccountID),
         ]
     )
 

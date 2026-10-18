@@ -49,6 +49,8 @@ struct PulledDelta: Equatable {
 struct PulledPage: Equatable {
     let deltas: [PulledDelta]
     let maxServerSeq: Int64
+    /// Versión del `capability_manifest.json` que anunció el Worker (`SyncCapability`). `nil` = un Worker anterior.
+    var manifestVersion: Int? = nil
 }
 
 // MARK: - PullOutcome
@@ -98,10 +100,12 @@ private struct RawPulledDelta: Decodable {
 private struct RawPullResponse: Decodable {
     let deltas: [RawPulledDelta]
     let maxServerSeq: Int64
+    let manifestVersion: Int?
 
     enum CodingKeys: String, CodingKey {
         case deltas
         case maxServerSeq = "max_server_seq"
+        case manifestVersion = "manifest_version"
     }
 }
 
@@ -118,8 +122,9 @@ final class SyncPullClient {
     /// test `{ false }`.
     private let canRenewSession: @MainActor () -> Bool
 
-    /// Capability-set del cliente (header `X-Yala-Capability-Set`). v1 = las 16 entidades del manifest.
-    static let capabilitySet = "v1"
+    /// Capability-set del cliente (header `X-Yala-Capability-Set`): la versión del manifest que habla ahora,
+    /// `v1` o `v2`. Ya no es una constante: la decide `SyncCapability` con lo que anuncia el backend.
+    static var capabilitySet: String { SyncCapability.declaredHeader }
 
     init(
         baseURL: URL = ProxyConfig.baseURL,
@@ -166,7 +171,7 @@ final class SyncPullClient {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue(Self.capabilitySet, forHTTPHeaderField: "X-Yala-Capability-Set")
+        request.setValue(SyncCapability.declaredHeader, forHTTPHeaderField: "X-Yala-Capability-Set")
         if let attest = await attestProvider(), !attest.isEmpty {
             request.setValue("Bearer \(attest)", forHTTPHeaderField: "X-Yala-Attest-Session")
         }
@@ -190,6 +195,8 @@ final class SyncPullClient {
             do {
                 let page = try Self.decodePage(data)
                 CloudSyncBreadcrumb.pull(count: page.deltas.count, maxSeq: page.maxServerSeq)
+                // Lo que el Worker dice saber, para el ciclo siguiente: esta página ya bajó con la versión pedida.
+                SyncCapability.recordBackendManifestVersion(page.manifestVersion)
                 return .page(page)
             } catch {
                 CloudSyncBreadcrumb.pullTransport(reason: "decode-200:\(error)")
@@ -223,7 +230,7 @@ final class SyncPullClient {
     static func decodePage(_ data: Data) throws -> PulledPage {
         let decoded = try JSONDecoder().decode(RawPullResponse.self, from: data)
         let deltas = try decoded.deltas.map { try mapDelta($0) }
-        return PulledPage(deltas: deltas, maxServerSeq: decoded.maxServerSeq)
+        return PulledPage(deltas: deltas, maxServerSeq: decoded.maxServerSeq, manifestVersion: decoded.manifestVersion)
     }
 
     /// Re-decodifica UN `rawDelta` (el JSON determinista que `SyncQuarantine.rawDelta` guarda, producido

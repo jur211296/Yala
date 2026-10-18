@@ -487,6 +487,48 @@ La app nueva sin el campo cae al aviso de siempre, que sigue bloqueando.
 
 ---
 
+## `g18_01_account_parent_account_id.sql` — tarjeta con varias divisas (staging 2026-10-18, producción PENDIENTE)
+
+**Staging: aplicada el 2026-10-18** (`fostjbbwstyuunmmefuk`, con el token de gestión, que esta vez sí respondía 200) y
+re-aplicada para comprobar que es idempotente. Worker de staging desplegado el mismo día: `914f5402` → `0207e3eb` →
+`af424141` (este último con el guard de despliegue y `sync.manifestVersion` en `/config`). Sonda
+`bash qa/cloud/g18_01-staging-probe.sh` **10/10** y goldens `test/sync.goldens.test.ts` **13/13** contra staging.
+**Producción: pendiente, la hace Jürgen** (card «Aplicar en producción el DDL de parentAccountID de Modo Nube»). Medido
+ese día en producción, solo lectura: `accounts` tiene 21 columnas y ninguna es `parent_account_id`.
+
+Qué es: `accounts.parent_account_id uuid` nullable, sin FK, para enlazar una línea en otra divisa con la cuenta principal
+de su tarjeta. Va con el Worker de `manifest_version: 2` (`qa/cloud/README.md`, entrada g18_01, explica por qué).
+
+### Los pasos en producción, en orden (`kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** Supabase → proyecto de producción → *SQL Editor* → *New query*:
+   ```sql
+   select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'accounts' and column_name = 'parent_account_id';
+   ```
+   Tiene que dar `0`. Si da `1`, ya está aplicada: salta al paso 3.
+2. **Aplicar.** *New query* → pega `qa/cloud/g18_01_account_parent_account_id.sql` entero → *Run*. Tiene que salir el
+   aviso `g18_01 OK · accounts.parent_account_id uuid nullable, grants heredados`. Si sale un error, no se aplicó nada
+   (va en transacción): para y avisa a Frank. Con `apply_migration` del MCP, quita antes el `begin;` y el `commit;`.
+3. **Comprobar.** Repite la consulta del paso 1: ahora da `1`.
+4. **Desplegar el Worker de producción, SOLO después del paso 3**, desde `2.2` ya con este PR mergeado:
+   `cd gateway && npm ci && npm run deploy:production`. Antes de subir, el `predeploy` comprueba que el manifest no
+   es más viejo que el desplegado (`check-manifest-not-older: OK (desplegado v1, este árbol v2)`). Apunta el
+   `Current Version ID` que imprime y el anterior (`npx wrangler deployments list --env production`). Ese deploy lleva
+   también lo que `gateway/RUNBOOK.md` tenga pendiente (hoy, el contador de uso de «Eliminar mi cuenta»).
+5. **Comprobar el Worker.** `curl -s -A yala https://yala-gateway-production.misty-surf-6866.workers.dev/config`: tiene
+   que traer `"sync":{"manifestVersion":2}`. **Ojo: con solo teléfonos 2.1 en producción, un DDL que no entró no da
+   ningún error** (los 2.1 piden `v1`, que no incluye la columna). Lo que lo prueba es el paso 3; si dudas, repítelo.
+   Con un iPhone con un build 2.2 en la nube, `npx wrangler tail --env production` no debe enseñar
+   `[sync-merkle] … 502`; si lo enseña, vuelve al Worker anterior (marcha atrás) y repite los pasos 2 y 3.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior> --env production`. Columna: `g18_01_rollback.sql`, que aborta
+si alguna cuenta ya tiene un enlace. **Cuidado con desplegar después el Worker desde `2.1`** (o desde cualquier rama sin
+`manifest_version: 2`): con `v2`, TODA alta de cuenta de un 2.2 lleva la columna (a NULL), y un Worker viejo la rechaza
+entera (`unknown_column`); el teléfono la aparta para siempre, también lo que tuviera en cola sin red. Desde esta rama el
+`predeploy` lo impide (`gateway/scripts/check-manifest-not-older.mjs`), pero **2.1 no trae ese guard hasta que se mezcle
+2.2 en 2.1**: hasta entonces, el Worker de producción no se despliega desde 2.1.
+
 ## Referencias
 
 - Detalle por migración y su historia: `qa/cloud/README.md` (la entrada de `g14_01` está en

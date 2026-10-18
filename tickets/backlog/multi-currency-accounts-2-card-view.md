@@ -41,6 +41,29 @@ secciones 3 (A), 4-6.
    la principal.
 7. **Capturas de antes y después** del Panel, la ficha, Ajustes y el formulario.
 
+## Lo que deja la entrega 1 (medido el 2026-10-18)
+
+- **Qué es cada cuenta lo decide `AccountLineLogic.resolve`** (`Yala/App/Logic/AccountLineLogic.swift`): principal, línea
+  o suelta. Una línea rota (huérfana, principal archivada, misma divisa, segundo nivel, duplicada) se lee suelta. Las
+  pantallas preguntan ahí, no repiten reglas.
+- **Vincular ya existe sin pantalla:** `AccountLineService.link(_:to:in:)` valida con `linkRejection` y escribe solo
+  `parentAccountID`. Los motivos de rechazo (`AccountLinkRejection`) son los textos que el formulario tendrá que decir.
+- **Ajustes lista las cuentas con `billableUserAccounts`** (`AccountsSettingsListViewModel.activeAccounts`), y desde la
+  entrega 1 ese predicado deja fuera las líneas válidas: en cuanto exista una, desaparece de la lista de Ajustes hasta
+  que esta entrega la anide bajo su tarjeta. Lo mismo `DowngradeResolutionSheet` (no ofrece archivar una línea) y el
+  recuento del Panel (bien: la tarjeta cuenta una vez).
+- **Archivar la principal deja sus líneas sueltas** (regla de la lógica). El archivado en cascada es de esta entrega,
+  **y tiene que alcanzar también a `DowngradeResolutionSheet`**: si en el downgrade se archiva una principal y no sus
+  líneas, la línea pasa a contar y el sheet vuelve a salir en el siguiente arranque (review del 2026-10-18).
+- **Reordenar en Ajustes borra la posición de las líneas**: `moveAccount` reescribe `accountsSortOrderNames` desde
+  `orderedActiveAccounts`, que ya no las incluye, y el Panel las manda al final (review del 2026-10-18).
+- **Dos líneas de la misma (tarjeta, divisa) no se desvinculan solas**: `resolve` lee la de menor `shortcutID` como línea
+  y la otra suelta. La ficha tendrá que enseñar esa suelta como lo que es (una cuenta) y dejar desvincularla a mano.
+- **`linkRejection` rechaza como principal una cuenta con cualquier `parentAccountID`, aunque su enlace esté roto**
+  (huérfano): el formulario tendrá que ofrecer desvincularla antes.
+- **En Modo Nube, un enlace solo sube con el teléfono en `v2`** (`SyncCapability`); antes se guarda en local y se
+  reemite al subir de versión. No bloquea vincular.
+
 ## Fuera de alcance
 
 Selectores, filtros, presupuestos y captura (entrega 3). Informes y export (entrega 4).

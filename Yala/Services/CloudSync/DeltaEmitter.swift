@@ -40,18 +40,29 @@ enum DeltaEmitter {
     ///   - changedColumns: columnas Postgres TOCADAS (PATCH parcial). En un INSERT = todas las columnas.
     ///   - hlc: el HLC de la transacción de History (el mismo para todas las unidades de esta emisión).
     ///   - calendar: calendario para derivar `local_day` (inyectable para determinismo; default `.current`).
+    ///   - capabilityLevel: versión del manifest que habla el teléfono (`SyncCapability`). Una columna posterior
+    ///     NO viaja aunque esté en `changedColumns`: el backend todavía no la conoce y rechazaría la fila entera.
     /// - Returns: `fields` (dominio limpio) + `field_hlcs` (por unidad).
     static func emit<Model: AnyObject>(
         model: Model,
         emission: EntityEmission<Model>,
         changedColumns: Set<String>,
         hlc: String,
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        capabilityLevel: Int = SyncCapability.declaredLevel
     ) -> Result {
+        let emitters = emission.emitters(upTo: capabilityLevel)
+        // Una fila entera (alta, foto de la migración, remap) con un enlace de tarjeta que esta versión no puede
+        // mandar: se apunta para reemitirlo al subir (`SyncCapability`). Con el enlace a `nil` no hace falta: la
+        // columna nace NULL en el servidor. Los cambios sueltos los apunta el drain, antes de filtrar.
+        if capabilityLevel < SyncCapability.accountLinksSince, changedColumns.contains("parent_account_id"),
+           let account = model as? Account, account.parentAccountID != nil {
+            SyncCapability.noteSuppressedAccountLink(account.shortcutID)
+        }
         // 1) Índices de grupo desde los emisores: group_key → [columnas], y columna → group_key.
         var columnsByGroup: [String: [String]] = [:]
         var groupByColumn: [String: String] = [:]
-        for emitter in emission.emitters {
+        for emitter in emitters {
             guard let group = emitter.group else { continue }
             columnsByGroup[group, default: []].append(emitter.column)
             groupByColumn[emitter.column] = group
@@ -70,7 +81,7 @@ enum DeltaEmitter {
 
         // 3) Construir `fields` para las columnas objetivo (leyendo el estado ACTUAL del modelo).
         var fields: [String: CanonValue] = [:]
-        for emitter in emission.emitters where targetColumns.contains(emitter.column) {
+        for emitter in emitters where targetColumns.contains(emitter.column) {
             fields[emitter.column] = emitter.build(model, calendar)
         }
 

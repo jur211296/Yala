@@ -1,10 +1,10 @@
 ---
 id: multi-currency-accounts-1-model-and-sync
-status: backlog
+status: done
 priority: high
 area: "accounts, currency, sync, cloudkit, schema"
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-18
 source: multi-currency-accounts (entrega 1 de A1, decidida por Jürgen el 2026-10-09/10)
 ---
 
@@ -21,7 +21,10 @@ Contexto y decisiones: [`multi-currency-accounts`](multi-currency-accounts.md) y
 [`docs/multi-currency-accounts-impact-2026-10.md`](../../docs/multi-currency-accounts-impact-2026-10.md),
 secciones 4-6.
 
-## Bloqueo
+## Bloqueo (resuelto)
+
+**Resuelto antes de empezar:** el esquema de Production se comprobó (card o2li) y el 16-oct los cuatro `.ckdb` quedaron
+byte a byte iguales a los exportados (card 1hfp). Lo de abajo queda como registro.
 
 **Bloqueada por [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md)**
 (high, en `blocked`). Esta entrega añade un campo opcional a `CD_Account` y lo despliega a Production.
@@ -89,25 +92,32 @@ entregas 2, 3 y 4.
 
 ## Criterio de hecho
 
-- [ ] `Account.parentAccountID` existe, es opcional y vale `nil` por defecto. Los 135 `Account(...)`
-      de los tests compilan sin tocarse.
-- [ ] Suite de la lógica de líneas en verde, con un caso por regla: misma divisa, divisa de la
-      principal, segundo nivel, ciclo, autoenlace, huérfana, tipo de cuenta no tarjeta, y vincular
-      con movimientos sin que cambie ninguna transacción.
-- [ ] `isBillableUserAccount` es `false` para una línea y `true` para su principal; un test lo fija.
-- [ ] Test con el UUID de la principal colapsado y regenerado: la línea sigue enlazada al nuevo.
-- [ ] Test de deduplicación: dos líneas `(tarjeta, PEN→USD)` llegadas de dos teléfonos acaban en una.
-- [ ] Ida y vuelta por Modo Nube: emitir una línea y aplicarla en otro store conserva el enlace. Un
-      cliente sin el applier de la columna la ignora y conserva los saldos (test con el manifest
-      viejo).
-- [ ] DDL aplicado en staging y sondeado, y después en producción. Salida de la sonda pegada en el PR.
-- [ ] `CD_Account.CD_parentAccountID` visible en el esquema de **Production** de los dos contenedores
-      personales, comprobado en la consola de iCloud (lo hace Jürgen si la sesión no tiene acceso), y
-      `.ckdb` regenerados.
-- [ ] `PersonalCloudKitSchemaParityTests` en verde con el campo nuevo en los cuatro `.ckdb`.
-- [ ] Review adversarial (varias lentes + refutación por hallazgo) hecha y sus hallazgos cerrados o
-      con ticket.
-- [ ] `/gate` en verde.
+Cerrado el 2026-10-18 (encargo `encargos/lanzados/2026-10-18-tarjeta-varias-divisas-entrega-1.md`, Paso 0 con las
+decisiones). Los dos despliegues a producción salen de este ticket a sus cards, porque no los hace una sesión.
+
+- [x] `Account.parentAccountID` existe, es opcional y vale `nil` por defecto. Ningún `Account(...)` de los tests cambió.
+- [x] Suite de la lógica de líneas en verde, con un caso por regla (`YalaTests/AccountLineLogicTests`), y vincular con
+      movimientos sin que cambie ninguna transacción (`AccountLineServiceTests#link_withMovements_*`).
+- [x] `isBillableUserAccount` es `false` para una línea y `true` para su principal (`AccountBillableCountTests`).
+- [x] UUID de la principal colapsado y regenerado: la línea sigue enlazada al nuevo, en el reparador y en el one-shot;
+      con dos candidatas posibles queda suelta en vez de adivinar.
+- [x] Dos líneas `(tarjeta, PEN→USD)` de dos teléfonos acaban en una. **Cambio de diseño tras la review**: se
+      desduplica leyendo (`AccountLineLogic.resolve`), no desvinculando; ver el Paso 0.
+- [x] Ida y vuelta por Modo Nube conserva el enlace (`AccountLineSyncTests#roundTrip_*`), y un cliente sin el applier de
+      la columna la ignora y conserva los saldos (`oldPhone_*`). Más: el gate por versión del manifest
+      (`SyncCapability`), que no estaba en el ticket y lo exigía el orden de despliegue.
+- [x] DDL aplicado en staging y sondeado: `qa/cloud/g18_01-staging-probe.sh` 10/10.
+- [ ] **DDL y Worker en producción** → card de Jürgen «Aplicar en producción el DDL de parentAccountID de Modo Nube»
+      (`tablero-aplicar-en-produccion-el-ddl-de-parentac-c849`). Requisito antes de publicar 2.2.
+- [ ] **`CD_Account.CD_parentAccountID` en Production** de `yala` y `yala_dev` → card de Lola «Desplegar
+      CD_parentAccountID a Production en CloudKit» (`tablero-desplegar-cd-parentaccountid-a-productio-1fl7`). Requisito
+      antes de publicar 2.2. Los cuatro `.ckdb` ya lo llevan.
+- [x] `PersonalCloudKitSchemaParityTests` en verde con el campo nuevo.
+- [x] Review adversarial (tres lentes + refutación por hallazgo): hallazgos cerrados o con ticket
+      (`gateway-deploys-from-2-1-are-not-guarded-against-a-manifest-downgrade`,
+      `account-line-relink-can-diverge-when-two-phones-repair-the-same-collapse`,
+      `capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc`; lo de pantalla, en el ticket de la entrega 2).
+- [x] `/gate` en verde.
 
 ## Dependencias y orden
 

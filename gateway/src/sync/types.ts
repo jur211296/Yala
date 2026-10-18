@@ -75,6 +75,8 @@ export interface PulledDelta {
 export interface SyncPullResponse {
   deltas: PulledDelta[];
   max_server_seq: number;
+  /** Versión del capability_manifest de este Worker (el cliente declara la menor entre la suya y esta). */
+  manifest_version: number;
 }
 
 /** POST /prefs/push — request (LWW por key, sin field_hlcs; §e.6). */
