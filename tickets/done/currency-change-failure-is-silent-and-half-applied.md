@@ -1,10 +1,10 @@
 ---
 id: currency-change-failure-is-silent-and-half-applied
-status: backlog
+status: done
 priority: medium
 area: "currency, fx, settings"
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-18
 source: "auditoría UX 2.2, lote 16 (Ajustes), PR #509"
 ---
 
@@ -38,3 +38,15 @@ Hermano: `currency-change-asks-rates-for-the-old-currency`. La propuesta de conf
 
 - Un fallo forzado de la migración deja todos los registros y las secundarias como estaban, y la pantalla lo dice.
 - Test con el `save()` fallando y mutante en rojo.
+
+## Cerrado (2026-10-18, implementación UX 2.2 · lotes 11 y 16)
+
+- `CurrencyChangeService.updateAllTransactions` guarda lo que reescribe de cada registro antes de tocarlo y, si el
+  `save()` falla, lo devuelve registro a registro y relanza. No usa `context.rollback()`: tiraría también los cambios
+  pendientes de otras pantallas.
+- `CurrencySettingsView` quita la nueva principal de las secundarias **después** de migrar y, si falla, enseña «No se
+  pudo cambiar a EUR · Tus registros siguen en PEN, como estaban». La barra llega al 100 % (antes, `progress * 0.5`).
+- Antes de todo eso, elegir otra moneda ya no la aplica: sale la confirmación de L16-3 con el antes y el después.
+- Tests: `CurrencyChangeFailureTests` (save forzado a fallar: los registros quedan como estaban y un cambio ajeno
+  pendiente sigue ahí) y `CurrencySettingsFailureWiringTests` (orden migración → retirar secundaria, aviso en el catch).
+- Fuera: `currency-change-asks-rates-for-the-old-currency` sigue abierto (pide las tasas de la moneda vieja).
