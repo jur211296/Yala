@@ -26,6 +26,10 @@ export interface Env {
   CLOUD_MODE_ROLLOUT_PERCENT?: string;
   CLOUD_ONBOARDING_CHOICE_ROLLOUT_PERCENT?: string;
   GROUPS_BACKEND_ROLLOUT_PERCENT?: string;
+  // Yala IA en modo nube con herramientas (`chat.explore`, `ai/explore/`). La app lo lee de /config con su cohorte; el
+  // gateway solo distingue 0 (apagado: `chat.explore` sale como `chat.answer`) del resto. Ausente/inválido → 0, también
+  // en staging. Encenderlo exige antes el texto de consentimiento nuevo (decisión de Jürgen pendiente).
+  AI_CLOUD_EXPLORE_ROLLOUT_PERCENT?: string;
   // Forzado de actualización (min-version): build de CFBundleVersion por debajo del cual el cliente
   // muestra la pantalla bloqueante. Ausente/inválido → 0 (desactivado). Flip = editar var + deploy.
   MIN_SUPPORTED_BUILD?: string;

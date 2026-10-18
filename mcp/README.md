@@ -27,7 +27,8 @@ Contexto, decisiones y fases: `docs/exploracion/plugin-claude-mcp.md` (§7 y §8
 | `src/egress.ts` | La lista cerrada de lo que el Worker puede pedir a Supabase |
 | `src/auth.ts` | Verifica los tokens de Supabase (firma, cliente, rol, sesión) |
 | `src/server.ts` | Servidor MCP sin estado, errores y auditoría por llamada |
-| `src/tools.ts` | Las seis herramientas y el punto de extensión Pro (`plan`) |
+| `src/tools.ts` | Las seis herramientas tal como las ve el SDK de MCP: el núcleo más su esquema de `zod` |
+| `src/toolCore.ts` | El núcleo de las seis (qué leen y qué calculan) y el punto de extensión Pro (`plan`). Lo comparte el gateway para Yala IA en la nube: sin dependencias, ver `gateway/src/ai/explore/` |
 | `src/logic/` | Cálculos portados de Swift; cada fichero cita la función de origen |
 | `plugin/` | Borrador del plugin: `.mcp.json` y tres skills. No publicado |
 

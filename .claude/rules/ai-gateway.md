@@ -95,3 +95,27 @@ calidad medida y después por precio**. La app ya no decide nada: dice qué tare
   la nota cruda. **Un cambio del prompt de la foto se juzga también por el acierto, no solo por la nota**: el 2026-10-10
   un prompt que pedía «nunca dejes vacíos comercio y nota» inventó movimientos en una página de resumen
   (`results/2026-10-10-nota-despues-v2/REPORT-nota.md`).
+
+## Yala IA en la nube: el camino ampliado (`chat.explore`, 2026-10-18)
+
+En modo nube, con el flag encendido, el modelo pide datos con herramientas que el gateway ejecuta contra las tablas del
+usuario (`gateway/src/ai/explore/`). Diseño y decisiones pendientes: `docs/ai-cloud-vs-private-2026-10.md`.
+
+- **En privado no se toca nada.** `YalaIAChatRouting.resolve` devuelve `.standard` sin leer el flag ni pedir el token, y
+  la petición sale como `chat.answer` byte a byte. Lo fijan `YalaIAChatRoutingTests` y
+  `ProxyTaskHeaderTests#standardRouteLeavesAsBefore`. Una lectura nueva en ese camino rompe la promesa del encargo.
+- **Un solo flag, `AI_CLOUD_EXPLORE_ROLLOUT_PERCENT`, a `"0"` en staging y en producción** (`config.test.ts` se pone rojo
+  si cambia). Encenderlo exige antes el texto de consentimiento de la nube (card
+  `tablero-yala-ia-en-la-nube-el-texto-de-consentim-pi5z`): el aviso de hoy no cubre notas ni más de 13 meses.
+- **En la app falla cerrado en todos los builds.** `CloudRemoteFlags.aiCloudExploreEnabled` no pasa por `decide()`, cuyo
+  `absentDefault` es `true` en DEV. No lo «unifiques» con los otros tres.
+- **Con el flag a 0 o sin JWT válido, `chat.explore` se contesta como `chat.answer`**, sin herramientas: nunca un error
+  nuevo. La fila de `chat.explore` es la de `chat.answer` (test): si cambias el modelo de una, cambia la otra.
+- **Las herramientas son las del conector MCP**: `mcp/src/toolCore.ts` y lo que importa no pueden depender de ningún
+  paquete (el CI del gateway no instala los del conector; lo fija `ai.explore.test.ts`). Su esquema JSON vive en
+  `explore/tools.ts` y tiene que casar con el `zod` del conector salvo dos diferencias declaradas (sin `zona_horaria`,
+  `limite` hasta 50): `mcp/test/toolSchemas.test.ts`.
+- **Lista cerrada propia**: solo `GET` a las nueve tablas de `EXPLORE_TABLES`, con el JWT del usuario y nunca
+  `service_role`. Una herramienta que lea otra tabla necesita añadirla ahí, o lanza sin tocar la red.
+- **Una pregunta = un uso de la cuota `chat`**, con topes por pregunta (`EXPLORE_LIMITS`). El log `ai_route` lleva
+  rondas, nombres de herramientas, caracteres y tokens; nunca argumentos ni resultados (test).

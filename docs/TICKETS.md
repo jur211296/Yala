@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (960)
+## Index (962)
 
 | id | status | path |
 |---|---|---|
@@ -172,6 +172,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | chat-assistant-is-down | discarded | tickets/discarded/chat-assistant-is-down.md |
 | chat-assistant-plants-exchange-rate-one | done | tickets/done/chat-assistant-plants-exchange-rate-one.md |
 | chat-compares-with-the-month-in-progress | done | tickets/done/chat-compares-with-the-month-in-progress.md |
+| chat-consent-does-not-mention-this-months-largest-expenses | backlog | tickets/backlog/chat-consent-does-not-mention-this-months-largest-expenses.md |
 | chat-context-encoding-failure-is-silent | backlog | tickets/backlog/chat-context-encoding-failure-is-silent.md |
 | chat-context-treats-archived-accounts-as-excluded | done | tickets/done/chat-context-treats-archived-accounts-as-excluded.md |
 | chat-creates-only-one-transaction-per-message | backlog | tickets/backlog/chat-creates-only-one-transaction-per-message.md |
@@ -1004,6 +1005,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | xcode-27-1-with-the-iphone-duo-simulator | backlog | tickets/backlog/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
 | yala-android | backlog | tickets/backlog/yala-android.md |
+| yala-ia-answer-renders-model-links-as-tappable | backlog | tickets/backlog/yala-ia-answer-renders-model-links-as-tappable.md |
 | yala-ia-context-sums-stored-amounts-from-other-preferred-currencies | done | tickets/done/yala-ia-context-sums-stored-amounts-from-other-preferred-currencies.md |
 | yearly-scheduled-payment-on-feb-29-skips-common-years | backlog | tickets/backlog/yearly-scheduled-payment-on-feb-29-skips-common-years.md |
 | zone-decisions-still-per-row | backlog | tickets/backlog/zone-decisions-still-per-row.md |

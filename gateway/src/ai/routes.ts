@@ -222,6 +222,16 @@ export const ROUTES: Readonly<Record<TaskId, Route>> = {
     params: { reasoningEffort: "none", responseFormat: "text", maxOutputTokens: 512 },
     retries: 0,
   },
+  // Yala IA en modo nube con el camino ampliado: MISMO modelo y parámetros que `chat.answer` (la sesión no cambia de
+  // modelo; eso lo decide Jürgen). Lo distinto lo pone `ai/explore/`: las herramientas y el bucle. Con el flag
+  // `AI_CLOUD_EXPLORE_ROLLOUT_PERCENT` a 0 sale exactamente como `chat.answer`.
+  "chat.explore": {
+    mode: "managed",
+    provider: "openai",
+    model: "gpt-6-luna",
+    params: { reasoningEffort: "none", responseFormat: "text", maxOutputTokens: 512 },
+    retries: 0,
+  },
   // 100 % en 14 reescrituras × 2 (igual que mini), p95 2,1 s contra el corte de 8 s, 0,056 USD por 1 000 (mini: 0,198).
   "chat.rewrite": {
     mode: "managed",
