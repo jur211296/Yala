@@ -183,6 +183,16 @@ struct ImportCurrencyMappingSheet: View {
 
         Button {
             currencyAccountMap[currencyCode] = account
+            // Tarjeta con varias divisas (entrega 3): las otras divisas sin cuenta van a las líneas de esa tarjeta. Se
+            // pueden cambiar a mano; una ya elegida no se toca.
+            let filled = AccountCardLogic.importAssignments(
+                chosenID: account.shortcutID,
+                currencies: sortedCurrencies,
+                assigned: Set(currencyAccountMap.keys),
+                nodes: accounts.map { AccountLineNode($0) })
+            for (currency, id) in filled {
+                if let member = accounts.first(where: { $0.shortcutID == id }) { currencyAccountMap[currency] = member }
+            }
             dsWithAnimation(reduceMotion) {
                 expandedCurrency = nil
             }

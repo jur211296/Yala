@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: "accounts, currency, reports, export"
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-18
 source: multi-currency-accounts (entrega 4 de A1, decidida por Jürgen el 2026-10-09/10)
 ---
 
@@ -33,6 +33,18 @@ secciones 2.3, 2.9 y 4-6.
    tarjeta.
 4. **Contexto del chat de IA** (`FullFinancialContextBuilder.swift:350-357`): describe la tarjeta con
    sus líneas en lugar de dos cuentas sueltas.
+
+## Añadido por la entrega 3 (2026-10-18)
+
+Medido al cerrar la entrega 3, y de esta entrega por ser informes, export e IA:
+
+5. **El conector de Claude (`mcp/`) no conoce las líneas.** `mcp/src/logic/budgets.ts` filtra el presupuesto por
+   `account_ids` a secas y `mcp/src/data.ts` no lee `parent_account_id`, así que el presupuesto de una tarjeta cuenta solo la
+   principal, mientras la app (y Yala IA, que pasa por `BudgetsViewModel`) ya cuenta sus líneas (`Budget.spendingAccountIDs`).
+   `MCPAppParityGoldenTests` no lo caza porque su golden no tiene líneas. Portar la regla y añadir una tarjeta al golden.
+6. **El filtro de cuentas del asistente de exportación** (`ExportFiltersStepView`) ofrece las líneas como cuentas sueltas y no
+   excluye las cuentas de sistema. Con la entrega 3, el resto de filtros enseña la tarjeta una vez
+   (`RecordsFiltersViewModel.filterAccounts`, `AccountCardLogic.shownSelection`).
 
 ## Fuera de alcance
 

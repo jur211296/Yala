@@ -236,6 +236,10 @@ struct HeroMonthView: View {
             .opacity(isDimmed ? 0.45 : 1.0)
         }
         .buttonStyle(.plain)
+        // VoiceOver lee qué es y cuánto («Entró S/ 3.101»): sin la línea de debajo, el importe suelto no decía de qué era.
+        .accessibilityLabel(isIncome
+            ? L10n.Panel.Hero.incomePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate))
+            : L10n.Panel.Hero.expensePill(appPreferences.currency(value, currencyCode: currencyCode, isEstimate: isEstimate)))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(isIncome ? "panel_hero_income_pill" : "panel_hero_expense_pill")
     }
@@ -250,8 +254,8 @@ struct HeroMonthView: View {
 
     // MARK: - Línea bajo la cifra (UX 2.2 · L3-1 y L3-3)
 
-    /// Con un filtro puesto, un chip que lo dice y lo quita. Sin filtro, de dónde sale el balance; y si el período
-    /// aún no tiene movimientos, lo dice y enseña lo que hay en las cuentas (el primer día salía «S/ 0» a secas).
+    /// Con un filtro puesto, un chip que lo dice y lo quita. Sin filtro, solo si el período aún no tiene movimientos: lo dice
+    /// y enseña lo que hay en las cuentas (el primer día salía «S/ 0» a secas).
     @ViewBuilder
     private func heroCaption(isIncomeFiltered: Bool, isExpenseFiltered: Bool) -> some View {
         if isIncomeFiltered || isExpenseFiltered {
@@ -291,16 +295,9 @@ struct HeroMonthView: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("panel_hero_caption")
-        } else {
-            Text(L10n.Panel.Hero.flowCaption(
-                income: appPreferences.currency(periodSummary.income, currencyCode: currencyCode, isEstimate: periodSummary.incomeApproximate),
-                expense: appPreferences.currency(periodSummary.expense, currencyCode: currencyCode, isEstimate: periodSummary.expenseApproximate)
-            ))
-            .font(DS.Typography.subheadline)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .accessibilityIdentifier("panel_hero_caption")
         }
+        // Con movimientos no hay línea: «Entró … − salió …» repetía los importes de las pastillas de encima (decisión de
+        // Jürgen del 18-oct). Las pastillas ya los dicen, también en VoiceOver (`naturePill`).
     }
 
     // MARK: - Copy

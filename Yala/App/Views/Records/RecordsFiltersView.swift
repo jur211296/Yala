@@ -212,7 +212,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
             icon: "creditcard",
             title: L10n.Settings.accounts,
             status: selectedAccountsText,
-            items: filtersViewModel.activeAccounts,
+            items: filtersViewModel.filterAccounts(selected: localSelectedAccounts),
             showEmptyPlaceholder: false,
             parenthesizesStatus: false
         ) { account in
@@ -608,7 +608,7 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
                 VStack(spacing: DS.Spacing.xxl) {
                     SectionBox(title: "") {
                         VStack(spacing: DS.Spacing.none) {
-                            ForEach(Array(filtersViewModel.activeAccounts.enumerated()), id: \.element.id) { index, account in
+                            ForEach(Array(filtersViewModel.filterAccounts(selected: localSelectedAccounts).enumerated()), id: \.element.id) { index, account in
                                 if index > 0 {
                                     SubsectionDivider()
                                 }
@@ -741,7 +741,9 @@ struct RecordsFiltersView<VM: Filterable & Observable>: View {
     // MARK: - Snapshot / Commit
 
     private func snapshotFromViewModel() {
-        localSelectedAccounts = recordsViewModel.selectedAccounts
+        // Las líneas de una tarjeta elegida no se ofrecen: entran solas al elegirla. El borrador local guarda solo la tarjeta,
+        // y así quitarla al confirmar quita también sus líneas (entrega 3).
+        localSelectedAccounts = SessionState.shared.shownAccountSelection(recordsViewModel.selectedAccounts)
         localSelectedCategories = recordsViewModel.selectedCategories
         localSelectedSubcategories = recordsViewModel.selectedSubcategories
         localSelectedTags = recordsViewModel.selectedTags

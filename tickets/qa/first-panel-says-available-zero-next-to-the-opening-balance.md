@@ -41,3 +41,8 @@ cifra es ya el balance con signo (antes «Disponible» se quedaba en 0 si salía
 
 **QA en el simulador:** alta nueva con saldo y sin movimientos → el hero enseña las dos líneas; con un gasto, la
 línea «Entró − salió» cuadra con la cifra. Captura en `_capturas/2026-10-17-implementar-2-2-l3-l4-panel-y-bandeja/`.
+
+**Actualización 2026-10-18:** la línea «Entró X − salió Y» bajo el hero se quitó (decisión de Jürgen del 18-oct, card
+«Quitar del Panel la línea «Entró … − salió …» bajo el hero»): repetía los importes de las pastillas de encima. El mensaje
+sin movimientos («Aún no tienes registros…» y «Tienes S/ … en tus cuentas») sigue igual. Al probar este ticket, la cifra
+cuadra con las pastillas «Entró»/«Salió».

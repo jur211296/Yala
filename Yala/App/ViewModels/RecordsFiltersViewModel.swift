@@ -31,6 +31,20 @@ final class RecordsFiltersViewModel {
         allAccounts.filter { !$0.isArchived }
     }
 
+    /// Las cuentas que ofrece el filtro (tarjeta con varias divisas, entrega 3): cada tarjeta una vez, sin sus líneas, que
+    /// entran solas al elegirla (`SessionState.selectedAccountIDs`). Una línea elegida SOLA —un presupuesto anterior al
+    /// enlace— se sigue enseñando, detrás de su tarjeta, para que se pueda quitar.
+    func filterAccounts(selected: Set<PersistentIdentifier>) -> [Account] {
+        let roles = AccountLineLogic.resolve(allAccounts.map { AccountLineNode($0) })
+        let active = activeAccounts
+        let heads = active.filter { !(roles[$0.shortcutID]?.isLine ?? false) }
+        let loneLines = active.filter { (roles[$0.shortcutID]?.isLine ?? false) && selected.contains($0.persistentModelID) }
+        guard !loneLines.isEmpty else { return heads }
+        return AccountCardLogic.cards(
+            heads + loneLines, roles: roles, id: \.shortcutID, currencyCode: \.currencyCode
+        ).flatMap(\.members)
+    }
+
     var activeTags: [Tag] {
         allTags.filter { $0.isActive }
     }
@@ -131,10 +145,14 @@ final class RecordsFiltersViewModel {
         if selectedAccounts.isEmpty {
             return empty
         }
-        if !isExcludeMode && selectedAccounts.count == activeAccounts.count {
+        // Se cuentan tarjetas: con la tarjeta elegida, sus líneas van en el conjunto pero no son otra cuenta (entrega 3).
+        // Cuenta las filas que se ven marcadas: así cuadra con la lista también con una línea elegida sola y su tarjeta.
+        let offered = filterAccounts(selected: selectedAccounts)
+        let marked = offered.filter { selectedAccounts.contains($0.persistentModelID) }.count
+        if !isExcludeMode && marked == offered.count {
             return empty
         }
-        return "\(selectedAccounts.count)/\(activeAccounts.count)"
+        return "\(marked)/\(offered.count)"
     }
 
     func selectedCategoriesText(selectedSubcategories: Set<PersistentIdentifier>, isExcludeMode: Bool = false) -> String {

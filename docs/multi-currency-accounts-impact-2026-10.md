@@ -761,7 +761,7 @@ la 3 y la 4 dependen de la 1.
      resto, y «Vincular cuenta existente», también con cuentas que ya tienen movimientos.
    - Recordatorio solo en la principal.
    - Capturas de antes y después.
-3. **[`multi-currency-accounts-3-pickers-and-capture`](../tickets/backlog/multi-currency-accounts-3-pickers-and-capture.md):
+3. **[`multi-currency-accounts-3-pickers-and-capture`](../tickets/qa/multi-currency-accounts-3-pickers-and-capture.md):
    que en ningún sitio se vean dos cuentas.** Prioridad `medium`.
    - Selector anidado: la tarjeta, con sus líneas debajo.
    - Filtros y presupuestos que incluyen las líneas al elegir la tarjeta.

@@ -945,8 +945,13 @@ enum L10n {
             static func incomeOfMonth(_ month: String) -> String {
                 String(format: ls("panel.hero.incomeOfMonth", comment: "Panel hero label when only income is shown. %@ = month name"), month)
             }
-            static func flowCaption(income: String, expense: String) -> String {
-                String(format: ls("panel.hero.flowCaption", comment: "Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses"), income, expense)
+            /// VoiceOver de la pastilla de ingresos del hero: qué es y cuánto. Clave propia y no `accountDetail.moneyIn`: misma
+            /// palabra hoy, pero acoplar dos pantallas por un literal es cómo acaban cambiando juntas.
+            static func incomePill(_ amount: String) -> String {
+                String(format: ls("panel.hero.incomePill", comment: "VoiceOver label of the income pill under the panel hero. %@ = amount"), amount)
+            }
+            static func expensePill(_ amount: String) -> String {
+                String(format: ls("panel.hero.expensePill", comment: "VoiceOver label of the expense pill under the panel hero. %@ = amount"), amount)
             }
             static var noMovements: String {
                 ls("panel.hero.noMovements", comment: "Line under the panel hero when the period has no income or expenses yet")
@@ -3809,6 +3814,10 @@ enum L10n {
 
         // MARK: - Tarjeta con varias divisas (entrega 2)
         enum Lines {
+            /// VoiceOver de la pastilla de divisa del formulario cuando la cuenta elegida es una tarjeta con varias divisas.
+            static func cardCurrencyChip(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.cardCurrencyChip", comment: "VoiceOver label of a currency pill next to a multi-currency card in the transaction form. %@ = ISO code"), currencyCode)
+            }
             static func lineLabel(_ currencyCode: String) -> String {
                 String(format: ls("account.lines.lineLabel %@", comment: ""), currencyCode)
             }

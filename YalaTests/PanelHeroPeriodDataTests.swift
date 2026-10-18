@@ -17,8 +17,8 @@ struct PanelHeroPeriodDataTests {
 
     // MARK: - Cifra del hero (UX 2.2 · L3-1 y L3-3)
 
-    /// Desde el lote 3 de la auditoría UX la cifra es el BALANCE y puede ser negativo: la línea «Entró − salió» de
-    /// debajo tiene que cuadrar con ella. «Disponible» se quedaba en 0.
+    /// Desde el lote 3 de la auditoría UX la cifra es el BALANCE y puede ser negativo: tiene que cuadrar con las pastillas
+    /// «Entró» y «Salió» de debajo. «Disponible» se quedaba en 0.
     @Test func balance_isSigned_whenExpenseExceedsIncome() {
         #expect(PanelHeroFigure.balance.value(income: 0, expense: 1250) == -1250)
     }

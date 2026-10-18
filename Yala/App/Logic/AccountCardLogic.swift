@@ -162,7 +162,136 @@ nonisolated enum AccountCardLogic {
         return (value, isConverted)
     }
 
+    // MARK: - Entrega 3: elegir la tarjeta y que la divisa decida la línea
+
+    /// Adónde va un importe cuando se elige `chosenID` y el importe está en `currencyCode`.
+    struct Route: Equatable, Sendable {
+        /// La cuenta concreta en la que se guarda: la principal o una de sus líneas.
+        let accountID: UUID
+        /// `true` si la tarjeta no tiene ninguna cuenta en esa divisa y el importe se queda en la principal (o en la cuenta
+        /// elegida, si no tiene líneas). Quien llama decide qué divisa usa entonces: la de esa cuenta, como hoy.
+        let isFallback: Bool
+    }
+
+    /// La función de la decisión 6 de Jürgen, la misma para todas las entradas (formulario, chat, voz, imagen, Siri, Apple Pay,
+    /// Bandeja, programados, favoritos e importación): se elige la tarjeta y la divisa del importe decide la línea.
+    /// - Si `chosenID` es una cuenta sin líneas (suelta, o una línea rota que se lee suelta), devuelve esa misma cuenta.
+    /// - Si es la principal o una línea de una tarjeta, devuelve el miembro vivo cuya divisa es `currencyCode`.
+    /// - Si ningún miembro está en esa divisa, devuelve la principal con `isFallback`. **Nunca crea una línea.**
+    /// Elegir una línea en otra divisa que la del importe también enruta: la tarjeta es una, y la línea elegida es solo cómo
+    /// se llegó a ella. Sin la cuenta en `nodes`, `nil`.
+    static func route(chosenID: UUID, currencyCode: String, nodes: [AccountLineNode]) -> Route? {
+        guard nodes.contains(where: { $0.id == chosenID }) else { return nil }
+        let roles = AccountLineLogic.resolve(nodes)
+        let headID: UUID
+        if case .line(let principalID)? = roles[chosenID] { headID = principalID } else { headID = chosenID }
+        let members = liveMembers(ofHead: headID, nodes: nodes, roles: roles)
+        guard members.count > 1 else {
+            let only = nodes.first { $0.id == chosenID }
+            return Route(accountID: chosenID, isFallback: only.map { !sameCurrency($0.currencyCode, currencyCode) } ?? false)
+        }
+        if let match = members.first(where: { sameCurrency($0.currencyCode, currencyCode) }) {
+            return Route(accountID: match.id, isFallback: false)
+        }
+        return Route(accountID: headID, isFallback: true)
+    }
+
+    /// La cabeza de la tarjeta a la que pertenece `id`: la principal si es una línea válida; si no, la propia cuenta.
+    static func headID(of id: UUID, roles: [UUID: AccountLineRole]) -> UUID {
+        if case .line(let principalID)? = roles[id] { return principalID }
+        return id
+    }
+
+    /// Los miembros vivos de la tarjeta de `id` (la cabeza primero y sus líneas por divisa). Una cuenta sin líneas devuelve
+    /// solo ella. Lo usan las pastillas de divisa del formulario y la importación.
+    static func liveMembers(of id: UUID, nodes: [AccountLineNode]) -> [AccountLineNode] {
+        let roles = AccountLineLogic.resolve(nodes)
+        return liveMembers(ofHead: headID(of: id, roles: roles), nodes: nodes, roles: roles)
+    }
+
+    /// Importación con varias divisas (decisión D11): al elegir `chosenID` para una divisa, las demás divisas del fichero que
+    /// aún no tienen cuenta se rellenan con la cuenta de su tarjeta en esa divisa. Solo devuelve las nuevas; nunca pisa una
+    /// ya elegida ni cae a la principal (una divisa que la tarjeta no tiene se queda sin asignar).
+    static func importAssignments(
+        chosenID: UUID, currencies: [String], assigned: Set<String>, nodes: [AccountLineNode]
+    ) -> [String: UUID] {
+        var result: [String: UUID] = [:]
+        for currency in currencies where !assigned.contains(currency) {
+            guard let route = route(chosenID: chosenID, currencyCode: currency, nodes: nodes), !route.isFallback,
+                  liveMembers(of: chosenID, nodes: nodes).count > 1 else { continue }
+            result[currency] = route.accountID
+        }
+        return result
+    }
+
+    // MARK: - Entrega 3: filtros y presupuestos
+
+    /// Las líneas de cada cabeza con líneas, por identificador cualquiera (`PersistentIdentifier` en el filtro de sesión,
+    /// `UUID` en los presupuestos). Solo aparecen las cabezas que tienen alguna. **Incluye las líneas archivadas** (siguen
+    /// siendo de la tarjeta para `resolve`): archivar no decide la suma (`session-filters.md`), así que archivar una línea no
+    /// le quita su gasto al presupuesto de la tarjeta ni sus movimientos al filtro (review del 2026-10-18).
+    static func linesByHead<E, ID: Hashable>(
+        _ accounts: [E], node: (E) -> AccountLineNode, id: (E) -> ID
+    ) -> [ID: Set<ID>] {
+        let nodes = accounts.map(node)
+        let roles = AccountLineLogic.resolve(nodes)
+        var idByShortcut: [UUID: ID] = [:]
+        for account in accounts { idByShortcut[node(account).id] = id(account) }
+        var result: [ID: Set<ID>] = [:]
+        for account in accounts {
+            let n = node(account)
+            guard case .line(let principalID)? = roles[n.id],
+                  let headKey = idByShortcut[principalID] else { continue }
+            result[headKey, default: []].insert(id(account))
+        }
+        return result
+    }
+
+    /// El conjunto que se guarda en el filtro de sesión tras un cambio de `old` a `new` (decisión D1 del encargo): poner una
+    /// tarjeta añade sus líneas; quitarla las quita; con la tarjeta puesta, sus líneas siguen puestas. Una línea elegida SOLA
+    /// (sin su tarjeta) se respeta: puede venir de un presupuesto anterior al enlace y vaciarla quitaría el filtro entero.
+    static func normalizedSelection<ID: Hashable>(old: Set<ID>, new: Set<ID>, linesByHead: [ID: Set<ID>]) -> Set<ID> {
+        var result = new
+        for (head, lines) in linesByHead {
+            if new.contains(head) {
+                result.formUnion(lines)
+            } else if old.contains(head) {
+                result.subtract(lines)
+            }
+        }
+        return result
+    }
+
+    /// Lo que se pinta de una selección: cada tarjeta una vez. Quita las líneas cuya cabeza también está.
+    static func shownSelection<ID: Hashable>(_ selection: Set<ID>, linesByHead: [ID: Set<ID>]) -> Set<ID> {
+        var result = selection
+        for (head, lines) in linesByHead where selection.contains(head) { result.subtract(lines) }
+        return result
+    }
+
+    /// Las cuentas que cuenta un presupuesto: las que guarda y las líneas vivas de las tarjetas que guarda (decisión D2).
+    static func includingLines<ID: Hashable>(_ ids: Set<ID>, linesByHead: [ID: Set<ID>]) -> Set<ID> {
+        var result = ids
+        for id in ids { if let lines = linesByHead[id] { result.formUnion(lines) } }
+        return result
+    }
+
     // MARK: - Privado
+
+    private static func sameCurrency(_ a: String, _ b: String) -> Bool {
+        a.trimmingCharacters(in: .whitespaces).uppercased() == b.trimmingCharacters(in: .whitespaces).uppercased()
+    }
+
+    /// La cabeza (si está viva) y sus líneas vivas, por divisa. Una cabeza archivada no tiene líneas (`resolve` las lee sueltas).
+    private static func liveMembers(
+        ofHead headID: UUID, nodes: [AccountLineNode], roles: [UUID: AccountLineRole]
+    ) -> [AccountLineNode] {
+        guard let head = nodes.first(where: { $0.id == headID }) else { return [] }
+        let lines = nodes
+            .filter { !$0.isArchived && roles[$0.id] == .line(principalID: headID) }
+            .sorted { $0.currencyCode < $1.currencyCode }
+        return (head.isArchived ? [] : [head]) + lines
+    }
 
     private static func liveLines(of principalID: UUID, nodes: [AccountLineNode]) -> [AccountLineNode] {
         lines(of: principalID, nodes: nodes).filter { !$0.isArchived }

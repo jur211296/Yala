@@ -83,8 +83,8 @@ struct AccountsCarouselView: View {
             let account = card.head
             // `contains` y no `== .first`: con dos cuentas filtradas desde
             // Registros el carrusel marcaba una sola, y el saldo ya suma las dos. Con líneas, manda la principal: filtrar
-            // desde la tarjeta filtra la principal, y que el filtro incluya sus líneas es la entrega 3 (selectores y
-            // filtros). Marcarla por cualquier línea la enseñaba filtrando con un saldo que no la suma entera.
+            // desde la tarjeta pone la principal y el filtro de sesión le añade sus líneas (entrega 3), así que el saldo
+            // filtrado es el de la tarjeta entera. Marcarla por una línea elegida sola la enseñaría con un saldo parcial.
             let isSelected = viewModel.selectedAccountIDs.contains(account.persistentModelID)
 
             Button {

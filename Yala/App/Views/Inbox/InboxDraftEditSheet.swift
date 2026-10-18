@@ -422,7 +422,9 @@ struct InboxDraftEditSheet: View {
     private var accountSheet: some View {
         AccountSelectorSheet(
             selectedAccount: $selectedAccount,
-            title: L10n.Transaction.account
+            title: L10n.Transaction.account,
+            // Elegir la tarjeta conserva la divisa que ya tenía el borrador (entrega 3).
+            routingCurrency: selectedAccount?.currencyCode
         )
     }
 
@@ -619,13 +621,9 @@ struct InboxDraftEditSheet: View {
     private var bottomChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
-                // Account chip
-                SelectionChip(
-                    icon: "creditcard",
-                    text: selectedAccount?.name ?? L10n.Transaction.account,
-                    isSelected: selectedAccount != nil,
-                    color: selectedAccount.map { Color(hex: $0.colorHex) }
-                ) {
+                // Account chip. Con una tarjeta con varias divisas, la tarjeta y sus divisas (entrega 3, decisión D6): elegir
+                // la divisa elige la línea en la que se aprueba.
+                AccountCardChips(selectedAccount: $selectedAccount) {
                     dismissKeyboard()
                     showAccountSelector = true
                 }

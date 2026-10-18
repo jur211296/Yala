@@ -334,6 +334,30 @@ struct ScheduledPaymentDraftService {
         )
     }
 
+    /// La cuenta del borrador (tarjeta con varias divisas, entrega 3, decisión D10): la de la tarjeta del pago en la divisa
+    /// del pago (`AccountCardLogic.route`). Hoy el editor estampa la divisa de la cuenta, así que es la misma cuenta; cuenta
+    /// cuando la cuenta del pago se vinculó después como principal o línea de una tarjeta. Un gasto de grupo recurrente
+    /// conserva la suya (su divisa es la del grupo). Sin divisa o si el fetch falla, la cuenta del pago.
+    static func draftAccount(for payment: ScheduledPayment, context: ModelContext) -> Account? {
+        let currency = payment.currencyCode
+        guard let account = payment.account, !payment.isGroupPayment, !currency.isEmpty else { return payment.account }
+        do {
+            let all = try context.fetch(FetchDescriptor<Account>())
+            // Sin cuenta de la tarjeta en esa divisa (p. ej. la línea del pago se archivó), la del pago: saltar a la principal
+            // cambiaría la divisa del borrador sin convertir (review del 2026-10-18).
+            guard let route = AccountCardLogic.route(
+                chosenID: account.shortcutID, currencyCode: currency, nodes: all.map { AccountLineNode($0) }),
+                  !route.isFallback
+            else { return account }
+            return all.first { $0.shortcutID == route.accountID } ?? account
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentDraftService: Error: fetch de cuentas para la tarjeta: \(error)")
+            #endif
+            return account
+        }
+    }
+
     /// Create an InboxDraft from a ScheduledPayment
     private static func createDraft(from payment: ScheduledPayment, context: ModelContext) -> InboxDraft {
         // Determine source type: gasto de grupo recurrente > suscripción > recurrente normal.
@@ -364,7 +388,7 @@ struct ScheduledPaymentDraftService {
             note: payment.name,
             amount: signedAmount,
             date: payment.nextDueDate,
-            account: payment.account,
+            account: draftAccount(for: payment, context: context),
             subcategory: payment.subcategory,
             tags: draftTags,
             sourceType: sourceType,

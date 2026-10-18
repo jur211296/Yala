@@ -379,7 +379,7 @@ struct AccountDetailSheet: View {
     private var filterButton: some View {
         if PanelAccountCardLogic.showsFilterAction(
             // Filtrar desde la ficha filtra la tarjeta (su principal), elija la línea que elija: la misma regla que el
-            // carrusel. Que el filtro incluya las líneas es la entrega 3.
+            // carrusel. El filtro de sesión le añade sus líneas (entrega 3).
             isSelected: viewModel.selectedAccountIDs.contains(account.persistentModelID),
             isExcludeMode: viewModel.isExcludeMode
         ) {

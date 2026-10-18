@@ -244,7 +244,75 @@ class SessionState {
     // MARK: - Global Filter State (shared between Panel and Statistics)
 
     /// Selected account IDs (empty = all accounts)
-    var selectedAccountIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }
+    ///
+    /// Tarjeta con varias divisas (entrega 3, decisión D1 del encargo): el conjunto se NORMALIZA al escribirlo, así que todo
+    /// lector —los ~25 que construyen filtros, la elegibilidad del Panel y de Estadísticas, el saldo vivo— ve la tarjeta con sus
+    /// líneas sin saber que existen. Poner la tarjeta añade sus líneas, quitarla las quita, y una línea elegida sola se
+    /// respeta (`AccountCardLogic.normalizedSelection`). Lo que se PINTA cuenta tarjetas: `shownAccountSelection`.
+    var selectedAccountIDs: Set<PersistentIdentifier> = [] {
+        didSet {
+            normalizeAccountSelection(from: oldValue)
+            resetExcludeModeIfNeeded()
+        }
+    }
+
+    /// Principal → sus líneas vivas, por `persistentModelID`. Lo instala el arranque con el contexto montado
+    /// (`installAccountLinesSource`); sin él (tests de unidad que no lo instalan), el filtro se guarda tal cual, como antes.
+    @ObservationIgnored var accountLinesByHead: (() -> [PersistentIdentifier: Set<PersistentIdentifier>])?
+    @ObservationIgnored private var isNormalizingAccountSelection = false
+
+    /// Instala la fuente de `accountLinesByHead`. El contexto se captura débil: un contenedor que se cambia en caliente no se
+    /// queda vivo por esto, y el arranque siguiente instala el nuevo. Un fetch que falla no expande (el filtro de antes).
+    func installAccountLinesSource(_ context: ModelContext) {
+        accountLinesByHead = { [weak context] in
+            guard let context else { return [:] }
+            do {
+                let accounts = try context.fetch(FetchDescriptor<Account>())
+                return AccountCardLogic.linesByHead(
+                    accounts, node: { AccountLineNode($0) }, id: { $0.persistentModelID })
+            } catch {
+                #if DEBUG
+                print("SessionState: Error: fetch de cuentas para el filtro de tarjetas: \(error)")
+                #endif
+                return [:]
+            }
+        }
+    }
+
+    private func normalizeAccountSelection(from oldValue: Set<PersistentIdentifier>) {
+        // Vaciar un filtro vacío (`clearFilters` tras un borrado, cambiar de modo) no tiene nada que normalizar: sin fetch.
+        guard !isNormalizingAccountSelection, !(oldValue.isEmpty && selectedAccountIDs.isEmpty),
+              let linesByHead = accountLinesByHead?(), !linesByHead.isEmpty else { return }
+        let normalized = AccountCardLogic.normalizedSelection(
+            old: oldValue, new: selectedAccountIDs, linesByHead: linesByHead)
+        guard normalized != selectedAccountIDs else { return }
+        isNormalizingAccountSelection = true
+        selectedAccountIDs = normalized
+        isNormalizingAccountSelection = false
+    }
+
+    /// Tras vincular o añadir una línea: si su tarjeta está en el filtro, la línea entra también. La normalización solo corre
+    /// al escribir el filtro, y sin esto el saldo y Registros dejaban fuera la línea nueva mientras el carrusel marcaba la
+    /// tarjeta entera (review del 2026-10-18).
+    func reapplyAccountSelection() {
+        guard !selectedAccountIDs.isEmpty else { return }
+        let current = selectedAccountIDs
+        selectedAccountIDs = current
+    }
+
+    /// La selección tal como se PINTA: cada tarjeta una vez (sin las líneas cuya tarjeta también está). Para píldoras,
+    /// contadores y marcas de «seleccionada»; para filtrar y sumar, `selectedAccountIDs`.
+    func shownAccountSelection(_ selection: Set<PersistentIdentifier>) -> Set<PersistentIdentifier> {
+        guard let linesByHead = accountLinesByHead?(), !linesByHead.isEmpty else { return selection }
+        return AccountCardLogic.shownSelection(selection, linesByHead: linesByHead)
+    }
+
+    /// Para las lecturas que son de UNA cuenta por diseño (prellenar el formulario, saltar a Registros): una cuenta de lo que
+    /// se pinta, nunca una línea de una tarjeta que también está elegida. Con varias tarjetas sigue sin ser estable, como
+    /// `.first` de siempre (regla «No colapses un conjunto a `.first` para calcular»).
+    func representativeAccountID(in selection: Set<PersistentIdentifier>) -> PersistentIdentifier? {
+        shownAccountSelection(selection).first
+    }
 
     /// Selected category IDs (empty = all categories)
     var selectedCategoryIDs: Set<PersistentIdentifier> = [] { didSet { resetExcludeModeIfNeeded() } }

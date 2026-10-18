@@ -699,7 +699,8 @@ final class BudgetsViewModel {
             )
         }
 
-        if let accountUUIDs = budget.resolvedAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
+        // `spendingAccountIDs`: una tarjeta cuenta también los gastos de sus líneas (entrega 3).
+        if let accountUUIDs = budget.spendingAccountIDs(scheduleBackfill: true), !accountUUIDs.isEmpty {
             filtered = filtered.filter { tx in
                 tx.account.map { accountUUIDs.contains($0.shortcutID) } ?? false
             }

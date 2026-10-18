@@ -49,6 +49,8 @@ enum AccountLineService {
             line.parentAccountID = previous
             throw error
         }
+        // Con la tarjeta ya filtrada, la línea vinculada entra en el filtro (entrega 3, review del 2026-10-18).
+        SessionState.shared.reapplyAccountSelection()
     }
 
     /// Reenlaza las líneas cuya principal acaba de cambiar de `shortcutID`. `linesBefore` = las cuentas que
@@ -142,6 +144,7 @@ enum AccountLineService {
             context.delete(line)
             throw error
         }
+        SessionState.shared.reapplyAccountSelection()
         return line
     }
 

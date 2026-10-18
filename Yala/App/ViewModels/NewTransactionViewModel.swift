@@ -355,6 +355,35 @@ final class NewTransactionViewModel {
             ? .valid : .invalid(message: L10n.Validation.selectSubcategory)
     }
 
+    // MARK: - Tarjeta con varias divisas (entrega 3)
+
+    /// La cuenta de la tarjeta de `account` en la divisa `currency` (`AccountCardLogic.route`): la decisión 6 de Jürgen, se
+    /// elige la tarjeta y la divisa del importe decide la línea. Si la tarjeta no tiene cuenta en esa divisa, la cuenta
+    /// elegida tal cual (no se salta a la principal: una línea archivada o una divisa sin línea no cambian de cuenta). Una
+    /// cuenta sin líneas vuelve tal cual.
+    func routed(_ account: Account, toCurrency currency: String) -> Account {
+        let nodes = accounts.map { AccountLineNode($0) }
+        guard let route = AccountCardLogic.route(chosenID: account.shortcutID, currencyCode: currency, nodes: nodes),
+              !route.isFallback,
+              let target = accounts.first(where: { $0.shortcutID == route.accountID }) else { return account }
+        return target
+    }
+
+    /// Las cuentas de la tarjeta de `account` (la principal y sus líneas vivas), si tiene líneas; si no, vacío. Son las
+    /// pastillas de divisa del formulario.
+    func cardMembers(of account: Account?) -> [Account] {
+        guard let account else { return [] }
+        let members = AccountCardLogic.liveMembers(of: account.shortcutID, nodes: accounts.map { AccountLineNode($0) })
+        guard members.count > 1 else { return [] }
+        return members.compactMap { member in accounts.first { $0.shortcutID == member.id } }
+    }
+
+    /// Elegir una divisa de la tarjeta es elegir su línea (o la principal).
+    func selectCardMember(_ member: Account) {
+        selectedAccount = member
+        currencyCode = member.currencyCode
+    }
+
     // MARK: - Prefill
 
     /// Pre-rellena el formulario desde contexto externo
@@ -399,9 +428,11 @@ final class NewTransactionViewModel {
         if let accountID = draft.accountID,
             let account = accounts.first(where: { $0.persistentModelID == accountID })
         {
-            selectedAccount = account
+            // Con una tarjeta, la divisa del borrador decide la línea (entrega 3).
+            let target = routed(account, toCurrency: draft.currencyCode)
+            selectedAccount = target
             sourceAccount = account
-            currencyCode = account.currencyCode
+            currencyCode = target.currencyCode
         } else {
             currencyCode = draft.currencyCode
         }

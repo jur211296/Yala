@@ -973,7 +973,7 @@ final class StatisticsViewModel: Filterable {
         }
 
         return RecordsFilterContext(
-            accountID: selectedAccounts.first,
+            accountID: SessionState.shared.representativeAccountID(in: selectedAccounts),
             categoryID: selectedCategories.first,
             subcategoryName: nil,
             need: selectedNeeds.first,

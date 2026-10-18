@@ -6732,8 +6732,11 @@
 /* Panel hero label when only income is shown. %@ = month name */
 "panel.hero.incomeOfMonth" = "Receitas de %@";
 
-/* Line under the panel hero: what came in minus what went out. %1$@ = income, %2$@ = expenses */
-"panel.hero.flowCaption" = "Entrou %1$@ − saiu %2$@";
+/* VoiceOver label of the income pill under the panel hero. %@ = amount */
+"panel.hero.incomePill" = "Entrou %@";
+
+/* VoiceOver label of the expense pill under the panel hero. %@ = amount */
+"panel.hero.expensePill" = "Saiu %@";
 
 /* Line under the panel hero when the period has no income or expenses yet */
 "panel.hero.noMovements" = "Você ainda não tem registros neste período";
@@ -7370,6 +7373,9 @@
 
 /* Subtitle of a currency line nested under its card; %@ = currency code like USD */
 "account.lines.lineLabel %@" = "Linha em %@";
+
+/* VoiceOver label of a currency pill next to a multi-currency card in the transaction form. %@ = ISO code */
+"account.lines.cardCurrencyChip" = "Moeda do cartão: %@";
 
 /* Account form section with the extra currency lines of a card */
 "account.lines.sectionTitle" = "Outras moedas";
