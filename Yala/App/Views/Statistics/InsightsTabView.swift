@@ -209,20 +209,13 @@ struct InsightsTabView: View {
     @ViewBuilder
     private func heroSummary(_ summary: PeriodSummary) -> some View {
         let hasRecords = summary.transactionCount > 0
-        let period = trendsViewModel.detailPeriod
 
         let showsFigure = !sessionState.isExpensesOnlyMode && hasRecords
 
         // El hero del Panel (`HeroHeader`): rótulo y período arriba, cifra y detalle debajo, a la izquierda.
         // Con poco alto (iPhone girado) va en banda: cifra y rótulo | período, entradas y salidas y recuento.
         SummaryHeaderStack(isShort: isShortContainer, verticalPadding: summaryVerticalPadding) {
-            TrendsPeriodMenu(
-                selectedPeriod: period,
-                customDateRange: sessionState.customDateRange,
-                onSelect: { sessionState.selectedPeriod = $0 },
-                onCustomTapped: { showCustomPeriodPicker = true }
-            )
-            .equatable()
+            StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
         } caption: {
             // Qué es la cifra. Aquí siempre es el neto: el hero no se pinta en
             // modo solo-gastos, así que no hay caso de un solo lado.
@@ -489,7 +482,9 @@ struct InsightsTabView: View {
         let showComparison = appPreferences.showVariations
             && PreviousPeriodHelper.isSelectorVisible(for: period)
 
-        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+        // Con qué se compara, en una frase bajo el título (UX 2.2 · L11-4). Antes eran «P-1 / A-1» a la derecha y
+        // «vs Set 26» debajo.
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                 Text(L10n.Stats.Insights.detailHeader)
                     .font(DS.Typography.title)
@@ -499,19 +494,11 @@ struct InsightsTabView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Spacer(minLength: DS.Spacing.sm)
-
             if showComparison {
-                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                    ComparisonModeSelector()
-                    Text(summary.previousPeriodLabel)
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
+                ComparisonModeSelector(period: period, customRange: sessionState.customDateRange)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder

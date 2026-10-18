@@ -129,13 +129,6 @@ struct ThemeSettingsView: View {
                     themePreview(for: appTheme)
                         .frame(height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: DS.Radius.md)
-                                .stroke(
-                                    isSelected ? Color.brandPrimary : Color.clear,
-                                    lineWidth: 3
-                                )
-                        )
                         .opacity(isLocked ? 0.5 : 1.0)
 
                     // Lock badge
@@ -153,7 +146,7 @@ struct ThemeSettingsView: View {
                 VStack(spacing: DS.Spacing.xxs) {
                     HStack(spacing: DS.Spacing.xs) {
                         Text(appTheme.label)
-                            .font(DS.Typography.label)
+                            .font(DS.Typography.label.weight(isSelected ? .bold : .regular))
                             .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
 
                         if appTheme.isPro && !isSelected {
@@ -161,9 +154,7 @@ struct ThemeSettingsView: View {
                         }
 
                         if isSelected {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.thAccent)
+                            InUseBadge()
                         }
                     }
 
@@ -187,11 +178,11 @@ struct ThemeSettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: DS.Radius.lg)
-                    .stroke(
-                        isSelected ? Color.brandPrimary.opacity(0.3) : Color.primary.opacity(0.05),
-                        lineWidth: 1
-                    )
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
             )
+            // La elegida, rellena del color de acento con su borde y «En uso» (UX 2.2 · L16-9). Antes, un borde índigo
+            // en la miniatura y un ✓ pequeño junto al nombre.
+            .selectedOptionFill(isSelected, radius: DS.Radius.lg, lineWidth: 2)
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("theme_card_\(appTheme.rawValue)")

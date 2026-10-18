@@ -448,10 +448,10 @@
 "settings.favorites" = "收藏付款";
 "settings.budgets" = "预算";
 "settings.budgetsFavorites" = "收藏的预算";
-"settings.budgetsFavoritesInfo" = "收藏的预算会显示在预算小组件中(中等显示 3 个,大显示 5 个)。";
+"settings.budgetsFavoritesInfo" = "收藏的预算会显示在首页的预算卡片中（中等显示 3 个，大显示 5 个）。";
 "settings.budgetsFavoritesEmptyHint" = "在「计划」标签页创建预算。";
 "settings.budgetsFavoritesReorder" = "重新排序收藏";
-"budgets.favorites.previewTitle" = "你的小组件将显示成这样";
+"budgets.favorites.previewTitle" = "在首页中将显示成这样";
 "budgets.favorites.previewEmpty" = "选择收藏以查看预览";
 "settings.tabBarConfig" = "自定义导航";
 "settings.tabBarConfigInfo" = "选择在底部栏显示哪些版块。最少 1 个,最多 3 个。";
@@ -7175,7 +7175,7 @@
 "budgets.l9.freePlanSheet" = "免费计划可启用 %lld 个预算。停用一个,或升级到 Pro。";
 "budgets.l9.seePro" = "查看 Pro";
 "budgets.l9.chooseWhich" = "选择";
-"budgets.l9.previewEmpty" = "用星标标记最多 3 个预算,就能在这里看到你的小组件。";
+"budgets.l9.previewEmpty" = "用星标标记最多 3 个预算，就能在这里看到你的首页卡片。";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "已逾期";
@@ -7246,3 +7246,69 @@
 "scheduled.l10.cadence.days" = "每%d天";
 "scheduled.l10.cadence.year" = "每年%@";
 "scheduled.l10.cadence.years" = "每%1$d年，%2$@";
+
+/* UX 2.2 · lotes 11 y 16 (implementación) */
+/* Estadísticas: flecha que pasa al período anterior (accesibilidad) */
+"stats.l11.period.previous" = "上一个时段";
+/* Estadísticas: flecha que pasa al período siguiente (accesibilidad) */
+"stats.l11.period.next" = "下一个时段";
+/* Estadísticas: los días que cubre el período (accesibilidad); %@ = «1–18 oct» */
+"stats.l11.period.rangeA11y" = "涵盖日期：%@";
+/* Estadísticas: con qué se comparan las cifras; %@ = «1–15 de septiembre» */
+"stats.l11.compare.with" = "对比：%@";
+/* Estadísticas: ayuda de accesibilidad del botón de comparación */
+"stats.l11.compare.hint" = "选择与上一时段还是去年同期对比";
+/* Estadísticas: opción de comparación con la semana anterior */
+"stats.l11.compare.previousWeek" = "上一周";
+/* Estadísticas: opción de comparación con los 7 días anteriores */
+"stats.l11.compare.previous7Days" = "前 7 天";
+/* Estadísticas: opción de comparación con los 30 días anteriores */
+"stats.l11.compare.previous30Days" = "前 30 天";
+/* Estadísticas: opción de comparación con el mes anterior */
+"stats.l11.compare.previousMonth" = "上个月";
+/* Estadísticas: opción de comparación con el período anterior (rango propio) */
+"stats.l11.compare.previousPeriod" = "上一时段";
+/* Estadísticas: opción de comparación con el mismo período del año pasado */
+"stats.l11.compare.previousYear" = "上一年";
+/* Tendencias: título de la tarjeta del gasto por día de la semana */
+"stats.l11.weekday.title" = "按星期几的支出";
+/* Tendencias: rótulo de la cifra semanal (suma del gasto medio de cada día de la semana) */
+"stats.l11.weekday.weeklyCaption" = "你一周的支出";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.1" = "周日是你花钱最多的一天";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.2" = "周一是你花钱最多的一天";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.3" = "周二是你花钱最多的一天";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.4" = "周三是你花钱最多的一天";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.5" = "周四是你花钱最多的一天";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.6" = "周五是你花钱最多的一天";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.7" = "周六是你花钱最多的一天";
+
+/* UX 2.2 · lotes 11 y 16 (implementación) */
+/* Ajustes › Temas / Icono: etiqueta de la opción elegida */
+"settings.l16.inUse" = "使用中";
+/* Ajustes › Moneda: título de la hoja que confirma el cambio de moneda principal; %@ = nombre de la moneda («Euro») */
+"settings.l16.currencyChange.title" = "将主要货币改为%@？";
+/* Ajustes › Moneda: rótulo del saldo de hoy en la moneda actual */
+"settings.l16.currencyChange.today" = "今天的余额";
+/* Ajustes › Moneda: rótulo del saldo convertido; %@ = código de la moneda nueva («EUR») */
+"settings.l16.currencyChange.in" = "以 %@ 计";
+/* Ajustes › Moneda: qué cambia; %@ = código de la moneda nueva */
+"settings.l16.currencyChange.totals" = "总额、图表和预算将以 %@ 显示";
+/* Ajustes › Moneda: cómo se convierte cada registro */
+"settings.l16.currencyChange.rates" = "每条记录按当天的汇率换算";
+/* Ajustes › Moneda: qué no cambia */
+"settings.l16.currencyChange.recordsKeep" = "每条记录保留你记账时的货币";
+/* Ajustes › Moneda: se puede volver; %@ = código de la moneda actual */
+"settings.l16.currencyChange.canReturn" = "你可以随时改回 %@";
+/* Ajustes › Moneda: botón que confirma; %@ = código de la moneda nueva */
+"settings.l16.currencyChange.confirm" = "改为 %@";
+/* Ajustes › Moneda: el cambio falló; %@ = código de la moneda que se eligió */
+"settings.l16.currencyChange.failedTitle" = "无法改为 %@";
+/* Ajustes › Moneda: qué quedó tras el fallo; %@ = código de la moneda principal, que no cambió */
+"settings.l16.currencyChange.failedMessage" = "你的记录仍为 %@，保持不变。请稍后重试。";

@@ -186,15 +186,9 @@ enum PreviousPeriodHelper {
             return "vs \(formatter.string(from: previousInterval.start))"
 
         case .thisMonth, .lastMonth:
-            if mode == .year {
-                // "vs Ene 25"
-                formatter.dateFormat = "MMM yy"
-                return "vs \(formatter.string(from: previousInterval.start).capitalized.replacing(".", with: ""))"
-            } else {
-                // "vs Dic 25"
-                formatter.dateFormat = "MMM yy"
-                return "vs \(formatter.string(from: previousInterval.start).capitalized.replacing(".", with: ""))"
-            }
+            // "vs Sept 2026". Con el año en dos cifras («vs Set 26») se leía como «el 26 de septiembre» (UX 2.2 · L11-4).
+            formatter.dateFormat = "MMM yyyy"
+            return "vs \(formatter.string(from: previousInterval.start).capitalized.replacing(".", with: ""))"
 
         case .thisWeek, .last7Days:
             if mode == .year {

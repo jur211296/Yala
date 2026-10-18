@@ -720,12 +720,13 @@ enum WidgetPeriod: String, CaseIterable, Codable {
                 from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? startOfToday
             return DateInterval(start: startOfWeek, end: endOfToday)
 
+        // Hoy y los 6 (o 29) anteriores, como `DetailPeriod.dateInterval()`.
         case .last7Days:
-            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -29, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .thisMonth:

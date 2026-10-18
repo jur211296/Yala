@@ -4049,6 +4049,19 @@ struct MainTabView: View {
                 }
                 navigation.selectMainTab(.panel)
             case .statistics:
+                // Un informe o un enlace con pestaña y período: se aplican en ESTA ventana. El período vale para esta
+                // visita y vuelve el de antes al salir de Estadísticas (UX 2.2 · L11-2).
+                // Se consume siempre; en la shell de solo grupos no se aplica: ahí Estadísticas no abre y la visita no
+                // terminaría nunca.
+                if let request = StatisticsDeepLinkTarget.shared.consume(), !sessionState.isGroupsFocusedShell {
+                    if let tab = request.tab {
+                        navigation.selectedDetailTab = tab.detailTab
+                    }
+                    if let period = request.period {
+                        let selection = period.selection()
+                        sessionState.applyVisitPeriod(selection.period, customRange: selection.customRange)
+                    }
+                }
                 navigation.selectMainTab(.statistics)
             case .records:
                 navigation.selectedDetailTab = .records

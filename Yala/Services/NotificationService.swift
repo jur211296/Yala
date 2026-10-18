@@ -86,6 +86,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         if let accountID = AlertDeepLink.account.id(fromDeepLink: destination) {
             AlertDeepLinkTarget.account.request(accountID)
         }
+        // Informe (`statistics/insights/last7Days`): abre esa pestaña con ese período (UX 2.2 · L11-2).
+        if let statisticsRequest = StatisticsDeepLink.request(fromDeepLink: destination) {
+            StatisticsDeepLinkTarget.shared.request(statisticsRequest)
+        }
         if let targetSessionID {
             SceneRegistry.shared.noteFocused(sessionID: targetSessionID)
         }
@@ -113,6 +117,10 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         // estaban programados con la versión anterior) abre el Panel, donde están las cuentas (L10-14).
         if destination == "accounts" || AlertDeepLink.account.id(fromDeepLink: destination) != nil {
             return .panel
+        }
+        // Informe con pestaña y período: "statistics/<pestaña>[/<período>]" (L11-2). La petición la apunta `routeTap`.
+        if StatisticsDeepLink.request(fromDeepLink: destination) != nil {
+            return .statistics
         }
 
         switch destination {

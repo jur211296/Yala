@@ -1057,18 +1057,9 @@ struct ProfileView: View {
                 activeSheet = .personalDetails
             } label: {
                 ZStack {
-                    // Pro users get golden gradient ring
+                    // Aro sólido: dorado con Pro, el color de acento sin él (UX 2.2 · L16-12). Antes, degradado.
                     Circle()
-                        .stroke(
-                            LinearGradient(
-                                colors: showsProBadge
-                                    ? DS.Gradients.proBadge
-                                    : [theme.accent, theme.accent.opacity(0.6)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 4
-                        )
+                        .stroke(showsProBadge ? Color.proGold : theme.accent, lineWidth: 4)
                         .frame(width: 100, height: 100)
 
                     if let imageData = profileStorage.imageData,
@@ -1096,7 +1087,10 @@ struct ProfileView: View {
                         ZStack {
                             Circle()
                                 .fill(.thCard)
-                            YalaSpark(size: .medium, animated: true)
+                            // Chispa cian sólida, la de la variante elegida (UX 2.2 · L16-12): la dorada iba en degradado.
+                            YalaSparkShape()
+                                .fill(Color.neonCyan)
+                                .frame(width: 14, height: 14)
                         }
                         .frame(width: 28, height: 28)
                         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
@@ -1127,18 +1121,7 @@ struct ProfileView: View {
         }
         .padding(.top, DS.Spacing.sm)
         .padding(.bottom, showsProBadge ? DS.Spacing.lg : 0)
-        .background(
-            Group {
-                if showsProBadge {
-                    LinearGradient(
-                        // A11Y-DM: tinte dorado Pro sutil decorativo (casi invisible, adapta a Dark Mode)
-                        colors: [Color.yellow.opacity(0.03), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-            }
-        )
+        // Sin el tinte dorado en degradado que llevaba detrás con Pro (UX 2.2 · L16-12): se veía como un rectángulo.
         .sheet(isPresented: $showUpgradeForVoice) {
             UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
         }
@@ -1155,28 +1138,23 @@ struct ProfileView: View {
 
     // MARK: - Pro Badge with Cyan Spark
 
-    /// Custom Pro badge with cyan spark so it stands out against the gold background
+    /// La insignia «Yala Pro» de la cabecera: dorado sólido con el texto oscuro (UX 2.2 · L16-12, variante 1). Antes,
+    /// «PRO» en blanco sobre el degradado amarillo-naranja.
     private var proBadgeWithCyanSpark: some View {
         HStack(spacing: DS.Spacing.xs) {
-            // Cyan spark (instead of gold)
             YalaSparkShape()
-                .fill(Color.cyan) // DS-OK: decorative section accent
+                .fill(Color.proGoldInk)
                 .frame(width: 12, height: 12)
+                .accessibilityHidden(true)
 
-            Text("PRO")
-                .font(DS.Typography.labelSmall)
-                .foregroundStyle(.white)
+            Text(verbatim: "Yala Pro")
+                .font(DS.Typography.labelSmall.weight(.bold))
+                .foregroundStyle(Color.proGoldInk)
         }
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs)
-        .background(
-            LinearGradient(
-                colors: DS.Gradients.proBadge,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(Capsule())
+        .background(Capsule().fill(Color.proGold))
+        .accessibilityIdentifier("profile_pro_badge")
     }
 
     // MARK: - Sections

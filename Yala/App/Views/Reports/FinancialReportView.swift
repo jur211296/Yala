@@ -388,7 +388,7 @@ struct FinancialReportView: View {
             onFilterChange: { scheduleRecalculate() }
         ) {
             if showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
-                ComparisonModeSelector()
+                ComparisonModeSelector(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
             }
         }
     }

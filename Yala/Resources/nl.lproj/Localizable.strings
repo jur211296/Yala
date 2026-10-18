@@ -448,10 +448,10 @@
 "settings.favorites" = "Favoriete betalingen";
 "settings.budgets" = "Budgetten";
 "settings.budgetsFavorites" = "Favoriete budgetten";
-"settings.budgetsFavoritesInfo" = "Favoriete budgetten verschijnen in de Budgetten-widget (3 in medium, 5 in groot).";
+"settings.budgetsFavoritesInfo" = "Favoriete budgetten verschijnen in de Budgetten-kaart op Start (3 in medium, 5 in groot).";
 "settings.budgetsFavoritesEmptyHint" = "Maak budgetten aan in het tabblad Planning.";
 "settings.budgetsFavoritesReorder" = "Volgorde favorieten wijzigen";
-"budgets.favorites.previewTitle" = "Zo ziet je widget eruit";
+"budgets.favorites.previewTitle" = "Zo ziet het eruit op Start";
 "budgets.favorites.previewEmpty" = "Selecteer favorieten om het voorbeeld te zien";
 "settings.tabBarConfig" = "Navigatie aanpassen";
 "settings.tabBarConfigInfo" = "Kies welke secties in de onderbalk worden getoond. Minimaal 1, maximaal 3.";
@@ -7175,7 +7175,7 @@
 "budgets.l9.freePlanSheet" = "In het gratis abonnement heb je %lld actieve budgetten. Zet er een uit of stap over op Pro.";
 "budgets.l9.seePro" = "Pro bekijken";
 "budgets.l9.chooseWhich" = "Kies welke";
-"budgets.l9.previewEmpty" = "Markeer tot 3 budgetten met de ster en hier zie je je widget.";
+"budgets.l9.previewEmpty" = "Markeer tot 3 budgetten met de ster en hier zie je je kaart op Start.";
 
 /* Auditoría UX 2.2 · lote 10 (pagos planificados) */
 "scheduled.l10.state.overdue" = "Achterstallig";
@@ -7246,3 +7246,69 @@
 "scheduled.l10.cadence.days" = "elke %d dagen";
 "scheduled.l10.cadence.year" = "elk jaar, op %@";
 "scheduled.l10.cadence.years" = "elke %1$d jaar, op %2$@";
+
+/* UX 2.2 · lotes 11 y 16 (implementación) */
+/* Estadísticas: flecha que pasa al período anterior (accesibilidad) */
+"stats.l11.period.previous" = "Vorige periode";
+/* Estadísticas: flecha que pasa al período siguiente (accesibilidad) */
+"stats.l11.period.next" = "Volgende periode";
+/* Estadísticas: los días que cubre el período (accesibilidad); %@ = «1–18 oct» */
+"stats.l11.period.rangeA11y" = "Dagen: %@";
+/* Estadísticas: con qué se comparan las cifras; %@ = «1–15 de septiembre» */
+"stats.l11.compare.with" = "Vergeleken met %@";
+/* Estadísticas: ayuda de accesibilidad del botón de comparación */
+"stats.l11.compare.hint" = "Kies of je vergelijkt met de vorige periode of met die van vorig jaar";
+/* Estadísticas: opción de comparación con la semana anterior */
+"stats.l11.compare.previousWeek" = "Vorige week";
+/* Estadísticas: opción de comparación con los 7 días anteriores */
+"stats.l11.compare.previous7Days" = "De 7 dagen ervoor";
+/* Estadísticas: opción de comparación con los 30 días anteriores */
+"stats.l11.compare.previous30Days" = "De 30 dagen ervoor";
+/* Estadísticas: opción de comparación con el mes anterior */
+"stats.l11.compare.previousMonth" = "Vorige maand";
+/* Estadísticas: opción de comparación con el período anterior (rango propio) */
+"stats.l11.compare.previousPeriod" = "Vorige periode";
+/* Estadísticas: opción de comparación con el mismo período del año pasado */
+"stats.l11.compare.previousYear" = "Vorig jaar";
+/* Tendencias: título de la tarjeta del gasto por día de la semana */
+"stats.l11.weekday.title" = "Uitgaven per dag van de week";
+/* Tendencias: rótulo de la cifra semanal (suma del gasto medio de cada día de la semana) */
+"stats.l11.weekday.weeklyCaption" = "In een week geef je uit";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.1" = "Op zondag geef je het meest uit";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.2" = "Op maandag geef je het meest uit";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.3" = "Op dinsdag geef je het meest uit";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.4" = "Op woensdag geef je het meest uit";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.5" = "Op donderdag geef je het meest uit";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.6" = "Op vrijdag geef je het meest uit";
+/* Tendencias: el día de la semana en el que más se gasta en promedio (1 = domingo … 7 = sábado) */
+"stats.l11.weekday.priciest.7" = "Op zaterdag geef je het meest uit";
+
+/* UX 2.2 · lotes 11 y 16 (implementación) */
+/* Ajustes › Temas / Icono: etiqueta de la opción elegida */
+"settings.l16.inUse" = "In gebruik";
+/* Ajustes › Moneda: título de la hoja que confirma el cambio de moneda principal; %@ = nombre de la moneda («Euro») */
+"settings.l16.currencyChange.title" = "Je hoofdvaluta wijzigen in %@?";
+/* Ajustes › Moneda: rótulo del saldo de hoy en la moneda actual */
+"settings.l16.currencyChange.today" = "Je saldo vandaag";
+/* Ajustes › Moneda: rótulo del saldo convertido; %@ = código de la moneda nueva («EUR») */
+"settings.l16.currencyChange.in" = "In %@";
+/* Ajustes › Moneda: qué cambia; %@ = código de la moneda nueva */
+"settings.l16.currencyChange.totals" = "Totalen, grafieken en budgetten worden in %@ getoond";
+/* Ajustes › Moneda: cómo se convierte cada registro */
+"settings.l16.currencyChange.rates" = "Elke boeking wordt omgerekend tegen de wisselkoers van die dag";
+/* Ajustes › Moneda: qué no cambia */
+"settings.l16.currencyChange.recordsKeep" = "Elke boeking houdt de valuta waarin je hem hebt ingevoerd";
+/* Ajustes › Moneda: se puede volver; %@ = código de la moneda actual */
+"settings.l16.currencyChange.canReturn" = "Je kunt altijd terug naar %@";
+/* Ajustes › Moneda: botón que confirma; %@ = código de la moneda nueva */
+"settings.l16.currencyChange.confirm" = "Wijzigen in %@";
+/* Ajustes › Moneda: el cambio falló; %@ = código de la moneda que se eligió */
+"settings.l16.currencyChange.failedTitle" = "Wijzigen in %@ is niet gelukt";
+/* Ajustes › Moneda: qué quedó tras el fallo; %@ = código de la moneda principal, que no cambió */
+"settings.l16.currencyChange.failedMessage" = "Je boekingen staan nog in %@, zoals eerst. Probeer het zo opnieuw.";

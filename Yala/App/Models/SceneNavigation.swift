@@ -33,6 +33,11 @@ final class SceneNavigation: Identifiable {
     /// Currently selected main tab (Panel, Statistics, etc.)
     var selectedMainTab: AppTab = .panel {
         didSet {
+            // Al salir de Estadísticas vuelve el período que tenía la persona antes de que un informe pusiera el suyo
+            // (UX 2.2 · L11-2). Sin visita en curso no hace nada.
+            if oldValue == .statistics && selectedMainTab != .statistics {
+                SessionState.shared.endVisitPeriod()
+            }
             // Clear temporary tab when navigating to a permanent tab
             if selectedMainTab != temporaryTab?.appTab && selectedMainTab != .more {
                 temporaryTab = nil

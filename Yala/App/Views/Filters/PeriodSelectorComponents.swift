@@ -89,12 +89,11 @@ struct TrendsPeriodMenu: View, Equatable {
         .id("\(selectedPeriod.rawValue)-\(customDateRange?.start.timeIntervalSince1970 ?? 0)")
     }
 
-    /// Format date range as "1 dic 25 - 27 dic 25"
+    /// «agosto de 2026» si el rango es un mes entero, «2024» si es un año, y si no «1–27 dic» (con el año solo si no es
+    /// el actual). Antes salía «1 dic. 25 - 27 dic. 25» siempre, también para los meses a los que llevan las flechas de
+    /// Estadísticas (UX 2.2 · L11-3).
     private func formattedRange(_ range: DateInterval) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMM yy"
-        formatter.locale = AppLocale.current
-        return "\(formatter.string(from: range.start)) - \(formatter.string(from: range.end))"
+        PeriodStepLogic.customTitle(range)
     }
 }
 
@@ -210,8 +209,9 @@ struct CustomPeriodPickerSheet: View {
             calendar.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
         let range = DateInterval(start: calendar.startOfDay(for: startDate), end: endOfDay)
 
-        sessionState.customDateRange = range
-        sessionState.selectedPeriod = .custom
+        // Un rango propio es una elección de la persona: si un aviso había puesto su período para esa visita, deja de
+        // valer (UX 2.2 · L11-2).
+        sessionState.choosePeriod(.custom, customRange: range)
         dismiss()
     }
 }

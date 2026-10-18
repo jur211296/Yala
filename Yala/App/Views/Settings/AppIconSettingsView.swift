@@ -164,10 +164,6 @@ struct AppIconSettingsView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 80, height: 80)
                             .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .stroke(isSelected ? Color.brandPrimary : Color.clear, lineWidth: 3)
-                            )
                             .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                             .opacity(isLocked ? 0.5 : 1.0)
                     } else {
@@ -175,10 +171,6 @@ struct AppIconSettingsView: View {
                         RoundedRectangle(cornerRadius: 18)
                             .fill(Color.gray.opacity(0.3)) // A11Y-DM: placeholder fallback for missing icon
                             .frame(width: 80, height: 80)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .stroke(isSelected ? Color.brandPrimary : Color.clear, lineWidth: 3)
-                            )
                     }
 
                     // Lock badge for premium icons
@@ -195,7 +187,7 @@ struct AppIconSettingsView: View {
                 // Label
                 HStack(spacing: DS.Spacing.xs) {
                     Text(icon.displayName)
-                        .font(DS.Typography.label)
+                        .font(DS.Typography.label.weight(isSelected ? .bold : .regular))
                         .foregroundStyle(isLocked ? .thSecondaryText : .thPrimaryText)
 
                     if icon.isPremium && !isSelected {
@@ -203,22 +195,22 @@ struct AppIconSettingsView: View {
                     }
 
                     if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.thAccent)
+                        InUseBadge()
                     }
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DS.Spacing.lg)
             .selectableCard(
-                isSelected: isSelected,
+                isSelected: false,
                 radius: DS.Radius.lg,
-                activeColor: Color.brandPrimary.opacity(0.3),
                 inactiveColor: Color.primary.opacity(0.05)
             )
+            // La elegida, rellena con su borde y «En uso», como en Temas (UX 2.2 · L16-9).
+            .selectedOptionFill(isSelected, radius: DS.Radius.lg, lineWidth: 2)
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Icon Logic

@@ -81,6 +81,8 @@ struct CategoriesTabView: View {
     @State private var previousSubcategoryTotal: Double? = nil
     @State private var previousTagTotal: Double? = nil
     @State private var previousNeedTotal: Double? = nil
+    /// El último día con movimientos del período: lo usa la frase de comparación (UX 2.2 · L11-4).
+    @State private var comparisonDataEnd: Date?
     @State private var previousNeedAmounts: [SubcategoryNeed: Double] = [:]
 
     /// Local pool-node selection for Sankey filtering. Single-select (tap toggles).
@@ -366,13 +368,7 @@ struct CategoriesTabView: View {
                     .accessibilityIdentifier("stats_hero_caption")
             }
         } period: {
-            TrendsPeriodMenu(
-                selectedPeriod: viewModel.detailPeriod,
-                customDateRange: sessionState.customDateRange,
-                onSelect: { sessionState.selectedPeriod = $0 },
-                onCustomTapped: { showCustomPeriodPicker = true }
-            )
-            .equatable()
+            StatisticsPeriodControl(onCustomTapped: { showCustomPeriodPicker = true })
         } content: {
             if showsAmount {
                 AmountText(
@@ -452,19 +448,23 @@ struct CategoriesTabView: View {
     /// Header con title dinámico (gasto/ingreso según FilterControlBar global) +
     /// M/A selector. El (?) educativo vive dentro de cada pie via `headerInfoButton`.
     private var analysisHeaderSection: some View {
-        HStack(spacing: DS.Spacing.sm) {
+        // Con qué se compara, en una frase bajo el título (UX 2.2 · L11-4).
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(isIncomeMode ? L10n.Statistics.incomeAnalysis : L10n.Statistics.spendingAnalysis)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
-            Spacer()
-
             if showComparisonSelector {
-                ComparisonModeSelector()
+                ComparisonModeSelector(
+                    period: viewModel.detailPeriod,
+                    customRange: sessionState.customDateRange,
+                    dataEnd: comparisonDataEnd
+                )
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Determines if comparison selector should be visible (only when appPreferences.showVariations is ON)
@@ -1495,6 +1495,15 @@ struct CategoriesTabView: View {
         currentTagSource: [TransactionItem],
         currentNeedSource: [TransactionItem]
     ) {
+        // El último movimiento del actual: el tramo anterior se corta en su día equivalente, y la frase de comparación
+        // lo dice (UX 2.2 · L11-4).
+        let lastCurrentDate = DistributionPreviousPeriodCalculator.currentDates(
+            from: currentCategorySource,
+            in: viewModel.panelDateInterval,
+            natures: viewModel.selectedTransactionNatures.isEmpty ? nil : viewModel.selectedTransactionNatures
+        ).max()
+        if lastCurrentDate != comparisonDataEnd { comparisonDataEnd = lastCurrentDate }
+
         // Proyección "mi parte" (neto) desde el set AMPLIO (con AMBAS hermanas del bridge).
         let adjustment = GroupBridgeStatsAdjustment.build(from: allTransactions, context: modelContext)
 

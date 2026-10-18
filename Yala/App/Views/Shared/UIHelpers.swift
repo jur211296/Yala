@@ -290,6 +290,17 @@ extension Color {
         traits.userInterfaceStyle == .dark ? UIColor(Color.hotPink) : UIColor(Color.emphasisPinkFill)
     })
 
+    /// Dorado de Yala Pro, sólido (UX 2.2 · L16-12, variante 1 elegida por Jürgen el 2026-10-15): el aro del avatar y
+    /// las insignias Pro. Antes era el degradado amarillo-naranja de `DS.Gradients.proBadge`, y nada de degradados.
+    static let proGold = Color(hex: "F5B400")
+
+    /// Texto sobre `proGold`: casi negro. El blanco sobre ese dorado da 1,9:1 y no se lee; éste pasa de 11:1.
+    static let proGoldInk = Color(hex: "1C1500")
+
+    /// TEXTO en el rosa de marca que tiene que leerse en los dos modos (UX 2.2 · L11-11, «Los lunes son tu día más caro»):
+    /// el mismo par que `overBudgetText`, con nombre propio porque no habla de presupuestos.
+    static let emphasisPinkText = overBudgetText
+
     /// Barra de un período que NO pasó el límite en el historial de un presupuesto (UX 2.2 · L9-7): neutra y sólida, para
     /// que el rosa marque solo los que se pasaron.
     static let budgetBarNeutral = Color(uiColor: .systemGray3) // A11Y-DM: gris de sistema, adapta claro/oscuro

@@ -207,12 +207,15 @@ enum DetailPeriod: String, CaseIterable, Identifiable {
                 from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? startOfToday
             return DateInterval(start: startOfWeek, end: endOfToday)
 
+        // «Últimos 7 días» son hoy y los seis anteriores: siete días, no ocho. Antes arrancaba en
+        // `startOfToday − 7` y contaba ocho (y «Últimos 30 días», treinta y uno), en totales, promedios y
+        // comparativas de Estadísticas, Panel y widgets. Espejo: `WidgetPeriod.dateInterval()`.
         case .last7Days:
-            let start = calendar.date(byAdding: .day, value: -7, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -6, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .last30Days:
-            let start = calendar.date(byAdding: .day, value: -30, to: startOfToday) ?? startOfToday
+            let start = calendar.date(byAdding: .day, value: -29, to: startOfToday) ?? startOfToday
             return DateInterval(start: start, end: endOfToday)
 
         case .thisMonth:
