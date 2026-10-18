@@ -7372,3 +7372,85 @@
 "chat.l14.logBody" = "输入或说出来：“刷卡打车花了 25”";
 "chat.l14.logHint" = "打开键盘输入";
 "chat.l14.askTitle" = "询问你的财务状况";
+
+/* Tarjeta con varias divisas (entrega 2) */
+/* Label of the converted total on a card with lines in several currencies */
+"panel.accounts.card.total" = "合计";
+
+/* Accessibility label of the picker that chooses which currency line of a card to show */
+"accountDetail.linePicker" = "卡片币种";
+
+/* Subtitle of a currency line nested under its card; %@ = currency code like USD */
+"account.lines.lineLabel %@" = "%@ 子账户";
+
+/* Account form section with the extra currency lines of a card */
+"account.lines.sectionTitle" = "其他币种";
+
+/* Help under the other-currencies section of a credit card */
+"account.lines.sectionFooter" = "如果你的卡也用其他币种扣款，就添加一个子账户：每种币种各有余额，卡片只显示一次。";
+
+/* Button that adds a line in another currency to an account */
+"account.lines.add" = "添加其他币种子账户";
+
+/* Button that links an existing account as a currency line */
+"account.lines.link" = "关联已有账户";
+
+/* Title of the sheet that adds a currency line */
+"account.lines.addTitle" = "新子账户";
+
+/* Help in the add-line sheet; %@ = the name the line will get */
+"account.lines.addFooter %@" = "子账户将命名为“%@”，类型和颜色与卡片相同。";
+
+/* Optional balance field when adding a currency line */
+"account.lines.addBalance" = "当前余额（可选）";
+
+/* Title of the sheet that links an existing account to a card */
+"account.lines.linkTitle" = "关联账户";
+
+/* Help in the link sheet; %@ = card name */
+"account.lines.linkFooter %@" = "你选择的账户将成为“%@”的子账户，其记录不会改变。";
+
+/* Empty state of the link sheet */
+"account.lines.linkEmpty" = "没有其他可关联的账户。";
+
+/* Why an account cannot be linked: same currency as the card */
+"account.lines.reject.sameCurrency" = "与此卡币种相同。";
+
+/* Why an account cannot be linked: it already has its own lines */
+"account.lines.reject.hasLines" = "它已有自己的其他币种子账户。";
+
+/* Why an account cannot be linked: the card already has a line in that currency; %@ = currency code */
+"account.lines.reject.currencyTaken %@" = "此卡已有 %@ 子账户。";
+
+/* Why an account cannot be linked: any other reason */
+"account.lines.reject.other" = "无法关联到此卡。";
+
+/* Text in the form of a currency line; %1$@ = currency code, %2$@ = card name */
+"account.lines.isLineOf %@ %@" = "这是“%2$@”的 %1$@ 子账户。提醒和还款日在卡片中设置。";
+
+/* Button that turns a currency line back into a standalone account */
+"account.lines.unlink" = "从卡片解除关联";
+
+/* Help under the unlink button */
+"account.lines.unlinkFooter" = "它会变回独立账户，保留所有记录。";
+
+/* Form text for an account whose link to a card is no longer valid */
+"account.lines.broken" = "此账户关联的卡片无法将其归组，因此显示为独立账户。解除关联后才能添加子账户。";
+
+/* Why the currency of a line cannot be changed */
+"account.lines.currencyLocked" = "子账户的币种不能更改。如需其他币种，请为卡片添加新的子账户。";
+
+/* Why the card cannot switch to a currency one of its lines already uses; %@ = currency code */
+"account.lines.currencyCollision %@" = "此卡已有 %@ 子账户。请选择其他币种。";
+
+/* Title of the alert shown when archiving a card that has currency lines */
+"account.lines.archiveTitle" = "同时归档其子账户？";
+
+/* Message of the alert shown when archiving a card with lines; %@ = card name */
+"account.lines.archiveMessage %@" = "“%@”有其他币种的子账户。如果不归档，它们会显示为独立账户。";
+
+/* Alert button: archive the card and its lines */
+"account.lines.archiveAll" = "同时归档子账户";
+
+/* Alert button: archive only the card, lines stay as standalone accounts */
+"account.lines.archiveOnlyCard" = "仅卡片";

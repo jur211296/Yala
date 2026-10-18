@@ -59,10 +59,23 @@ final class AccountsSettingsListViewModel {
         accounts.filter { $0.isSystemAccount && !$0.isArchived }
     }
 
+    /// Las tarjetas activas en el orden guardado: una por cuenta principal o suelta, con sus líneas en otra divisa
+    /// dentro (`AccountCardLogic`). Desde la entrega 1 `billableUserAccounts` deja fuera las líneas, así que las tarjetas
+    /// se arman con TODAS las cuentas de usuario vivas.
+    var orderedCards: [AccountCard<Account>] {
+        sortedByUserOrder(accounts.filter { !$0.isArchived && !$0.isSystemAccount })
+            .accountCards(roles: accounts.lineRoles)
+    }
+
+    /// La cabeza de cada tarjeta: lo que se reordena y lo que cuenta para el límite Free.
     var orderedActiveAccounts: [Account] {
+        orderedCards.map(\.head)
+    }
+
+    private func sortedByUserOrder(_ list: [Account]) -> [Account] {
         let indexByName = accountSortIndex
 
-        return activeAccounts.sorted { a, b in
+        return list.sorted { a, b in
             let ia = indexByName[a.name]
             let ib = indexByName[b.name]
 
@@ -159,9 +172,12 @@ final class AccountsSettingsListViewModel {
 
     // MARK: - Reorder Logic
 
+    /// Mueve tarjetas enteras. El orden guardado lleva cada línea justo detrás de su principal: sin ellas, reordenar
+    /// borraba su posición y el Panel las mandaba al final (review de la entrega 1).
     func moveAccount(from source: IndexSet, to destination: Int) -> [String] {
-        var currentOrder = orderedActiveAccounts.map { $0.name }
-        currentOrder.move(fromOffsets: source, toOffset: destination)
+        var cards = orderedCards
+        cards.move(fromOffsets: source, toOffset: destination)
+        let currentOrder = AccountCardLogic.sortOrderNames(cards) { $0.name }
         accountsSortOrderNames = currentOrder
         return currentOrder
     }

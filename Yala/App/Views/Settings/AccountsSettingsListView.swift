@@ -20,6 +20,11 @@ struct AccountsSettingsListView: View {
 
     @State private var viewModel = AccountsSettingsListViewModel()
     @State private var showUpgradeSheet = false
+    /// Alto de cada fila de la lista (el `List` no se desplaza: su alto lo calcula la pantalla). Escala con el tamaño del
+    /// texto: fijo, la línea anidada de una tarjeta quedaba fuera con texto grande. A tamaño normal, los 80 y 48 de
+    /// siempre.
+    @ScaledMetric(relativeTo: .headline) private var rowHeight: CGFloat = 80 // A11Y-DT: @ScaledMetric
+    @ScaledMetric(relativeTo: .subheadline) private var lineRowHeight: CGFloat = 48 // A11Y-DT: @ScaledMetric
 
     private var activeAccountsCount: Int {
         viewModel.orderedActiveAccounts.count
@@ -183,22 +188,40 @@ struct AccountsSettingsListView: View {
                 .foregroundStyle(Color.primary.opacity(0.6))
                 .padding(.leading, DS.Chip.paddingV)
 
+            // Una fila por tarjeta: sus líneas en otra divisa van anidadas DENTRO de la fila, así que reordenar mueve la
+            // tarjeta entera (tarjeta con varias divisas, entrega 2).
+            let cards = viewModel.orderedCards
             List {
-                ForEach(Array(viewModel.orderedActiveAccounts.enumerated()), id: \.element.id) {
-                    index, account in
-                    Button {
-                        if !viewModel.isEditMode {
-                            viewModel.accountToEdit = account
+                ForEach(Array(cards.enumerated()), id: \.element.head.id) {
+                    index, card in
+                    VStack(spacing: DS.Spacing.none) {
+                        Button {
+                            if !viewModel.isEditMode {
+                                viewModel.accountToEdit = card.head
+                            }
+                        } label: {
+                            listAccountRow(card.head)
                         }
-                    } label: {
-                        listAccountRow(account)
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("accounts_row_\(card.head.name)")
+
+                        ForEach(card.lines, id: \.id) { line in
+                            Button {
+                                if !viewModel.isEditMode {
+                                    viewModel.accountToEdit = line
+                                }
+                            } label: {
+                                listLineRow(line)
+                                    .frame(height: lineRowHeight)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("accounts_line_row_\(line.name)")
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("accounts_row_\(account.name)")
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(
-                        index == 0 || index == viewModel.orderedActiveAccounts.count - 1 ? .hidden : .visible,
+                        index == 0 || index == cards.count - 1 ? .hidden : .visible,
                         edges: index == 0 ? .top : .bottom)
                 }
                 .onMove(perform: moveAccountList)
@@ -206,10 +229,46 @@ struct AccountsSettingsListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .scrollDisabled(true)
-            .frame(height: CGFloat(viewModel.orderedActiveAccounts.count) * 80)
+            .frame(height: cards.reduce(0) { $0 + rowHeight + CGFloat($1.lines.count) * lineRowHeight })
             .solidCard()
             .environment(\.editMode, .constant(viewModel.isEditMode ? .active : .inactive))
         }
+    }
+
+    /// Una línea en otra divisa, debajo de su tarjeta: su divisa y su saldo. El nombre de la tarjeta ya está encima.
+    private func listLineRow(_ line: Account) -> some View {
+        let code = normalizeCurrencyCode(line.currencyCode)
+        return HStack(spacing: DS.Spacing.md) {
+            Image(systemName: "arrow.turn.down.right")
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(width: DS.Icon.badgeMedium)
+                .accessibilityHidden(true)
+
+            Text(L10n.Account.Lines.lineLabel(code))
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+
+            Spacer()
+
+            HStack(spacing: DS.Spacing.xs) {
+                if !sessionState.isExpensesOnlyMode {
+                    Text(viewModel.formattedBalance(for: line))
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .foregroundStyle(.primary)
+                }
+
+                if !viewModel.isEditMode {
+                    Image(systemName: "chevron.right")
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .contentShape(Rectangle())
     }
 
     private func listAccountRow(_ account: Account) -> some View {

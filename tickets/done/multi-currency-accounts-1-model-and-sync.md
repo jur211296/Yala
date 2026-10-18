@@ -123,7 +123,7 @@ decisiones). Los dos despliegues a producción salen de este ticket a sus cards,
 
 - Depende de: [`personal-cloudkit-schema-snapshot-misses-optional-fields`](../blocked/personal-cloudkit-schema-snapshot-misses-optional-fields.md)
   (en `blocked`: espera el token de gestión de CloudKit).
-- De esta dependen: [`multi-currency-accounts-2-card-view`](multi-currency-accounts-2-card-view.md),
+- De esta dependen: [`multi-currency-accounts-2-card-view`](../qa/multi-currency-accounts-2-card-view.md),
   [`multi-currency-accounts-3-pickers-and-capture`](multi-currency-accounts-3-pickers-and-capture.md)
   y [`multi-currency-accounts-4-reports-and-export`](multi-currency-accounts-4-reports-and-export.md).
 - Va sola y antes que nada: ningún cliente puede escribir el campo antes de que la nube y iCloud de

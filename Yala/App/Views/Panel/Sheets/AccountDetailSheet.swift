@@ -37,6 +37,28 @@ struct AccountDetailSheet: View {
     @State private var selectedDetent: PresentationDetent = .medium
     @State private var summary: AccountDetailCalculator.Summary?
     @State private var reconciliation: AccountDetailCalculator.Reconciliation?
+    @Environment(CurrencyConverter.self) private var currencyConverter
+    /// Tarjeta con varias divisas: la línea que enseñan la cuenta del período, la curva y los movimientos. `nil` = la
+    /// principal. Cada línea es una cuenta de una divisa: sus cálculos no cambian de premisa.
+    @State private var selectedLineID: PersistentIdentifier?
+
+    /// Las cuentas de la tarjeta, la principal primero. Una sola = cuenta de una divisa.
+    private var cardMembers: [Account] {
+        guard !isStale else { return [account] }
+        // Sin las borradas: esta hoja sigue montada mientras el formulario elimina una línea, y leer un `@Model` borrado
+        // tumba la app (`detailIsStale`).
+        let live = viewModel.accounts.filter { !$0.isDeleted && $0.modelContext != nil }
+        let cards = live.filter { !$0.isArchived }.accountCards(roles: live.lineRoles)
+        return cards.first { $0.head.persistentModelID == account.persistentModelID }?.members ?? [account]
+    }
+
+    private var hasLines: Bool { cardMembers.count > 1 }
+
+    /// La cuenta que se enseña abajo: la línea elegida si sigue en la tarjeta; si no, la principal.
+    private var shown: Account {
+        guard let selectedLineID else { return account }
+        return cardMembers.first { $0.persistentModelID == selectedLineID } ?? account
+    }
 
     private var isStale: Bool {
         PanelAccountCardLogic.detailIsStale(
@@ -73,6 +95,7 @@ struct AccountDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     hero
+                    linePicker
                     balanceEquation
                     filterButton
                     chart
@@ -118,7 +141,7 @@ struct AccountDetailSheet: View {
         .accessibilityIdentifier("account_detail_sheet")
         .task(id: refreshKey) { recompute() }
         .sheet(isPresented: $isEditing, onDismiss: onAccountChanged) {
-            AccountFormView(existingNames: otherAccountNames, accountToEdit: account)
+            AccountFormView(existingNames: otherAccountNames, accountToEdit: shown)
         }
     }
 
@@ -128,36 +151,36 @@ struct AccountDetailSheet: View {
         account.isSystemAccount ? Color(.systemGray) : Color(hex: account.colorHex)
     }
 
-    private var currencyCode: String { normalizeCurrencyCode(account.currencyCode) }
+    private var currencyCode: String { normalizeCurrencyCode(shown.currencyCode) }
 
     private var periodName: String { sessionState.selectedPeriod.displayName }
 
     private var cardValue: Double {
         isExpensesOnlyMode
-            ? viewModel.accountPeriodExpenses[account.persistentModelID] ?? 0
-            : viewModel.accountBalances[account.persistentModelID] ?? 0
+            ? viewModel.accountPeriodExpenses[shown.persistentModelID] ?? 0
+            : viewModel.accountBalances[shown.persistentModelID] ?? 0
     }
 
     private var amountKind: PanelAccountCardLogic.AmountKind {
         PanelAccountCardLogic.amountKind(
             isExpensesOnlyMode: isExpensesOnlyMode,
-            isCreditCard: AccountType(rawValue: account.type) == .creditCard,
+            isCreditCard: AccountType(rawValue: shown.type) == .creditCard,
             value: cardValue
         )
     }
 
     private var amountLabel: String {
-        switch amountKind {
-        case .balance: return L10n.PanelAccountCard.balance
-        case .toPay: return L10n.PanelAccountCard.toPay
-        case .spent: return L10n.PanelAccountCard.spentInPeriod(periodName)
-        }
+        lineKindLabel(hasLines ? cardKind : amountKind)
     }
 
     private var subtitle: String {
         let typeName: String? = account.isSystemAccount
             ? L10n.Account.System.badge
             : AccountType(rawValue: account.type)?.localizedName
+        if hasLines {
+            return PanelAccountCardLogic.subtitle(
+                typeName: typeName, currencyCodes: cardMembers.map { normalizeCurrencyCode($0.currencyCode) })
+        }
         return PanelAccountCardLogic.subtitle(typeName: typeName, currencyCode: currencyCode)
     }
 
@@ -182,16 +205,111 @@ struct AccountDetailSheet: View {
                     .font(DS.Typography.caption)
                     .foregroundStyle(theme.secondaryText)
                     .lineLimit(2)
-                AmountText(
-                    value: PanelAccountCardLogic.displayedValue(cardValue, kind: amountKind),
-                    currencyCode: currencyCode,
-                    font: DS.Typography.largeTitle.bold(),
-                    secondaryFont: DS.Typography.title3,
-                    tint: .color(theme.primaryText)
-                )
+                if hasLines {
+                    cardLinesSummary
+                } else {
+                    AmountText(
+                        value: PanelAccountCardLogic.displayedValue(cardValue, kind: amountKind),
+                        currencyCode: currencyCode,
+                        font: DS.Typography.largeTitle.bold(),
+                        secondaryFont: DS.Typography.title3,
+                        tint: .color(theme.primaryText)
+                    )
+                }
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    // MARK: - Tarjeta con varias divisas
+
+    private func memberValue(_ member: Account) -> Double {
+        isExpensesOnlyMode
+            ? viewModel.accountPeriodExpenses[member.persistentModelID] ?? 0
+            : viewModel.accountBalances[member.persistentModelID] ?? 0
+    }
+
+    /// El rótulo de cada línea; «tarjeta de crédito» lo decide la principal, como en la tarjeta del Panel.
+    private func memberKind(_ member: Account) -> PanelAccountCardLogic.AmountKind? {
+        PanelAccountCardLogic.lineKind(
+            isExpensesOnlyMode: isExpensesOnlyMode,
+            isCreditCard: AccountType(rawValue: account.type) == .creditCard,
+            value: memberValue(member))
+    }
+
+    /// El rótulo de la cabecera de una tarjeta con líneas: el de todas si coinciden (`cardAmountKind`).
+    private var cardKind: PanelAccountCardLogic.AmountKind {
+        PanelAccountCardLogic.cardAmountKind(lineKinds: cardMembers.map(memberKind))
+    }
+
+    /// Una línea por divisa y el total en la preferida, como la tarjeta del Panel.
+    private var cardLinesSummary: some View {
+        let card = cardKind
+        let target = appPreferences.defaultCurrencyCode.rawValue
+        let amounts = cardMembers.map {
+            AccountCardLogic.LineAmount(value: memberValue($0), currencyCode: normalizeCurrencyCode($0.currencyCode))
+        }
+        let total = AccountCardLogic.total(amounts, in: target) { value, code in
+            let outcome = currencyConverter.convertCheckedWithLatestRate(Decimal(value), from: code, to: target)
+            return (outcome.amount as NSDecimalNumber).doubleValue
+        }
+        return VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+            ForEach(cardMembers, id: \.persistentModelID) { member in
+                let kind = memberKind(member)
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.sm) {
+                    AmountText(
+                        value: PanelAccountCardLogic.displayedValue(memberValue(member), kind: kind ?? card),
+                        currencyCode: normalizeCurrencyCode(member.currencyCode),
+                        font: DS.Typography.title2.bold(),
+                        secondaryFont: DS.Typography.subheadline,
+                        tint: .color(theme.primaryText)
+                    )
+                    if let kind, PanelAccountCardLogic.showsLineLabel(lineKind: kind, cardKind: card) {
+                        Text(lineKindLabel(kind))
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(theme.secondaryText)
+                    }
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                Text(L10n.PanelAccountCard.total)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(theme.secondaryText)
+                AmountText(
+                    value: PanelAccountCardLogic.displayedValue(total.value, kind: card),
+                    currencyCode: target,
+                    font: DS.Typography.subheadlineEmphasized,
+                    secondaryFont: DS.Typography.caption,
+                    tint: .color(theme.secondaryText),
+                    isEstimate: total.isConverted
+                )
+            }
+        }
+    }
+
+    private func lineKindLabel(_ kind: PanelAccountCardLogic.AmountKind) -> String {
+        switch kind {
+        case .balance: return L10n.PanelAccountCard.balance
+        case .toPay: return L10n.PanelAccountCard.toPay
+        case .spent: return L10n.PanelAccountCard.spentInPeriod(periodName)
+        }
+    }
+
+    /// Qué línea enseña lo de abajo: la cuenta del período, la curva y los movimientos son de una sola divisa.
+    @ViewBuilder
+    private var linePicker: some View {
+        if hasLines {
+            // `nil` es la principal: así una línea que deja la tarjeta devuelve la selección a ella sola.
+            Picker(L10n.AccountDetail.linePicker, selection: $selectedLineID) {
+                ForEach(cardMembers, id: \.persistentModelID) { member in
+                    let tag: PersistentIdentifier? = member.persistentModelID == account.persistentModelID
+                        ? nil : member.persistentModelID
+                    Text(verbatim: normalizeCurrencyCode(member.currencyCode)).tag(tag)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("account_detail_line_picker")
+        }
     }
 
     /// La cuenta del saldo en el período (UX 2.2 · L3-11). En modo «solo gastos» no va: la cabecera ya dice lo gastado,
@@ -260,6 +378,8 @@ struct AccountDetailSheet: View {
     @ViewBuilder
     private var filterButton: some View {
         if PanelAccountCardLogic.showsFilterAction(
+            // Filtrar desde la ficha filtra la tarjeta (su principal), elija la línea que elija: la misma regla que el
+            // carrusel. Que el filtro incluya las líneas es la entrega 3.
             isSelected: viewModel.selectedAccountIDs.contains(account.persistentModelID),
             isExcludeMode: viewModel.isExcludeMode
         ) {
@@ -316,7 +436,7 @@ struct AccountDetailSheet: View {
             .chartYAxis(.hidden)
             .frame(height: 120)
             .accessibilityElement()
-            .accessibilityLabel(L10n.AccountDetail.chartLabel(account: account.name, period: periodName))
+            .accessibilityLabel(L10n.AccountDetail.chartLabel(account: shown.name, period: periodName))
         }
     }
 
@@ -440,6 +560,7 @@ struct AccountDetailSheet: View {
         let period: DetailPeriod
         let customRange: DateInterval?
         let balance: Double
+        let lineID: PersistentIdentifier?
     }
 
     private var refreshKey: RefreshKey {
@@ -447,19 +568,20 @@ struct AccountDetailSheet: View {
             dataVersion: sessionState.dataVersion,
             period: sessionState.selectedPeriod,
             customRange: sessionState.customDateRange,
-            balance: viewModel.accountBalances[account.persistentModelID] ?? 0
+            balance: viewModel.accountBalances[shown.persistentModelID] ?? 0,
+            lineID: selectedLineID
         )
     }
 
     private var otherAccountNames: [String] {
         viewModel.accounts
-            .filter { $0.persistentModelID != account.persistentModelID }
+            .filter { $0.persistentModelID != shown.persistentModelID }
             .map(\.name)
     }
 
     private func recompute() {
         guard !isStale else { return }
-        let entries = (account.transactions ?? []).map { tx in
+        let entries = (shown.transactions ?? []).map { tx in
             AccountDetailCalculator.Entry(
                 id: String(describing: tx.persistentModelID),
                 date: tx.date,

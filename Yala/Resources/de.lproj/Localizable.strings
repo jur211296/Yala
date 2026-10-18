@@ -7360,3 +7360,85 @@
 "chat.l14.logBody" = "Schreib oder sprich sie: „25 fürs Taxi mit der Karte ausgegeben“";
 "chat.l14.logHint" = "Öffnet die Tastatur zum Schreiben";
 "chat.l14.askTitle" = "Frag nach deinen Finanzen";
+
+/* Tarjeta con varias divisas (entrega 2) */
+/* Label of the converted total on a card with lines in several currencies */
+"panel.accounts.card.total" = "Gesamt";
+
+/* Accessibility label of the picker that chooses which currency line of a card to show */
+"accountDetail.linePicker" = "Währung der Karte";
+
+/* Subtitle of a currency line nested under its card; %@ = currency code like USD */
+"account.lines.lineLabel %@" = "Linie in %@";
+
+/* Account form section with the extra currency lines of a card */
+"account.lines.sectionTitle" = "Weitere Währungen";
+
+/* Help under the other-currencies section of a credit card */
+"account.lines.sectionFooter" = "Wenn deine Karte auch in einer anderen Währung abrechnet, füge eine Linie hinzu: Jede Währung hat ihren eigenen Saldo und die Karte erscheint nur einmal.";
+
+/* Button that adds a line in another currency to an account */
+"account.lines.add" = "Linie in anderer Währung hinzufügen";
+
+/* Button that links an existing account as a currency line */
+"account.lines.link" = "Bestehendes Konto verknüpfen";
+
+/* Title of the sheet that adds a currency line */
+"account.lines.addTitle" = "Neue Linie";
+
+/* Help in the add-line sheet; %@ = the name the line will get */
+"account.lines.addFooter %@" = "Die Linie heißt „%@“ und übernimmt Typ und Farbe der Karte.";
+
+/* Optional balance field when adding a currency line */
+"account.lines.addBalance" = "Aktueller Saldo (optional)";
+
+/* Title of the sheet that links an existing account to a card */
+"account.lines.linkTitle" = "Konto verknüpfen";
+
+/* Help in the link sheet; %@ = card name */
+"account.lines.linkFooter %@" = "Das gewählte Konto wird zu einer Linie von „%@“. Seine Buchungen ändern sich nicht.";
+
+/* Empty state of the link sheet */
+"account.lines.linkEmpty" = "Du hast keine anderen Konten zum Verknüpfen.";
+
+/* Why an account cannot be linked: same currency as the card */
+"account.lines.reject.sameCurrency" = "Es hat dieselbe Währung wie diese Karte.";
+
+/* Why an account cannot be linked: it already has its own lines */
+"account.lines.reject.hasLines" = "Es hat bereits eigene Linien in anderen Währungen.";
+
+/* Why an account cannot be linked: the card already has a line in that currency; %@ = currency code */
+"account.lines.reject.currencyTaken %@" = "Diese Karte hat schon eine Linie in %@.";
+
+/* Why an account cannot be linked: any other reason */
+"account.lines.reject.other" = "Es kann nicht mit dieser Karte verknüpft werden.";
+
+/* Text in the form of a currency line; %1$@ = currency code, %2$@ = card name */
+"account.lines.isLineOf %@ %@" = "Das ist die %1$@-Linie von „%2$@“. Erinnerung und Zahltag stellst du in der Karte ein.";
+
+/* Button that turns a currency line back into a standalone account */
+"account.lines.unlink" = "Von der Karte lösen";
+
+/* Help under the unlink button */
+"account.lines.unlinkFooter" = "Es wird wieder ein eigenständiges Konto, mit allen Buchungen.";
+
+/* Form text for an account whose link to a card is no longer valid */
+"account.lines.broken" = "Dieses Konto ist mit einer Karte verknüpft, die es nicht gruppieren kann, deshalb erscheint es eigenständig. Löse es, um Linien hinzuzufügen.";
+
+/* Why the currency of a line cannot be changed */
+"account.lines.currencyLocked" = "Die Währung einer Linie ändert sich nicht. Brauchst du eine andere, füge der Karte eine neue Linie hinzu.";
+
+/* Why the card cannot switch to a currency one of its lines already uses; %@ = currency code */
+"account.lines.currencyCollision %@" = "Diese Karte hat schon eine Linie in %@. Wähle eine andere Währung.";
+
+/* Title of the alert shown when archiving a card that has currency lines */
+"account.lines.archiveTitle" = "Auch ihre Linien archivieren?";
+
+/* Message of the alert shown when archiving a card with lines; %@ = card name */
+"account.lines.archiveMessage %@" = "„%@“ hat Linien in anderen Währungen. Wenn du sie nicht archivierst, erscheinen sie als eigenständige Konten.";
+
+/* Alert button: archive the card and its lines */
+"account.lines.archiveAll" = "Linien auch archivieren";
+
+/* Alert button: archive only the card, lines stay as standalone accounts */
+"account.lines.archiveOnlyCard" = "Nur die Karte";

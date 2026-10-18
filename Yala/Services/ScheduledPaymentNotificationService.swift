@@ -516,7 +516,7 @@ final class ScheduledPaymentNotificationService {
             break
         }
 
-        let accounts = fetchCreditCardAccounts(context: context)
+        let accounts = remindableAccounts(fetchCreditCardAccounts(context: context), context: context)
         let today = Date.now
         let dayOfMonth = Calendar.current.component(.day, from: today)
 
@@ -530,6 +530,23 @@ final class ScheduledPaymentNotificationService {
             guard await send(title: account.name, body: message, deepLink: AlertDeepLink.account.deepLink(for: account.shortcutID)) else { continue }
 
             tracker.markNotifiedCreditCard(accountID: account.shortcutID, date: today)
+        }
+    }
+
+    /// Tarjeta con varias divisas: el recordatorio es de la tarjeta, así que una LÍNEA no avisa aunque lleve el ajuste
+    /// encendido (lo traía de antes de vincularse); si no, la notificación llegaría duplicada. Una línea rota se ve
+    /// suelta y avisa (`AccountCardLogic.ownsCardSettings`). Si no se pueden leer todas las cuentas, ninguna cuenta con
+    /// enlace avisa: mejor un aviso de menos que uno doble.
+    func remindableAccounts(_ candidates: [Account], context: ModelContext) -> [Account] {
+        guard candidates.contains(where: { $0.parentAccountID != nil }) else { return candidates }
+        do {
+            let roles = try context.fetch(FetchDescriptor<Account>()).lineRoles
+            return candidates.filter { AccountCardLogic.ownsCardSettings(roles[$0.shortcutID]) }
+        } catch {
+            #if DEBUG
+            print("ScheduledPaymentNotificationService: Error fetching accounts for card lines: \(error)")
+            #endif
+            return candidates.filter { $0.parentAccountID == nil }
         }
     }
 

@@ -121,4 +121,16 @@ extension Array where Element == Account {
             return !(roles[account.shortcutID]?.isLine ?? false)
         }
     }
+
+    /// Qué es cada cuenta de esta lista (`AccountLineLogic.resolve`). Para que una principal archivada cuente, la
+    /// lista tiene que traer TODAS las cuentas, archivadas incluidas.
+    var lineRoles: [UUID: AccountLineRole] {
+        AccountLineLogic.resolve(map { AccountLineNode($0) })
+    }
+
+    /// Estas cuentas agrupadas en tarjetas, en su orden (`AccountCardLogic.cards`). `roles` sale de `lineRoles` sobre
+    /// todas las cuentas, no solo sobre las que se enseñan.
+    func accountCards(roles: [UUID: AccountLineRole]) -> [AccountCard<Account>] {
+        AccountCardLogic.cards(self, roles: roles, id: \.shortcutID, currencyCode: \.currencyCode)
+    }
 }

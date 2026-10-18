@@ -7372,3 +7372,85 @@
 "chat.l14.logBody" = "Typ of spreek hem in: ‘25 uitgegeven aan een taxi met de kaart’";
 "chat.l14.logHint" = "Opent het toetsenbord om hem te typen";
 "chat.l14.askTitle" = "Vraag naar je financiën";
+
+/* Tarjeta con varias divisas (entrega 2) */
+/* Label of the converted total on a card with lines in several currencies */
+"panel.accounts.card.total" = "Totaal";
+
+/* Accessibility label of the picker that chooses which currency line of a card to show */
+"accountDetail.linePicker" = "Valuta van de kaart";
+
+/* Subtitle of a currency line nested under its card; %@ = currency code like USD */
+"account.lines.lineLabel %@" = "Lijn in %@";
+
+/* Account form section with the extra currency lines of a card */
+"account.lines.sectionTitle" = "Andere valuta's";
+
+/* Help under the other-currencies section of a credit card */
+"account.lines.sectionFooter" = "Rekent je kaart ook af in een andere valuta? Voeg een lijn toe: elke valuta houdt zijn eigen saldo en de kaart verschijnt maar één keer.";
+
+/* Button that adds a line in another currency to an account */
+"account.lines.add" = "Lijn in andere valuta toevoegen";
+
+/* Button that links an existing account as a currency line */
+"account.lines.link" = "Bestaande rekening koppelen";
+
+/* Title of the sheet that adds a currency line */
+"account.lines.addTitle" = "Nieuwe lijn";
+
+/* Help in the add-line sheet; %@ = the name the line will get */
+"account.lines.addFooter %@" = "De lijn heet ‘%@’ en krijgt het type en de kleur van de kaart.";
+
+/* Optional balance field when adding a currency line */
+"account.lines.addBalance" = "Huidig saldo (optioneel)";
+
+/* Title of the sheet that links an existing account to a card */
+"account.lines.linkTitle" = "Rekening koppelen";
+
+/* Help in the link sheet; %@ = card name */
+"account.lines.linkFooter %@" = "De rekening die je kiest wordt een lijn van ‘%@’. Haar transacties veranderen niet.";
+
+/* Empty state of the link sheet */
+"account.lines.linkEmpty" = "Je hebt geen andere rekeningen om te koppelen.";
+
+/* Why an account cannot be linked: same currency as the card */
+"account.lines.reject.sameCurrency" = "Heeft dezelfde valuta als deze kaart.";
+
+/* Why an account cannot be linked: it already has its own lines */
+"account.lines.reject.hasLines" = "Heeft al eigen lijnen in andere valuta's.";
+
+/* Why an account cannot be linked: the card already has a line in that currency; %@ = currency code */
+"account.lines.reject.currencyTaken %@" = "Deze kaart heeft al een lijn in %@.";
+
+/* Why an account cannot be linked: any other reason */
+"account.lines.reject.other" = "Kan niet aan deze kaart gekoppeld worden.";
+
+/* Text in the form of a currency line; %1$@ = currency code, %2$@ = card name */
+"account.lines.isLineOf %@ %@" = "Dit is de %1$@-lijn van ‘%2$@’. Herinnering en betaaldag stel je in bij de kaart.";
+
+/* Button that turns a currency line back into a standalone account */
+"account.lines.unlink" = "Loskoppelen van de kaart";
+
+/* Help under the unlink button */
+"account.lines.unlinkFooter" = "Het wordt weer een losse rekening, met al haar transacties.";
+
+/* Form text for an account whose link to a card is no longer valid */
+"account.lines.broken" = "Deze rekening is gekoppeld aan een kaart die haar niet kan groeperen, dus ze staat los. Koppel haar los om lijnen toe te voegen.";
+
+/* Why the currency of a line cannot be changed */
+"account.lines.currencyLocked" = "De valuta van een lijn verandert niet. Heb je een andere nodig, voeg dan een nieuwe lijn aan de kaart toe.";
+
+/* Why the card cannot switch to a currency one of its lines already uses; %@ = currency code */
+"account.lines.currencyCollision %@" = "Deze kaart heeft al een lijn in %@. Kies een andere valuta.";
+
+/* Title of the alert shown when archiving a card that has currency lines */
+"account.lines.archiveTitle" = "Ook de lijnen archiveren?";
+
+/* Message of the alert shown when archiving a card with lines; %@ = card name */
+"account.lines.archiveMessage %@" = "‘%@’ heeft lijnen in andere valuta's. Als je ze niet archiveert, verschijnen ze als losse rekeningen.";
+
+/* Alert button: archive the card and its lines */
+"account.lines.archiveAll" = "Ook de lijnen archiveren";
+
+/* Alert button: archive only the card, lines stay as standalone accounts */
+"account.lines.archiveOnlyCard" = "Alleen de kaart";

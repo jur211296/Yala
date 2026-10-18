@@ -4,7 +4,8 @@ import SwiftUI
 struct AccountsCarouselView: View {
     @Environment(\.yalaTheme) private var theme
     let viewModel: PanelViewModel
-    let orderedAccounts: [Account]
+    /// Una tarjeta por cuenta principal o suelta; las líneas en otra divisa van dentro de la suya.
+    let orderedCards: [AccountCard<Account>]
     let accountBalances: [PersistentIdentifier: Double]
     let accountPeriodExpenses: [PersistentIdentifier: Double]
     var isExpensesOnlyMode: Bool = false
@@ -25,7 +26,7 @@ struct AccountsCarouselView: View {
     @State private var carouselWidth: CGFloat = 0
 
     var body: some View {
-        let allCards = orderedAccounts
+        let allCards = orderedCards
         let totalCards = allCards.count + 1  // accounts + add button
         let cardWidth = PanelAccountCardLogic.cardWidth(containerWidth: carouselWidth)
 
@@ -76,11 +77,14 @@ struct AccountsCarouselView: View {
     // MARK: - Card View
 
     @ViewBuilder
-    private func cardView(at index: Int, accounts: [Account]) -> some View {
-        if index < accounts.count {
-            let account = accounts[index]
+    private func cardView(at index: Int, accounts cards: [AccountCard<Account>]) -> some View {
+        if index < cards.count {
+            let card = cards[index]
+            let account = card.head
             // `contains` y no `== .first`: con dos cuentas filtradas desde
-            // Registros el carrusel marcaba una sola, y el saldo ya suma las dos.
+            // Registros el carrusel marcaba una sola, y el saldo ya suma las dos. Con líneas, manda la principal: filtrar
+            // desde la tarjeta filtra la principal, y que el filtro incluya sus líneas es la entrega 3 (selectores y
+            // filtros). Marcarla por cualquier línea la enseñaba filtrando con un saldo que no la suma entera.
             let isSelected = viewModel.selectedAccountIDs.contains(account.persistentModelID)
 
             Button {
@@ -94,7 +98,9 @@ struct AccountsCarouselView: View {
                     isSelected: isSelected,
                     isExcludeMode: viewModel.isExcludeMode,
                     isExpensesOnlyMode: isExpensesOnlyMode,
-                    periodName: viewModel.selectedPeriod.displayName
+                    periodName: viewModel.selectedPeriod.displayName,
+                    lines: card.hasLines
+                        ? viewModel.lineAmounts(for: card, isExpensesOnlyMode: isExpensesOnlyMode) : []
                 )
             }
             .buttonStyle(.plain)

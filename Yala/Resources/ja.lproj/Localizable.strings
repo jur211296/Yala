@@ -7372,3 +7372,85 @@
 "chat.l14.logBody" = "入力するか話しかけてください：「カードでタクシーに25使った」";
 "chat.l14.logHint" = "キーボードを開いて入力します";
 "chat.l14.askTitle" = "お金について質問する";
+
+/* Tarjeta con varias divisas (entrega 2) */
+/* Label of the converted total on a card with lines in several currencies */
+"panel.accounts.card.total" = "合計";
+
+/* Accessibility label of the picker that chooses which currency line of a card to show */
+"accountDetail.linePicker" = "カードの通貨";
+
+/* Subtitle of a currency line nested under its card; %@ = currency code like USD */
+"account.lines.lineLabel %@" = "%@ の明細";
+
+/* Account form section with the extra currency lines of a card */
+"account.lines.sectionTitle" = "ほかの通貨";
+
+/* Help under the other-currencies section of a credit card */
+"account.lines.sectionFooter" = "カードが別の通貨でも請求されるなら、明細を追加しましょう。通貨ごとに残高を持ち、カードは1枚として表示されます。";
+
+/* Button that adds a line in another currency to an account */
+"account.lines.add" = "別の通貨の明細を追加";
+
+/* Button that links an existing account as a currency line */
+"account.lines.link" = "既存の口座をリンク";
+
+/* Title of the sheet that adds a currency line */
+"account.lines.addTitle" = "新しい明細";
+
+/* Help in the add-line sheet; %@ = the name the line will get */
+"account.lines.addFooter %@" = "明細の名前は「%@」で、カードと同じ種類と色になります。";
+
+/* Optional balance field when adding a currency line */
+"account.lines.addBalance" = "現在の残高（任意）";
+
+/* Title of the sheet that links an existing account to a card */
+"account.lines.linkTitle" = "口座をリンク";
+
+/* Help in the link sheet; %@ = card name */
+"account.lines.linkFooter %@" = "選んだ口座は「%@」の明細になります。記録は変わりません。";
+
+/* Empty state of the link sheet */
+"account.lines.linkEmpty" = "リンクできるほかの口座がありません。";
+
+/* Why an account cannot be linked: same currency as the card */
+"account.lines.reject.sameCurrency" = "このカードと同じ通貨です。";
+
+/* Why an account cannot be linked: it already has its own lines */
+"account.lines.reject.hasLines" = "すでにほかの通貨の明細があります。";
+
+/* Why an account cannot be linked: the card already has a line in that currency; %@ = currency code */
+"account.lines.reject.currencyTaken %@" = "このカードにはすでに %@ の明細があります。";
+
+/* Why an account cannot be linked: any other reason */
+"account.lines.reject.other" = "このカードにはリンクできません。";
+
+/* Text in the form of a currency line; %1$@ = currency code, %2$@ = card name */
+"account.lines.isLineOf %@ %@" = "「%2$@」の %1$@ の明細です。リマインダーと支払日はカード側で設定します。";
+
+/* Button that turns a currency line back into a standalone account */
+"account.lines.unlink" = "カードからリンク解除";
+
+/* Help under the unlink button */
+"account.lines.unlinkFooter" = "すべての記録を残したまま、単独の口座に戻ります。";
+
+/* Form text for an account whose link to a card is no longer valid */
+"account.lines.broken" = "この口座はまとめられないカードにリンクされているため、単独で表示されます。明細を追加するにはリンクを解除してください。";
+
+/* Why the currency of a line cannot be changed */
+"account.lines.currencyLocked" = "明細の通貨は変更できません。別の通貨が必要なら、カードに新しい明細を追加してください。";
+
+/* Why the card cannot switch to a currency one of its lines already uses; %@ = currency code */
+"account.lines.currencyCollision %@" = "このカードにはすでに %@ の明細があります。別の通貨を選んでください。";
+
+/* Title of the alert shown when archiving a card that has currency lines */
+"account.lines.archiveTitle" = "明細もアーカイブしますか？";
+
+/* Message of the alert shown when archiving a card with lines; %@ = card name */
+"account.lines.archiveMessage %@" = "「%@」にはほかの通貨の明細があります。アーカイブしない場合、単独の口座として表示されます。";
+
+/* Alert button: archive the card and its lines */
+"account.lines.archiveAll" = "明細もアーカイブ";
+
+/* Alert button: archive only the card, lines stay as standalone accounts */
+"account.lines.archiveOnlyCard" = "カードのみ";

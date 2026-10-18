@@ -1,10 +1,10 @@
 ---
 id: multi-currency-accounts-2-card-view
-status: backlog
+status: qa
 priority: medium
 area: "accounts, currency, panel, settings"
 created: 2026-10-10
-updated: 2026-10-10
+updated: 2026-10-18
 source: multi-currency-accounts (entrega 2 de A1, decidida por Jürgen el 2026-10-09/10)
 ---
 
@@ -16,7 +16,7 @@ Su tarjeta «Visa BCP» sale una sola vez, con una línea por divisa («S/ −1.
 en su divisa preferida («≈ S/ −1.548»). Puede añadir una línea en otra divisa a cualquier cuenta, y
 unir dos cuentas que ya tenía partidas sin que ningún movimiento cambie.
 
-Contexto y decisiones: [`multi-currency-accounts`](multi-currency-accounts.md) y
+Contexto y decisiones: [`multi-currency-accounts`](../backlog/multi-currency-accounts.md) y
 [`docs/multi-currency-accounts-impact-2026-10.md`](../../docs/multi-currency-accounts-impact-2026-10.md),
 secciones 3 (A), 4-6.
 
@@ -85,23 +85,58 @@ Selectores, filtros, presupuestos y captura (entrega 3). Informes y export (entr
 
 ## Criterio de hecho
 
-- [ ] Con el seed de tarjeta de dos líneas, el Panel enseña **una** tarjeta con dos saldos y un total
+- [x] Con el seed de tarjeta de dos líneas, el Panel enseña **una** tarjeta con dos saldos y un total
       «≈»; un XCUITest lo fija contando tarjetas.
-- [ ] Ajustes enseña la tarjeta una vez y sus líneas anidadas; XCUITest.
-- [ ] Añadir una línea en otra divisa desde una tarjeta de crédito y desde una cuenta de ahorro
+- [x] Ajustes enseña la tarjeta una vez y sus líneas anidadas; XCUITest.
+- [x] Añadir una línea en otra divisa desde una tarjeta de crédito y desde una cuenta de ahorro
       funciona; en la de crédito la acción está a la vista sin abrir menús.
-- [ ] Vincular dos cuentas con movimientos: el número de transacciones, sus importes y sus divisas
+- [x] Vincular dos cuentas con movimientos: el número de transacciones, sus importes y sus divisas
       son idénticos antes y después (test sobre el store, no sobre la pantalla).
-- [ ] Vincular dos cuentas de la misma divisa, o una cuenta que ya tiene líneas, se rechaza con un
+- [x] Vincular dos cuentas de la misma divisa, o una cuenta que ya tiene líneas, se rechaza con un
       mensaje que dice por qué.
-- [ ] Una línea no ofrece recordatorio ni día de pago, y una tarjeta con dos líneas genera una sola
+- [x] Una línea no ofrece recordatorio ni día de pago, y una tarjeta con dos líneas genera una sola
       notificación.
-- [ ] Copy nuevo en los 7 idiomas; `/l10n-check` en verde.
-- [ ] Capturas `antes`/`después` de las cuatro pantallas, con Dynamic Type grande y modo oscuro.
-- [ ] `/gate` en verde.
+- [x] Copy nuevo en los 16 idiomas; `/l10n-check` en verde.
+- [x] Capturas `antes`/`después` de las cuatro pantallas, con Dynamic Type grande y modo oscuro.
+- [x] `/gate` en verde.
 
 ## Dependencias
 
-- Depende de: [`multi-currency-accounts-1-model-and-sync`](multi-currency-accounts-1-model-and-sync.md).
+- Depende de: [`multi-currency-accounts-1-model-and-sync`](../done/multi-currency-accounts-1-model-and-sync.md).
 - Puede ir en paralelo con la 3 y la 4, pero la función no se publica hasta que la 3 esté: sin ella
   los selectores enseñan las líneas como cuentas sueltas.
+
+## Entregado (2026-10-18, PR contra 2.2)
+
+- **Panel:** una tarjeta (y un chip, plegada) por principal; dentro, un saldo por línea en su divisa y «Total ≈» en la
+  preferida. «Por pagar» se evalúa por línea; una línea en 0 no decide el rótulo.
+- **Ficha:** cabecera agregada y selector de línea (PEN / USD); la cuenta del período, la curva y los movimientos son de
+  la línea elegida. «Editar» abre esa línea; «Filtrar» filtra la tarjeta (su principal).
+- **Ajustes:** la tarjeta una vez con sus líneas anidadas; reordenar guarda cada línea justo detrás de su principal. Los
+  altos de fila escalan con el tamaño de texto.
+- **Formulario:** «Otras divisas» a la vista en tarjetas de crédito (y en cualquier cuenta con líneas); en el resto, al
+  final. Añadir línea (divisa + saldo opcional; hereda tipo, color e icono; se llama «Nombre · ISO»), vincular (lista con
+  el porqué bajo cada cuenta que no se puede), desvincular (pide Pro si ya estás al límite Free). Una línea tiene la
+  divisa fija y no tiene recordatorio. Una principal no puede pasar a la divisa de una de sus líneas.
+- **Archivar** una tarjeta con líneas pregunta: también las líneas, o solo la tarjeta. El downgrade archiva en cascada.
+- **Recordatorio:** una sola notificación por tarjeta (las líneas se saltan).
+- Seed `-uitest-seed tarjeta-dos-lineas`. Tests: `AccountLinesUITests` (5), `AccountCardLogicTests`,
+  `AccountLineCardViewTests`.
+
+Decidido por la sesión (Jürgen fuera): ver el Paso 0 del encargo `encargos/lanzados/2026-10-18-tarjeta-varias-divisas-entrega-2.md`
+y el cuerpo del PR.
+
+Queda abierto, con nota: borrar una principal deja sus líneas sueltas (como en la entrega 1); «Solo la tarjeta» al
+archivar puede dejar más cuentas contando que el límite Free; desarchivar la tarjeta no desarchiva sus líneas.
+
+## Guion de QA en el iPhone (Jürgen)
+
+1. Instala el build de 2.2 con este PR. En Ajustes › Cuentas, abre una tarjeta de crédito tuya.
+2. En «Otras divisas», toca «Añadir línea en otra divisa», elige USD y toca «Añadir». Vuelve al Panel: la tarjeta sale una
+   vez, con S/ y US$ y «Total ≈».
+3. Toca la tarjeta: arriba los dos saldos; cambia PEN ↔ USD y mira que los movimientos cambian.
+4. Si tienes otra cuenta en dólares con movimientos, vincúlala desde «Vincular cuenta existente» de otra tarjeta y
+   comprueba en Registros que sus movimientos siguen iguales.
+5. En el formulario de la línea USD: no hay recordatorio de pago; «Desvincular de la tarjeta» la devuelve a cuenta suelta.
+6. Con el recordatorio de la tarjeta encendido, el día de pago llega **una** notificación.
+7. Mira las capturas del PR y di si el diseño de la tarjeta te vale.
