@@ -61,6 +61,35 @@ nonisolated enum PanelAccountCardLogic {
         return "\(typeName) · \(currencyCode)"
     }
 
+    // MARK: - Tarjeta con varias divisas
+
+    /// «Tipo · PEN · USD»: las divisas de la tarjeta en el orden de sus líneas (la principal primero).
+    static func subtitle(typeName: String?, currencyCodes: [String]) -> String {
+        subtitle(typeName: typeName, currencyCode: currencyCodes.joined(separator: " · "))
+    }
+
+    /// El rótulo de una línea de la tarjeta. `nil` con saldo 0: no es deuda ni saldo a favor, y una línea recién
+    /// creada no puede quitarle el «Por pagar» a la tarjeta. Lo de «tarjeta de crédito» lo decide la principal, igual en
+    /// todas sus líneas. En «solo gastos» el rótulo es siempre el de lo gastado.
+    static func lineKind(isExpensesOnlyMode: Bool, isCreditCard: Bool, value: Double) -> AmountKind? {
+        guard isExpensesOnlyMode || value != 0 else { return nil }
+        return amountKind(isExpensesOnlyMode: isExpensesOnlyMode, isCreditCard: isCreditCard, value: value)
+    }
+
+    /// El rótulo de una tarjeta con varias líneas. «Por pagar» se evalúa por línea: si todas las que tienen saldo dicen
+    /// lo mismo, la tarjeta lo dice una vez; si no, «Saldo» arriba y cada línea que difiere lleva el suyo.
+    static func cardAmountKind(lineKinds: [AmountKind?]) -> AmountKind {
+        let decided = lineKinds.compactMap { $0 }
+        guard let first = decided.first, decided.allSatisfy({ $0 == first }) else { return .balance }
+        return first
+    }
+
+    /// Una línea enseña su propio rótulo solo cuando no es el de la tarjeta (una en 0 nunca).
+    static func showsLineLabel(lineKind: AmountKind?, cardKind: AmountKind) -> Bool {
+        guard let lineKind else { return false }
+        return lineKind != cardKind
+    }
+
     /// Ancho de cada tarjeta: el 80 % del carrusel, con techo, para que siempre asome la siguiente y se vea que hay
     /// más. Lo decide el ancho del carrusel, nunca el aparato: en la columna de la cabecera del iPad sale media más.
     static let maxCardWidth: CGFloat = 320

@@ -32,6 +32,11 @@ struct AccountFormView: View {
     @State private var showDiscardChangesAlert: Bool = false
     /// «Más opciones» plegado al crear la cuenta (L7-4).
     @State private var showsMoreOptions: Bool = false
+    /// Tarjeta con varias divisas: las hojas de añadir una línea y de vincular una cuenta existente.
+    @State private var showsAddLine: Bool = false
+    @State private var showsLinkAccount: Bool = false
+    /// Desvincular convierte la línea en otra cuenta que cuenta para el límite Free: sin hueco, se ofrece Pro.
+    @State private var showsUpgradeToUnlink: Bool = false
     @FocusState private var focusedField: Field?
     /// Abre a media altura (ticket `account-form-as-medium-detent-sheet`); se puede tirar hacia arriba.
     @State private var selectedDetent: PresentationDetent = .medium
@@ -71,7 +76,15 @@ struct AccountFormView: View {
                         generalSection
                         ContextualGuideBanner.accountForm(accountType: viewModel.selectedType)
                         currencySection
-                        if viewModel.selectedType == .creditCard {
+                        // Tarjeta con varias divisas: una línea dice de qué tarjeta es; una tarjeta de crédito (o una
+                        // cuenta que ya tiene líneas) enseña «Otras divisas» a la vista (decisión 3 de Jürgen).
+                        if viewModel.isCurrencyLockedAsLine || viewModel.hasBrokenLink {
+                            lineMembershipSection
+                        } else if showsLinesUpFront {
+                            cardLinesSection
+                        }
+                        // Recordatorio y día de pago: solo la principal, o la notificación llegaría doble.
+                        if viewModel.selectedType == .creditCard && viewModel.ownsCardSettings {
                             creditCardSection
                         }
                         if usesBalanceEditor {
@@ -92,6 +105,10 @@ struct AccountFormView: View {
 
                         if viewModel.isEditing {
                             actionsSection
+                            // En el resto de tipos, «Otras divisas» está disponible pero más discreta: al final.
+                            if viewModel.canManageLines && !showsLinesUpFront {
+                                cardLinesSection
+                            }
                         } else {
                             // Al crear, «Archivar» no tiene sentido y «Excluir» es una decisión avanzada: va
                             // plegado bajo «Más opciones», como en el rediseño aprobado (L7-4).
@@ -157,6 +174,15 @@ struct AccountFormView: View {
                     onDismiss: { showBalanceCalculator = false }
                 )
             }
+            .sheet(isPresented: $showsAddLine) {
+                AddAccountLineSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showsLinkAccount) {
+                LinkAccountLineSheet(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showsUpgradeToUnlink) {
+                UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            }
             .onChange(of: viewModel.isPresentingColorPicker) { _, isPresenting in
                 if isPresenting { focusedField = nil }
             }
@@ -214,6 +240,7 @@ struct AccountFormView: View {
             onDecline: { dismiss() }
         ))
         .modifier(DiscardAccountChangesAlert(isPresented: $showDiscardChangesAlert) { dismiss() })
+        .modifier(AccountLinesAlerts(viewModel: viewModel))
         .alert(
             viewModel.pendingCurrencyConversion.map { Self.currencyConversionTitle($0) } ?? "",
             isPresented: Binding(
@@ -436,7 +463,19 @@ struct AccountFormView: View {
     private var currencySection: some View {
         SectionBox(title: L10n.Account.currency) {
             VStack(alignment: .leading, spacing: DS.Spacing.none) {
-                if viewModel.isCurrencyEditable {
+                if viewModel.isCurrencyLockedAsLine {
+                    // Una línea de tarjeta no cambia de divisa: es lo que la hace línea.
+                    currencyRow(showsChevron: false, currency: viewModel.balanceDisplayCurrency)
+                        .accessibilityIdentifier("account_currency_locked")
+
+                    Text(L10n.Account.Lines.currencyLocked)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                        .accessibilityIdentifier("account_currency_locked_reason")
+                } else if viewModel.isCurrencyEditable {
                     NavigationLink {
                         CurrencySelectorView(selectedCurrency: $viewModel.selectedCurrency)
                             .swipeBack()
@@ -445,6 +484,17 @@ struct AccountFormView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("account_currency_link")
+
+                    // La tarjeta no puede pasar a la divisa de una de sus líneas: el guardado se bloquea y aquí dice por qué.
+                    if let collision = viewModel.currencyCollidingLine {
+                        Text(L10n.Account.Lines.currencyCollision(collision))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(DS.Semantic.errorForeground)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.horizontal)
+                            .padding(.bottom)
+                            .accessibilityIdentifier("account_currency_line_collision")
+                    }
                 } else {
                     // Sin `NavigationLink`: no hay destino al que llegar, así que tampoco hay tap.
                     // El motivo va debajo y no en un alert porque se puede leer ANTES de intentarlo
@@ -1280,9 +1330,158 @@ struct AccountFormView: View {
             accountWasRemoved = false
             dismiss()
         } else {
+            viewModel.loadAccounts()
             viewModel.loadTransactions()
             viewModel.loadPlans()
         }
+    }
+
+    // MARK: - Tarjeta con varias divisas (entrega 2)
+
+    /// «Otras divisas» va a la vista en una tarjeta de crédito, o en cualquier cuenta que ya tenga líneas.
+    private var showsLinesUpFront: Bool {
+        viewModel.canManageLines && (viewModel.selectedType == .creditCard || !viewModel.cardLines.isEmpty)
+    }
+
+    /// Las líneas de la tarjeta y las dos formas de añadir una: crear una nueva o vincular una cuenta que ya existe.
+    private var cardLinesSection: some View {
+        SectionBox(title: L10n.Account.Lines.sectionTitle) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                ForEach(viewModel.cardLines, id: \.persistentModelID) { line in
+                    HStack(spacing: DS.Spacing.md) {
+                        let code = normalizeCurrencyCode(line.currencyCode)
+                        Text(currencyInfo(for: CurrencyCode(rawValue: code) ?? .usd).flag)
+                            .font(DS.Typography.title)
+                            .accessibilityHidden(true)
+                        Text(L10n.Account.Lines.lineLabel(code))
+                            .font(DS.Typography.body)
+                        Spacer()
+                    }
+                    .padding()
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("account_line_\(normalizeCurrencyCode(line.currencyCode))")
+                    SubsectionDivider()
+                }
+
+                if !viewModel.addableLineCurrencies.isEmpty {
+                    lineActionRow(title: L10n.Account.Lines.add, icon: "plus.circle", id: "account_lines_add") {
+                        focusedField = nil
+                        showsAddLine = true
+                    }
+                    SubsectionDivider()
+                }
+                lineActionRow(title: L10n.Account.Lines.link, icon: "link", id: "account_lines_link") {
+                    focusedField = nil
+                    showsLinkAccount = true
+                }
+
+                if viewModel.selectedType == .creditCard {
+                    Text(L10n.Account.Lines.sectionFooter)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                }
+            }
+        }
+    }
+
+    private func lineActionRow(title: String, icon: String, id: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(DS.Typography.body)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(DS.Typography.body)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(.thAccent)
+            .padding()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+
+    /// Una línea: de qué tarjeta es y «Desvincular». Una cuenta con un enlace que ya no vale: por qué se ve suelta.
+    private var lineMembershipSection: some View {
+        SectionBox(title: L10n.Account.Lines.sectionTitle) {
+            VStack(alignment: .leading, spacing: DS.Spacing.none) {
+                Group {
+                    if let principal = viewModel.principalOfLine {
+                        Text(L10n.Account.Lines.isLineOf(
+                            currencyCode: normalizeCurrencyCode(viewModel.accountToEdit?.currencyCode ?? ""),
+                            cardName: principal.name))
+                    } else {
+                        Text(L10n.Account.Lines.broken)
+                    }
+                }
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding()
+                .accessibilityIdentifier("account_line_membership")
+
+                SubsectionDivider()
+
+                Button {
+                    if viewModel.unlinkFitsTheFreeLimit {
+                        viewModel.unlink()
+                    } else {
+                        showsUpgradeToUnlink = true
+                    }
+                } label: {
+                    HStack(spacing: DS.Spacing.md) {
+                        Image(systemName: "minus.circle")
+                            .accessibilityHidden(true)
+                        Text(L10n.Account.Lines.unlink)
+                        Spacer()
+                    }
+                    .foregroundStyle(.thAccent)
+                    .padding()
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("account_line_unlink")
+
+                Text(L10n.Account.Lines.unlinkFooter)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal)
+                    .padding(.bottom)
+            }
+        }
+    }
+}
+
+// MARK: - Avisos de la tarjeta con varias divisas
+
+/// «¿Archivar también sus líneas?» y el error de añadir, vincular o desvincular. Los botones de un `.alert` van con
+/// texto fijo (`swiftui-ds.md`); lo que cambia es el título y el mensaje.
+private struct AccountLinesAlerts: ViewModifier {
+    @Bindable var viewModel: AccountFormViewModel
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.Account.Lines.archiveTitle, isPresented: $viewModel.isAskingArchiveLines) {
+                Button(L10n.Account.Lines.archiveAll) { viewModel.answerArchiveLines(true) }
+                Button(L10n.Account.Lines.archiveOnlyCard) { viewModel.answerArchiveLines(false) }
+                Button(L10n.Common.cancel, role: .cancel) { viewModel.answerArchiveLines(nil) }
+            } message: {
+                Text(L10n.Account.Lines.archiveMessage(viewModel.accountToEdit?.name ?? viewModel.trimmedName))
+            }
+            .alert(L10n.Common.error, isPresented: $viewModel.isShowingLineActionError) {
+                Button(L10n.Common.understood, role: .cancel) {}
+            } message: {
+                Text(viewModel.lineActionError ?? "")
+            }
     }
 }
 

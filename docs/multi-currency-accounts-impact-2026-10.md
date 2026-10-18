@@ -753,7 +753,7 @@ la 3 y la 4 dependen de la 1.
    - Exclusión de las líneas del límite Free.
    - Entrada en la reconstrucción de UUID colapsados.
    - Review adversarial, porque es sync.
-2. **[`multi-currency-accounts-2-card-view`](../tickets/backlog/multi-currency-accounts-2-card-view.md):
+2. **[`multi-currency-accounts-2-card-view`](../tickets/qa/multi-currency-accounts-2-card-view.md):
    la tarjeta en pantalla.** Prioridad `medium`.
    - Carrusel y ficha agregados, con saldo por línea y total convertido con «≈».
    - Ajustes con líneas anidadas.

@@ -91,6 +91,9 @@ enum DevSeedProfile: String {
     /// `.movimientosSinCuenta` más la pata real de una cena de grupo pagada desde «Efectivo QA». Ver
     /// `DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount`.
     case pataDeGrupoSinCuenta = "pata-de-grupo-sin-cuenta"
+    /// Tarjeta con varias divisas (entrega 2): «Visa QA» en soles con su línea en dólares, más dos cuentas sueltas.
+    /// Ver `DevSeedAccountLines`.
+    case tarjetaDosLineas = "tarjeta-dos-lineas"
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -100,7 +103,8 @@ enum DevSeedProfile: String {
         switch self {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
-             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta: return 7
+             .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
+             .tarjetaDosLineas: return 7
         case .fichaMXVida: return 365
         case .realista, .ficha: return 730
         case .pesado: return 3650
@@ -156,7 +160,8 @@ final class DevSeedService {
             SessionState.shared.incrementDataVersion()
             return
         }
-        if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta {
+        if profile == .cuentaConMovimientos || profile == .movimientosSinCuenta || profile == .pataDeGrupoSinCuenta
+            || profile == .tarjetaDosLineas {
             defer { isSeeding = false }
             seedCategoriesIfNeeded(in: context)
             // Tipos de cambio de la semana: mover a «Dólares QA» convierte con la tasa de cada día, y en el
@@ -165,7 +170,9 @@ final class DevSeedService {
             let end = Date.now
             let start = Calendar.current.date(byAdding: .day, value: -7, to: end) ?? end
             DevSeedExchangeRates.create(startDate: start, endDate: end, rng: &rng, in: context)
-            if profile == .movimientosSinCuenta {
+            if profile == .tarjetaDosLineas {
+                DevSeedAccountLines.create(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            } else if profile == .movimientosSinCuenta {
                 DevSeedAccountRemoval.createOrphaned(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
             } else if profile == .pataDeGrupoSinCuenta {
                 DevSeedGroupRowsWithoutGroup.createGroupLegWithoutAccount(

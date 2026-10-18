@@ -37,7 +37,7 @@ struct PanelPanoramaSection: View {
             } else if accountsVisible && !viewModel.accounts.isEmpty {
                 PanelAccountChipsRow(
                     viewModel: viewModel,
-                    orderedAccounts: viewModel.orderedActiveAccounts(
+                    orderedCards: viewModel.orderedActiveAccountCards(
                         from: viewModel.accounts,
                         sortOrderNames: accountsSortOrderNames
                     ),

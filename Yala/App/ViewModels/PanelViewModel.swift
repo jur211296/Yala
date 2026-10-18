@@ -1111,6 +1111,21 @@ final class PanelViewModel {
         }
     }
 
+    /// Las cuentas activas agrupadas en tarjetas (tarjeta con varias divisas): una por principal o cuenta suelta, con
+    /// sus líneas dentro. Los roles se resuelven sobre TODAS las cuentas, archivadas incluidas.
+    func orderedActiveAccountCards(from accounts: [Account], sortOrderNames: [String]) -> [AccountCard<Account>] {
+        orderedActiveAccounts(from: accounts, sortOrderNames: sortOrderNames).accountCards(roles: accounts.lineRoles)
+    }
+
+    /// Lo de cada cuenta de la tarjeta en su divisa: saldo, o lo gastado en el período en modo «solo gastos».
+    func lineAmounts(for card: AccountCard<Account>, isExpensesOnlyMode: Bool) -> [AccountCardLogic.LineAmount] {
+        card.members.map { account in
+            let id = account.persistentModelID
+            let value = isExpensesOnlyMode ? accountPeriodExpenses[id] ?? 0 : accountBalances[id] ?? 0
+            return AccountCardLogic.LineAmount(value: value, currencyCode: account.currencyCode)
+        }
+    }
+
     /// Calcula el balance mostrado: total de todas las cuentas o de **las
     /// cuentas filtradas** (vivo, TC actual sobre saldo nativo). En el total
     /// respeta `includeGroupsInPanelTotal`: con el toggle OFF excluye las cuentas

@@ -31,7 +31,7 @@ struct PanelAccountsSection: View {
         } else {
             AccountsCarouselView(
                 viewModel: viewModel,
-                orderedAccounts: viewModel.orderedActiveAccounts(
+                orderedCards: viewModel.orderedActiveAccountCards(
                     from: viewModel.accounts,
                     sortOrderNames: accountsSortOrderNames
                 ),

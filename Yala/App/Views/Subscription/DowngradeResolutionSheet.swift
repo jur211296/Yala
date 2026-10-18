@@ -29,6 +29,18 @@ struct DowngradeResolutionSheet: View {
         accounts.billableUserAccounts
     }
 
+    /// Las divisas de cada tarjeta, la principal primero: «PEN · USD» en la fila de una tarjeta con líneas, para que se
+    /// vea que archivarla archiva también sus líneas.
+    private var cardCurrencies: [PersistentIdentifier: String] {
+        let cards = accounts.filter { !$0.isArchived && !$0.isSystemAccount }.accountCards(roles: accounts.lineRoles)
+        var result: [PersistentIdentifier: String] = [:]
+        for card in cards {
+            result[card.head.persistentModelID] = card.members.map { normalizeCurrencyCode($0.currencyCode) }
+                .joined(separator: " · ")
+        }
+        return result
+    }
+
     private var activeBudgets: [Budget] {
         budgets.filter { $0.isActive }
     }
@@ -199,7 +211,7 @@ struct DowngradeResolutionSheet: View {
                         .font(DS.Typography.bodyBold)
                         .foregroundStyle(.thPrimaryText)
 
-                    Text(account.currencyCode)
+                    Text(cardCurrencies[account.persistentModelID] ?? account.currencyCode)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)
                 }
@@ -311,9 +323,12 @@ struct DowngradeResolutionSheet: View {
     // MARK: - Archive Logic
 
     private func archiveExcessItems() {
-        // Archive accounts not selected
+        // Archive accounts not selected. Una tarjeta se archiva con sus líneas: si no, la línea pasa a leerse suelta,
+        // cuenta para el límite y esta hoja vuelve a salir en el arranque siguiente (review de la entrega 1). Sin
+        // excluir de estadísticas, como el resto de este archivado (`session-filters.md`).
         for account in activeAccounts {
             if !selectedAccountIDs.contains(account.persistentModelID) {
+                AccountLineService.archiveLines(of: account, among: accounts, excludeFromStatistics: false)
                 account.isArchived = true
             }
         }

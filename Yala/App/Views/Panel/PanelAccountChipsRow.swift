@@ -15,20 +15,22 @@ import SwiftUI
 
 struct PanelAccountChipsRow: View {
     let viewModel: PanelViewModel
-    let orderedAccounts: [Account]
+    /// Una por cuenta principal o suelta: una tarjeta con varias divisas es un chip, con su total en la preferida.
+    let orderedCards: [AccountCard<Account>]
     let isExpensesOnlyMode: Bool
     let onAddAccount: () -> Void
     let onEditAccount: (Account) -> Void
     let onOpenAccount: (Account) -> Void
 
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(CurrencyConverter.self) private var currencyConverter
     @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: DS.Spacing.sm) {
-                ForEach(Array(orderedAccounts.enumerated()), id: \.element.persistentModelID) { index, account in
-                    chip(for: account, index: index)
+                ForEach(Array(orderedCards.enumerated()), id: \.element.head.persistentModelID) { index, card in
+                    chip(for: card, index: index)
                 }
                 addChip
             }
@@ -39,7 +41,9 @@ struct PanelAccountChipsRow: View {
 
     // MARK: - Chip de cuenta
 
-    private func chip(for account: Account, index: Int) -> some View {
+    private func chip(for card: AccountCard<Account>, index: Int) -> some View {
+        let account = card.head
+        // Manda la principal, como en la tarjeta del carrusel (`AccountsCarouselView`).
         let isSelected = viewModel.selectedAccountIDs.contains(account.persistentModelID)
         let style = PanelAccountCardLogic.style(isSelected: isSelected, isExcludeMode: viewModel.isExcludeMode)
         let color = account.isSystemAccount ? Color(.systemGray) : Color(hex: account.colorHex)
@@ -48,13 +52,9 @@ struct PanelAccountChipsRow: View {
         let raw = isExpensesOnlyMode
             ? viewModel.accountPeriodExpenses[account.persistentModelID] ?? 0
             : viewModel.accountBalances[account.persistentModelID] ?? 0
-        let kind = PanelAccountCardLogic.amountKind(
-            isExpensesOnlyMode: isExpensesOnlyMode,
-            isCreditCard: AccountType(rawValue: account.type) == .creditCard,
-            value: raw
-        )
-        let shown = PanelAccountCardLogic.displayedValue(raw, kind: kind)
-        let currency = normalizeCurrencyCode(account.currencyCode)
+        let amount = chipAmount(card: card, singleValue: raw)
+        let shown = PanelAccountCardLogic.displayedValue(amount.value, kind: amount.kind)
+        let currency = amount.currencyCode
 
         return Button {
             onOpenAccount(account)
@@ -78,7 +78,8 @@ struct PanelAccountChipsRow: View {
                     currencyCode: currency,
                     font: DS.Typography.subheadline,
                     secondaryFont: DS.Typography.captionSmall,
-                    tint: .color(isFilled ? foreground.opacity(0.85) : theme.secondaryText)
+                    tint: .color(isFilled ? foreground.opacity(0.85) : theme.secondaryText),
+                    isEstimate: amount.isConverted
                 )
                 if style == .excluded {
                     Image(systemName: "minus.circle.fill")
@@ -100,7 +101,9 @@ struct PanelAccountChipsRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel(account: account, kind: kind, shown: shown, currency: currency, isFiltering: isFilled))
+        .accessibilityLabel(accessibilityLabel(
+            account: account, kind: amount.kind, shown: shown, currency: currency,
+            isApproximate: amount.isConverted, isFiltering: isFilled))
         .accessibilityAddTraits(isFilled ? .isSelected : [])
         .accessibilityIdentifier("panel_account_chip_\(index)")
         .pointerHighlight(cornerRadius: nil)
@@ -123,6 +126,7 @@ struct PanelAccountChipsRow: View {
         kind: PanelAccountCardLogic.AmountKind,
         shown: Double,
         currency: String,
+        isApproximate: Bool,
         isFiltering: Bool
     ) -> String {
         let label: String
@@ -131,9 +135,35 @@ struct PanelAccountChipsRow: View {
         case .toPay: label = L10n.PanelAccountCard.toPay
         case .spent: label = L10n.PanelAccountCard.spentInPeriod(viewModel.selectedPeriod.displayName)
         }
-        var text = "\(account.name). \(label): \(appPreferences.currency(shown, currencyCode: currency))"
+        let amount = appPreferences.currency(shown, currencyCode: currency)
+        var text = "\(account.name). \(label): \(isApproximate ? "≈ " : "")\(amount)"
         if isFiltering { text += ". \(L10n.PanelAccountCard.filtering)" }
         return text
+    }
+
+    /// Lo que enseña el chip: el importe de la cuenta en su divisa o, en una tarjeta con varias divisas, el total de sus
+    /// líneas en la preferida (`AccountCardLogic.total`), con el rótulo de la tarjeta (`cardAmountKind`).
+    private func chipAmount(
+        card: AccountCard<Account>, singleValue: Double
+    ) -> (value: Double, currencyCode: String, kind: PanelAccountCardLogic.AmountKind, isConverted: Bool) {
+        let isCreditCard = AccountType(rawValue: card.head.type) == .creditCard
+        guard card.hasLines else {
+            let kind = PanelAccountCardLogic.amountKind(
+                isExpensesOnlyMode: isExpensesOnlyMode, isCreditCard: isCreditCard, value: singleValue)
+            return (singleValue, normalizeCurrencyCode(card.head.currencyCode), kind, false)
+        }
+        let lines = viewModel.lineAmounts(for: card, isExpensesOnlyMode: isExpensesOnlyMode).map {
+            AccountCardLogic.LineAmount(value: $0.value, currencyCode: normalizeCurrencyCode($0.currencyCode))
+        }
+        let kind = PanelAccountCardLogic.cardAmountKind(lineKinds: lines.map {
+            PanelAccountCardLogic.lineKind(isExpensesOnlyMode: isExpensesOnlyMode, isCreditCard: isCreditCard, value: $0.value)
+        })
+        let target = appPreferences.defaultCurrencyCode.rawValue
+        let total = AccountCardLogic.total(lines, in: target) { value, code in
+            let outcome = currencyConverter.convertCheckedWithLatestRate(Decimal(value), from: code, to: target)
+            return (outcome.amount as NSDecimalNumber).doubleValue
+        }
+        return (total.value, target, kind, total.isConverted)
     }
 
     // MARK: - Agregar

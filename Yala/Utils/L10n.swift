@@ -264,6 +264,8 @@ enum L10n {
         static var filtering: String { ls("panel.accounts.card.filtering", comment: "Tag on the account card that is filtering the Panel") }
         /// Chip «Agregar» al final de la fila de cuentas de «Tus finanzas» (UX 2.2 · L3-9, variante 3).
         static var addChip: String { ls("panel.accounts.addChip", comment: "Last chip in the Panel account chips row: adds an account") }
+        /// Rótulo del total convertido de una tarjeta con varias divisas.
+        static var total: String { ls("panel.accounts.card.total", comment: "Label of the converted total on a card with lines in several currencies") }
         static func spentInPeriod(_ period: String) -> String {
             String(format: ls("panel.accounts.card.spentInPeriod %@", comment: "Label above the amount in expenses-only mode"), period)
         }
@@ -276,6 +278,7 @@ enum L10n {
         static var topCategories: String { ls("accountDetail.topCategories", comment: "Section with top expense categories") }
         static var latest: String { ls("accountDetail.latest", comment: "Section with latest records") }
         static var empty: String { ls("accountDetail.empty", comment: "No records in the period") }
+        static var linePicker: String { ls("accountDetail.linePicker", comment: "Picker that chooses which currency line of a card to show") }
         static func chartLabel(account: String, period: String) -> String {
             String(format: ls("accountDetail.chartLabel %@ %@", comment: "Accessibility label of the balance chart"), account, period)
         }
@@ -3802,6 +3805,49 @@ enum L10n {
             static func paymentNotification(_ accountName: String) -> String {
                 String(format: ls("account.creditCard.paymentNotification", comment: ""), accountName)
             }
+        }
+
+        // MARK: - Tarjeta con varias divisas (entrega 2)
+        enum Lines {
+            static func lineLabel(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.lineLabel %@", comment: ""), currencyCode)
+            }
+            static var sectionTitle: String { ls("account.lines.sectionTitle", comment: "") }
+            static var sectionFooter: String { ls("account.lines.sectionFooter", comment: "") }
+            static var add: String { ls("account.lines.add", comment: "") }
+            static var link: String { ls("account.lines.link", comment: "") }
+            static var addTitle: String { ls("account.lines.addTitle", comment: "") }
+            static func addFooter(_ lineName: String) -> String {
+                String(format: ls("account.lines.addFooter %@", comment: ""), lineName)
+            }
+            static var addBalance: String { ls("account.lines.addBalance", comment: "") }
+            static var linkTitle: String { ls("account.lines.linkTitle", comment: "") }
+            static func linkFooter(_ cardName: String) -> String {
+                String(format: ls("account.lines.linkFooter %@", comment: ""), cardName)
+            }
+            static var linkEmpty: String { ls("account.lines.linkEmpty", comment: "") }
+            static var rejectSameCurrency: String { ls("account.lines.reject.sameCurrency", comment: "") }
+            static var rejectHasLines: String { ls("account.lines.reject.hasLines", comment: "") }
+            static func rejectCurrencyTaken(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.reject.currencyTaken %@", comment: ""), currencyCode)
+            }
+            static var rejectOther: String { ls("account.lines.reject.other", comment: "") }
+            static func isLineOf(currencyCode: String, cardName: String) -> String {
+                String(format: ls("account.lines.isLineOf %@ %@", comment: ""), currencyCode, cardName)
+            }
+            static var unlink: String { ls("account.lines.unlink", comment: "") }
+            static var unlinkFooter: String { ls("account.lines.unlinkFooter", comment: "") }
+            static var broken: String { ls("account.lines.broken", comment: "") }
+            static var currencyLocked: String { ls("account.lines.currencyLocked", comment: "") }
+            static func currencyCollision(_ currencyCode: String) -> String {
+                String(format: ls("account.lines.currencyCollision %@", comment: ""), currencyCode)
+            }
+            static var archiveTitle: String { ls("account.lines.archiveTitle", comment: "") }
+            static func archiveMessage(_ cardName: String) -> String {
+                String(format: ls("account.lines.archiveMessage %@", comment: ""), cardName)
+            }
+            static var archiveAll: String { ls("account.lines.archiveAll", comment: "") }
+            static var archiveOnlyCard: String { ls("account.lines.archiveOnlyCard", comment: "") }
         }
 
     }

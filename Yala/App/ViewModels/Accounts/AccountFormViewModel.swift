@@ -21,6 +21,8 @@ final class AccountFormViewModel {
 
     // MARK: - Dependencies
     private var modelContext: ModelContext?
+    /// El contexto, para la extensión de las líneas (`AccountFormViewModel+Lines.swift`).
+    var modelContextForLines: ModelContext? { modelContext }
     var accountToEdit: Account?
     var existingNames: [String] = []
     private(set) var allTransactions: [TransactionItem] = []
@@ -85,6 +87,7 @@ final class AccountFormViewModel {
     /// archivada no la re-incluye, porque el toggle sigue siendo del usuario.
     func setArchived(_ archived: Bool) {
         isArchived = archived
+        askArchiveLinesIfNeeded(archived: archived)
         if archived {
             guard !excludeFromStatistics else { return }
             excludeFromStatistics = true
@@ -106,6 +109,20 @@ final class AccountFormViewModel {
     // Credit card
     var creditCardPaymentReminder: Bool = false
     var creditCardPaymentDay: Int = 1
+
+    // MARK: - Tarjeta con varias divisas (entrega 2)
+
+    /// Todas las cuentas, archivadas incluidas: `AccountLineLogic` decide con ellas qué es esta cuenta. Las reglas viven
+    /// en `AccountFormViewModel+Lines.swift`.
+    var allAccounts: [Account] = []
+    /// Archivar una tarjeta con líneas vivas pregunta qué hacer con ellas.
+    var isAskingArchiveLines: Bool = false
+    /// La respuesta: `true` archiva también las líneas al guardar, `false` las deja como cuentas sueltas, `nil` sin
+    /// preguntar todavía.
+    var archiveLinesChoice: Bool?
+    /// Un añadir, vincular o desvincular que falló, con su motivo ya traducido.
+    var lineActionError: String?
+    var isShowingLineActionError: Bool = false
 
     // MARK: - UI State
     var isShowingDeleteError: Bool = false
@@ -386,6 +403,7 @@ final class AccountFormViewModel {
 
     func setContext(_ context: ModelContext) {
         self.modelContext = context
+        loadAccounts()
         loadTransactions()
         loadPlans()
         initializeBalanceIfNeeded()
@@ -422,6 +440,7 @@ final class AccountFormViewModel {
     /// del guardado, sin `await` de por medio; si el guardado falla, `loadTransactions()` y `loadPlans()` las
     /// vuelven a traer.
     func releaseLoadedRows() {
+        allAccounts = []
         allTransactions = []
         allScheduledPayments = []
         allFavoritePayments = []
@@ -537,7 +556,7 @@ final class AccountFormViewModel {
     }
 
     var canSave: Bool {
-        isNameValid && isNameUnique && isCurrencyValid && isBalanceValid
+        isNameValid && isNameUnique && isCurrencyValid && isBalanceValid && currencyCollidingLine == nil
     }
 
     var isEditing: Bool {
@@ -692,6 +711,11 @@ final class AccountFormViewModel {
         }
 
         if let account = accountToEdit {
+            // Archivar la tarjeta con «también las líneas»: se leen ANTES de escribir `isArchived` en la principal (con
+            // ella archivada sus líneas se leerían sueltas), y van en el mismo guardado.
+            if isArchived, !account.isArchived, archiveLinesChoice == true {
+                AccountLineService.archiveLines(of: account, among: allAccounts, excludeFromStatistics: true)
+            }
             // Update account properties
             applyBaseAccountProperties(to: account, trimmedAccountNumber: trimmedAccountNumber)
 

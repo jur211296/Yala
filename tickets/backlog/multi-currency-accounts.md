@@ -47,7 +47,7 @@ Este ticket queda como épica. El trabajo vive en cuatro entregas:
 | # | Ticket | Prioridad | Depende de |
 |---|---|---|---|
 | 1 | [`multi-currency-accounts-1-model-and-sync`](multi-currency-accounts-1-model-and-sync.md): modelo, sync y esquema, sin UI | high | `personal-cloudkit-schema-snapshot-misses-optional-fields` |
-| 2 | [`multi-currency-accounts-2-card-view`](multi-currency-accounts-2-card-view.md): la tarjeta en Panel, ficha, Ajustes y formulario | medium | 1 |
+| 2 | [`multi-currency-accounts-2-card-view`](../qa/multi-currency-accounts-2-card-view.md): la tarjeta en Panel, ficha, Ajustes y formulario | medium | 1 |
 | 3 | [`multi-currency-accounts-3-pickers-and-capture`](multi-currency-accounts-3-pickers-and-capture.md): selectores, filtros, presupuestos y captura | medium | 1 |
 | 4 | [`multi-currency-accounts-4-reports-and-export`](multi-currency-accounts-4-reports-and-export.md): informes, flujo de caja y export | medium | 1 |
 

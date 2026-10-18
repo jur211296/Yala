@@ -621,7 +621,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | more-tab-missing-profile-button | done | tickets/done/more-tab-missing-profile-button.md |
 | multi-currency-accounts | backlog | tickets/backlog/multi-currency-accounts.md |
 | multi-currency-accounts-1-model-and-sync | done | tickets/done/multi-currency-accounts-1-model-and-sync.md |
-| multi-currency-accounts-2-card-view | backlog | tickets/backlog/multi-currency-accounts-2-card-view.md |
+| multi-currency-accounts-2-card-view | qa | tickets/qa/multi-currency-accounts-2-card-view.md |
 | multi-currency-accounts-3-pickers-and-capture | backlog | tickets/backlog/multi-currency-accounts-3-pickers-and-capture.md |
 | multi-currency-accounts-4-reports-and-export | backlog | tickets/backlog/multi-currency-accounts-4-reports-and-export.md |
 | navigation-uitests-look-for-the-iphone-tab-bar-on-ipad | backlog | tickets/backlog/navigation-uitests-look-for-the-iphone-tab-bar-on-ipad.md |
