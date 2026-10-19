@@ -3446,9 +3446,9 @@
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "グループに問題が発生しました";
-"groups.bridge.errorTransaction" = "個人の記録は自動的に再試行されます。";
-"groups.bridge.errorTransactionUpdate" = "変更は個人の記録に反映されませんでした。もう一度試みます。";
-"groups.bridge.errorDelete" = "個人の記録を削除できませんでした。";
+"groups.bridge.errorTransaction" = "この支出をあなたの口座に記録できませんでした。こちらで自動的にもう一度試すので、何もする必要はありません。";
+"groups.bridge.errorTransactionUpdate" = "あなたの口座でこの支出を更新できませんでした。こちらで自動的にもう一度試すので、何もする必要はありません。";
+"groups.bridge.errorDelete" = "この支出をあなたの口座から削除できませんでした。「記録」に残っている場合は、そこから削除してください。";
 "groups.bridge.errorNoAccounts" = "口座が設定されていません。先に1つ作成してください。";
 "groups.sync.errorMemberSetup" = "グループに参加しましたが、識別情報に問題があります。アプリを再起動してください。";
 
@@ -4919,8 +4919,6 @@
 /* Body of the provider chooser in the cloud migration entry */
 "storage.signin.body" = "データをクラウドに保存するにはYalaアカウントが必要です。AppleまたはGoogleでサインインしてください。";
 
-/* Provider-binding note (R9) below the sign-in buttons */
-"storage.signin.note" = "Yalaアカウントは選んだ方法に紐づきます。次回以降も同じ方法でサインインしてください。";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
 "groups.empty.signedOut.title" = "グループはアカウントに保存されています";
@@ -4929,7 +4927,7 @@
 "groups.empty.signedOut.message" = "サインインすると、共有しているグループを表示できます。";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
-"groups.empty.signedOut.action" = "サインイン";
+"groups.empty.signedOut.action" = "自分のアカウントにサインイン";
 
 /* H-2026-07-18-6 — caption while the sign-out saves pending changes */
 "settings.signOutWorking" = "保留中の変更を保存しています…";
@@ -4957,7 +4955,7 @@
 /* Fase 1: subtitulo de la fila Eliminar mi cuenta */
 
 /* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
-"settings.deleteAccountCrossReferHint" = "データだけ消去してアカウントは残したいですか？「自分のデータを消去」を使ってください。";
+"settings.deleteAccountCrossReferHint" = "データだけ消去してアカウントは残したいですか？「データを消去」を使ってください。";
 
 
 
@@ -5049,10 +5047,10 @@
 "settings.deleteAccountScopeCloudCloud" = "アカウントとすべてのデータが完全に削除されます";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
-"settings.deleteAccountScopeCloudGroupsOnly" = "アカウントが削除され、グループから退出します";
+"settings.deleteAccountScopeCloudGroupsOnly" = "Yalaアカウントが削除されます";
 
 /* D4 Eliminar cuenta: fila grupos */
-"settings.deleteAccountScopeGroups" = "「削除されたユーザー」と表示されたままになります";
+"settings.deleteAccountScopeGroups" = "あなたの名前は「削除されたユーザー」になります";
 
 /* D4 Cerrar sesión (privado): fila dispositivo */
 "settings.signOutScopeDevicePrivate" = "このデバイスから削除されます。その前にiCloudへのアップロードを完了します";
@@ -5215,7 +5213,7 @@
 "settings.batchLeaveStatSkipped" = "未処理";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "「自分のデータを消去」からいつでも再開できます。";
+"settings.batchLeaveStoppedBody" = "「データを消去」からいつでも再開できます。";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "精算";
@@ -5966,7 +5964,7 @@
 "settings.signOutAttestExportFailed" = "ファイルを作成できませんでした。もう一度お試しください。";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
-"groups.attestTerminalBanner" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。この端末での変更はグループに届かないため、当面は別の端末をお使いください。";
+"groups.attestTerminalBanner" = "この端末は1日前からグループに変更を送信できません。ここで記録した内容はグループの誰にも表示されないため、別の端末をお使いください。";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "1日以上、サーバーが求めるセキュリティ確認を通過できていません。この端末で記録した内容は端末内には残りますが、クラウドのアカウントには届きません。当面は別の端末をお使いください。";
@@ -7577,3 +7575,13 @@
 "l20d.groups.leaveAll.confirmAction" = "すべて退出";
 "l20d.groups.leaveAll.confirmMessage" = "%@から退出します。";
 "l20d.groups.leaveAll.confirmMessageGeneric" = "未精算の残高がないすべてのグループから退出します。";
+
+/* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
+"uxcs.removeDeviceData.row" = "このiPhoneから自分のデータを削除";
+"uxcs.removeDeviceData.subtitle" = "iCloudには残ります";
+"uxcs.removeDeviceData.sheetTitle" = "このiPhoneからデータを削除しますか？";
+"uxcs.removeDeviceData.confirm" = "データを削除";
+"uxcs.signOutUpload.title" = "変更をiCloudにアップロード中…";
+"uxcs.signOutUpload.pending" = "アップロード待ちの変更：%d件";
+"uxcs.migrated.rejoinSentence" = "このグループは移動しました。最新の状態を見るには、もう一度サインインしてください。";
+"uxcs.deleteAccount.finalGroupsOnly" = "Yalaアカウントは削除されます。この端末にあるデータは残ります。";

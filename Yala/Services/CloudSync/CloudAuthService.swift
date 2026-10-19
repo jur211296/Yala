@@ -206,6 +206,12 @@ final class CloudAuthService: NSObject {
         client?.currentSession?.user.id.uuidString.lowercased()
     }
 
+    /// UX 2.2 · L20-9: el correo de la cuenta de la sesión, para enseñarlo en «Tu cuenta de Yala». Solo lectura y solo
+    /// para pintar: nada decide con él. Lo trae la sesión aunque Apple solo entregue el correo en el primer inicio de sesión.
+    var sessionEmail: String? {
+        client?.currentSession?.user.email
+    }
+
     /// **Cuántas veces cambió la sesión en este proceso**: sube con cada inicio de sesión que entra y con cada `signOut()`.
     /// En memoria a propósito —un relanzamiento vuelve a 0— y sin el seam de `hasSession`. Lo lee la tarjeta de «Migrar a la
     /// nube» para atar un rechazo de la comprobación a la sesión que lo recibió, no solo a la cuenta: cerrar y volver a

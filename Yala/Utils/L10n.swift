@@ -8476,7 +8476,6 @@ enum L10n {
         enum SignIn {
             static var title: String { ls("storage.signin.title", comment: "") }
             static var body: String { ls("storage.signin.body", comment: "") }
-            static var note: String { ls("storage.signin.note", comment: "") }
         }
     }
 

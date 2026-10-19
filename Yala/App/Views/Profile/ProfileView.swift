@@ -147,7 +147,9 @@ struct ProfileView: View {
     @State private var isExportingBeforeLosingChanges = false
     /// L20-8 (decisión de Jürgen, 2026-10-18): «Exportar antes» en las hojas de cerrar sesión sin copia y de eliminar la
     /// cuenta de la nube. Qué hoja lo pidió, para volver a ella al cerrar la de compartir (o el aviso de error).
-    private enum LossExportReturn { case signOut, deleteAccount }
+    /// `.signOutExportNotice` (L20-7): «Exportar mis registros» desde el aviso de los 45 s; al cerrar la hoja de compartir
+    /// vuelve ESE aviso, porque el cierre sigue parado esperando una decisión.
+    private enum LossExportReturn { case signOut, deleteAccount, signOutExportNotice }
     @State private var pendingLossExport: LossExportReturn?
     @State private var lossExportReturn: LossExportReturn?
     @State private var lossExportFile: ExportedFile?
@@ -367,6 +369,9 @@ struct ProfileView: View {
             case .deleteAccount:
                 guard deletionService.phase != .working, deleteAccountScope == nil else { return }
                 deleteAccountScope = DeleteAccountScope(summary: GroupService.shared.accountDeletionGroupsSummary())
+            case .signOutExportNotice:
+                guard case .blocked(_, .exportUnconfirmed) = signOutCoordinator.phase else { return }
+                syncSignOutUI(from: signOutCoordinator.phase)
             }
         }
     }
@@ -450,9 +455,38 @@ struct ProfileView: View {
     /// H-2026-07-18-6: caption honesto mientras el sign-out solo-grupos ESPERA a que se asienten writes
     /// internos (retry interno) — el bloqueo típico es transitorio y antes obligaba a tocar la fila varias
     /// veces. Compartido por las filas "Cerrar sesión" y "Cerrar sesión de grupos" (D2).
+    ///
+    /// **UX 2.2 · L20-7 (decisión de Jürgen, 2026-10-18): la espera de iCloud se ve.** Cuando lo que se espera es que lo
+    /// último llegue a iCloud (`iCloudExportWait`), en vez del pie gris de una línea sale una tarjeta con progreso: qué
+    /// está pasando y cuántos cambios faltan. Las demás esperas del cierre no suben a iCloud y conservan su pie.
     @ViewBuilder
     private var signOutWorkingCaption: some View {
-        if signOutCoordinator.phase == .working && signOutCoordinator.waitingForPending {
+        if signOutCoordinator.phase == .working, let wait = signOutCoordinator.iCloudExportWait {
+            HStack(alignment: .center, spacing: DS.Spacing.md) {
+                ProgressView()
+                    .controlSize(.regular)
+                    .tint(theme.accent)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(L10n.UXCS.signOutUploadTitle)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let pending = wait.pending, pending > 0 {
+                        Text(L10n.UXCS.signOutUploadPending(pending))
+                            .font(DS.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(DS.Spacing.md)
+            .background(theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.FormRow.paddingV)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("profile_signout_upload_card")
+        } else if signOutCoordinator.phase == .working && signOutCoordinator.waitingForPending {
             Text(L10n.Settings.signOutWorking)
                 .font(DS.Typography.caption)
                 .foregroundStyle(.secondary)
@@ -528,6 +562,55 @@ struct ProfileView: View {
         case .groups: return L10n.UXL20D.wipeRowKeepsGroups
         case .nothing: return L10n.UXL20D.wipeRowKeepsNothing
         }
+    }
+
+    /// UX 2.2 · L20-6: sin cuenta de Yala (celda C) la fila de salida se llama «Quitar mis datos de este iPhone» y va en su
+    /// propia tarjeta al final de Ajustes, separada de «Calificar». La regla vive en `DestructiveScopeLogic`, y la hoja que
+    /// abre la lee del MISMO camino (`SignOutScope.path`).
+    private var signOutRowRemovesDeviceData: Bool {
+        DestructiveScopeLogic.signOutRemovesDeviceData(path: signOutRowPath)
+    }
+
+    /// «Siguen en tu iCloud», solo si hay copia: sin ella la hoja dice que no queda ninguna, y el subtítulo mentiría. Es la
+    /// misma pregunta que hace la hoja al tocar (`makeSignOutScope`).
+    private var removeDeviceDataSubtitle: String? {
+        guard !UITestHooks.privateSignOutNoCopy, CloudSessionSignOut.privateCopyChannel() == .iCloud else { return nil }
+        return L10n.UXCS.removeDeviceDataSubtitle
+    }
+
+    /// La fila de salida, UNA sola construcción para los dos sitios donde puede ir (su id lo cuenta un test).
+    private var signOutRow: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                requestSignOut()
+            } label: {
+                settingsRowContent(
+                    icon: "rectangle.portrait.and.arrow.right",
+                    title: signOutRowRemovesDeviceData ? L10n.UXCS.removeDeviceDataRow : L10n.Settings.signOut,
+                    subtitle: signOutRowRemovesDeviceData ? removeDeviceDataSubtitle : nil,
+                    iconColor: .red,
+                    showSpinner: signOutCoordinator.phase == .working)
+            }
+            .buttonStyle(.plain)
+            .disabled(signOutCoordinator.phase == .working || deletionService.phase == .working)
+            .accessibilityIdentifier("profile_security_signout")
+
+            signOutWorkingCaption
+        }
+    }
+
+    /// L20-6: la tarjeta suelta del final, sin cabecera (ninguna decidida), con el mismo bloque que las secciones.
+    private var removeDeviceDataSection: some View {
+        signOutRow
+            .solidCard()
+            .padding(.horizontal, DS.Spacing.lg)
+    }
+
+    /// L20-10: la alerta final de «Eliminar mi cuenta» dice lo que pasa en SU celda (`DestructiveScopeLogic`).
+    private var deleteAccountFinalMessage: String {
+        DestructiveScopeLogic.deleteAccountFinalKeepsThisDevice(deleteAccountScopeOperation)
+            ? L10n.UXCS.deleteAccountFinalGroupsOnly
+            : L10n.Settings.deleteAccountFinalMessage
     }
 
     /// §3.2: subtítulo dinámico de la fila "Dónde viven tus datos" — refleja el modo real.
@@ -681,6 +764,11 @@ struct ProfileView: View {
                             ayudaSection
                             legalSection
 
+                            // UX 2.2 · L20-6: «Quitar mis datos de este iPhone», sola y al final.
+                            if signOutRowRemovesDeviceData {
+                                removeDeviceDataSection
+                            }
+
                             // Version info
                             Text(AppVersionInfo.footer())
                                 .accessibilityIdentifier("profile_version_footer")
@@ -821,7 +909,9 @@ struct ProfileView: View {
                 cloudLabel: scope.cloudLabel,
                 onConfirm: { pendingSignOutScope = scope },
                 // L20-8: solo las celdas sin copia lo ofrecen (lo decide `DestructiveScopeLogic.secondaryActions`).
-                onExport: { pendingLossExport = .signOut }))
+                onExport: { pendingLossExport = .signOut },
+                // L20-6: la fila «Quitar mis datos de este iPhone» abre su hoja con el mismo verbo.
+                removesDeviceData: DestructiveScopeLogic.signOutRemovesDeviceData(path: scope.path)))
         }
         // L20-8: el archivo de todo, antes de cerrar sesión sin copia o de eliminar la cuenta de la nube.
         .sheet(item: $lossExportFile, onDismiss: { returnFromLossExport() }) { file in
@@ -858,16 +948,30 @@ struct ProfileView: View {
         }
         // Paso 9 · la espera del export se agotó: el aviso cuenta lo que no llegó a iCloud y ofrece cerrar
         // igualmente o seguir esperando (decisión de Jürgen del 2026-09-09). Nunca borra sin este gesto.
+        //
+        // UX 2.2 · L20-7 (decisión de Jürgen, 2026-10-18): **la salida que no pierde nada va primero.** «Exportar mis
+        // registros» (el archivo de todo, sin asistente: L20-8) · «Esperar» · «Cerrar sesión igualmente» al final, como
+        // el aviso equivalente de la nube. Ninguno lleva `role: .cancel`: iOS manda ese botón al final y desordenaría la
+        // lista (medido el 2026-10-19, iOS 27.0: con «Esperar» como `.cancel` sale Exportar · Cerrar sesión igualmente ·
+        // Esperar). **El precio, también medido: sin ningún `.cancel`, SwiftUI añade un «Cancelar» suyo al final**, que
+        // cierra el aviso y deja el cierre parado (tocar la fila lo vuelve a enseñar). Cuál de las dos formas prefiere
+        // Jürgen está preguntado en la card de L20-7. Exportar no toca el cierre, que sigue parado: al cerrar la hoja de
+        // compartir vuelve este aviso. Los textos son literales: un `actions` que dependa del `@State` rompe la app
+        // (`swiftui-ds.md`).
         .alert(L10n.Settings.signOutExportPendingTitle, isPresented: $showSignOutExportAlert) {
+            Button(L10n.Settings.signOutAttestExportButton) {
+                exportEverythingBeforeLosingIt(returningTo: .signOutExportNotice)
+            }
+            .accessibilityIdentifier("signout_export_export")
+            // «Esperar» sigue esperando y cierra solo cuando llega lo último: no cancela el cierre.
+            Button(L10n.Settings.signOutWaitButton) {
+                Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
+            }
+            .accessibilityIdentifier("signout_export_wait")
             Button(L10n.Settings.signOutExportDiscardButton, role: .destructive) {
                 Task { await CloudSessionSignOut.shared.exitDiscardingUnconfirmed(context: modelContext) }
             }
             .accessibilityIdentifier("signout_export_discard")
-            // «Esperar» sigue esperando y cierra solo cuando llega lo último: no cancela el cierre.
-            Button(L10n.Settings.signOutWaitButton, role: .cancel) {
-                Task { await CloudSessionSignOut.shared.resumeWaitingForExport(context: modelContext) }
-            }
-            .accessibilityIdentifier("signout_export_wait")
         } message: {
             Text(signOutExportPending > 0
                  ? L10n.Settings.signOutExportPendingMessage(signOutExportPending)
@@ -979,7 +1083,8 @@ struct ProfileView: View {
             }
             Button(L10n.Common.cancel, role: .cancel) {}
         } message: {
-            Text(L10n.Settings.deleteAccountFinalMessage)
+            // L20-10: el texto de su celda (en la cuenta de grupos con sesión privada, lo de este teléfono se queda).
+            Text(deleteAccountFinalMessage)
         }
         .alert(L10n.Settings.deleteAccountErrorTitle, isPresented: $showDeleteAccountError) {
             Button(L10n.Settings.deleteAccountRetry) {
@@ -1249,6 +1354,9 @@ struct ProfileView: View {
     /// CTA «Activar Yala completo» para quien tiene la shell reducida a Grupos. Abre el flujo guiado
     /// (FullModeActivationView vía router), que enciende el eje 1 y con eso des-reduce la shell.
     /// Molde de `MoreView.activateFullYalaButton`.
+    /// UX 2.2 · L19-15 (decisión de Jürgen, 2026-10-18): en solo grupos, la puerta al resto de Yala se DESTACA. Era una fila
+    /// más sobre tarjeta blanca; ahora va rellena del color de la app (el mismo relleno que `YalaPrimaryButton`), con el
+    /// texto en blanco. Sin degradado ni brillo.
     private var activateFullYalaSection: some View {
         Button {
             RouterEntryGate.shared.submit(.presentFullModeActivation)
@@ -1260,32 +1368,33 @@ struct ProfileView: View {
                     .frame(width: DS.FormRow.iconWidth, height: DS.FormRow.iconWidth)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(theme.accent)
+                            .fill(Color.white.opacity(0.2))
                     )
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
                     Text(L10n.Groups.Activate.title)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.primary)
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.white)
 
                     Text(L10n.Groups.Activate.subtitle)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.85))
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(DS.Typography.chevron)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.white.opacity(0.8))
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, DS.FormRow.paddingH)
             .padding(.vertical, DS.FormRow.paddingV)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .solidCard(radius: DS.Radius.xl)
-        .dsSubtleShadow()
+        .background(theme.accent, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
         .padding(.horizontal, DS.Spacing.lg)
         .accessibilityIdentifier("profile_activate_full_yala")
     }
@@ -1425,7 +1534,9 @@ struct ProfileView: View {
                 // La fila "iCloud" se oculta en Modo Nube (`.cloud`): `iCloudSyncSettingsView` mentiría
                 // (el store personal ya no lo espeja el mirror). Cada bloque condicional lleva su divisor
                 // arriba ⇒ nunca queda un divisor colgante si una fila anterior se oculta.
-                if CloudSyncFlags.storageMode != .cloud {
+                // UX 2.2 · L19-15 (decisión de Jürgen, 2026-10-18): en solo grupos, tampoco. No hay datos personales que
+                // sincronizar, y la fila hablaba de iCloud a quien no sabía dónde estaban sus grupos.
+                if CloudSyncFlags.storageMode != .cloud && !isGroupsFocusedShell {
                     SubsectionDivider()
                     profileRow(
                         icon: "icloud.fill",
@@ -1447,7 +1558,12 @@ struct ProfileView: View {
                 // lectura (`GroupsAssociationPresence`) — leerlo dos veces es cómo divergen, y divergían.
                 // Quien decide qué se ofrece DENTRO bajo el kill es `offersCloudMigrationEntry`, en
                 // `StorageSettingsView` — abrir la fila no abre la migración.
-                if StorageRowGateLogic.isVisible(
+                //
+                // UX 2.2 · L19-15: en solo grupos la fila no sale (opción 1 de
+                // `groups-only-session-storage-screen-says-data-lives-in-icloud`). Su pantalla decía «tus datos viven en
+                // tu iCloud privado» a quien no tiene datos personales, y su sección de Grupos es `.notApplicable` ahí, así
+                // que no se pierde la puerta de desasociar: en solo grupos soltar la cuenta es «Cerrar sesión».
+                if !isGroupsFocusedShell, StorageRowGateLogic.isVisible(
                     isConfigured: CloudBackendConfig.isConfigured,
                     remoteEnabled: CloudRemoteFlags.cloudModeEnabled,
                     isEngaged: StorageRowGateLogic.isEngaged(
@@ -1564,26 +1680,14 @@ struct ProfileView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("profile_yala_account")
                 }
-                // H4 + paso 9: «Cerrar sesión» — SIEMPRE al final, UNA fila y el mismo verbo en las cuatro celdas
-                // del ADR 2026-09-09 (§6: «dos botones y nada más»), sin subtítulo: el detalle de qué se borra y
-                // qué queda vive en la hoja de alcance, que nombra su celda. «Eliminar mi cuenta» ya no está
-                // aquí: vive dentro de «Tu cuenta de Yala» (a dos toques), como pide la App Store 5.1.1(v).
-                SubsectionDivider()
-                VStack(alignment: .leading, spacing: 0) {
-                    Button {
-                        requestSignOut()
-                    } label: {
-                        settingsRowContent(
-                            icon: "rectangle.portrait.and.arrow.right",
-                            title: L10n.Settings.signOut,
-                            iconColor: .red,
-                            showSpinner: signOutCoordinator.phase == .working)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(signOutCoordinator.phase == .working || deletionService.phase == .working)
-                    .accessibilityIdentifier("profile_security_signout")
-
-                    signOutWorkingCaption
+                // H4 + paso 9: «Cerrar sesión» — SIEMPRE al final, UNA fila y el mismo verbo en las celdas CON cuenta de
+                // Yala (ADR 2026-09-09, §6: «dos botones y nada más»), sin subtítulo: el detalle de qué se borra y qué
+                // queda vive en la hoja de alcance, que nombra su celda. «Eliminar mi cuenta» ya no está aquí: vive
+                // dentro de «Tu cuenta de Yala» (a dos toques), como pide la App Store 5.1.1(v).
+                // UX 2.2 · L20-6: sin cuenta de Yala la fila se va a su propia tarjeta, al final de Ajustes.
+                if !signOutRowRemovesDeviceData {
+                    SubsectionDivider()
+                    signOutRow
                 }
             }
         }

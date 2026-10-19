@@ -288,21 +288,23 @@ final class GroupsAssociationRowUITests: XCTestCase {
         // hay `sub`), así que sería una aserción que no puede fallar. Ver el caso del borrado fallido.
     }
 
-    // MARK: - Solo grupos (F): la sección no aplica
+    // MARK: - Solo grupos (F): ni la sección ni la fila
 
-    /// Sin sesión privada no hay nada a lo que ligar una cuenta, así que la sección no existe. Es una
-    /// aserción NEGATIVA, y por eso va acompañada del control positivo de que la pantalla sí montó: sin
-    /// él se cumpliría igual con la fila de Ajustes cerrada, que es otra cosa.
-    func test_groupsOnly_sectionDoesNotApply() {
+    /// Sin sesión privada no hay nada a lo que ligar una cuenta, así que la sección no aplica. **Desde UX 2.2 · L19-15
+    /// (2026-10-19) tampoco se llega a la pantalla**: en solo grupos «Dónde viven tus datos» no sale en Ajustes, porque su
+    /// pantalla decía «tus datos viven en tu iCloud privado» a quien no tiene datos personales. Es una aserción NEGATIVA,
+    /// y por eso va con su control: la sección «Datos» sí está («Exportar datos»), así que el scroll llegó hasta ahí.
+    func test_groupsOnly_storageRowIsNotOffered() {
         let app = XCUIApplication()
         app.launchForUITest(seed: "solo-grupos", groupInvite: true, cloudSession: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
         app.openProfile()
-        openStorageScreen(app)
 
-        XCTAssertFalse(section(app).exists, """
-            La sección «Grupos» se pinta en una sesión solo-grupos, donde no hay sesión privada a la que
-            asociar nada: ahí la cuenta de la nube ES la sesión, y soltarla es «Cerrar sesión».
+        let reset = scrollTo(app, "profile_security_reset_data")
+        XCTAssertTrue(reset.waitForExistence(timeout: 5), "Control: la sección «Datos» no se montó en solo grupos.")
+        XCTAssertFalse(app.buttons["storage_settings_row"].exists, """
+            «Dónde viven tus datos» sale en una sesión solo-grupos: su pantalla habla de iCloud a quien no tiene datos \
+            personales, y su sección de Grupos no aplica ahí (L19-15).
             """)
     }
 }

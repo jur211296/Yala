@@ -81,8 +81,11 @@ struct StorageSignInChooserView: View {
                     }
                     .padding(.horizontal, DS.Spacing.xl)
 
-                    // Nota §13 (invariante R9): la cuenta queda ligada al método elegido.
-                    Text(L10n.Storage.SignIn.note)
+                    // UX 2.2 · L20-9: la MISMA frase que «Tu cuenta de Yala», y la misma key, para que no vuelvan a
+                    // decir cosas distintas. La nota de antes («queda ligada al método») contradecía al backend: con
+                    // Apple y Google activos y el vínculo manual apagado, GoTrue une las dos entradas por el correo
+                    // verificado (H4; medido en producción el 2026-10-19, `security_manual_linking_enabled = false`).
+                    Text(L10n.Settings.yalaAccountLinkingNote)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

@@ -245,7 +245,8 @@ extension DestructiveScopeSheet.Config {
         hasLegacyCloudKitFootprint: Bool = false,
         onConfirm: @escaping () -> Void,
         onSecondary: (() -> Void)? = nil,
-        onExport: (() -> Void)? = nil
+        onExport: (() -> Void)? = nil,
+        removesDeviceData: Bool = false
     ) -> Self {
         let model = DestructiveScopeLogic.model(
             operation: operation,
@@ -283,13 +284,15 @@ extension DestructiveScopeSheet.Config {
             }
         }
 
+        // L20-6: la fila «Quitar mis datos de este iPhone» abre su hoja con el mismo verbo
+        // (`DestructiveScopeLogic.signOutRemovesDeviceData`). Las filas de la hoja no cambian: ya decían lo que pasa.
         return Self(
-            title: Self.title(for: operation),
+            title: removesDeviceData ? L10n.UXCS.removeDeviceDataSheetTitle : Self.title(for: operation),
             rows: rows,
             conservationNote: model.hasConservationNote ? Self.conservation(for: operation) : nil,
             extraLines: model.extraLines.map { Self.extraLine(for: $0) },
             secondaries: secondaries,
-            confirmLabel: Self.confirmLabel(for: operation),
+            confirmLabel: removesDeviceData ? L10n.UXCS.removeDeviceDataConfirm : Self.confirmLabel(for: operation),
             confirmIdentifier: Self.confirmIdentifier(for: operation),
             scenarioIdentifier: Self.scenarioIdentifier(for: operation),
             cancelLabel: L10n.Common.cancel,

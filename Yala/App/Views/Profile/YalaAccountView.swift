@@ -45,6 +45,18 @@ struct YalaAccountView: View {
             : CloudAuthService.shared.storedProvider()
     }
 
+    /// L20-9 · con qué cuenta estás: el correo de la sesión, el capturado o el nombre (`YalaAccountLogic.identity`). Bajo
+    /// `-uitest-fake-backend-session` no hay sesión real, así que se enseña un correo de muestra SOLO para QA (inerte en
+    /// release, como `rawProvider`).
+    private var identity: YalaAccountLogic.Identity {
+        if UITestHooks.fakeBackendSession { return .email("ana@icloud.com") }
+        let auth = CloudAuthService.shared
+        return YalaAccountLogic.identity(
+            sessionEmail: auth.sessionEmail,
+            capturedEmail: auth.capturedEmail(),
+            capturedName: auth.capturedFullName())
+    }
+
     private var model: YalaAccountLogic.Model {
         if let previewModel { return previewModel }
         return YalaAccountLogic.model(
@@ -71,21 +83,28 @@ struct YalaAccountView: View {
         .accessibilityIdentifier("yala_account_screen")
     }
 
-    // MARK: - Header (método de entrada + nota de vínculo)
+    // MARK: - Header (con qué cuenta estás + la frase del método)
 
+    /// UX 2.2 · L20-9 (decisión de Jürgen, 2026-10-18): arriba, el correo (o el nombre) con el icono de Apple o Google, y
+    /// UNA frase sobre el método, la misma que dice el selector de «Activar la nube» (misma key). Sin correo ni nombre, la
+    /// línea del método de siempre ocupa su sitio.
     private var header: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             HStack(spacing: DS.Spacing.md) {
-                Image(systemName: "person.crop.circle.badge.checkmark")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(theme.accent)
+                providerBadge
                     .accessibilityHidden(true)
-                Text(methodLine)
-                    .font(DS.Typography.body)
+                Text(identityLine)
+                    .font(DS.Typography.headline)
                     .foregroundStyle(.primary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
+                    .minimumScaleFactor(0.8)
             }
-            // Q1 (owner): nota general del vínculo Apple↔Google, siempre (H4 no detectable client-side).
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(identityAccessibilityLabel)
+            .accessibilityIdentifier("yala_account_identity")
+            // La frase del método, una sola y verdadera: con el mismo correo, Apple y Google abren la misma cuenta
+            // (H4; medido en el backend el 2026-10-19, ver `StorageSignInChooserView`).
             if model.showLinkingNote {
                 Text(L10n.Settings.yalaAccountLinkingNote)
                     .font(DS.Typography.caption)
@@ -98,6 +117,52 @@ struct YalaAccountView: View {
         .solidCard(radius: DS.Radius.xl)
     }
 
+    /// El icono del proveedor. El logo de Google va sin recolorear y sobre blanco (guía de marca), por eso el círculo blanco.
+    @ScaledMetric(relativeTo: .headline) private var badgeSize: CGFloat = 36 // A11Y-DT: @ScaledMetric
+    @ViewBuilder
+    private var providerBadge: some View {
+        switch model.method {
+        case .apple:
+            Image(systemName: "apple.logo")
+                .font(DS.Typography.title3)
+                .foregroundStyle(.primary)
+                .frame(width: badgeSize, height: badgeSize)
+                .background(Circle().fill(Color(.tertiarySystemFill)))
+        case .google:
+            Image("GoogleG")
+                .resizable()
+                .scaledToFit()
+                .padding(badgeSize * 0.22)
+                .frame(width: badgeSize, height: badgeSize)
+                .background(Circle().fill(Color.white)) // A11Y-DM: fondo blanco que exige el logo de Google
+                .overlay(Circle().stroke(Color(.separator), lineWidth: 0.5))
+        case .unknown:
+            Image(systemName: "person.crop.circle.badge.checkmark")
+                .font(DS.Typography.title)
+                .foregroundStyle(theme.accent)
+                .frame(width: badgeSize, height: badgeSize)
+        }
+    }
+
+    private var identityLine: String {
+        switch identity {
+        case .email(let email): return email
+        case .name(let name): return name
+        case .none: return methodLine
+        }
+    }
+
+    /// VoiceOver lee el proveedor y la cuenta: «Apple, ana@icloud.com». Sin cuenta que nombrar, la línea del método ya
+    /// lo dice.
+    private var identityAccessibilityLabel: String {
+        guard identity != .none else { return methodLine }
+        switch model.method {
+        case .apple: return "Apple, \(identityLine)"
+        case .google: return "Google, \(identityLine)"
+        case .unknown: return identityLine
+        }
+    }
+
     private var methodLine: String {
         switch model.method {
         case .apple:   return L10n.Settings.yalaAccountMethodApple
@@ -108,19 +173,35 @@ struct YalaAccountView: View {
 
     // MARK: - Dónde viven los datos
 
+    /// L20-9: una fila que abre «Dónde viven tus datos», con el chevron de las demás. En solo grupos sin sesión privada
+    /// esa pantalla no se ofrece (L19-15) y queda como texto (`YalaAccountLogic.dataLocationOpensStorage`).
+    @ViewBuilder
     private var dataLocationSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Text(L10n.Settings.yalaAccountDataLocationTitle)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-            Text(dataLocationText)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        if YalaAccountLogic.dataLocationOpensStorage(model.dataLocation) {
+            NavigationLink(value: ProfileDestination.storageMode) {
+                exitRowContent(
+                    icon: "externaldrive.badge.icloud",
+                    title: L10n.Settings.yalaAccountDataLocationTitle,
+                    subtitle: dataLocationText,
+                    destructive: false)
+            }
+            .buttonStyle(.plain)
+            .solidCard(radius: DS.Radius.xl)
+            .accessibilityIdentifier("yala_account_data_location")
+        } else {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                Text(L10n.Settings.yalaAccountDataLocationTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                Text(dataLocationText)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(DS.Spacing.lg)
+            .solidCard(radius: DS.Radius.xl)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .solidCard(radius: DS.Radius.xl)
     }
 
     private var dataLocationText: String {

@@ -125,13 +125,13 @@ struct GroupsSignInView: View {
                             .frame(height: 50)
                             .accessibilityIdentifier("groups_signin_button")
 
-                            // G3 (2026-08-11): el verbo pasa de `.continue` a `.signUp`. W4 enseñó al
-                            // Welcome a distinguir alta de reentrada y este sheet se quedó en el neutro,
-                            // pero sus dos entradas —el invitado por link y ahora el ORGANIZADOR que crea
-                            // su primer grupo— son altas: nadie llega aquí con una sesión viva (el
-                            // `onAppear` de abajo la cierra si la hay, y el productor lo garantiza).
+                            // UX 2.2 · L19-17 (decisión de Jürgen, 2026-10-18): «Continuar con Apple» y
+                            // «Continuar con Google», el mismo verbo para las dos. G3 (2026-08-11) había puesto
+                            // `.signUp` porque sus dos entradas eran altas, pero a esta hoja también vuelve quien
+                            // cerró su sesión de grupos (la pestaña «Tus grupos están en tu cuenta»), y ese lee
+                            // «Crear cuenta con Google» y duda de si perderá sus grupos. Es el verbo de L12-7.
                             GoogleSignInButton(variant: colorScheme == .dark ? .dark : .light,
-                                               purpose: .signUp) {
+                                               purpose: .continue) {
                                 DS.Haptic.selection()
                                 startSignIn(provider: .google)
                             }
@@ -287,7 +287,7 @@ private struct GroupsAppleSignInButton: UIViewRepresentable {
 
     func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
         let button = ASAuthorizationAppleIDButton(
-            type: .signIn,
+            type: .continue,  // L19-17: «Continuar con Apple», pareja del «Continuar con Google».
             style: colorScheme == .dark ? .white : .black
         )
         button.cornerRadius = DS.Radius.lg
