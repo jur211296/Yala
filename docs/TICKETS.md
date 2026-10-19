@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (966)
+## Index (973)
 
 | id | status | path |
 |---|---|---|
@@ -132,6 +132,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | archiving-exclusion-open-decisions | backlog | tickets/backlog/archiving-exclusion-open-decisions.md |
 | associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
+| attest-copy-still-says-the-security-check-our-server-requires | backlog | tickets/backlog/attest-copy-still-says-the-security-check-our-server-requires.md |
 | attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
 | attest-session-token-rejected-by-the-gateway-stays-cached | backlog | tickets/backlog/attest-session-token-rejected-by-the-gateway-stays-cached.md |
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
@@ -472,7 +473,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | qa | tickets/qa/groups-only-second-launch-mounts-icloud-mirror.md |
-| groups-only-session-storage-screen-says-data-lives-in-icloud | backlog | tickets/backlog/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
+| groups-only-session-storage-screen-says-data-lives-in-icloud | done | tickets/done/groups-only-session-storage-screen-says-data-lives-in-icloud.md |
 | groups-only-sign-up-drops-a-language-chosen-just-before-it | backlog | tickets/backlog/groups-only-sign-up-drops-a-language-chosen-just-before-it.md |
 | groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome | backlog | tickets/backlog/groups-organizer-gate-unavailable-sends-to-settings-from-the-welcome.md |
 | groups-organizer-intent-is-lost-on-relaunch | backlog | tickets/backlog/groups-organizer-intent-is-lost-on-relaunch.md |
@@ -760,6 +761,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | remote-wipe-receiver-has-no-behaviour-test | backlog | tickets/backlog/remote-wipe-receiver-has-no-behaviour-test.md |
 | remote-wipe-signal-honored-by-any-session | done | tickets/done/remote-wipe-signal-honored-by-any-session.md |
 | remote-wipe-signal-is-burned-even-when-the-session-ignores-it | backlog | tickets/backlog/remote-wipe-signal-is-burned-even-when-the-session-ignores-it.md |
+| remove-device-data-row-leads-to-alerts-that-say-sign-out | backlog | tickets/backlog/remove-device-data-row-leads-to-alerts-that-say-sign-out.md |
 | reopened-balance-calculator-reads-a-grouped-amount-as-zero | backlog | tickets/backlog/reopened-balance-calculator-reads-a-grouped-amount-as-zero.md |
 | repair-queue-has-no-exit-for-partial-rate-rows | done | tickets/done/repair-queue-has-no-exit-for-partial-rate-rows.md |
 | reparacion-de-tasas-no-avisa-al-panel | done | tickets/done/reparacion-de-tasas-no-avisa-al-panel.md |
@@ -983,6 +985,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |
 | welcome-private-fresh-start-skips-icloud-check | qa | tickets/qa/welcome-private-fresh-start-skips-icloud-check.md |
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
+| welcome-sign-in-notes-say-the-account-is-bound-to-one-method | backlog | tickets/backlog/welcome-sign-in-notes-say-the-account-is-bound-to-one-method.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | backlog | tickets/backlog/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
