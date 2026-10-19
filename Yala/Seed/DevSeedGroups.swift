@@ -351,7 +351,7 @@ enum DevSeedGroups {
     /// Variante SALDADA (perfil `.gruposSaldado`): el MISMO dataset de `create` (2 grupos, multi-moneda,
     /// yo owner) MÁS las liquidaciones CONFIRMADAS que dejan el neto del usuario actual en CERO en todos
     /// sus grupos y monedas. Es el único perfil con grupos VIVOS y SIN deuda, que es el estado que ofrece
-    /// el batch D10 "También salir de mis grupos" de la hoja de Vaciar (`canLeaveAllGroups` exige
+    /// el batch D10 «Salir de todos mis grupos» de Ajustes de Grupos (`offersLeaveAllGroups` exige
     /// `hasGroups && !hasOutstandingDebt`): `create` deja al usuario acreedor por construcción (+190 PEN y
     /// +46,66 USD en Cusco, +140 PEN en Lima) y `createAsInvitee` lo deja deudor, así que ninguno de los
     /// dos ejercita esa rama.

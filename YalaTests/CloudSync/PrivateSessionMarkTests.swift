@@ -336,10 +336,10 @@ struct PrivateSessionMarkWiringTests {
         // Con los espacios colapsados: lo que se fija es QUÉ lee la descripción, no la sangría.
         let vista = try Self.code("Yala/App/Views/Settings/UserDataResetView.swift")
             .split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        #expect(vista.contains("Text(Self.resetDescriptionText(for: scopeOperation))"), """
+        #expect(vista.contains("Text(Self.sentence(for: scopeOperation,"), """
             el párrafo de la pantalla dejó de salir de `scopeOperation`, que es lo que recibe la hoja.
             """)
-        #expect(!vista.contains("PrivateSessionMark.hasPrivateSession() ? L10n.Settings.resetDataDescription"), """
+        #expect(!vista.contains("PrivateSessionMark.hasPrivateSession() ? L10n.UXL20D"), """
             el párrafo volvió a leer solo la marca: discrepa de la hoja en la celda sin sesión privada
             + espejo, donde prometía menos de lo que se borra.
             """)

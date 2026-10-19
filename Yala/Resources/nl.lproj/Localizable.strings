@@ -478,7 +478,6 @@
 "settings.theme.liquidGlass" = "Liquid Glass";
 "settings.defaultCurrency" = "Standaardvaluta";
 "settings.currentIcon" = "Huidig icoon";
-"settings.resetAllData" = "Reset al je gegevens";
 "settings.deleteAllData" = "Mijn gegevens wissen";
 
 // MARK: - Common
@@ -621,20 +620,9 @@
 "settings.currencyAndExchange" = "Valuta & wisselkoers";
 "common.updatingRecords" = "Boekingen worden bijgewerkt...";
 "common.recalculatingConversions" = "Historische conversies worden herberekend";
-"export.customizeFile" = "Pas je bestand aan";
-"export.csvGeneratedSuccess" = "Het bestand is succesvol aangemaakt.";
-"export.confirmExport" = "Bevestig je export";
-"export.selectColumns" = "Selecteer kolommen";
-"export.availableColumns" = "Beschikbare kolommen";
-"export.columnsDescription" = "Kies welke kolommen je wilt opnemen in het geëxporteerde bestand. Je moet er minstens één kiezen.";
-"export.summaryAndExport" = "Samenvatting en exporteren";
-"export.summaryDescription" = "Bekijk de gekozen filters en kolommen voordat je het bestand aanmaakt.";
-"export.filtersSummary" = "Samenvatting filters";
-"export.columnsToExport" = "Kolommen om te exporteren";
 "export.exportToCSV" = "Exporteren naar CSV";
 "export.exportBtn" = "Exporteren";
 "export.exportError" = "Er ging iets mis bij het exporteren";
-"export.exportCompleted" = "Export voltooid";
 "export.backToSettings" = "Terug naar instellingen";
 "export.exportData" = "Gegevens exporteren";
 "export.greaterThan" = "Groter dan";
@@ -659,14 +647,14 @@
 "export.column.subcategory" = "Subcategorie";
 "export.column.tags" = "Labels";
 "export.column.note" = "Notitie";
-"export.column.date.description" = "Datum in formaat jjjj-mm-dd.";
-"export.column.amount.description" = "Bedrag van de boeking met 2 decimalen.";
-"export.column.currency.description" = "Valutacode (PEN, USD, EUR).";
-"export.column.account.description" = "Naam van de gekoppelde rekening.";
-"export.column.category.description" = "Hoofdcategorie van de boeking.";
-"export.column.subcategory.description" = "Specifieke subcategorie.";
-"export.column.tags.description" = "Gekoppelde labels, gescheiden door ';'.";
-"export.column.note.description" = "Vrije notitie bij de boeking.";
+"export.column.date.description" = "De dag van de boeking (jaar-maand-dag).";
+"export.column.amount.description" = "Hoeveel het was, met twee decimalen.";
+"export.column.currency.description" = "De valuta, zoals EUR of USD.";
+"export.column.account.description" = "De rekening waarop je het noteerde.";
+"export.column.category.description" = "De categorie.";
+"export.column.subcategory.description" = "De subcategorie.";
+"export.column.tags.description" = "De labels, gescheiden door puntkomma’s.";
+"export.column.note.description" = "Wat je in de notitie schreef.";
 "common.next" = "Volgende";
 "settings.versionInfo" = "Versie %1$@ (Build %2$@)";
 "tab.panel" = "Start";
@@ -1177,7 +1165,6 @@
 "settings.firstWeekdayDescription" = "Bepaal welke dag als begin van de week telt voor filters als 'Deze week'.";
 "settings.sunday" = "Zondag";
 "settings.monday" = "Maandag";
-"settings.resetDataDescription" = "Met deze actie verwijder je permanent je rekeningen, boekingen, budgetten, wisselkoersen, categorieën en alle andere gegevens van je Yala-profiel. Na het verwijderen keert de app terug naar de begininstelling.";
 "settings.deleteDataConfirmation" = "Je gegevens wissen?";
 "settings.delete" = "Verwijderen";
 "settings.cancel" = "Annuleren";
@@ -3090,10 +3077,9 @@
 "groups.expense.newExpense" = "Nieuwe uitgave";
 
 "export.column.splitTotal" = "Oorspronkelijk totaal";
-"export.column.splitPortion" = "Aandeel";
-"export.column.splitTotal.description" = "Totaalbedrag voor het splitsen";
-"export.column.splitPortion.description" = "Beschrijving van het aandeel";
-
+"export.column.splitPortion" = "Jouw deel";
+"export.column.splitTotal.description" = "Als je het deelde: hoeveel het in totaal was.";
+"export.column.splitPortion.description" = "Als je het deelde: welk deel van jou was.";
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "Til je financiën naar een hoger niveau";
@@ -4356,7 +4342,6 @@
 "split.typeSharesShort" = "Aandelen";
 
 /* Reset-data screen description — groups-only mode */
-"settings.resetDataDescriptionGroupsOnly" = "Deze actie zet je Yala-profiel en voorkeuren terug naar de begintoestand. Je groepen worden niet verwijderd: beheer ze via het tabblad Groepen.";
 
 /* Delete-data confirmation warning — groups-only mode */
 
@@ -4846,7 +4831,7 @@
 "settings.deleteAccountRetry" = "Opnieuw proberen";
 /* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
 "export.includeGroups" = "Mijn groepen opnemen";
-"export.includeGroups.description" = "Voegt een apart bestand toe met de uitgaven, betalingen en jouw saldo van elke groep.";
+"export.includeGroups.description" = "Voegt een apart bestand toe met de uitgaven, de betalingen en wat je in elke groep schuldig bent of tegoed hebt.";
 "export.groups.header.group" = "Groep";
 "export.groups.header.type" = "Type";
 "export.groups.header.date" = "Datum";
@@ -4964,8 +4949,7 @@
 "settings.wipeDataSecondConfirmTitle" = "Zeker weten? Dit is definitief.";
 
 /* Fase 1: subtitulo de la fila Exportar datos */
-"settings.exportDataSubtitle" = "Slaat een kopie op als CSV";
-
+"settings.exportDataSubtitle" = "Voor Excel of Google Sheets";
 /* Fase 1: subtitulo de la fila Vaciar mis datos */
 "settings.wipeDataSubtitle" = "Wist je gegevens. Je account en je groepen blijven behouden.";
 
@@ -4985,8 +4969,7 @@
 "export.groupsOnlyTitle" = "Exporteer je groepen";
 
 /* D6: description under the group-only export header */
-"export.groupsOnlyDescription" = "Slaat een CSV-bestand op met de uitgaven, betalingen en je saldo voor elke groep.";
-
+"export.groupsOnlyDescription" = "Slaat een sheet op met de uitgaven, de betalingen en wat je in elke groep schuldig bent of tegoed hebt. Opent in Excel, Numbers of Google Sheets.";
 /* D6: alert title when there are no active groups to export */
 "export.groupsOnlyEmptyTitle" = "Geen groepen om te exporteren";
 
@@ -5123,8 +5106,6 @@
 "settings.wipeScopeGroupsDebt" = "Je groepen blijven behouden, maar je hebt openstaande saldi. Je kunt ze vereffenen via het tabblad Groepen.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
-"settings.wipeLeaveGroupsButton" = "Ook mijn groepen verlaten";
-
 /* D10 batch: dedicated flow title */
 "settings.batchLeaveTitle" = "Mijn groepen verlaten";
 
@@ -7469,8 +7450,7 @@
 "accountCardGrouping.byLine" = "Per lijn";
 "accountCardGrouping.label" = "Kaarten met meerdere valuta's";
 "export.column.card" = "Kaart";
-"export.column.card.description" = "Naam van de kaart, als de rekening bij een kaart met meerdere valuta's hoort.";
-
+"export.column.card.description" = "De kaart, als de rekening bij een kaart met meerdere valuta hoort.";
 /* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
 "shortcut.spending.title" = "Uitgaven opvragen";
 "shortcut.spending.description" = "Vertelt hoeveel je in een periode hebt uitgegeven, zonder Yala te openen";
@@ -7550,3 +7530,50 @@
 "stats.l11d.title.atAGlance.year" = "Je jaar in één oogopslag";
 "stats.l11d.title.atAGlance.all" = "Je hele geschiedenis in één oogopslag";
 "stats.l11d.title.atAGlance.period" = "Je periode in één oogopslag";
+
+/* Lote decidido 2.2 · 03 — Exportar y Vaciar (L20-1…L20-8, L19-12, L19-16) */
+"l20d.export.title" = "Neem je boekingen mee";
+"l20d.export.subtitle" = "Een bestand om te openen in Excel of Google Sheets.";
+"l20d.export.periodAll" = "Alles";
+"l20d.export.periodDates" = "Datums…";
+"l20d.export.formatExcel" = "Excel";
+"l20d.export.formatRecommended" = "Aanbevolen";
+"l20d.export.formatCSV" = "Tekst (CSV)";
+"l20d.export.formatCSVHint" = "Voor andere apps";
+"l20d.export.moreOptions" = "Meer opties";
+"l20d.export.moreOptionsHint" = "Rekeningen, categorieën, labels en kolommen";
+"l20d.export.expanded" = "Uitgevouwen";
+"l20d.export.collapsed" = "Ingevouwen";
+"l20d.export.modeLabel" = "Wat te doen met je keuze";
+"l20d.export.active.accounts" = "Rekeningen: %d";
+"l20d.export.active.categories" = "Subcategorieën: %d";
+"l20d.export.active.tags" = "Labels: %d";
+"l20d.export.active.needs" = "Behoefte: %d";
+"l20d.export.active.currencies" = "Valuta: %@";
+"l20d.export.active.amount" = "Bedrag gefilterd";
+"l20d.export.active.note" = "Notitie: ‘%@’";
+"l20d.export.active.hiding" = "Je keuze wordt verborgen";
+"l20d.export.rangeToToday" = "van %@ tot vandaag";
+"l20d.export.range" = "van %1$@ tot %2$@";
+"l20d.export.none" = "Geen met deze filters";
+"l20d.export.doneIn" = "Klaar, je bestand staat in %@";
+"l20d.export.doneShared" = "Klaar, je hebt je bestand gedeeld";
+"l20d.export.app.files" = "Bestanden";
+"l20d.export.app.messages" = "Berichten";
+"l20d.export.app.notes" = "Notities";
+"l20d.export.continueWipe" = "Doorgaan met wissen";
+"l20d.export.fileStem" = "Boekingen";
+"l20d.settings.exportRecords" = "Boekingen exporteren";
+"l20d.wipe.sentence.icloud" = "Wist je rekeningen, boekingen en budgetten van dit apparaat en uit je iCloud. Dit kan niet ongedaan worden gemaakt.";
+"l20d.wipe.sentence.cloud" = "Wist je rekeningen, boekingen en budgetten van dit apparaat en uit je Yala-account. Dit kan niet ongedaan worden gemaakt.";
+"l20d.wipe.sentence.groupsOnly" = "Wist je profiel en je voorkeuren van dit apparaat. Je groepen blijven ongemoeid. Dit kan niet ongedaan worden gemaakt.";
+"l20d.wipe.exportCopy" = "Eerst een kopie exporteren";
+"l20d.wipe.row.account" = "Wist je gegevens. Je account blijft behouden.";
+"l20d.wipe.row.groups" = "Wist je gegevens. Je groepen blijven behouden.";
+"l20d.wipe.row.nothing" = "Wist je gegevens.";
+"l20d.groups.leaveAll.section" = "Je groepen";
+"l20d.groups.leaveAll.button" = "Al mijn groepen verlaten";
+"l20d.groups.leaveAll.confirmTitle" = "Al je groepen verlaten?";
+"l20d.groups.leaveAll.confirmAction" = "Alle verlaten";
+"l20d.groups.leaveAll.confirmMessage" = "Je verlaat %@.";
+"l20d.groups.leaveAll.confirmMessageGeneric" = "Je verlaat alle groepen waarin je geen openstaand saldo hebt.";

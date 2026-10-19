@@ -117,6 +117,7 @@
 - [Instrumentar gana a razonar](feedback_instrumentar_gana_a_razonar.md) — a la tercera hipótesis caída, cuenta en vez de ded…
 - [Un flaky «de entorno» se mide a mano](feedback_el_flaky_de_entorno_se_mide_lanzando_a_mano.md) — N arranques con simctl + prints; el de la oferta en cola era producto.
 - [Conducir a mano ensucia aunque no teclees](feedback_conducir_a_mano_ensucia_aunque_no_teclees.md) — capturas con content_size/axe antes del gate: erase o capturar después.
+- [Conducir a mano contamina los unit](feedback_conducir_a_mano_contamina_los_unit.md) — un arranque en solo grupos dejó 16 rojos falsos; erase antes del gate.
 - [El tap de XcodeBuildMCP se pierde en pantallas vivas](feedback_el_tap_de_xcodebuildmcp_se_pierde_en_pantallas_vivas.md) — `touch` 0,1 s antes de culpar al botón.
 - [El seam que lanza lo mismo no prueba el `catch`](feedback_el_seam_que_lanza_lo_mismo_no_prueba_el_catch.md) — que lance un `C…
 - [El mutante con dangler lo cura el pase final](feedback_el_mutante_con_dangler_lo_cura_el_pase_final.md) — en el pull, nil sin dangler o el mutante sobrevive.

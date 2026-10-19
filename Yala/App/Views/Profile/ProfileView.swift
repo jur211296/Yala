@@ -145,6 +145,14 @@ struct ProfileView: View {
     @State private var showSignOutRescueExportError = false
     /// Mientras se genera ese archivo, un indicador: la exportación corre en el hilo principal y con un historial largo tarda.
     @State private var isExportingBeforeLosingChanges = false
+    /// L20-8 (decisión de Jürgen, 2026-10-18): «Exportar antes» en las hojas de cerrar sesión sin copia y de eliminar la
+    /// cuenta de la nube. Qué hoja lo pidió, para volver a ella al cerrar la de compartir (o el aviso de error).
+    private enum LossExportReturn { case signOut, deleteAccount }
+    @State private var pendingLossExport: LossExportReturn?
+    @State private var lossExportReturn: LossExportReturn?
+    @State private var lossExportFile: ExportedFile?
+    @State private var lossExportErrorMessage = ""
+    @State private var showLossExportError = false
     /// Qué bloqueó el cierre, para elegir el mensaje del aviso. **Es el motivo entero y no un `Bool`**
     /// desde el 2026-09-13: eran dos mensajes y son tres —sesión caducada, canal de Grupos en pausa, y el
     /// resto—, así que un `Bool` ya no los separa. Solo lo leen los mensajes; qué alert se presenta lo
@@ -320,6 +328,49 @@ struct ProfileView: View {
         }
     }
 
+    /// L20-8 · **El punto único de «exportar todo, sin asistente»** antes de perderlo (cerrar sesión sin copia en iCloud y
+    /// eliminar la cuenta de la nube). Todos los registros (`ExportFilters.allTransactions`), en Excel, como pide «Para
+    /// Excel o Google Sheets» (L20-4), y la hoja de compartir. Un turno después del toque: la hoja de alcance se está
+    /// desmontando. Al cerrar la de compartir —o el aviso de error— vuelve la hoja de alcance de la que salió
+    /// (`returnFromLossExport`): exportar no decide nada por la persona. `scheduleTagBackfill: false`, como el rescate: el
+    /// relleno de etiquetas guardaría cambios por subir justo antes de borrar.
+    private func exportEverythingBeforeLosingIt(returningTo destination: LossExportReturn) {
+        lossExportReturn = destination
+        isExportingBeforeLosingChanges = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            defer { isExportingBeforeLosingChanges = false }
+            do {
+                let result = try TransactionsExportService.export(
+                    format: .xlsx, using: .allTransactions, columns: .default, in: modelContext,
+                    scheduleTagBackfill: false)
+                lossExportFile = ExportedFile(urls: [result.fileURL])
+            } catch {
+                #if DEBUG
+                print("ProfileView: Error exportando antes de perder los datos: \(error)")
+                #endif
+                lossExportErrorMessage = SignOutBlockedCopy.personalExportFailureMessage(for: error)
+                showLossExportError = true
+            }
+        }
+    }
+
+    /// Vuelve a la hoja de alcance que pidió la exportación, recalculada (la celda pudo cambiar entretanto). Un turno
+    /// después: la hoja de compartir o el aviso se están desmontando en el mismo anchor.
+    private func returnFromLossExport() {
+        guard let destination = lossExportReturn else { return }
+        lossExportReturn = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            switch destination {
+            case .signOut:
+                guard signOutCoordinator.phase == .idle, signOutScope == nil else { return }
+                signOutScope = makeSignOutScope()
+            case .deleteAccount:
+                guard deletionService.phase != .working, deleteAccountScope == nil else { return }
+                deleteAccountScope = DeleteAccountScope(summary: GroupService.shared.accountDeletionGroupsSummary())
+            }
+        }
+    }
+
     /// Tras la hoja de compartir o el aviso de error de la exportación: el cierre sigue parado en el aviso de tus datos, y se
     /// vuelve a enseñar, que es lo que la persona dejó a medias. Si ya no está ahí —otro gesto lo reconoció—, no enciende nada.
     /// Desde el 2026-09-28 ese aviso lo abre también la sesión caducada (`personalLossCause`).
@@ -363,7 +414,8 @@ struct ProfileView: View {
         let hasICloudCopy: Bool
         switch path {
         case .privateSignOut, .privateWithGroupsSignOut:
-            hasICloudCopy = CloudSessionSignOut.privateCopyChannel() == .iCloud
+            // QA/XCUITest: la celda sin copia (L20-8); el seam es inerte en release.
+            hasICloudCopy = !UITestHooks.privateSignOutNoCopy && CloudSessionSignOut.privateCopyChannel() == .iCloud
         case .cloudSecureSignOut, .groupsOnlySignOut:
             hasICloudCopy = true
         }
@@ -464,6 +516,18 @@ struct ProfileView: View {
     /// [FLAG]) SÍ tiene cuenta que explicar (su desenlace de borrado lo gatea `YalaAccountLogic`).
     private var showsYalaAccountRow: Bool {
         deleteAccountRowHasSession
+    }
+
+    /// L20-5: la fila de «Vaciar datos» promete conservar solo lo que hay — la cuenta de Yala si hay sesión, los grupos si
+    /// hay alguno. Decía «Tu cuenta y tus grupos se conservan» también a quien no tenía ninguno de los dos.
+    private var wipeRowSubtitle: String {
+        switch ExportRecordsLogic.wipeRowKeeps(hasYalaAccount: deleteAccountRowHasSession,
+                                               hasGroups: viewModel.hasExportableGroups) {
+        case .accountAndGroups: return L10n.Settings.wipeDataSubtitle
+        case .account: return L10n.UXL20D.wipeRowKeepsAccount
+        case .groups: return L10n.UXL20D.wipeRowKeepsGroups
+        case .nothing: return L10n.UXL20D.wipeRowKeepsNothing
+        }
     }
 
     /// §3.2: subtítulo dinámico de la fila "Dónde viven tus datos" — refleja el modo real.
@@ -670,7 +734,7 @@ struct ProfileView: View {
                         }
                     )
                 case .exportWizard:
-                    ExportFiltersStepView()
+                    ExportRecordsView()
                 case .groupsExport:
                     GroupsExportView(onFinish: { activeSheet = nil })
                 }
@@ -731,6 +795,11 @@ struct ProfileView: View {
         // hoja; el `onDismiss` actúa YA con la hoja fuera (anti-carrera): o el segundo gesto del cierre sin
         // copia, o el cierre. El cover terminal lo dueña el root vía `.phase`.
         .sheet(item: $signOutScope, onDismiss: {
+            if pendingLossExport == .signOut {
+                pendingLossExport = nil
+                exportEverythingBeforeLosingIt(returningTo: .signOut)
+                return
+            }
             guard let scope = pendingSignOutScope else { return }
             pendingSignOutScope = nil
             // La celda pudo cambiar con la hoja abierta (una sesión que caduca, un evento del espejo): se
@@ -750,7 +819,19 @@ struct ProfileView: View {
             DestructiveScopeSheet(config: .make(
                 operation: scope.operation,
                 cloudLabel: scope.cloudLabel,
-                onConfirm: { pendingSignOutScope = scope }))
+                onConfirm: { pendingSignOutScope = scope },
+                // L20-8: solo las celdas sin copia lo ofrecen (lo decide `DestructiveScopeLogic.secondaryActions`).
+                onExport: { pendingLossExport = .signOut }))
+        }
+        // L20-8: el archivo de todo, antes de cerrar sesión sin copia o de eliminar la cuenta de la nube.
+        .sheet(item: $lossExportFile, onDismiss: { returnFromLossExport() }) { file in
+            ShareSheet(activityItems: file.urls)
+                .yalaSheetDetents([.medium, .large])
+        }
+        .alert(L10n.Export.exportError, isPresented: $showLossExportError) {
+            Button(L10n.Common.ok, role: .cancel) { returnFromLossExport() }
+        } message: {
+            Text(lossExportErrorMessage)
         }
         // Paso 9 · el segundo gesto del cierre privado sin copia en iCloud: no se bloquea, se avisa.
         .alert(L10n.Settings.signOutNoCopyConfirmTitle, isPresented: $showSignOutNoCopyConfirm) {
@@ -867,9 +948,13 @@ struct ProfileView: View {
             // mutuamente excluyentes por construcción, evita un flag stale en un dismiss posterior).
             let goFinal = pendingDeleteAccountFinal
             let goViewGroups = pendingViewGroups
+            let goExport = pendingLossExport == .deleteAccount
             pendingDeleteAccountFinal = false
             pendingViewGroups = false
-            if goFinal {
+            if goExport { pendingLossExport = nil }
+            if goExport {
+                exportEverythingBeforeLosingIt(returningTo: .deleteAccount)
+            } else if goFinal {
                 showDeleteAccountFinal = true
             } else if goViewGroups {
                 // Selecciona el tab ANTES del dismiss (patrón de FullModeActivationView): el estado del
@@ -884,7 +969,9 @@ struct ProfileView: View {
                 hasOutstandingDebt: scope.summary.hasOutstandingDebt,
                 hasLegacyCloudKitFootprint: scope.summary.hasLegacyCloudKitFootprint,
                 onConfirm: { pendingDeleteAccountFinal = true },
-                onSecondary: { pendingViewGroups = true }))
+                onSecondary: { pendingViewGroups = true },
+                // L20-8: solo la cuenta de la nube lo ofrece (lo decide `DestructiveScopeLogic.secondaryActions`).
+                onExport: { pendingLossExport = .deleteAccount }))
         }
         .alert(L10n.Settings.deleteAccountFinalTitle, isPresented: $showDeleteAccountFinal) {
             Button(L10n.Settings.deleteAccountFinalAction, role: .destructive) {
@@ -1307,8 +1394,11 @@ struct ProfileView: View {
                 Button {
                     activeSheet = isGroupsOnlyShell ? .groupsExport : .exportWizard
                 } label: {
+                    // L20-4: «Exportar registros · Para Excel o Google Sheets». En solo grupos exporta los grupos, no
+                    // registros: conserva «Exportar datos» con el mismo subtítulo (el archivo también se abre ahí).
                     settingsRowContent(
-                        icon: "square.and.arrow.up.fill", title: L10n.Settings.exportData,
+                        icon: "square.and.arrow.up.fill",
+                        title: isGroupsOnlyShell ? L10n.Settings.exportData : L10n.UXL20D.exportRecordsRow,
                         subtitle: L10n.Settings.exportDataSubtitle,
                         iconColor: .mint
                     )
@@ -1386,7 +1476,7 @@ struct ProfileView: View {
                     // sistema (adapta a Dark Mode) → sin marcador A11Y-DM.
                     settingsRowContent(
                         icon: "arrow.counterclockwise", title: L10n.Settings.wipeData,
-                        subtitle: L10n.Settings.wipeDataSubtitle, iconColor: .red)
+                        subtitle: wipeRowSubtitle, iconColor: .red)
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("profile_security_reset_data")

@@ -85,10 +85,12 @@ nonisolated enum DestructiveScopeLogic {
     /// lógica pura decide el CONJUNTO y el ORDEN (fiel a "la ESTRUCTURA la decide DestructiveScopeLogic");
     /// la factory mapea cada kind a su label/id/handler/caption. `.viewGroups` = "Ver mis grupos" (→ tab
     /// Grupos; eliminar-cuenta o Vaciar con deuda); `.exportBefore` = "Exportar antes" (red de seguridad
-    /// §m.4 — SOLO Vaciar completo, donde existe el wizard personal).
-    /// `.leaveAllGroups` = "También salir de mis grupos" (batch D10 — SOLO Vaciar completo, sin deudas, con
-    /// grupos y flag ON).
-    enum SecondaryKind: Equatable { case viewGroups, exportBefore, leaveAllGroups }
+    /// §m.4): Vaciar completo, y desde L20-8 (decisión de Jürgen, 2026-10-18) los cierres de sesión sin copia en
+    /// iCloud y el borrado de la cuenta de la nube, los tres sitios donde lo personal se pierde para siempre.
+    ///
+    /// «También salir de mis grupos» (el batch D10) ya no es de esta hoja: L19-12 (2026-10-18) lo llevó a Ajustes de
+    /// Grupos, con su propia confirmación. Aquí parecía el botón principal de Vaciar y salía de todos sin preguntar.
+    enum SecondaryKind: Equatable { case viewGroups, exportBefore }
 
     struct RowSpec: Equatable {
         let location: Location
@@ -153,10 +155,10 @@ nonisolated enum DestructiveScopeLogic {
 
     /// Qué alcance nombra el párrafo de la pantalla «Vaciar mis datos», el que se lee ANTES de tocar.
     enum WipeDescription: Equatable {
-        /// Cuentas, transacciones, presupuestos… todo lo personal (`settings.resetDataDescription`).
+        /// Cuentas, registros, presupuestos… todo lo personal (`l20d.wipe.sentence.icloud` / `.cloud`).
         case wholePersonalData
         /// Solo el perfil y las preferencias; los grupos no se tocan
-        /// (`settings.resetDataDescriptionGroupsOnly`).
+        /// (`l20d.wipe.sentence.groupsOnly`).
         case profileAndPreferences
     }
 
@@ -326,8 +328,7 @@ nonisolated enum DestructiveScopeLogic {
         operation: Operation,
         cloudLabel: CloudLabel,
         hasOutstandingDebt: Bool = false,
-        hasLegacyCloudKitFootprint: Bool = false,
-        canLeaveAllGroups: Bool = false
+        hasLegacyCloudKitFootprint: Bool = false
     ) -> Model {
         switch operation {
         case .wipeDataFull:
@@ -346,13 +347,8 @@ nonisolated enum DestructiveScopeLogic {
                 // `.icloud` no exista residual alguno, solo que la hoja no lo declara.
                 extraLines: cloudLabel == .cloudAccount ? [.multiDeviceResidual] : [],
                 // "Exportar antes" SIEMPRE (red de seguridad §m.4); con deuda, "Ver mis grupos" va PRIMERO
-                // (protege a terceros: saldar antes de destruir); sin deuda y con grupos+flag (D10),
-                // "También salir de mis grupos" va PRIMERO (el batch no se ofrece con deuda).
-                secondaryActions: {
-                    if hasOutstandingDebt { return [.viewGroups, .exportBefore] }
-                    if canLeaveAllGroups { return [.leaveAllGroups, .exportBefore] }
-                    return [.exportBefore]
-                }())
+                // (protege a terceros: saldar antes de destruir).
+                secondaryActions: hasOutstandingDebt ? [.viewGroups, .exportBefore] : [.exportBefore])
 
         case .wipeDataGroupsOnly:
             // Solo grupos: perfil + preferencias, en ESTE dispositivo. Desde el paso 9 no se avisa a los demás
@@ -389,7 +385,12 @@ nonisolated enum DestructiveScopeLogic {
                     hasOutstandingDebt: hasOutstandingDebt,
                     hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint
                 ).compactMap(Self.mapDeleteAccountLine),
-                secondaryActions: hasOutstandingDebt ? [.viewGroups] : [])
+                // L20-8: la cuenta de la nube se lleva lo personal; «Exportar antes» lo deja en un archivo. Las dos de
+                // grupos no borran registros personales y no lo ofrecen.
+                secondaryActions: {
+                    let export: [SecondaryKind] = isCloud ? [.exportBefore] : []
+                    return (hasOutstandingDebt ? [.viewGroups] : []) + export
+                }())
 
         case .signOutPrivate:
             // Se borra de este dispositivo (📱 neutral: cambia, pero sin pérdida — antes se sube lo pendiente);
@@ -413,7 +414,8 @@ nonisolated enum DestructiveScopeLogic {
                 cloudLabel: cloudLabel,
                 hasConservationNote: false,
                 extraLines: [.noICloudCopy],
-                secondaryActions: [])
+                // L20-8: sin copia en ninguna parte, la salida que no pierde nada es llevarse el archivo.
+                secondaryActions: [.exportBefore])
 
         case .signOutPrivateWithGroups:
             // «Equipo»: lo personal queda en iCloud y los grupos en la cuenta (👥 neutral: el dispositivo los
@@ -436,7 +438,7 @@ nonisolated enum DestructiveScopeLogic {
                 cloudLabel: cloudLabel,
                 hasConservationNote: false,
                 extraLines: [.noICloudCopy],
-                secondaryActions: [])
+                secondaryActions: [.exportBefore])
 
         case .signOutCloud:
             // El device se resetea a "recién instalado" (wipe por archivos al boot) pero los datos están

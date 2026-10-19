@@ -193,11 +193,13 @@ final class ExportFiltersStepViewModel {
 
     /// Returns a date interval from the earliest transaction to end of today
     func allTimeDateInterval() -> DateInterval {
-        guard let earliest = earliestTransactionDate else {
-            return DetailPeriod.allTime.dateInterval()
-        }
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: Date.now)
+        // Sin registros: anclado al inicio de hoy, no a `.now`. La pantalla cuenta con `.task(id:)` sobre los filtros, y un
+        // fin que avanza con el reloj cambiaba el id en cada repintado y volvía a contar sin parar.
+        guard let earliest = earliestTransactionDate else {
+            return DetailPeriod.allTime.dateInterval(now: startOfToday)
+        }
         let endOfToday = calendar.date(byAdding: .day, value: 1, to: startOfToday) ?? Date.now
         return DateInterval(start: calendar.startOfDay(for: earliest), end: endOfToday)
     }

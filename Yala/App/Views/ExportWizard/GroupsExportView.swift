@@ -17,7 +17,6 @@ import SwiftUI
 struct GroupsExportView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.yalaTheme) private var theme
 
     /// El contenedor decide cómo cerrar (p.ej. volver a Ajustes). Si es `nil`, cierra este nivel.
     let onFinish: (() -> Void)?
@@ -26,7 +25,9 @@ struct GroupsExportView: View {
     @State private var exportError: (any Error)?
     @State private var showErrorAlert = false
     @State private var exportedFile: ExportedFile?
-    @State private var showSuccessAlert = false
+    /// L19-16 (decisión de Jürgen, 2026-10-18): tras la hoja de compartir, «Listo, tu archivo está en <app>» solo si se
+    /// compartió; si se cancela, nada. Antes salía «Exportación completada» también al cancelar.
+    @State private var shareResult = ExportShareResult()
     /// Red defensiva (cero silencios): si los grupos desaparecen entre abrir Ajustes y exportar.
     @State private var showEmptyAlert = false
 
@@ -59,26 +60,19 @@ struct GroupsExportView: View {
                     Text(error.localizedDescription)
                 }
             }
-            .alert(L10n.Export.exportCompleted, isPresented: $showSuccessAlert) {
+            .alert(ExportShareResult.title(for: shareResult.shownOutcome), isPresented: $shareResult.isShowingAlert) {
                 Button(L10n.Export.backToSettings) { closeToRoot() }
-            } message: {
-                Text(L10n.Export.csvGeneratedSuccess)
             }
             .alert(L10n.Export.groupsOnlyEmptyTitle, isPresented: $showEmptyAlert) {
                 Button(L10n.Common.ok, role: .cancel) { closeToRoot() }
             } message: {
                 Text(L10n.Export.groupsOnlyEmpty)
             }
-            .sheet(
-                item: $exportedFile,
-                onDismiss: {
-                    // El archivo se generó bien; mostramos éxito aunque el usuario no comparta.
-                    showSuccessAlert = true
-                }
-            ) { file in
-                ShareSheet(activityItems: file.urls)
-                    .yalaSheetDetents([.medium, .large])
-                    .interactiveDismissDisabled(false)
+            .sheet(item: $exportedFile, onDismiss: { shareResult.sheetDidClose() }) { file in
+                ShareSheet(activityItems: file.urls, onFinish: { completed, activity in
+                    shareResult.record(completed: completed, activityType: activity)
+                })
+                .yalaSheetDetents([.medium, .large])
             }
         }
     }
@@ -98,26 +92,12 @@ struct GroupsExportView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// L19-16: el botón de la app (`YalaPrimaryButton`), no un rectángulo propio.
     private var exportButtonSection: some View {
-        Button {
+        YalaPrimaryButton(L10n.Export.exportBtn, icon: "square.and.arrow.up", isLoading: isExporting) {
             performExport()
-        } label: {
-            ZStack {
-                if isExporting {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Label(L10n.Export.exportBtn, systemImage: "square.and.arrow.up")
-                        .font(DS.Typography.headline)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(theme.accent)
-            .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
         }
-        .disabled(isExporting)
+        .accessibilityIdentifier("groups_export_button")
         .accessibilityHint(isExporting ? L10n.Accessibility.exportingHint : "")
         .padding(.top, DS.Spacing.lg)
     }

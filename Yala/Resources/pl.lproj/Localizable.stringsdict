@@ -1492,5 +1492,45 @@
 			<string>Zastosuj do %d wpisu</string>
 		</dict>
 	</dict>
+	<key>l20d.export.willExport</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zostanie wyeksportowany %d wpis</string>
+			<key>few</key>
+			<string>Zostaną wyeksportowane %d wpisy</string>
+			<key>many</key>
+			<string>Zostanie wyeksportowanych %d wpisów</string>
+			<key>other</key>
+			<string>Zostanie wyeksportowane %d wpisu</string>
+		</dict>
+	</dict>
+	<key>l20d.export.exportCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Eksportuj %d wpis</string>
+			<key>few</key>
+			<string>Eksportuj %d wpisy</string>
+			<key>many</key>
+			<string>Eksportuj %d wpisów</string>
+			<key>other</key>
+			<string>Eksportuj %d wpisu</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
