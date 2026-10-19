@@ -1,0 +1,534 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Anota un gasto en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota um gasto no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota um gasto no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota um gasto no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Apple Pay en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Apunta un gasto en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota uma despesa no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota uma despesa no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anota uma despesa no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Añade un registro en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicione um registro no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicione um registro no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adiciona um registo no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cuánto gasté ${period} en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto gastei ${period} no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto gastei ${period} no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto gastei ${period} no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cuánto gasté en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto gastei no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto gastei no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto gastei no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cuánto llevo gastado en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto já gastei no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto já gastei no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto já gastei no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Cuánto tengo en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto tenho no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto tenho no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto tenho no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Dictar gasto en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ditar gasto no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ditar gasto no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ditar despesa no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Entrada por imagen en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrada por imagem no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrada por imagem no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrada por imagem no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Entrada por voz en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrada por voz no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrada por voz no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrada por voz no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Escanear gasto en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanear gasto no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanear gasto no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digitalizar despesa no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Log an expense in ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com a Siri no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com a Siri no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regista com a Siri no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Mi saldo en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meu saldo no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meu saldo no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O meu saldo no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Note an expense in ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva uma despesa no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva uma despesa no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarda uma despesa no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Nuevo registro en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo registro no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo registro no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo registo no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Pago Apple Pay en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagamento Apple Pay no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagamento Apple Pay no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagamento Apple Pay no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Registra Apple Pay en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre Apple Pay no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre Apple Pay no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regista Apple Pay no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Registra con Siri en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cria um registro no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cria um registro no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cria um registo no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Registra con foto o archivo en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com foto ou arquivo no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com foto ou arquivo no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regista com foto ou ficheiro no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Registra con imagen en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com imagem no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com imagem no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regista com imagem no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Registra con voz en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com voz no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre com voz no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regista com voz no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Registra en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registre no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regista no ${applicationName}"
+          }
+        }
+      }
+    },
+    "Registro rápido en ${applicationName}": {
+      "localizations": {
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registro rápido no ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registro rápido no ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registo rápido no ${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

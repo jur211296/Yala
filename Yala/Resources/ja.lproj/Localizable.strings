@@ -7467,3 +7467,34 @@
 "accountCardGrouping.label" = "複数通貨のカード";
 "export.column.card" = "カード";
 "export.column.card.description" = "口座が複数通貨のカードに含まれる場合、そのカード名。";
+
+/* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
+"shortcut.spending.title" = "支出を確認";
+"shortcut.spending.description" = "Yalaを開かずに、期間内の支出額を教えます";
+"shortcut.spending.shortTitle" = "支出";
+"shortcut.balance.title" = "残高を確認";
+"shortcut.balance.description" = "Yalaを開かずに、合計またはひとつの口座の残高を教えます";
+"shortcut.balance.shortTitle" = "残高";
+"shortcut.openAccount.title" = "口座を開く";
+"shortcut.openAccount.description" = "Yalaで口座の詳細を開きます";
+"siri.query.param.period" = "期間";
+"siri.query.param.account" = "口座";
+"siri.query.period.type" = "期間";
+"siri.query.period.thisWeek" = "今週";
+"siri.query.period.thisMonth" = "今月";
+"siri.query.period.lastMonth" = "先月";
+"siri.query.period.thisYear" = "今年";
+"siri.entity.account" = "口座";
+"siri.query.noData" = "一度Yalaを開いてから、もう一度聞いてください。";
+"siri.query.groupsOnly" = "このiPhoneのYalaにはグループしかありません。";
+"siri.query.stale" = "その期間の数字が最新ではありません。Yalaを開いてから、もう一度聞いてください。";
+"siri.query.spending.thisWeek" = "今週の支出は%@です。";
+"siri.query.spending.thisMonth" = "今月の支出は%@です。";
+"siri.query.spending.lastMonth" = "先月の支出は%@でした。";
+"siri.query.spending.thisYear" = "今年の支出は%@です。";
+"siri.query.balance.total" = "合計残高は%@です。";
+"siri.query.balance.account" = "%1$@の残高：%2$@。";
+"siri.query.balance.expensesOnly" = "Yalaは「支出のみ」モードのため、残高はありません。今月の支出は%@です。";
+"siri.query.accountNotFound" = "Yalaにその口座が見つかりません。";
+"siri.query.approximate" = "概算です：未確定の為替レートがあります。";
+"siri.query.asOf" = "%@時点のデータです。";

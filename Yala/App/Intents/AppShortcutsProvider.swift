@@ -4,6 +4,11 @@
 //
 //  Provides App Shortcuts for the Shortcuts app and Siri.
 //
+//  Las frases de abajo son las CLAVES. Cada idioma las recibe tal cual (español e inglés, en los 16) salvo donde
+//  `AppShortcuts.xcstrings` las traduce: hoy, portugués (pt, pt-BR, pt-PT). Lo que Siri entrena por idioma se ve en el
+//  bundle compilado, `Metadata.appintents/root.ssu.yaml`, y lo fija `SiriPhrasesPortugueseTests`. Los otros siete
+//  idiomas esperan decisión (L15-5).
+//
 
 import AppIntents
 
@@ -96,6 +101,38 @@ struct YalaShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "shortcut.siriNatural.shortTitle",
             systemImageName: "text.bubble.fill"
+        )
+
+        // Preguntas que Siri contesta sin abrir la app (`SiriQueryIntents.swift`). El período de la tercera frase sale
+        // de los títulos de `SiriSpendingPeriodOption` («esta semana», «el mes pasado»…), por eso van en minúscula.
+        AppShortcut(
+            intent: SpendingQueryIntent(),
+            phrases: [
+                // Spanish
+                "Cuánto gasté en \(.applicationName)",
+                "Cuánto llevo gastado en \(.applicationName)",
+                "Cuánto gasté \(\.$period) en \(.applicationName)",
+                // English
+                "How much did I spend in \(.applicationName)",
+                "My spending in \(.applicationName)",
+                "How much did I spend \(\.$period) in \(.applicationName)"
+            ],
+            shortTitle: "shortcut.spending.shortTitle",
+            systemImageName: "chart.bar.fill"
+        )
+
+        AppShortcut(
+            intent: BalanceQueryIntent(),
+            phrases: [
+                // Spanish
+                "Cuánto tengo en \(.applicationName)",
+                "Mi saldo en \(.applicationName)",
+                // English
+                "How much do I have in \(.applicationName)",
+                "My balance in \(.applicationName)"
+            ],
+            shortTitle: "shortcut.balance.shortTitle",
+            systemImageName: "banknote.fill"
         )
 
     }

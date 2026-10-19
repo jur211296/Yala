@@ -16,7 +16,7 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (30 entradas)
+## Índice (31 entradas)
 
 > **No hace falta leer este fichero entero** — son 204 KB. Localiza la entrada
 > aquí y salta a ella.
@@ -40,6 +40,7 @@
 - `—` [`accessibilityIdentifier` NO se propaga dentro de un `.alert` de SwiftUI: el botón existe en pantall](#accessibilityidentifier-no-se-propaga-dentro-de-un-alert-de-swiftui-el-botn-existe-en-pantalla-y-el-id-llega-vaco-al-rbol)
 - `—` [`xcodebuild test` REINSTALA la app del simulador: el QA que corres después del gate no mira tu](#xcodebuild-test-reinstala-la-app-del-simulador-el-qa-que-corres-despus-del-gate-no-mira-tu)
 - `—` [El árbol de accesibilidad del simulador se degrada tras muchos ciclos launch/stop y solo lo cura](#el-rbol-de-accesibilidad-del-simulador-se-degrada-tras-muchos-ciclos-launchstop-y-solo-lo-cura)
+- `2026-10-18` [El CI compila con Xcode 26.6: lo que solo existe en el SDK de iOS 27 va tras `#if compiler(>=6.3](#el-ci-compila-con-xcode-266-lo-que-solo-existe-en-el-sdk-de-ios-27-va-tras-if-compiler63-2026-10-18)
 - `2026-09-28` [Un build INCREMENTAL puede fallar con «`Category` no conforma `Hashable`» en código que no tocaste: ](#un-build-incremental-puede-fallar-con-category-no-conforma-hashable-en-cdigo-que-no-tocaste-es-el-compilador-y-lo-cura-un-clean-2026-09-28)
 - `2026-09-28` [Cada `xcodebuild test` deja ~400 MB de contenedor muerto en el simulador, y una tanda de mutantes ll](#cada-xcodebuild-test-deja-400-mb-de-contenedor-muerto-en-el-simulador-y-una-tanda-de-mutantes-llena-el-disco-2026-09-28)
 - `2026-09-23` [Una tanda de mutantes: `-collect-test-diagnostics never`, o cada mutante muerto cuesta 10 min (2026-](#una-tanda-de-mutantes--collect-test-diagnostics-never-o-cada-mutante-muerto-cuesta-10-min-2026-09-23)
@@ -598,3 +599,15 @@ el permiso concedido (`authStatus=2`). El log de la app lo decía: cada `UNUserN
 porque no pasan por ese repositorio. Tras `simctl shutdown` + `boot`, el mismo arranque dio `notificationCenter.add OK` y
 el resumen llegó a su hora. **Antes de culpar al planificador de notificaciones, lanza la app con el log a la vista y
 busca 2003**; si sale, reinicia el simulador. Un `simctl push` que sí llega no prueba que el simulador acepte las locales.
+
+### El CI compila con Xcode 26.6: lo que solo existe en el SDK de iOS 27 va tras `#if compiler(>=6.3)` (2026-10-18)
+
+**Qué pasó.** La Mini tiene Xcode 27.1 (Swift 6.4, SDK iOS 27.1) y el job `tests` del CI, Xcode 26.6 (Swift 6.2, SDK
+iOS 26). `@available(iOS 27, *)` no basta: protege en tiempo de ejecución, pero el símbolo tiene que existir al compilar.
+`.system.open` (`AppSchema.SystemIntent.open`, `anyAppleOS 27.0`) y el framework `AppIntentsTesting` no existen en el SDK
+de iOS 26, así que el PR habría compilado aquí y roto el CI.
+
+**Cómo se hace.** En la app, `#if compiler(>=6.3)` alrededor del tipo (`OpenAccountIntent`), y el test que lo mira, igual.
+En un target de tests que importa un framework nuevo, `#if canImport(AppIntentsTesting)` alrededor del fichero entero. En
+el CI esas piezas no existen y el resto compila igual. **Antes de usar una API marcada `anyAppleOS 27.0`, mira con qué
+Xcode compila el CI** (`.github/workflows/qa.yml`, «Seleccionar Xcode»).

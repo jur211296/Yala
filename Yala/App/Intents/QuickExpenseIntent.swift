@@ -196,9 +196,9 @@ struct SiriNaturalEntryIntent: AppIntent {
         if let existingText = text, !existingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             finalText = existingText.trimmingCharacters(in: .whitespacesAndNewlines)
         } else {
-            let requested = try await $text.requestValue("shortcut.siriNatural.dialog.askText")
+            let requested = try await $text.requestValue(IntentSpeech.dialog("shortcut.siriNatural.dialog.askText"))
             guard !requested.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                return .result(dialog: "shortcut.siriNatural.error.noText", view: EmptyView())
+                return .result(dialog: IntentSpeech.dialog("shortcut.siriNatural.error.noText"), view: EmptyView())
             }
             finalText = requested.trimmingCharacters(in: .whitespacesAndNewlines)
         }
@@ -206,7 +206,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         // Step 2: Pro gate — LLM parsing requires Pro subscription
         let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.isProUser) ?? false
         guard isProUser else {
-            return .result(dialog: "shortcut.siriNatural.error.proRequired", view: EmptyView())
+            return .result(dialog: IntentSpeech.dialog("shortcut.siriNatural.error.proRequired"), view: EmptyView())
         }
 
         // Step 3: Leer el contexto cacheado por la app (subcategorías para el LLM + divisa + cuentas).
@@ -221,7 +221,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         // crea el draft con "account" en needsUserInput (evita el falso "no hay cuentas" por caché
         // ausente/stale).
         if let cachedContext, !cachedContext.hasRealAccount {
-            return .result(dialog: "shortcut.error.noAccount", view: EmptyView())
+            return .result(dialog: IntentSpeech.dialog("shortcut.error.noAccount"), view: EmptyView())
         }
 
         // Step 4: Parse with LLM (con offline fallback). Las subcategorías salen de la caché. Sin el consentimiento de
@@ -242,7 +242,7 @@ struct SiriNaturalEntryIntent: AppIntent {
         // Pre-flight quality gate: descarta transactions sin amount. Si TODAS fallan → error.
         let validParsed = parsedTransactions.filter { $0.amount != nil }
         guard !validParsed.isEmpty else {
-            return .result(dialog: "shortcut.siriNatural.error.parsingFailedHelp", view: EmptyView())
+            return .result(dialog: IntentSpeech.dialog("shortcut.siriNatural.error.parsingFailedHelp"), view: EmptyView())
         }
         let partialFailures = parsedTransactions.count - validParsed.count
 
@@ -296,7 +296,7 @@ struct SiriNaturalEntryIntent: AppIntent {
             isExpense: snippetIsExpense,
             isDraft: true
         )
-        return .result(dialog: IntentDialog(stringLiteral: dialogText), view: snippet)
+        return .result(dialog: IntentSpeech.resolved(dialogText), view: snippet)
     }
 
     /// Lee el texto dictado. Con el consentimiento de IA lo manda a `remote` (el LLM, a través del servidor) y, si

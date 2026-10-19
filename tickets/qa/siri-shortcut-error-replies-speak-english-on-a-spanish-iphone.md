@@ -1,10 +1,10 @@
 ---
 id: siri-shortcut-error-replies-speak-english-on-a-spanish-iphone
-status: backlog
+status: qa
 priority: medium
 area: "intents, siri, l10n"
 created: 2026-09-16
-updated: 2026-10-08
+updated: 2026-10-18
 source: "barrido /qa del 2026-09-16 (`storekit-appgroup-siri-pro-gate`), visto en simulador"
 ---
 
@@ -74,3 +74,30 @@ Siri», «Registrar por voz»…). O sea: no son solo las cuatro respuestas de e
 Atajos lo pinte en español. Captura: `~/Claude/entregas/Yala--auditoria-ux-2-2-lote-15-desde-fuera/capturas/15.6-01-anotar-con-siri-pregunta.png`.
 Causa sin aislar; dos sospechas que se pueden medir: `CFBundleDevelopmentRegion = en` sin `CFBundleLocalizations` en el
 `Info.plist`, y `es-PE` sin casar con `es-419` en ese proceso.
+
+## Hecho en 2.2 (2026-10-18, card «Integrar Yala con el nuevo Siri con IA de iOS 27»)
+
+**Medido en el SDK de iOS 27.1**: `IntentDialog(stringLiteral:)` lleva `@_semantics("localization_key.init_literal")`.
+`.result(dialog: "clave")` y `$text.requestValue("clave")` mandan una CLAVE que resuelve el sistema, y con es-PE caía en
+el idioma de desarrollo (`developmentRegion = en`). Lo que la app resuelve con `String(localized:)` salía en español.
+Por qué el sistema elige inglés con es-PE no está aislado; no hace falta para el arreglo.
+
+**Arreglo**: las cuatro respuestas de error (`noText`, `proRequired`, `noAccount`, `parsingFailedHelp`) y la pregunta
+«¿Qué quieres registrar?» se traducen en la app y llegan ya resueltas (`IntentSpeech`, en `SiriQueryIntents.swift`).
+Las acciones nuevas de 2.2 contestan igual.
+
+**Red**: `IntentSpeechTests` (en `YalaTests/SiriIOS27Tests.swift`): ningún `dialog: "…"` ni `requestValue("…")` literal
+en los ficheros de intents; las cuatro respuestas y la pregunta pasan por `IntentSpeech`; existen en es, es-419, es-ES,
+es-AR y pt-BR y no son el inglés.
+
+**Sin tocar**: los títulos de los parámetros en la ficha de Atajos («Amount / The transaction amount») son metadatos que
+resuelve el sistema y no se pueden traducir desde la app en tiempo de ejecución. Se miden en el simulador (ver abajo).
+
+### Guion de iPhone (Jürgen, 3 min)
+
+1. iPhone en **español**, Siri en español. Yala **sin Pro** (o con el interruptor Pro apagado en Yala Dev).
+2. Di «Oye Siri, **Anota un gasto en Yala**».
+3. Siri pregunta «**¿Qué quieres registrar?**» (antes: «What do you want to record?»). Contesta «café cinco soles».
+4. Siri contesta «**Activa Yala Pro para usar registro con Siri.**» en español (antes: «Activate Yala Pro…»).
+
+Si el paso 3 y el 4 salen en español, el ticket pasa a `done`.

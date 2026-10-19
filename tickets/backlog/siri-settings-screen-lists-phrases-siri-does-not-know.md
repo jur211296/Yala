@@ -4,7 +4,7 @@ status: backlog
 area: intents
 priority: medium
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-18
 source: docs/ux/mapa-de-flujos-2.2.md (auditoría UX 2.2, fase 1)
 ---
 
@@ -44,3 +44,7 @@ la acción no existe. Test: `YalaTests/ExternalEntriesLote15Tests.swift` (`SiriS
 (un array de Swift, sin `AppShortcuts.xcstrings`). En los otros 10 idiomas la pantalla enseña frases traducidas que Siri
 no conoce **ninguna**. Es la mejora L15-3 del lote, con card para Jürgen: registrar las frases por idioma o decir en la
 pantalla que Siri entiende español e inglés.
+
+**Portugués arreglado (2026-10-18)**: `AppShortcuts.xcstrings` registra en pt, pt-BR y pt-PT las frases que enseña la
+pantalla (medido en `root.ssu.yaml`, test `SiriPhrasesPortugueseTests`). Quedan 7 idiomas sin frases propias: alemán,
+francés, italiano, japonés, neerlandés, polaco y chino (L15-5, pendiente de Jürgen).

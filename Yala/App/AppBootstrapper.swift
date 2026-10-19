@@ -1082,7 +1082,13 @@ final class AppBootstrapper {
 
     /// Seed de datos UI-test al final del bootstrap + señal `uitest_ready`.
     private func applyUITestSeed(context: ModelContext) async {
-        defer { UITestHooks.shared.markReady() }
+        defer {
+            // El paso 9 del arranque escribió la caché de los widgets (y la foto de Siri) ANTES de sembrar: sin esto,
+            // con `-uitest-seed` las dos se quedaban vacías hasta el primer cambio, cosa que en un arranque real con
+            // datos no pasa. Medido el 2026-10-18 con `SiriIntentsUITests` (Siri no veía ninguna cuenta).
+            WidgetDataCache.updateCache(context: context)
+            UITestHooks.shared.markReady()
+        }
         // Excluyente con `-uitest-seed-desync`: el seed aleatorio del perfil contaminaría los
         // totales del XCUI de clasificación → si ambos flags están, gana el desync (aislado).
         if let raw = UITestHooks.seedProfile, !UITestHooks.seedDesync {
@@ -2612,6 +2618,14 @@ final class AppBootstrapper {
 
         case "records":
             setOrDeferDeepLink(.recordsStandalone)
+
+        case "accounts":
+            // «Abrir cuenta» de Siri (`OpenAccountIntent`, iOS 27): `accounts/<shortcutID>` abre la ficha de esa cuenta en
+            // el Panel por el mismo camino que el aviso de la tarjeta (UX 2.2 · L10-14). Sin id válido, el Panel.
+            if let accountID = AlertDeepLink.account.id(fromDeepLink: "accounts" + url.path) {
+                AlertDeepLinkTarget.account.request(accountID)
+            }
+            setOrDeferDeepLink(.panel)
 
         case "groups":
             if let groupID = url.pathComponents.last, groupID != "/" {

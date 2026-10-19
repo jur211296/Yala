@@ -7467,3 +7467,34 @@
 "accountCardGrouping.label" = "多币种卡片";
 "export.column.card" = "卡片";
 "export.column.card.description" = "如果该账户属于多币种卡片，则为卡片名称。";
+
+/* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
+"shortcut.spending.title" = "查询支出";
+"shortcut.spending.description" = "无需打开 Yala，告诉你某段时间花了多少";
+"shortcut.spending.shortTitle" = "我的支出";
+"shortcut.balance.title" = "查询余额";
+"shortcut.balance.description" = "无需打开 Yala，告诉你总共或某个账户有多少钱";
+"shortcut.balance.shortTitle" = "我的余额";
+"shortcut.openAccount.title" = "打开账户";
+"shortcut.openAccount.description" = "在 Yala 中打开账户详情";
+"siri.query.param.period" = "期间";
+"siri.query.param.account" = "账户";
+"siri.query.period.type" = "期间";
+"siri.query.period.thisWeek" = "本周";
+"siri.query.period.thisMonth" = "本月";
+"siri.query.period.lastMonth" = "上个月";
+"siri.query.period.thisYear" = "今年";
+"siri.entity.account" = "账户";
+"siri.query.noData" = "请先打开一次 Yala，再问我。";
+"siri.query.groupsOnly" = "在这台 iPhone 上，Yala 只有你的群组。";
+"siri.query.stale" = "这段时间的数据不是最新的。请打开 Yala 后再问我。";
+"siri.query.spending.thisWeek" = "本周你已花费 %@。";
+"siri.query.spending.thisMonth" = "本月你已花费 %@。";
+"siri.query.spending.lastMonth" = "上个月你花费了 %@。";
+"siri.query.spending.thisYear" = "今年你已花费 %@。";
+"siri.query.balance.total" = "你总共有 %@。";
+"siri.query.balance.account" = "%1$@ 余额：%2$@。";
+"siri.query.balance.expensesOnly" = "Yala 处于“仅支出”模式，没有余额。本月你已花费 %@。";
+"siri.query.accountNotFound" = "在 Yala 中找不到这个账户。";
+"siri.query.approximate" = "这是估算值：还有汇率未确认。";
+"siri.query.asOf" = "根据你 %@ 的数据。";
