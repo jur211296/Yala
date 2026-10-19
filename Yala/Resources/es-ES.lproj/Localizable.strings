@@ -289,10 +289,10 @@
 "groups.bridge.draftReasonCurrencyChanged" = "La moneda del gasto en %@ cambió. Elige cuenta para registrar tu parte.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registró este gasto en %2$@. Elige cuenta para llevarlo a tus registros.";
 "groups.bridge.editPartialBanner" = "Este gasto viene del grupo. Puedes editar la cuenta, la categoría y las etiquetas. El monto y la fecha se sincronizan con el grupo.";
-"groups.bridge.errorDelete" = "No se pudo borrar el registro personal del gasto.";
+"groups.bridge.errorDelete" = "No pudimos quitar este gasto de tus cuentas. Si sigue en Registros, bórralo desde ahí.";
 "groups.bridge.errorNoAccounts" = "No tienes cuentas configuradas. Crea una primero.";
-"groups.bridge.errorTransaction" = "Tu registro personal del gasto se reintentará automáticamente.";
-"groups.bridge.errorTransactionUpdate" = "El cambio no se reflejó en tu registro personal. Lo reintentaremos.";
+"groups.bridge.errorTransaction" = "No pudimos apuntar este gasto en tus cuentas. Lo intentamos otra vez solos; no tienes que hacer nada.";
+"groups.bridge.errorTransactionUpdate" = "No pudimos actualizar este gasto en tus cuentas. Lo intentamos otra vez solos; no tienes que hacer nada.";
 "groups.bridge.optoutAlertBody" = "Puedes crear un registro personal en tu cuenta para reflejar este gasto, o dejarlo solo dentro del grupo.";
 "groups.bridge.optoutAlertNo" = "Solo en el grupo";
 "groups.bridge.optoutAlertTitle" = "¿Registrar también en tu Yala personal?";
@@ -4199,8 +4199,6 @@
 /* Body of the provider chooser in the cloud migration entry */
 "storage.signin.body" = "Para guardar tus datos en la nube necesitas una cuenta de Yala. Entra con Apple o Google.";
 
-/* Provider-binding note (R9) below the sign-in buttons */
-"storage.signin.note" = "Tu cuenta de Yala queda ligada al método que elijas: úsalo siempre que vuelvas a entrar.";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
 "groups.empty.signedOut.title" = "Tus grupos están en tu cuenta";
@@ -4209,7 +4207,7 @@
 "groups.empty.signedOut.message" = "Inicia sesión para ver los grupos que compartes.";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
-"groups.empty.signedOut.action" = "Iniciar sesión";
+"groups.empty.signedOut.action" = "Entrar en mi cuenta";
 
 /* H-2026-07-18-6 — caption while the sign-out saves pending changes */
 "settings.signOutWorking" = "Guardando tus cambios pendientes…";
@@ -4237,7 +4235,7 @@
 /* Fase 1: subtitulo de la fila Eliminar mi cuenta */
 
 /* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
-"settings.deleteAccountCrossReferHint" = "¿Solo quieres borrar tus datos y conservar tu cuenta? Usa «Vaciar mis datos».";
+"settings.deleteAccountCrossReferHint" = "¿Solo quieres borrar tus datos y conservar tu cuenta? Usa «Vaciar datos».";
 
 
 
@@ -4329,10 +4327,10 @@
 "settings.deleteAccountScopeCloudCloud" = "Se borra tu cuenta y todos tus datos, para siempre";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
-"settings.deleteAccountScopeCloudGroupsOnly" = "Se borra tu cuenta y saldrás de tus grupos";
+"settings.deleteAccountScopeCloudGroupsOnly" = "Se borra tu cuenta de Yala";
 
 /* D4 Eliminar cuenta: fila grupos */
-"settings.deleteAccountScopeGroups" = "Seguirás apareciendo como «Usuario eliminado»";
+"settings.deleteAccountScopeGroups" = "Tu nombre pasa a «Usuario eliminado»";
 
 /* D4 Cerrar sesión (privado): fila dispositivo */
 "settings.signOutScopeDevicePrivate" = "Se borran de este dispositivo; antes terminamos de subirlos a iCloud";
@@ -4495,7 +4493,7 @@
 "settings.batchLeaveStatSkipped" = "Sin procesar";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "Puedes retomarlo cuando quieras desde «Vaciar mis datos».";
+"settings.batchLeaveStoppedBody" = "Puedes retomarlo cuando quieras desde «Vaciar datos».";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Liquidación";
@@ -5259,7 +5257,7 @@
 "settings.signOutAttestExportFailed" = "No hemos podido generar el archivo. Inténtalo de nuevo.";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
-"groups.attestTerminalBanner" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Lo que edites aquí no llega al grupo: usa otro teléfono mientras tanto.";
+"groups.attestTerminalBanner" = "Este teléfono no puede enviar cambios a tus grupos desde hace un día. Lo que apuntes aquí no lo verá nadie del grupo: usa otro teléfono.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "Lleva más de un día sin conseguir la verificación de seguridad que pide nuestro servidor. Lo que apuntes aquí se guarda en este teléfono, pero no llega a tu cuenta en la nube: usa otro teléfono mientras tanto.";
@@ -6898,3 +6896,13 @@
 "l20d.groups.leaveAll.confirmMessageGeneric" = "Vas a salir de todos los grupos en los que no tienes saldos pendientes.";
 "l20d.export.willExport" = "Saldrán %d registros";
 "l20d.export.exportCount" = "Exportar %d registros";
+
+/* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
+"uxcs.removeDeviceData.row" = "Quitar mis datos de este iPhone";
+"uxcs.removeDeviceData.subtitle" = "Siguen en tu iCloud";
+"uxcs.removeDeviceData.sheetTitle" = "¿Quitar tus datos de este iPhone?";
+"uxcs.removeDeviceData.confirm" = "Quitar mis datos";
+"uxcs.signOutUpload.title" = "Subiendo tus cambios a iCloud…";
+"uxcs.signOutUpload.pending" = "Cambios por subir: %d";
+"uxcs.migrated.rejoinSentence" = "Este grupo se ha mudado. Vuelve a entrar para verlo al día.";
+"uxcs.deleteAccount.finalGroupsOnly" = "Se borra tu cuenta de Yala. Lo de este teléfono se queda.";

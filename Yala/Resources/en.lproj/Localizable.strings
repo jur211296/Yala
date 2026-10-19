@@ -3486,9 +3486,9 @@
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Group sync issue";
-"groups.bridge.errorTransaction" = "Your personal record for this expense will retry automatically.";
-"groups.bridge.errorTransactionUpdate" = "The change didn't reflect in your personal record. We'll retry.";
-"groups.bridge.errorDelete" = "Couldn't delete the personal record for this expense.";
+"groups.bridge.errorTransaction" = "We couldn't add this expense to your accounts. We'll try again on our own — you don't need to do anything.";
+"groups.bridge.errorTransactionUpdate" = "We couldn't update this expense in your accounts. We'll try again on our own — you don't need to do anything.";
+"groups.bridge.errorDelete" = "We couldn't remove this expense from your accounts. If it's still in Records, delete it from there.";
 "groups.bridge.errorNoAccounts" = "You don't have any accounts set up. Create one first.";
 "groups.sync.errorMemberSetup" = "You joined, but there was an issue with your identity in the group. Reopen the app.";
 
@@ -4913,8 +4913,6 @@
 /* Body of the provider chooser in the cloud migration entry */
 "storage.signin.body" = "To store your data in the cloud you need a Yala account. Sign in with Apple or Google.";
 
-/* Provider-binding note (R9) below the sign-in buttons */
-"storage.signin.note" = "Your Yala account is tied to the method you choose — use it whenever you sign in again.";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
 "groups.empty.signedOut.title" = "Your groups are in your account";
@@ -4923,7 +4921,7 @@
 "groups.empty.signedOut.message" = "Sign in to see the groups you share.";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
-"groups.empty.signedOut.action" = "Sign in";
+"groups.empty.signedOut.action" = "Sign in to my account";
 
 /* H-2026-07-18-6 — caption while the sign-out saves pending changes */
 "settings.signOutWorking" = "Saving your pending changes…";
@@ -4951,7 +4949,7 @@
 /* Fase 1: subtitulo de la fila Eliminar mi cuenta */
 
 /* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
-"settings.deleteAccountCrossReferHint" = "Just want to erase your data and keep your account? Use “Wipe my data”.";
+"settings.deleteAccountCrossReferHint" = "Just want to erase your data and keep your account? Use “Clear Data”.";
 
 
 
@@ -5043,10 +5041,10 @@
 "settings.deleteAccountScopeCloudCloud" = "Your account and all your data are deleted, forever";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
-"settings.deleteAccountScopeCloudGroupsOnly" = "Your account is deleted and you’ll leave your groups";
+"settings.deleteAccountScopeCloudGroupsOnly" = "Your Yala account is deleted";
 
 /* D4 Eliminar cuenta: fila grupos */
-"settings.deleteAccountScopeGroups" = "You’ll still appear as “Deleted user”";
+"settings.deleteAccountScopeGroups" = "Your name becomes “Deleted user”";
 
 /* D4 Cerrar sesión (privado): fila dispositivo */
 "settings.signOutScopeDevicePrivate" = "Deleted from this device; we finish uploading them to iCloud first";
@@ -5209,7 +5207,7 @@
 "settings.batchLeaveStatSkipped" = "Skipped";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "You can pick it up again anytime from “Wipe my data”.";
+"settings.batchLeaveStoppedBody" = "You can pick it up again anytime from “Clear Data”.";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Settlement";
@@ -5960,7 +5958,7 @@
 "settings.signOutAttestExportFailed" = "We couldn't create the file. Please try again.";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
-"groups.attestTerminalBanner" = "It's gone more than a day without passing the security check our server requires. Anything you edit here won't reach the group — use another phone in the meantime.";
+"groups.attestTerminalBanner" = "This phone hasn't been able to send changes to your groups for a day. No one in the group will see what you add here — use another phone.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "It's gone more than a day without passing the security check our server requires. Anything you add here is saved on this phone, but it doesn't reach your cloud account — use another phone in the meantime.";
@@ -7571,3 +7569,13 @@
 "l20d.groups.leaveAll.confirmAction" = "Leave all";
 "l20d.groups.leaveAll.confirmMessage" = "You’ll leave %@.";
 "l20d.groups.leaveAll.confirmMessageGeneric" = "You’ll leave every group where you have no outstanding balance.";
+
+/* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
+"uxcs.removeDeviceData.row" = "Remove my data from this iPhone";
+"uxcs.removeDeviceData.subtitle" = "They stay in your iCloud";
+"uxcs.removeDeviceData.sheetTitle" = "Remove your data from this iPhone?";
+"uxcs.removeDeviceData.confirm" = "Remove my data";
+"uxcs.signOutUpload.title" = "Uploading your changes to iCloud…";
+"uxcs.signOutUpload.pending" = "Changes left to upload: %d";
+"uxcs.migrated.rejoinSentence" = "This group moved. Sign back in to see it up to date.";
+"uxcs.deleteAccount.finalGroupsOnly" = "Your Yala account is deleted. What's on this phone stays.";

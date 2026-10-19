@@ -3446,9 +3446,9 @@
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Probleem met de groep";
-"groups.bridge.errorTransaction" = "Je persoonlijke registratie wordt automatisch opnieuw geprobeerd.";
-"groups.bridge.errorTransactionUpdate" = "De wijziging is niet doorgevoerd in je persoonlijke registratie. We proberen het opnieuw.";
-"groups.bridge.errorDelete" = "Kon de persoonlijke registratie van de uitgave niet verwijderen.";
+"groups.bridge.errorTransaction" = "We konden deze uitgave niet in je rekeningen zetten. We proberen het zelf opnieuw; je hoeft niets te doen.";
+"groups.bridge.errorTransactionUpdate" = "We konden deze uitgave in je rekeningen niet bijwerken. We proberen het zelf opnieuw; je hoeft niets te doen.";
+"groups.bridge.errorDelete" = "We konden deze uitgave niet uit je rekeningen halen. Staat hij nog in Boekingen, verwijder hem dan daar.";
 "groups.bridge.errorNoAccounts" = "Je hebt nog geen rekeningen ingesteld. Maak er eerst een aan.";
 "groups.sync.errorMemberSetup" = "Je bent toegetreden, maar er was een probleem met je identiteit in de groep. Open de app opnieuw.";
 
@@ -4919,8 +4919,6 @@
 /* Body of the provider chooser in the cloud migration entry */
 "storage.signin.body" = "Om je gegevens in de cloud te bewaren heb je een Yala-account nodig. Log in met Apple of Google.";
 
-/* Provider-binding note (R9) below the sign-in buttons */
-"storage.signin.note" = "Je Yala-account is gekoppeld aan de gekozen methode — gebruik die telkens wanneer je opnieuw inlogt.";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos (H-2026-07-18-7): título */
 "groups.empty.signedOut.title" = "Je groepen staan in je account";
@@ -4929,7 +4927,7 @@
 "groups.empty.signedOut.message" = "Meld je aan om de groepen te zien die je deelt.";
 
 /* Empty state del tab Grupos tras cerrar sesión solo-grupos: CTA */
-"groups.empty.signedOut.action" = "Aanmelden";
+"groups.empty.signedOut.action" = "Inloggen op mijn account";
 
 /* H-2026-07-18-6 — caption while the sign-out saves pending changes */
 "settings.signOutWorking" = "Je openstaande wijzigingen worden opgeslagen…";
@@ -4957,7 +4955,7 @@
 /* Fase 1: subtitulo de la fila Eliminar mi cuenta */
 
 /* Fase 1: desvio cruzado del dialogo de eliminar cuenta hacia Vaciar */
-"settings.deleteAccountCrossReferHint" = "Wil je alleen je gegevens wissen en je account houden? Gebruik ‘Mijn gegevens wissen’.";
+"settings.deleteAccountCrossReferHint" = "Wil je alleen je gegevens wissen en je account houden? Gebruik ‘Gegevens wissen’.";
 
 
 
@@ -5049,10 +5047,10 @@
 "settings.deleteAccountScopeCloudCloud" = "Je account en al je gegevens worden voorgoed verwijderd";
 
 /* D4 Eliminar cuenta (solo grupos backend): fila cuenta de Yala */
-"settings.deleteAccountScopeCloudGroupsOnly" = "Je account wordt verwijderd en je verlaat je groepen";
+"settings.deleteAccountScopeCloudGroupsOnly" = "Je Yala-account wordt verwijderd";
 
 /* D4 Eliminar cuenta: fila grupos */
-"settings.deleteAccountScopeGroups" = "Je blijft verschijnen als “Verwijderde gebruiker”";
+"settings.deleteAccountScopeGroups" = "Je naam wordt “Verwijderde gebruiker”";
 
 /* D4 Cerrar sesión (privado): fila dispositivo */
 "settings.signOutScopeDevicePrivate" = "Worden van dit apparaat verwijderd; eerst uploaden we ze nog naar iCloud";
@@ -5215,7 +5213,7 @@
 "settings.batchLeaveStatSkipped" = "Niet verwerkt";
 
 /* D10 batch: body explaining how to relaunch after stop (D3) */
-"settings.batchLeaveStoppedBody" = "Je kunt het altijd hervatten via ‘Mijn gegevens wissen’.";
+"settings.batchLeaveStoppedBody" = "Je kunt het altijd hervatten via ‘Gegevens wissen’.";
 
 /* Feed row title for a confirmed settlement in group records */
 "groups.settlement.entryDescription" = "Afrekening";
@@ -5966,7 +5964,7 @@
 "settings.signOutAttestExportFailed" = "We konden het bestand niet maken. Probeer het opnieuw.";
 
 /* Aviso fijo en la pestana Grupos: el telefono lleva mas de un dia sin pasar la verificacion de seguridad, asi que sus cambios de grupos no llegan */
-"groups.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier wijzigt, bereikt de groep niet — gebruik zolang een andere telefoon.";
+"groups.attestTerminalBanner" = "Deze telefoon kan al een dag geen wijzigingen naar je groepen sturen. Niemand in de groep ziet wat je hier invoert — gebruik een andere telefoon.";
 
 /* Aviso fijo: este teléfono no consigue App Attest y los datos personales no suben a la nube */
 "settings.attestTerminalBanner" = "Hij komt al meer dan een dag niet door de beveiligingscontrole die onze server vereist. Wat je hier invoert, wordt op deze telefoon bewaard, maar bereikt je cloudaccount niet — gebruik zolang een andere telefoon.";
@@ -7577,3 +7575,13 @@
 "l20d.groups.leaveAll.confirmAction" = "Alle verlaten";
 "l20d.groups.leaveAll.confirmMessage" = "Je verlaat %@.";
 "l20d.groups.leaveAll.confirmMessageGeneric" = "Je verlaat alle groepen waarin je geen openstaand saldo hebt.";
+
+/* Auditoría UX 2.2 · lote decidido 04 — cuenta, cerrar sesión y modo solo grupos (2026-10-19) */
+"uxcs.removeDeviceData.row" = "Mijn gegevens van deze iPhone verwijderen";
+"uxcs.removeDeviceData.subtitle" = "Ze blijven in je iCloud";
+"uxcs.removeDeviceData.sheetTitle" = "Je gegevens van deze iPhone verwijderen?";
+"uxcs.removeDeviceData.confirm" = "Mijn gegevens verwijderen";
+"uxcs.signOutUpload.title" = "Je wijzigingen worden naar iCloud geüpload…";
+"uxcs.signOutUpload.pending" = "Nog te uploaden wijzigingen: %d";
+"uxcs.migrated.rejoinSentence" = "Deze groep is verhuisd. Meld je opnieuw aan om hem bijgewerkt te zien.";
+"uxcs.deleteAccount.finalGroupsOnly" = "Je Yala-account wordt verwijderd. Wat op deze telefoon staat, blijft.";

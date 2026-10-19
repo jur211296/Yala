@@ -85,17 +85,20 @@ struct WelcomeSignInVerbTests {
         #expect(!src.contains("purpose: .signIn"))
     }
 
-    /// **G3 (2026-08-11) sacó a Grupos del neutro.** W4 lo dejó en `.continue` cuando su única entrada era
-    /// el invitado por link; con la rama ORGANIZADOR del Welcome, quien llega aquí está CREANDO su cuenta
-    /// para estrenar Grupos. Y las dos entradas coinciden en eso: nadie alcanza este sheet con una sesión
-    /// viva —el `onAppear` la cierra si la hay, y el productor lo garantiza—, así que el verbo del alta es
-    /// el correcto para ambas.
-    @Test("Grupos pide CREAR cuenta: sus dos entradas son altas")
-    func groups_usesTheSignUpVerb() throws {
+    /// **UX 2.2 · L19-17 (2026-10-19) devolvió a Grupos al neutro, y ahora con los DOS botones.** G3 (2026-08-11) le
+    /// había puesto el verbo del alta porque sus dos entradas eran altas; a la hoja vuelve también quien cerró su
+    /// sesión de grupos, y «Crear cuenta con Google» le hacía dudar de si perdería sus grupos. Decisión de Jürgen:
+    /// «Continuar con Apple» y «Continuar con Google», el verbo de L12-7. Se fija también el botón de Apple, que no
+    /// pasa por `purpose`: con `.signIn` diría «Iniciar sesión con Apple» al lado de «Continuar con Google».
+    @Test("Grupos dice CONTINUAR en los dos botones: a la hoja se llega para entrar y para crear")
+    func groups_usesTheContinueVerb() throws {
         let src = try Self.code(Self.groupsPath)
-        #expect(src.contains("purpose: .signUp"), "\(Self.groupsPath) dejó de declarar el verbo del alta")
-        #expect(!src.contains("purpose: .continue"))
+        #expect(src.contains("purpose: .continue"), "\(Self.groupsPath) dejó de declarar el verbo neutro")
+        #expect(!src.contains("purpose: .signUp"))
         #expect(!src.contains("purpose: .signIn"))
+        #expect(src.contains("type: .continue"), "el botón de Apple de Grupos dejó de decir «Continuar»")
+        #expect(!src.contains("type: .signIn"))
+        #expect(!src.contains("type: .signUp"))
     }
 
     /// El conteo es lo que convierte esto en una red: una superficie NUEVA que se cuele sin decidir su

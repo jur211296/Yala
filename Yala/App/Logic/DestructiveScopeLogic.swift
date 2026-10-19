@@ -298,6 +298,25 @@ nonisolated enum DestructiveScopeLogic {
         return hasPrivateSession ? .deleteAccountGroupsOnly : .deleteAccountGroupsOnlyNoPrivate
     }
 
+    /// UX 2.2 · L20-6 (decisión de Jürgen, 2026-10-18): **sin cuenta de Yala, la salida se llama por lo que hace.** En la
+    /// celda privada sin sesión en la nube (C) no hay ninguna sesión que «cerrar»: lo que pasa es que los datos se van de
+    /// este iPhone y siguen en iCloud. Ahí la fila dice «Quitar mis datos de este iPhone», va sola al final de Ajustes, y la
+    /// hoja que abre lleva el mismo verbo. Con cuenta de Yala (D, E, F) se sigue llamando «Cerrar sesión».
+    ///
+    /// Decide por el CAMINO y no por la operación: `.privateSignOut` con filas de grupos de una sesión caducada resuelve la
+    /// operación del «equipo» (`signOutPrivateWithGroups`), y sigue siendo la misma fila sin cuenta viva.
+    static func signOutRemovesDeviceData(path: CloudSignOutFlowLogic.Path) -> Bool {
+        path == .privateSignOut
+    }
+
+    /// UX 2.2 · L20-10 (decisión de Jürgen, 2026-10-18): **la alerta final de «Eliminar mi cuenta» habla de su celda.** La
+    /// genérica («tu cuenta y tus datos se eliminarán por completo») contradecía a la hoja de la cuenta de grupos con sesión
+    /// privada (D), donde lo personal de este teléfono no se toca. En la nube (E) y en solo grupos sin sesión privada (F) la
+    /// genérica es cierta y se queda.
+    static func deleteAccountFinalKeepsThisDevice(_ operation: Operation) -> Bool {
+        operation == .deleteAccountGroupsOnly
+    }
+
     /// ¿La confirmación de la hoja necesita un SEGUNDO gesto? Solo los cierres sin copia en iCloud: son los
     /// únicos «Cerrar sesión» que destruyen algo que no existe en ninguna otra parte (confirmación reforzada,
     /// decisión de Jürgen del 2026-09-09).

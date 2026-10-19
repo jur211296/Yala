@@ -638,31 +638,44 @@ private struct MigratedGroupBanner: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: DS.Spacing.sm) {
-            Image(systemName: iconName)
-                .font(DS.Typography.title2)
-                .foregroundStyle(DS.Semantic.warningForeground)
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+                Image(systemName: iconName)
+                    .font(DS.Typography.title2)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+                    .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Groups.Migrated.bannerTitle)
-                    .font(DS.Typography.subheadlineEmphasized)
-                Text(bodyText)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
-                // C-10: honestidad sobre datos stale. Lo que se ve es la foto de CloudKit del instante
-                // del freeze; la verdad ya vive en el backend y se separa cada día.
-                Text(L10n.Groups.Migrated.readOnlyNote)
-                    .font(DS.Typography.captionSmall)
-                    .foregroundStyle(.secondary)
+                if mode == .rejoin {
+                    // UX 2.2 · L19-19 (decisión de Jürgen, 2026-10-18): una frase, no tres. «Se movió a la nube de
+                    // Yala», «vuelve a entrar» y «lo que ves es la copia de cuando se movió» decían lo mismo en tres
+                    // líneas que nadie leía; la copia vieja ya la cuenta «para verlo al día».
+                    Text(L10n.UXCS.migratedRejoinSentence)
+                        .font(DS.Typography.subheadlineEmphasized)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(L10n.Groups.Migrated.bannerTitle)
+                            .font(DS.Typography.subheadlineEmphasized)
+                        Text(bodyText)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                        // C-10: honestidad sobre datos stale. Lo que se ve es la foto de CloudKit del instante
+                        // del freeze; la verdad ya vive en el backend y se separa cada día.
+                        Text(L10n.Groups.Migrated.readOnlyNote)
+                            .font(DS.Typography.captionSmall)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
             }
 
-            Spacer()
-
+            // L19-19: el botón tenía forma de texto naranja y no se veía que se podía tocar. Ahora es el botón relleno
+            // de la app, debajo de la frase. Es el mismo componente para las dos salidas («Volver a entrar» y
+            // «Actualizar»): las dos tenían el mismo defecto.
             if let ctaTitle, let onAction {
-                Button(ctaTitle, action: onAction)
-                    .font(DS.Typography.label)
-                    .foregroundStyle(DS.Semantic.warningForeground)
-                    .disabled(!isActionEnabled)
+                YalaPrimaryButton(ctaTitle, isDisabled: !isActionEnabled, action: onAction)
+                    .accessibilityIdentifier("group_migrated_cta")
             }
         }
         .padding(DS.Spacing.md)

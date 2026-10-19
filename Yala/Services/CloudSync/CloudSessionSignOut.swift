@@ -86,6 +86,16 @@ final class CloudSessionSignOut {
     /// típico es transitorio y antes obligaba al usuario a tocar "Cerrar sesión" 2-3 veces.
     private(set) var waitingForPending: Bool = false
 
+    /// UX 2.2 · L20-7 (decisión de Jürgen, 2026-10-18): **lo que falta por subir a iCloud mientras el cierre privado
+    /// ESPERA al export**, para que Ajustes pinte una tarjeta de progreso en vez de un pie gris. `nil` fuera de esa espera
+    /// —incluidas las demás esperas del cierre, que no suben a iCloud—; dentro, la última cifra que contó la espera
+    /// (`pending == nil` = no hay número honesto). Solo lo escribe `confirmExportOrBlock`, y lo retira al salir de ella
+    /// pase lo que pase: es un testigo de la espera, no del cierre.
+    struct ICloudExportWait: Equatable {
+        let pending: Int?
+    }
+    private(set) var iCloudExportWait: ICloudExportWait?
+
     /// Vuelve a `.idle` tras un `.blocked` (el usuario cerró el error).
     func acknowledgeBlocked() {
         if case .blocked = phase {
@@ -1243,9 +1253,13 @@ final class CloudSessionSignOut {
     private func confirmExportOrBlock(context: ModelContext, kind: CloudSignOutFlowLogic.ExitKind, credentialsReleased: Bool) async -> Bool {
         var withoutAnchor: Int?? = .none
         var lastQueued: Int?
+        // L20-7: la cifra de cada vuelta se guarda para la tarjeta de Ajustes; solo se PUBLICA cuando la espera empieza
+        // de verdad (`onWaiting`), así que un export ya confirmado no la enciende ni un instante.
+        var lastCounted: Int?
+        defer { iCloudExportWait = nil }
         let verdict = await PrivateSignOutExportGateLogic.awaitConfirmedExport(
             pendingCount: {
-                PrivateSignOutExportGateLogic.pendingCountMaterializingInbound(
+                let counted = PrivateSignOutExportGateLogic.pendingCountMaterializingInbound(
                     materialize: {
                         let inbound = InboundCaptureDrain.forSignOut(context: context)
                         // La cola encogió: alguien la convirtió en borradores, aquí o fuera. El cero cacheado ya no vale.
@@ -1263,8 +1277,14 @@ final class CloudSessionSignOut {
                         }
                         return Self.personalHistoryPendingCount(context: context)
                     })
+                lastCounted = counted
+                if self.iCloudExportWait != nil { self.iCloudExportWait = ICloudExportWait(pending: counted) }
+                return counted
             },
-            onWaiting: { self.waitingForPending = true },
+            onWaiting: {
+                self.waitingForPending = true
+                self.iCloudExportWait = ICloudExportWait(pending: lastCounted)
+            },
             sleep: { seconds in
                 do {
                     try await Task.sleep(for: .seconds(seconds))

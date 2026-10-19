@@ -1,10 +1,10 @@
 ---
 id: groups-only-session-storage-screen-says-data-lives-in-icloud
-status: backlog
+status: done
 priority: medium
 area: "sesiones, ajustes, copy"
 created: 2026-09-16
-updated: 2026-10-08
+updated: 2026-10-19
 source: "review adversarial de `cloud-migration-offers-the-cloud-to-a-phone-without-app-attest` (2026-09-16)"
 ---
 
@@ -67,3 +67,12 @@ dos no pueden ser verdad a la vez.
 - Recomendación para la decisión: opción 1 (ocultar la fila en solo-grupos, como «Importar»), que además quita la tarjeta que puede quedarse cerrada para siempre.
 
 Triage 2026-10-08: abierto · low → medium · la pantalla sigue diciendo «tus datos viven en tu iCloud privado» en una sesión que no tiene datos personales; copy falso sobre los datos.
+
+## Cerrado (2026-10-19, lote decidido 2.2 · 04 — L19-15)
+
+Jürgen eligió la opción 1 el 2026-10-18 (L19-15, opción B): en solo grupos, Ajustes ya no enseña «Dónde viven tus datos»
+ni «Sincronización iCloud», y «Activar Yala completo» sale destacada en el color de la app. El predicado es
+`isGroupsFocusedShell`, el mismo que enseña «Activar Yala completo». La sección de Grupos de esa pantalla era
+`.notApplicable` en solo grupos, así que no se pierde ninguna puerta de desasociar. En «Tu cuenta de Yala», en esa misma
+sesión, «Dónde viven tus datos» queda como texto, sin enlace. Lo fijan `UXAudit22Lote04UITests` y
+`GroupsAssociationRowUITests#test_groupsOnly_storageRowIsNotOffered`.
