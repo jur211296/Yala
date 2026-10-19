@@ -1,10 +1,10 @@
 ---
 id: image-entry-end-to-end-redesign
-status: qa
+status: done
 priority: high
 area: "image"
 created: 2026-10-04
-updated: 2026-10-15
+updated: 2026-10-19
 qa-status: needs-testing
 source: encargo 2026-10-04-mejorar-el-registro-por-imagen-de-punta-a-punta · tablero tablero-mejorar-el-registro-por-imagen-de-punta-g5wl
 ---
@@ -100,3 +100,5 @@ usuario y con salida; color del tema.
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone solo por la cámara (B · cámara): permiso, foto real y cámara denegada. Pasaron en el simulador, con lectura real de staging: Fotos con tres recibos y «Guardar 3» (el disponible bajó S/ 96,50), PDF por Archivo, el fallo de lectura con Reintentar y compartir sin Pro, que pide Pro. «Sin conexión» lo fija `ImageEntryFlowLogicTests`. Capturas `~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/b1-*` y `g5wl-*`, también para tu visto bueno. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: TestFlight 18: «Leyendo tu foto…» → «Esto leí» con datos con sentido; sin permiso, «Yala no puede usar la cámara» con «Abrir Configuración». La primera foto tras instalar falló (card vv0k).

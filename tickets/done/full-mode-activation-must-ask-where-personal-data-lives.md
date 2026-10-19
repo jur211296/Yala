@@ -1,11 +1,11 @@
 ---
 id: full-mode-activation-must-ask-where-personal-data-lives
-status: qa
+status: done
 priority: high
 area: "groups, onboarding, modo-nube"
 created: 2026-09-09
 source: "medido durante el device-QA guiado del 2026-09-09 · ADR 2026-09-09 «Sesiones — dos ejes» §8"
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # «Activar Yala completo» no pregunta dónde van a vivir tus datos personales
@@ -236,3 +236,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D5): pide una sesión real solo de grupos y datos en iCloud; la elección y cancelar ya los fija `FullModeActivationChooserUITests`. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: «¿Dónde guardamos tus finanzas?» con dos tarjetas, aviso con cifras, datos de antes; el gasto de grupo salió una sola vez (sin segundo miembro: la app solo une por enlace).

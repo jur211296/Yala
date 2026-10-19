@@ -1,11 +1,11 @@
 ---
 id: groups-only-second-launch-mounts-icloud-mirror
-status: qa
+status: done
 priority: high
 area: "modo-nube, groups"
 created: 2026-09-09
 source: "medido durante el device-QA guiado del 2026-09-09 · ADR 2026-09-09 «Sesiones — dos ejes» §2-3"
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # La segunda apertura de una sesión solo-grupos adjunta el espejo de iCloud y se trae los datos personales
@@ -262,3 +262,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D3): pide el montaje real del espejo de iCloud. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: tres aperturas seguidas de la sesión solo-grupos sin datos de iCloud en el Panel.

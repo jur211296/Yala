@@ -1,9 +1,9 @@
 ---
 id: cloud-tx-epoch-orphan-relations
-status: qa
+status: done
 priority: medium
 created: 2026-07-17
-updated: 2026-10-15
+updated: 2026-10-19
 source: YalaWiki/Bugs/qa_cloud-tx-epoca-relaciones-huerfanas.md
 ---
 
@@ -175,3 +175,5 @@ Ajustes › Cuentas aparece la cuenta duplicada. Con `danglingRef` es el applier
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (A · C4): lo que falta medir es CloudKit real; el código ya lo cubre `ReverseEpochTxRelationsTests` con control rojo. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: «QA rápida 1/2» creadas en la nube conservaron cuenta y subcategoría tras «Volver a iCloud» y tras reabrir; 0 danglingRef.

@@ -1,11 +1,11 @@
 ---
 id: welcome-private-fresh-start-skips-icloud-check
-status: qa
+status: done
 priority: high
 area: "onboarding, modo-nube"
 created: 2026-09-09
 source: "device-QA guiado por Jürgen (2026-09-09) · ADR 2026-09-09 «Sesiones — dos ejes» §9"
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # «Primera vez → privado» en una instalación fresca no valida iCloud: reinicia y hace el onboarding encima de los datos viejos
@@ -430,3 +430,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D1, bloquea): pide datos reales en iCloud. En el simulador, sin iCloud, «Es mi primera vez» lleva a «No pudimos revisar tu iCloud» › «Seguir así» › reabrir › onboarding (`~/Claude/worktrees/_capturas/2026-10-15-barrido-qa-2-1/d1-r5-sin-icloud.png`). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: TestFlight 18: «¿Ya tienes datos en tu iCloud?» con cifras; volver y entrar dio las mismas cifras; los datos volvieron.

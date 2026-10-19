@@ -1,11 +1,11 @@
 ---
 id: groups-entry-on-a-mirrored-store-still-blocks-the-owner
-status: qa
+status: done
 priority: high
 area: "modo-nube, groups"
 created: 2026-09-10
 source: "mitad 2 de `groups-only-second-launch-mounts-icloud-mirror`, separada por decisión de Jürgen (2026-09-10) tras medir que el desmontaje en caliente no es viable"
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # «Vengo por un grupo» sobre un store que ya lleva espejo sigue bloqueando al dueño de los datos
@@ -283,3 +283,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D3, bloquea): pide el espejo real de iCloud con datos. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: con el espejo bajado, «Vengo por un grupo › Crear mi primer grupo» subió, pidió reabrir y aterrizó en Grupos; «Restaurar desde iCloud» trajo todo.

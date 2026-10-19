@@ -1,10 +1,10 @@
 ---
 id: ai-every-call-sends-its-task-and-passes-the-bench
-status: qa
+status: done
 priority: high
 area: ai, gateway, app, voice, image, quota
 created: 2026-10-07
-updated: 2026-10-15
+updated: 2026-10-19
 qa-status: needs-testing
 source: sesión 1 de ai-model-choice-lives-in-the-app-binary (encargo gpt-4-1-nano-shuts-down-on-october-23)
 ---
@@ -162,3 +162,5 @@ El cupo de prueba agotado no se puede ver con una cuenta Pro: está verificado e
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (B · idioma de voz): dictar pide micrófono real. La foto con «$» a secas ya pasó en el simulador contra staging. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: TestFlight 18 contra producción: foto, voz (dos filas guardadas), dictado y voz en inglés funcionaron.

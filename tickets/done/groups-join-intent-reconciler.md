@@ -1,10 +1,10 @@
 ---
 id: groups-join-intent-reconciler
-status: blocked
+status: done
 priority: high
 area: "groups, sync, cloudkit, onboarding"
 created: 2026-07-11
-updated: 2026-10-15
+updated: 2026-10-19
 source: YalaWiki/Bugs/qa_groups-join-intent-reconciler.md
 ---
 
@@ -278,3 +278,5 @@ migrated from YalaWiki Bugs/qa_groups-join-intent-reconciler.md @ 1934e8ad
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tus dos iPhone con TestFlight (D · E1, bloquea). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: unión por enlace con «Esperando aprobación», aprobación, gasto de 30 visible en el otro aparato y unión que se completa sola tras cerrar la app (con hallazgo t2q8).

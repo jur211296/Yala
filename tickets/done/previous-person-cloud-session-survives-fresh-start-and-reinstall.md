@@ -1,10 +1,10 @@
 ---
 id: previous-person-cloud-session-survives-fresh-start-and-reinstall
-status: qa
+status: done
 priority: high
 area: "modo-nube, handover, sesiones"
 created: 2026-09-17
-updated: 2026-10-15
+updated: 2026-10-19
 source: "review adversarial de `fresh-start-keeps-a-groups-session-that-migrate-promotes` (lentes de identidad y de puertas), 2026-09-17"
 ---
 
@@ -217,3 +217,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D2, bloquea): actualizar encima de un TestFlight anterior y el llavero tras reinstalar no se reproducen en el simulador. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: TestFlight 15→18 encima mantuvo la sesión y Grupos; al reinstalar, «Ya tengo una cuenta» pidió elegir y no entró solo.

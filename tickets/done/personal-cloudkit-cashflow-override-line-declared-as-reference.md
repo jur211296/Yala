@@ -1,10 +1,10 @@
 ---
 id: personal-cloudkit-cashflow-override-line-declared-as-reference
-status: qa
+status: done
 priority: high
 area: "cloudkit, sync, cashflow"
 created: 2026-10-10
-updated: 2026-10-16
+updated: 2026-10-19
 qa-status: needs-testing
 qa-notes: espera el despliegue de CD_cashFlowLine a Production (runbook) y luego dos iPhone
 source: diff del esquema personal (personal-cloudkit-schema-snapshot-misses-optional-fields, 2026-10-10)
@@ -94,3 +94,5 @@ real entre dos dispositivos ni el esquema vivo se pueden ver desde aquí. Que un
 ## Barrido de QA · 2026-10-16
 
 Barrido de QA 2026-10-16 · se queda: §4 dos iPhone con el mismo Apple ID y, antes, el despliegue del esquema (tuyo). La migración la fijan `CashFlowOverrideLineMigrationTests` y `PersonalCloudKitSchemaParityTests`, con 6 tests que caen ante sus mutantes (#523). Prueba D · ly22 de `docs/qa/tanda-qa-jurgen-2.1.md`; el despliegue va primero, en «Antes de empezar».
+
+Cerrado en el QA guiado 2026-10-19: iPhone + iPad con el mismo Apple ID, de la 2.0.4 de la App Store al TestFlight 18: los ajustes de oct, nov, dic y ene viajaron en los dos sentidos.

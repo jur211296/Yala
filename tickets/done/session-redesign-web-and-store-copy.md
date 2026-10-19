@@ -1,10 +1,10 @@
 ---
 id: session-redesign-web-and-store-copy
-status: qa
+status: done
 priority: high
 area: "web, marketing, legal"
 created: 2026-09-09
-updated: 2026-10-15
+updated: 2026-10-19
 source: "ADR 2026-09-09 «Sesiones — dos ejes» — consecuencias · partido de after-session-redesign-review-widgets-siri-applepay-and-web-copy por decisión de Jürgen (2026-09-09)"
 ---
 
@@ -76,3 +76,5 @@ Connect (Jürgen, `docs/RELEASE-CHECKLIST-2.1.md` §1).
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda sin iPhone (E · G2): ficha de Lola en 7 idiomas y la rama de producción de Vercel. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: la ficha de la 2.1 dice en 12 idiomas que los grupos viven en la nube de Yala, y la web y /privacy en producción también.

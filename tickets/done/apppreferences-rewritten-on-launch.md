@@ -1,9 +1,9 @@
 ---
 id: apppreferences-rewritten-on-launch
-status: blocked
+status: done
 priority: high
 created: 2026-08-05
-updated: 2026-10-15
+updated: 2026-10-19
 source: YalaWiki/Backlog/qa_apppreferences-lavado-general.md
 ---
 
@@ -160,3 +160,5 @@ migrated from YalaWiki Backlog/qa_apppreferences-lavado-general.md @ 1934e8ad
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tus dos aparatos con el mismo iCloud (D · E3). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: «Solo gastos», alertas de presupuesto y divisa viajaron entre iPhone e iPad sin pisarse al abrir.

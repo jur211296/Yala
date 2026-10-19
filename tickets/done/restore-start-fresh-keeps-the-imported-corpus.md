@@ -1,11 +1,11 @@
 ---
 id: restore-start-fresh-keeps-the-imported-corpus
-status: qa
+status: done
 priority: high
 area: "onboarding, modo-nube"
 created: 2026-09-11
 source: "medido leyendo el código durante el paso 8 del rediseño de sesiones; NO reproducido en device"
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # «Empezar desde cero» en Restaurar promete «sin tus datos previos» y los deja bajando
@@ -353,3 +353,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D6): pide datos reales en iCloud. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: «Empezar desde cero» en Restaurar dio la puerta con cifras y tres salidas; los datos volvieron y siguieron tras dos reaperturas.

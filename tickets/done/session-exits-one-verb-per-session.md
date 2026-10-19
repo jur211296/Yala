@@ -1,11 +1,11 @@
 ---
 id: session-exits-one-verb-per-session
-status: qa
+status: done
 priority: high
 area: "settings, modo-nube, groups"
 created: 2026-09-09
 source: "ADR 2026-09-09 «Sesiones — dos ejes» §5-6"
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # Cierres de sesión: dos botones («Cerrar sesión», «Vaciar datos»), un verbo por sesión, y la sesión privada que sale borra lo local
@@ -409,3 +409,5 @@ Está en la lista corta de device-QA del 2026-09-23 (`qa/guion-tanda.md`). Se pr
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (C · D4): pide la subida real a iCloud antes de cerrar sesión. Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: cerrar sin aviso, la espera y el aviso con 1 en modo avión, «Esperar», y la sesión que sigue tras matar la app.

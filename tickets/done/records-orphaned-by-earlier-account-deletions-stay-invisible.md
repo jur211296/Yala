@@ -1,10 +1,10 @@
 ---
 id: records-orphaned-by-earlier-account-deletions-stay-invisible
-status: qa
+status: done
 priority: high
 area: "accounts, transactions, data-repair"
 created: 2026-10-15
-updated: 2026-10-16
+updated: 2026-10-19
 source: encargo tablero-al-eliminar-una-cuenta-sus-movimientos-q-ofst (medido en simulador)
 ---
 
@@ -50,3 +50,5 @@ Avisar que hay movimientos sin cuenta de borrados antiguos y dejar elegir a qué
 ## Barrido de QA · 2026-10-16
 
 Barrido de QA 2026-10-16 · se queda: lo funcional pasó en el simulador (Yala Dev, iOS 27.0, `c648223bc`, semilla `movimientos-sin-cuenta`): el Panel avisa «Movimientos sin cuenta · 2» con S/ 1.000; la hoja lista Taxi −25 y Teléfono −33; «Mover a «Banco QA»» deja el saldo en S/ 942, Gastos en S/ 58 y el aviso desaparece; en Buscar, Taxi ya lleva «Banco QA». Capturas `~/Claude/worktrees/_capturas/2026-10-16-barrido-qa-2-1-2/sovw-1…4`. `OrphanedRecordsUITests` (2) y `GroupRowsWithoutGroupUITests` (3) re-corridos en verde. Solo espera tu visto bueno al aviso nuevo del Panel, en el lote de capturas de `docs/qa/tanda-qa-jurgen-2.1.md`. Ya no pide iPhone.
+
+Cerrado en el QA guiado 2026-10-19: Jürgen aprobó las capturas sovw-1…4 y lo vio en vivo con 3 movimientos huérfanos.

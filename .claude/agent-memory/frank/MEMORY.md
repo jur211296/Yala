@@ -25,6 +25,7 @@
 - [Simulador ajeno parado: se pregunta](feedback_simulador_ajeno_parado_se_pregunta.md) — si su sesión espera a Jürgen, aprobó usarlo sin apagarlo.
 
 - [Capturas en el chat antes de preguntar](feedback_capturas_en_el_chat_antes_de_preguntar.md) — SendUserFile o artifact antes de la pregunta; la ruta no sirve.
+- [El guion se adapta al estado del teléfono](feedback_el_guion_se_adapta_al_estado_del_telefono.md) — QA guiado: re-deriva cada paso de lo que dejaron las pruebas previas; nunca literal.
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
 ## Cómo mido y cómo entrego
 - [La telemetría de la card puede ser de otro aparato](feedback_la_telemetria_de_la_card_puede_ser_de_otro_aparato.md) — filtra por instalación; el 401 «medido» era del iPad.

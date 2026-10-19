@@ -1,10 +1,10 @@
 ---
 id: chat-dictation-looks-poor
-status: qa
+status: done
 priority: medium
 area: "chat, yala-ia, voz, design-system"
 created: 2026-10-04
-updated: 2026-10-16
+updated: 2026-10-19
 qa-status: needs-testing
 source: Jürgen, 2026-10-03 («el dictado se ve pobre»); tarjeta del tablero `tablero-mejorar-el-diseno-del-dictado-en-yala-ai-apsc`
 ---
@@ -64,3 +64,5 @@ Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (B · dictado del 
 ## Barrido de QA · 2026-10-16
 
 Barrido de QA 2026-10-16 · se queda: su card (apsc) se cerró el 15-oct al aprobar la pantalla; lo que pide micrófono va en «B · micrófono» de `docs/qa/tanda-qa-jurgen-2.1.md`, colgado de la card h52f. §4 micrófono.
+
+Cerrado en el QA guiado 2026-10-19: TestFlight 18: el micro de Yala IA dice «Escuchando…» y deja el texto en la caja sin enviarlo.

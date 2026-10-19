@@ -1,10 +1,10 @@
 ---
 id: groups-entry-left-half-done-reaches-the-private-gate-with-group-rows
-status: qa
+status: done
 priority: low
 area: "modo-nube, onboarding, groups"
 created: 2026-10-12
-updated: 2026-10-16
+updated: 2026-10-19
 source: "medición de alcanzabilidad de `private-gate-device-notice-has-no-forward-exit` (2026-10-12)"
 ---
 
@@ -72,3 +72,5 @@ por buena.
 ## Barrido de QA · 2026-10-16
 
 Barrido de QA 2026-10-16 · se queda: §4 entrada real con una cuenta de solo grupos: bajo XCUITest el montaje nunca es neutro (medido en #522), así que el camino solo se conduce en un iPhone. La cadena de decisiones la fija un test (21 aserciones caen con el arreglo revertido). Prueba A · dzih de `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+Cerrado en el QA guiado 2026-10-19: con el grupo ya bajado, «Es mi primera vez › privado» dio el aviso de iCloud, no «Ya hay datos en este teléfono»; el grupo siguió en Grupos.

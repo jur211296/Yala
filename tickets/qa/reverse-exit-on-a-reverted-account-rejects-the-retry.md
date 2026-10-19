@@ -4,7 +4,7 @@ status: qa
 priority: high
 area: "modo-nube, migración, backend"
 created: 2026-09-16
-updated: 2026-10-15
+updated: 2026-10-19
 source: "review adversarial de `reverse-upload-has-no-ceiling-and-no-exit` (2026-09-16), lente de datos — H1; decisión D17 (b) de Jürgen: ticket aparte"
 ---
 
@@ -139,3 +139,5 @@ Pasado a qa en el barrido de QA 2026-10: g17_01 está aplicada en staging y prod
 ## Barrido de QA · 2026-10-15
 
 Barrido de QA 2026-10-15 · se queda: se queda para tus dos iPhone (D · E2). Guion en `docs/qa/tanda-qa-jurgen-2.1.md`.
+
+QA guiado 2026-10-19: no se pudo montar. Una cuenta nacida en la nube no puede volver a iCloud desde aparatos adoptados (.degradedNoMap) y la activación de una cuenta migrada se atascó (cards axgf y ppxk). Falta todo D · E2 tras esos arreglos.
