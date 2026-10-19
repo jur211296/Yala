@@ -708,7 +708,9 @@
 "action.viewAll" = "Ver todos";
 "action.viewLess" = "Ver menos";
 "aiConsent.accept" = "Aceptar y activar";
-"aiConsent.chatMessage" = "Yala responde tus preguntas sobre tus finanzas con tus propios datos. Para eso envía a un servicio de IA un resumen de tus últimos 13 meses: saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos y pagos recurrentes. Se usa solo para responderte y no para entrenar a la IA.";
+"aiConsent.chatMessage" = "Yala responde tus preguntas sobre tus finanzas con tus propios datos. Para eso envía a un servicio de IA un resumen de tus últimos 13 meses: saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos, pagos recurrentes y tus gastos más grandes de este mes. Se usa solo para responderte y no para entrenar a la IA.";
+"aiConsent.cloudExploreTitle" = "Yala IA con tu cuenta en la nube";
+"aiConsent.cloudExploreMessage" = "Yala responde tus preguntas sobre tus finanzas con tus propios datos. Para eso envía a un servicio de IA un resumen de tus últimos 13 meses y, cuando la pregunta lo necesita, los datos de tu cuenta en la nube que hacen falta para responderla: movimientos de cualquier fecha con su nota, cuentas, presupuestos y pagos recurrentes. Se usa solo para responderte y no para entrenar a la IA.";
 "aiConsent.chatTitle" = "Asistente financiero";
 "aiConsent.inlineHintBoth" = "Tus datos de voz, imágenes y resumen se procesan con un servicio de IA. No se almacenan permanentemente.";
 "aiConsent.inlineHintChat" = "Tu resumen financiero se procesa con un servicio de IA para responder. No se almacena permanentemente.";
@@ -723,6 +725,7 @@
 "aiPrivacy.chatRow" = "Asistente Pro";
 "aiPrivacy.footerHint" = "Tus datos solo se envían cuando usas Insights, el Asistente o los registros con voz e imagen, y llegan a un servicio de IA a través de nuestro servidor. No los vendemos ni los usamos para publicidad.";
 "aiPrivacy.insightsRow" = "Insights inteligentes";
+"aiPrivacy.cloudExploreRow" = "Consultar tu cuenta en la nube";
 "aiPrivacy.policyLink" = "Política de Privacidad";
 "aiPrivacy.processingRow" = "Procesamiento (voz e imagen)";
 "aiPrivacy.revokeConfirmAction" = "Desactivar";
@@ -6682,7 +6685,7 @@
 "yalaAI.onboarding.l14.consent.title" = "Antes de empezar";
 "yalaAI.onboarding.l14.consent.subtitle" = "Para responderte, Yala IA lee un resumen de tus finanzas.";
 "yalaAI.onboarding.l14.consent.readsTitle" = "Qué lee";
-"yalaAI.onboarding.l14.consent.readsBody" = "Saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos y pagos recurrentes de los últimos 13 meses.";
+"yalaAI.onboarding.l14.consent.readsBody" = "Saldos y nombres de tus cuentas, totales por categoría, comercios frecuentes, presupuestos y pagos recurrentes de los últimos 13 meses, y tus gastos más grandes de este mes.";
 "yalaAI.onboarding.l14.consent.useTitle" = "Qué no hace";
 "yalaAI.onboarding.l14.consent.useBody" = "Lo envía a un servicio de IA solo para responderte. No se usa para entrenar a la IA.";
 "yalaAI.onboarding.l14.consent.decideTitle" = "Tú decides";

@@ -45,11 +45,12 @@ struct ChatMessageBubble: View {
     }
 
     /// El texto, en párrafos separados. La negrita y el `código` llegan del markdown en línea de la respuesta; las
-    /// cifras van con dígitos de ancho fijo para que un importe se lea de un vistazo.
+    /// cifras van con dígitos de ancho fijo para que un importe se lea de un vistazo. Un enlace solo se puede tocar si
+    /// es de Yala (`YalaIAAnswerLinkPolicy`); los demás salen como texto.
     private var bubbleText: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             ForEach(Array(ChatBubbleText.paragraphs(of: message.text).enumerated()), id: \.offset) { _, paragraph in
-                Text(LocalizedStringKey(paragraph))
+                Text(YalaIAAnswerLinkPolicy.inlineMarkdown(paragraph))
             }
         }
         .font(DS.Typography.body.monospacedDigit())

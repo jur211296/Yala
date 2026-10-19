@@ -2837,6 +2837,7 @@
 "aiPrivacy.processingRow" = "Processamento (voz e imagem)";
 "aiPrivacy.chatRow" = "Assistente Pro";
 "aiPrivacy.insightsRow" = "Insights inteligentes";
+"aiPrivacy.cloudExploreRow" = "Consultar sua conta na nuvem";
 "aiPrivacy.revokeConfirmTitle" = "Desativar esta função?";
 "aiPrivacy.revokeConfirmMessage" = "Pararemos de processar seus dados de IA para esta função. Você pode reativá-la quando quiser.";
 "aiPrivacy.revokeConfirmAction" = "Desativar";
@@ -3388,7 +3389,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistente financeiro";
-"aiConsent.chatMessage" = "O Yala responde às suas perguntas sobre suas finanças com os seus próprios números. Para isso, envia a um serviço de IA um resumo dos seus últimos 13 meses: saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos e pagamentos recorrentes. Ele é usado só para responder, não para treinar a IA.";
+"aiConsent.chatMessage" = "O Yala responde às suas perguntas sobre suas finanças com os seus próprios números. Para isso, envia a um serviço de IA um resumo dos seus últimos 13 meses: saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos, pagamentos recorrentes e seus maiores gastos deste mês. Ele é usado só para responder, não para treinar a IA.";
+"aiConsent.cloudExploreTitle" = "Yala IA com sua conta na nuvem";
+"aiConsent.cloudExploreMessage" = "O Yala responde às suas perguntas sobre suas finanças com os seus próprios números. Para isso, envia a um serviço de IA um resumo dos seus últimos 13 meses e, quando a pergunta precisa, os dados da sua conta na nuvem necessários para responder: lançamentos de qualquer data com a nota, contas, orçamentos e pagamentos recorrentes. Eles são usados só para responder, não para treinar a IA.";
 "aiConsent.inlineHintChat" = "O resumo das suas finanças é processado por um serviço de IA para responder. Não é armazenado permanentemente.";
 "aiConsent.inlineHintMultiple" = "Várias funções usam um serviço de IA para processar seus dados. Não são armazenados permanentemente.";
 
@@ -7352,7 +7355,7 @@
 "yalaAI.onboarding.l14.consent.title" = "Antes de começar";
 "yalaAI.onboarding.l14.consent.subtitle" = "Para te responder, o Yala IA lê um resumo das suas finanças.";
 "yalaAI.onboarding.l14.consent.readsTitle" = "O que lê";
-"yalaAI.onboarding.l14.consent.readsBody" = "Saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos e pagamentos recorrentes dos últimos 13 meses.";
+"yalaAI.onboarding.l14.consent.readsBody" = "Saldos e nomes das suas contas, totais por categoria, comerciantes frequentes, orçamentos e pagamentos recorrentes dos últimos 13 meses, e seus maiores gastos deste mês.";
 "yalaAI.onboarding.l14.consent.useTitle" = "O que não faz";
 "yalaAI.onboarding.l14.consent.useBody" = "Envia isso a um serviço de IA só para te responder. Não é usado para treinar a IA.";
 "yalaAI.onboarding.l14.consent.decideTitle" = "Você decide";

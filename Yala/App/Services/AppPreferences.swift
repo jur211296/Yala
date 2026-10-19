@@ -278,6 +278,15 @@ final class AppPreferences {
         }
     }
 
+    /// La respuesta al texto N1 de Yala IA en la nube (`YalaIACloudExploreConsent`); `nil` = aún no se preguntó. Del
+    /// teléfono, sin sincronizar. La lee `YalaIAChatRouting` por `YalaIACloudExploreConsentStore`, sobre la misma key.
+    var aiCloudExploreConsent: YalaIACloudExploreConsent? = nil {
+        didSet {
+            guard oldValue != aiCloudExploreConsent, !isLoadingFromDefaults else { return }
+            YalaIACloudExploreConsentStore.write(aiCloudExploreConsent, defaults)
+        }
+    }
+
     // DEPRECATED v2.0.x — feature toggle redundante con consent. Storage retained.
     var chatAssistantEnabled: Bool = false {
         didSet {
@@ -1103,6 +1112,7 @@ final class AppPreferences {
         aiInsightsConsentAccepted = defaults.bool(forKey: Keys.aiInsightsConsentAccepted)
         aiInsightsEnabled = defaults.bool(forKey: Keys.aiInsightsEnabled)
         aiChatConsentAccepted = defaults.bool(forKey: Keys.aiChatConsentAccepted)
+        aiCloudExploreConsent = YalaIACloudExploreConsentStore.read(defaults)
         chatAssistantEnabled = defaults.bool(forKey: Keys.chatAssistantEnabled)
         if defaults.object(forKey: Keys.chatFABVisible) != nil {
             chatFABVisible = defaults.bool(forKey: Keys.chatFABVisible)
@@ -1384,6 +1394,7 @@ final class AppPreferences {
         static let aiInsightsMigratedV1 = "aiInsightsMigratedV1"
         static let aiTogglesRemovedV2 = "aiTogglesRemovedV2"
         static let aiChatConsentAccepted = "aiChatConsentAccepted"
+        static let aiCloudExploreConsent = "aiCloudExploreConsent"
         static let chatAssistantEnabled = "chatAssistantEnabled"
         static let chatFABVisible = "chatFABVisible"
         static let cashFlowAIEnabled = "cashFlowAIEnabled"

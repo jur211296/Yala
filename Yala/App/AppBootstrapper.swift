@@ -878,6 +878,7 @@ final class AppBootstrapper {
             //    uitest — esto es limpieza de cinturón para corridas manuales posteriores).
             #if DEV_BUILD
             UserDefaults.standard.removeObject(forKey: CloudRemoteFlags.debugForceOffKey)
+            UserDefaults.standard.removeObject(forKey: CloudRemoteFlags.debugAICloudExploreForceOnKey)
             #endif
             UserDefaults.standard.removeObject(forKey: CloudRemoteConfigStore.snapshotKey)
             //  · Telemetría propia: spool/guard-del-día/one-shots de registro son keys `metrics.*`
@@ -1250,7 +1251,7 @@ final class AppBootstrapper {
         }
         #if DEBUG
         if UITestHooks.chatConversation {
-            ChatAssistantViewModel.seedTodayConversationForUITest()
+            ChatAssistantViewModel.seedTodayConversationForUITest(withLinks: UITestHooks.chatLinks)
         }
         #endif
     }

@@ -2841,6 +2841,7 @@
 "aiPrivacy.processingRow" = "処理(音声・画像)";
 "aiPrivacy.chatRow" = "Proアシスタント";
 "aiPrivacy.insightsRow" = "スマートインサイト";
+"aiPrivacy.cloudExploreRow" = "クラウドのアカウントを参照";
 "aiPrivacy.revokeConfirmTitle" = "この機能を無効にしますか？";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
 "aiPrivacy.revokeConfirmAction" = "無効化";
@@ -3399,7 +3400,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "金融アシスタント";
-"aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い）をAIサービスに送ります。回答のためだけに使われ、AIの学習には使われません。";
+"aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い、今月の大きな支出）をAIサービスに送ります。回答のためだけに使われ、AIの学習には使われません。";
+"aiConsent.cloudExploreTitle" = "Yala AIとクラウドのアカウント";
+"aiConsent.cloudExploreMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要をAIサービスに送ります。質問に必要な場合は、回答に必要なクラウドアカウントのデータ（任意の日付の記録とそのメモ、口座、予算、定期的な支払い）も送ります。回答のためだけに使われ、AIの学習には使われません。";
 "aiConsent.inlineHintChat" = "あなたの財務概要は回答のためAIサービスで処理されます。永続的に保存されることはありません。";
 "aiConsent.inlineHintMultiple" = "複数の機能がAIサービスでデータを処理します。永続的に保存されることはありません。";
 
@@ -7364,7 +7367,7 @@
 "yalaAI.onboarding.l14.consent.title" = "始める前に";
 "yalaAI.onboarding.l14.consent.subtitle" = "回答のために、Yala AIはあなたのお金の概要を読み取ります。";
 "yalaAI.onboarding.l14.consent.readsTitle" = "読み取るもの";
-"yalaAI.onboarding.l14.consent.readsBody" = "直近13か月の口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い。";
+"yalaAI.onboarding.l14.consent.readsBody" = "直近13か月の口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い、そして今月の大きな支出。";
 "yalaAI.onboarding.l14.consent.useTitle" = "しないこと";
 "yalaAI.onboarding.l14.consent.useBody" = "回答のためだけにAIサービスに送ります。AIの学習には使われません。";
 "yalaAI.onboarding.l14.consent.decideTitle" = "決めるのはあなた";

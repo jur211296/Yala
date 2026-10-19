@@ -2838,6 +2838,7 @@
 "aiPrivacy.processingRow" = "Traitement (voix et image)";
 "aiPrivacy.chatRow" = "Assistant Pro";
 "aiPrivacy.insightsRow" = "Insights intelligents";
+"aiPrivacy.cloudExploreRow" = "Consulter ton compte dans le cloud";
 "aiPrivacy.revokeConfirmTitle" = "Désactiver cette fonctionnalité ?";
 "aiPrivacy.revokeConfirmMessage" = "Nous arrêterons de traiter vos données IA pour cette fonctionnalité. Vous pouvez la réactiver à tout moment.";
 "aiPrivacy.revokeConfirmAction" = "Désactiver";
@@ -3389,7 +3390,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Assistant financier";
-"aiConsent.chatMessage" = "Yala répond à tes questions sur tes finances avec tes propres chiffres. Pour cela, il envoie à un service d’IA un résumé de tes 13 derniers mois : les soldes et noms de tes comptes, les totaux par catégorie, les commerces fréquents, les budgets et les paiements récurrents. Il sert uniquement à te répondre, pas à entraîner l’IA.";
+"aiConsent.chatMessage" = "Yala répond à tes questions sur tes finances avec tes propres chiffres. Pour cela, il envoie à un service d’IA un résumé de tes 13 derniers mois : les soldes et noms de tes comptes, les totaux par catégorie, les commerces fréquents, les budgets, les paiements récurrents et tes plus grosses dépenses du mois. Il sert uniquement à te répondre, pas à entraîner l’IA.";
+"aiConsent.cloudExploreTitle" = "Yala IA avec ton compte dans le cloud";
+"aiConsent.cloudExploreMessage" = "Yala répond à tes questions sur tes finances avec tes propres chiffres. Pour cela, il envoie à un service d’IA un résumé de tes 13 derniers mois et, quand une question le demande, les données de ton compte dans le cloud nécessaires pour y répondre : des mouvements de n’importe quelle date avec leur note, tes comptes, tes budgets et tes paiements récurrents. Elles servent uniquement à te répondre, pas à entraîner l’IA.";
 "aiConsent.inlineHintChat" = "Ton résumé financier est traité par un service d’IA pour répondre. Il n’est pas stocké de façon permanente.";
 "aiConsent.inlineHintMultiple" = "Plusieurs fonctions utilisent un service d’IA pour traiter tes données. Elles ne sont pas stockées de façon permanente.";
 
@@ -7353,7 +7356,7 @@
 "yalaAI.onboarding.l14.consent.title" = "Avant de commencer";
 "yalaAI.onboarding.l14.consent.subtitle" = "Pour te répondre, Yala IA lit un résumé de tes finances.";
 "yalaAI.onboarding.l14.consent.readsTitle" = "Ce qu'elle lit";
-"yalaAI.onboarding.l14.consent.readsBody" = "Les soldes et noms de tes comptes, les totaux par catégorie, les commerces fréquents, les budgets et les paiements récurrents des 13 derniers mois.";
+"yalaAI.onboarding.l14.consent.readsBody" = "Les soldes et noms de tes comptes, les totaux par catégorie, les commerces fréquents, les budgets et les paiements récurrents des 13 derniers mois, ainsi que tes plus grosses dépenses du mois.";
 "yalaAI.onboarding.l14.consent.useTitle" = "Ce qu'elle ne fait pas";
 "yalaAI.onboarding.l14.consent.useBody" = "Elle l'envoie à un service d'IA uniquement pour te répondre. Il ne sert pas à entraîner l'IA.";
 "yalaAI.onboarding.l14.consent.decideTitle" = "C'est toi qui décides";

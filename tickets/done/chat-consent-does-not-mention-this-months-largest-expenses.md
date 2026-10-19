@@ -1,6 +1,6 @@
 ---
 id: chat-consent-does-not-mention-this-months-largest-expenses
-status: backlog
+status: done
 priority: medium
 area: "ia, privacidad, l10n"
 created: 2026-10-18
@@ -37,3 +37,11 @@ Card `tablero-yala-ia-en-privado-el-aviso-no-dice-que-mhwf`. Opciones y textos e
 
 El aviso del chat (y su gemelo del onboarding de Yala IA) dice lo que se manda, en los 16 idiomas, sin nombrar al
 proveedor (`AIConsentProviderNameTests`), o Jürgen decide dejarlo.
+
+## Cerrado (2026-10-18)
+
+Jürgen eligió la opción recomendada (decisión 2A, 18-oct 18:17). `aiConsent.chatMessage` es ahora el texto P1 del anexo
+de `docs/ai-cloud-vs-private-2026-10.md` en los 16 idiomas, y su gemelo del onboarding de Yala IA
+(`yalaAI.onboarding.l14.consent.readsBody`) gana «y tus gastos más grandes de este mes» con la misma redacción.
+`YalaIACloudExploreConsentTests.annexTextsAreTheOnesInTheApp` fija P1 palabra por palabra contra el documento;
+`AIConsentProviderNameTests` sigue verde (ningún aviso nombra al proveedor). Capturas: antes/después del aviso en el PR.

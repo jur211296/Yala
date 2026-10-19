@@ -18,6 +18,9 @@ struct ChatSheetView: View {
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
+    /// El tema elegido en la hoja de Temas sale al CERRARSE esa hoja: si toca preguntar N1, su aviso no puede pedirse
+    /// con la hoja todavía arriba.
+    @State private var topicAwaitingSheetDismissal: ChatSuggestion?
     /// La ficha «Apunta un gasto» del saludo pone aquí el foco: el gasto se escribe en la caja de siempre.
     @FocusState private var isInputFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -119,15 +122,25 @@ struct ChatSheetView: View {
         .sheet(isPresented: $showAISettingsSheet) {
             AIPersonalizationSheet()
         }
-        .sheet(isPresented: $showTopicsSheet) {
+        .sheet(isPresented: $showTopicsSheet, onDismiss: sendTopicAwaitingSheetDismissal) {
             ChatTopicsSheet(
                 suggestions: viewModel.suggestions,
                 isLoading: viewModel.suggestionsLoading,
-                onSelect: { suggestion in
-                    Task { await viewModel.sendSuggestion(suggestion) }
-                }
+                onSelect: { suggestion in topicAwaitingSheetDismissal = suggestion }
             )
         }
+        .cloudExploreConsentAlert(
+            isPresented: $viewModel.showsCloudExploreConsent,
+            onAccept: { Task { await viewModel.acceptCloudExploreConsent() } },
+            onDecline: { Task { await viewModel.declineCloudExploreConsent() } },
+            onPrivacyPolicy: { viewModel.postponeCloudExploreConsent() }
+        )
+    }
+
+    private func sendTopicAwaitingSheetDismissal() {
+        guard let suggestion = topicAwaitingSheetDismissal else { return }
+        topicAwaitingSheetDismissal = nil
+        Task { await viewModel.sendSuggestion(suggestion) }
     }
 
     private var aiSettingsButton: some View {

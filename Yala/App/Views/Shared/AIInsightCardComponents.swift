@@ -73,9 +73,17 @@ enum AIInsightCardComponents {
         }
     }
 
-    /// Renderiza markdown con fallback al texto plano si el parse falla.
+    /// Renderiza markdown con fallback al texto plano si el parse falla. El texto lo escribe el modelo, así que solo
+    /// quedan tocables los enlaces de Yala, como en la burbuja del chat (`YalaIAAnswerLinkPolicy`).
     static func markdownAttributed(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text)) ?? AttributedString(text)
+        do {
+            return YalaIAAnswerLinkPolicy.sanitized(try AttributedString(markdown: text))
+        } catch {
+            #if DEBUG
+            print("AIInsightCardComponents: markdown no legible, va como texto: \(error)")
+            #endif
+            return AttributedString(text)
+        }
     }
 }
 
