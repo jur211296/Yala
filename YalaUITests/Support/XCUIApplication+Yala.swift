@@ -96,6 +96,16 @@ extension XCUIApplication {
         notificationsDenied: Bool = false,
         appleLanguages: String = "(es)",
         appleLocale: String = XCUIApplication.uiTestLocaleIdentifier,
+        // UX 2.2 · lote decidido 06 (Yala Pro). En `xcodebuild test` la tienda de pruebas no da precios: `fakePrices`
+        // pinta los de `Configuration.storekit` (con la prueba disponible, o ya usada con `fakePricesTrialUsed`).
+        // La oferta de prueba solo se enseña si se MIDIÓ que la cuenta aún tiene la prueba (L17-5), así que
+        // `trialOffer`/`trialOfferArmed` la encienden solos. `fakePurchase`: comprar sale bien y enciende Pro.
+        // `proTrialDays`/`proPlan` (con `pro`): Pro en prueba con N días, o pagado (`yearly|monthly|yearly-off`).
+        fakePrices: Bool = false,
+        fakePricesTrialUsed: Bool = false,
+        fakePurchase: Bool = false,
+        proTrialDays: Int? = nil,
+        proPlan: String? = nil,
         extraArguments: [String] = []
     ) -> XCUIApplication {
         var args = ["-uitest"]
@@ -143,6 +153,14 @@ extension XCUIApplication {
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
         if trialOffer { args.append("-uitest-trial-offer") }
+        if fakePricesTrialUsed {
+            args.append(contentsOf: ["-uitest-fake-prices", "trial-used"])
+        } else if fakePrices || trialOffer || trialOfferArmed {
+            args.append("-uitest-fake-prices")
+        }
+        if fakePurchase { args.append("-uitest-fake-purchase") }
+        if let proTrialDays { args.append(contentsOf: ["-uitest-pro-trial-days", String(proTrialDays)]) }
+        if let proPlan { args.append(contentsOf: ["-uitest-pro-plan", proPlan]) }
         if trialOfferArmed { args.append("-uitest-trial-offer-armed") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }

@@ -109,8 +109,10 @@ struct BudgetsListView: View {
             .yalaSheetDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .budgets, context: .limitReached)
+        // Si compra Pro ahí, al cerrarse se abre el presupuesto nuevo que se quería crear (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $showUpgradeSheet, feature: .budgets, context: .limitReached) {
+            viewModel.editingBudget = nil
+            viewModel.showBudgetEditor = true
         }
         // Tocar una alerta abre ESE presupuesto, en su tipo y su período actual (UX 2.2 · L9-5).
         .modifier(BudgetAlertOpening(viewModel: viewModel, selectedSegment: $selectedSegment, onPeriodReset: { recalculatePeriodFilters() }))

@@ -5,80 +5,64 @@
 //  Banner showing trial status and days remaining.
 //
 
+import StoreKit
 import SwiftUI
 
 struct TrialBanner: View {
 
-    // MARK: - Environment
-
-    @Environment(\.yalaTheme) private var theme
-
     // MARK: - Properties
 
     let daysRemaining: Int
-    let onUpgrade: () -> Void
 
-    // MARK: - Computed
+    @State private var showManageSubscription = false
 
-    private var isUrgent: Bool {
-        daysRemaining <= 5
-    }
-
-    private var iconName: String {
-        isUrgent ? "exclamationmark.circle.fill" : "clock.fill"
-    }
-
-    private var iconColor: Color {
-        isUrgent ? DS.Semantic.warningForeground : DS.Semantic.infoForeground
-    }
-
-    private var daysText: String {
-        switch daysRemaining {
-        case 0:
-            return L10n.Subscription.Trial.endsToday
-        case 1:
-            return L10n.Subscription.Trial.endsTomorrow
-        default:
-            return L10n.Subscription.Trial.daysRemaining(daysRemaining)
-        }
+    /// «Te quedan 3 días de prueba · después $29.99 al año». Sin precio cargado, o con la renovación apagada (entonces
+    /// no se cobra nada después), solo los días.
+    private var line: String {
+        let store = StoreKitManager.shared
+        let days = L10n.UXPro.bannerDaysLeft(daysRemaining)
+        guard let plan = store.activePlan, plan.willAutoRenew != false,
+              let price = store.displayPrice(yearly: plan.nextChargeIsYearly) else { return days }
+        let then = plan.nextChargeIsYearly ? L10n.UXPro.bannerThenYearly(price) : L10n.UXPro.bannerThenMonthly(price)
+        return days + " · " + then
     }
 
     // MARK: - Body
 
+    /// Una línea, solo los últimos 5 días, con «Gestionar» (UX 2.2 · L17-7). Antes salía los 30 días con
+    /// «Suscribirse», un botón que a quien ya está suscrito (la prueba de Apple ya es la suscripción) le llevaba a
+    /// «Eres Yala Pro». «Gestionar» abre la hoja de Apple, donde se cambia de plan o se cancela.
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
-            Image(systemName: iconName)
-                .font(DS.Typography.title)
-                .foregroundStyle(iconColor)
+            Image(systemName: "clock")
+                .font(DS.Typography.body)
+                .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.Subscription.Trial.title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.thPrimaryText)
+            Text(line)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("trial_banner_line")
 
-                Text(daysText)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.thSecondaryText)
-            }
-
-            Spacer()
+            Spacer(minLength: DS.Spacing.sm)
 
             Button {
-                onUpgrade()
+                showManageSubscription = true
             } label: {
-                Text(L10n.Subscription.Trial.subscribe)
+                Text(L10n.UXPro.bannerManage)
                     .font(DS.Typography.labelSmall)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, DS.Spacing.md)
-                    .padding(.vertical, DS.Spacing.xs)
-                    .background(theme.accent)
-                    .clipShape(Capsule())
+                    .foregroundStyle(.thAccent)
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("trial_banner_manage")
         }
         .padding(DS.Spacing.md)
-        .background(isUrgent ? DS.Semantic.warningBackground : DS.Semantic.infoBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
+        .background(
+            RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
+                .fill(Color(.tertiarySystemFill))
+        )
+        .manageSubscriptionsSheet(isPresented: $showManageSubscription)
     }
 }
 
@@ -111,13 +95,9 @@ extension L10n.Subscription {
 
 #Preview {
     VStack(spacing: DS.Spacing.xl) {
-        TrialBanner(daysRemaining: 5) {}
-
-        TrialBanner(daysRemaining: 2) {}
-
-        TrialBanner(daysRemaining: 1) {}
-
-        TrialBanner(daysRemaining: 0) {}
+        TrialBanner(daysRemaining: 5)
+        TrialBanner(daysRemaining: 1)
+        TrialBanner(daysRemaining: 0)
     }
     .padding()
 }

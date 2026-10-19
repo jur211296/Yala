@@ -96,8 +96,9 @@ struct VoiceRecordingView: View {
         .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
             NewTransactionView()
         }
-        .sheet(isPresented: $showUpgrade) {
-            UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+        // Si compra Pro ahí, al volver el micrófono ya escucha (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $showUpgrade, feature: .voiceInput, context: .proFeature) {
+            recordAgain()
         }
     }
 

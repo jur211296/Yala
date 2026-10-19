@@ -10,8 +10,6 @@ import SwiftUI
 
 struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.yalaTheme) private var theme
 
     var source: String = "direct"
 
@@ -20,7 +18,6 @@ struct SubscriptionView: View {
     @State private var selectedPlan: String = StoreKitManager.proYearlyID
     @State private var showManageSubscription = false
     @State private var showError = false
-    @State private var animateHero = false
     @State private var showSuccessView = false
     /// La App Store no devolvió precios. Sin esto el paywall dejaba «Suscribirse» en gris sin decir por qué
     /// ni dejar reintentar (lote 17 · B1); mismo aviso que la oferta de prueba.
@@ -34,9 +31,8 @@ struct SubscriptionView: View {
                 paywallContent
             }
         }
-        // Excepción a la regla "sheets → .subtle": la pantalla de venta Pro
-        // (paywall + suscripción activa) conserva el gradiente premium.
-        .yalaScreenBackground(.panel)
+        // Sin el degradado premium que tenía (UX 2.2 · L17-2): fondo plano, como toda hoja.
+        .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.Subscription.title)
         .navigationBarTitleDisplayMode(.inline)
         .swipeBack()
@@ -67,8 +63,11 @@ struct SubscriptionView: View {
             }
             store.didJustSubscribe = false
         }
+        // «Comenzar» cierra la bienvenida y también esta pantalla: tras comprar no queda nada de Pro por cerrar
+        // (UX 2.2 · L17-9). Desde una hoja, `dismiss` la cierra; desde Ajustes, vuelve a la lista.
         .fullScreenCover(isPresented: $showSuccessView, onDismiss: {
             ProTourManager.shared.triggerIfEligible()
+            dismiss()
         }) {
             SubscriptionSuccessView()
         }
@@ -76,429 +75,107 @@ struct SubscriptionView: View {
 
     // MARK: - Paywall (non-subscriber)
 
+    /// El molde L17-2 variante 2: cabecera corta sin degradado, planes arriba, «Así funciona la prueba», fichas debajo.
     private var paywallContent: some View {
         ScrollView {
-            VStack(spacing: DS.Spacing.none) {
-                // Hero gradient header
-                heroSection
-
-                // Content below hero
-                VStack(spacing: DS.Spacing.xxl) {
-                    // Features list
-                    featuresSection
-
-                    // Plan selector
-                    if !store.products.isEmpty {
-                        planSelector
-                    } else if productLoadFailed {
-                        VStack(spacing: DS.Spacing.sm) {
-                            Text(L10n.TrialOffer.pricesUnavailable)
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.thSecondaryText)
-                                .multilineTextAlignment(.center)
-                                .accessibilityIdentifier("subscription_prices_unavailable")
-                            Button(L10n.Action.retry) {
-                                productLoadFailed = false
-                                Task { await loadProducts() }
-                            }
-                            .font(DS.Typography.label)
-                            .accessibilityIdentifier("subscription_prices_retry")
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                    } else {
-                        ProgressView()
-                    }
-
-                    // Purchase button
-                    VStack(spacing: DS.Spacing.md) {
-                        YalaPrimaryButton(
-                            store.isPurchasing
-                                ? L10n.Subscription.processing
-                                : selectedProductHasFreeTrial
-                                    ? L10n.Subscription.startFreeTrial
-                                    : L10n.Subscription.subscribe,
-                            isDisabled: store.isPurchasing || store.products.isEmpty
-                        ) {
-                            Task { await purchaseSelected() }
-                        }
-
-                        Button {
-                            Task { await store.restorePurchases() }
-                        } label: {
-                            Text(L10n.Subscription.restore)
-                                .font(DS.Typography.subheadline)
-                                .foregroundStyle(.thPrimaryText)
-                        }
-                    }
-                    .padding(.horizontal, DS.Spacing.lg)
-
-                    // Legal footer
-                    VStack(spacing: DS.Spacing.xs) {
-                        Text(L10n.Subscription.legalFooter)
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.tertiary)
-                            .multilineTextAlignment(.center)
-                        HStack(spacing: DS.Spacing.xs) {
-                            Link(L10n.Subscription.termsOfUseLink, destination: AppConstants.termsURL)
-                            Text("·").foregroundStyle(.tertiary)
-                            Link(L10n.Subscription.privacyPolicyLink, destination: AppConstants.privacyURL)
-                        }
-                        .font(DS.Typography.caption)
-                        .tint(theme.accent)
-                    }
-                    .padding(.horizontal, DS.Spacing.xl)
-                    .padding(.bottom, DS.Spacing.xxl)
-                }
-                .padding(.top, DS.Spacing.xxl)
-            }
+            ProPaywallBody(
+                offers: store.planOffers,
+                pricesFailed: productLoadFailed,
+                selectedID: $selectedPlan,
+                isPurchasing: store.isPurchasing,
+                ctaIdentifier: "subscription_cta",
+                onRetryPrices: {
+                    productLoadFailed = false
+                    Task { await loadProducts() }
+                },
+                onPurchase: { Task { await purchaseSelected() } },
+                onRestore: { Task { await store.restorePurchases() } }
+            )
         }
-    }
-
-    // MARK: - Hero Section
-
-    private var heroSection: some View {
-        // Content
-        VStack(spacing: DS.Spacing.lg) {
-            Spacer()
-                .frame(height: 60) // Safe area compensation
-
-            // Spark icon with glow
-            ZStack {
-                // Glow
-                YalaSpark(size: .large, animated: false)
-                    .scaleEffect(3.5)
-                    .blur(radius: 20)
-                    .opacity(animateHero ? 0.6 : 0.3)
-
-                YalaSpark(size: .large, animated: true)
-                    .scaleEffect(3.0)
-                    .shadow(color: Color.orange.opacity(0.5), radius: 8, y: 4) // DS-OK: brand decorative
-            }
-            .scaleEffect(animateHero ? 1.0 : 0.8)
-            .onAppear {
-                dsWithAnimation(reduceMotion) {
-                    animateHero = true
-                }
-            }
-
-            // Title
-            Text(L10n.Subscription.paywallTitle)
-                .font(DS.Typography.largeTitle)
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-                .shadow(color: Color.black.opacity(0.2), radius: 4, y: 2)
-
-            // Subtitle
-            Text(L10n.Subscription.paywallSubtitle)
-                .font(DS.Typography.body)
-                .foregroundStyle(.white.opacity(0.85))
-                .multilineTextAlignment(.center)
-
-            Spacer()
-                .frame(height: DS.Spacing.lg)
-        }
-        .padding(.horizontal, DS.Spacing.xxl)
-        // Alto MÍNIMO, no fijo: con el texto en tamaños de accesibilidad el título y el subtítulo no caben en 320 pt
-        // y se cortaban («Desbloqu…»); ahora la cabecera crece con ellos (medido en un iPhone SE el 2026-09-28).
-        // A tamaño normal cabe y pinta lo mismo: el contenido va centrado en 320 pt sobre el mismo fondo.
-        .frame(maxWidth: .infinity, minHeight: 320)
-        .background {
-            ZStack {
-                // Gradient background
-                LinearGradient(
-                    colors: [
-                        Color.electricIndigo,
-                        Color.electricIndigo.opacity(0.85),
-                        Color.electricIndigo.opacity(0.6),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-
-                // Subtle pattern overlay
-                Circle()
-                    .fill(DS.Colors.backgroundFaint)
-                    .frame(width: 300, height: 300)
-                    .offset(x: 120, y: -60)
-
-                Circle()
-                    .fill(Color.white.opacity(0.03))  // Even fainter than DS.Opacity.faint
-                    .frame(width: 200, height: 200)
-                    .offset(x: -100, y: 40)
-            }
-        }
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     // MARK: - Active Subscription Content
 
+    /// Pro activo (L17-8): la tarjeta del plan con la fecha y el precio, lo que incluye, «Gestionar o cancelar» como
+    /// botón de verdad y qué pasa si se cancela. Antes, «Eres Yala Pro» y un texto que no parecía un botón.
     private var activeSubscriptionContent: some View {
         ScrollView {
-            VStack(spacing: DS.Spacing.xxl) {
-                // Header
-                VStack(spacing: DS.Spacing.md) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.orange.opacity(0.1)) // DS-OK: brand decorative
-                            .frame(width: 100, height: 100)
-
-                        YalaSpark(size: .large, animated: true)
-                            .scaleEffect(2.0)
-                    }
-                    .padding(.bottom, DS.Spacing.sm)
-
-                    Text(L10n.Subscription.activeTitle)
-                        .font(.title2.bold())
-                        .foregroundStyle(.thPrimaryText)
-
-                    Text(L10n.Subscription.activeSubtitle)
-                        .font(DS.Typography.body)
-                        .foregroundStyle(.thSecondaryText)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top, DS.Spacing.xxxl)
-
-                // Current plan info
-                if let transaction = store.activeSubscription {
-                    currentPlanCard(transaction: transaction)
-                }
-
-                // Manage subscription
-                Button {
-                    showManageSubscription = true
-                } label: {
-                    Text(L10n.Subscription.manageInAppStore)
-                        .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.thPrimaryText)
-                }
-                .manageSubscriptionsSheet(isPresented: $showManageSubscription)
-            }
-        }
-    }
-
-    // MARK: - Features
-
-    private var featuresSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.none) {
-            // A11Y-DM: paleta decorativa por feature del paywall (colores de sistema, adaptan a Dark Mode)
-            featureRow(icon: "building.columns.fill", text: L10n.Subscription.featureUnlimitedAccounts, color: .blue)
-            featureRow(icon: "chart.pie.fill", text: L10n.Subscription.featureUnlimitedBudgets, color: .purple)
-            featureRow(icon: "sparkles", text: L10n.Subscription.featureAIAssistant, color: .electricIndigo)
-            featureRow(icon: "waveform.badge.mic", text: L10n.Subscription.featureVoice, color: .hotPink)
-            featureRow(icon: "photo.on.rectangle", text: L10n.Subscription.featureImage, color: .teal)
-            featureRow(icon: "paintpalette.fill", text: L10n.Subscription.featureThemes, color: .orange)
-            featureRow(icon: "app.fill", text: L10n.Subscription.featurePremiumIcons, color: .pink)
-        }
-        .padding(.vertical, DS.Spacing.sm)
-        .solidCard(radius: DS.Radius.xl)
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private func featureRow(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: DS.Spacing.md) {
-            Image(systemName: icon)
-                .font(DS.Typography.labelSmall.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(color)
-                )
-
-            Text(text)
-                .font(DS.Typography.body)
-                .foregroundStyle(.thPrimaryText)
-
-            Spacer()
-
-            Image(systemName: "checkmark.circle.fill")
-                .font(DS.Typography.body)
-                .foregroundStyle(.thAccent)
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-        .padding(.vertical, DS.Spacing.md)
-    }
-
-    // MARK: - Plan Selector
-
-    private var planSelector: some View {
-        VStack(spacing: DS.Spacing.md) {
-            if let yearly = store.yearlyProduct {
-                planCard(
-                    product: yearly,
-                    badge: savingsBadge,
-                    isSelected: selectedPlan == yearly.id
-                )
-            }
-
-            if let monthly = store.monthlyProduct {
-                planCard(
-                    product: monthly,
-                    badge: nil,
-                    isSelected: selectedPlan == monthly.id
-                )
-            }
-        }
-        .padding(.horizontal, DS.Spacing.lg)
-    }
-
-    private var savingsBadge: String? {
-        guard let percent = store.yearlySavingsPercent, percent > 0 else { return nil }
-        return L10n.Subscription.saveBadge(percent)
-    }
-
-    private func planCard(product: Product, badge: String?, isSelected: Bool) -> some View {
-        Button {
-            dsWithAnimation(reduceMotion) {
-                selectedPlan = product.id
-            }
-        } label: {
-            HStack {
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    HStack(spacing: DS.Spacing.sm) {
-                        Text(planDisplayName(for: product))
-                            .font(DS.Typography.headline)
+            VStack(alignment: .leading, spacing: DS.Spacing.xl) {
+                HStack(alignment: .center, spacing: DS.Spacing.md) {
+                    YalaSpark(size: .large, animated: false, solid: true)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(L10n.Subscription.activeTitle)
+                            .font(DS.Typography.title)
                             .foregroundStyle(.thPrimaryText)
-
-                        if let badge {
-                            Text(badge)
-                                .font(DS.Typography.labelSmall)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, DS.Spacing.sm)
-                                .padding(.vertical, DS.Spacing.xxs)
-                                // Relleno sólido: hasta el lote 17 la etiqueta no salía nunca (B3) y su degradado
-                                // no se veía; al salir, no estrena un degradado (regla de UI de Jürgen).
-                                .background(Capsule().fill(theme.accent))
-                                .accessibilityIdentifier("subscription_save_badge")
-                        }
-                    }
-
-                    if let trialText = trialDaysText(for: product) {
-                        Text(trialText)
-                            .font(DS.Typography.subheadline)
-                            .foregroundStyle(.thAccent)
-                    } else {
-                        Text(product.displayPrice + " " + planPeriodLabel(for: product))
+                            .accessibilityAddTraits(.isHeader)
+                        Text(L10n.Subscription.activeSubtitle)
                             .font(DS.Typography.subheadline)
                             .foregroundStyle(.thSecondaryText)
                     }
-
-                    if let monthlyEquiv = store.monthlyEquivalent(for: product) {
-                        Text(L10n.Subscription.perMonth(monthlyEquiv))
-                            .font(DS.Typography.caption)
-                            .foregroundStyle(.thSecondaryText)
-                    }
                 }
+                .padding(.top, DS.Spacing.md)
 
-                Spacer()
+                currentPlanCard
 
-                ZStack {
-                    Circle()
-                        .stroke(
-                            isSelected ? theme.accent : theme.secondaryText.opacity(0.3),
-                            lineWidth: 2
-                        )
-                        .frame(width: 24, height: 24)
+                ProIncludedGrid()
 
-                    if isSelected {
-                        Circle()
-                            .fill(theme.accent)
-                            .frame(width: 16, height: 16)
+                VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                    YalaSecondaryButton(L10n.UXPro.activeManage) {
+                        showManageSubscription = true
                     }
-                }
-            }
-            .padding(DS.Spacing.lg)
-            .selectableCard(isSelected: isSelected, radius: DS.Radius.lg)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
+                    .accessibilityIdentifier("subscription_manage")
+                    .manageSubscriptionsSheet(isPresented: $showManageSubscription)
 
-    // MARK: - Current Plan Card (active subscriber)
-
-    private func currentPlanCard(transaction: StoreKit.Transaction) -> some View {
-        VStack(spacing: DS.Spacing.md) {
-            HStack {
-                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                    Text(L10n.Subscription.currentPlan)
+                    Text(L10n.UXPro.activeIfCancel(ProFeature.accounts.freeLimit ?? 0, ProFeature.budgets.freeLimit ?? 0))
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)
-
-                    Text(transaction.productID == StoreKitManager.proYearlyID
-                        ? L10n.Subscription.planYearly
-                        : L10n.Subscription.planMonthly)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.thPrimaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("subscription_if_cancel")
                 }
-
-                Spacer()
-
-                YalaSpark(size: .medium, animated: false)
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.bottom, DS.Spacing.xxl)
+        }
+    }
 
-            if let expirationDate = transaction.expirationDate {
-                Divider()
-
-                HStack {
-                    Text(L10n.Subscription.renewsOn)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.thSecondaryText)
-                    Spacer()
-                    Text(expirationDate.formatted(date: .abbreviated, time: .omitted))
-                        .font(DS.Typography.label)
-                        .foregroundStyle(.thPrimaryText)
-                }
+    /// «Plan actual · Anual · Se renueva el 15 nov · $29.99 al año» (o «Prueba gratis hasta el 15 nov · luego…»).
+    /// Sin transacción local que lo describa (Pro de la cuenta) queda «Yala Pro» sin fecha.
+    private var currentPlanCard: some View {
+        let plan = store.activePlan
+        return VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+            Text(L10n.Subscription.currentPlan)
+                .font(DS.Typography.caption)
+                .foregroundStyle(.thSecondaryText)
+            Text(plan.map { $0.isYearly ? L10n.Subscription.planYearly : L10n.Subscription.planMonthly }
+                 ?? L10n.Subscription.title)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thPrimaryText)
+            if let plan, let line = ProPresentation.activeCardLine(for: plan) {
+                Text(line)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thPrimaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("subscription_plan_line")
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.lg)
-        .padding(.horizontal, DS.Spacing.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("subscription_plan_card")
     }
 
     // MARK: - Helpers
 
-    private func planDisplayName(for product: Product) -> String {
-        product.id == StoreKitManager.proYearlyID
-            ? L10n.Subscription.planYearly
-            : L10n.Subscription.planMonthly
-    }
-
-    private func planPeriodLabel(for product: Product) -> String {
-        product.id == StoreKitManager.proYearlyID
-            ? L10n.Subscription.perYear
-            : L10n.Subscription.perMonthUnit
-    }
-
     private func loadProducts() async {
         await store.loadProducts()
-        productLoadFailed = store.products.isEmpty
+        productLoadFailed = store.planOffers.isEmpty
     }
 
     private func purchaseSelected() async {
-        let product = store.products.first { $0.id == selectedPlan }
-        guard let product else { return }
-        _ = await store.purchase(product)
-    }
-
-    /// Whether the selected product has a free trial introductory offer
-    private var selectedProductHasFreeTrial: Bool {
-        guard let product = store.products.first(where: { $0.id == selectedPlan }),
-              let intro = product.subscription?.introductoryOffer,
-              intro.paymentMode == .freeTrial else { return false }
-        return store.isIntroOfferEligible
-    }
-
-    /// Extract readable trial duration from a product's introductory offer
-    private func trialDaysText(for product: Product) -> String? {
-        let intro = product.subscription?.introductoryOffer
-        // Solo se promete la prueba a quien aún tiene derecho a ella (lote 17 · B4).
-        guard let days = PaywallPricingLogic.promisedTrialDays(
-            hasFreeTrialOffer: intro?.paymentMode == .freeTrial,
-            periodUnit: intro?.period.unit,
-            periodValue: intro?.period.value ?? 0,
-            isEligible: store.isIntroOfferEligible
-        ) else { return nil }
-        return L10n.Subscription.trialThenPrice(
-            "\(days)",
-            product.displayPrice + " " + planPeriodLabel(for: product)
-        )
+        let offerID = store.planOffers.first { $0.id == selectedPlan }?.id ?? store.planOffers.first?.id
+        guard let offerID else { return }
+        _ = await store.purchase(offerID: offerID)
     }
 }

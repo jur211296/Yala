@@ -813,6 +813,11 @@ final class AppBootstrapper {
             //    momento, que es como queda un alta recién terminada.
             SessionState.shared.needsPostOnboardingTrial = UITestHooks.armTrialOffer
             SessionState.shared.trialOfferMomentReached = false
+            //  · «Prueba terminada» ya enseñada (UX 2.2 · L17-6). Su drenaje la re-mide ahora, y la marca sigue a la
+            //    suscripción (el wipe no la toca): sin esto, el primer test que la enseñara apagaba la de los demás.
+            UserDefaults.standard.removeObject(forKey: "pro.trial.expiredSheetShown")
+            //  · el «era Pro» que deja el escenario de fin de Pro (`kind=pro-ended`) si el test no llega a confirmar.
+            UserDefaults.standard.removeObject(forKey: "yala.wasProUser")
             UserDefaults.standard.removeObject(forKey: UITestHooks.seededGroupIDKey)
             //  · el idioma elegido DENTRO de la app (`appLanguageOverride`, App Group + KV). Vive fuera de
             //    SwiftData y gana al `-AppleLanguages (es)` que fija `launchForUITest`: uno que quedara
@@ -3024,8 +3029,8 @@ final class AppBootstrapper {
         print("AppBootstrapper: Detected downgrade from Pro to Free")
         #endif
 
-        // Reset premium app icon and theme if needed
-        resetPremiumIconIfNeeded()
+        // El tema de Pro vuelve al de siempre. El icono de Pro, no: lo avisa y lo devuelve la hoja de fin de Pro
+        // (UX 2.2 · L16-11); aquí volvía en silencio y solo se enteraba quien veía la alerta de iOS.
         resetProThemeIfNeeded()
 
         // Mark that we need to show downgrade resolution
@@ -3046,26 +3051,6 @@ final class AppBootstrapper {
             #if DEBUG
             print("AppBootstrapper: Reset Pro theme '\(currentTheme.label)' to Liquid Glass")
             #endif
-        }
-    }
-
-    /// Reset app icon to Original if user is Free and has premium icon
-    private func resetPremiumIconIfNeeded() {
-        guard !FeatureGateService.shared.isProUser else { return }
-
-        let currentIconName = UIApplication.shared.alternateIconName
-
-        // If user has an alternate icon set (premium), reset to default
-        if currentIconName != nil {
-            UIApplication.shared.setAlternateIconName(nil) { error in
-                #if DEBUG
-                if let error = error {
-                    print("AppBootstrapper: Failed to reset app icon: \(error)")
-                } else {
-                    print("AppBootstrapper: Reset premium icon to Original")
-                }
-                #endif
-            }
         }
     }
 

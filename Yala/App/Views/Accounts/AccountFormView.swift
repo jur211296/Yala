@@ -180,8 +180,9 @@ struct AccountFormView: View {
             .sheet(isPresented: $showsLinkAccount) {
                 LinkAccountLineSheet(viewModel: viewModel)
             }
-            .sheet(isPresented: $showsUpgradeToUnlink) {
-                UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            // Si compra Pro ahí, al cerrarse se desvincula la línea, que es lo que se quería (UX 2.2 · L17-9).
+            .proUpgradeSheet(isPresented: $showsUpgradeToUnlink, feature: .accounts, context: .limitReached) {
+                viewModel.unlink()
             }
             .onChange(of: viewModel.isPresentingColorPicker) { _, isPresenting in
                 if isPresenting { focusedField = nil }

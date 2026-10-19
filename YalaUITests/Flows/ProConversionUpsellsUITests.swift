@@ -7,8 +7,8 @@
 //  de conversión; la entrada manual (gratuita) NO lo muestra (control).
 //  Lanza SIN -uitest-pro (usuario free). El flujo es 100% determinista: el gate
 //  setea un flag local (`showUpgradeForVoice`) que presenta el sheet — sin red,
-//  StoreKit, LLM ni permisos de sistema. NO se toca el CTA "Actualizar a Pro"
-//  (abriría SubscriptionView, que sí carga productos de StoreKit por red).
+//  StoreKit, LLM ni permisos de sistema. NO se toca el CTA de compra (desde UX 2.2 · L17-3 compra
+//  dentro de la hoja, y en `xcodebuild test` la tienda de pruebas no da precios).
 //  Seed `minimal` (basta con 1 cuenta activa + subcategorías para habilitar el menú).
 //  Convenciones: ver CLAUDE.md (sin sleeps, scheme Yala Dev).
 //
@@ -84,7 +84,9 @@ final class ProConversionUpsellsUITests: XCTestCase {
         voiceButton.tap()
         let cta = app.buttons["upgrade_prompt_cta"]
         XCTAssertTrue(cta.waitForExistence(timeout: 5), "No apareció el UpgradePromptSheet.")
-        cta.tap()
+        // Desde UX 2.2 · L17-3 los planes van dentro de «Función Pro»: sin precios, lo dice la propia hoja y el botón
+        // de compra no se puede tocar.
+        XCTAssertFalse(cta.isEnabled, "Sin precios, el botón de compra tenía que estar apagado.")
 
         let unavailable = app.descendants(matching: .any)["subscription_prices_unavailable"]
         XCTAssertTrue(unavailable.waitForExistence(timeout: 20),

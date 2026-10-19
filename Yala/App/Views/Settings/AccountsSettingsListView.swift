@@ -116,8 +116,9 @@ struct AccountsSettingsListView: View {
                 accountToEdit: account
             )
         }
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .accounts, context: .limitReached)
+        // Si compra Pro ahí, al cerrarse se abre la cuenta nueva que se quería crear (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $showUpgradeSheet, feature: .accounts, context: .limitReached) {
+            viewModel.isPresentingCreateAccount = true
         }
         .onAppear {
             viewModel.setContext(modelContext)

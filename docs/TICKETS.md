@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (973)
+## Index (980)
 
 | id | status | path |
 |---|---|---|
@@ -672,6 +672,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-trend-chart-labels-overlap | qa | tickets/qa/panel-trend-chart-labels-overlap.md |
 | partial-sheets-that-never-adapted-to-the-window | backlog | tickets/backlog/partial-sheets-that-never-adapted-to-the-window.md |
 | paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch | backlog | tickets/backlog/paywall-inbox-routing-uitest-misses-the-held-paywall-in-a-batch.md |
+| paywall-storekit-alert-is-never-cleared | backlog | tickets/backlog/paywall-storekit-alert-is-never-cleared.md |
 | pdf-statement-pages-without-currency-pick-no-account | backlog | tickets/backlog/pdf-statement-pages-without-currency-pick-no-account.md |
 | pdf-statement-reads-only-the-first-page | done | tickets/done/pdf-statement-reads-only-the-first-page.md |
 | pending-reverse-complete-runs-with-whatever-session-is-live | backlog | tickets/backlog/pending-reverse-complete-runs-with-whatever-session-is-live.md |
@@ -718,6 +719,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-sign-out-misses-group-edits-made-during-the-icloud-wait | backlog | tickets/backlog/private-sign-out-misses-group-edits-made-during-the-icloud-wait.md |
 | private-sign-out-proceeds-with-a-migration-in-flight | done | tickets/done/private-sign-out-proceeds-with-a-migration-in-flight.md |
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
+| pro-theme-resets-silently-when-pro-ends | backlog | tickets/backlog/pro-theme-resets-silently-when-pro-ends.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | backlog | tickets/backlog/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
@@ -861,6 +863,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | share-extension-image-skips-pro-gate | done | tickets/done/share-extension-image-skips-pro-gate.md |
 | share-image-reading-does-not-always-start | done | tickets/done/share-image-reading-does-not-always-start.md |
 | shared-photo-waits-silently-behind-an-open-panel-sheet | done | tickets/done/shared-photo-waits-silently-behind-an-open-panel-sheet.md |
+| shared-receipt-is-dropped-when-it-hits-the-pro-gate | backlog | tickets/backlog/shared-receipt-is-dropped-when-it-hits-the-pro-gate.md |
 | shared-scheduled-expense-shows-twice-in-inbox | done | tickets/done/shared-scheduled-expense-shows-twice-in-inbox.md |
 | shared-state-guard-misses-wipelocalgroupsdomain | backlog | tickets/backlog/shared-state-guard-misses-wipelocalgroupsdomain.md |
 | sharing-several-photos-hides-yala | done | tickets/done/sharing-several-photos-hides-yala.md |
@@ -936,6 +939,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-insight-card-v2-bullets | done | tickets/done/trends-insight-card-v2-bullets.md |
 | trends-insight-title-capitalizes-the-period-mid-sentence | done | tickets/done/trends-insight-title-capitalizes-the-period-mid-sentence.md |
 | trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
+| trial-says-30-days-for-a-one-month-offer | backlog | tickets/backlog/trial-says-30-days-for-a-one-month-offer.md |
 | tutorial-completion-check-appears-only-after-reentering | backlog | tickets/backlog/tutorial-completion-check-appears-only-after-reentering.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
@@ -989,6 +993,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
 | welcome-sign-in-notes-say-the-account-is-bound-to-one-method | backlog | tickets/backlog/welcome-sign-in-notes-say-the-account-is-bound-to-one-method.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
+| welcome-to-pro-still-lists-the-old-feature-names | backlog | tickets/backlog/welcome-to-pro-still-lists-the-old-feature-names.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | backlog | tickets/backlog/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
 | whats-new-2-2-review-before-release | backlog | tickets/backlog/whats-new-2-2-review-before-release.md |

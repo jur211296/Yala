@@ -95,7 +95,8 @@ struct MilestoneUpgradeSheet: View {
 
                 // Buttons
                 VStack(spacing: DS.Spacing.md) {
-                    YalaPrimaryButton(L10n.FeatureGate.upgradeToPro) {
+                    // «Probar Pro gratis» o «Pasarme a Pro» (UX 2.2 · L17-4).
+                    YalaPrimaryButton(ProPresentation.upgradeButtonTitle) {
                         showSubscription = true
                     }
 
@@ -124,7 +125,10 @@ struct MilestoneUpgradeSheet: View {
             // pierde (markMilestoneShown es idempotente ante doble onAppear).
             ProUpsellService.shared.markMilestoneShown(milestone)
         }
-        .sheet(isPresented: $showSubscription) {
+        // Tras comprar, el paywall se cierra solo y esta hoja también: no queda nada de Pro por cerrar (UX 2.2 · L17-9).
+        .sheet(isPresented: $showSubscription, onDismiss: {
+            if FeatureGateService.shared.isProUser { dismiss() }
+        }) {
             NavigationStack {
                 SubscriptionView(source: "milestone")
             }

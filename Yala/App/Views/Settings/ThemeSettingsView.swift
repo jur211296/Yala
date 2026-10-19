@@ -21,6 +21,8 @@ struct ThemeSettingsView: View {
     var onThemeChanged: (() -> Void)?
 
     @State private var showUpgradeSheet = false
+    /// El tema Pro que se tocó: el muro lo enseña (UX 2.2 · L16-11) y, si se compra ahí, se aplica (L17-9).
+    @State private var lockedTheme: AppTheme?
     @State private var showTranslucentVariantPicker = false
 
     @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
@@ -95,8 +97,30 @@ struct ThemeSettingsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .proThemes, context: .proFeature)
+        .proUpgradeSheet(
+            isPresented: $showUpgradeSheet,
+            feature: .proThemes,
+            context: .proFeature,
+            preview: lockedTheme.map { .theme($0, variant: themeManager.translucentVariant) },
+            onUnlocked: {
+                if let lockedTheme { choose(lockedTheme) }
+            }
+        )
+    }
+
+    /// Aplicar un tema que se puede usar: el mismo camino al tocarlo que al comprarlo desde su muro.
+    private func choose(_ appTheme: AppTheme) {
+        if appTheme == .translucent {
+            // Solo abre el selector de variante: el tema no cambia hasta que se elige una.
+            showTranslucentVariantPicker = true
+        } else {
+            themeManager.userChoice = appTheme
+            // Dismiss theme view + parent profile sheet
+            Task {
+                try? await Task.sleep(for: .milliseconds(300))
+                dismiss()
+                onThemeChanged?()
+            }
         }
     }
 
@@ -109,24 +133,16 @@ struct ThemeSettingsView: View {
 
         Button {
             if isLocked {
+                lockedTheme = appTheme
                 showUpgradeSheet = true
-            } else if appTheme == .translucent {
-                // Solo abre el selector de variante: el tema no cambia hasta que se elige una.
-                showTranslucentVariantPicker = true
             } else {
-                themeManager.userChoice = appTheme
-                // Dismiss theme view + parent profile sheet
-                Task {
-                    try? await Task.sleep(for: .milliseconds(300))
-                    dismiss()
-                    onThemeChanged?()
-                }
+                choose(appTheme)
             }
         } label: {
             VStack(spacing: DS.Spacing.md) {
                 // Preview area
                 ZStack(alignment: .topTrailing) {
-                    themePreview(for: appTheme)
+                    ThemePreviewTile(appTheme: appTheme, translucentVariant: themeManager.translucentVariant)
                         .frame(height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                         .opacity(isLocked ? 0.5 : 1.0)
@@ -188,11 +204,17 @@ struct ThemeSettingsView: View {
         .accessibilityIdentifier("theme_card_\(appTheme.rawValue)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
+}
 
-    // MARK: - Theme Preview
+// MARK: - Theme Preview Tile
 
-    @ViewBuilder
-    private func themePreview(for appTheme: AppTheme) -> some View {
+/// La miniatura de un tema: la de Temas y la de la vista previa del muro de Pro (UX 2.2 · L16-11), que es la misma.
+struct ThemePreviewTile: View {
+    let appTheme: AppTheme
+    /// La variante con la que se pinta el tema Translúcido (la elegida en Temas).
+    let translucentVariant: TranslucentVariant
+
+    var body: some View {
         if appTheme == .system {
             // Split preview: left light, right dark
             GeometryReader { geo in
@@ -222,7 +244,7 @@ struct ThemeSettingsView: View {
         variant: TranslucentVariant? = nil,
         isLiquidGlass: Bool = false
     ) -> some View {
-        let effectiveVariant = variant ?? themeManager.translucentVariant
+        let effectiveVariant = variant ?? translucentVariant
         let gradientColors: [Color] = if isLiquidGlass {
             [Color(hex: "0E0A24"), Color(hex: "14102E"), Color(hex: "050510")]
         } else {

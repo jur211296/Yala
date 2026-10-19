@@ -130,8 +130,9 @@ struct ImageSelectionView: View {
             ImageCameraPicker(onFinish: cameraFinished)
                 .ignoresSafeArea()
         }
-        .sheet(isPresented: $showUpgrade) {
-            UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+        // Si compra Pro ahí, al volver se lee lo que faltaba (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $showUpgrade, feature: .imageInput, context: .proFeature) {
+            continueAfterProUnlock()
         }
         .sheet(isPresented: $showManualEntry, onDismiss: { dismiss() }) {
             NewTransactionView()
@@ -1007,6 +1008,16 @@ struct ImageSelectionView: View {
             return
         }
         beginReading(batch, appending: false)
+    }
+
+    /// Tras comprar Pro desde «Ver Yala Pro» con el cupo de prueba agotado: si la lectura entera se paró, se elige otra
+    /// foto; si quedaron fotos fuera, se leen esas (UX 2.2 · L17-9).
+    private func continueAfterProUnlock() {
+        if case .failure = phase {
+            chooseAnother()
+        } else {
+            retryFailedPhotos()
+        }
     }
 
     /// Reintenta solo las que fallaron, sin perder lo ya leído.

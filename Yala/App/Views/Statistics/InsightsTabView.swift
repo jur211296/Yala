@@ -1008,7 +1008,8 @@ struct InsightsTabView: View {
             } label: {
                 HStack(spacing: DS.Spacing.xs) {
                     YalaSpark(size: .small, animated: false)
-                    Text(L10n.FeatureGate.upgradeToPro)
+                    // «Probar Pro gratis» o «Pasarme a Pro» (UX 2.2 · L17-4).
+                    Text(ProPresentation.upgradeButtonTitle)
                         .font(DS.Typography.labelSmall)
                 }
                 .foregroundStyle(.white)

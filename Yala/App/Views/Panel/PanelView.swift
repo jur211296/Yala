@@ -461,7 +461,10 @@ struct PanelView: View {
         flags.panelGuide = !UITestHooks.isActive && !panelGuideDismissed
         flags.setupChecklist = !UITestHooks.isActive && SetupChecklistManager.shared.shouldShow
         flags.updateAvailable = AppUpdateService.shared.shouldShowBanner && AppUpdateService.shared.latestVersion != nil
-        flags.proOffer = StoreKitManager.shared.isInTrial
+        // La prueba, solo sus últimos 5 días (UX 2.2 · L17-7); antes, los 30.
+        flags.proOffer = ProPlanStatusLogic.showsTrialBanner(
+            isInTrial: StoreKitManager.shared.isInTrial,
+            daysRemaining: StoreKitManager.shared.trialDaysRemaining)
             || (!FeatureGateService.shared.isProUser && showPeriodicBanner)
         flags.nudge = !UITestHooks.isActive && NudgeService.shared.currentNudge != nil && showNudgeBanner
         flags.siriTip = !UITestHooks.isActive && appPreferences.showSiriTip && viewModel.transactions.count >= 5
@@ -488,12 +491,7 @@ struct PanelView: View {
             }
         case .proOffer:
             if StoreKitManager.shared.isInTrial {
-                TrialBanner(
-                    daysRemaining: StoreKitManager.shared.trialDaysRemaining
-                ) {
-                    sheets.subscriptionBannerSource = "trialBanner"
-                    sheets.showSubscriptionFromBanner = true
-                }
+                TrialBanner(daysRemaining: StoreKitManager.shared.trialDaysRemaining)
             } else {
                 ProUpgradeBanner(
                     onUpgrade: {

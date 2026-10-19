@@ -8,6 +8,10 @@
 import SwiftData
 import SwiftUI
 
+/// Lo que sale al abrir Yala cuando Pro se acabó (UX 2.2 · L17-6 variante 2): UNA hoja. «Tu prueba de Pro terminó» (o
+/// «Tu suscripción terminó» si se pagó), cuántos caben en el plan gratis, «Elegidos 3 de 3», qué pasa con el resto (no
+/// se borra nada) y, al tocar uno de más, «Quita uno para elegir…». Antes eran dos hojas seguidas, la primera con un
+/// triángulo de alarma. Si el icono de la app era de Pro, lo avisa aquí antes de devolverlo al original (L16-11).
 struct DowngradeResolutionSheet: View {
 
     // MARK: - Environment
@@ -15,12 +19,12 @@ struct DowngradeResolutionSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.yalaTheme) private var theme
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 48 // A11Y-DT: @ScaledMetric
-
     // MARK: - Properties
 
     let accounts: [Account]
     let budgets: [Budget]
+    /// El icono de la app es de Pro y vuelve al original al confirmar (L16-11).
+    var iconWillReset: Bool = false
     let onComplete: () -> Void
 
     // MARK: - Computed
@@ -53,14 +57,27 @@ struct DowngradeResolutionSheet: View {
         max(0, activeBudgets.count - (ProFeature.budgets.freeLimit ?? Int.max))
     }
 
+    private var hasExcess: Bool { excessAccounts > 0 || excessBudgets > 0 }
+
     private var accountsToKeep: Int { ProFeature.accounts.freeLimit ?? Int.max }
     private var budgetsToKeep: Int { ProFeature.budgets.freeLimit ?? Int.max }
+
+    /// La prueba o la suscripción: lo último activo que vio este dispositivo.
+    private var endedWasTrial: Bool { ProPresentation.endedWasTrial }
 
     // MARK: - State
 
     @State private var selectedAccountIDs: Set<PersistentIdentifier> = []
     @State private var selectedBudgetIDs: Set<PersistentIdentifier> = []
     @State private var showSubscription = false
+    /// «Quita uno para elegir «Movilidad».», al tocar uno de más con el cupo lleno. Antes no pasaba nada. Sale bajo la
+    /// cabecera de su sección, a la vista: al pie de una lista larga quedaba tapado por los botones.
+    @State private var fullHint: FullHint?
+
+    private struct FullHint: Equatable {
+        let inBudgets: Bool
+        let text: String
+    }
 
     private var canConfirm: Bool {
         let accountsOK = excessAccounts == 0 || selectedAccountIDs.count == accountsToKeep
@@ -73,42 +90,43 @@ struct DowngradeResolutionSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: DS.Spacing.xxl) {
-                    // Header
+                VStack(alignment: .leading, spacing: DS.Spacing.lg) {
                     headerSection
 
-                    // Account selection (if excess)
                     if excessAccounts > 0 {
-                        accountSelectionSection
-                    }
-
-                    // Budget selection (if excess)
-                    if excessBudgets > 0 {
-                        budgetSelectionSection
-                    }
-
-                    // Buttons
-                    VStack(spacing: DS.Spacing.md) {
-                        YalaPrimaryButton(
-                            L10n.Subscription.Downgrade.confirm,
-                            isDisabled: !canConfirm
+                        selectionSection(
+                            title: L10n.FeatureGate.accounts,
+                            chosen: L10n.UXPro.chosenAccounts(selectedAccountIDs.count, accountsToKeep),
+                            hint: fullHint.flatMap { $0.inBudgets ? nil : $0.text },
+                            identifier: "downgrade_accounts"
                         ) {
-                            archiveExcessItems()
-                            onComplete()
+                            // En el orden en que llegan elegidas: por nombre (como la preselección).
+                            ForEach(activeAccounts.sorted { $0.name < $1.name }, id: \.persistentModelID) { account in
+                                accountRow(account)
+                            }
                         }
-
-                        Button(L10n.Subscription.Downgrade.reactivate) {
-                            showSubscription = true
-                        }
-                        .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.thAccent)
                     }
-                    .padding(.horizontal, DS.Spacing.lg)
-                    .padding(.top, DS.Spacing.lg)
+
+                    if excessBudgets > 0 {
+                        selectionSection(
+                            title: L10n.FeatureGate.budgets,
+                            chosen: L10n.UXPro.chosenBudgets(selectedBudgetIDs.count, budgetsToKeep),
+                            hint: fullHint.flatMap { $0.inBudgets ? $0.text : nil },
+                            identifier: "downgrade_budgets"
+                        ) {
+                            // En el orden en que llegan elegidos: los más recientes primero (como la preselección).
+                            ForEach(activeBudgets.sorted { $0.createdAt > $1.createdAt }, id: \.persistentModelID) { budget in
+                                budgetRow(budget)
+                            }
+                        }
+                    }
                 }
-                .padding(.vertical, DS.Spacing.xxl)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.xl)
+                .padding(.bottom, DS.Spacing.lg)
             }
             .scrollContentBackground(.hidden)
+            .safeAreaInset(edge: .bottom) { buttons }
             .yalaScreenBackground(.subtle)
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled()  // Cannot dismiss without resolving
@@ -130,193 +148,258 @@ struct DowngradeResolutionSheet: View {
             // Pre-select budgets by most recently created first
             let sortedBudgets = activeBudgets.sorted { $0.createdAt > $1.createdAt }
             selectedBudgetIDs = Set(sortedBudgets.prefix(budgetsToKeep).map { $0.persistentModelID })
+
+            // Una sola hoja (L17-6): con esta delante, «Prueba terminada» ya no sale después. Se quema al aparecer de
+            // verdad, como el resto de avisos de una vez.
+            ProUpsellService.shared.markTrialExpiredSheetShown()
         }
     }
 
     // MARK: - Subviews
 
     private var headerSection: some View {
-        VStack(spacing: DS.Spacing.md) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: heroIconSize))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: DS.Gradients.warning,
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
+            Image(systemName: "hourglass")
+                .font(DS.Typography.title)
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(theme.accent))
                 .accessibilityHidden(true)
 
-            Text(L10n.Subscription.Downgrade.title)
-                .font(.title2.bold())
+            Text(endedWasTrial ? L10n.UXPro.endedTrialTitle : L10n.Subscription.Downgrade.title)
+                .font(DS.Typography.title)
                 .foregroundStyle(.thPrimaryText)
-                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("downgrade_title")
 
-            Text(L10n.Subscription.Downgrade.subtitle)
-                .font(DS.Typography.body)
-                .foregroundStyle(.thSecondaryText)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
+            if let subtitle {
+                Text(subtitle)
+                    .font(DS.Typography.body)
+                    .foregroundStyle(.thSecondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let keepNote {
+                note(icon: "archivebox.fill", text: keepNote, identifier: "downgrade_keep_note")
+            }
+
+            if iconWillReset {
+                note(icon: "app.fill", text: L10n.UXPro.iconResetNote, identifier: "downgrade_icon_note")
+            }
         }
     }
 
-    private var accountSelectionSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(L10n.Subscription.Downgrade.selectAccounts(accountsToKeep))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
-                .padding(.horizontal, DS.Spacing.lg)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(activeAccounts, id: \.persistentModelID) { account in
-                    accountRow(account)
-
-                    if account.persistentModelID != activeAccounts.last?.persistentModelID {
-                        Divider()
-                            .padding(.leading, DS.Icon.badgeLarge + DS.Spacing.xl)
-                    }
-                }
-            }
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .padding(.horizontal, DS.Spacing.lg)
-
-            // Selection count
-            Text(L10n.FeatureGate.limitInfo(selectedAccountIDs.count, accountsToKeep))
-                .font(DS.Typography.caption)
-                .foregroundStyle(selectedAccountIDs.count == accountsToKeep ? DS.Semantic.successForeground : DS.Semantic.warningForeground)
-                .padding(.horizontal, DS.Spacing.lg)
+    private var subtitle: String? {
+        switch (excessAccounts > 0, excessBudgets > 0) {
+        case (true, true): return L10n.UXPro.endedChooseBoth(accountsToKeep, budgetsToKeep)
+        case (true, false): return L10n.UXPro.endedChooseAccounts(accountsToKeep)
+        case (false, true): return L10n.UXPro.endedChooseBudgets(budgetsToKeep)
+        case (false, false): return nil
         }
+    }
+
+    private var keepNote: String? {
+        switch (excessAccounts > 0, excessBudgets > 0) {
+        case (true, true): return L10n.UXPro.endedNoteBoth
+        case (true, false): return L10n.UXPro.endedNoteAccounts
+        case (false, true): return L10n.UXPro.endedNoteBudgets
+        case (false, false): return nil
+        }
+    }
+
+    private var confirmTitle: String {
+        switch (excessAccounts > 0, excessBudgets > 0) {
+        case (true, true): return L10n.UXPro.keepBoth
+        // El número del plan gratis, no el de elegidos: el botón solo se puede tocar con el cupo completo, y con uno
+        // quitado decía «Conservar estos 2» apagado (review del lote decidido 06).
+        case (true, false): return L10n.UXPro.keepAccounts(accountsToKeep)
+        case (false, true): return L10n.UXPro.keepBudgets(budgetsToKeep)
+        case (false, false): return L10n.Common.understood
+        }
+    }
+
+    private func note(icon: String, text: String, identifier: String) -> some View {
+        HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            Image(systemName: icon)
+                .font(DS.Typography.body)
+                .foregroundStyle(Color.hotPink)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.thPrimaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier(identifier)
+    }
+
+    private func selectionSection<Rows: View>(
+        title: String,
+        chosen: String,
+        hint: String?,
+        identifier: String,
+        @ViewBuilder rows: () -> Rows
+    ) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.sm) {
+                Text(title)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.thPrimaryText)
+                    .accessibilityAddTraits(.isHeader)
+                Text(chosen)
+                    .font(DS.Typography.labelSmall)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, DS.Spacing.md)
+                    .padding(.vertical, DS.Spacing.xs)
+                    .background(Capsule().fill(theme.accent))
+                    .accessibilityIdentifier("\(identifier)_chosen")
+            }
+            if let hint {
+                Label(hint, systemImage: "info.circle.fill")
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(Color.hotPink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("downgrade_full_hint")
+            }
+            VStack(spacing: DS.Spacing.sm) {
+                rows()
+            }
+        }
+    }
+
+    private var buttons: some View {
+        VStack(spacing: DS.Spacing.sm) {
+            YalaPrimaryButton(confirmTitle, isDisabled: !canConfirm) {
+                confirm()
+            }
+            .accessibilityIdentifier("downgrade_confirm")
+
+            Button(L10n.Subscription.Downgrade.reactivate) {
+                showSubscription = true
+            }
+            .font(DS.Typography.bodyBold)
+            .foregroundStyle(.thAccent)
+            .accessibilityIdentifier("downgrade_reactivate")
+        }
+        .padding(DS.Spacing.lg)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .padding(.horizontal, DS.Spacing.md)
+        .padding(.bottom, DS.Spacing.sm)
     }
 
     private func accountRow(_ account: Account) -> some View {
         let isSelected = selectedAccountIDs.contains(account.persistentModelID)
-
-        return Button {
+        return choiceRow(
+            title: account.name,
+            detail: cardCurrencies[account.persistentModelID] ?? account.currencyCode,
+            isSelected: isSelected
+        ) {
             toggleAccountSelection(account)
-        } label: {
-            HStack(spacing: DS.Spacing.md) {
-                // Account icon
-                RoundedRectangle(cornerRadius: DS.Radius.sm)
-                    .fill(colorForHex(account.colorHex))
-                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
-                    .overlay(
-                        Image(systemName: account.iconName)
-                            .foregroundStyle(.white)
-                    )
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(account.name)
-                        .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.thPrimaryText)
-
-                    Text(cardCurrencies[account.persistentModelID] ?? account.currencyCode)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.thSecondaryText)
-                }
-
-                Spacer()
-
-                // Selection indicator
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(DS.Typography.title)
-                    .foregroundStyle(isSelected ? theme.accent : theme.secondaryText.opacity(0.3))
-            }
-            .padding(DS.Spacing.md)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var budgetSelectionSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(L10n.Subscription.Downgrade.selectBudgets(budgetsToKeep))
-                .font(DS.Typography.headline)
-                .foregroundStyle(.thPrimaryText)
-                .padding(.horizontal, DS.Spacing.lg)
-
-            VStack(spacing: DS.Spacing.none) {
-                ForEach(activeBudgets, id: \.persistentModelID) { budget in
-                    budgetRow(budget)
-
-                    if budget.persistentModelID != activeBudgets.last?.persistentModelID {
-                        Divider()
-                            .padding(.leading, DS.Icon.badgeLarge + DS.Spacing.xl)
-                    }
-                }
-            }
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg))
-            .padding(.horizontal, DS.Spacing.lg)
-
-            // Selection count
-            Text(L10n.FeatureGate.limitInfo(selectedBudgetIDs.count, budgetsToKeep))
-                .font(DS.Typography.caption)
-                .foregroundStyle(selectedBudgetIDs.count == budgetsToKeep ? DS.Semantic.successForeground : DS.Semantic.warningForeground)
-                .padding(.horizontal, DS.Spacing.lg)
         }
     }
 
     private func budgetRow(_ budget: Budget) -> some View {
         let isSelected = selectedBudgetIDs.contains(budget.persistentModelID)
-
-        return Button {
+        return choiceRow(
+            title: budget.name,
+            detail: formatCurrency(budget.limitAmount, code: budget.currencyCode),
+            isSelected: isSelected
+        ) {
             toggleBudgetSelection(budget)
-        } label: {
+        }
+    }
+
+    /// Una fila para elegir: la elegida, rellena del color de acento con el texto en blanco; las demás, en tarjeta.
+    private func choiceRow(title: String, detail: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             HStack(spacing: DS.Spacing.md) {
-                // Budget icon
-                Circle()
-                    .fill(theme.accent)
-                    .frame(width: DS.Icon.badgeLarge, height: DS.Icon.badgeLarge)
-                    .overlay(
-                        Image(systemName: "chart.pie.fill")
-                            .foregroundStyle(.white)
-                    )
-
                 VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(budget.name)
+                    Text(title)
                         .font(DS.Typography.bodyBold)
-                        .foregroundStyle(.thPrimaryText)
-
-                    Text(formatCurrency(budget.limitAmount, code: budget.currencyCode))
+                    Text(detail)
                         .font(DS.Typography.caption)
-                        .foregroundStyle(.thSecondaryText)
+                        .opacity(0.85)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer()
-
-                // Selection indicator
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(DS.Typography.title)
-                    .foregroundStyle(isSelected ? theme.accent : theme.secondaryText.opacity(0.3))
+                    .symbolRenderingMode(isSelected ? .palette : .monochrome)
+                    .foregroundStyle(isSelected ? AnyShapeStyle(theme.accent) : AnyShapeStyle(Color.primary.opacity(0.6)),
+                                     Color.white)
+                    .accessibilityHidden(true)
             }
+            .foregroundStyle(isSelected ? Color.white : Color.primary)
             .padding(DS.Spacing.md)
-            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .fill(isSelected ? AnyShapeStyle(theme.accent) : AnyShapeStyle(.thCard))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Selection Logic
 
     private func toggleAccountSelection(_ account: Account) {
         let id = account.persistentModelID
-
-        if selectedAccountIDs.contains(id) {
-            selectedAccountIDs.remove(id)
-        } else if selectedAccountIDs.count < accountsToKeep {
-            selectedAccountIDs.insert(id)
+        switch ProPlanStatusLogic.toggle(
+            isSelected: selectedAccountIDs.contains(id), selectedCount: selectedAccountIDs.count, limit: accountsToKeep
+        ) {
+        case .selected: selectedAccountIDs.insert(id); fullHint = nil
+        case .deselected: selectedAccountIDs.remove(id); fullHint = nil
+        case .full: showFullHint(FullHint(inBudgets: false, text: L10n.UXPro.removeOneAccount(account.name)))
         }
-        // If already at limit, tapping another item does nothing
     }
 
     private func toggleBudgetSelection(_ budget: Budget) {
         let id = budget.persistentModelID
+        switch ProPlanStatusLogic.toggle(
+            isSelected: selectedBudgetIDs.contains(id), selectedCount: selectedBudgetIDs.count, limit: budgetsToKeep
+        ) {
+        case .selected: selectedBudgetIDs.insert(id); fullHint = nil
+        case .deselected: selectedBudgetIDs.remove(id); fullHint = nil
+        case .full: showFullHint(FullHint(inBudgets: true, text: L10n.UXPro.removeOneBudget(budget.name)))
+        }
+    }
 
-        if selectedBudgetIDs.contains(id) {
-            selectedBudgetIDs.remove(id)
-        } else if selectedBudgetIDs.count < budgetsToKeep {
-            selectedBudgetIDs.insert(id)
+    private func showFullHint(_ hint: FullHint) {
+        fullHint = hint
+        AccessibilityNotification.Announcement(hint.text).post()
+    }
+
+    // MARK: - Confirm
+
+    private func confirm() {
+        if hasExcess {
+            archiveExcessItems()
+        }
+        if iconWillReset {
+            resetPremiumIcon()
+        }
+        // El downgrade queda resuelto también si solo había un icono que devolver: sin esto, `justDowngraded` seguía en
+        // `true` y la hoja se volvía a pedir en cada arranque (review del lote decidido 06). Con exceso ya lo hace
+        // `archiveExcessItems`.
+        StoreKitManager.shared.wasProUser = false
+        onComplete()
+    }
+
+    /// El icono vuelve al original DESPUÉS de avisarlo aquí (L16-11). Antes volvía en silencio al arrancar.
+    private func resetPremiumIcon() {
+        guard !FeatureGateService.shared.isProUser, UIApplication.shared.alternateIconName != nil else { return }
+        UIApplication.shared.setAlternateIconName(nil) { error in
+            #if DEBUG
+            if let error {
+                print("DowngradeResolutionSheet: Failed to reset app icon: \(error)")
+            }
+            #endif
         }
     }
 
