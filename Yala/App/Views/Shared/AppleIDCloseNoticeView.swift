@@ -177,6 +177,13 @@ struct AppleIDCloseNoticeView: View {
     /// adversarial del 2026-09-15).
     @State private var lastStage: AppleIDCloseNoticeLogic.Stage = .asking
 
+    /// «Exportar mis registros» (UX 2.2 · L20-16): la copia de lo que se va a quitar, antes de quitarlo.
+    @State private var isExporting = false
+    @State private var exportedFile: ExportedFile?
+    /// Si la exportación falla, se dice EN la hoja, bajo el botón, y no con un `.alert`: esta hoja no presenta alerts
+    /// (`AppleIDCloseNoticeTests.theAlertDoesNotComeBack`, regla de las dos presentaciones encadenadas).
+    @State private var exportErrorMessage: String?
+
     /// El coordinador del cierre. Su fase se lee en el `body` para que `@Observable` la rastree.
     private var coordinator: CloudSessionSignOut { CloudSessionSignOut.shared }
 
@@ -204,6 +211,21 @@ struct AppleIDCloseNoticeView: View {
         .onChange(of: liveStage, initial: true) { _, stage in
             if let stage { lastStage = stage }
         }
+        .overlay {
+            if isExporting {
+                ProgressView()
+                    .controlSize(.large)
+                    .padding(DS.Spacing.lg)
+                    .glassEffect()
+                    .accessibilityIdentifier("apple_id_close_export_progress")
+            }
+        }
+        // La hoja de compartir cuelga de ESTA hoja, no del anchor de `ContentView`: el aviso sigue arriba y sigue
+        // reteniendo el router mientras la persona guarda el archivo, y al cerrarla vuelve a la misma pregunta.
+        .sheet(item: $exportedFile) { file in
+            ShareSheet(activityItems: file.urls)
+                .yalaSheetDetents([.medium, .large])
+        }
     }
 
     @ViewBuilder
@@ -219,6 +241,20 @@ struct AppleIDCloseNoticeView: View {
                 identifier: "apple_id_close_asking") {
                 YalaPrimaryButton(L10n.iCloud.appleIDChangedLater) { later() }
                     .accessibilityIdentifier("apple_id_close_later")
+                // L20-16: la salida que no pierde nada, ANTES de la que quita los datos. No toca el aviso ni el cierre.
+                YalaSecondaryButton(L10n.Settings.signOutAttestExportButton, icon: "square.and.arrow.up",
+                                    isDisabled: isExporting) {
+                    exportEverything()
+                }
+                .accessibilityIdentifier("apple_id_close_export")
+                if let exportErrorMessage {
+                    Text(exportErrorMessage)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("apple_id_close_export_error")
+                }
                 Button(role: .destructive) {
                     requestClose()
                 } label: {
@@ -381,6 +417,32 @@ struct AppleIDCloseNoticeView: View {
     }
 
     // MARK: - Los botones
+
+    /// «Exportar mis registros» (L20-16): todos los registros de este teléfono —los de la cuenta de iCloud anterior, que
+    /// es lo que «Cerrar sesión y quitarlos» quitaría—, en Excel y sin asistente, el mismo archivo que «Exportar antes»
+    /// de cerrar sesión (L20-8). `scheduleTagBackfill: false`: el relleno de etiquetas guardaría cambios por subir justo
+    /// antes de quitarlos. Una vuelta después del toque, para que el indicador llegue a pintarse.
+    private func exportEverything() {
+        guard !isExporting else { return }
+        isExporting = true
+        exportErrorMessage = nil
+        let context = modelContext
+        Task { @MainActor in
+            await Task.yield()
+            defer { isExporting = false }
+            do {
+                let result = try TransactionsExportService.export(
+                    format: .xlsx, using: .allTransactions, columns: .default, in: context,
+                    scheduleTagBackfill: false)
+                exportedFile = ExportedFile(urls: [result.fileURL])
+            } catch {
+                #if DEBUG
+                print("AppleIDCloseNoticeView: Error exportando antes de quitar los datos: \(error)")
+                #endif
+                exportErrorMessage = SignOutBlockedCopy.personalExportFailureMessage(for: error)
+            }
+        }
+    }
 
     /// «Ahora no». Suelta el aviso, que vuelve en el arranque siguiente: el latch de `AppBootstrapper` es por
     /// proceso. Si el cierre de ESTE aviso paró en un bloqueo, antes lo reconoce: la hoja es la única

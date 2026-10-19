@@ -1532,5 +1532,65 @@
 			<string>Eksportuj %d wpisu</string>
 		</dict>
 	</dict>
+	<key>l20n.count.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d wpis</string>
+			<key>few</key>
+			<string>%d wpisy</string>
+			<key>many</key>
+			<string>%d wpisów</string>
+			<key>other</key>
+			<string>%d wpisu</string>
+		</dict>
+	</dict>
+	<key>l20n.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d konto</string>
+			<key>few</key>
+			<string>%d konta</string>
+			<key>many</key>
+			<string>%d kont</string>
+			<key>other</key>
+			<string>%d konta</string>
+		</dict>
+	</dict>
+	<key>l20n.count.budgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d budżet</string>
+			<key>few</key>
+			<string>%d budżety</string>
+			<key>many</key>
+			<string>%d budżetów</string>
+			<key>other</key>
+			<string>%d budżetu</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -11,9 +11,13 @@ import Foundation
 nonisolated enum SupportMailLinkLogic {
     /// `nil` solo si el correo no forma una URL (no ocurre con la constante de soporte). El asunto va codificado:
     /// lleva espacios y acentos.
-    static func url(to address: String, subject: String) -> URL? {
+    /// `body`, si va, también codificado: la pantalla de iCloud mete ahí el detalle técnico (UX 2.2 · L20-14), que ya no
+    /// se enseña en pantalla.
+    static func url(to address: String, subject: String, body: String? = nil) -> URL? {
         guard var components = URLComponents(string: "mailto:\(address)") else { return nil }
-        components.queryItems = [URLQueryItem(name: "subject", value: subject)]
+        var items = [URLQueryItem(name: "subject", value: subject)]
+        if let body { items.append(URLQueryItem(name: "body", value: body)) }
+        components.queryItems = items
         return components.url
     }
 }

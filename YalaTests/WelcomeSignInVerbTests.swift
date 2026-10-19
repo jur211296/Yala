@@ -54,6 +54,8 @@ struct WelcomeSignInVerbTests {
 
     private static let welcomePath = "Yala/App/Views/Onboarding/WelcomeCloudSignInView.swift"
     private static let storagePath = "Yala/App/Views/Settings/StorageSignInChooserView.swift"
+    /// La hoja única de activar la nube de Ajustes (UX 2.2 · L20-11): el mismo contexto que el chooser, el mismo verbo.
+    private static let activationPath = "Yala/App/Views/Settings/CloudActivationSheet.swift"
     private static let groupsPath = "Yala/App/Views/Groups/GroupsSignInView.swift"
 
     // MARK: - Punto 15 · el verbo por contexto
@@ -79,10 +81,14 @@ struct WelcomeSignInVerbTests {
     /// es el mismo de siempre: ahí entra tanto quien ya tiene cuenta como quien la estrena al migrar.
     @Test("Ajustes/migración conserva el verbo neutro")
     func settings_keepsTheNeutralVerb() throws {
-        let src = try Self.code(Self.storagePath)
-        #expect(src.contains("purpose: .continue"), "\(Self.storagePath) dejó de declarar el verbo neutro")
-        #expect(!src.contains("purpose: .signUp"))
-        #expect(!src.contains("purpose: .signIn"))
+        for path in [Self.storagePath, Self.activationPath] {
+            let src = try Self.code(path)
+            #expect(src.contains("purpose: .continue"), "\(path) dejó de declarar el verbo neutro")
+            #expect(!src.contains("purpose: .signUp"))
+            #expect(!src.contains("purpose: .signIn"))
+        }
+        // Y su botón de Apple dice lo mismo que el de Google («Continuar con…»), no «Iniciar sesión».
+        #expect(try Self.code(Self.activationPath).contains("StorageAppleSignInButton(colorScheme: colorScheme, type: .continue)"))
     }
 
     /// **UX 2.2 · L19-17 (2026-10-19) devolvió a Grupos al neutro, y ahora con los DOS botones.** G3 (2026-08-11) le
@@ -104,11 +110,12 @@ struct WelcomeSignInVerbTests {
     /// El conteo es lo que convierte esto en una red: una superficie NUEVA que se cuele sin decidir su
     /// verbo cae aquí, y el compilador no la caza porque `purpose` es obligatorio pero cualquiera de los
     /// tres valores compila. **Eran cuatro hasta el paso 6**, que añadió las DOS de la pantalla de
-    /// mismatch —una por salida, cada una con su verbo: lo fija el test de abajo—.
-    @Test("las seis construcciones de producción declaran su verbo, y son seis")
-    func productionCallSites_declareTheirVerb_andAreSix() throws {
+    /// mismatch —una por salida, cada una con su verbo: lo fija el test de abajo—, y siete desde la hoja única de activar la
+    /// nube de Ajustes (UX 2.2 · L20-11).
+    @Test("las siete construcciones de producción declaran su verbo, y son siete")
+    func productionCallSites_declareTheirVerb_andAreSeven() throws {
         var total = 0
-        for path in [Self.welcomePath, Self.storagePath, Self.groupsPath] {
+        for path in [Self.welcomePath, Self.storagePath, Self.activationPath, Self.groupsPath] {
             let src = try Self.code(path)
             let constructions = src.components(separatedBy: "GoogleSignInButton(").count - 1
             let declared = src.components(separatedBy: "purpose: .").count - 1
@@ -116,7 +123,7 @@ struct WelcomeSignInVerbTests {
                     "\(path): \(constructions) botones de Google y \(declared) verbos declarados")
             total += constructions
         }
-        #expect(total == 6, "se esperaban 6 construcciones de producción, hay \(total)")
+        #expect(total == 7, "se esperaban 7 construcciones de producción, hay \(total)")
     }
 
     /// **Paso 6 · el mismatch dice DOS verbos, uno por salida, y emparejados.** Con un `contains` suelto un

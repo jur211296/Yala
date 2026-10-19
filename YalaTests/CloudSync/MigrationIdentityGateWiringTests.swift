@@ -410,16 +410,19 @@ struct MigrationIdentityGateWiringTests {
         ])
         let action = try Self.body(of: "private func beginActivation(_ controller: CloudMigrationController, isAdopt: Bool) {",
                                    in: Self.viewPath)
+        // Desde UX 2.2 · L20-11 lo que se abre es la hoja única de activar (consentimiento, confirmación y método), y con
+        // sesión viva la comprobación de la cuenta sigue yendo ANTES de abrirla.
         #expect(Self.lines(action) == [
             "consentPath = isAdopt ? .adopt : .migration",
+            "activationPlan = nil",
             "let decision = signInDecision(isAdopt: isAdopt)",
             "guard !isAdopt, case .reuseLiveSession = decision else {",
-            "showConsent = true",
+            "presentActivationSheet(controller, isAdopt: isAdopt)",
             "return",
             "}",
             "Task {",
             "guard await controller.preflightMigrationIdentity() else { return }",
-            "showConsent = true",
+            "presentActivationSheet(controller, isAdopt: isAdopt)",
             "}",
         ])
     }

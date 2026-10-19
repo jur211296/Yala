@@ -1259,7 +1259,7 @@ final class CloudMigrationController {
         isWorking = true
         defer { isWorking = false }
         lastError = nil
-        // Mismo guard que `startMigration`: su doble confirmación cuelga de la raíz de la pantalla.
+        // Mismo guard que `startMigration`: su confirmación (una sola desde UX 2.2 · L20-17) cuelga de la raíz de la pantalla.
         guard readJournalDecisionInputs() != nil else {
             lastError = L10n.Storage.journalUnreadableMessage
             refresh()

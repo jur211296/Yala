@@ -4,9 +4,9 @@
 //
 //  **«Activar la nube» con un borrado de iCloud pendiente pregunta antes de seguir** (ticket
 //  `late-wipe-arm-is-dropped-silently-when-the-device-moves-to-the-cloud`, decisión A de Jürgen del 2026-10-04). Hasta ese
-//  ticket la tarjeta iba directa al consentimiento y el borrado se retiraba en silencio al arrancar en la nube.
+//  ticket la tarjeta iba directa a la hoja de activar y el borrado se retiraba en silencio al arrancar en la nube.
 //
-//  Qué prueba esta suite y los unit no: que el toque de verdad abre el diálogo ANTES del consentimiento, que «Ahora no»
+//  Qué prueba esta suite y los unit no: que el toque de verdad abre el diálogo ANTES de la hoja de activar, que «Ahora no»
 //  no deja nada abierto detrás y que «Activar la nube sin borrar» sigue a la cadena de siempre.
 //
 //  **El seam finge la ENTRADA** (`-uitest-pending-icloud-wipe`): el arm real lo reanudaría el propio arranque del XCUITest
@@ -60,22 +60,24 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
         app.sheets.buttons["storage_pending_icloud_wipe_proceed"].firstMatch
     }
 
+    /// La hoja única de activar la nube (UX 2.2 · L20-11), por su título: desde ese día es lo que abre el toque, en vez
+    /// de la hoja de activar suelto.
     private func consentAccept(_ app: XCUIApplication) -> XCUIElement {
-        app.buttons["storage_consent_accept"]
+        app.staticTexts["storage_activation_sheet"]
     }
 
-    /// La CONDICIÓN, sin el seam: sin borrado pendiente el toque va al consentimiento y no hay diálogo. Sin este caso, los
+    /// La CONDICIÓN, sin el seam: sin borrado pendiente el toque va a la hoja de activar y no hay diálogo. Sin este caso, los
     /// dos de abajo no distinguen «el diálogo sale por el borrado» de «el diálogo sale siempre».
     func test_withoutPendingWipe_goesStraightToTheConsent() {
         let (app, migrate) = openMigrateCard(pendingICloudWipe: false)
         migrate.tap()
 
         XCTAssertTrue(consentAccept(app).waitForExistence(timeout: 10),
-                      "Sin borrado pendiente, «Activar la nube» no llegó al consentimiento.")
+                      "Sin borrado pendiente, «Activar la nube» no llegó a la hoja de activar.")
         XCTAssertFalse(proceedButton(app).exists, "El diálogo del borrado pendiente salió sin ningún borrado pendiente.")
     }
 
-    /// El diálogo sale ANTES del consentimiento, y «Ahora no» no deja nada detrás.
+    /// El diálogo sale ANTES de la hoja de activar, y «Ahora no» no deja nada detrás.
     func test_pendingWipe_asksFirst_andWaitLeavesNothingBehind() {
         let (app, migrate) = openMigrateCard(pendingICloudWipe: true)
         migrate.tap()
@@ -91,11 +93,11 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
         wait.tap()
 
         XCTAssertFalse(consentAccept(app).waitForExistence(timeout: 3),
-                       "«Ahora no» abrió el consentimiento: la activación siguió aunque la persona dijo que no.")
+                       "«Ahora no» abrió la hoja de activar: la activación siguió aunque la persona dijo que no.")
         XCTAssertFalse(proceedButton(app).exists, "«Ahora no» dejó el diálogo abierto.")
     }
 
-    /// «Activar la nube sin borrar» sigue a la cadena de siempre: el consentimiento.
+    /// «Activar la nube sin borrar» sigue a la cadena de siempre: la hoja de activar.
     func test_pendingWipe_proceedGoesOnToTheConsent() {
         let (app, migrate) = openMigrateCard(pendingICloudWipe: true)
         migrate.tap()
@@ -105,33 +107,40 @@ final class PendingICloudWipeMigrationUITests: XCTestCase {
         proceed.tap()
 
         XCTAssertTrue(consentAccept(app).waitForExistence(timeout: 10), """
-            «Activar la nube sin borrar» no llegó al consentimiento: la persona eligió activar la nube y la pantalla la \
+            «Activar la nube sin borrar» no llegó a la hoja de activar: la persona eligió activar la nube y la pantalla la \
             dejó sin camino.
             """)
     }
 
-    /// B6 (auditoría UX 2.2, lote 20): «¿Activar la nube?» enseña «Cancelar». Con `role: .cancel` el globo de iOS 26 no lo
-    /// pintaba y solo se veía «Continuar»; la única salida era tocar fuera. «Cancelar» no sigue a «¿Seguro?» ni al selector.
-    func test_activateCloudConfirmation_showsCancel_andCancelStops() {
+    /// UX 2.2 · L20-11/12 (decisión de Jürgen, opción C): activar es UNA hoja con los dos botones de entrar, «Ver los
+    /// detalles», «Exportar una copia antes» y «Cancelar» a la vista. «Cancelar» la cierra sin abrir «¿Activar la nube?»,
+    /// «¿Seguro?» ni el selector de Apple o Google, y la tarjeta sigue ahí: no arrancó nada.
+    func test_activationSheet_isOneStep_andCancelStops() {
         let (app, migrate) = openMigrateCard(pendingICloudWipe: false)
         migrate.tap()
 
-        let accept = consentAccept(app)
-        XCTAssertTrue(accept.waitForExistence(timeout: 10), "«Activar la nube» no llegó al consentimiento.")
-        accept.tap()
+        XCTAssertTrue(consentAccept(app).waitForExistence(timeout: 10), "«Activar la nube» no abrió la hoja de activar.")
+        XCTAssertTrue(app.buttons["storage_activation_apple"].exists, "La hoja no ofrece «Continuar con Apple».")
+        XCTAssertTrue(app.buttons["storage_activation_google"].exists, "La hoja no ofrece «Continuar con Google».")
+        XCTAssertTrue(app.buttons["storage_activation_export"].exists, "La hoja no ofrece «Exportar una copia antes».")
 
-        let cancel = app.sheets.buttons["storage_confirm_migrate_cancel"].firstMatch
-        XCTAssertTrue(cancel.waitForExistence(timeout: 5), """
-            «¿Activar la nube?» no enseña «Cancelar»: con `role: .cancel` el globo no lo pinta y la persona solo ve \
-            «Continuar».
-            """)
-        XCTAssertTrue(app.sheets.buttons["storage_confirm_migrate_continue"].firstMatch.exists,
-                      "El diálogo perdió «Continuar».")
+        // «Ver los detalles» despliega el texto legal entero, a un toque.
+        let details = app.buttons["storage_activation_details"]
+        XCTAssertTrue(details.exists, "La hoja no ofrece «Ver los detalles».")
+        details.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["storage_activation_details_text"].waitForExistence(timeout: 3),
+                      "«Ver los detalles» no desplegó el texto legal.")
+
+        let cancel = app.buttons["storage_activation_cancel"]
+        XCTAssertTrue(cancel.exists, "La hoja no enseña «Cancelar».")
         cancel.tap()
 
-        XCTAssertFalse(app.sheets.buttons["storage_confirm_migrate2_confirm"].firstMatch.waitForExistence(timeout: 3),
-                       "«Cancelar» abrió «¿Seguro?»: la activación siguió aunque la persona dijo que no.")
+        XCTAssertFalse(consentAccept(app).waitForExistence(timeout: 3), "«Cancelar» no cerró la hoja.")
         XCTAssertFalse(app.descendants(matching: .any)["storage_signin_chooser"].exists,
                        "«Cancelar» abrió el selector de Apple o Google.")
+        XCTAssertFalse(app.descendants(matching: .any)["storage_progress_card"].exists,
+                       "«Cancelar» arrancó la activación.")
+        XCTAssertTrue(app.descendants(matching: .any)["storage_migrate_button"].waitForExistence(timeout: 3),
+                      "La tarjeta de la nube desapareció tras cancelar.")
     }
 }

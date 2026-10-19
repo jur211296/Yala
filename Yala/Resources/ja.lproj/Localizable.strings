@@ -2395,10 +2395,10 @@
 "icloud.privacyNote" = "データはあなた個人のiCloudアカウントに非公開で保存されます。Yalaがアクセスすることはありません。";
 "icloud.statusSynced" = "同期済み";
 "icloud.statusSyncing" = "同期中...";
-"icloud.statusNoAccount" = "iCloudアカウントなし";
+"icloud.statusNoAccount" = "この iPhone では iCloud がオンになっていません";
 "icloud.statusError" = "同期エラー";
 "icloud.lastSync" = "最終同期: %@";
-"icloud.noAccountWarning" = "同期を有効にするには設定からiCloudにサインインしてください。";
+"icloud.noAccountWarning" = "データを iCloud に保存するには、iPhone の設定のいちばん上で Apple アカウントにサインインしてください。";
 "icloud.syncingData" = "データを同期中...";
 "icloud.syncingDescription" = "iCloudから情報を取得しています。";
 "icloud.syncing.skip" = "新規としてセットアップ";
@@ -2410,7 +2410,7 @@
 "icloud.detail.upToDate" = "最新の状態 — 最終同期 %@";
 "icloud.detail.errorTitle" = "現在iCloudに保存されていません";
 "icloud.detail.errorMessage" = "オフラインかiCloudが利用できません。データはこのデバイスに安全に保存されており、可能になり次第同期します。";
-"icloud.detail.stalledMessage" = "最近の変更はまだこのデバイスにあります。iCloudへ同期する方法を見ていきましょう。";
+"icloud.detail.stalledMessage" = "最近の変更はこの iPhone に安全に残っていますが、まだ iCloud に届いていません。";
 "icloud.detail.technicalCode" = "技術詳細: %@";
 "icloud.detail.cta.retry" = "今すぐ再試行";
 "icloud.detail.cta.diagnose" = "確認と修復";
@@ -2418,7 +2418,7 @@
 "icloud.remoteOnboardingCompleted" = "別の端末で設定が完了しました。すべてここにそろっています。";
 "icloud.remoteRestoreCompleted" = "データを復元しました";
 "icloud.remoteWipe.title" = "データが利用できなくなりました";
-"icloud.remoteWipe.message" = "iCloudからデータが削除されました。新規に始めるか、戻ってくるのを待つことができます。";
+"icloud.remoteWipe.message" = "あなたの別のデバイスで Yala が空にされました。あなたが行ったのなら、ここでも最初から始めてください。そうでなければ待ってください。誤りだった場合、データが戻ることがあります。";
 "icloud.remoteWipe.confirm" = "新規に始める";
 "icloud.remoteWipe.cancel" = "待つ";
 "icloud.forceSync.button" = "強制同期";
@@ -4622,7 +4622,7 @@
 "storage.confirm.migrate2Body" = "この端末でクラウドが有効になります。";
 "storage.confirm.migrate2Confirm" = "はい、クラウドを有効化";
 "storage.confirm.revertTitle" = "iCloud に戻しますか？";
-"storage.confirm.revertBody" = "データはデバイスと iCloud に保存されます。何も失われません。";
+"storage.confirm.revertBody" = "データはこの iPhone とあなたの iCloud に戻ります。何も失いません。";
 "storage.confirm.revertContinue" = "続ける";
 "storage.confirm.revert2Title" = "よろしいですか？";
 "storage.confirm.revert2Body" = "この端末でクラウドが無効になります。";
@@ -5903,7 +5903,7 @@
 "icloud.appleIDChanged.title" = "iCloud アカウントが変わりました";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "この iPhone にある Yala のデータは以前の iCloud アカウントのもので、そのアカウントに保存されたまま残ります。この iPhone で Yala を使い続けるには、ここから削除する必要があります。そのアカウントに届いていない内容はもうアップロードできません。";
+"icloud.appleIDChanged.message" = "この電話の Yala のデータは以前の iCloud アカウントのもので、そちらに保存されたままです。Yala を使い続けるにはここから取り除く必要があり、そのアカウントに届いていないものはアップロードできなくなります。";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "サインアウトして削除";
@@ -5995,7 +5995,7 @@
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "アカウントを確認できませんでした。少し待ってからもう一度お試しください。何も変更していません。";
-"storage.migrateBlock.personalDataTitle" = "そのアカウントにはすでに個人の家計データがあります";
+"storage.migrateBlock.personalDataTitle" = "このアカウントにはすでに独自のデータがあります";
 "storage.migrateBlock.personalDataBody" = "何も変更していません。データをクラウドに移すには、別のアカウントを使ってください。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "何も変更していません。そのアカウントのデータをここで使うには、サインアウトしてからそのアカウントでサインインしてください。データを別のアカウントに移すには、先に「グループ」でこのアカウントのリンクを解除してください。";
 "storage.migrateBlock.otherGroupsTitle" = "グループにはすでに別のアカウントを使っています";
@@ -6428,10 +6428,10 @@
 "storage.pendingICloudWipe.title" = "削除が完了していません";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "最初からやり直してiCloudのデータを削除するよう依頼しましたが、削除はまだ完了していません。クラウドを有効にすると削除は取り消され、削除されなかったデータがYalaアカウントに入る可能性があります。待つ場合は何も変わらず、削除は保留のままです。";
+"storage.pendingICloudWipe.body" = "以前 iCloud のデータの削除を依頼しましたが、終わっていません。クラウドをオンにすると、その削除は取り消されます。";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "削除せずにクラウドを有効化";
+"storage.pendingICloudWipe.proceed" = "削除せずにオンにする";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "今はしない";
@@ -7585,3 +7585,39 @@
 "uxcs.signOutUpload.pending" = "アップロード待ちの変更：%d件";
 "uxcs.migrated.rejoinSentence" = "このグループは移動しました。最新の状態を見るには、もう一度サインインしてください。";
 "uxcs.deleteAccount.finalGroupsOnly" = "Yalaアカウントは削除されます。この端末にあるデータは残ります。";
+
+/* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
+"l20n.sheet.title" = "クラウドをオンにする前に";
+"l20n.sheet.anyPhoneTitle" = "どの電話からでもログインできます";
+"l20n.sheet.anyPhoneDetail" = "iCloud に頼らずに使えます。";
+"l20n.sheet.seesTitle" = "Yala はあなたのデータを見ることができます";
+"l20n.sheet.seesDetail" = "サポートやスマート機能を提供するためです。";
+"l20n.sheet.accessTitle" = "Apple または Google でログインします";
+"l20n.sheet.accessDetail" = "そのアクセスを失っても Yala のパスワードはありません。先にコピーをエクスポートしてください。";
+"l20n.sheet.exportCopy" = "先にコピーをエクスポート";
+"l20n.sheet.details" = "詳細を見る";
+"l20n.sheet.hideDetails" = "詳細を隠す";
+"l20n.sheet.detailsAccess" = "Yala のパスワードやメールでの復旧はありません。Apple または Google のアカウントにアクセスできなくなると、データにもアクセスできなくなります。だからこそ、先にコピーをエクスポートしておくのがおすすめです。";
+"l20n.sheet.willMove" = "%1$@、%2$@、%3$@ が移ります。";
+"l20n.sheet.continueCurrent" = "今のアカウントで続ける";
+"l20n.relaunch.almostTitle" = "あと少しです";
+"l20n.relaunch.doneSignedOut" = "サインアウトしました";
+"l20n.relaunch.afterSignOut" = "もう一度開くと、Yala がこの iPhone からデータを取り除き終えます。";
+"l20n.relaunch.afterGroupsOnly" = "個人のデータはこの iPhone に残ります。";
+"l20n.relaunch.doneInCloud" = "データはすでにクラウドのアカウントにあります";
+"l20n.relaunch.doneOnPhone" = "データはすでにこの iPhone にあります";
+"l20n.relaunch.afterToICloud" = "もう一度開くと、iCloud へのアップロードが始まります。";
+"l20n.relaunch.doneReverseStopped" = "iCloud への切り替えは止まりました";
+"l20n.relaunch.pending" = "Yala をもう一度開く";
+"l20n.relaunch.toFinish" = "仕上げに";
+"l20n.relaunch.step1" = "画面の下端から上にスワイプして止めます";
+"l20n.relaunch.step1HomeButton" = "ホームボタンを2回押します";
+"l20n.relaunch.step2" = "Yala を上にスワイプして閉じます";
+"l20n.relaunch.step3" = "Yala のアイコンをタップしてもう一度開きます";
+"l20n.relaunch.doneA11y" = "完了：%@";
+"l20n.relaunch.pendingA11y" = "残り：Yala をもう一度開く";
+"l20n.relaunch.mismatchMessage" = "iCloud の準備ができる前に Yala が開きました。データを同期するには、Yala を閉じてもう一度開いてください：\n\n%@";
+"l20n.icloud.noAccountDetail" = "データはこの端末にだけ保存されます。";
+"l20n.icloud.openSettings" = "iPhone の設定を開く";
+"l20n.icloud.mailSubject" = "Yala：iCloud が同期しません";
+"l20n.icloud.contactFooter" = "このままなら、ご連絡ください。サポートできるよう、メールには技術的な詳細がすでに入っています。";

@@ -1228,5 +1228,53 @@
 			<string>%d Einträge exportieren</string>
 		</dict>
 	</dict>
+	<key>l20n.count.records</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d Eintrag</string>
+			<key>other</key>
+			<string>%d Einträge</string>
+		</dict>
+	</dict>
+	<key>l20n.count.accounts</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d Konto</string>
+			<key>other</key>
+			<string>%d Konten</string>
+		</dict>
+	</dict>
+	<key>l20n.count.budgets</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d Budget</string>
+			<key>other</key>
+			<string>%d Budgets</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

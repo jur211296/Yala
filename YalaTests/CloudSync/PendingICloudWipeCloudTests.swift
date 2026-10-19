@@ -483,7 +483,7 @@ struct PendingICloudWipeCloudWiringTests {
                              "un «sin borrar» de un intento anterior se arrastraría al siguiente")
         try Self.expectOrder("confirmPendingICloudWipe = true", before: "beginActivation(controller, isAdopt: isAdopt)", in: tap,
                              "con un borrado pendiente, el diálogo va antes del consentimiento")
-        #expect(!tap.contains("showConsent = true"), "el toque saltaba el diálogo directo al consentimiento")
+        #expect(!tap.contains("activationRequest = "), "el toque saltaba el diálogo directo a la hoja de activar")
         let dialog = try Self.slice(from: ".confirmationDialog(L10n.Storage.PendingICloudWipe.title,",
                                     to: "} message: {", in: src)
         try Self.expectOrder("pendingICloudWipeWaived = true", before: "beginActivation(controller, isAdopt: isAdopt)", in: dialog,
