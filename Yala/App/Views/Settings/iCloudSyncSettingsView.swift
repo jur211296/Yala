@@ -5,6 +5,7 @@
 //  Shows real iCloud sync status. Sync is automatic when iCloud is available.
 //  Copy is deliberately non-alarming (Brand Voice §8) — errors are framed as
 //  "something's a bit off" and always reassure that local data is safe.
+//  Desde UX 2.2 · L20-14 es una `YalaSettingsList` (lista agrupada, como el resto de Ajustes).
 //
 
 import CloudKit
@@ -13,9 +14,9 @@ import SwiftUI
 
 struct iCloudSyncSettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
     @State private var syncService = iCloudSyncService.shared
     @State private var isForceSyncDisabled = false
-    @State private var showTechnical = false
     /// Set when an explicit "Sync now" tap couldn't reach iCloud (transient).
     /// Drives a contextual, non-alarming note — never the global banner.
     @State private var manualSyncUnreachable = false
@@ -24,154 +25,137 @@ struct iCloudSyncSettingsView: View {
     @State private var lastRepairMessage: String?
     #endif
 
-    /// Auto-recovery CTAs (Retry / Diagnose) are gated on a future feature.
-    /// Flip to true when `cloudkit-auto-recovery-stuck-queue` ships.
-    private let isAutoRecoveryAvailable = false
-
+    /// UX 2.2 · L20-14 (opción B), decidida por Jürgen el 2026-10-18: **una lista agrupada que no se contradice**. Sin
+    /// cuenta ya no dice debajo que «tus datos se sincronizan automáticamente con iCloud», y ofrece abrir los Ajustes del
+    /// iPhone; atascada ya no promete «Revisemos qué podemos hacer» sin ningún botón (los de recuperación siguen
+    /// apagados: `cloudkit-auto-recovery-stuck-queue`); y el código técnico (`CKError.N`) no se enseña: viaja dentro del
+    /// correo de «Contacta con nosotros», que es donde le sirve a alguien.
     var body: some View {
-        ScrollView {
-            VStack(spacing: DS.Spacing.xl) {
-                    statusCard
-
-                    if syncService.isAccountAvailable {
-                        forceSyncSection
-                    }
-
-                    if !syncService.isAccountAvailable {
-                        noAccountWarning
-                    }
-
-                    descriptionFooter
-
-                    #if DEV_BUILD
-                    qaPanel
-                    cloudAuthPanel
-                    #endif
-                    #if DEBUG
-                    dedupHookPanel
-                    #endif
+        YalaSettingsList {
+            YalaSettingsSection {
+                statusRow
+            } footer: {
+                if let message = statusMessage {
+                    Text(message)
+                        .accessibilityIdentifier("icloud_status_message")
                 }
-                .padding(.vertical, DS.Spacing.xxl)
             }
+
+            if showsNoAccount {
+                noAccountSection
+            } else {
+                forceSyncSection
+            }
+
+            if let code = technicalCode {
+                contactSection(code: code)
+            }
+
+            if !showsNoAccount {
+                // Lo que promete iCloud, solo cuando hay iCloud: sin cuenta, los datos se quedan en este iPhone.
+                YalaSettingsSection {
+                    EmptyView()
+                } footer: {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Text(L10n.iCloud.description)
+                        Text(L10n.iCloud.privacyNote)
+                    }
+                    .accessibilityIdentifier("icloud_description")
+                }
+            }
+
+            #if DEV_BUILD
+            YalaSettingsSection { qaPanel }
+            YalaSettingsSection { cloudAuthPanel }
+            #endif
+            #if DEBUG
+            YalaSettingsSection { dedupHookPanel }
+            #endif
+        }
         .yalaScreenBackground(.subtle)
         .navigationTitle(L10n.iCloud.title)
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - Status Card
+    // MARK: - Estado
 
-    @ViewBuilder
-    private var statusCard: some View {
+    /// «Sin cuenta», con UNA sola respuesta para toda la pantalla: el testigo de iCloud Drive o un `notAuthenticated` de
+    /// CloudKit (`status == .noAccount`). Con dos —la fila por el estado y las secciones por el testigo— la pantalla decía
+    /// «iCloud no está activo» encima de «Tus datos se sincronizan automáticamente con iCloud» (review del 2026-10-19).
+    private var showsNoAccount: Bool {
+        !syncService.isAccountAvailable || syncService.status.isNoAccount
+    }
+
+    private var statusRow: some View {
+        HStack(spacing: DS.Spacing.lg) {
+            iconBadge(statusIcon.name, color: statusIcon.color)
+            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                Text(statusTitle)
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let detail = statusDetail {
+                    Text(detail)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, DS.Spacing.xs)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("icloud_status_row")
+    }
+
+    private var statusIcon: (name: String, color: Color) {
+        switch syncService.status {
+        case .idle, .success, .syncing: ("checkmark.icloud.fill", DS.Semantic.successForeground)
+        case .failed: ("icloud.slash", DS.Semantic.errorForeground)
+        case .stalled: ("clock.arrow.circlepath", DS.Semantic.warningForeground)
+        case .noAccount: ("person.icloud.fill", DS.Semantic.warningForeground)
+        }
+    }
+
+    private var statusTitle: String {
+        switch syncService.status {
+        case .idle, .success, .syncing: L10n.iCloud.statusSynced
+        case .failed: L10n.iCloud.Detail.errorTitle
+        case .stalled(let days, _): L10n.iCloud.Detail.stalledTitle(days)
+        case .noAccount: L10n.iCloud.statusNoAccount
+        }
+    }
+
+    /// La línea bajo el título: la última sincronización, o —sin cuenta— que los datos se quedan aquí.
+    private var statusDetail: String? {
         switch syncService.status {
         case .idle, .success, .syncing:
-            upToDateCard
-        case .failed(let code, _, _):
-            failedCard(code: code)
-        case .stalled(let days, let code):
-            stalledCard(days: days, code: code)
+            return (syncService.lastSuccessfulExportDate ?? syncService.lastSuccessfulImportDate)
+                .map { L10n.iCloud.Detail.upToDate(formatRelative($0)) }
         case .noAccount:
-            noAccountCard
+            return L10n.UXL20N.icloudNoAccountDetail
+        case .failed, .stalled:
+            return nil
         }
     }
 
-    // MARK: - Up to Date (idle / success / syncing)
-
-    private var upToDateCard: some View {
-        HStack(spacing: DS.Spacing.lg) {
-            iconBadge("checkmark.icloud.fill", color: DS.Semantic.successForeground)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.iCloud.statusSynced)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-
-                if let lastSync = syncService.lastSuccessfulExportDate
-                    ?? syncService.lastSuccessfulImportDate {
-                    Text(L10n.iCloud.Detail.upToDate(formatRelative(lastSync)))
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
+    /// Qué pasa, en el pie del bloque del estado. Sin «Revisemos qué podemos hacer»: no hay botón que lo haga.
+    private var statusMessage: String? {
+        switch syncService.status {
+        case .failed: L10n.iCloud.Detail.errorMessage
+        case .stalled: L10n.iCloud.Detail.stalledMessage
+        case .idle, .success, .syncing, .noAccount: nil
         }
-        .statusCardStyle()
     }
 
-    // MARK: - Failed
-
-    private func failedCard(code: CKError.Code) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.lg) {
-                iconBadge("icloud.slash", color: DS.Semantic.errorForeground)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.iCloud.Detail.errorTitle)
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-                }
-                Spacer()
-            }
-
-            Text(L10n.iCloud.Detail.errorMessage)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-
-            technicalDisclosure(code: code)
-
-            if isAutoRecoveryAvailable {
-                recoveryCTAs
-            }
+    /// El código que soporte necesita, cuando hay uno: solo en fallo o atasco.
+    private var technicalCode: String? {
+        switch syncService.status {
+        case .failed(let code, _, _): "CKError.\(code.rawValue)"
+        case .stalled(_, let code): code.map { "CKError.\($0.rawValue)" }
+        case .idle, .success, .syncing, .noAccount: nil
         }
-        .statusCardStyle()
     }
-
-    // MARK: - Stalled
-
-    private func stalledCard(days: Int, code: CKError.Code?) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            HStack(spacing: DS.Spacing.lg) {
-                iconBadge("clock.arrow.circlepath", color: DS.Semantic.warningForeground)
-
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(L10n.iCloud.Detail.stalledTitle(days))
-                        .font(DS.Typography.headline)
-                        .foregroundStyle(.primary)
-                }
-                Spacer()
-            }
-
-            Text(L10n.iCloud.Detail.stalledMessage)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
-
-            if let code {
-                technicalDisclosure(code: code)
-            }
-
-            if isAutoRecoveryAvailable {
-                recoveryCTAs
-            }
-        }
-        .statusCardStyle()
-    }
-
-    // MARK: - No account
-
-    private var noAccountCard: some View {
-        HStack(spacing: DS.Spacing.lg) {
-            iconBadge("person.icloud.fill", color: DS.Semantic.warningForeground)
-
-            VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                Text(L10n.iCloud.statusNoAccount)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-            }
-            Spacer()
-        }
-        .statusCardStyle()
-    }
-
-    // MARK: - Shared pieces
 
     private func iconBadge(_ systemName: String, color: Color) -> some View {
         ZStack {
@@ -183,79 +167,53 @@ struct iCloudSyncSettingsView: View {
                 .font(DS.Typography.title)
                 .foregroundStyle(color)
         }
+        .accessibilityHidden(true)
     }
 
-    private func technicalDisclosure(code: CKError.Code) -> some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+    // MARK: - Sin cuenta
+
+    /// «Abrir Ajustes del iPhone»: iOS solo deja abrir los Ajustes en la página de Yala (`openSettingsURLString`); desde
+    /// ahí, el nombre de la persona está arriba del todo. El pie dice dónde iniciar sesión.
+    private var noAccountSection: some View {
+        YalaSettingsSection {
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showTechnical.toggle()
-                }
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                openURL(url)
             } label: {
-                Text(L10n.iCloud.Detail.CTA.viewTechnical)
-                    .font(DS.Typography.caption)
-                    .foregroundStyle(.tertiary)
+                YalaSettingsRowLabel(title: L10n.UXL20N.icloudOpenSettings, accessory: "arrow.up.forward")
             }
-            .buttonStyle(.plain)
-
-            if showTechnical {
-                Text(L10n.iCloud.Detail.technicalCode("CKError.\(code.rawValue)"))
-                    .font(DS.Typography.caption.monospaced())
-                    .foregroundStyle(.tertiary)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var recoveryCTAs: some View {
-        HStack(spacing: DS.Spacing.md) {
-            Button(L10n.iCloud.Detail.CTA.retry) {
-                Task { await syncService.forceSync(modelContext: modelContext) }
-            }
-            .buttonStyle(.borderedProminent)
-
-            Button(L10n.iCloud.Detail.CTA.diagnose) {
-                // Will dispatch to cloudkit-auto-recovery-stuck-queue when available.
-            }
-            .buttonStyle(.bordered)
-        }
-    }
-
-    private var noAccountWarning: some View {
-        HStack(spacing: DS.Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(DS.Semantic.warningForeground)
+            .accessibilityIdentifier("icloud_open_settings")
+        } footer: {
             Text(L10n.iCloud.noAccountWarning)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, DS.Spacing.lg)
     }
 
-    private var descriptionFooter: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.md) {
-            Text(L10n.iCloud.description)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
+    // MARK: - Contacta con nosotros
 
-            Text(L10n.iCloud.privacyNote)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
+    /// El detalle técnico, dentro del correo y no en pantalla (L20-14).
+    @ViewBuilder
+    private func contactSection(code: String) -> some View {
+        if let url = SupportMailLinkLogic.url(
+            to: AppConstants.supportEmail, subject: L10n.UXL20N.icloudMailSubject,
+            body: L10n.iCloud.Detail.technicalCode(code)) {
+            YalaSettingsSection {
+                Button {
+                    openURL(url)
+                } label: {
+                    YalaSettingsRowLabel(title: L10n.Settings.contact, accessory: "envelope")
+                }
+                .accessibilityIdentifier("icloud_contact_support")
+            } footer: {
+                Text(L10n.UXL20N.icloudContactFooter)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, DS.Spacing.lg)
     }
 
     // MARK: - Force Sync
 
     private var forceSyncSection: some View {
-        VStack(spacing: DS.Spacing.md) {
-            YalaPrimaryButton(
-                L10n.iCloud.forceSyncButton,
-                icon: "arrow.triangle.2.circlepath",
-                isDisabled: isForceSyncDisabled || syncService.status.isSyncing,
-                isLoading: syncService.status.isSyncing
-            ) {
+        YalaSettingsSection {
+            Button {
                 Task {
                     manualSyncUnreachable = false
                     let result = await syncService.forceSync(modelContext: modelContext)
@@ -268,19 +226,28 @@ struct iCloudSyncSettingsView: View {
                     }
                     isForceSyncDisabled = false
                 }
+            } label: {
+                HStack {
+                    Label(L10n.iCloud.forceSyncButton, systemImage: "arrow.triangle.2.circlepath")
+                        .font(DS.Typography.body)
+                    Spacer()
+                    if syncService.status.isSyncing {
+                        ProgressView()
+                    }
+                }
+                .contentShape(Rectangle())
             }
-
-            Text(L10n.iCloud.forceSyncDescription)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-
-            if manualSyncUnreachable {
-                offlineNote
+            .disabled(isForceSyncDisabled || syncService.status.isSyncing)
+            .accessibilityIdentifier("icloud_force_sync")
+        } footer: {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                Text(L10n.iCloud.forceSyncDescription)
+                if manualSyncUnreachable {
+                    offlineNote
+                }
             }
+            .animation(.easeInOut(duration: 0.2), value: manualSyncUnreachable)
         }
-        .padding(.horizontal, DS.Spacing.lg)
-        .animation(.easeInOut(duration: 0.2), value: manualSyncUnreachable)
     }
 
     /// Contextual, non-alarming note when an explicit "Sync now" tap couldn't
@@ -289,10 +256,7 @@ struct iCloudSyncSettingsView: View {
     private var offlineNote: some View {
         HStack(alignment: .top, spacing: DS.Spacing.sm) {
             Image(systemName: "info.circle")
-                .foregroundStyle(.secondary)
             Text(L10n.iCloud.forceSyncOfflineNote)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -340,10 +304,6 @@ struct iCloudSyncSettingsView: View {
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .padding(.horizontal, DS.Spacing.lg)
     }
 
     /// Acceso al panel de auth del Modo Nube (I7c) — DEV_BUILD only.
@@ -368,12 +328,7 @@ struct iCloudSyncSettingsView: View {
                     .foregroundStyle(.tertiary)
             }
             .contentShape(Rectangle())
-            .padding(DS.Spacing.lg)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-            .padding(.horizontal, DS.Spacing.lg)
         }
-        .buttonStyle(.plain)
     }
     #endif
 
@@ -413,23 +368,8 @@ struct iCloudSyncSettingsView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(DS.Spacing.lg)
-        .background(.thCard)
-        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-        .padding(.horizontal, DS.Spacing.lg)
     }
     #endif
-}
-
-private extension View {
-    /// Shared card styling used by every status card variant in this view.
-    func statusCardStyle() -> some View {
-        self
-            .padding(DS.Spacing.lg)
-            .background(.thCard)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
-            .padding(.horizontal, DS.Spacing.lg)
-    }
 }
 
 #Preview {

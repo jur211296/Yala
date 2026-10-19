@@ -2393,10 +2393,10 @@
 "icloud.privacyNote" = "I tuoi dati sono archiviati privatamente nel tuo account iCloud personale. Yala non vi ha accesso.";
 "icloud.statusSynced" = "Sincronizzato";
 "icloud.statusSyncing" = "Sincronizzazione...";
-"icloud.statusNoAccount" = "Nessun account iCloud";
+"icloud.statusNoAccount" = "iCloud non è attivo su questo iPhone";
 "icloud.statusError" = "Errore di sincronizzazione";
 "icloud.lastSync" = "Ultima sincronizzazione: %@";
-"icloud.noAccountWarning" = "Accedi a iCloud nelle Impostazioni per attivare la sincronizzazione.";
+"icloud.noAccountWarning" = "Per salvare i tuoi dati su iCloud, accedi con il tuo Account Apple in cima alle Impostazioni dell'iPhone.";
 "icloud.syncingData" = "Sincronizzazione dati...";
 "icloud.syncingDescription" = "Stiamo recuperando le tue informazioni da iCloud.";
 "icloud.syncing.skip" = "Configura come nuovo";
@@ -2408,7 +2408,7 @@
 "icloud.detail.upToDate" = "Tutto aggiornato — ultima sincronizzazione %@";
 "icloud.detail.errorTitle" = "Per ora non stiamo salvando su iCloud";
 "icloud.detail.errorMessage" = "Sei offline o iCloud non è disponibile. I tuoi dati sono al sicuro su questo dispositivo e verranno sincronizzati appena possibile.";
-"icloud.detail.stalledMessage" = "Le tue modifiche recenti sono ancora su questo dispositivo. Vediamo cosa possiamo fare per portarle su iCloud.";
+"icloud.detail.stalledMessage" = "Le tue modifiche recenti sono ancora al sicuro su questo iPhone, ma non sono ancora arrivate su iCloud.";
 "icloud.detail.technicalCode" = "Dettaglio tecnico: %@";
 "icloud.detail.cta.retry" = "Riprova ora";
 "icloud.detail.cta.diagnose" = "Controlla e ripara";
@@ -2416,7 +2416,7 @@
 "icloud.remoteOnboardingCompleted" = "Hai completato la configurazione sull'altro dispositivo. Ora è tutto qui.";
 "icloud.remoteRestoreCompleted" = "Dati ripristinati";
 "icloud.remoteWipe.title" = "Dati non più disponibili";
-"icloud.remoteWipe.message" = "I tuoi dati sono stati rimossi da iCloud. Puoi ricominciare da capo o attendere che si risincronizzino.";
+"icloud.remoteWipe.message" = "Yala è stata svuotata su un altro dei tuoi dispositivi. Se sei stato tu, ricomincia da zero anche qui; altrimenti aspetta: se è stato un errore, i tuoi dati possono tornare.";
 "icloud.remoteWipe.confirm" = "Ricomincia";
 "icloud.remoteWipe.cancel" = "Continua ad attendere";
 "icloud.forceSync.button" = "Forza sincronizzazione";
@@ -4620,7 +4620,7 @@
 "storage.confirm.migrate2Body" = "Il cloud verrà attivato su questo dispositivo.";
 "storage.confirm.migrate2Confirm" = "Sì, attiva il cloud";
 "storage.confirm.revertTitle" = "Tornare a iCloud?";
-"storage.confirm.revertBody" = "I tuoi dati passeranno sul tuo dispositivo e sul tuo iCloud. Non perderai nulla.";
+"storage.confirm.revertBody" = "I tuoi dati tornano a vivere su questo iPhone e nel tuo iCloud. Non perdi nulla.";
 "storage.confirm.revertContinue" = "Continua";
 "storage.confirm.revert2Title" = "Sei sicuro?";
 "storage.confirm.revert2Body" = "Il cloud verrà disattivato su questo dispositivo.";
@@ -5901,7 +5901,7 @@
 "icloud.appleIDChanged.title" = "Hai cambiato account iCloud";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "I dati di Yala su questo telefono sono dell'account iCloud precedente e restano salvati lì. Per continuare a usare Yala su questo telefono bisogna rimuoverli da qui. Ciò che non è arrivato a quell'account non potrà più essere caricato.";
+"icloud.appleIDChanged.message" = "I dati di Yala su questo telefono appartengono al tuo account iCloud precedente e restano salvati lì. Per continuare a usare Yala bisogna rimuoverli da qui, e ciò che non è arrivato su quell'account non potrà più essere caricato.";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "Esci e rimuovi";
@@ -5993,7 +5993,7 @@
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "Non siamo riusciti a verificare il tuo account. Riprova tra poco. Non abbiamo cambiato niente.";
-"storage.migrateBlock.personalDataTitle" = "Questo account ha già delle finanze personali";
+"storage.migrateBlock.personalDataTitle" = "Questo account ha già i suoi dati";
 "storage.migrateBlock.personalDataBody" = "Non abbiamo cambiato niente. Per portare i tuoi dati nel cloud, usa un altro account. Per usare qui i dati di quell’account, esci e accedi con quell’account.";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "Non abbiamo cambiato niente. Per usare qui i dati di quell’account, esci e accedi con quell’account. Per portare i tuoi dati su un altro account, prima scollega questo in “Gruppi”.";
 "storage.migrateBlock.otherGroupsTitle" = "Usi già un altro account per i tuoi gruppi";
@@ -6426,10 +6426,10 @@
 "storage.pendingICloudWipe.title" = "Hai un'eliminazione non finita";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "Hai chiesto di ricominciare da zero ed eliminare i tuoi dati da iCloud, e l'eliminazione non è ancora finita. Se attivi il cloud, viene annullata e ciò che non è stato eliminato può finire nel tuo account Yala. Se aspetti, non cambia nulla e l'eliminazione resta in sospeso.";
+"storage.pendingICloudWipe.body" = "Avevi chiesto di eliminare i tuoi dati di iCloud e non è finito. Se attivi il cloud, quell'eliminazione viene annullata.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "Attiva il cloud senza eliminare";
+"storage.pendingICloudWipe.proceed" = "Attiva senza eliminare";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "Non ora";
@@ -7583,3 +7583,39 @@
 "uxcs.signOutUpload.pending" = "Modifiche ancora da caricare: %d";
 "uxcs.migrated.rejoinSentence" = "Questo gruppo si è trasferito. Accedi di nuovo per vederlo aggiornato.";
 "uxcs.deleteAccount.finalGroupsOnly" = "Il tuo account Yala viene eliminato. Quello che c'è su questo telefono resta.";
+
+/* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
+"l20n.sheet.title" = "Prima di attivare il cloud";
+"l20n.sheet.anyPhoneTitle" = "Accedi da qualsiasi telefono";
+"l20n.sheet.anyPhoneDetail" = "Senza dipendere da iCloud.";
+"l20n.sheet.seesTitle" = "Yala può vedere i tuoi dati";
+"l20n.sheet.seesDetail" = "Per darti assistenza e funzioni intelligenti.";
+"l20n.sheet.accessTitle" = "Accedi con Apple o Google";
+"l20n.sheet.accessDetail" = "Se perdi quell'accesso, non c'è una password di Yala: esporta prima una copia.";
+"l20n.sheet.exportCopy" = "Esporta prima una copia";
+"l20n.sheet.details" = "Vedi i dettagli";
+"l20n.sheet.hideDetails" = "Nascondi i dettagli";
+"l20n.sheet.detailsAccess" = "Non c'è una password di Yala né un recupero via email: se perdi l'accesso al tuo account Apple o Google, perdi l'accesso ai tuoi dati. Per questo conviene esportare prima una copia.";
+"l20n.sheet.willMove" = "Passeranno %1$@, %2$@ e %3$@.";
+"l20n.sheet.continueCurrent" = "Continua con il tuo account attuale";
+"l20n.relaunch.almostTitle" = "Ci siamo quasi";
+"l20n.relaunch.doneSignedOut" = "Sessione chiusa";
+"l20n.relaunch.afterSignOut" = "Quando la riaprirai, Yala finirà di rimuovere i tuoi dati da questo iPhone.";
+"l20n.relaunch.afterGroupsOnly" = "I tuoi dati personali restano su questo iPhone.";
+"l20n.relaunch.doneInCloud" = "I tuoi dati sono già nel tuo account cloud";
+"l20n.relaunch.doneOnPhone" = "I tuoi dati sono già su questo iPhone";
+"l20n.relaunch.afterToICloud" = "Quando la riaprirai, inizieranno a caricarsi sul tuo iCloud.";
+"l20n.relaunch.doneReverseStopped" = "Il ritorno a iCloud si è fermato";
+"l20n.relaunch.pending" = "Riapri Yala";
+"l20n.relaunch.toFinish" = "Per finire";
+"l20n.relaunch.step1" = "Scorri verso l'alto dal bordo inferiore e fermati";
+"l20n.relaunch.step1HomeButton" = "Premi due volte il tasto Home";
+"l20n.relaunch.step2" = "Scorri Yala verso l'alto per chiuderla";
+"l20n.relaunch.step3" = "Tocca l'icona di Yala per riaprirla";
+"l20n.relaunch.doneA11y" = "Fatto: %@";
+"l20n.relaunch.pendingA11y" = "Da fare: riapri Yala";
+"l20n.relaunch.mismatchMessage" = "Yala si è aperta prima che iCloud fosse pronto. Per sincronizzare i tuoi dati, chiudila e riaprila:\n\n%@";
+"l20n.icloud.noAccountDetail" = "I tuoi dati restano solo qui.";
+"l20n.icloud.openSettings" = "Apri Impostazioni dell'iPhone";
+"l20n.icloud.mailSubject" = "Yala: iCloud non si sincronizza";
+"l20n.icloud.contactFooter" = "Se resta così, scrivici: l'email contiene già il dettaglio tecnico per aiutarti.";

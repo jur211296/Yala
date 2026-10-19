@@ -388,8 +388,9 @@ struct StorageRowGroupsAssociationWiringTests {
 
         // **Y la acción, que no es el render.** Los dos arranques del flujo tienen que re-medirlo: la card
         // puede haberse dibujado con el snapshot viejo y el flag caer mientras el consent está arriba.
-        #expect(storage.contains("private func proceedToSignInStep() { guard !abortIfCloudEntryClosed() else { return }"), """
-            `proceedToSignInStep` dejó de re-medir el kill-switch: un flujo empezado antes de que bajara \
+        #expect(storage.contains("private func onActivationSheetDismissed() { guard let plan = activationPlan else { return } "
+                                 + "activationPlan = nil guard !abortIfCloudEntryClosed() else { return }"), """
+            el arranque desde la hoja de activar dejó de re-medir el kill-switch: un flujo empezado antes de que bajara \
             el flag llega a `startMigration` con el incidente ya declarado.
             """)
         #expect(storage.contains("private func onChooserDismissed() { guard !abortIfCloudEntryClosed() else { return }"), """

@@ -4,10 +4,10 @@
 //
 //  UI real de migración/reversa del Modo Nube (I14 P3). Pantalla de Ajustes (stack de Profile →
 //  `.subtle`) que expone, según el estado derivado del journal (`CloudMigrationController.uiState`):
-//   - `.icloud` estable → "Migrar a la nube" (consent → doble confirmación → chooser Apple|Google →
-//     auth → progreso → relaunch) o, si el mirror trae el marcador de un líder
-//     (`secondaryDeviceCloudLogin`), el copy de ADOPT (consent → chooser → auth).
-//   - `.cloud` estable → "Volver a iCloud" (gate `ReverseEligibility` + doble confirmación) + estado de sync.
+//   - `.icloud` estable → "Migrar a la nube" (UNA hoja con lo que cambia y «Continuar con Apple/Google» → auth →
+//     progreso → relaunch; UX 2.2 · L20-11) o, si el mirror trae el marcador de un líder
+//     (`secondaryDeviceCloudLogin`), el copy de ADOPT (la misma hoja → auth).
+//   - `.cloud` estable → "Volver a iCloud" (gate `ReverseEligibility` + una confirmación, L20-17) + estado de sync.
 //   - Fase transicional → progreso (molde `OnboardingRestoreProgress`) + "Retomar"/"Reintentar".
 //   - `needsRelaunch` → card BLOQUEANTE "cierra Yala y vuelve a abrirla" (relaunch asistido — NUNCA `exit()`).
 //
@@ -28,13 +28,17 @@ struct StorageSettingsView: View {
     /// ese caso la fila de Profile ni aparece, pero se degrada elegante por si se navega directo.
     private var controller: CloudMigrationController? { CloudMigrationController.shared }
 
-    @State private var showConsent = false
+    /// La hoja única de activar la nube (UX 2.2 · L20-11/12): consentimiento, confirmación y método en un solo paso. Va
+    /// por `.sheet(item:)` con lo que enseña DENTRO (la ruta y la cifra): con `isPresented` y la cifra en otro `@State`, la
+    /// hoja podía abrirse la primera vez sin la cifra (`swiftui-ds.md`, medido en Buscar; review del 2026-10-19).
+    @State private var activationRequest: CloudActivationRequest?
     @State private var consentPath: CloudMigrationController.ConsentPath = .migration
-    /// One-shot del accept del consent: se quema en el callback del accept y se CONSUME en el
-    /// `onDismiss` del sheet (regla 4 de presentaciones: el paso siguiente — dialogs o chooser —
-    /// jamás se presenta con el sheet aún bajando). Drag-dismiss/Cancel no lo queman → no-op.
-    @State private var consentAccepted = false
-    /// Chooser de método (Apple | Google) — último paso antes de la auth (Bloque C 2026-07-17).
+    /// One-shot de la hoja: lo quema el botón de entrar y lo CONSUME el `onDismiss` (regla 4 de presentaciones: la
+    /// migración —y la auth de Google, que busca el VC de arriba— jamás arranca con la hoja aún bajando).
+    /// «Cancelar» y el swipe no lo queman → no-op.
+    @State private var activationPlan: CloudMigrationController.SignInPlan?
+    /// Chooser de método (Apple | Google). Desde L20-11 solo lo abre «Usar otra cuenta» del aviso de bloqueo: la entrada
+    /// normal elige el método en la hoja única.
     @State private var showSignInChooser = false
     /// Provider elegido en el chooser; lo consume el `onDismiss` del sheet del chooser (con el
     /// anchor YA estable — Google resuelve su presenter por topmost VC). Cancel = queda `nil` → no-op.
@@ -52,10 +56,8 @@ struct StorageSettingsView: View {
     /// retira el borrado: lo retira el arranque en la nube si el dispositivo llega (`retireWaivedInCloud`). Cada toque del
     /// botón lo baja antes de volver a mirar.
     @State private var pendingICloudWipeWaived = false
-    @State private var confirmMigrate1 = false
-    @State private var confirmMigrate2 = false
-    @State private var confirmRevert1 = false
-    @State private var confirmRevert2 = false
+    /// La única confirmación de «Volver a iCloud» (L20-17): antes eran dos que decían lo mismo.
+    @State private var confirmRevert = false
     /// Lo que el iCloud del teléfono sumaría a la vuelta, si la pregunta encontró algo
     /// (`CloudMigrationController.checkICloudBeforeReverse`). Copiado para presentarlo: el aviso no se queda sin cifras si
     /// la tarjeta se repinta.
@@ -67,7 +69,7 @@ struct StorageSettingsView: View {
     /// `revertNeedsICloud` elige el texto.
     @State private var showRevertCheckFailed = false
     @State private var revertNeedsICloud = false
-    /// La persona eligió «Sumarlos a mis datos» y el «¿seguro?» de siempre es el de esa vuelta. Lo baja cada toque del botón.
+    /// La persona eligió «Sumarlos a mis datos» y la confirmación de siempre es la de esa vuelta. Lo baja cada toque del botón.
     @State private var revertMergesPriorData = false
     /// Confirmación de «Cancelar y seguir en la nube» en la espera de la vuelta a iCloud. Un solo diálogo, colgado
     /// del propio botón: no encadena con los de `StorageConfirmations`.
@@ -85,8 +87,6 @@ struct StorageSettingsView: View {
     /// One-shot de «Usar otra cuenta»: lo quema el botón y lo consume el `onDismiss` de la hoja, que abre la elección de
     /// Apple/Google con la hoja ya abajo. «Entendido» y el swipe no lo queman.
     @State private var migrationBlockUseAnotherAccount = false
-    /// «Ver qué migraría»: `nil` hasta el toque; `.unreadable` si los conteos no se dejaron leer.
-    @State private var dryRun: MigrationDryRunPreview?
     /// Tick de refresco del journal vivo (el runner no es `@Observable`).
     @State private var refreshTick = false
     /// **El veredicto de App Attest de ESTE teléfono** (ticket
@@ -140,11 +140,15 @@ struct StorageSettingsView: View {
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
-        .sheet(isPresented: $showConsent, onDismiss: onConsentDismissed) {
-            CloudConsentView(path: consentPath) {
-                consentAccepted = true
-                showConsent = false
-            }
+        .sheet(item: $activationRequest, onDismiss: onActivationSheetDismissed) { request in
+            CloudActivationSheet(
+                path: request.path,
+                decision: signInDecision(isAdopt: request.path == .adopt),
+                preview: request.preview,
+                onContinue: { plan in
+                    activationPlan = plan
+                    activationRequest = nil
+                })
         }
         .sheet(isPresented: $showSignInChooser, onDismiss: onChooserDismissed) {
             StorageSignInChooserView(
@@ -178,9 +182,7 @@ struct StorageSettingsView: View {
             presentedMigrationBlock = block
         }
         .modifier(StorageConfirmations(
-            confirmMigrate1: $confirmMigrate1, confirmMigrate2: $confirmMigrate2,
-            confirmRevert1: $confirmRevert1, confirmRevert2: $confirmRevert2,
-            onMigrate: proceedToSignInStep,
+            confirmRevert: $confirmRevert,
             onRevert: startConfirmedReverse))
         .modifier(StorageRevertPriorDataDialogs(
             priorData: revertPriorData,
@@ -355,33 +357,7 @@ struct StorageSettingsView: View {
                 EmptyView()
             }
 
-            if !isAdopt {
-                Button {
-                    dryRun = controller.dryRunCounts()
-                } label: {
-                    Text(L10n.Storage.Migrate.previewButton)
-                        .font(DS.Typography.caption.weight(.medium))
-                        .foregroundStyle(DS.Semantic.infoForeground)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("storage_preview_button")
-
-                switch dryRun {
-                case let .counts(transactions, categories, accounts, budgets):
-                    Text(L10n.Storage.Migrate.previewResult(transactions, categories, accounts, budgets))
-                        .font(DS.Typography.caption.monospaced())
-                        .foregroundStyle(.tertiary)
-                case .unreadable:
-                    // Sin cifras: un cero sería inventado (ticket `an-unreadable-migration-journal-reads-as-never-started`).
-                    Text(L10n.Storage.Migrate.previewUnreadable)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("storage_preview_unreadable")
-                case nil:
-                    EmptyView()
-                }
-            }
+            // «Ver qué migraría» ya no está aquí (L20-11): la cifra la enseña la hoja de activar, en letra normal.
 
             YalaPrimaryButton(
                 isAdopt ? L10n.Storage.Adopt.button : L10n.Storage.Migrate.button,
@@ -436,21 +412,31 @@ struct StorageSettingsView: View {
         UITestHooks.fakePendingICloudWipe || StorageModePersistence.hasPendingICloudCorpusWipe()
     }
 
-    /// El toque de «Activar la nube» / «Activar en este dispositivo», una vez resuelto el borrado pendiente. Es la cadena
-    /// de siempre: con sesión viva, «Migrar» pregunta por la cuenta ANTES del consentimiento y de las dos confirmaciones
-    /// (Jürgen, 2026-09-16); sin sesión hay que firmar primero, y la comprobación va entre firmar y el claim.
+    /// El toque de «Activar la nube» / «Activar en este dispositivo», una vez resuelto el borrado pendiente. Con sesión
+    /// viva, «Migrar» pregunta por la cuenta ANTES de abrir la hoja (Jürgen, 2026-09-16); sin sesión hay que firmar
+    /// primero, y la comprobación va entre firmar y el claim. La hoja cuenta lo que pasaría al abrirse, no antes.
     /// `isAdopt` es la cara de la tarjeta del render que pintó el botón o el diálogo; la decisión de sesión se relee viva.
     private func beginActivation(_ controller: CloudMigrationController, isAdopt: Bool) {
         consentPath = isAdopt ? .adopt : .migration
+        activationPlan = nil
         let decision = signInDecision(isAdopt: isAdopt)
         guard !isAdopt, case .reuseLiveSession = decision else {
-            showConsent = true
+            presentActivationSheet(controller, isAdopt: isAdopt)
             return
         }
         Task {
             guard await controller.preflightMigrationIdentity() else { return }
-            showConsent = true
+            presentActivationSheet(controller, isAdopt: isAdopt)
         }
+    }
+
+    /// Abre la hoja con lo que enseña. Re-mide la entrada (kill-switch, App Attest): con sesión viva el preflight tarda, y
+    /// el kill pudo bajar entretanto; sin esto la persona leería y aceptaría para acabar en el error genérico.
+    private func presentActivationSheet(_ controller: CloudMigrationController, isAdopt: Bool) {
+        guard !abortIfCloudEntryClosed() else { return }
+        activationRequest = CloudActivationRequest(
+            path: isAdopt ? .adopt : .migration,
+            preview: isAdopt ? nil : controller.dryRunCounts())
     }
 
     /// **El único sitio que arranca la migración o el adopt desde esta pantalla.** Si la persona eligió «Activar la nube
@@ -545,14 +531,14 @@ struct StorageSettingsView: View {
         revertMergesPriorData = false
         // Un flag que se quedó en `true` porque UIKit no llegó a presentar su diálogo dejaría el botón sin respuesta: cada
         // toque lo volvería a poner en `true`, que no cambia nada. Cada toque empieza con los tres abajo.
-        confirmRevert1 = false
+        confirmRevert = false
         showRevertPriorData = false
         showRevertCheckFailed = false
         switch await controller.checkICloudBeforeReverse() {
         case nil:
             return
         case .proceed:
-            confirmRevert1 = true
+            confirmRevert = true
         case .ask(let corpus):
             revertPriorData = corpus
             showRevertPriorData = true
@@ -579,13 +565,14 @@ struct StorageSettingsView: View {
         }
     }
 
-    /// «Sumarlos a mis datos» lleva al «¿seguro?» de siempre, que es el que empieza la vuelta.
+    /// «Sumarlos a mis datos» lleva a la confirmación de siempre, que es la que empieza la vuelta. Elegir qué hacer con lo
+    /// ajeno no es confirmar la vuelta: por eso sigue habiendo una (L20-17 fundió las dos de antes, no esta).
     private func chooseMergingPriorData() {
         revertMergesPriorData = true
-        confirmRevert2 = true
+        confirmRevert = true
     }
 
-    /// El «Sí, volver a iCloud» del «¿seguro?»: la vuelta de siempre, o la que suma lo ajeno si la persona lo eligió.
+    /// El «Sí, volver a iCloud» de la confirmación: la vuelta de siempre, o la que suma lo ajeno si la persona lo eligió.
     private func startConfirmedReverse() {
         let merging = revertMergesPriorData
         revertMergesPriorData = false
@@ -894,30 +881,22 @@ struct StorageSettingsView: View {
         // Tras una salida de la espera de la vuelta a iCloud el relanzamiento no «termina» nada: devuelve el
         // almacenamiento a la nube. «Ya casi está» sería falso, así que la tarjeta dice dónde siguen los datos y,
         // si no lo pidió la persona, por qué.
+        //
+        // UX 2.2 · L20-18 (variante 3): lo hecho con check y el gesto en tres pasos, la misma instrucción que el cierre de
+        // sesión. Cada check es verdad en su caso (`RelaunchChecklistCopyLogic`): en la ida y el adopt los datos ya están en
+        // la cuenta de la nube (el mirror-off se arma tras verificar); en la vuelta ya bajaron a este iPhone y suben a
+        // iCloud al reabrir; con la vuelta cancelada, siguen en la nube.
         let reverseAbort = direction == .toCloud ? controller.reverseAbortReason : nil
-        return VStack(spacing: DS.Spacing.lg) {
-            Image(systemName: "arrow.clockwise.circle.fill")
-                .font(.system(size: 44))  // A11Y-DT: ícono hero decorativo de la card de relaunch (molde GroupInviteOnboardingView); el texto acompañante SÍ escala
-                .foregroundStyle(DS.Semantic.infoForeground)
-            Text(reverseAbort == nil ? L10n.Storage.Relaunch.title : L10n.Storage.ReverseAbort.relaunchTitle)
-                .font(DS.Typography.headline)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-            if let reason = ReverseUploadWaitingCopyLogic.abortNote(reverseAbort) {
-                Text(L10n.Storage.ReverseAbort.note(for: reason))
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("storage_relaunch_reverse_abort_reason")
-            }
-            Text(reverseAbort == nil ? L10n.Storage.Relaunch.body : L10n.Storage.ReverseAbort.relaunchBody)
-                .font(DS.Typography.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .storageCardStyle()
-        .accessibilityIdentifier("storage_relaunch_card")
+        let copy = RelaunchChecklistCopyLogic.storage(direction: direction, reverseAborted: reverseAbort != nil)
+        return RelaunchChecklist(
+            title: copy.title,
+            done: copy.done,
+            afterNote: copy.afterNote,
+            reason: ReverseUploadWaitingCopyLogic.abortNote(reverseAbort).map { reason in L10n.Storage.ReverseAbort.note(for: reason) })
+            .padding(.horizontal, DS.Spacing.lg)
+            // `.contain`: el id de la tarjeta no pisa los de sus pasos (`relaunch_step_<n>`).
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("storage_relaunch_card")
     }
 
     // MARK: - Waiting for leader
@@ -1061,35 +1040,40 @@ struct StorageSettingsView: View {
     }
     #endif
 
-    // MARK: - Consent aceptado / chooser
+    // MARK: - Hoja de activar / chooser
 
-    /// `onDismiss` del sheet de consent: enruta con el sheet YA abajo (presentar el chooser desde el
-    /// callback del accept sería sheet-sobre-sheet en el mismo anchor — la clase exacta de la
-    /// doble-presentación descartada). El flag es one-shot: solo el accept lo quema.
-    private func onConsentDismissed() {
-        guard consentAccepted else { return }
-        consentAccepted = false
-        switch consentPath {
-        case .adopt:
-            // Adopt: NO doble confirmación destructiva (no mueve datos) — directo al paso de auth.
-            proceedToSignInStep()
-        case .migration:
-            // Migración: doble confirmación sobre la ACCIÓN antes de mover datos.
-            confirmMigrate1 = true
-        case .bornCloud:
-            // INALCANZABLE desde Almacenamiento: `consentPath` solo se asigna `.adopt`/`.migration`
-            // arriba, y el alta born-cloud (A5 de D-A7) vive entera en el Welcome, que no monta esta
-            // vista. El case existe porque el `switch` es exhaustivo por el compilador — y ese es
-            // justamente su valor: si algún día esta pantalla ofreciera el alta, el compilador NO
-            // avisaría, pero este `break` deja el camino muerto en vez de disparar una doble
-            // confirmación de migración sobre un flujo que no migra nada.
+    /// `onDismiss` de la hoja única (L20-11): arranca con la hoja YA abajo. El plan es one-shot: solo el botón de entrar
+    /// lo quema. **La sesión se relee aquí** (C-7): pudo aparecer o morir con la hoja arriba. Con sesión viva se sigue
+    /// con ella aunque se tocara un proveedor (el belt del chooser de antes); si la persona tocó «seguir con mi cuenta»
+    /// y esa sesión ya no está, la hoja vuelve a abrirse para elegir Apple o Google en vez de arrancar con nada.
+    ///
+    /// **Ya no hay «¿Activar la nube?» ni «¿Seguro?» detrás** (decisión de Jürgen, opción C): la hoja dice lo que pasa y
+    /// el botón de entrar es la confirmación. `.bornCloud` no llega aquí: el alta vive entera en el Welcome.
+    private func onActivationSheetDismissed() {
+        guard let plan = activationPlan else { return }
+        activationPlan = nil
+        guard !abortIfCloudEntryClosed() else { return }
+        // Otra ventana (iPad) pudo arrancar una activación con la hoja arriba: no se arranca otra encima.
+        guard let controller, controller.uiState == .idle, !controller.isWorking else { return }
+        let path = consentPath
+        guard path != .bornCloud else { return }
+        switch signInDecision(isAdopt: path == .adopt) {
+        case .reuseLiveSession:
+            startActivation(path, .reuseLiveSession)
+        case .askProvider:
+            guard case .authenticateWith = plan else {
+                // La sesión que iba a reusarse murió con la hoja arriba: que elija método.
+                presentActivationSheet(controller, isAdopt: path == .adopt)
+                return
+            }
+            startActivation(path, plan)
+        case .blockedOtherAccount:
+            // La tarjeta ya deshabilita el botón y explica por qué; si se llegara aquí por una carrera (la sesión
+            // cambió con la hoja arriba), no arrancar nada.
             break
         }
     }
 
-    /// Paso de auth (C-7): con sesión de nube viva NO se pregunta el método — se reusa la cuenta
-    /// que ya está dentro (la de Grupos, típicamente), que es justo lo que promete
-    /// `groups.signin.accountNote`. Sin sesión, el chooser se comporta como siempre.
     /// **El término de la entrada —el kill-switch y App Attest—, en UN solo sitio y leído en vivo.** Lo
     /// consultan tres: el render de `migrateCard` y los dos puntos desde los que se arranca la migración.
     ///
@@ -1110,14 +1094,14 @@ struct StorageSettingsView: View {
     }
 
     /// **Gatear el render no es gatear la migración, y entre los dos hay una ventana real.** El flujo de
-    /// esta card —consent → doble confirmación → chooser → `startMigration`— no vuelve a preguntar por el
+    /// esta card —la hoja única → `startMigration`— no vuelve a preguntar por el
     /// flag en ningún punto (`CloudMigrationController` no consulta `CloudRemoteFlags`: cero ocurrencias,
     /// medido el 2026-09-11). Así que quien tapeó «Migrar a la nube» un segundo antes de que aterrizara el
     /// snapshot nuevo —lo baja el `.task` de esta misma pantalla— migraba con el kill YA puesto, mientras
-    /// la card desaparecía a su espalda. Re-medir aquí cierra esa ventana en el último punto antes del
-    /// consent, y en el del chooser, que es el otro sitio desde el que se arranca.
+    /// la card desaparecía a su espalda. Re-medir aquí cierra esa ventana en el último punto antes de
+    /// arrancar: el `onDismiss` de la hoja única y el del chooser, los dos sitios desde los que se arranca.
     ///
-    /// Sale con el error genérico y no en silencio: la persona acaba de confirmar dos veces, y un botón
+    /// Sale con el error genérico y no en silencio: la persona acaba de tocar «Continuar con…», y un botón
     /// que no hace nada es peor que un aviso. No estrena copy — es el mismo texto que ya usa la pantalla
     /// cuando no puede operar.
     ///
@@ -1127,21 +1111,6 @@ struct StorageSettingsView: View {
         guard !offersCloudMigrationEntry else { return false }
         controller?.lastError = L10n.Storage.Errors.generic
         return true
-    }
-
-    private func proceedToSignInStep() {
-        guard !abortIfCloudEntryClosed() else { return }
-        let path = consentPath
-        switch signInDecision(isAdopt: path == .adopt) {
-        case .reuseLiveSession:
-            startActivation(path, .reuseLiveSession)
-        case .askProvider:
-            showSignInChooser = true
-        case .blockedOtherAccount:
-            // La card ya deshabilita el botón y explica por qué; si se llegara aquí por una
-            // carrera (la sesión cambió entre el consent y su dismiss), no arrancar nada.
-            break
-        }
     }
 
     /// Copy de la nota de cuenta. Con método conocido lo NOMBRA (`ProviderMismatchLogic.displayName`
@@ -1231,56 +1200,30 @@ struct StorageSettingsView: View {
     }
 }
 
-// MARK: - Confirmaciones (2 confirmationDialog destructive por acción, patrón panel)
+// MARK: - Confirmación de volver a iCloud (una sola, UX 2.2 · L20-17)
+//
+// Eran dos —«¿Volver a iCloud?» y «¿Seguro?»— que decían lo mismo. Volver es la salida segura y reversible: basta una
+// pregunta que diga lo que pasa y que no se pierde nada. «Migrar» ya no tiene diálogos aquí: su confirmación es el
+// botón de entrar de la hoja única (L20-11).
 //
 // B6 (lote 20, medido en el simulador el 2026-10-17): en iOS 26 estos diálogos salen como globo y NO pintan el botón con
-// `role: .cancel`, también colgados de la raíz de la pantalla: «¿Activar la nube?» enseñaba solo «Continuar», y
-// «¿Cancelar la activación?» solo «Sí, cancelar». Los siete botones de no hacer nada van SIN rol, el molde del diálogo del
-// borrado pendiente de esta misma pantalla. No les devuelvas el rol: la única salida visible volvería a ser tocar fuera.
+// `role: .cancel`, también colgados de la raíz de la pantalla. El de no hacer nada va SIN rol, el molde del diálogo del
+// borrado pendiente de esta misma pantalla. No le devuelvas el rol: la única salida visible volvería a ser tocar fuera.
 
 private struct StorageConfirmations: ViewModifier {
-    @Binding var confirmMigrate1: Bool
-    @Binding var confirmMigrate2: Bool
-    @Binding var confirmRevert1: Bool
-    @Binding var confirmRevert2: Bool
-    let onMigrate: () -> Void
+    @Binding var confirmRevert: Bool
     let onRevert: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .confirmationDialog(L10n.Storage.Confirm.migrateTitle,
-                                isPresented: $confirmMigrate1, titleVisibility: .visible) {
-                Button(L10n.Storage.Confirm.migrateContinue, role: .destructive) { confirmMigrate2 = true }
-                    .accessibilityIdentifier("storage_confirm_migrate_continue")
-                Button(L10n.Common.cancel) {}
-                    .accessibilityIdentifier("storage_confirm_migrate_cancel")
-            } message: {
-                Text(L10n.Storage.Confirm.migrateBody)
-            }
-            .confirmationDialog(L10n.Storage.Confirm.migrate2Title,
-                                isPresented: $confirmMigrate2, titleVisibility: .visible) {
-                Button(L10n.Storage.Confirm.migrate2Confirm, role: .destructive) { onMigrate() }
-                    .accessibilityIdentifier("storage_confirm_migrate2_confirm")
-                Button(L10n.Common.cancel) {}
-                    .accessibilityIdentifier("storage_confirm_migrate2_cancel")
-            } message: {
-                Text(L10n.Storage.Confirm.migrate2Body)
-            }
             .confirmationDialog(L10n.Storage.Confirm.revertTitle,
-                                isPresented: $confirmRevert1, titleVisibility: .visible) {
-                Button(L10n.Storage.Confirm.revertContinue, role: .destructive) { confirmRevert2 = true }
-                    .accessibilityIdentifier("storage_revert_continue")
-                Button(L10n.Common.cancel) {}
-            } message: {
-                Text(L10n.Storage.Confirm.revertBody)
-            }
-            .confirmationDialog(L10n.Storage.Confirm.revert2Title,
-                                isPresented: $confirmRevert2, titleVisibility: .visible) {
+                                isPresented: $confirmRevert, titleVisibility: .visible) {
                 Button(L10n.Storage.Confirm.revert2Confirm, role: .destructive) { onRevert() }
                     .accessibilityIdentifier("storage_revert_confirm")
                 Button(L10n.Common.cancel) {}
+                    .accessibilityIdentifier("storage_revert_cancel")
             } message: {
-                Text(L10n.Storage.Confirm.revert2Body)
+                Text(L10n.Storage.Confirm.revertBody)
             }
     }
 }
@@ -1344,4 +1287,11 @@ private extension View {
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xl))
             .padding(.horizontal, DS.Spacing.lg)
     }
+}
+
+/// Lo que abre la hoja única de activar la nube: la ruta (para la métrica y el adopt) y la cifra de lo que pasaría.
+private struct CloudActivationRequest: Identifiable {
+    let id = UUID()
+    let path: CloudMigrationController.ConsentPath
+    let preview: MigrationDryRunPreview?
 }

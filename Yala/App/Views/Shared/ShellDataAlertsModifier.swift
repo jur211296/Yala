@@ -79,6 +79,10 @@ struct ShellDataAlertsModifier: ViewModifier {
             // reabre nada): desde este ticket se presenta por la cola del router, así que sólo monta con
             // el anchor libre — debajo sigue estando la shell de la app. Sus vecinos reabren el Welcome
             // porque el suyo se encendía sobre un cover y lo desmontaba.
+            //
+            // **UX 2.2 · L20-15: el texto dice de dónde viene el vaciado; el ORDEN de los botones está en espera de Jürgen.**
+            // «Seguir esperando» primero no cabe en un `.alert`: con `role: .cancel` iOS lo baja al final, y sin él SwiftUI
+            // añade un «Cancelar» propio (medido en el simulador el 2026-10-19: tres botones). Las propuestas están en la card.
             .alert(L10n.iCloud.remoteWipeTitle, isPresented: $showRemoteWipeAlert) {
                 Button(L10n.iCloud.remoteWipeConfirm, role: .destructive) {
                     onRemoteWipeStartFresh()
@@ -102,10 +106,11 @@ struct ShellDataAlertsModifier: ViewModifier {
             } message: {
                 Text(L10n.iCloud.unavailableNoticeMessage)
             }
+            // L20-18: la misma instrucción que las pantallas de reabrir Yala, en texto: un `.alert` no pinta la tarjeta.
             .alert(L10n.iCloud.mismatchTitle, isPresented: $showICloudRestartAlert) {
                 Button(L10n.iCloud.mismatchAction) {}
             } message: {
-                Text(L10n.iCloud.mismatchMessage)
+                Text(L10n.UXL20N.mismatchMessage(steps: RelaunchSteps.inlineText))
             }
             // **PRESENTAR ESTE ALERT DESMONTA EL COVER DEL WELCOME. Medido, no inferido (2026-09-03).**
             //

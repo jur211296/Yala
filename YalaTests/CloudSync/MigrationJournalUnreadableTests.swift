@@ -776,22 +776,17 @@ struct MigrationJournalUnreadableWiringTests {
     /// Las dos ramas nuevas de la pantalla que no inventan cifras.
     @Test func storageScreen_doesNotInventCounts() throws {
         let view = "Yala/App/Views/Settings/StorageSettingsView.swift"
-        let migrate = Self.lines(try Self.body(of: "private func migrateCard(_ controller: CloudMigrationController) -> some View {",
-                                               in: view))
-        let dry = try #require(migrate.firstIndex(of: "switch dryRun {"))
-        #expect(Array(migrate[dry..<(dry + 13)]) == [
-            "switch dryRun {",
-            "case let .counts(transactions, categories, accounts, budgets):",
-            "Text(L10n.Storage.Migrate.previewResult(transactions, categories, accounts, budgets))",
-            ".font(DS.Typography.caption.monospaced())",
-            ".foregroundStyle(.tertiary)",
+        // Desde UX 2.2 · L20-11 la cifra de «lo que pasaría» la enseña la hoja de activar, no la tarjeta.
+        let sheet = Self.lines(try Self.body(of: "private var previewLine: String? {",
+                                             in: "Yala/App/Views/Settings/CloudActivationSheet.swift"))
+        #expect(sheet == [
+            "switch preview {",
+            "case let .counts(transactions, _, accounts, budgets):",
+            "return L10n.UXL20N.willMove(records: transactions, accounts: accounts, budgets: budgets)",
             "case .unreadable:",
-            "Text(L10n.Storage.Migrate.previewUnreadable)",
-            ".font(DS.Typography.caption)",
-            ".foregroundStyle(.secondary)",
-            ".accessibilityIdentifier(\"storage_preview_unreadable\")",
+            "return L10n.Storage.Migrate.previewUnreadable",
             "case nil:",
-            "EmptyView()",
+            "return nil",
             "}",
         ])
         let sync = Self.lines(try Self.body(of: "private func syncStatusSection(_ controller: CloudMigrationController) -> some View {",

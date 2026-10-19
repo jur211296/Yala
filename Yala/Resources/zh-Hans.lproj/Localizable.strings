@@ -2395,10 +2395,10 @@
 "icloud.privacyNote" = "你的数据私密存储在你的个人 iCloud 账号中。Yala 无法访问。";
 "icloud.statusSynced" = "已同步";
 "icloud.statusSyncing" = "正在同步...";
-"icloud.statusNoAccount" = "无 iCloud 账号";
+"icloud.statusNoAccount" = "这台 iPhone 未启用 iCloud";
 "icloud.statusError" = "同步错误";
 "icloud.lastSync" = "上次同步:%@";
-"icloud.noAccountWarning" = "请在「设置」中登录 iCloud 以启用同步。";
+"icloud.noAccountWarning" = "要把数据保存到 iCloud，请在 iPhone 设置的最上方登录你的 Apple 账户。";
 "icloud.syncingData" = "正在同步你的数据...";
 "icloud.syncingDescription" = "我们正在从 iCloud 取回你的信息。";
 "icloud.syncing.skip" = "作为新设备设置";
@@ -2410,7 +2410,7 @@
 "icloud.detail.upToDate" = "全部同步 — 上次同步 %@";
 "icloud.detail.errorTitle" = "目前未保存到 iCloud";
 "icloud.detail.errorMessage" = "你处于离线状态或 iCloud 不可用。你的数据在本设备上是安全的,可用时会同步。";
-"icloud.detail.stalledMessage" = "你最近的更改还在本设备上。我们看看怎样让它们到达 iCloud。";
+"icloud.detail.stalledMessage" = "你最近的更改仍安全地保存在这台 iPhone 上，但还没有到达 iCloud。";
 "icloud.detail.technicalCode" = "技术详情:%@";
 "icloud.detail.cta.retry" = "立即重试";
 "icloud.detail.cta.diagnose" = "检查并修复";
@@ -2418,7 +2418,7 @@
 "icloud.remoteOnboardingCompleted" = "你已在另一台设备上完成设置，现在一切都在这里了。";
 "icloud.remoteRestoreCompleted" = "数据已恢复";
 "icloud.remoteWipe.title" = "数据不再可用";
-"icloud.remoteWipe.message" = "你的数据已从 iCloud 移除。你可以从头开始,或等待它再同步回来。";
+"icloud.remoteWipe.message" = "你的另一台设备上清空了 Yala。如果是你操作的，请在这里也从头开始；如果不是，请等待：如果是误操作，你的数据可能会回来。";
 "icloud.remoteWipe.confirm" = "重新开始";
 "icloud.remoteWipe.cancel" = "继续等待";
 "icloud.forceSync.button" = "强制同步";
@@ -4622,7 +4622,7 @@
 "storage.confirm.migrate2Body" = "将在此设备上启用云端。";
 "storage.confirm.migrate2Confirm" = "是，启用云端";
 "storage.confirm.revertTitle" = "返回 iCloud？";
-"storage.confirm.revertBody" = "您的数据将保存在设备和 iCloud 中，不会丢失任何内容。";
+"storage.confirm.revertBody" = "你的数据会回到这台 iPhone 和你的 iCloud 中。你不会丢失任何东西。";
 "storage.confirm.revertContinue" = "继续";
 "storage.confirm.revert2Title" = "确定吗？";
 "storage.confirm.revert2Body" = "将在此设备上停用云端。";
@@ -5903,7 +5903,7 @@
 "icloud.appleIDChanged.title" = "你更换了 iCloud 账户";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "这台手机上的 Yala 数据属于之前的 iCloud 账户，会继续保存在那里。要在这台手机上继续使用 Yala，需要把它们从这里移除。尚未上传到那个账户的内容将无法再上传。";
+"icloud.appleIDChanged.message" = "这台手机上的 Yala 数据属于你之前的 iCloud 账户，并仍保存在那里。要继续使用 Yala，需要把它们从这里移除，尚未到达该账户的内容将无法再上传。";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "退出并移除";
@@ -5995,7 +5995,7 @@
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "无法验证你的账户。请稍后重试。未做任何更改。";
-"storage.migrateBlock.personalDataTitle" = "此账户已有个人财务数据";
+"storage.migrateBlock.personalDataTitle" = "此账户已有自己的数据";
 "storage.migrateBlock.personalDataBody" = "未做任何更改。要把你的数据移到云端，请使用其他账户。要在这里使用此账户的数据，请退出登录后用此账户登录。";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "未做任何更改。要在这里使用该账户的数据，请退出登录后用该账户登录。要把你的数据移到其他账户，请先在“群组”中取消关联此账户。";
 "storage.migrateBlock.otherGroupsTitle" = "你的群组已在使用另一个账户";
@@ -6428,10 +6428,10 @@
 "storage.pendingICloudWipe.title" = "有一项删除尚未完成";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "你曾要求从头开始并删除 iCloud 中的数据，但删除尚未完成。如果启用云端，删除将被取消，未删除的数据可能会进入你的 Yala 账户。如果你等待，一切不变，删除仍处于待完成状态。";
+"storage.pendingICloudWipe.body" = "你之前要求删除 iCloud 中的数据，但尚未完成。如果开启云端，该删除将被取消。";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "启用云端但不删除";
+"storage.pendingICloudWipe.proceed" = "开启但不删除";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "暂不";
@@ -7585,3 +7585,39 @@
 "uxcs.signOutUpload.pending" = "待上传的更改：%d 项";
 "uxcs.migrated.rejoinSentence" = "这个群组已迁移。请重新登录以查看最新内容。";
 "uxcs.deleteAccount.finalGroupsOnly" = "你的 Yala 账户将被删除。这台手机上的内容会保留。";
+
+/* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
+"l20n.sheet.title" = "开启云端之前";
+"l20n.sheet.anyPhoneTitle" = "可在任何手机上登录";
+"l20n.sheet.anyPhoneDetail" = "无需依赖 iCloud。";
+"l20n.sheet.seesTitle" = "Yala 可以查看你的数据";
+"l20n.sheet.seesDetail" = "用于为你提供支持和智能功能。";
+"l20n.sheet.accessTitle" = "你使用 Apple 或 Google 登录";
+"l20n.sheet.accessDetail" = "如果失去该访问权限，Yala 没有密码可用：请先导出一份副本。";
+"l20n.sheet.exportCopy" = "先导出一份副本";
+"l20n.sheet.details" = "查看详情";
+"l20n.sheet.hideDetails" = "隐藏详情";
+"l20n.sheet.detailsAccess" = "Yala 没有密码，也不能通过邮件恢复：如果你无法访问自己的 Apple 或 Google 账户，也就无法访问你的数据。因此建议先导出一份副本。";
+"l20n.sheet.willMove" = "将转移 %1$@、%2$@ 和 %3$@。";
+"l20n.sheet.continueCurrent" = "使用当前账户继续";
+"l20n.relaunch.almostTitle" = "快完成了";
+"l20n.relaunch.doneSignedOut" = "已退出登录";
+"l20n.relaunch.afterSignOut" = "再次打开后，Yala 会完成从这台 iPhone 上移除你的数据。";
+"l20n.relaunch.afterGroupsOnly" = "你的个人数据仍保留在这台 iPhone 上。";
+"l20n.relaunch.doneInCloud" = "你的数据已在你的云端账户中";
+"l20n.relaunch.doneOnPhone" = "你的数据已在这台 iPhone 上";
+"l20n.relaunch.afterToICloud" = "再次打开后，数据会开始上传到你的 iCloud。";
+"l20n.relaunch.doneReverseStopped" = "返回 iCloud 已停止";
+"l20n.relaunch.pending" = "重新打开 Yala";
+"l20n.relaunch.toFinish" = "最后一步";
+"l20n.relaunch.step1" = "从屏幕底部边缘向上轻扫并停顿";
+"l20n.relaunch.step1HomeButton" = "连按两次主屏幕按钮";
+"l20n.relaunch.step2" = "向上轻扫 Yala 将其关闭";
+"l20n.relaunch.step3" = "轻点 Yala 图标重新打开";
+"l20n.relaunch.doneA11y" = "已完成：%@";
+"l20n.relaunch.pendingA11y" = "待完成：重新打开 Yala";
+"l20n.relaunch.mismatchMessage" = "Yala 在 iCloud 准备好之前就打开了。要同步你的数据，请关闭 Yala 并重新打开：\n\n%@";
+"l20n.icloud.noAccountDetail" = "你的数据只保存在这里。";
+"l20n.icloud.openSettings" = "打开 iPhone 设置";
+"l20n.icloud.mailSubject" = "Yala：iCloud 未同步";
+"l20n.icloud.contactFooter" = "如果一直这样，请联系我们：邮件里已附上技术详情，方便我们帮你。";

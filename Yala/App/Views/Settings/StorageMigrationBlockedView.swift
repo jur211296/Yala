@@ -39,6 +39,8 @@ struct StorageMigrationBlockedView: View {
                             .font(DS.Typography.title2)
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
+                            // L20-13: el título iba de borde a borde; ahora con el mismo margen que el cuerpo.
+                            .padding(.horizontal, DS.Spacing.lg)
                             .accessibilityIdentifier("storage_migrate_block_title")
                         Text(L10n.Storage.MigrateBlock.body(
                             for: block.reason,

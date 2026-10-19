@@ -2395,10 +2395,10 @@
 "icloud.privacyNote" = "Je gegevens worden privé bewaard op je persoonlijke iCloud-account. Yala heeft er geen toegang toe.";
 "icloud.statusSynced" = "Gesynchroniseerd";
 "icloud.statusSyncing" = "Bezig met synchroniseren...";
-"icloud.statusNoAccount" = "Geen iCloud-account";
+"icloud.statusNoAccount" = "iCloud is niet actief op deze iPhone";
 "icloud.statusError" = "Synchronisatiefout";
 "icloud.lastSync" = "Laatste synchronisatie: %@";
-"icloud.noAccountWarning" = "Log in op iCloud via Instellingen om synchroniseren in te schakelen.";
+"icloud.noAccountWarning" = "Log helemaal bovenaan in de iPhone-instellingen in met je Apple Account om je gegevens in iCloud te bewaren.";
 "icloud.syncingData" = "Je gegevens worden gesynchroniseerd...";
 "icloud.syncingDescription" = "We halen je gegevens op uit iCloud.";
 "icloud.syncing.skip" = "Als nieuw instellen";
@@ -2410,7 +2410,7 @@
 "icloud.detail.upToDate" = "Helemaal bij — laatst gesynchroniseerd %@";
 "icloud.detail.errorTitle" = "We slaan op dit moment niets op in iCloud";
 "icloud.detail.errorMessage" = "Je bent offline of iCloud is niet beschikbaar. Je gegevens staan veilig op dit apparaat en synchroniseren zodra het kan.";
-"icloud.detail.stalledMessage" = "Je recente wijzigingen staan nog op dit apparaat. Laten we kijken wat we kunnen doen om ze naar iCloud te krijgen.";
+"icloud.detail.stalledMessage" = "Je recente wijzigingen staan nog veilig op deze iPhone, maar zijn nog niet in iCloud aangekomen.";
 "icloud.detail.technicalCode" = "Technisch detail: %@";
 "icloud.detail.cta.retry" = "Nu opnieuw proberen";
 "icloud.detail.cta.diagnose" = "Controleren en herstellen";
@@ -2418,7 +2418,7 @@
 "icloud.remoteOnboardingCompleted" = "Je hebt de configuratie op je andere apparaat afgerond. Alles staat nu hier.";
 "icloud.remoteRestoreCompleted" = "Gegevens hersteld";
 "icloud.remoteWipe.title" = "Gegevens niet meer beschikbaar";
-"icloud.remoteWipe.message" = "Je gegevens zijn uit iCloud verwijderd. Je kunt opnieuw beginnen of wachten tot ze terugsynchroniseren.";
+"icloud.remoteWipe.message" = "Yala is op een ander apparaat van je leeggemaakt. Was jij het, begin dan ook hier opnieuw; zo niet, wacht: was het een vergissing, dan kunnen je gegevens terugkomen.";
 "icloud.remoteWipe.confirm" = "Opnieuw beginnen";
 "icloud.remoteWipe.cancel" = "Blijven wachten";
 "icloud.forceSync.button" = "Forceer synchronisatie";
@@ -4622,7 +4622,7 @@
 "storage.confirm.migrate2Body" = "De cloud wordt ingeschakeld voor dit apparaat.";
 "storage.confirm.migrate2Confirm" = "Ja, cloud inschakelen";
 "storage.confirm.revertTitle" = "Terug naar iCloud?";
-"storage.confirm.revertBody" = "Je gegevens komen op je apparaat en in je iCloud te staan. Je verliest niets.";
+"storage.confirm.revertBody" = "Je gegevens staan weer op deze iPhone en in je iCloud. Je verliest niets.";
 "storage.confirm.revertContinue" = "Doorgaan";
 "storage.confirm.revert2Title" = "Weet je het zeker?";
 "storage.confirm.revert2Body" = "De cloud wordt uitgeschakeld voor dit apparaat.";
@@ -5903,7 +5903,7 @@
 "icloud.appleIDChanged.title" = "Je bent van iCloud-account gewisseld";
 
 /* Alert body: que pasa con los datos al cambiar de Apple ID */
-"icloud.appleIDChanged.message" = "De Yala-gegevens op deze telefoon horen bij het vorige iCloud-account en blijven daar bewaard. Om Yala op deze telefoon te blijven gebruiken, moeten ze hier weg. Wat dat account niet heeft bereikt, kan niet meer worden geüpload.";
+"icloud.appleIDChanged.message" = "De Yala-gegevens op deze telefoon horen bij je vorige iCloud-account en blijven daar bewaard. Om Yala te blijven gebruiken moeten ze hier weg, en wat dat account niet heeft bereikt, kan niet meer worden geüpload.";
 
 /* Alert button: confirma el cierre de la sesion privada y el borrado local */
 "icloud.appleIDChanged.confirm" = "Uitloggen en verwijderen";
@@ -5995,7 +5995,7 @@
 
 /* «Migrar a la nube» se paró sin escribir nada: la cuenta ya tiene datos (settings-migrate-to-cloud-adopts-silently-instead-of-migrating) */
 "storage.errors.identityCheck" = "We konden je account niet controleren. Probeer het zo meteen opnieuw. Er is niets veranderd.";
-"storage.migrateBlock.personalDataTitle" = "Dit account heeft al persoonlijke financiën";
+"storage.migrateBlock.personalDataTitle" = "Dit account heeft al eigen gegevens";
 "storage.migrateBlock.personalDataBody" = "Er is niets veranderd. Gebruik een ander account om je gegevens naar de cloud te brengen. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account.";
 "storage.migrateBlock.personalDataBodyNoSwitch" = "Er is niets veranderd. Wil je de gegevens van dit account hier gebruiken, log dan uit en log in met dit account. Wil je je gegevens naar een ander account brengen, ontkoppel dit account dan eerst in ‘Groepen’.";
 "storage.migrateBlock.otherGroupsTitle" = "Je gebruikt al een ander account voor je groepen";
@@ -6428,10 +6428,10 @@
 "storage.pendingICloudWipe.title" = "Een verwijdering is niet klaar";
 
 /* Dialog body: the cloud cannot finish that deletion; activating now cancels it */
-"storage.pendingICloudWipe.body" = "Je wilde opnieuw beginnen en je iCloud-gegevens verwijderen, en dat is nog niet klaar. Als je de cloud inschakelt, wordt het geannuleerd en kan wat niet is verwijderd in je Yala-account terechtkomen. Als je wacht, verandert er niets en blijft het verwijderen openstaan.";
+"storage.pendingICloudWipe.body" = "Je vroeg eerder om je iCloud-gegevens te wissen en dat is niet afgerond. Als je de cloud aanzet, wordt dat wissen geannuleerd.";
 
 /* Dialog button: activate the cloud and cancel the pending iCloud deletion */
-"storage.pendingICloudWipe.proceed" = "Cloud inschakelen zonder te verwijderen";
+"storage.pendingICloudWipe.proceed" = "Aanzetten zonder wissen";
 
 /* Dialog cancel button: do not activate the cloud, keep the pending iCloud deletion */
 "storage.pendingICloudWipe.wait" = "Niet nu";
@@ -7585,3 +7585,39 @@
 "uxcs.signOutUpload.pending" = "Nog te uploaden wijzigingen: %d";
 "uxcs.migrated.rejoinSentence" = "Deze groep is verhuisd. Meld je opnieuw aan om hem bijgewerkt te zien.";
 "uxcs.deleteAccount.finalGroupsOnly" = "Je Yala-account wordt verwijderd. Wat op deze telefoon staat, blijft.";
+
+/* UX 2.2 · lote decidido 05 (L20-11…18): activar la nube, iCloud y reabrir Yala */
+"l20n.sheet.title" = "Voordat je de cloud aanzet";
+"l20n.sheet.anyPhoneTitle" = "Je logt in vanaf elke telefoon";
+"l20n.sheet.anyPhoneDetail" = "Zonder afhankelijk te zijn van iCloud.";
+"l20n.sheet.seesTitle" = "Yala kan je gegevens zien";
+"l20n.sheet.seesDetail" = "Om je te helpen en voor slimme functies.";
+"l20n.sheet.accessTitle" = "Je logt in met Apple of Google";
+"l20n.sheet.accessDetail" = "Raak je die toegang kwijt, dan is er geen Yala-wachtwoord: exporteer eerst een kopie.";
+"l20n.sheet.exportCopy" = "Eerst een kopie exporteren";
+"l20n.sheet.details" = "Bekijk de details";
+"l20n.sheet.hideDetails" = "Verberg de details";
+"l20n.sheet.detailsAccess" = "Er is geen Yala-wachtwoord en geen herstel via e-mail: raak je de toegang tot je Apple- of Google-account kwijt, dan raak je de toegang tot je gegevens kwijt. Daarom loont het om eerst een kopie te exporteren.";
+"l20n.sheet.willMove" = "%1$@, %2$@ en %3$@ gaan mee.";
+"l20n.sheet.continueCurrent" = "Doorgaan met je huidige account";
+"l20n.relaunch.almostTitle" = "Bijna klaar";
+"l20n.relaunch.doneSignedOut" = "Afgemeld";
+"l20n.relaunch.afterSignOut" = "Als je de app opnieuw opent, haalt Yala je gegevens helemaal van deze iPhone.";
+"l20n.relaunch.afterGroupsOnly" = "Je persoonlijke gegevens blijven op deze iPhone.";
+"l20n.relaunch.doneInCloud" = "Je gegevens staan al in je cloudaccount";
+"l20n.relaunch.doneOnPhone" = "Je gegevens staan al op deze iPhone";
+"l20n.relaunch.afterToICloud" = "Als je de app opnieuw opent, worden ze naar je iCloud geüpload.";
+"l20n.relaunch.doneReverseStopped" = "De terugkeer naar iCloud is gestopt";
+"l20n.relaunch.pending" = "Open Yala opnieuw";
+"l20n.relaunch.toFinish" = "Om af te ronden";
+"l20n.relaunch.step1" = "Veeg omhoog vanaf de onderrand en houd even stil";
+"l20n.relaunch.step1HomeButton" = "Druk twee keer op de thuisknop";
+"l20n.relaunch.step2" = "Veeg Yala omhoog om de app te sluiten";
+"l20n.relaunch.step3" = "Tik op het Yala-symbool om de app weer te openen";
+"l20n.relaunch.doneA11y" = "Klaar: %@";
+"l20n.relaunch.pendingA11y" = "Nog te doen: open Yala opnieuw";
+"l20n.relaunch.mismatchMessage" = "Yala werd geopend voordat iCloud klaar was. Sluit de app en open hem opnieuw om je gegevens te synchroniseren:\n\n%@";
+"l20n.icloud.noAccountDetail" = "Je gegevens blijven alleen hier.";
+"l20n.icloud.openSettings" = "iPhone-instellingen openen";
+"l20n.icloud.mailSubject" = "Yala: iCloud synchroniseert niet";
+"l20n.icloud.contactFooter" = "Blijft het zo, schrijf ons dan: de e-mail bevat al het technische detail zodat we kunnen helpen.";

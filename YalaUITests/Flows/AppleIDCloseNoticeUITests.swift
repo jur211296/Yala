@@ -101,6 +101,25 @@ final class AppleIDCloseNoticeUITests: XCTestCase {
             """)
     }
 
+    /// UX 2.2 · L20-16: la pregunta ofrece «Exportar mis registros» ANTES de «Cerrar sesión y quitarlos», y por debajo de
+    /// «Ahora no»: la salida que no pierde nada va antes de la que quita los datos.
+    func test_notice_offersExportBeforeTheDestructiveExit() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: "minimal", appleIDChanged: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap no completó.")
+
+        let asking = stage(app, "apple_id_close_asking")
+        XCTAssertTrue(asking.waitForExistence(timeout: 30), "La hoja del cambio de Apple ID no se presentó.")
+        let later = app.buttons["apple_id_close_later"]
+        let export = app.buttons["apple_id_close_export"]
+        let confirm = app.buttons["apple_id_close_confirm"]
+        XCTAssertTrue(export.exists, "La pregunta no ofrece «Exportar mis registros».")
+        XCTAssertTrue(later.frame.minY < export.frame.minY && export.frame.minY < confirm.frame.minY, """
+            «Exportar mis registros» no va entre «Ahora no» y «Cerrar sesión y quitarlos»: \
+            later=\(later.frame.minY) export=\(export.frame.minY) confirm=\(confirm.frame.minY).
+            """)
+    }
+
     /// **El DESARME: si la hoja no llega a montarse, la red agota su cap y suelta la condición viva** (ticket
     /// `presentation-net-desarm-has-no-automated-net`). Sin esto, una hoja que UIKit descarta deja la matriz de
     /// readiness retenida por `appleIDCloseNotice` el resto de la sesión: ni bandeja, ni ofertas, ni invitaciones.

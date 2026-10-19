@@ -376,26 +376,28 @@ struct ReverseICloudPriorDataWiringTests {
     private static let controllerPath = "Yala/Services/CloudSync/CloudMigrationController.swift"
 
     /// El botón «Volver a iCloud» pasa por la pregunta. Las confirmaciones de siempre solo se abren cuando iCloud contestó
-    /// que no hay nada ajeno: con un `confirmRevert1 = true` en otro sitio, la vuelta podría empezar sin preguntar.
+    /// que no hay nada ajeno: con un `confirmRevert = true` en otro sitio, la vuelta podría empezar sin preguntar. Desde
+    /// UX 2.2 · L20-17 la confirmación es una sola, y la abren dos sitios: esta pregunta (nada ajeno) y «Sumarlos a mis
+    /// datos» (`chooseMergingPriorData`, fijado abajo).
     @Test func theRevertButton_asksICloudBeforeTheConfirmations() throws {
         let view = try Self.source(Self.viewPath)
         let card = try Self.body(of: "private func revertCard(_ controller: CloudMigrationController) -> some View {",
                                  in: view)
         #expect(card.contains("Task { await beginRevert() }"))
-        #expect(Self.codeOnly(view).components(separatedBy: "confirmRevert1 = true").count - 1 == 1,
-                "una sola apertura de las confirmaciones de siempre")
+        #expect(Self.codeOnly(view).components(separatedBy: "confirmRevert = true").count - 1 == 2,
+                "la confirmación de volver se abre solo desde la pregunta y desde «Sumarlos a mis datos»")
         let begin = try Self.body(of: "private func beginRevert() async {", in: view)
         #expect(begin == [
             "guard let controller else { return }",
             "revertMergesPriorData = false",
-            "confirmRevert1 = false",
+            "confirmRevert = false",
             "showRevertPriorData = false",
             "showRevertCheckFailed = false",
             "switch await controller.checkICloudBeforeReverse() {",
             "case nil:",
             "return",
             "case .proceed:",
-            "confirmRevert1 = true",
+            "confirmRevert = true",
             "case .ask(let corpus):",
             "revertPriorData = corpus",
             "showRevertPriorData = true",
@@ -420,7 +422,7 @@ struct ReverseICloudPriorDataWiringTests {
         #expect(view.contains("Button(L10n.Storage.Revert.Prior.discard, role: .destructive) { confirmDiscard = true }"))
         #expect(view.contains("Button(L10n.Storage.Revert.Prior.discardConfirm, role: .destructive) { onDiscard() }"))
         let merge = try Self.body(of: "private func chooseMergingPriorData() {", in: try Self.source(Self.viewPath))
-        #expect(merge == ["revertMergesPriorData = true", "confirmRevert2 = true"])
+        #expect(merge == ["revertMergesPriorData = true", "confirmRevert = true"])
     }
 
     /// Solo pregunta un teléfono nacido en la nube, y la sonda que produce el veredicto es la de lo ajeno.

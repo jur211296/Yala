@@ -81,8 +81,8 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
             Tocar «Activar la nube» con una cuenta que ya tiene datos no avisa. Es el bug del ticket: el flujo seguiría y la \
             migración acabaría adoptando esa cuenta en silencio.
             """)
-        XCTAssertEqual(title.label, "Esa cuenta ya tiene finanzas personales")
-        XCTAssertFalse(app.buttons["storage_consent_accept"].exists,
+        XCTAssertEqual(title.label, "Esta cuenta ya tiene sus propios datos")   // L20-13
+        XCTAssertFalse(app.staticTexts["storage_activation_sheet"].exists,
                        "El consentimiento se abrió detrás del aviso: la comprobación no paró el flujo.")
         XCTAssertFalse(app.buttons["storage_migrate_block_use_another"].exists, """
             Con la sesión de sus grupos, la hoja ofrece «Usar otra cuenta», un gesto que exige desasociar primero y que \
@@ -97,7 +97,7 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertTrue(migrate.waitForHittable(timeout: 5), "Tras cerrar el aviso la tarjeta de migrar no se puede tocar.")
         // Con espera: una segunda hoja pedida en el mismo anchor aparece al cerrarse la primera (`.claude/rules/testing.md`),
         // así que un consentimiento pedido a la vez que el aviso solo se ve AHORA.
-        XCTAssertFalse(app.buttons["storage_consent_accept"].waitForExistence(timeout: 3),
+        XCTAssertFalse(app.staticTexts["storage_activation_sheet"].waitForExistence(timeout: 3),
                        "Cerrar el aviso abrió el consentimiento: el toque siguió aunque la comprobación dijo que no.")
         XCTAssertFalse(title.waitForExistence(timeout: 2), "El aviso volvió a salir: la hoja no lo soltó al montar.")
 
@@ -139,7 +139,7 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         XCTAssertTrue(body.waitForExistence(timeout: 5))
         XCTAssertTrue(body.label.contains("reinténtala allí"), "El aviso no nombra la salida: \(body.label)")
         XCTAssertFalse(body.label.contains("finanzas personales"), "El cuerpo repite el texto falso: \(body.label)")
-        XCTAssertFalse(app.buttons["storage_consent_accept"].exists,
+        XCTAssertFalse(app.staticTexts["storage_activation_sheet"].exists,
                        "El consentimiento se abrió detrás del aviso: la comprobación no paró el flujo.")
 
         let close = app.buttons["storage_migrate_block_close"]
@@ -147,7 +147,7 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
         close.tap()
         XCTAssertTrue(title.waitForNonExistence(timeout: 5), "«Entendido» no cerró la hoja.")
         XCTAssertTrue(migrate.waitForHittable(timeout: 5), "Tras cerrar el aviso la tarjeta de migrar no se puede tocar.")
-        XCTAssertFalse(app.buttons["storage_consent_accept"].waitForExistence(timeout: 3),
+        XCTAssertFalse(app.staticTexts["storage_activation_sheet"].waitForExistence(timeout: 3),
                        "Cerrar el aviso abrió el consentimiento: el toque siguió aunque la comprobación dijo que no.")
 
         let refused = app.staticTexts["storage_account_refused_note"]
@@ -160,18 +160,21 @@ final class StorageMigrationIdentityBlockUITests: XCTestCase {
     }
 
     /// El gemelo que hace discriminante al de arriba: con una cuenta que sí puede recibir la migración, el MISMO toque llega
-    /// al consentimiento y no enseña ninguna hoja. **No prueba el valor `proceed` del seam**: al toque, «no se pudo
+    /// a la hoja de activar (UX 2.2 · L20-11; antes, el consentimiento) y no enseña ninguna hoja. **No prueba el valor `proceed` del seam**: al toque, «no se pudo
     /// preguntar» también sigue al consentimiento, así que sin el seam pasaría igual. Ese valor lo fija la paridad de
     /// `MigrationIdentityGateWiringTests`; lo que prueba este caso es que solo un bloqueo para el toque.
     func test_liveSession_accountThatCanReceiveTheMigration_goesOnToTheConsent() {
         let (app, migrate) = openMigrateCard(fakeMigrationIdentity: "proceed")
         migrate.tap()
 
-        XCTAssertTrue(app.buttons["storage_consent_accept"].waitForExistence(timeout: 10), """
+        XCTAssertTrue(app.staticTexts["storage_activation_sheet"].waitForExistence(timeout: 10), """
             Con una cuenta que puede recibir la migración, tocar «Activar la nube» no llegó al consentimiento: la \
             comprobación adelantada rompió el camino de siempre.
             """)
         XCTAssertFalse(app.staticTexts["storage_migrate_block_title"].exists)
+        // C-7 en la hoja única (L20-11): con la sesión viva no se elige método, así que no salen los dos proveedores.
+        XCTAssertFalse(app.buttons["storage_activation_apple"].exists && app.buttons["storage_activation_google"].exists,
+                       "Con una sesión de la nube viva la hoja ofrece Apple y Google: el que no es el de la sesión mentiría.")
     }
 
     // MARK: - «Usar otra cuenta»
