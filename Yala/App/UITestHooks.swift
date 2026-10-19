@@ -401,6 +401,14 @@ final class UITestHooks {
     /// producción. Y el store arranca vacío con `-uitest-reset`, que es la otra condición viva.
     nonisolated static var showRemoteWipeNotice: Bool { hasArg("-uitest-remote-wipe-notice") }
 
+    /// `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de
+    /// «iCloud no está disponible» (`ContentView.requestColdStartICloudNoticeIfNeeded`, card
+    /// `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). **Habilita al productor, no fuerza la decisión**: el
+    /// simulador nunca tiene token de iCloud, así que sin este flag el chequeo saldría en todo XCUITest que arranca sin
+    /// seed y con el onboarding hecho. Con él puesto, deciden el eje, la medida del store, el onboarding y la cuenta de
+    /// iCloud de producción. Fuera de `-uitest` el chequeo corre siempre. Solo DEBUG.
+    nonisolated static var coldStartICloudCheck: Bool { hasArg("-uitest-cold-start-icloud-check") }
+
     /// `-uitest-remote-wipe-notice-never-mounts`: el aviso de vaciado remoto «no llega a montarse» — la
     /// condición viva se enciende igual, pero su RED VISUAL (`showRemoteWipeAlert`) no, ni en el drenaje ni
     /// en los reintentos de la red. Es lo que pasa cuando UIKit descarta la presentación con el anchor

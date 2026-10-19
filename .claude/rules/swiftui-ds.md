@@ -53,6 +53,14 @@ paths:
   siguiente bump: `wipeAllUserData` no bumpea `dataVersion`, así que quien borra re-mide
   (`settleSignalsAfterDeliberateWipe`).
 
+- **Una decisión del arranque que lea el eje de sesión NO puede tomarse en el splash (medido el 2026-10-19).**
+  `checkInitialSyncState` corre en paralelo a `AppBootstrapper.bootstrap`, y el eje (`PrivateSessionMark`) lo escribe
+  el backfill del bootstrap: decidido en el splash, el aviso en frío de «iCloud no está disponible» no salía en ningún
+  XCUITest con `-uitest-reset` (y en un iPhone, en el primer arranque tras actualizar). ⇒ espera con
+  `waitForBootstrap()` y RE-MIDE lo que leyó el splash, al final del `.task` del arranque para no retrasar el splash
+  (`requestColdStartICloudNoticeAfterBootstrap`). Y su estado va en un tipo del PROCESO, no en `@State`: con varias
+  ventanas la líder se remonta (ver «Varias ventanas»).
+
 - **`containerRelativeFrame(.horizontal)` en `ScrollView(.vertical)` con `.contentMargins`** → deadlock de layout, splash nunca dismissa, sin crash log. Usar `onGeometryChange`. Detalles en UI-PATTERNS.md.
 
 - **`YalaFormatter` no auto-refresca prefs** — lee `UserDefaults` directo. Vista que lo use con `decimalPlaces` o `currencyDisplayFormat` debe inyectar `@Environment(AppPreferences.self)` y leer `let _ = appPreferences.X` en body para registrar dependencia.

@@ -254,8 +254,8 @@ struct PrivateSessionMarkWiringTests {
         // un consumidor que pasara su propio `UserDefaults` —que es lo que hace el servicio de
         // preferencias— no lo contaba nadie: se colaba un lector de la estricta sin pasar por esta
         // decisión. El prefijo `PrivateSessionMark.` deja fuera la declaración del propio tipo.
-        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 8, """
-            `confirmedPrivateSession` tiene OCHO lecturas en toda la app, y todas comparten el SIGNO
+        #expect(Self.countInProduction("PrivateSessionMark.confirmedPrivateSession(") == 9, """
+            `confirmedPrivateSession` tiene NUEVE lecturas en toda la app, y todas comparten el SIGNO
             de su error: hacia `true` se DAÑA —se borra, o se afirma un hecho falso sobre datos
             ajenos—, hacia `false` solo se conserva de más o se calla. Si aparece una más, decide a
             conciencia de qué lado cae — si equivocarse hacia `true` no destruye nada ni miente, la
@@ -306,6 +306,11 @@ struct PrivateSessionMarkWiringTests {
 
             Fueron NUEVE del 2026-09-27 al 2026-10-06: quien reponía lo que un receptor tardío sin grupos
             declaraba al parque. Se retiró sin productor (ticket `late-remote-wipe-return-has-no-producer-left`).
+
+            La NOVENA de hoy entró el 2026-10-19 y es el segundo productor del aviso de `ContentView`: el
+            ARRANQUE en frío que pide «iCloud no está disponible» cuando el store ya nace vacío
+            (`requestColdStartICloudNoticeIfNeeded`, card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`).
+            Mismo signo que la gracia: hacia `true` le diría a quien no guarda ahí sus datos que su iCloud no está.
             """)
     }
 
