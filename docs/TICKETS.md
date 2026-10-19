@@ -301,6 +301,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | diez-worktrees-comparten-un-simulador | done | tickets/done/diez-worktrees-comparten-un-simulador.md |
 | discard-gate-cannot-close-an-orphan-session-window | done | tickets/done/discard-gate-cannot-close-an-orphan-session-window.md |
 | discard-gate-proceed-leaves-the-imported-rows-behind | backlog | tickets/backlog/discard-gate-proceed-leaves-the-imported-rows-behind.md |
+| discard-prior-icloud-confirmation-has-no-visible-cancel | backlog | tickets/backlog/discard-prior-icloud-confirmation-has-no-visible-cancel.md |
 | displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays | discarded | tickets/discarded/displaced-leader-after-the-cutover-restores-its-own-identity-over-the-relays.md |
 | displaced-leader-late-identity-export-can-rekey-the-relief-corpus | done | tickets/done/displaced-leader-late-identity-export-can-rekey-the-relief-corpus.md |
 | displaced-migration-leader-keeps-uploading-after-a-takeover | done | tickets/done/displaced-migration-leader-keeps-uploading-after-a-takeover.md |
@@ -515,6 +516,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | home-screen-budgets-widget-ignores-favorites | done | tickets/done/home-screen-budgets-widget-ignores-favorites.md |
 | icloud-export-error-latch-never-clears | backlog | tickets/backlog/icloud-export-error-latch-never-clears.md |
 | icloud-kv-prefs-cross-sessions-on-a-lent-phone | done | tickets/done/icloud-kv-prefs-cross-sessions-on-a-lent-phone.md |
+| icloud-screen-says-not-active-with-drive-off | backlog | tickets/backlog/icloud-screen-says-not-active-with-drive-off.md |
 | icloud-sync-status-treats-non-ck-failures-as-success | backlog | tickets/backlog/icloud-sync-status-treats-non-ck-failures-as-success.md |
 | identity-uuid-repair-can-commit-half-done-after-a-read-failure | backlog | tickets/backlog/identity-uuid-repair-can-commit-half-done-after-a-read-failure.md |
 | image-entry-end-to-end-redesign | qa | tickets/qa/image-entry-end-to-end-redesign.md |
