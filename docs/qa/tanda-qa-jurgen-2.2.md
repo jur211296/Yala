@@ -69,6 +69,13 @@ Guion entero en el PR #538, bloque B:
 1. Crea un grupo de verdad.
 2. En la hoja «“X” está listo», toca «Invitar por WhatsApp u otra app»: sale la hoja de compartir con el enlace.
 
+**B3 · «Tu cuenta de Yala» con tu cuenta real** (`tablero-ux-2-2-l20-9-tu-cuenta-de-yala-no-dice-q-vlc4`) · §4 inicio de
+sesión real (el correo sale de la sesión; el simulador solo enseña uno de muestra). PR #558, unos 2 min:
+1. Con tu cuenta de Yala, Ajustes › «Tu cuenta de Yala».
+2. Arriba sale tu correo con el logo de Apple o de Google, el método con que entraste.
+3. Debajo, «Si usas el mismo correo, Apple y Google abren esta misma cuenta.».
+4. Toca «Dónde viven tus datos»: abre esa pantalla.
+
 ### C · Dos teléfonos y compra sandbox (unos 10 min)
 
 **C1 · Lote 5, terminar el onboarding en otro** (`auditoria-ux-2-2-lote-5-primeros-dias-gu-k4gd`) · §4 dos dispositivos.
@@ -124,6 +131,8 @@ Guion entero en el PR #538, bloque B:
 | `con-el-iphone-en-espanol-…-ymwo` + ticket `siri-shortcut-error-replies-speak-english-on-a-spanish-iphone` | Ya hay evidencia | el simulador es-PE reproducía el inglés y da español tras el #552 |
 | `yala-ia-en-la-nube-textos-…-gic9` | Ya hay evidencia | `YalaIACloudExploreConsentUITests` + textos P1/N1 contra el doc en 16 idiomas + capturas |
 
+| Lote decidido 2.2 · 04 (PR #558): `l20-6 lpj1`, `l20-10 4dwv`, `l19-15 0kj5`, `l19-17 7jxn`, `l19-18 yxsc`, `l19-19 zvwe` | Ya hay evidencia | `UXAudit22Lote04UITests` (6 casos) + `UXAudit22Lote04Tests` + antes/después en `~/Claude/entregas/Yala--lote-decidido-2-2-04-cuenta-sesion-y-modo-solo-grupos/antes-despues.jpg` |
+
 ## Lo que se queda
 
 | Card | Lo retiene |
@@ -138,3 +147,5 @@ Guion entero en el PR #538, bloque B:
 | `ui-2-2-l12-10-al-guardar-un-grupo-no-se-i104` | §4 cuenta en la nube real |
 | `integrar-yala-con-el-nuevo-siri-con-ia-d-egjm` | §4 Siri por voz |
 | `las-frases-de-siri-que-la-app-ensena-en-eol6` | §4 Siri por voz |
+| `tablero-ux-2-2-l20-9-tu-cuenta-de-yala-no-dice-q-vlc4` | §4 inicio de sesión real (B3) |
+| `tablero-ux-2-2-l20-7-cerrar-sesion-espera-45-seg-wtme` | §2.7 decisión: el orden de los tres botones no cabe en una alerta de iOS (A/B en la card). Lo demás, probado en el simulador con `UXAudit22Lote04UITests` |
