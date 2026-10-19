@@ -478,7 +478,6 @@
 "settings.theme.liquidGlass" = "Liquid Glass";
 "settings.defaultCurrency" = "Moneda predeterminada";
 "settings.currentIcon" = "Ícono actual";
-"settings.resetAllData" = "Vaciar todos tus datos";
 "settings.deleteAllData" = "Vaciar mis datos";
 
 // MARK: - Common
@@ -621,20 +620,9 @@
 "settings.currencyAndExchange" = "Moneda y tipo de cambio";
 "common.updatingRecords" = "Actualizando registros...";
 "common.recalculatingConversions" = "Recalculando conversiones históricas";
-"export.customizeFile" = "Personaliza tu archivo";
-"export.csvGeneratedSuccess" = "El archivo se ha generado correctamente.";
-"export.confirmExport" = "Confirma tu exportación";
-"export.selectColumns" = "Seleccionar columnas";
-"export.availableColumns" = "Columnas disponibles";
-"export.columnsDescription" = "Elige qué columnas quieres incluir en el archivo exportado. Debes seleccionar al menos una.";
-"export.summaryAndExport" = "Resumen y Exportar";
-"export.summaryDescription" = "Revisa los filtros y columnas seleccionadas antes de generar el archivo.";
-"export.filtersSummary" = "Resumen de filtros";
-"export.columnsToExport" = "Columnas a exportar";
 "export.exportToCSV" = "Exportar a CSV";
 "export.exportBtn" = "Exportar";
 "export.exportError" = "Hubo un problema al exportar";
-"export.exportCompleted" = "Exportación completada";
 "export.backToSettings" = "Volver a ajustes";
 "export.exportData" = "Exportar datos";
 "export.greaterThan" = "Mayor a";
@@ -659,14 +647,14 @@
 "export.column.subcategory" = "Subcategoría";
 "export.column.tags" = "Etiquetas";
 "export.column.note" = "Nota";
-"export.column.date.description" = "Fecha en formato yyyy-MM-dd.";
-"export.column.amount.description" = "Monto del registro con 2 decimales.";
-"export.column.currency.description" = "Código de moneda (PEN, USD, EUR).";
-"export.column.account.description" = "Nombre de la cuenta asociada.";
-"export.column.category.description" = "Categoría principal del registro.";
-"export.column.subcategory.description" = "Subcategoría específica.";
-"export.column.tags.description" = "Etiquetas asociadas, separadas por ';'.";
-"export.column.note.description" = "Nota libre asociada al registro.";
+"export.column.date.description" = "El día del registro (año-mes-día).";
+"export.column.amount.description" = "Cuánto fue, con dos decimales.";
+"export.column.currency.description" = "La moneda, como PEN o USD.";
+"export.column.account.description" = "La cuenta donde lo apuntaste.";
+"export.column.category.description" = "Su categoría.";
+"export.column.subcategory.description" = "Su subcategoría.";
+"export.column.tags.description" = "Sus etiquetas, separadas por punto y coma.";
+"export.column.note.description" = "Lo que escribiste en la nota.";
 "common.next" = "Siguiente";
 "settings.versionInfo" = "Versión %1$@ (Build %2$@)";
 "tab.panel" = "Panel";
@@ -1177,7 +1165,6 @@
 "settings.firstWeekdayDescription" = "Define qué día considerar como inicio de semana para filtros como 'Esta semana'.";
 "settings.sunday" = "Domingo";
 "settings.monday" = "Lunes";
-"settings.resetDataDescription" = "Esta operación eliminará de forma permanente tus cuentas, registros, presupuestos, tipos de cambio, categorías y cualquier otro dato asociado a tu perfil de Yala. Después del borrado, la app volverá a un estado similar al inicial.";
 "settings.deleteDataConfirmation" = "¿Vaciar tus datos?";
 "settings.delete" = "Eliminar";
 "settings.cancel" = "Cancelar";
@@ -3081,10 +3068,9 @@
 "groups.expense.newExpense" = "Nuevo gasto";
 
 "export.column.splitTotal" = "Total original";
-"export.column.splitPortion" = "Porción";
-"export.column.splitTotal.description" = "Monto total antes de dividir";
-"export.column.splitPortion.description" = "Descripción de la porción";
-
+"export.column.splitPortion" = "Tu parte";
+"export.column.splitTotal.description" = "Si lo dividiste, cuánto fue en total.";
+"export.column.splitPortion.description" = "Si lo dividiste, qué parte te tocó.";
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "Lleva tus finanzas al siguiente nivel";
@@ -4358,7 +4344,6 @@
 "split.typeSharesShort" = "Proporción";
 
 /* Reset-data screen description — groups-only mode */
-"settings.resetDataDescriptionGroupsOnly" = "Esta operación restablecerá tu perfil y tus preferencias de Yala a un estado inicial. Tus grupos no se eliminan: gestiónalos desde la pestaña Grupos.";
 
 /* Delete-data confirmation warning — groups-only mode */
 
@@ -4851,7 +4836,7 @@
 "settings.deleteAccountRetry" = "Reintentar";
 /* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
 "export.includeGroups" = "Incluir mis grupos";
-"export.includeGroups.description" = "Añade un archivo aparte con los gastos, pagos y tu balance de cada grupo.";
+"export.includeGroups.description" = "Añade un archivo aparte con los gastos, los pagos y lo que debes o te deben en cada grupo.";
 "export.groups.header.group" = "Grupo";
 "export.groups.header.type" = "Tipo";
 "export.groups.header.date" = "Fecha";
@@ -4969,8 +4954,7 @@
 "settings.wipeDataSecondConfirmTitle" = "¿Seguro? Esto es definitivo.";
 
 /* Fase 1: subtitulo de la fila Exportar datos */
-"settings.exportDataSubtitle" = "Guarda una copia en CSV";
-
+"settings.exportDataSubtitle" = "Para Excel o Google Sheets";
 /* Fase 1: subtitulo de la fila Vaciar mis datos */
 "settings.wipeDataSubtitle" = "Borra tus datos. Tu cuenta y tus grupos se conservan";
 
@@ -4990,8 +4974,7 @@
 "export.groupsOnlyTitle" = "Exporta tus grupos";
 
 /* D6: description under the group-only export header */
-"export.groupsOnlyDescription" = "Guarda un archivo CSV con los gastos, pagos y tu balance de cada grupo.";
-
+"export.groupsOnlyDescription" = "Guarda una hoja con los gastos, los pagos y lo que debes o te deben en cada grupo. Se abre en Excel, Numbers o Google Sheets.";
 /* D6: alert title when there are no active groups to export */
 "export.groupsOnlyEmptyTitle" = "Sin grupos que exportar";
 
@@ -5128,8 +5111,6 @@
 "settings.wipeScopeGroupsDebt" = "Tus grupos se conservan, pero tienes saldos pendientes. Puedes saldarlos desde la pestaña Grupos.";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
-"settings.wipeLeaveGroupsButton" = "También salir de mis grupos";
-
 /* D10 batch: dedicated flow title */
 "settings.batchLeaveTitle" = "Salir de mis grupos";
 
@@ -7483,8 +7464,7 @@
 "accountCardGrouping.byLine" = "Por línea";
 "accountCardGrouping.label" = "Tarjetas con varias divisas";
 "export.column.card" = "Tarjeta";
-"export.column.card.description" = "Nombre de la tarjeta, si la cuenta es parte de una con varias divisas.";
-
+"export.column.card.description" = "La tarjeta, si la cuenta es parte de una con varias monedas.";
 /* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
 "shortcut.spending.title" = "Consultar gastos";
 "shortcut.spending.description" = "Te dice cuánto llevas gastado en un período, sin abrir Yala";
@@ -7564,3 +7544,50 @@
 "stats.l11d.title.atAGlance.year" = "Tu año de un vistazo";
 "stats.l11d.title.atAGlance.all" = "Todo tu historial de un vistazo";
 "stats.l11d.title.atAGlance.period" = "Tu período de un vistazo";
+
+/* Lote decidido 2.2 · 03 — Exportar y Vaciar (L20-1…L20-8, L19-12, L19-16) */
+"l20d.export.title" = "Llévate tus registros";
+"l20d.export.subtitle" = "Un archivo para abrir en Excel o Google Sheets.";
+"l20d.export.periodAll" = "Todo";
+"l20d.export.periodDates" = "Fechas…";
+"l20d.export.formatExcel" = "Excel";
+"l20d.export.formatRecommended" = "Recomendado";
+"l20d.export.formatCSV" = "Texto (CSV)";
+"l20d.export.formatCSVHint" = "Para otras apps";
+"l20d.export.moreOptions" = "Más opciones";
+"l20d.export.moreOptionsHint" = "Cuentas, categorías, etiquetas y columnas";
+"l20d.export.expanded" = "Desplegado";
+"l20d.export.collapsed" = "Plegado";
+"l20d.export.modeLabel" = "Qué hacer con lo elegido";
+"l20d.export.active.accounts" = "Cuentas: %d";
+"l20d.export.active.categories" = "Subcategorías: %d";
+"l20d.export.active.tags" = "Etiquetas: %d";
+"l20d.export.active.needs" = "Necesidad: %d";
+"l20d.export.active.currencies" = "Moneda: %@";
+"l20d.export.active.amount" = "Monto filtrado";
+"l20d.export.active.note" = "Nota: «%@»";
+"l20d.export.active.hiding" = "Ocultando lo elegido";
+"l20d.export.rangeToToday" = "del %@ a hoy";
+"l20d.export.range" = "del %1$@ al %2$@";
+"l20d.export.none" = "Ninguno con estos filtros";
+"l20d.export.doneIn" = "Listo, tu archivo está en %@";
+"l20d.export.doneShared" = "Listo, ya compartiste tu archivo";
+"l20d.export.app.files" = "Archivos";
+"l20d.export.app.messages" = "Mensajes";
+"l20d.export.app.notes" = "Notas";
+"l20d.export.continueWipe" = "Seguir con el vaciado";
+"l20d.export.fileStem" = "Registros";
+"l20d.settings.exportRecords" = "Exportar registros";
+"l20d.wipe.sentence.icloud" = "Borra tus cuentas, registros y presupuestos de este dispositivo y de tu iCloud. No se puede deshacer.";
+"l20d.wipe.sentence.cloud" = "Borra tus cuentas, registros y presupuestos de este dispositivo y de tu cuenta de Yala. No se puede deshacer.";
+"l20d.wipe.sentence.groupsOnly" = "Borra tu perfil y tus preferencias de este dispositivo. Tus grupos no se tocan. No se puede deshacer.";
+"l20d.wipe.exportCopy" = "Exportar una copia antes";
+"l20d.wipe.row.account" = "Borra tus datos. Tu cuenta se conserva";
+"l20d.wipe.row.groups" = "Borra tus datos. Tus grupos se conservan";
+"l20d.wipe.row.nothing" = "Borra tus datos";
+"l20d.groups.leaveAll.section" = "Tus grupos";
+"l20d.groups.leaveAll.button" = "Salir de todos mis grupos";
+"l20d.groups.leaveAll.confirmTitle" = "¿Salir de todos tus grupos?";
+"l20d.groups.leaveAll.confirmAction" = "Salir de todos";
+"l20d.groups.leaveAll.confirmMessage" = "Vas a salir de %@.";
+"l20d.groups.leaveAll.confirmMessageGeneric" = "Vas a salir de todos los grupos en los que no tienes saldos pendientes.";

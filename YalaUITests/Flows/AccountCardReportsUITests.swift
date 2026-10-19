@@ -149,14 +149,19 @@ final class AccountCardReportsUITests: XCTestCase {
     func test_export_offersTheCardOnce_itsCurrencies_andTheCardColumn() {
         let app = launch()
         app.openProfile()
-        let exportRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Exportar datos")).firstMatch
-        XCTAssertTrue(exportRow.waitForExistence(timeout: 10), "No apareció la fila Exportar datos en el Perfil.")
+        let exportRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Exportar registros")).firstMatch
+        XCTAssertTrue(exportRow.waitForExistence(timeout: 10), "No apareció la fila Exportar registros en el Perfil.")
         var swipes = 0
         while !exportRow.isHittable && swipes < 14 {
             app.swipeUp()
             swipes += 1
         }
         exportRow.tap()
+
+        // L20-1: los filtros y las columnas viven en «Más opciones», plegado.
+        let more = app.buttons["export_more_options"]
+        XCTAssertTrue(more.waitForExistence(timeout: 10), "Falta «Más opciones» en la pantalla de exportar.")
+        more.tap()
 
         let cardChip = app.buttons["export_account_chip_\(card)"]
         XCTAssertTrue(cardChip.waitForExistence(timeout: 10), "El filtro de cuentas no ofrece la tarjeta.")
@@ -168,10 +173,12 @@ final class AccountCardReportsUITests: XCTestCase {
         XCTAssertTrue(app.buttons["export_currency_chip_PEN"].waitForExistence(timeout: 5), "Falta la divisa de la principal.")
         XCTAssertTrue(app.buttons["export_currency_chip_USD"].exists, "Falta la divisa de la línea en dólares.")
 
-        let next = app.navigationBars.buttons.matching(NSPredicate(format: "label == %@", "Siguiente")).firstMatch
-        XCTAssertTrue(next.waitForExistence(timeout: 5))
-        next.tap()
         let cardColumn = element(app, "export_column_card")
+        var columnSwipes = 0
+        while !cardColumn.isHittable && columnSwipes < 10 {
+            app.swipeUp()
+            columnSwipes += 1
+        }
         XCTAssertTrue(cardColumn.waitForExistence(timeout: 10), "No se ofrece la columna Tarjeta.")
         XCTAssertEqual(cardColumn.value as? String, "1", "La columna Tarjeta no sale activada.")
     }

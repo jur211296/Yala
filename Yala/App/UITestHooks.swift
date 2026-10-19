@@ -376,12 +376,18 @@ final class UITestHooks {
 
     /// `-uitest-groups-batch-demo`: QA/XCUITest del batch "salir de todos mis grupos" (D10) SIN backend ni
     /// iCloud (imposibles en sim — la ejecución real de leave/transfer es device/TestFlight). Fuerza que la
-    /// hoja de Vaciar OFREZCA «También salir de mis grupos» (input `canLeaveAllGroups` de `UserDataResetView`)
+    /// Ajustes de Grupos OFREZCA «Salir de todos mis grupos» (`GroupsGlobalSettingsView.offersLeaveAllGroups`, L19-12)
     /// y hace que la vista del batch (`GroupBatchLeaveView`) muestre un RESULTADO determinista fabricado
     /// (2 salidos + 1 transferido + 1 «necesita tu decisión») en vez de ejecutar el orquestador real. Solo
     /// verifica el CABLEADO/UI; la lógica del orquestador va por unit tests (kill-sim). Inerte en release
     /// vía `hasArg`; el seed demo del store está bajo `#if DEBUG`.
     nonisolated static var groupsBatchDemo: Bool { hasArg("-uitest-groups-batch-demo") }
+
+    /// `-uitest-private-signout-no-copy`: la hoja de «Cerrar sesión» de una sesión privada sale como la de SIN copia en
+    /// iCloud (L20-8, «Exportar antes»). Solo elige la HOJA (`ProfileView.makeSignOutScope`), no el cierre: el host de
+    /// test monta el store sin espejo y su testigo dice siempre que hay copia, así que esa celda no se alcanza sin esto.
+    /// Inerte en release vía `hasArg`.
+    nonisolated static var privateSignOutNoCopy: Bool { hasArg("-uitest-private-signout-no-copy") }
 
     /// `-uitest-groups-batch-running`: variante EN CURSO del seam anterior, para el botón «Detener» (D3).
     /// Siembra el intent con entries `.pending` SIN ejecutar el orquestador real (imposible en sim), de modo

@@ -197,6 +197,12 @@ struct ExportColumns: Equatable {
         activeColumns.remove(column)
     }
 
+    /// La columna como interruptor (`$columns[isActive: .date]`), para un `Toggle` sin `Binding(get:set:)`.
+    subscript(isActive column: ExportColumn) -> Bool {
+        get { activeColumns.contains(column) }
+        set { set(column, isActive: newValue) }
+    }
+
     /// Cambia el estado (on/off) de una columna.
     mutating func set(_ column: ExportColumn, isActive: Bool) {
         if isActive {
@@ -258,6 +264,12 @@ struct ExportFilters: Equatable {
     /// Texto a buscar dentro de la nota de la transacción.
     /// Si es `nil` o cadena vacía, no se filtra por nota.
     var noteContains: String?
+
+    // MARK: Necesidad
+
+    /// Necesidades del gasto elegidas (L20-2, 2026-10-19). Vacío = todas. Hasta entonces el asistente pintaba sus fichas
+    /// y no las pasaba aquí: el filtro no recortaba nada. Con «Ocultar», las elegidas se quitan, como el resto.
+    var selectedNeeds: [SubcategoryNeed] = []
 
     // MARK: Estado por defecto
 

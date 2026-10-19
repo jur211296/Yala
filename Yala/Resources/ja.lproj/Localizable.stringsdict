@@ -1050,5 +1050,33 @@
 			<string>%d件の記録に適用</string>
 		</dict>
 	</dict>
+	<key>l20d.export.willExport</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d件の記録を書き出します</string>
+		</dict>
+	</dict>
+	<key>l20d.export.exportCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d件をエクスポート</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

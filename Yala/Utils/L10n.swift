@@ -4259,35 +4259,9 @@ enum L10n {
         static var period: String { ls("export.period", comment: "") }
         static var selectAll: String { ls("export.selectAll", comment: "") }
         static var deselectAll: String { ls("export.deselectAll", comment: "") }
-        static var customizeFile: String { ls("export.customizeFile", comment: "") }
-        static var csvGeneratedSuccess: String {
-            ls("export.csvGeneratedSuccess", comment: "")
-        }
         /// F1 review G5-D2: el usuario pidió incluir grupos y el CSV de grupos falló — cero silencios.
         static var groupsExportFailedNote: String {
             ls("export.groupsExportFailedNote", comment: "")
-        }
-        static var confirmExport: String { ls("export.confirmExport", comment: "") }
-        static var selectColumns: String {
-            ls("export.selectColumns", comment: "")
-        }
-        static var availableColumns: String {
-            ls("export.availableColumns", comment: "")
-        }
-        static var columnsDescription: String {
-            ls("export.columnsDescription", comment: "")
-        }
-        static var summaryAndExport: String {
-            ls("export.summaryAndExport", comment: "")
-        }
-        static var summaryDescription: String {
-            ls("export.summaryDescription", comment: "")
-        }
-        static var filtersSummary: String {
-            ls("export.filtersSummary", comment: "")
-        }
-        static var columnsToExport: String {
-            ls("export.columnsToExport", comment: "")
         }
         static var exportToCSV: String {
             ls("export.exportToCSV", comment: "")
@@ -4302,9 +4276,6 @@ enum L10n {
         static var errorInvalidDateRange: String { ls("export.error.invalidDateRange", comment: "") }
         static var errorNoTransactions: String { ls("export.error.noTransactions", comment: "") }
         static var errorFileWriteFailed: String { ls("export.error.fileWriteFailed", comment: "") }
-        static var exportCompleted: String {
-            ls("export.exportCompleted", comment: "")
-        }
         static var backToSettings: String {
             ls("export.backToSettings", comment: "")
         }
@@ -4725,7 +4696,6 @@ enum L10n {
             ls("settings.defaultCurrency", comment: "")
         }
         static var currentIcon: String { ls("settings.currentIcon", comment: "") }
-        static var resetAllData: String { ls("settings.resetAllData", comment: "") }
         static var deleteAllData: String {
             ls("settings.deleteAllData", comment: "")
         }
@@ -4895,9 +4865,6 @@ enum L10n {
             ls("settings.autoFocusNone", comment: "")
         }
         // resetData removed (duplicate)
-        static var resetDataDescription: String {
-            ls("settings.resetDataDescription", comment: "")
-        }
         // deleteAllData removed (duplicate)
         static var deleteDataConfirmation: String {
             ls("settings.deleteDataConfirmation", comment: "")
@@ -4911,10 +4878,6 @@ enum L10n {
         /// Fase 1 (§3.2): subtítulos de una línea de las filas de Ajustes.
         static var exportDataSubtitle: String { ls("settings.exportDataSubtitle", comment: "") }
         static var wipeDataSubtitle: String { ls("settings.wipeDataSubtitle", comment: "") }
-        /// Descripción de "Borrar datos" en modo solo-grupos (sin finanzas personales).
-        static var resetDataDescriptionGroupsOnly: String {
-            ls("settings.resetDataDescriptionGroupsOnly", comment: "")
-        }
         // D4: `deleteDataWarningGroupsOnly` RETIRADA — sustituida por las filas de la hoja (5a).
         // Cierre de sesión universal (H4 — privada y nube)
         /// La fila «Cerrar sesión» no lleva subtítulo desde el paso 9 del rediseño (2026-09-11): es el mismo
@@ -5102,7 +5065,6 @@ enum L10n {
         static var wipeExportBeforeButton: String { ls("settings.wipeExportBeforeButton", comment: "") }
         static var wipeExportBeforeCloudCaption: String { ls("settings.wipeExportBeforeCloudCaption", comment: "") }
         // D10 — batch "salir de todos mis grupos"
-        static var wipeLeaveGroupsButton: String { ls("settings.wipeLeaveGroupsButton", comment: "") }
         static var batchLeaveTitle: String { ls("settings.batchLeaveTitle", comment: "") }
         static var batchLeaveProgress: String { ls("settings.batchLeaveProgress", comment: "") }
         static var batchLeaveAllDone: String { ls("settings.batchLeaveAllDone", comment: "") }

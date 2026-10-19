@@ -478,7 +478,6 @@
 "settings.theme.liquidGlass" = "液态玻璃";
 "settings.defaultCurrency" = "默认货币";
 "settings.currentIcon" = "当前图标";
-"settings.resetAllData" = "重置你所有的数据";
 "settings.deleteAllData" = "清空我的数据";
 
 // MARK: - Common
@@ -621,20 +620,9 @@
 "settings.currencyAndExchange" = "货币与汇率";
 "common.updatingRecords" = "正在更新记录...";
 "common.recalculatingConversions" = "正在重新计算历史汇率";
-"export.customizeFile" = "自定义你的文件";
-"export.csvGeneratedSuccess" = "文件已成功生成。";
-"export.confirmExport" = "确认导出";
-"export.selectColumns" = "选择列";
-"export.availableColumns" = "可用列";
-"export.columnsDescription" = "选择导出文件中要包含的列。你必须至少选择一列。";
-"export.summaryAndExport" = "摘要与导出";
-"export.summaryDescription" = "在生成文件前查看选定的筛选条件和列。";
-"export.filtersSummary" = "筛选摘要";
-"export.columnsToExport" = "要导出的列";
 "export.exportToCSV" = "导出为 CSV";
 "export.exportBtn" = "导出";
 "export.exportError" = "导出时出现问题";
-"export.exportCompleted" = "导出完成";
 "export.backToSettings" = "返回设置";
 "export.exportData" = "导出数据";
 "export.greaterThan" = "大于";
@@ -659,14 +647,14 @@
 "export.column.subcategory" = "子类别";
 "export.column.tags" = "标签";
 "export.column.note" = "备注";
-"export.column.date.description" = "日期,格式为 yyyy-MM-dd。";
-"export.column.amount.description" = "记录金额,保留 2 位小数。";
-"export.column.currency.description" = "货币代码 (PEN, USD, EUR)。";
-"export.column.account.description" = "关联账户名称。";
-"export.column.category.description" = "记录主类别。";
-"export.column.subcategory.description" = "具体子类别。";
-"export.column.tags.description" = "关联标签,以「;」分隔。";
-"export.column.note.description" = "记录的自由格式备注。";
+"export.column.date.description" = "记录的日期（年-月-日）。";
+"export.column.amount.description" = "金额，保留两位小数。";
+"export.column.currency.description" = "货币，例如 CNY 或 USD。";
+"export.column.account.description" = "记录所在的账户。";
+"export.column.category.description" = "所属类别。";
+"export.column.subcategory.description" = "所属子类别。";
+"export.column.tags.description" = "标签，用分号分隔。";
+"export.column.note.description" = "你在备注中写的内容。";
 "common.next" = "下一步";
 "settings.versionInfo" = "版本 %1$@ (Build %2$@)";
 "tab.panel" = "首页";
@@ -1177,7 +1165,6 @@
 "settings.firstWeekdayDescription" = "设置「本周」等筛选的起始日。";
 "settings.sunday" = "星期日";
 "settings.monday" = "星期一";
-"settings.resetDataDescription" = "此操作将永久删除你的账户、记录、预算、汇率、类别以及与你 Yala 资料相关的任何其他数据。删除后,应用将回到类似初始设置的状态。";
 "settings.deleteDataConfirmation" = "清空你的数据？";
 "settings.delete" = "删除";
 "settings.cancel" = "取消";
@@ -3090,10 +3077,9 @@
 "groups.expense.newExpense" = "新支出";
 
 "export.column.splitTotal" = "原总额";
-"export.column.splitPortion" = "份额";
-"export.column.splitTotal.description" = "拆分前的总金额";
-"export.column.splitPortion.description" = "份额描述";
-
+"export.column.splitPortion" = "你的份额";
+"export.column.splitTotal.description" = "如果分摊了，总金额是多少。";
+"export.column.splitPortion.description" = "如果分摊了，你承担的部分。";
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "把你的财务带到下一阶段";
@@ -4356,7 +4342,6 @@
 "split.typeSharesShort" = "份数";
 
 /* Reset-data screen description — groups-only mode */
-"settings.resetDataDescriptionGroupsOnly" = "此操作会将你的 Yala 个人资料和偏好重置为初始状态。你的群组不会被删除:请在「群组」标签页中管理它们。";
 
 /* Delete-data confirmation warning — groups-only mode */
 
@@ -4846,7 +4831,7 @@
 "settings.deleteAccountRetry" = "重试";
 /* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
 "export.includeGroups" = "包含我的群组";
-"export.includeGroups.description" = "添加一个单独的文件，包含每个群组的支出、付款和你的余额。";
+"export.includeGroups.description" = "另附一个文件，列出每个群组的支出、付款，以及你欠别人或别人欠你的金额。";
 "export.groups.header.group" = "群组";
 "export.groups.header.type" = "类型";
 "export.groups.header.date" = "日期";
@@ -4964,8 +4949,7 @@
 "settings.wipeDataSecondConfirmTitle" = "确定吗？此操作不可撤销。";
 
 /* Fase 1: subtitulo de la fila Exportar datos */
-"settings.exportDataSubtitle" = "将副本保存为 CSV";
-
+"settings.exportDataSubtitle" = "用于 Excel 或 Google 表格";
 /* Fase 1: subtitulo de la fila Vaciar mis datos */
 "settings.wipeDataSubtitle" = "清除你的数据。你的账户和群组会保留。";
 
@@ -4985,8 +4969,7 @@
 "export.groupsOnlyTitle" = "导出你的群组";
 
 /* D6: description under the group-only export header */
-"export.groupsOnlyDescription" = "将每个群组的支出、付款和你的余额保存为 CSV 文件。";
-
+"export.groupsOnlyDescription" = "保存一张表格，列出每个群组的支出、付款，以及你欠别人或别人欠你的金额。可在 Excel、Numbers 或 Google 表格中打开。";
 /* D6: alert title when there are no active groups to export */
 "export.groupsOnlyEmptyTitle" = "没有可导出的群组";
 
@@ -5123,8 +5106,6 @@
 "settings.wipeScopeGroupsDebt" = "你的群组会保留，但你有未结清的余额。你可以在「群组」标签页结清。";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
-"settings.wipeLeaveGroupsButton" = "同时离开我的群组";
-
 /* D10 batch: dedicated flow title */
 "settings.batchLeaveTitle" = "离开我的群组";
 
@@ -7469,8 +7450,7 @@
 "accountCardGrouping.byLine" = "按子账户";
 "accountCardGrouping.label" = "多币种卡片";
 "export.column.card" = "卡片";
-"export.column.card.description" = "如果该账户属于多币种卡片，则为卡片名称。";
-
+"export.column.card.description" = "如果账户属于多币种卡片，则为该卡片。";
 /* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
 "shortcut.spending.title" = "查询支出";
 "shortcut.spending.description" = "无需打开 Yala，告诉你某段时间花了多少";
@@ -7550,3 +7530,50 @@
 "stats.l11d.title.atAGlance.year" = "一眼看这一年";
 "stats.l11d.title.atAGlance.all" = "一眼看全部记录";
 "stats.l11d.title.atAGlance.period" = "一眼看这段时间";
+
+/* Lote decidido 2.2 · 03 — Exportar y Vaciar (L20-1…L20-8, L19-12, L19-16) */
+"l20d.export.title" = "带走你的记录";
+"l20d.export.subtitle" = "一个可在 Excel 或 Google 表格中打开的文件。";
+"l20d.export.periodAll" = "全部";
+"l20d.export.periodDates" = "选择日期…";
+"l20d.export.formatExcel" = "Excel";
+"l20d.export.formatRecommended" = "推荐";
+"l20d.export.formatCSV" = "文本（CSV）";
+"l20d.export.formatCSVHint" = "用于其他应用";
+"l20d.export.moreOptions" = "更多选项";
+"l20d.export.moreOptionsHint" = "账户、类别、标签和列";
+"l20d.export.expanded" = "已展开";
+"l20d.export.collapsed" = "已收起";
+"l20d.export.modeLabel" = "如何处理所选项";
+"l20d.export.active.accounts" = "账户：%d";
+"l20d.export.active.categories" = "子类别：%d";
+"l20d.export.active.tags" = "标签：%d";
+"l20d.export.active.needs" = "需求：%d";
+"l20d.export.active.currencies" = "货币：%@";
+"l20d.export.active.amount" = "已按金额筛选";
+"l20d.export.active.note" = "备注：“%@”";
+"l20d.export.active.hiding" = "正在隐藏所选项";
+"l20d.export.rangeToToday" = "从 %@ 到今天";
+"l20d.export.range" = "从 %1$@ 到 %2$@";
+"l20d.export.none" = "没有符合这些筛选条件的记录";
+"l20d.export.doneIn" = "完成，你的文件在“%@”中";
+"l20d.export.doneShared" = "完成，你已分享文件";
+"l20d.export.app.files" = "文件";
+"l20d.export.app.messages" = "信息";
+"l20d.export.app.notes" = "备忘录";
+"l20d.export.continueWipe" = "继续清除";
+"l20d.export.fileStem" = "记录";
+"l20d.settings.exportRecords" = "导出记录";
+"l20d.wipe.sentence.icloud" = "从此设备和你的 iCloud 中清除你的账户、记录和预算。此操作无法撤销。";
+"l20d.wipe.sentence.cloud" = "从此设备和你的 Yala 账户中清除你的账户、记录和预算。此操作无法撤销。";
+"l20d.wipe.sentence.groupsOnly" = "清除此设备上的个人资料和偏好设置。你的群组不受影响。此操作无法撤销。";
+"l20d.wipe.exportCopy" = "先导出一份副本";
+"l20d.wipe.row.account" = "清除你的数据。你的账户会保留。";
+"l20d.wipe.row.groups" = "清除你的数据。你的群组会保留。";
+"l20d.wipe.row.nothing" = "清除你的数据。";
+"l20d.groups.leaveAll.section" = "你的群组";
+"l20d.groups.leaveAll.button" = "退出我的所有群组";
+"l20d.groups.leaveAll.confirmTitle" = "退出你的所有群组？";
+"l20d.groups.leaveAll.confirmAction" = "全部退出";
+"l20d.groups.leaveAll.confirmMessage" = "你将退出%@。";
+"l20d.groups.leaveAll.confirmMessageGeneric" = "你将退出所有没有未结余额的群组。";

@@ -243,18 +243,15 @@ extension DestructiveScopeSheet.Config {
         cloudLabel: DestructiveScopeLogic.CloudLabel,
         hasOutstandingDebt: Bool = false,
         hasLegacyCloudKitFootprint: Bool = false,
-        canLeaveAllGroups: Bool = false,
         onConfirm: @escaping () -> Void,
         onSecondary: (() -> Void)? = nil,
-        onExport: (() -> Void)? = nil,
-        onLeaveGroups: (() -> Void)? = nil
+        onExport: (() -> Void)? = nil
     ) -> Self {
         let model = DestructiveScopeLogic.model(
             operation: operation,
             cloudLabel: cloudLabel,
             hasOutstandingDebt: hasOutstandingDebt,
-            hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint,
-            canLeaveAllGroups: canLeaveAllGroups)
+            hasLegacyCloudKitFootprint: hasLegacyCloudKitFootprint)
 
         let rows = model.rows.map { spec in
             Row(icon: Self.icon(for: spec.location),
@@ -279,17 +276,10 @@ extension DestructiveScopeSheet.Config {
                 guard let onExport else { return nil }
                 return SecondaryAction(
                     label: L10n.Settings.wipeExportBeforeButton,
-                    identifier: "wipe_export_before",
+                    identifier: Self.exportBeforeIdentifier(for: operation),
                     // En `.cloud` esta puede ser la única copia (§3.3.1).
                     caption: cloudLabel == .cloudAccount ? L10n.Settings.wipeExportBeforeCloudCaption : nil,
                     handler: onExport)
-            case .leaveAllGroups:
-                guard let onLeaveGroups else { return nil }
-                return SecondaryAction(
-                    label: L10n.Settings.wipeLeaveGroupsButton,
-                    identifier: "wipe_leave_groups",
-                    caption: nil,
-                    handler: onLeaveGroups)
             }
         }
 
@@ -313,6 +303,20 @@ extension DestructiveScopeSheet.Config {
         case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
             return "delete_account_view_groups"
         default: return "wipe_view_groups"
+        }
+    }
+
+    /// `wipe_export_before` en Vaciar (lo asertan los XCUITest de siempre); en los cierres sin copia y en eliminar la
+    /// cuenta (L20-8), el suyo: la misma etiqueta abre cosas distintas (el asistente / el archivo de todo).
+    private static func exportBeforeIdentifier(for operation: DestructiveScopeLogic.Operation) -> String {
+        switch operation {
+        case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+            return "delete_account_export_before"
+        case .signOutPrivate, .signOutPrivateNoCopy, .signOutPrivateWithGroups, .signOutPrivateWithGroupsNoCopy,
+             .signOutCloud, .signOutGroupsOnly:
+            return "signout_export_before"
+        case .wipeDataFull, .wipeDataGroupsOnly:
+            return "wipe_export_before"
         }
     }
 

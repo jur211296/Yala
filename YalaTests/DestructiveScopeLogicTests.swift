@@ -100,13 +100,18 @@ struct DestructiveScopeLogicTests {
 
     // MARK: - Acciones secundarias (steer-away)
 
+    /// L20-8 (2026-10-18): «Exportar antes» también en los cierres sin copia y en eliminar la cuenta de la nube, los otros
+    /// dos sitios donde lo personal se pierde para siempre. L19-12: «También salir de mis grupos» ya no es de esta hoja.
     @Test func secondaryActions_perOperationAndDebt() {
         func expected(_ op: Op, debt: Bool) -> [Kind] {
             switch op {
             case .wipeDataFull:       return debt ? [.viewGroups, .exportBefore] : [.exportBefore]
             case .wipeDataGroupsOnly: return debt ? [.viewGroups] : []
-            case .deleteAccountCloud, .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
+            case .deleteAccountCloud: return debt ? [.viewGroups, .exportBefore] : [.exportBefore]
+            case .deleteAccountGroupsOnly, .deleteAccountGroupsOnlyNoPrivate:
                                       return debt ? [.viewGroups] : []
+            case .signOutPrivateNoCopy, .signOutPrivateWithGroupsNoCopy:
+                                      return [.exportBefore]
             default:                  return []
             }
         }
@@ -118,15 +123,13 @@ struct DestructiveScopeLogicTests {
         }
     }
 
-    @Test func leaveAllGroups_firstWhenCanLeaveAndNoDebt_inWipeDataFull() {
-        let m = DestructiveScopeLogic.model(operation: .wipeDataFull, cloudLabel: .icloud,
-                                            hasOutstandingDebt: false, canLeaveAllGroups: true)
-        #expect(m.secondaryActions == [.leaveAllGroups, .exportBefore])
-        let debt = DestructiveScopeLogic.model(operation: .wipeDataFull, cloudLabel: .icloud,
-                                               hasOutstandingDebt: true, canLeaveAllGroups: true)
-        #expect(debt.secondaryActions == [.viewGroups, .exportBefore])
-        let go = DestructiveScopeLogic.model(operation: .wipeDataGroupsOnly, cloudLabel: .icloud, canLeaveAllGroups: true)
-        #expect(!go.secondaryActions.contains(.leaveAllGroups))
+    /// Los cierres CON copia en iCloud y los de la nube no ofrecen exportar: no se pierde nada.
+    @Test func exportBefore_onlyWhereSomethingIsLostForGood() {
+        let offering = Op.allCases.filter {
+            DestructiveScopeLogic.model(operation: $0, cloudLabel: .icloud).secondaryActions.contains(.exportBefore)
+        }
+        #expect(Set(offering) == [.wipeDataFull, .deleteAccountCloud, .signOutPrivateNoCopy,
+                                  .signOutPrivateWithGroupsNoCopy])
     }
 
     @Test func wipeDataFull_cloud_addsMultiDeviceResidual() {
@@ -503,19 +506,20 @@ struct WipeDescriptionParityTests {
 
     /// Fija la discrepancia de antes: el párrafo leía SOLO `hasPrivateSession`. Esta regla vieja, escrita
     /// aquí tal cual, discrepa de la operación en exactamente una celda — sin sesión privada y con espejo —
-    /// y en esa celda promete menos de lo que la hoja borra.
+    /// y en esa celda promete menos de lo que la hoja borra. Desde L20-5 (2026-10-19) el párrafo es una frase
+    /// (`UserDataResetView.sentence`), y la regla sigue: sale de la operación, no de la marca.
     @Test func oldOneAxisRule_promisedLessInTheGroupsOnlyMirroredCell() {
         var divergent: [(Bool, Bool)] = []
         for cell in Self.cells {
             let op = DestructiveScopeLogic.wipeOperation(
                 hasPrivateSession: cell.hasPrivateSession, personalMountAttachesMirror: cell.mirror)
             let oldText = cell.hasPrivateSession
-                ? L10n.Settings.resetDataDescription
-                : L10n.Settings.resetDataDescriptionGroupsOnly
-            if oldText != UserDataResetView.resetDescriptionText(for: op) {
+                ? L10n.UXL20D.wipeSentenceICloud
+                : L10n.UXL20D.wipeSentenceGroupsOnly
+            if oldText != UserDataResetView.sentence(for: op, cloudLabel: .icloud) {
                 divergent.append((cell.hasPrivateSession, cell.mirror))
                 #expect(op == .wipeDataFull, "la celda que diverge es la de borrado completo")
-                #expect(oldText == L10n.Settings.resetDataDescriptionGroupsOnly,
+                #expect(oldText == L10n.UXL20D.wipeSentenceGroupsOnly,
                         "la regla vieja prometía solo perfil y preferencias")
             }
         }
@@ -523,30 +527,33 @@ struct WipeDescriptionParityTests {
         #expect(divergent.first.map { $0 == (false, true) } == true)
     }
 
-    /// En las cuatro celdas, el párrafo nombra el alcance de la operación que ejecutará la hoja: completo
-    /// si y solo si la hoja es la completa. Control rojo: con el cuerpo viejo de la pantalla
-    /// (`PrivateSessionMark.hasPrivateSession() ? completo : solo perfil`) este test falla.
+    /// En las cuatro celdas, la frase nombra el alcance de la operación que ejecutará la hoja: completo
+    /// si y solo si la hoja es la completa, y donde vive lo personal (iCloud o la cuenta de Yala), como la fila ☁️.
     @Test func paragraphAndSheet_cannotDisagree_inAnyCell() {
         for cell in Self.cells {
             let op = DestructiveScopeLogic.wipeOperation(
                 hasPrivateSession: cell.hasPrivateSession, personalMountAttachesMirror: cell.mirror)
-            let text = UserDataResetView.resetDescriptionText(for: op)
             let label = "privada=\(cell.hasPrivateSession) espejo=\(cell.mirror) → \(op)"
+            let icloud = UserDataResetView.sentence(for: op, cloudLabel: .icloud)
+            let cloud = UserDataResetView.sentence(for: op, cloudLabel: .cloudAccount)
             switch op {
             case .wipeDataFull:
-                #expect(text == L10n.Settings.resetDataDescription, "\(label)")
+                #expect(icloud == L10n.UXL20D.wipeSentenceICloud, "\(label)")
+                #expect(cloud == L10n.UXL20D.wipeSentenceCloud, "\(label)")
             case .wipeDataGroupsOnly:
-                #expect(text == L10n.Settings.resetDataDescriptionGroupsOnly, "\(label)")
+                #expect(icloud == L10n.UXL20D.wipeSentenceGroupsOnly, "\(label)")
+                #expect(cloud == L10n.UXL20D.wipeSentenceGroupsOnly, "\(label)")
             default:
                 Issue.record("wipeOperation devolvió una operación que no es de Vaciar: \(label)")
             }
         }
     }
 
-    /// Las dos claves son textos distintos en el idioma de la prueba; si fueran iguales, el test de arriba
+    /// Las tres frases son textos distintos en el idioma de la prueba; si fueran iguales, el test de arriba
     /// pasaría sin distinguir nada.
-    @Test func theTwoParagraphs_areDistinct() {
-        #expect(L10n.Settings.resetDataDescription != L10n.Settings.resetDataDescriptionGroupsOnly)
+    @Test func theThreeSentences_areDistinct() {
+        let all = [L10n.UXL20D.wipeSentenceICloud, L10n.UXL20D.wipeSentenceCloud, L10n.UXL20D.wipeSentenceGroupsOnly]
+        #expect(Set(all).count == 3)
     }
 
     /// Solo las dos operaciones de Vaciar tienen párrafo; cada una el suyo.

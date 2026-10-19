@@ -478,7 +478,6 @@
 "settings.theme.liquidGlass" = "リキッドグラス";
 "settings.defaultCurrency" = "既定の通貨";
 "settings.currentIcon" = "現在のアイコン";
-"settings.resetAllData" = "すべてのデータをリセット";
 "settings.deleteAllData" = "自分のデータを消去";
 
 // MARK: - Common
@@ -621,20 +620,9 @@
 "settings.currencyAndExchange" = "通貨と為替";
 "common.updatingRecords" = "記録を更新中...";
 "common.recalculatingConversions" = "過去の換算を再計算中";
-"export.customizeFile" = "ファイルをカスタマイズ";
-"export.csvGeneratedSuccess" = "ファイルが正常に生成されました。";
-"export.confirmExport" = "エクスポートを確認";
-"export.selectColumns" = "列を選択";
-"export.availableColumns" = "利用可能な列";
-"export.columnsDescription" = "エクスポートに含める列を選択してください。少なくとも1つ必要です。";
-"export.summaryAndExport" = "サマリーとエクスポート";
-"export.summaryDescription" = "ファイルを生成する前に、選択中のフィルターと列を確認してください。";
-"export.filtersSummary" = "フィルターのサマリー";
-"export.columnsToExport" = "エクスポートする列";
 "export.exportToCSV" = "CSVにエクスポート";
 "export.exportBtn" = "エクスポート";
 "export.exportError" = "エクスポート中に問題が発生しました";
-"export.exportCompleted" = "エクスポートが完了しました";
 "export.backToSettings" = "設定に戻る";
 "export.exportData" = "データをエクスポート";
 "export.greaterThan" = "より大きい";
@@ -659,14 +647,14 @@
 "export.column.subcategory" = "サブカテゴリー";
 "export.column.tags" = "タグ";
 "export.column.note" = "メモ";
-"export.column.date.description" = "yyyy-MM-dd形式の日付。";
-"export.column.amount.description" = "記録の金額(小数点2桁)。";
-"export.column.currency.description" = "通貨コード(PEN、USD、EUR)。";
-"export.column.account.description" = "関連付けられた口座名。";
-"export.column.category.description" = "記録のメインカテゴリー。";
-"export.column.subcategory.description" = "具体的なサブカテゴリー。";
-"export.column.tags.description" = "関連付けられたタグ(';'で区切る)。";
-"export.column.note.description" = "記録の自由記述メモ。";
+"export.column.date.description" = "記録の日付（年-月-日）。";
+"export.column.amount.description" = "金額（小数点以下2桁）。";
+"export.column.currency.description" = "通貨（JPY や USD など）。";
+"export.column.account.description" = "記録した口座。";
+"export.column.category.description" = "カテゴリー。";
+"export.column.subcategory.description" = "サブカテゴリー。";
+"export.column.tags.description" = "タグ（セミコロン区切り）。";
+"export.column.note.description" = "メモに書いた内容。";
 "common.next" = "次へ";
 "settings.versionInfo" = "バージョン%1$@ (ビルド%2$@)";
 "tab.panel" = "ホーム";
@@ -1177,7 +1165,6 @@
 "settings.firstWeekdayDescription" = "「今週」などのフィルターで週の開始日を設定します。";
 "settings.sunday" = "日曜日";
 "settings.monday" = "月曜日";
-"settings.resetDataDescription" = "この操作はYalaのプロフィールに関連付けられた口座、記録、予算、為替レート、カテゴリーなどのデータを完全に削除します。削除後、アプリは初期設定に近い状態に戻ります。";
 "settings.deleteDataConfirmation" = "データを消去しますか？";
 "settings.delete" = "削除";
 "settings.cancel" = "キャンセル";
@@ -3090,10 +3077,9 @@
 "groups.expense.newExpense" = "新規支出";
 
 "export.column.splitTotal" = "元の合計";
-"export.column.splitPortion" = "負担分";
-"export.column.splitTotal.description" = "分ける前の合計金額";
-"export.column.splitPortion.description" = "負担分の説明";
-
+"export.column.splitPortion" = "あなたの分";
+"export.column.splitTotal.description" = "割り勘にした場合の合計金額。";
+"export.column.splitPortion.description" = "割り勘にした場合のあなたの負担分。";
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "資産管理を次のレベルへ";
@@ -4356,7 +4342,6 @@
 "split.typeSharesShort" = "シェア";
 
 /* Reset-data screen description — groups-only mode */
-"settings.resetDataDescriptionGroupsOnly" = "この操作で、Yalaのプロフィールと設定が初期状態に戻ります。グループは削除されません。「グループ」タブで管理してください。";
 
 /* Delete-data confirmation warning — groups-only mode */
 
@@ -4846,7 +4831,7 @@
 "settings.deleteAccountRetry" = "再試行";
 /* G5-D2: export ampliado con grupos (toggle + headers/tipos del CSV de grupos) */
 "export.includeGroups" = "グループを含める";
-"export.includeGroups.description" = "各グループの支出、支払い、あなたの残高を別ファイルで追加します。";
+"export.includeGroups.description" = "各グループの支出・支払い・貸し借りをまとめた別ファイルを追加します。";
 "export.groups.header.group" = "グループ";
 "export.groups.header.type" = "種類";
 "export.groups.header.date" = "日付";
@@ -4964,8 +4949,7 @@
 "settings.wipeDataSecondConfirmTitle" = "本当によろしいですか？取り消せません。";
 
 /* Fase 1: subtitulo de la fila Exportar datos */
-"settings.exportDataSubtitle" = "コピーをCSVで保存します";
-
+"settings.exportDataSubtitle" = "Excel や Google スプレッドシート用";
 /* Fase 1: subtitulo de la fila Vaciar mis datos */
 "settings.wipeDataSubtitle" = "データを消去します。アカウントとグループは残ります。";
 
@@ -4985,8 +4969,7 @@
 "export.groupsOnlyTitle" = "グループをエクスポート";
 
 /* D6: description under the group-only export header */
-"export.groupsOnlyDescription" = "各グループの支出、支払い、あなたの残高をまとめたCSVファイルを保存します。";
-
+"export.groupsOnlyDescription" = "各グループの支出・支払い・貸し借りをまとめた表を保存します。Excel、Numbers、Google スプレッドシートで開けます。";
 /* D6: alert title when there are no active groups to export */
 "export.groupsOnlyEmptyTitle" = "エクスポートできるグループがありません";
 
@@ -5123,8 +5106,6 @@
 "settings.wipeScopeGroupsDebt" = "グループは残りますが、未精算の残高があります。グループタブから精算できます。";
 
 /* D10 batch: secondary action label in the wipe scope sheet */
-"settings.wipeLeaveGroupsButton" = "グループからも退出";
-
 /* D10 batch: dedicated flow title */
 "settings.batchLeaveTitle" = "グループを退出";
 
@@ -7469,8 +7450,7 @@
 "accountCardGrouping.byLine" = "明細ごと";
 "accountCardGrouping.label" = "複数通貨のカード";
 "export.column.card" = "カード";
-"export.column.card.description" = "口座が複数通貨のカードに含まれる場合、そのカード名。";
-
+"export.column.card.description" = "口座が複数通貨のカードに含まれる場合、そのカード。";
 /* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
 "shortcut.spending.title" = "支出を確認";
 "shortcut.spending.description" = "Yalaを開かずに、期間内の支出額を教えます";
@@ -7550,3 +7530,50 @@
 "stats.l11d.title.atAGlance.year" = "この1年をひと目で";
 "stats.l11d.title.atAGlance.all" = "これまでの記録をひと目で";
 "stats.l11d.title.atAGlance.period" = "この期間をひと目で";
+
+/* Lote decidido 2.2 · 03 — Exportar y Vaciar (L20-1…L20-8, L19-12, L19-16) */
+"l20d.export.title" = "記録を持ち出す";
+"l20d.export.subtitle" = "Excel や Google スプレッドシートで開けるファイルです。";
+"l20d.export.periodAll" = "すべて";
+"l20d.export.periodDates" = "期間を指定…";
+"l20d.export.formatExcel" = "Excel";
+"l20d.export.formatRecommended" = "おすすめ";
+"l20d.export.formatCSV" = "テキスト（CSV）";
+"l20d.export.formatCSVHint" = "ほかのアプリ用";
+"l20d.export.moreOptions" = "その他のオプション";
+"l20d.export.moreOptionsHint" = "口座・カテゴリー・タグ・列";
+"l20d.export.expanded" = "展開";
+"l20d.export.collapsed" = "折りたたみ";
+"l20d.export.modeLabel" = "選んだ項目の扱い";
+"l20d.export.active.accounts" = "口座: %d";
+"l20d.export.active.categories" = "サブカテゴリー: %d";
+"l20d.export.active.tags" = "タグ: %d";
+"l20d.export.active.needs" = "必要度: %d";
+"l20d.export.active.currencies" = "通貨: %@";
+"l20d.export.active.amount" = "金額で絞り込み中";
+"l20d.export.active.note" = "メモ: 「%@」";
+"l20d.export.active.hiding" = "選んだ項目を非表示";
+"l20d.export.rangeToToday" = "%@から今日まで";
+"l20d.export.range" = "%1$@から%2$@まで";
+"l20d.export.none" = "この条件に合う記録はありません";
+"l20d.export.doneIn" = "完了しました。ファイルは%@にあります";
+"l20d.export.doneShared" = "完了しました。ファイルを共有しました";
+"l20d.export.app.files" = "ファイル";
+"l20d.export.app.messages" = "メッセージ";
+"l20d.export.app.notes" = "メモ";
+"l20d.export.continueWipe" = "消去を続ける";
+"l20d.export.fileStem" = "記録";
+"l20d.settings.exportRecords" = "記録をエクスポート";
+"l20d.wipe.sentence.icloud" = "このデバイスと iCloud から、口座・記録・予算を消去します。元に戻せません。";
+"l20d.wipe.sentence.cloud" = "このデバイスと Yala アカウントから、口座・記録・予算を消去します。元に戻せません。";
+"l20d.wipe.sentence.groupsOnly" = "このデバイスのプロフィールと設定を消去します。グループはそのままです。元に戻せません。";
+"l20d.wipe.exportCopy" = "先にコピーをエクスポート";
+"l20d.wipe.row.account" = "データを消去します。アカウントは残ります。";
+"l20d.wipe.row.groups" = "データを消去します。グループは残ります。";
+"l20d.wipe.row.nothing" = "データを消去します。";
+"l20d.groups.leaveAll.section" = "あなたのグループ";
+"l20d.groups.leaveAll.button" = "すべてのグループから退出";
+"l20d.groups.leaveAll.confirmTitle" = "すべてのグループから退出しますか？";
+"l20d.groups.leaveAll.confirmAction" = "すべて退出";
+"l20d.groups.leaveAll.confirmMessage" = "%@から退出します。";
+"l20d.groups.leaveAll.confirmMessageGeneric" = "未精算の残高がないすべてのグループから退出します。";

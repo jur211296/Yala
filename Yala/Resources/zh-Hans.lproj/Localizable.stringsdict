@@ -1050,5 +1050,33 @@
 			<string>应用到 %d 条记录</string>
 		</dict>
 	</dict>
+	<key>l20d.export.willExport</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>将导出 %d 条记录</string>
+		</dict>
+	</dict>
+	<key>l20d.export.exportCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>导出 %d 条记录</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

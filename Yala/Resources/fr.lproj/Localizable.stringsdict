@@ -1196,5 +1196,37 @@
 			<string>Appliquer à %d enregistrements</string>
 		</dict>
 	</dict>
+	<key>l20d.export.willExport</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d enregistrement sera exporté</string>
+			<key>other</key>
+			<string>%d enregistrements seront exportés</string>
+		</dict>
+	</dict>
+	<key>l20d.export.exportCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Exporter %d enregistrement</string>
+			<key>other</key>
+			<string>Exporter %d enregistrements</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
