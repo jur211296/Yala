@@ -150,6 +150,14 @@ paths:
   igualmente» (L20-7) solo caben dos formas: «Esperar» como `.cancel` (y queda último) o los tres sin rol y un «Cancelar»
   de más. Antes de prometer un orden en una alerta, mídelo; si el orden es la decisión, puede que no sea una alerta.
 
+- **En un `.alert`, el botón con `role: .cancel` va SIEMPRE al final, y sin ninguno SwiftUI añade un «Cancelar» propio
+  (medido el 2026-10-19, iPhone 17 Pro, iOS 27.0, aviso «Datos no disponibles»).** Para poner «Seguir esperando» primero
+  se le quitó el rol: salió arriba, pero el aviso pasó a tener tres botones —«Seguir esperando», «Empezar de cero» y un
+  «Cancelar» que repite al primero—, y los `accessibilityIdentifier` de esos botones no llegaron al árbol (`""`).
+  `.keyboardShortcut(.defaultAction)` en el de cancelar lo rellena pero no lo sube, y con el tinte de la app su texto
+  sale ilegible (la regla del botón destacado, arriba). ⇒ **el orden de una alerta no se elige**: si la salida segura
+  tiene que ir primero, hace falta otra presentación (una hoja con fases, molde `AppleIDCloseNoticeView`).
+
 - **El `actions` builder de un `.alert` NO admite un label dependiente del `@State`, y lo que rompe no es la alerta: es la app.** Medido el 2026-09-06. Al dar título y botón dinámicos a la alerta de invitación de `ContentView` —para que el mismo anchor sirviera a dos avisos distintos— **dejó de completarse el guardado de una transacción**: `TransactionSuccessView` no llegaba a montarse y `dismissTransactionSuccess()` agotaba sus 10 s. El síntoma cae a pantallas que no tienen ninguna relación con la alerta, así que **el diagnóstico por lectura no llega**: hay que bisecar. Aislado con control en las DOS direcciones — `Button(String(localized: "common.ok"))` pasa (×2) · `Button(activeInviteError?.cta ?? …)` falla (×4) — y con el contraste que delimita el alcance: **el TÍTULO dinámico pasa sin problema**, así que la frontera está en el ViewBuilder de `actions`, no en la alerta entera. ⇒ **el texto de los botones de un `.alert` va literal**; si dos avisos comparten anchor, lo que puede variar es el título y el mensaje. Y el corolario de método, que es el caro: un cambio de presentación aparentemente inerte —la alerta estaba OCULTA— puede romper un flujo cualquiera de la app, así que **no basta con correr los XCUITest del área tocada**. Este rojo salió en `QuickActionsFavoritesUITests`, un área que ningún cruce de `codeGlobs` habría señalado como afectada por un cambio en invitaciones de grupo.
 
 ## iOS 26 Liquid Glass (OBLIGATORIO)
