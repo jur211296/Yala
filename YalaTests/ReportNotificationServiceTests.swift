@@ -258,7 +258,11 @@ struct ReportNotificationServiceTests {
         let data = ReportData(balance: 0, totalExpense: 0, totalIncome: 0, topCategory: nil, hasExpenseActivity: false, hasIncomeActivity: false)
 
         let dailyBody = ReportNotificationService.formatReportBody(config, reportType: .dailyReport, data: data)
-        let weeklyBody = ReportNotificationService.formatReportBody(config, reportType: .weeklyReport, data: data)
+        // El semanal del DOMINGO: el del lunes habla de la semana cerrada y tiene su texto (UX 2.2 · L11-12,
+        // `UXAudit22Lote11DecididasTests`).
+        let weeklyBody = ReportNotificationService.formatReportBody(
+            ReportConfig(dataType: .expenses, dayPreference: .sunday), reportType: .weeklyReport, data: data
+        )
         let monthlyBody = ReportNotificationService.formatReportBody(config, reportType: .monthlyReport, data: data)
 
         // Each report type should have its own empty state message

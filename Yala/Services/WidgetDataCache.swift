@@ -258,6 +258,7 @@ enum WidgetDataCache {
 
         let built = buildSnapshot(context: context)
         saveSnapshot(built.widget)
+        lastBuiltAt = Date.now
         // La foto de Siri sale de los MISMOS números, en su propia clave (`SiriFinanceSnapshot`): así Siri y los widgets
         // dicen lo mismo y viven y mueren juntos (ver `clearCache`).
         SiriFinanceSnapshotStore.write(built.siri, to: sharedDefaults)
@@ -265,6 +266,25 @@ enum WidgetDataCache {
 
         // Trigger widget refresh
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// Cuándo se construyó la última foto en este proceso.
+    private(set) static var lastBuiltAt: Date?
+
+    /// Recalcula la foto al volver a primer plano si se construyó otro día.
+    ///
+    /// El saldo de hoy deja fuera los movimientos con fecha futura (`LiveBalanceCalculator.TodayCutoff`). La extensión no
+    /// recalcula nada: solo relee esta foto. Sin esto, cuando un movimiento de mañana llegaba a su fecha el widget seguía
+    /// sin él hasta la siguiente edición o el siguiente arranque en frío.
+    static func refreshIfBuiltOnAnotherDay(context: ModelContext, now: Date = .now) {
+        guard needsDayRefresh(lastBuiltAt: lastBuiltAt, now: now, calendar: .current) else { return }
+        updateCache(context: context)
+    }
+
+    /// `true` si hay una foto de este proceso y es de otro día. Sin foto no decide: el arranque en frío ya la construye.
+    static func needsDayRefresh(lastBuiltAt: Date?, now: Date, calendar: Calendar) -> Bool {
+        guard let lastBuiltAt else { return false }
+        return !calendar.isDate(lastBuiltAt, inSameDayAs: now)
     }
 
     /// El predicado de la puerta, ESPEJO EXACTO de `NotificationService.isPersonalWipeArmed`. NO incluye

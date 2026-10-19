@@ -38,6 +38,15 @@ final class UITestHooks {
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 
+    /// `-uitest-notifications-denied`: «Probar» del editor de avisos lee el permiso como NEGADO (UX 2.2 · L11-12). En el
+    /// simulador el permiso nunca está negado, y el aviso del sistema no es determinista: sin esto el camino que explica
+    /// y ofrece Ajustes no se puede recorrer en XCUITest.
+    nonisolated static var notificationsDenied: Bool { hasArg("-uitest-notifications-denied") }
+
+    /// `-uitest-seed-future-movement`: añade un gasto fechado MAÑANA en la cuenta principal (`DevSeedFutureMovement`),
+    /// para ver el saldo de hoy con un movimiento futuro. Aditivo al perfil de `-uitest-seed`.
+    nonisolated static var seedFutureMovement: Bool { hasArg("-uitest-seed-future-movement") }
+
     /// `-uitest-last-seen-version <valor>`: qué `lastSeenAppVersion` deja el arranque uitest. Sin el flag, la versión
     /// actual (las Novedades no tapan el primer tap de ningún XCUITest). Con una versión (`2.0.4`), esa: el
     /// dispositivo «viene de actualizar». `none` borra la key; `keep` no la toca, para medir lo que dejó el
@@ -488,6 +497,10 @@ final class UITestHooks {
     /// abrir entradas IA Pro (voz/imagen) sin el alert de consentimiento. No graba ni
     /// transcribe — solo destraba la navegación a la vista.
     nonisolated static var aiConsent: Bool { hasArg("-uitest-ai-consent") }
+
+    /// `-uitest-insights-ai-consent`: el consentimiento del «Resumen con IA» de Estadísticas ya dado, para recorrer en
+    /// XCUITest lo que Pro ve SIN tocar nada (UX 2.2 · L11-7). Es otro consentimiento que el de `-uitest-ai-consent`.
+    nonisolated static var insightsAIConsent: Bool { hasArg("-uitest-insights-ai-consent") }
 
     /// `-uitest-ai-chat-ready`: el chat de Yala IA ya tiene su consentimiento y su onboarding vistos, así que
     /// tocar la entrada abre el chat directo (`YalaAIOnboardingLogic.nextScreen` → `.chat`). Lo usa el XCUITest de

@@ -90,6 +90,10 @@ extension XCUIApplication {
         // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
         // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
         // que este harness quiera depender de medir.
+        // UX 2.2 · L11-7 y L11-12: el consentimiento del «Resumen con IA» ya dado, y el permiso de notificaciones
+        // negado para «Probar». Nombrados por lo mismo que sus vecinos.
+        insightsAIConsent: Bool = false,
+        notificationsDenied: Bool = false,
         appleLanguages: String = "(es)",
         appleLocale: String = XCUIApplication.uiTestLocaleIdentifier,
         extraArguments: [String] = []
@@ -142,6 +146,8 @@ extension XCUIApplication {
         if trialOfferArmed { args.append("-uitest-trial-offer-armed") }
         if forceUpdate { args.append("-uitest-force-update") }
         if aiConsent { args.append("-uitest-ai-consent") }
+        if insightsAIConsent { args.append("-uitest-insights-ai-consent") }
+        if notificationsDenied { args.append("-uitest-notifications-denied") }
         if aiChatReady { args.append("-uitest-ai-chat-ready") }
         if chatConversation { args.append("-uitest-chat-conversation") }
         if groupInvite { args.append("-uitest-group-invite") }

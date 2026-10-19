@@ -20,12 +20,17 @@ struct AccountBalanceCalculator {
     /// - Parameters:
     ///   - transactions: Lista de TransactionItem asociados a la cuenta.
     /// - Returns: Saldo actual como Decimal (misma moneda de la cuenta).
+    ///
+    /// Solo cuentan los movimientos fechados hasta hoy (`LiveBalanceCalculator.TodayCutoff`): un movimiento con fecha
+    /// futura entra en el saldo cuando llega su fecha, igual que en el saldo total del Panel.
     static func currentBalance(
-        transactions: [TransactionItem]
+        transactions: [TransactionItem],
+        asOf now: Date = .now
     ) -> Decimal {
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
         // Reducimos desde 0 y sumamos cada monto con su signo correcto
         return transactions.reduce(Decimal(0)) { partial, item in
-            partial + signedAmount(for: item)
+            cutoff.counts(item.date) ? partial + signedAmount(for: item) : partial
         }
     }
 
@@ -33,7 +38,8 @@ struct AccountBalanceCalculator {
     /// y se encarga de filtrar internamente solo las de esa cuenta.
     static func currentBalance(
         for account: Account,
-        allTransactions: [TransactionItem]
+        allTransactions: [TransactionItem],
+        asOf now: Date = .now
     ) -> Decimal {
         // Filtramos únicamente las transacciones de la cuenta dada.
         // Usamos `persistentModelID` en lugar de comparar modelos directamente para
@@ -42,7 +48,7 @@ struct AccountBalanceCalculator {
         let accountTransactions = allTransactions.filter { $0.account?.persistentModelID == accountID }
 
         // Partimos de 0 - el saldo inicial es ahora una transacción.
-        return currentBalance(transactions: accountTransactions)
+        return currentBalance(transactions: accountTransactions, asOf: now)
     }
 
     // MARK: - Batch Calculation (Optimized)
@@ -51,8 +57,10 @@ struct AccountBalanceCalculator {
     /// - Returns: Diccionario [AccountID: SaldoDecimal]
     static func batchCalculateBalances(
         accounts: [Account],
-        transactions: [TransactionItem]
+        transactions: [TransactionItem],
+        asOf now: Date = .now
     ) -> [PersistentIdentifier: Decimal] {
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now)
         // 1. Inicializar saldos en 0 (el saldo inicial es ahora una transacción)
         var balances: [PersistentIdentifier: Decimal] = [:]
         for account in accounts {
@@ -60,7 +68,7 @@ struct AccountBalanceCalculator {
         }
 
         // 2. Iterar transacciones una sola vez y acumular en la cuenta correspondiente
-        for transaction in transactions {
+        for transaction in transactions where cutoff.counts(transaction.date) {
             if let account = transaction.account {
                 let amount = signedAmount(for: transaction)
                 let accountID = account.persistentModelID

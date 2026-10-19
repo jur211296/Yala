@@ -71,8 +71,9 @@ import SwiftData
         }
 
         if let earliestDate = accountTransactions.map({ $0.date }).min() {
-            // First day of the month of the earliest transaction
-            let components = calendar.dateComponents([.year, .month], from: earliestDate)
+            // First day of the month of the earliest transaction — nunca un mes futuro: el saldo de hoy deja fuera lo
+            // fechado después de hoy (`LiveBalanceCalculator.TodayCutoff`), y un saldo de partida futuro no contaría.
+            let components = calendar.dateComponents([.year, .month], from: min(earliestDate, Date.now))
             return calendar.date(from: components) ?? Date.now
         } else {
             // No transactions - first day of current month

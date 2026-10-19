@@ -205,6 +205,9 @@ struct StatisticsDeepLinkTests {
             == .init(tab: .records, period: .today))
         #expect(StatisticsDeepLink.reportRequest(type: .weeklyReport, dayPreference: .sunday)
             == .init(tab: .insights, period: .last7Days))
+        // El del lunes cuenta la semana que acaba de cerrar (L11-12) y abre esos mismos días.
+        #expect(StatisticsDeepLink.reportRequest(type: .weeklyReport, dayPreference: .monday)
+            == .init(tab: .insights, period: .lastWeek))
         #expect(StatisticsDeepLink.reportRequest(type: .monthlyReport, dayPreference: .firstDay)
             == .init(tab: .insights, period: .lastMonth))
         #expect(StatisticsDeepLink.reportRequest(type: .monthlyReport, dayPreference: .lastDay)
@@ -212,9 +215,12 @@ struct StatisticsDeepLinkTests {
     }
 
     @Test func reportLink_roundTripsThroughTheNotificationParser() {
-        let link = StatisticsDeepLink.reportDeepLink(type: .weeklyReport, dayPreference: .monday)
+        let link = StatisticsDeepLink.reportDeepLink(type: .weeklyReport, dayPreference: .sunday)
         #expect(link == "statistics/insights/last7Days")
         #expect(StatisticsDeepLink.request(fromDeepLink: link) == .init(tab: .insights, period: .last7Days))
+        let monday = StatisticsDeepLink.reportDeepLink(type: .weeklyReport, dayPreference: .monday)
+        #expect(monday == "statistics/insights/lastWeek")
+        #expect(StatisticsDeepLink.request(fromDeepLink: monday) == .init(tab: .insights, period: .lastWeek))
         #expect(NotificationService.parseDestination(link) == .statistics)
     }
 

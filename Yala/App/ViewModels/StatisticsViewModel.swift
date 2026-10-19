@@ -888,6 +888,7 @@ final class StatisticsViewModel: Filterable {
         calendar: Calendar,
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment,
+        asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> [Date: Double] {
         var buckets: [Date: Double] = Dictionary(
@@ -895,6 +896,13 @@ final class StatisticsViewModel: Filterable {
 
         switch metric {
         case .balance:
+            // El saldo llega hasta HOY, como la cifra y la curva agregada (`LiveBalanceCalculator.TodayCutoff`): un
+            // movimiento con fecha futura no entra, y el día de mañana no tiene punto. Antes el bucle de días
+            // incluía el de mañana y los movimientos de mañana salían como un punto por encima del saldo.
+            let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: calendar)
+            let bucketDates = bucketDates.filter { cutoff.counts($0) }
+            buckets = buckets.filter { cutoff.counts($0.key) }
+            let accountTransactions = accountTransactions.filter { cutoff.counts($0.date) }
             // Initial balance is now a transaction, start from 0. Saldo NATIVO acumulado, valorado al cierre de
             // cada bucket con el tipo de cambio de ese día y hoy con la regla del saldo vivo (`BalanceValuation`):
             // la regla de la curva agregada (`TrendDataProcessor.fillBalanceBuckets`), así que la vista por cuenta

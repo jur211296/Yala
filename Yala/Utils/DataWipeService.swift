@@ -1247,6 +1247,8 @@ final class DataWipeService {
         defaults.removeObject(forKey: "imageInputEnabled")      // Default: false
         defaults.removeObject(forKey: "aiDataConsentAccepted") // Default: false
         defaults.removeObject(forKey: "aiInsightsConsentAccepted") // Default: false
+        // El último «Resumen con IA» guardado (UX 2.2 · L11-7): describe los datos que se borran.
+        defaults.removeObject(forKey: "insightsAI.savedResults")
         defaults.removeObject(forKey: "aiInsightsEnabled")         // Default: false
         defaults.removeObject(forKey: "aiInsightsMigratedV1")      // Sentinel de migración one-shot
         defaults.removeObject(forKey: "aiTogglesRemovedV2")        // Sentinel remove-ai-toggles refactor

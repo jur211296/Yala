@@ -366,6 +366,8 @@ final class AppBootstrapper {
             lifecycleObserversInstalled = true
             // 12.5. Observe exchange rate updates to invalidate the latest-rates cache
             observeExchangeRateUpdates()
+            // 12.6. Al cambiar de día con la app abierta, la foto de los widgets se rehace (UX 2.2 · saldo de hoy)
+            observeDayChangeForWidgets()
             // 13. Observe CloudKit remote changes to auto-refresh UI
             observeRemoteStoreChanges()
             // 14. Observe iCloud account changes — detect mismatch if container was created without CloudKit
@@ -1127,6 +1129,12 @@ final class AppBootstrapper {
         if let iso = UITestHooks.groupBridgeFXCurrency {
             DevSeedService().seedGroupBridgeFXLegs(currencyCode: iso, in: context)
         }
+        // Un gasto fechado mañana: el saldo de hoy lo deja fuera hasta su fecha (UX 2.2 · saldo de hoy).
+        #if DEBUG
+        if UITestHooks.seedFutureMovement {
+            DevSeedFutureMovement.create(in: context)
+        }
+        #endif
         // Liquidación aprobada cuyo importe cambia después: el aviso de importe cambiado en el Inbox.
         if UITestHooks.seedSettlementAmountChange {
             DevSeedSettlementAmountChange.create(in: context)
@@ -1245,6 +1253,9 @@ final class AppBootstrapper {
         if UITestHooks.aiConsent {
             appPreferences.aiDataConsentAccepted = true
         }
+        if UITestHooks.insightsAIConsent {
+            appPreferences.aiInsightsConsentAccepted = true
+        }
         if UITestHooks.aiChatReady {
             appPreferences.aiChatConsentAccepted = true
             appPreferences.hasShownYalaAIOnboarding = true
@@ -1356,6 +1367,24 @@ final class AppBootstrapper {
             queue: .main
         ) { _ in
             CurrencyConverter.shared.invalidateLatestRatesCache()
+        }
+    }
+
+    // MARK: - Cambio de día: el saldo de los widgets
+
+    /// El saldo de hoy deja fuera lo fechado en el futuro (`LiveBalanceCalculator.TodayCutoff`), y la extensión solo relee
+    /// la foto del App Group. Con la app abierta al pasar la medianoche no hay vuelta a primer plano que la rehaga
+    /// (`handleBecameActive`), así que lo que llegaba a su fecha no entraba en el widget hasta la siguiente edición.
+    private func observeDayChangeForWidgets() {
+        NotificationCenter.default.addObserver(
+            forName: .NSCalendarDayChanged,
+            object: nil,
+            queue: .main
+        ) { _ in
+            MainActor.assumeIsolated {
+                guard let context = AppBootstrapper.shared.remoteChangeModelContext else { return }
+                WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
+            }
         }
     }
 
@@ -2122,6 +2151,10 @@ final class AppBootstrapper {
 
         // Apply any pending remote CloudKit changes on foreground resume
         sessionState.applyPendingChangesIfNeeded()
+
+        // El saldo de los widgets corta en el día (movimientos con fecha futura fuera): si la foto es de otro día, se
+        // rehace para que lo que llegó a su fecha entre.
+        WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
 
         // Modo Nube runtime (I9, DARK): dispara un ciclo inmediato / re-evalúa stop-states. Inerte con
         // el flag apagado (y sin `shared` asignado, que solo lo pone el wiring del paso 14.7).

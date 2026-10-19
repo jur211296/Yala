@@ -24,6 +24,39 @@ import SwiftData
 
 struct LiveBalanceCalculator {
 
+    /// Qué movimientos cuentan en «el saldo de hoy»: los fechados antes del inicio de mañana.
+    ///
+    /// Decisión de Jürgen (2026-10-18, ticket `balance-figure-counts-future-dated-rows-the-curve-never-draws`,
+    /// opción A): un movimiento con fecha futura no entra en el saldo hasta que llega su fecha. Antes la cifra lo
+    /// sumaba y la curva, que acaba hoy, no lo dibujaba: el Panel decía 800 y la curva acababa en 1.000.
+    ///
+    /// El corte es por DÍA y no por instante, como `DraftFutureDateLogic`: el `DatePicker` guarda la medianoche, foto y
+    /// voz las 12:00, así que un gasto de hoy a cualquier hora cuenta hoy. Es el mismo borde en que acaba la curva
+    /// (`DetailPeriod.dateInterval` cierra los periodos en curso en el inicio de mañana). Todo lo que enseña un saldo
+    /// de HOY pasa por aquí: el saldo vivo, el P&L cambiario (viaja en el `Breakdown`), el saldo por cuenta
+    /// (`AccountBalanceCalculator`) y las curvas por cuenta.
+    nonisolated struct TodayCutoff: Equatable, Sendable {
+        /// Primer instante que ya no cuenta.
+        let startOfTomorrow: Date
+
+        /// El calendario por defecto es `.current`: el primer día de la semana del usuario (`userConfiguredCalendar`)
+        /// no cambia dónde empieza un día, y así el corte se puede usar desde lógica sin actor (`AccountDetailCalculator`).
+        init(asOf now: Date = .now, calendar: Calendar = .current) {
+            // El final del día de `now` según el calendario, y no «inicio de hoy + 1 día»: en una zona que cambia de
+            // hora a medianoche (Santiago, La Habana), sumar un día al inicio de hoy cae en la 01:00 de mañana.
+            if let today = calendar.dateInterval(of: .day, for: now) {
+                startOfTomorrow = today.end
+            } else {
+                let startOfToday = calendar.startOfDay(for: now)
+                startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday)
+                    ?? startOfToday.addingTimeInterval(86_400)
+            }
+        }
+
+        /// `true` si un movimiento con esta fecha ya forma parte del saldo.
+        func counts(_ date: Date) -> Bool { date < startOfTomorrow }
+    }
+
     /// Desglose por moneda nativa del saldo vivo, útil para debug y para
     /// futuras vistas educativas (FX P&L breakdown).
     struct Breakdown {
@@ -50,6 +83,10 @@ struct LiveBalanceCalculator {
         /// resultado seguirá pareciendo plausible y estará mal. Compartir el conjunto ya resuelto
         /// es lo que hace que no puedan divergir.
         let eligibleAccountIDs: Set<PersistentIdentifier>
+
+        /// El corte de fecha con que se sumó. El P&L cambiario recorre las mismas filas que este saldo, y un
+        /// movimiento futuro que entrara en uno y no en el otro descuadra el FIFO y hace desaparecer la divisa.
+        let cutoff: TodayCutoff
     }
 
     /// Output del helper `liveBalanceOverride`: valor total + breakdown por
@@ -83,6 +120,7 @@ struct LiveBalanceCalculator {
         preferredCurrencyCode: String,
         selectedAccountIDs: Set<PersistentIdentifier> = [],
         isExcludeMode: Bool = false,
+        asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Double {
         let breakdown = liveBalanceBreakdown(
@@ -91,6 +129,7 @@ struct LiveBalanceCalculator {
             preferredCurrencyCode: preferredCurrencyCode,
             selectedAccountIDs: selectedAccountIDs,
             isExcludeMode: isExcludeMode,
+            asOf: now,
             converter: converter
         )
         return (breakdown.convertedTotal as NSDecimalNumber).doubleValue
@@ -112,6 +151,7 @@ struct LiveBalanceCalculator {
         preferredCurrencyCode: String,
         selectedAccountIDs: Set<PersistentIdentifier> = [],
         isExcludeMode: Bool = false,
+        asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> Breakdown {
         // Las cuentas marcadas "excluir de estadísticas" nunca entran, se filtre
@@ -136,10 +176,12 @@ struct LiveBalanceCalculator {
             eligibleAccountIDs = filtered.isEmpty ? countableIDs : filtered
         }
 
+        let cutoff = TodayCutoff(asOf: now)
         var nativeBalances: [String: Decimal] = [:]
         for tx in transactions {
             guard let acc = tx.account,
-                eligibleAccountIDs.contains(acc.persistentModelID)
+                eligibleAccountIDs.contains(acc.persistentModelID),
+                cutoff.counts(tx.date)
             else { continue }
             addNative(tx, to: &nativeBalances)
         }
@@ -157,7 +199,8 @@ struct LiveBalanceCalculator {
             convertedTotal: convertedTotal,
             preferredCurrencyCode: preferredCurrencyCode,
             amountsAreApproximate: amountsAreApproximate,
-            eligibleAccountIDs: eligibleAccountIDs
+            eligibleAccountIDs: eligibleAccountIDs,
+            cutoff: cutoff
         )
     }
 
@@ -212,13 +255,15 @@ struct LiveBalanceCalculator {
         accounts: [Account],
         transactions: [TransactionItem],
         preferredCurrencyCode: String,
+        asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> LiveAnchorInfo? {
-        guard metric == .balance, interval.end >= Date.now else { return nil }
+        guard metric == .balance, interval.end >= now else { return nil }
         let breakdown = liveBalanceBreakdown(
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: preferredCurrencyCode,
+            asOf: now,
             converter: converter
         )
         return LiveAnchorInfo(

@@ -47,7 +47,7 @@ final class TrendsInsightCardUITests: XCTestCase {
         XCTAssertTrue(element(app, "trends_insight_bullet_weekday").exists, "Falta el bullet del día de la semana.")
         XCTAssertFalse(element(app, "trends_insight_bullet_comparison").exists,
                        "En «Todo el tiempo» no debería haber bullet de Comparativa.")
-        XCTAssertTrue(app.buttons["Refinar con IA"].exists, "Free debería ver el CTA de upsell.")
+        XCTAssertTrue(app.buttons["Generar con IA"].exists, "Free debería ver el CTA de upsell.")
     }
 
     /// V2-01: con un período comparable aparece el bullet de Comparativa, en su
@@ -78,6 +78,6 @@ final class TrendsInsightCardUITests: XCTestCase {
 
         XCTAssertTrue(element(app, "trends_insight_title").waitForExistence(timeout: 10), "La card de resumen no se montó.")
         XCTAssertTrue(element(app, "trends_insight_bullet_weekday").exists, "Pro pre-IA debería ver los bullets de reglas.")
-        XCTAssertTrue(element(app, "trends_insight_generate_ai").exists, "Falta el CTA «Generar análisis IA».")
+        XCTAssertTrue(element(app, "trends_insight_generate_ai").exists, "Falta el CTA «Generar con IA».")
     }
 }

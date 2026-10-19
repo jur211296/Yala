@@ -162,6 +162,9 @@ enum FXPnLLogic {
         for tx in transactions {
             guard let acc = tx.account,
                 breakdown.eligibleAccountIDs.contains(acc.persistentModelID),
+                // El mismo corte de fecha que el saldo: un movimiento futuro que sumara aquí y no allí
+                // descuadraría los lotes contra `nativeBalances` y la divisa saldría de la tarjeta.
+                breakdown.cutoff.counts(tx.date),
                 tx.currencyCode != preferred
             else { continue }
             // Un traspaso entre cuentas propias no compra ni vende divisa: mueve la misma de sitio.

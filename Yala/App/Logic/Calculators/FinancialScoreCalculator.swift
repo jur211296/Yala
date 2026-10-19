@@ -409,10 +409,15 @@ enum FinancialScoreCalculator {
             converter: converter,
             calendar: calendar
         )
+        // La cobertura cuenta TODO lo apuntado, también lo fechado en el futuro, y no el saldo de hoy de la pantalla
+        // (`LiveBalanceCalculator.TodayCutoff`). Lo pendiente descuenta lo ya pagado con un movimiento enlazado aunque
+        // su fecha sea futura: el alquiler apuntado hoy para el día 25 no está ni en el saldo de hoy ni en lo pendiente,
+        // y con el saldo de hoy la cobertura salía mejor de lo real en su importe (review del 2026-10-18).
         let liveBalance = LiveBalanceCalculator.liveBalance(
             accounts: accounts,
             transactions: transactions,
             preferredCurrencyCode: preferredCurrencyCode,
+            asOf: .distantFuture,
             converter: converter
         )
         let coverageScore = computeCoverageScore(

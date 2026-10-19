@@ -7,11 +7,13 @@
 
 import SwiftData
 import SwiftUI
+import UserNotifications
 
 struct NotificationEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.yalaTheme) private var theme
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
     @FocusState private var focusedField: Field?
 
     let notification: NotificationItem?
@@ -30,6 +32,9 @@ struct NotificationEditorSheet: View {
     @State private var selectedIconName: String = NotificationType.custom.defaultIcon
     @State private var selectedColorHex: String = NotificationType.custom.defaultColor
     @State private var showingIconPicker: Bool = false
+
+    /// «Probar» sin permiso de notificaciones: se explica y se ofrece Ajustes (UX 2.2 · L11-12). Antes no pasaba nada.
+    @State private var showingTestPermissionAlert: Bool = false
 
     // Weekday selection (for custom and daily report)
     @State private var selectedWeekdays: Set<Int> = [] // Empty = all days
@@ -129,6 +134,14 @@ struct NotificationEditorSheet: View {
             .onAppear {
                 loadNotificationData()
             }
+            .alert(L10n.Notifications.permissionRequired, isPresented: $showingTestPermissionAlert) {
+                Button(L10n.Notifications.openSettings) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+                Button(L10n.Action.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Notifications.permissionMessage)
+            }
         }
     }
 
@@ -146,6 +159,17 @@ struct NotificationEditorSheet: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.xl)
+            }
+
+            // Lo que llegará, con sus días (UX 2.2 · L11-12): «El lunes a las 9:00, con lo que gastaste del lunes 6 al
+            // domingo 12». La línea de arriba dice cada cuánto; ésta, qué días entran.
+            if let upcomingLine {
+                Text(upcomingLine)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("notification_upcoming_line")
             }
         }
         .padding(.top, DS.Spacing.lg)
@@ -227,6 +251,24 @@ struct NotificationEditorSheet: View {
         default:
             return notification?.displayText ?? ""
         }
+    }
+
+    /// El próximo informe semanal o mensual, con los días que contará. `nil` para los demás tipos.
+    private var upcomingLine: String? {
+        guard notificationType == .weeklyReport || notificationType == .monthlyReport else { return nil }
+        let calendar = Calendar.current
+        let parts = calendar.dateComponents([.hour, .minute], from: scheduledTime)
+        guard let upcoming = ReportUpcomingLogic.upcoming(
+            type: notificationType,
+            config: ReportConfig(dataType: selectedDataType, dayPreference: selectedDayPreference),
+            hour: parts.hour ?? 9,
+            minute: parts.minute ?? 0,
+            now: .now,
+            calendar: calendar
+        ) else { return nil }
+        return L10n.UXL11D.upcomingLine(
+            type: notificationType, dataType: selectedDataType, upcoming: upcoming, time: formattedScheduledTime
+        )
     }
 
     // MARK: - Static Formatters
@@ -532,12 +574,7 @@ struct NotificationEditorSheet: View {
 
     private var testNotificationButton: some View {
         Button {
-            Task {
-                let testText = getTestNotificationText()
-                // El título del informe de verdad («Resumen semanal»), no «Yala».
-                let title = isReportType && !name.isEmpty ? name : "Yala"
-                await NotificationService.shared.sendTestNotification(title: title, body: testText)
-            }
+            Task { await runTestNotification() }
         } label: {
             HStack {
                 Image(systemName: "bell.badge")
@@ -553,6 +590,40 @@ struct NotificationEditorSheet: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("notification_test_button")
+    }
+
+    /// «Probar» pide el permiso si falta (UX 2.2 · L11-12): sin él la prueba no llegaba y no pasaba nada en pantalla. Si
+    /// ya lo negó, iOS no vuelve a preguntar: se le explica y se le ofrece Ajustes.
+    private func runTestNotification() async {
+        let status: UNAuthorizationStatus
+        if UITestHooks.notificationsDenied {
+            status = .denied
+        } else if UITestHooks.isActive {
+            // El aviso del sistema no es determinista en XCUITest (molde de `NotificationsSettingsView`).
+            status = .authorized
+        } else {
+            status = await NotificationService.shared.checkPermissionStatus()
+        }
+        switch ReportUpcomingLogic.testStep(for: status) {
+        case .send:
+            await sendTestNotification()
+        case .askThenSend:
+            if await NotificationService.shared.requestPermission() {
+                await sendTestNotification()
+            } else {
+                showingTestPermissionAlert = true
+            }
+        case .explainAndOfferSettings:
+            showingTestPermissionAlert = true
+        }
+    }
+
+    private func sendTestNotification() async {
+        let testText = getTestNotificationText()
+        // El título del informe de verdad («Resumen semanal»), no «Yala».
+        let title = isReportType && !name.isEmpty ? name : "Yala"
+        await NotificationService.shared.sendTestNotification(title: title, body: testText)
     }
 
     /// Get appropriate test text based on notification type

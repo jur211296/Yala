@@ -11,13 +11,13 @@ import OpenAI
 
 // MARK: - LLM Insight Result
 
-struct LLMInsightResponse {
+struct LLMInsightResponse: Codable, Equatable {
     let heroText: String
     let cards: [LLMInsightCard]
     let funFact: String?
 }
 
-struct LLMInsightCard {
+struct LLMInsightCard: Codable, Equatable {
     let icon: String
     let text: String
     let sentiment: String  // "positive", "neutral", "attention"
@@ -105,7 +105,8 @@ final class InsightsLLMService {
         aggregatedData: [String: Any],
         cacheKey key: String,
         tone: InsightTone = .normal,
-        focus: InsightFocus = .balanced
+        focus: InsightFocus = .balanced,
+        bypassCache: Bool = false
     ) async throws -> LLMInsightResponse {
         let client: OpenAI
         do {
@@ -124,8 +125,8 @@ final class InsightsLLMService {
         let now = Date.now
         cache = cache.filter { now.timeIntervalSince($0.value.timestamp) < 300 }
 
-        // Check cache
-        if let cached = getCached(key: key) {
+        // Check cache («Actualizar» la salta: pide uno nuevo).
+        if !bypassCache, let cached = getCached(key: key) {
             return cached
         }
 

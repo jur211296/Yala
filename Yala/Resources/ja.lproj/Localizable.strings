@@ -1081,7 +1081,7 @@
 "insights.perDay" = "1日あたり";
 "insights.ofTotal" = "合計に対して";
 "insights.analyzingData" = "データを分析中...";
-"insights.activateAITitle" = "スマート概要を利用できます";
+"insights.activateAITitle" = "AIサマリーを利用できます";
 "insights.activateAIBody" = "プロフィール > AI機能で有効化・カスタマイズできます。";
 "insights.activate" = "有効化";
 "insights.goToSettings" = "設定に移動";
@@ -2176,7 +2176,7 @@
 "tipkit.pro.voiceInput.message" = "支出を口述で入力できます。話すだけでYalaが記録します。";
 "tipkit.pro.imageInput.title" = "写真・ファイル入力";
 "tipkit.pro.imageInput.message" = "レシートや請求書の写真を添付すると、Yalaが1件以上の記録を抽出します。";
-"tipkit.pro.smartInsights.title" = "スマートインサイト";
+"tipkit.pro.smartInsights.title" = "AIサマリー";
 "tipkit.pro.smartInsights.message" = "これを有効にすると、YalaがAIで資産状況に関するインサイトを生成します。";
 "tipkit.pro.premiumIcons.title" = "限定アイコン";
 "tipkit.pro.premiumIcons.message" = "プレミアムアイコンからアプリを自分仕様に。";
@@ -2184,7 +2184,7 @@
 "tipkit.pro.proThemes.message" = "Yalaに自分らしい彩りを加える限定カラーテーマを発見。";
 "tipkit.pro.chatFab.title" = "金融アシスタント";
 "tipkit.pro.aiSummary.title" = "AIサマリー";
-"tipkit.pro.aiSummary.message" = "1タップで資産状況のスマートサマリーを生成。役立つインサイトをすぐに。";
+"tipkit.pro.aiSummary.message" = "家計のAIサマリーを1タップで。役立つ気づきがすぐに。";
 "tipkit.aiCharts.pro.title" = "AIインサイト";
 "tipkit.aiCharts.pro.message" = "ここをタップしてキャッシュフローのスマートインサイトを取得。";
 "tipkit.aiCharts.free.title" = "スマートインサイト";
@@ -2449,7 +2449,7 @@
 "featureGate.imageInput" = "写真・ファイル入力";
 "featureGate.premiumIcons" = "プレミアムアイコン";
 "featureGate.proThemes" = "Proテーマ";
-"featureGate.smartInsightsAI" = "AI分析";
+"featureGate.smartInsightsAI" = "AIサマリー";
 "featureGate.cashFlowAdvanced" = "高度なキャッシュフロー";
 
 // Titles
@@ -2840,7 +2840,7 @@
 "aiPrivacy.title" = "AIプライバシーとデータ";
 "aiPrivacy.processingRow" = "処理(音声・画像)";
 "aiPrivacy.chatRow" = "Proアシスタント";
-"aiPrivacy.insightsRow" = "スマートインサイト";
+"aiPrivacy.insightsRow" = "AIサマリー";
 "aiPrivacy.cloudExploreRow" = "クラウドのアカウントを参照";
 "aiPrivacy.revokeConfirmTitle" = "この機能を無効にしますか？";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
@@ -2851,7 +2851,7 @@
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yalaが代わりに記録します";
 "aiConsent.processingMessage" = "話すかレシートの写真を選ぶと、Yalaが支出を記録します。そのために、音声や写真をその時だけAIサービスに送ります。AIの学習には使われません。";
-"aiConsent.insightsTitle" = "スマート概要";
+"aiConsent.insightsTitle" = "AIサマリー";
 "aiConsent.insightsMessage" = "Yalaが家計を分析して、今の状況をお伝えします。そのために、概要（カテゴリ別の合計と推移、予算、定期的な支払い）をAIサービスに送ります。記録の履歴全体は送りません。AIの学習には使われません。";
 "aiConsent.accept" = "同意して有効化";
 "aiConsent.privacyPolicy" = "プライバシーポリシー";
@@ -2861,7 +2861,7 @@
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "人工知能";
-"insights.aiToggle" = "スマート概要";
+"insights.aiToggle" = "AIサマリー";
 "insights.metricsSection" = "指標";
 "insights.chartsSection" = "グラフ";
 "insights.analysisSection" = "分析";
@@ -3097,12 +3097,12 @@
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "資産管理を次のレベルへ";
-"proBanner.subtitle" = "音声入力、AIインサイト、無制限の口座を解放。";
+"proBanner.subtitle" = "音声入力、AIサマリー、無制限の口座を解放。";
 
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "良い習慣ができてきました。Yala Proなら音声で支出を口述できます。";
-"milestone.message50" = "素晴らしい！AI分析で支出のパターンが見えてきます。";
+"milestone.message50" = "素晴らしい！AIサマリーで支出のパターンが見えてきます。";
 "milestone.message100" = "あなたは資産管理のプロですね。Yala Proで全機能を解放しましょう。";
 "milestone.notNow" = "あとで";
 "milestone.unlimitedAccounts" = "無制限の口座";
@@ -4191,8 +4191,8 @@
 "stats.insights.motivationalOne" = "1件の記録 · 良いスタートです";
 "stats.insights.motivationalMany %d" = "%d件の記録 · その調子です";
 "stats.insights.detailHeader" = "あなたの数字";
-"stats.insights.aiCardTitle" = "スマートサマリー";
-"stats.insights.aiCardSubtitle" = "AIでパーソナライズ";
+"stats.insights.aiCardTitle" = "AIサマリー";
+"stats.insights.aiCardSubtitle" = "AIで作成";
 "stats.insights.dailyAvgIn %@" = "%@の1日あたり";
 
 "stats.insights.need.dailyFormat %@" = "≈ %@/日";
@@ -4204,10 +4204,10 @@
 "stats.trends.comparisonTitle" = "比較";
 "stats.trends.insightTitleFree %@" = "あなたの%@をひと言で";
 "stats.trends.insightTitlePro" = "期間分析";
-"stats.trends.refineWithAI" = "AIで詳しく分析";
-"stats.trends.generateAI" = "AI分析を生成";
-"stats.trends.regenerate" = "再生成";
-"stats.trends.aiFootnote" = "AI分析";
+"stats.trends.refineWithAI" = "AIで作成";
+"stats.trends.generateAI" = "AIで作成";
+"stats.trends.regenerate" = "更新";
+"stats.trends.aiFootnote" = "AIサマリー";
 "stats.trends.heroOnset" = "Yalaを始めて最初の期間";
 "stats.trends.heroStable" = "残高は安定しています";
 "stats.trends.heroVarUp %d %@" = "%2$@より%1$d%%上 · この調子で";
@@ -4218,7 +4218,7 @@
 "stats.distribution.heroSubtitle3 %d %d %d" = "%d件のカテゴリ · %d件のサブカテゴリ · %d件のタグ";
 "stats.distribution.insightTitleFree %@" = "あなたの%@をひと目で";
 "stats.distribution.insightTitlePro" = "期間内の分布";
-"stats.distribution.aiFootnote" = "AI分析";
+"stats.distribution.aiFootnote" = "AIサマリー";
 "stats.distribution.modeCharts" = "グラフ";
 "stats.distribution.insight.onset %@" = "%@の傾向が見え始めています。もうすぐより明確なパターンが分かります。";
 "stats.distribution.insight.newCategory %@ %@" = "今%2$@、%1$@を試しましたね。";
@@ -7501,3 +7501,52 @@
 "siri.query.accountNotFound" = "Yalaにその口座が見つかりません。";
 "siri.query.approximate" = "概算です：未確定の為替レートがあります。";
 "siri.query.asOf" = "%@時点のデータです。";
+
+/* UX 2.2 · lote 11 · decisiones de Jürgen (2026-10-18) */
+"stats.l11d.trends.inAndOut" = "入金と出金";
+"stats.l11d.trends.showPrevious.month" = "前月を表示";
+"stats.l11d.trends.showPrevious.week" = "前週を表示";
+"stats.l11d.trends.showPrevious.days7" = "その前の7日間を表示";
+"stats.l11d.trends.showPrevious.days30" = "その前の30日間を表示";
+"stats.l11d.trends.showPrevious.period" = "前の期間を表示";
+"stats.l11d.trends.showPrevious.year" = "前年を表示";
+"notifications.report.closed.week.balance" = "先週の残高はこうなりました：%@ 💰";
+"notifications.report.closed.week.expenses" = "先週の支出は%@でした 📊";
+"notifications.report.closed.week.income" = "先週の収入は%@でした 🎉";
+"notifications.report.closed.week.topCategory" = "先週いちばん使ったのは：%@ 👀";
+"notifications.report.closed.week.noExpenses" = "穏やかな一週間！先週は支出の記録がありませんでした ✨";
+"notifications.report.closed.month.balance" = "%1$@の残高はこうなりました：%2$@ 💰";
+"notifications.report.closed.month.expenses" = "%1$@の支出は%2$@でした 📊";
+"notifications.report.closed.month.income" = "%1$@の収入は%2$@でした 🎉";
+"notifications.report.closed.month.topCategory" = "%1$@にいちばん使ったのは：%2$@ 👀";
+"notifications.report.closed.month.noExpenses" = "%@は支出の記録がありませんでした ✨";
+"notifications.upcoming.week.expenses" = "%1$@ %2$@に、%3$@〜%4$@の支出をお知らせします";
+"notifications.upcoming.week.income" = "%1$@ %2$@に、%3$@〜%4$@の収入をお知らせします";
+"notifications.upcoming.week.topCategory" = "%1$@ %2$@に、%3$@〜%4$@でいちばん使ったものをお知らせします";
+"notifications.upcoming.week.balance" = "%1$@ %2$@に、%3$@時点の残高をお知らせします";
+"notifications.upcoming.month.expenses" = "%1$@ %2$@に、%3$@の支出をお知らせします";
+"notifications.upcoming.month.income" = "%1$@ %2$@に、%3$@の収入をお知らせします";
+"notifications.upcoming.month.topCategory" = "%1$@ %2$@に、%3$@でいちばん使ったものをお知らせします";
+"notifications.upcoming.month.balance" = "%1$@ %2$@に、%3$@末の残高をお知らせします";
+"stats.l11d.toPay.title" = "これから支払う分";
+"stats.l11d.toPay.total" = "合計：%@";
+"stats.l11d.toPay.payments" = "支払い";
+"stats.l11d.toPay.subscriptions" = "サブスク";
+"stats.l11d.toPay.pendingCount" = "未払い：%d件";
+"stats.l11d.budgets.title" = "あなたの予算";
+"stats.l11d.budgets.usage" = "%2$@中 %1$@ · %3$@";
+"stats.l11d.need.purpose" = "支出が「必要なもの」「大事なもの」「減らせるもの」にどう分かれているかを示します。";
+"stats.l11d.title.inAFewWords.week" = "今週をひとことで";
+"stats.l11d.title.inAFewWords.days7" = "直近7日間をひとことで";
+"stats.l11d.title.inAFewWords.days30" = "直近30日間をひとことで";
+"stats.l11d.title.inAFewWords.month" = "今月をひとことで";
+"stats.l11d.title.inAFewWords.year" = "この1年をひとことで";
+"stats.l11d.title.inAFewWords.all" = "これまでの記録をひとことで";
+"stats.l11d.title.inAFewWords.period" = "この期間をひとことで";
+"stats.l11d.title.atAGlance.week" = "今週をひと目で";
+"stats.l11d.title.atAGlance.days7" = "直近7日間をひと目で";
+"stats.l11d.title.atAGlance.days30" = "直近30日間をひと目で";
+"stats.l11d.title.atAGlance.month" = "今月をひと目で";
+"stats.l11d.title.atAGlance.year" = "この1年をひと目で";
+"stats.l11d.title.atAGlance.all" = "これまでの記録をひと目で";
+"stats.l11d.title.atAGlance.period" = "この期間をひと目で";

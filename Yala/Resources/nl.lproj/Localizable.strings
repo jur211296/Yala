@@ -1081,7 +1081,7 @@
 "insights.perDay" = "per dag";
 "insights.ofTotal" = "van totaal";
 "insights.analyzingData" = "Je gegevens worden geanalyseerd...";
-"insights.activateAITitle" = "Slim overzicht beschikbaar";
+"insights.activateAITitle" = "AI-samenvatting beschikbaar";
 "insights.activateAIBody" = "Schakel het in en pas aan via Profiel > AI-functies.";
 "insights.activate" = "Activeren";
 "insights.goToSettings" = "Naar instellingen";
@@ -2176,7 +2176,7 @@
 "tipkit.pro.voiceInput.message" = "Je kunt nu je uitgaven dicteren. Spreek en Yala boekt ze voor je.";
 "tipkit.pro.imageInput.title" = "Invoer met foto of bestand";
 "tipkit.pro.imageInput.message" = "Voeg een foto toe van een bon of factuur en Yala haalt er één of meer boekingen uit.";
-"tipkit.pro.smartInsights.title" = "Slimme inzichten";
+"tipkit.pro.smartInsights.title" = "AI-samenvatting";
 "tipkit.pro.smartInsights.message" = "Zet dit aan en Yala genereert AI-gestuurde observaties over je financiën.";
 "tipkit.pro.premiumIcons.title" = "Exclusieve iconen";
 "tipkit.pro.premiumIcons.message" = "Kies uit premium-iconen om je app te personaliseren.";
@@ -2184,7 +2184,7 @@
 "tipkit.pro.proThemes.message" = "Ontdek exclusieve kleurenthema's die Yala je persoonlijke touch geven.";
 "tipkit.pro.chatFab.title" = "Je financiële assistent";
 "tipkit.pro.aiSummary.title" = "Jouw AI-samenvatting";
-"tipkit.pro.aiSummary.message" = "Genereer met één tik een slimme samenvatting van je financiën. Nuttige observaties, direct.";
+"tipkit.pro.aiSummary.message" = "Je AI-samenvatting van je financiën, met één tik. Nuttige inzichten, meteen.";
 "tipkit.aiCharts.pro.title" = "AI-observaties";
 "tipkit.aiCharts.pro.message" = "Tik hier voor slimme observaties over je kasstroom.";
 "tipkit.aiCharts.free.title" = "Slimme observaties";
@@ -2449,7 +2449,7 @@
 "featureGate.imageInput" = "Foto- of bestandsinvoer";
 "featureGate.premiumIcons" = "Premium-iconen";
 "featureGate.proThemes" = "Pro-thema's";
-"featureGate.smartInsightsAI" = "AI-analyse";
+"featureGate.smartInsightsAI" = "AI-samenvatting";
 "featureGate.cashFlowAdvanced" = "Geavanceerde kasstroom";
 
 // Titles
@@ -2840,7 +2840,7 @@
 "aiPrivacy.title" = "AI-privacy & gegevens";
 "aiPrivacy.processingRow" = "Verwerking (spraak & afbeelding)";
 "aiPrivacy.chatRow" = "Pro-assistent";
-"aiPrivacy.insightsRow" = "Slimme inzichten";
+"aiPrivacy.insightsRow" = "AI-samenvatting";
 "aiPrivacy.cloudExploreRow" = "Je cloudaccount raadplegen";
 "aiPrivacy.revokeConfirmTitle" = "Deze functie uitschakelen?";
 "aiPrivacy.revokeConfirmMessage" = "We stoppen met het verwerken van je AI-gegevens voor deze functie. Je kunt het altijd weer aanzetten.";
@@ -2851,7 +2851,7 @@
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala legt het voor je vast";
 "aiConsent.processingMessage" = "Spreek het in of kies een foto van het bonnetje, en Yala legt de uitgave vast. Daarvoor gaat de opname of foto alleen op dat moment naar een AI-dienst. Het wordt niet gebruikt om de AI te trainen.";
-"aiConsent.insightsTitle" = "Slim overzicht";
+"aiConsent.insightsTitle" = "AI-samenvatting";
 "aiConsent.insightsMessage" = "Yala analyseert je financiën en laat zien hoe je ervoor staat. Daarvoor gaat er een samenvatting naar een AI-dienst — totalen en trends per categorie, budgetten en terugkerende betalingen —, niet je volledige boekingsgeschiedenis. Die wordt niet gebruikt om de AI te trainen.";
 "aiConsent.accept" = "Accepteren en inschakelen";
 "aiConsent.privacyPolicy" = "Privacybeleid";
@@ -2861,7 +2861,7 @@
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Kunstmatige intelligentie";
-"insights.aiToggle" = "Slim overzicht";
+"insights.aiToggle" = "AI-samenvatting";
 "insights.metricsSection" = "Metingen";
 "insights.chartsSection" = "Grafieken";
 "insights.analysisSection" = "Analyse";
@@ -3097,12 +3097,12 @@
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "Til je financiën naar een hoger niveau";
-"proBanner.subtitle" = "Ontgrendel spraakinvoer, AI-inzichten en onbeperkt rekeningen.";
+"proBanner.subtitle" = "Ontgrendel spraakinvoer, AI-samenvatting en onbeperkte rekeningen.";
 
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "Je bouwt een geweldige gewoonte op. Met Yala Pro kun je uitgaven dicteren met je stem.";
-"milestone.message50" = "Indrukwekkend! Met de AI-analyse ontdek je patronen in je uitgaven.";
+"milestone.message50" = "Indrukwekkend! Met de AI-samenvatting ontdek je patronen in je uitgaven.";
 "milestone.message100" = "Je bent een financiële pro. Ontgrendel de volledige ervaring met Yala Pro.";
 "milestone.notNow" = "Nu niet";
 "milestone.unlimitedAccounts" = "Onbeperkt rekeningen";
@@ -4191,8 +4191,8 @@
 "stats.insights.motivationalOne" = "1 boeking · Goede start";
 "stats.insights.motivationalMany %d" = "%d boekingen · Ga zo door";
 "stats.insights.detailHeader" = "Jouw cijfers";
-"stats.insights.aiCardTitle" = "Slimme samenvatting";
-"stats.insights.aiCardSubtitle" = "Gepersonaliseerd met AI";
+"stats.insights.aiCardTitle" = "AI-samenvatting";
+"stats.insights.aiCardSubtitle" = "Maken met AI";
 "stats.insights.dailyAvgIn %@" = "per dag in %@";
 
 "stats.insights.need.dailyFormat %@" = "≈ %@/dag";
@@ -4204,10 +4204,10 @@
 "stats.trends.comparisonTitle" = "Vergelijking";
 "stats.trends.insightTitleFree %@" = "Jouw %@ in het kort";
 "stats.trends.insightTitlePro" = "Periode-analyse";
-"stats.trends.refineWithAI" = "Verfijnen met AI";
-"stats.trends.generateAI" = "AI-analyse genereren";
-"stats.trends.regenerate" = "Opnieuw genereren";
-"stats.trends.aiFootnote" = "AI-analyse";
+"stats.trends.refineWithAI" = "Maken met AI";
+"stats.trends.generateAI" = "Maken met AI";
+"stats.trends.regenerate" = "Bijwerken";
+"stats.trends.aiFootnote" = "AI-samenvatting";
 "stats.trends.heroOnset" = "Jouw eerste periode met Yala";
 "stats.trends.heroStable" = "Je saldo blijft stabiel";
 "stats.trends.heroVarUp %d %@" = "%d%% boven vs %@ · Ga zo door";
@@ -4218,7 +4218,7 @@
 "stats.distribution.heroSubtitle3 %d %d %d" = "%d categorieën · %d subcategorieën · %d tags";
 "stats.distribution.insightTitleFree %@" = "Jouw %@ in één oogopslag";
 "stats.distribution.insightTitlePro" = "Verdeling van deze periode";
-"stats.distribution.aiFootnote" = "AI-analyse";
+"stats.distribution.aiFootnote" = "AI-samenvatting";
 "stats.distribution.modeCharts" = "Grafieken";
 "stats.distribution.insight.onset %@" = "Je %@ begint vorm te krijgen. Binnenkort zie je duidelijkere patronen.";
 "stats.distribution.insight.newCategory %@ %@" = "Je hebt %@ geprobeerd deze %@.";
@@ -7501,3 +7501,52 @@
 "siri.query.accountNotFound" = "Ik kan die rekening niet vinden in Yala.";
 "siri.query.approximate" = "Het is een schatting: een wisselkoers moet nog bevestigd worden.";
 "siri.query.asOf" = "Volgens je gegevens van %@.";
+
+/* UX 2.2 · lote 11 · decisiones de Jürgen (2026-10-18) */
+"stats.l11d.trends.inAndOut" = "In en uit";
+"stats.l11d.trends.showPrevious.month" = "Vorige maand tonen";
+"stats.l11d.trends.showPrevious.week" = "Vorige week tonen";
+"stats.l11d.trends.showPrevious.days7" = "Vorige 7 dagen tonen";
+"stats.l11d.trends.showPrevious.days30" = "Vorige 30 dagen tonen";
+"stats.l11d.trends.showPrevious.period" = "Vorige periode tonen";
+"stats.l11d.trends.showPrevious.year" = "Vorig jaar tonen";
+"notifications.report.closed.week.balance" = "Zo sloot je saldo vorige week af: %@ 💰";
+"notifications.report.closed.week.expenses" = "Vorige week gaf je %@ uit 📊";
+"notifications.report.closed.week.income" = "Vorige week ontving je %@ 🎉";
+"notifications.report.closed.week.topCategory" = "Je grootste uitgave van vorige week: %@ 👀";
+"notifications.report.closed.week.noExpenses" = "Rustige week! Je hebt vorige week geen uitgaven genoteerd ✨";
+"notifications.report.closed.month.balance" = "Zo sloot je saldo af in %1$@: %2$@ 💰";
+"notifications.report.closed.month.expenses" = "In %1$@ gaf je %2$@ uit 📊";
+"notifications.report.closed.month.income" = "In %1$@ ontving je %2$@ 🎉";
+"notifications.report.closed.month.topCategory" = "Je grootste uitgave in %1$@: %2$@ 👀";
+"notifications.report.closed.month.noExpenses" = "Je hebt in %@ geen uitgaven genoteerd ✨";
+"notifications.upcoming.week.expenses" = "Op %1$@ om %2$@, met wat je uitgaf van %3$@ tot %4$@";
+"notifications.upcoming.week.income" = "Op %1$@ om %2$@, met wat je ontving van %3$@ tot %4$@";
+"notifications.upcoming.week.topCategory" = "Op %1$@ om %2$@, met je grootste uitgave van %3$@ tot %4$@";
+"notifications.upcoming.week.balance" = "Op %1$@ om %2$@, met je saldo op %3$@";
+"notifications.upcoming.month.expenses" = "Op %1$@ om %2$@, met wat je uitgaf in %3$@";
+"notifications.upcoming.month.income" = "Op %1$@ om %2$@, met wat je ontving in %3$@";
+"notifications.upcoming.month.topCategory" = "Op %1$@ om %2$@, met je grootste uitgave in %3$@";
+"notifications.upcoming.month.balance" = "Op %1$@ om %2$@, met je saldo aan het eind van %3$@";
+"stats.l11d.toPay.title" = "Wat je nog moet betalen";
+"stats.l11d.toPay.total" = "Totaal: %@";
+"stats.l11d.toPay.payments" = "Betalingen";
+"stats.l11d.toPay.subscriptions" = "Abonnementen";
+"stats.l11d.toPay.pendingCount" = "Openstaand: %d";
+"stats.l11d.budgets.title" = "Je budgetten";
+"stats.l11d.budgets.usage" = "%1$@ van %2$@ · %3$@";
+"stats.l11d.need.purpose" = "Zo verdelen je uitgaven zich over wat nodig is, wat belangrijk is en wat je zou kunnen schrappen.";
+"stats.l11d.title.inAFewWords.week" = "Je week in een paar woorden";
+"stats.l11d.title.inAFewWords.days7" = "Je laatste 7 dagen in een paar woorden";
+"stats.l11d.title.inAFewWords.days30" = "Je laatste 30 dagen in een paar woorden";
+"stats.l11d.title.inAFewWords.month" = "Je maand in een paar woorden";
+"stats.l11d.title.inAFewWords.year" = "Je jaar in een paar woorden";
+"stats.l11d.title.inAFewWords.all" = "Je hele geschiedenis in een paar woorden";
+"stats.l11d.title.inAFewWords.period" = "Je periode in een paar woorden";
+"stats.l11d.title.atAGlance.week" = "Je week in één oogopslag";
+"stats.l11d.title.atAGlance.days7" = "Je laatste 7 dagen in één oogopslag";
+"stats.l11d.title.atAGlance.days30" = "Je laatste 30 dagen in één oogopslag";
+"stats.l11d.title.atAGlance.month" = "Je maand in één oogopslag";
+"stats.l11d.title.atAGlance.year" = "Je jaar in één oogopslag";
+"stats.l11d.title.atAGlance.all" = "Je hele geschiedenis in één oogopslag";
+"stats.l11d.title.atAGlance.period" = "Je periode in één oogopslag";

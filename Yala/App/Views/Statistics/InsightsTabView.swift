@@ -47,7 +47,10 @@ struct InsightsTabView: View {
 
     // Content split: bento Detalle (stats + commitments + need) vs Observaciones
     @State private var contentMode: InsightsContentMode = .detail
-    @State private var isCommitmentsExpanded: Bool = false
+    // «Lo que te falta pagar» y «Tus presupuestos» (UX 2.2 · L11-5) se abren solos si caben: el primero siempre (dos
+    // filas como mucho); el segundo con pocos presupuestos. Un toque de la persona manda sobre eso.
+    @State private var isToPayExpanded: Bool = true
+    @State private var budgetsExpandedChoice: Bool?
     @State private var isNeedSectionExpanded: Bool = false
 
     // Coach mark: Pro tour (Phase 3)
@@ -317,7 +320,8 @@ struct InsightsTabView: View {
                     sentiment: .neutral,
                     isProOnly: true
                 ))
-            } else if let error = viewModel.aiError {
+            } else if let error = viewModel.aiError, contentMode != .observations {
+                // En Observaciones el aviso va bajo su título (abajo), que es donde se está mirando.
                 AIInsightCardComponents.errorCard(error) {
                     Task { await viewModel.triggerAIGeneration() }
                 }
@@ -403,25 +407,48 @@ struct InsightsTabView: View {
                             isProOnly: true
                         ))
                     }
-                } else if viewModel.aiError != nil {
-                    // Error already shown in hero section
-                    EmptyView()
+                } else if let error = viewModel.aiError {
+                    // Con el resumen que sale solo (UX 2.2 · L11-7), un fallo dejaba el título «Observaciones» sin nada
+                    // debajo y el aviso arriba. Ahora el aviso, con «Reintentar», va aquí.
+                    AIInsightCardComponents.errorCard(error) {
+                        Task { await viewModel.triggerAIGeneration() }
+                    }
+                    .spansAllColumns()
                 }
+            } else if viewModel.canGenerateAIAutomatically {
+                // Pro con el consentimiento dado: el resumen sale solo al abrir Observaciones (UX 2.2 · L11-7). Hasta
+                // que llega, el mismo «cargando» que tras tocar el botón; antes, una caja gris que mandaba «arriba».
+                AIInsightCardComponents.loadingPlaceholder(accentColor: theme.accent)
+                    .spansAllColumns()
             } else {
-                // Hint to use the button
-                HStack(spacing: DS.Spacing.sm) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(.tertiary)
-                    Text(L10n.Insights.generateAIHint)
-                        .font(DS.Typography.caption)
-                        .foregroundStyle(.tertiary)
+                // Sin consentimiento hace falta un toque: es el que autoriza enviar el resumen al servicio de IA.
+                Button {
+                    showInsightsConsentAlert = true
+                } label: {
+                    HStack(spacing: DS.Spacing.sm) {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(theme.accent)
+                            .accessibilityHidden(true)
+                        Text(L10n.Stats.Insights.aiCardSubtitle)
+                            .font(DS.Typography.subheadlineEmphasized)
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: DS.Spacing.sm)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(.plain)
                 .panelCard()
+                .accessibilityIdentifier("insights_observations_generate_ai")
                 .spansAllColumns()
             }
         }
         .spansAllColumns()
+        // Al abrir Observaciones, y cada vez que cambian el período, los filtros o los datos: si hay un resumen guardado
+        // para lo que se ve, ya está en pantalla; si no, se pide uno (`InsightsViewModel.autoGenerateIfNeeded`).
+        .task(id: viewModel.aiContextVersion) {
+            await viewModel.autoGenerateIfNeeded()
+        }
     }
 
     // MARK: - Free Observations Section
@@ -465,8 +492,12 @@ struct InsightsTabView: View {
             .spansAllColumns()
         }
 
-        if hasCommitmentsData(data.commitments) {
-            commitmentsSection(data.commitments)
+        if hasToPayData(data.commitments) {
+            toPaySection(data.commitments)
+        }
+
+        if hasBudgetsData(data.commitments) {
+            budgetsSection(data.commitments.budgets)
         }
 
         if data.periodSummary.transactionCount >= 5,
@@ -633,51 +664,97 @@ struct InsightsTabView: View {
         .panelCard()
     }
 
-    // MARK: - Section 4: Commitments
+    // MARK: - Section 4: Lo que te falta pagar · Tus presupuestos (UX 2.2 · L11-5)
+    //
+    // Hasta el 2026-10-18 era una sola sección plegada, «Compromisos · Periodo actual de cada presupuesto», que mezclaba
+    // los pagos pendientes, las suscripciones activas («S/ 223 mensual», sin pasar a mensual y contando otra vez la que
+    // estaba pendiente) y los presupuestos con solo su porcentaje. Decisión B de Jürgen: dos bloques con nombre de
+    // persona, cada número diciendo de dónde sale.
 
-    private func hasCommitmentsData(_ c: Commitments) -> Bool {
-        (appPreferences.insightsShowPendingPayments && c.pendingPaymentsCount > 0) ||
-        (appPreferences.insightsShowSubscriptions && c.activeSubscriptionsCount > 0) ||
-        (appPreferences.insightsShowBudgetsAtRisk && !c.budgetsAtRisk.isEmpty)
+    private func hasToPayData(_ c: Commitments) -> Bool {
+        (appPreferences.insightsShowPendingPayments && c.pendingOtherPaymentsCount > 0) ||
+        (appPreferences.insightsShowSubscriptions && c.pendingSubscriptionsCount > 0)
+    }
+
+    private func hasBudgetsData(_ c: Commitments) -> Bool {
+        appPreferences.insightsShowBudgetsAtRisk && !c.budgets.isEmpty
+    }
+
+    /// Los presupuestos se abren solos si caben sin alargar la pantalla.
+    static let budgetsOpenWhenAtMost = 4
+
+    private func isBudgetsExpanded(_ budgets: [BudgetAtRisk]) -> Bool {
+        budgetsExpandedChoice ?? (budgets.count <= Self.budgetsOpenWhenAtMost)
+    }
+
+    /// Lo que suma «Lo que te falta pagar»: solo las filas que se ven.
+    private func toPayTotal(_ c: Commitments) -> Double {
+        (appPreferences.insightsShowPendingPayments ? c.pendingOtherPaymentsAmount : 0)
+            + (appPreferences.insightsShowSubscriptions ? c.pendingSubscriptionsAmount : 0)
     }
 
     @ViewBuilder
-    private func commitmentsSection(_ c: Commitments) -> some View {
+    private func toPaySection(_ c: Commitments) -> some View {
         VStack(spacing: DS.Spacing.sm) {
             CollapsibleSectionHeader(
-                title: L10n.Insights.commitments,
-                subtitle: L10n.Insights.commitmentsNote,
-                isExpanded: isCommitmentsExpanded
+                title: L10n.UXL11D.toPayTitle,
+                subtitle: L10n.UXL11D.toPayTotal(
+                    appPreferences.currency(toPayTotal(c), currencyCode: defaultCurrencyCode)
+                ),
+                isExpanded: isToPayExpanded
             ) {
                 dsWithAnimation(reduceMotion) {
-                    isCommitmentsExpanded.toggle()
+                    isToPayExpanded.toggle()
                 }
             }
+            .accessibilityIdentifier("insights_to_pay_header")
 
-            if isCommitmentsExpanded {
+            if isToPayExpanded {
                 VStack(spacing: DS.Spacing.md) {
-                    if appPreferences.insightsShowPendingPayments, c.pendingPaymentsCount > 0 {
+                    if appPreferences.insightsShowPendingPayments, c.pendingOtherPaymentsCount > 0 {
                         commitmentRow(
                             icon: "clock",
-                            label: L10n.Insights.pendingPayments,
-                            value: "\(c.pendingPaymentsCount)",
-                            secondary: appPreferences.currency(c.pendingPaymentsAmount, currencyCode: defaultCurrencyCode)
+                            label: L10n.UXL11D.toPayPayments,
+                            value: appPreferences.currency(c.pendingOtherPaymentsAmount, currencyCode: defaultCurrencyCode),
+                            secondary: L10n.UXL11D.pendingCount(c.pendingOtherPaymentsCount)
                         )
+                        .accessibilityIdentifier("insights_to_pay_payments")
                     }
 
-                    if appPreferences.insightsShowSubscriptions, c.activeSubscriptionsCount > 0 {
+                    if appPreferences.insightsShowSubscriptions, c.pendingSubscriptionsCount > 0 {
                         commitmentRow(
                             icon: "repeat",
-                            label: L10n.Insights.activeSubscriptions,
-                            value: "\(c.activeSubscriptionsCount)",
-                            secondary: "\(appPreferences.currency(c.activeSubscriptionsMonthly, currencyCode: defaultCurrencyCode)) \(L10n.Insights.monthly)"
+                            label: L10n.UXL11D.toPaySubscriptions,
+                            value: appPreferences.currency(c.pendingSubscriptionsAmount, currencyCode: defaultCurrencyCode),
+                            secondary: L10n.UXL11D.pendingCount(c.pendingSubscriptionsCount)
                         )
+                        .accessibilityIdentifier("insights_to_pay_subscriptions")
                     }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
 
-                    if appPreferences.insightsShowBudgetsAtRisk {
-                        ForEach(c.budgetsAtRisk) { budget in
-                            budgetRow(budget)
-                        }
+    @ViewBuilder
+    private func budgetsSection(_ budgets: [BudgetAtRisk]) -> some View {
+        let expanded = isBudgetsExpanded(budgets)
+        VStack(spacing: DS.Spacing.sm) {
+            CollapsibleSectionHeader(
+                title: L10n.UXL11D.budgetsTitle,
+                subtitle: L10n.Insights.commitmentsNote,
+                isExpanded: expanded
+            ) {
+                dsWithAnimation(reduceMotion) {
+                    budgetsExpandedChoice = !expanded
+                }
+            }
+            .accessibilityIdentifier("insights_budgets_header")
+
+            if expanded {
+                VStack(spacing: DS.Spacing.md) {
+                    ForEach(budgets) { budget in
+                        budgetRow(budget)
                     }
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
@@ -701,16 +778,25 @@ struct InsightsTabView: View {
                         .foregroundStyle(.white)
                 }
 
-                Text(budget.name)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(budget.name)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.primary)
 
-                Spacer()
+                    // «S/ 780 de S/ 1,000 · 78 %» (UX 2.2 · L11-5): el porcentaje solo no decía de cuánto. Bajo el
+                    // nombre y no a su derecha: con importes de cuatro cifras, a la derecha se partía en dos líneas.
+                    Text(L10n.UXL11D.budgetUsage(
+                        spent: appPreferences.currency(budget.spent, currencyCode: budget.currencyCode),
+                        limit: appPreferences.currency(budget.limit, currencyCode: budget.currencyCode),
+                        percent: L10n.UXL11D.percent(budget.usagePercent)
+                    ))
+                        .font(DS.Typography.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("insights_budget_usage")
+                }
 
-                Text("\(Int(budget.usagePercent))%")
-                    .font(DS.Typography.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
             }
 
             BudgetProgressBar(
@@ -766,11 +852,19 @@ struct InsightsTabView: View {
 
             if isNeedSectionExpanded {
                 VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                    // El para qué (UX 2.2 · L11-6, decisión B): las tres palabras no se explicaban solas.
+                    Text(L10n.UXL11D.needPurpose)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("insights_need_purpose")
+
                     NeedBar(distribution: distribution)
 
                     VStack(spacing: DS.Spacing.sm) {
                         needBucketRow(
                             label: L10n.Need.essential,
+                            example: SubcategoryNeed.essential.description,
                             amount: distribution.essential,
                             percent: distribution.essentialPercent,
                             color: Color.essentialNeed,
@@ -778,6 +872,7 @@ struct InsightsTabView: View {
                         )
                         needBucketRow(
                             label: L10n.Need.priority,
+                            example: SubcategoryNeed.priority.description,
                             amount: distribution.priority,
                             percent: distribution.priorityPercent,
                             color: Color.priorityNeedNew,
@@ -785,6 +880,7 @@ struct InsightsTabView: View {
                         )
                         needBucketRow(
                             label: L10n.Need.optional,
+                            example: SubcategoryNeed.optional.description,
                             amount: distribution.optional,
                             percent: distribution.optionalPercent,
                             color: Color.optionalNeed,
@@ -806,7 +902,9 @@ struct InsightsTabView: View {
         }
     }
 
-    private func needBucketRow(label: String, amount: Double, percent: Double, color: Color, icon: String) -> some View {
+    private func needBucketRow(
+        label: String, example: String, amount: Double, percent: Double, color: Color, icon: String
+    ) -> some View {
         HStack(spacing: DS.Spacing.md) {
             ZStack {
                 Circle()
@@ -822,6 +920,11 @@ struct InsightsTabView: View {
                 Text(label)
                     .font(DS.Typography.subheadline)
                     .foregroundStyle(.primary)
+                // Un ejemplo por fila, el mismo texto que el selector de necesidad del formulario (L2-9 B).
+                Text(example)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(L10n.Stats.Insights.needDailyFormat(appPreferences.currency(amount / Double(periodDays), currencyCode: defaultCurrencyCode)))
                     .font(DS.Typography.captionSmall)
                     .foregroundStyle(.secondary)

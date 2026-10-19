@@ -1081,7 +1081,7 @@
 "insights.perDay" = "每天";
 "insights.ofTotal" = "占总额";
 "insights.analyzingData" = "正在分析你的数据...";
-"insights.activateAITitle" = "智能概览可用";
+"insights.activateAITitle" = "AI 总结可用";
 "insights.activateAIBody" = "在「个人资料 > AI 功能」中启用并自定义。";
 "insights.activate" = "启用";
 "insights.goToSettings" = "前往设置";
@@ -2176,7 +2176,7 @@
 "tipkit.pro.voiceInput.message" = "现在你可以口述支出了。直接说,Yala 会替你记录。";
 "tipkit.pro.imageInput.title" = "照片或文件输入";
 "tipkit.pro.imageInput.message" = "附上任意收据或发票的照片,Yala 会为你提取一条或多条记录。";
-"tipkit.pro.smartInsights.title" = "智能洞察";
+"tipkit.pro.smartInsights.title" = "AI 总结";
 "tipkit.pro.smartInsights.message" = "打开它,Yala 会用 AI 生成关于你财务的观察。";
 "tipkit.pro.premiumIcons.title" = "专属图标";
 "tipkit.pro.premiumIcons.message" = "从高级图标中选一个,个性化你的应用。";
@@ -2184,7 +2184,7 @@
 "tipkit.pro.proThemes.message" = "发现专属配色主题,让 Yala 充满你的个人风格。";
 "tipkit.pro.chatFab.title" = "你的财务助理";
 "tipkit.pro.aiSummary.title" = "你的 AI 摘要";
-"tipkit.pro.aiSummary.message" = "一键生成你财务的智能摘要。立即获得有用的观察。";
+"tipkit.pro.aiSummary.message" = "一键获取你的财务 AI 总结。实用观察，即刻呈现。";
 "tipkit.aiCharts.pro.title" = "AI 观察";
 "tipkit.aiCharts.pro.message" = "点击这里获取关于你现金流的智能观察。";
 "tipkit.aiCharts.free.title" = "智能观察";
@@ -2449,7 +2449,7 @@
 "featureGate.imageInput" = "照片或文件输入";
 "featureGate.premiumIcons" = "高级图标";
 "featureGate.proThemes" = "Pro 主题";
-"featureGate.smartInsightsAI" = "AI 分析";
+"featureGate.smartInsightsAI" = "AI 总结";
 "featureGate.cashFlowAdvanced" = "高级现金流";
 
 // Titles
@@ -2840,7 +2840,7 @@
 "aiPrivacy.title" = "AI 隐私与数据";
 "aiPrivacy.processingRow" = "处理(语音和图片)";
 "aiPrivacy.chatRow" = "Pro 助理";
-"aiPrivacy.insightsRow" = "智能洞察";
+"aiPrivacy.insightsRow" = "AI 总结";
 "aiPrivacy.cloudExploreRow" = "查询你的云端账户";
 "aiPrivacy.revokeConfirmTitle" = "禁用此功能?";
 "aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
@@ -2851,7 +2851,7 @@
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "Yala 帮你记下来";
 "aiConsent.processingMessage" = "说出来或选一张收据照片，Yala 就会记下这笔支出。为此，音频或照片只会在当时发送给 AI 服务，不会用于训练 AI。";
-"aiConsent.insightsTitle" = "智能概览";
+"aiConsent.insightsTitle" = "AI 总结";
 "aiConsent.insightsMessage" = "Yala 会分析你的财务，告诉你目前的状况。为此，它会把一份摘要——按类别的总计和趋势、预算以及定期付款——发送给 AI 服务，不会发送你的完整记录历史。这些数据不会用于训练 AI。";
 "aiConsent.accept" = "接受并启用";
 "aiConsent.privacyPolicy" = "隐私政策";
@@ -2861,7 +2861,7 @@
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "人工智能";
-"insights.aiToggle" = "智能概览";
+"insights.aiToggle" = "AI 总结";
 "insights.metricsSection" = "指标";
 "insights.chartsSection" = "图表";
 "insights.analysisSection" = "分析";
@@ -3097,12 +3097,12 @@
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "把你的财务带到下一阶段";
-"proBanner.subtitle" = "解锁语音输入、AI 洞察和无限账户。";
+"proBanner.subtitle" = "解锁语音输入、AI 总结和无限账户。";
 
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "你正在养成好习惯。用 Yala Pro 你可以语音口述支出。";
-"milestone.message50" = "了不起！用 AI 分析发现你的支出规律。";
+"milestone.message50" = "太棒了！通过 AI 总结，你能发现支出中的规律。";
 "milestone.message100" = "你是理财高手。用 Yala Pro 解锁全部体验。";
 "milestone.notNow" = "暂时不用";
 "milestone.unlimitedAccounts" = "无限账户";
@@ -4191,8 +4191,8 @@
 "stats.insights.motivationalOne" = "1 条记录 · 好的开始";
 "stats.insights.motivationalMany %d" = "%d 条记录 · 继续保持";
 "stats.insights.detailHeader" = "你的数据";
-"stats.insights.aiCardTitle" = "智能摘要";
-"stats.insights.aiCardSubtitle" = "由AI个性化";
+"stats.insights.aiCardTitle" = "AI 总结";
+"stats.insights.aiCardSubtitle" = "用 AI 生成";
 "stats.insights.dailyAvgIn %@" = "每天 %@";
 
 "stats.insights.need.dailyFormat %@" = "≈ %@/天";
@@ -4204,10 +4204,10 @@
 "stats.trends.comparisonTitle" = "对比";
 "stats.trends.insightTitleFree %@" = "你的%@速览";
 "stats.trends.insightTitlePro" = "周期分析";
-"stats.trends.refineWithAI" = "用 AI 进一步分析";
-"stats.trends.generateAI" = "生成 AI 分析";
-"stats.trends.regenerate" = "重新生成";
-"stats.trends.aiFootnote" = "AI 分析";
+"stats.trends.refineWithAI" = "用 AI 生成";
+"stats.trends.generateAI" = "用 AI 生成";
+"stats.trends.regenerate" = "更新";
+"stats.trends.aiFootnote" = "AI 总结";
 "stats.trends.heroOnset" = "你与 Yala 的第一个周期";
 "stats.trends.heroStable" = "你的余额保持稳定";
 "stats.trends.heroVarUp %d %@" = "比%2$@高出%1$d%% · 继续保持";
@@ -4218,7 +4218,7 @@
 "stats.distribution.heroSubtitle3 %d %d %d" = "%d 个分类 · %d 个子分类 · %d 个标签";
 "stats.distribution.insightTitleFree %@" = "一目了然你的 %@";
 "stats.distribution.insightTitlePro" = "本期分布";
-"stats.distribution.aiFootnote" = "AI 分析";
+"stats.distribution.aiFootnote" = "AI 总结";
 "stats.distribution.modeCharts" = "图表";
 "stats.distribution.insight.onset %@" = "你的 %@ 正在成型。很快你会看到更清晰的模式。";
 "stats.distribution.insight.newCategory %@ %@" = "你这个 %2$@ 尝试了 %1$@。";
@@ -7501,3 +7501,52 @@
 "siri.query.accountNotFound" = "在 Yala 中找不到这个账户。";
 "siri.query.approximate" = "这是估算值：还有汇率未确认。";
 "siri.query.asOf" = "根据你 %@ 的数据。";
+
+/* UX 2.2 · lote 11 · decisiones de Jürgen (2026-10-18) */
+"stats.l11d.trends.inAndOut" = "收入与支出";
+"stats.l11d.trends.showPrevious.month" = "查看上个月";
+"stats.l11d.trends.showPrevious.week" = "查看上一周";
+"stats.l11d.trends.showPrevious.days7" = "查看之前 7 天";
+"stats.l11d.trends.showPrevious.days30" = "查看之前 30 天";
+"stats.l11d.trends.showPrevious.period" = "查看上一期间";
+"stats.l11d.trends.showPrevious.year" = "查看去年";
+"notifications.report.closed.week.balance" = "上周你的余额收在：%@ 💰";
+"notifications.report.closed.week.expenses" = "上周你花了 %@ 📊";
+"notifications.report.closed.week.income" = "上周你收到了 %@ 🎉";
+"notifications.report.closed.week.topCategory" = "上周你最大的支出：%@ 👀";
+"notifications.report.closed.week.noExpenses" = "平静的一周！上周你没有记录任何支出 ✨";
+"notifications.report.closed.month.balance" = "%1$@你的余额收在：%2$@ 💰";
+"notifications.report.closed.month.expenses" = "%1$@你花了 %2$@ 📊";
+"notifications.report.closed.month.income" = "%1$@你收到了 %2$@ 🎉";
+"notifications.report.closed.month.topCategory" = "%1$@你最大的支出：%2$@ 👀";
+"notifications.report.closed.month.noExpenses" = "%@你没有记录任何支出 ✨";
+"notifications.upcoming.week.expenses" = "%1$@ %2$@，告诉你 %3$@ 至 %4$@ 的支出";
+"notifications.upcoming.week.income" = "%1$@ %2$@，告诉你 %3$@ 至 %4$@ 的收入";
+"notifications.upcoming.week.topCategory" = "%1$@ %2$@，告诉你 %3$@ 至 %4$@ 最大的支出";
+"notifications.upcoming.week.balance" = "%1$@ %2$@，告诉你截至 %3$@ 的余额";
+"notifications.upcoming.month.expenses" = "%1$@ %2$@，告诉你%3$@的支出";
+"notifications.upcoming.month.income" = "%1$@ %2$@，告诉你%3$@的收入";
+"notifications.upcoming.month.topCategory" = "%1$@ %2$@，告诉你%3$@最大的支出";
+"notifications.upcoming.month.balance" = "%1$@ %2$@，告诉你%3$@底的余额";
+"stats.l11d.toPay.title" = "还要付的";
+"stats.l11d.toPay.total" = "合计：%@";
+"stats.l11d.toPay.payments" = "付款";
+"stats.l11d.toPay.subscriptions" = "订阅";
+"stats.l11d.toPay.pendingCount" = "待付：%d 笔";
+"stats.l11d.budgets.title" = "你的预算";
+"stats.l11d.budgets.usage" = "%2$@ 中的 %1$@ · %3$@";
+"stats.l11d.need.purpose" = "你的支出在必需、重要和可以削减的部分之间是这样分布的。";
+"stats.l11d.title.inAFewWords.week" = "一句话看本周";
+"stats.l11d.title.inAFewWords.days7" = "一句话看最近 7 天";
+"stats.l11d.title.inAFewWords.days30" = "一句话看最近 30 天";
+"stats.l11d.title.inAFewWords.month" = "一句话看本月";
+"stats.l11d.title.inAFewWords.year" = "一句话看这一年";
+"stats.l11d.title.inAFewWords.all" = "一句话看全部记录";
+"stats.l11d.title.inAFewWords.period" = "一句话看这段时间";
+"stats.l11d.title.atAGlance.week" = "一眼看本周";
+"stats.l11d.title.atAGlance.days7" = "一眼看最近 7 天";
+"stats.l11d.title.atAGlance.days30" = "一眼看最近 30 天";
+"stats.l11d.title.atAGlance.month" = "一眼看本月";
+"stats.l11d.title.atAGlance.year" = "一眼看这一年";
+"stats.l11d.title.atAGlance.all" = "一眼看全部记录";
+"stats.l11d.title.atAGlance.period" = "一眼看这段时间";
