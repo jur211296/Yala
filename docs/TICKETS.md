@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (964)
+## Index (965)
 
 | id | status | path |
 |---|---|---|
@@ -147,6 +147,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | born-cloud-signup-into-existing-account-relaunch-says-nothing | backlog | tickets/backlog/born-cloud-signup-into-existing-account-relaunch-says-nothing.md |
 | born-cloud-signup-lands-on-existing-account-silently | done | tickets/done/born-cloud-signup-lands-on-existing-account-silently.md |
 | borncloud-consent-epoch-written-before-the-guard-decides | backlog | tickets/backlog/borncloud-consent-epoch-written-before-the-guard-decides.md |
+| branch-2-2-merges-without-waiting-for-ci | backlog | tickets/backlog/branch-2-2-merges-without-waiting-for-ci.md |
 | bridge-de-grupos-pierde-la-marca-de-sus-patas | done | tickets/done/bridge-de-grupos-pierde-la-marca-de-sus-patas.md |
 | bridge-synthesis-trusts-a-zero-converted-amount | done | tickets/done/bridge-synthesis-trusts-a-zero-converted-amount.md |
 | bridge-virtual-only-currency-mismatch-is-silent | backlog | tickets/backlog/bridge-virtual-only-currency-mismatch-is-silent.md |
@@ -877,7 +878,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-phrases-shown-in-portuguese-do-not-trigger-siri | qa | tickets/qa/siri-phrases-shown-in-portuguese-do-not-trigger-siri.md |
 | siri-settings-screen-lists-phrases-siri-does-not-know | backlog | tickets/backlog/siri-settings-screen-lists-phrases-siri-does-not-know.md |
-| siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | qa | tickets/qa/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
+| siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | done | tickets/done/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | small-screen-leftovers-after-the-iphone-se-audit | backlog | tickets/backlog/small-screen-leftovers-after-the-iphone-se-audit.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
 | snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling | done | tickets/done/snapshot-upload-alternating-definitive-causes-never-reach-the-short-ceiling.md |

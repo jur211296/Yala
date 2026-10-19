@@ -1,6 +1,6 @@
 ---
 id: siri-shortcut-error-replies-speak-english-on-a-spanish-iphone
-status: qa
+status: done
 priority: medium
 area: "intents, siri, l10n"
 created: 2026-09-16
@@ -106,3 +106,5 @@ Si el paso 3 y el 4 salen en español, el ticket pasa a `done`.
 con Siri»)**: antes del cambio, «What do you want to record?» y «Activate Yala Pro to use Siri entry.»; después, «¿Qué
 quieres registrar?» y «Activa Yala Pro para usar registro con Siri.». Siguen en inglés los botones «Cancel / Done» y el
 «Text» del campo: los pinta el sistema (el «Text» es el título del parámetro, metadato que resuelve el sistema).
+
+Cerrado en el barrido de QA 2026-10-18: el simulador en es-PE reproducía el inglés antes del PR #552 y da español después (capturas antes/despues-2 y -3 en ~/Claude/entregas/Yala--integrar-siri-ia-ios-27/capturas/); Siri dice el mismo texto que pinta Atajos.
