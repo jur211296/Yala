@@ -7467,3 +7467,34 @@
 "accountCardGrouping.label" = "Karty z kilkoma walutami";
 "export.column.card" = "Karta";
 "export.column.card.description" = "Nazwa karty, jeśli konto należy do karty z kilkoma walutami.";
+
+/* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
+"shortcut.spending.title" = "Sprawdź wydatki";
+"shortcut.spending.description" = "Podaje Twoje wydatki z wybranego okresu bez otwierania Yala";
+"shortcut.spending.shortTitle" = "Moje wydatki";
+"shortcut.balance.title" = "Sprawdź saldo";
+"shortcut.balance.description" = "Podaje, ile masz łącznie lub na jednym koncie, bez otwierania Yala";
+"shortcut.balance.shortTitle" = "Moje saldo";
+"shortcut.openAccount.title" = "Otwórz konto";
+"shortcut.openAccount.description" = "Otwiera szczegóły konta w Yala";
+"siri.query.param.period" = "Okres";
+"siri.query.param.account" = "Konto";
+"siri.query.period.type" = "Okres";
+"siri.query.period.thisWeek" = "w tym tygodniu";
+"siri.query.period.thisMonth" = "w tym miesiącu";
+"siri.query.period.lastMonth" = "w zeszłym miesiącu";
+"siri.query.period.thisYear" = "w tym roku";
+"siri.entity.account" = "Konto";
+"siri.query.noData" = "Otwórz raz Yala i zapytaj mnie ponownie.";
+"siri.query.groupsOnly" = "Na tym iPhonie Yala ma tylko Twoje grupy.";
+"siri.query.stale" = "Twoje dane z tego okresu nie są aktualne. Otwórz Yala i zapytaj mnie ponownie.";
+"siri.query.spending.thisWeek" = "Twoje wydatki w tym tygodniu: %@.";
+"siri.query.spending.thisMonth" = "Twoje wydatki w tym miesiącu: %@.";
+"siri.query.spending.lastMonth" = "Twoje wydatki w zeszłym miesiącu: %@.";
+"siri.query.spending.thisYear" = "Twoje wydatki w tym roku: %@.";
+"siri.query.balance.total" = "Masz łącznie %@.";
+"siri.query.balance.account" = "Saldo konta %1$@: %2$@.";
+"siri.query.balance.expensesOnly" = "Yala działa w trybie Tylko wydatki, bez sald. Twoje wydatki w tym miesiącu: %@.";
+"siri.query.accountNotFound" = "Nie mogę znaleźć tego konta w Yala.";
+"siri.query.approximate" = "To kwota przybliżona: jeszcze nie potwierdzono kursu wymiany.";
+"siri.query.asOf" = "Według Twoich danych z %@.";

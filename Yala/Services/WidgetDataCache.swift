@@ -256,8 +256,11 @@ enum WidgetDataCache {
             return
         }
 
-        let snapshot = buildSnapshot(context: context)
-        saveSnapshot(snapshot)
+        let built = buildSnapshot(context: context)
+        saveSnapshot(built.widget)
+        // La foto de Siri sale de los MISMOS números, en su propia clave (`SiriFinanceSnapshot`): así Siri y los widgets
+        // dicen lo mismo y viven y mueren juntos (ver `clearCache`).
+        SiriFinanceSnapshotStore.write(built.siri, to: sharedDefaults)
         publishSessionShell(hasPrivateSession: PrivateSessionMark.hasPrivateSession())
 
         // Trigger widget refresh
@@ -280,6 +283,7 @@ enum WidgetDataCache {
     /// No toca `groupsOnlySessionKey`: vaciar los datos no cambia QUIÉN usa el teléfono.
     static func clearCache(in defaults: UserDefaults?) {
         defaults?.removeObject(forKey: cacheKey)
+        SiriFinanceSnapshotStore.clear(in: defaults)
         WidgetCenter.shared.reloadAllTimelines()
     }
 
@@ -305,7 +309,7 @@ enum WidgetDataCache {
 
     // MARK: - Private Helpers
 
-    private static func buildSnapshot(context: ModelContext) -> WidgetDataSnapshot {
+    private static func buildSnapshot(context: ModelContext) -> (widget: WidgetDataSnapshot, siri: SiriFinanceSnapshot) {
         // Fetch ALL transactions for correct balance calculation
         let allTransactionsDescriptor = FetchDescriptor<TransactionItem>(
             sortBy: [SortDescriptor(\.date, order: .reverse), SortDescriptor(\.createdAt, order: .reverse)]
@@ -492,8 +496,11 @@ enum WidgetDataCache {
             .lastMonth, .thisYear, .lastYear, .allTime
         ]
 
+        // Un solo «ahora» para los ocho períodos y para la foto de Siri, que guarda el inicio de cada uno: con dos
+        // relojes, un cálculo a caballo de medianoche del día 1 etiquetaría los totales de septiembre como de octubre.
+        let periodsNow = Date.now
         for period in widgetPeriods {
-            let interval = period.dateInterval()
+            let interval = period.dateInterval(now: periodsNow)
             let summary = buildPeriodSummary(
                 transactions: eligibleTransactions,
                 periodStart: interval.start,
@@ -525,7 +532,7 @@ enum WidgetDataCache {
             converter: converter
         )
 
-        return WidgetDataSnapshot(
+        let widgetSnapshot = WidgetDataSnapshot(
             lastUpdated: Date.now,
             preferredCurrencyCode: preferredCurrency,
             currencyDisplayFormat: currencyDisplayFormat,
@@ -539,6 +546,24 @@ enum WidgetDataCache {
             allTimeSummary: allTimeSummary,
             periodSummaries: periodSummaries
         )
+
+        // Siri: todas las cuentas (las archivadas hacen falta para leer bien las líneas de una tarjeta), con el saldo
+        // nativo de las que el Panel enseña. `SiriFinanceSnapshotBuilder` decide cuáles salen.
+        let siriAccounts = accounts.map { account in
+            SiriAccountInput(
+                node: AccountLineNode(account),
+                name: account.name,
+                excludedFromStatistics: account.excludeFromStatistics,
+                nativeBalance: NSDecimalNumber(decimal: nativeBalancesByAccount[account.persistentModelID] ?? 0).doubleValue
+            )
+        }
+        let siriSnapshot = SiriFinanceSnapshotBuilder.make(
+            widget: widgetSnapshot,
+            accounts: siriAccounts,
+            now: periodsNow,
+            calendar: userConfiguredCalendar()
+        )
+        return (widgetSnapshot, siriSnapshot)
     }
 
     /// Spent del budget vía SSOT `BudgetsViewModel.calculateSpending`.

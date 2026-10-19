@@ -7455,3 +7455,34 @@
 "accountCardGrouping.label" = "Karten mit mehreren Währungen";
 "export.column.card" = "Karte";
 "export.column.card.description" = "Name der Karte, wenn das Konto zu einer Karte mit mehreren Währungen gehört.";
+
+/* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
+"shortcut.spending.title" = "Ausgaben abfragen";
+"shortcut.spending.description" = "Sagt dir, wie viel du in einem Zeitraum ausgegeben hast, ohne Yala zu öffnen";
+"shortcut.spending.shortTitle" = "Meine Ausgaben";
+"shortcut.balance.title" = "Kontostand abfragen";
+"shortcut.balance.description" = "Sagt dir, wie viel du insgesamt oder auf einem Konto hast, ohne Yala zu öffnen";
+"shortcut.balance.shortTitle" = "Mein Kontostand";
+"shortcut.openAccount.title" = "Konto öffnen";
+"shortcut.openAccount.description" = "Öffnet die Details eines Kontos in Yala";
+"siri.query.param.period" = "Zeitraum";
+"siri.query.param.account" = "Konto";
+"siri.query.period.type" = "Zeitraum";
+"siri.query.period.thisWeek" = "diese Woche";
+"siri.query.period.thisMonth" = "diesen Monat";
+"siri.query.period.lastMonth" = "letzten Monat";
+"siri.query.period.thisYear" = "dieses Jahr";
+"siri.entity.account" = "Konto";
+"siri.query.noData" = "Öffne Yala einmal und frag mich noch mal.";
+"siri.query.groupsOnly" = "Auf diesem iPhone hat Yala nur deine Gruppen.";
+"siri.query.stale" = "Deine Zahlen für diesen Zeitraum sind nicht aktuell. Öffne Yala und frag mich noch mal.";
+"siri.query.spending.thisWeek" = "Diese Woche hast du %@ ausgegeben.";
+"siri.query.spending.thisMonth" = "Diesen Monat hast du %@ ausgegeben.";
+"siri.query.spending.lastMonth" = "Letzten Monat hast du %@ ausgegeben.";
+"siri.query.spending.thisYear" = "Dieses Jahr hast du %@ ausgegeben.";
+"siri.query.balance.total" = "Du hast insgesamt %@.";
+"siri.query.balance.account" = "Kontostand von %1$@: %2$@.";
+"siri.query.balance.expensesOnly" = "Yala ist im Modus „Nur Ausgaben“, ohne Kontostände. Diesen Monat hast du %@ ausgegeben.";
+"siri.query.accountNotFound" = "Ich finde dieses Konto in Yala nicht.";
+"siri.query.approximate" = "Der Betrag ist ungefähr: Ein Wechselkurs ist noch nicht bestätigt.";
+"siri.query.asOf" = "Laut deinen Daten vom %@.";

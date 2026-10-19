@@ -7456,3 +7456,34 @@
 "accountCardGrouping.label" = "Cartes à plusieurs devises";
 "export.column.card" = "Carte";
 "export.column.card.description" = "Nom de la carte, si le compte fait partie d’une carte à plusieurs devises.";
+
+/* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
+"shortcut.spending.title" = "Consulter les dépenses";
+"shortcut.spending.description" = "Te dit combien tu as dépensé sur une période, sans ouvrir Yala";
+"shortcut.spending.shortTitle" = "Mes dépenses";
+"shortcut.balance.title" = "Consulter le solde";
+"shortcut.balance.description" = "Te dit combien tu as au total ou sur un compte, sans ouvrir Yala";
+"shortcut.balance.shortTitle" = "Mon solde";
+"shortcut.openAccount.title" = "Ouvrir un compte";
+"shortcut.openAccount.description" = "Ouvre la fiche d'un compte dans Yala";
+"siri.query.param.period" = "Période";
+"siri.query.param.account" = "Compte";
+"siri.query.period.type" = "Période";
+"siri.query.period.thisWeek" = "cette semaine";
+"siri.query.period.thisMonth" = "ce mois-ci";
+"siri.query.period.lastMonth" = "le mois dernier";
+"siri.query.period.thisYear" = "cette année";
+"siri.entity.account" = "Compte";
+"siri.query.noData" = "Ouvre Yala une fois et repose-moi la question.";
+"siri.query.groupsOnly" = "Sur cet iPhone, Yala n'a que tes groupes.";
+"siri.query.stale" = "Tes chiffres de cette période ne sont pas à jour. Ouvre Yala et repose-moi la question.";
+"siri.query.spending.thisWeek" = "Cette semaine, tu as dépensé %@.";
+"siri.query.spending.thisMonth" = "Ce mois-ci, tu as dépensé %@.";
+"siri.query.spending.lastMonth" = "Le mois dernier, tu as dépensé %@.";
+"siri.query.spending.thisYear" = "Cette année, tu as dépensé %@.";
+"siri.query.balance.total" = "Tu as %@ au total.";
+"siri.query.balance.account" = "Solde de %1$@ : %2$@.";
+"siri.query.balance.expensesOnly" = "Yala est en mode Dépenses uniquement, sans soldes. Ce mois-ci, tu as dépensé %@.";
+"siri.query.accountNotFound" = "Je ne trouve pas ce compte dans Yala.";
+"siri.query.approximate" = "C'est approximatif : un taux de change reste à confirmer.";
+"siri.query.asOf" = "D'après tes données du %@.";

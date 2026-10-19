@@ -7467,3 +7467,34 @@
 "accountCardGrouping.label" = "Kaarten met meerdere valuta's";
 "export.column.card" = "Kaart";
 "export.column.card.description" = "Naam van de kaart, als de rekening bij een kaart met meerdere valuta's hoort.";
+
+/* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
+"shortcut.spending.title" = "Uitgaven opvragen";
+"shortcut.spending.description" = "Vertelt hoeveel je in een periode hebt uitgegeven, zonder Yala te openen";
+"shortcut.spending.shortTitle" = "Mijn uitgaven";
+"shortcut.balance.title" = "Saldo opvragen";
+"shortcut.balance.description" = "Vertelt hoeveel je in totaal of op een rekening hebt, zonder Yala te openen";
+"shortcut.balance.shortTitle" = "Mijn saldo";
+"shortcut.openAccount.title" = "Rekening openen";
+"shortcut.openAccount.description" = "Opent de gegevens van een rekening in Yala";
+"siri.query.param.period" = "Periode";
+"siri.query.param.account" = "Rekening";
+"siri.query.period.type" = "Periode";
+"siri.query.period.thisWeek" = "deze week";
+"siri.query.period.thisMonth" = "deze maand";
+"siri.query.period.lastMonth" = "vorige maand";
+"siri.query.period.thisYear" = "dit jaar";
+"siri.entity.account" = "Rekening";
+"siri.query.noData" = "Open Yala één keer en vraag het me opnieuw.";
+"siri.query.groupsOnly" = "Op deze iPhone heeft Yala alleen je groepen.";
+"siri.query.stale" = "Je cijfers van die periode zijn niet bijgewerkt. Open Yala en vraag het me opnieuw.";
+"siri.query.spending.thisWeek" = "Deze week heb je %@ uitgegeven.";
+"siri.query.spending.thisMonth" = "Deze maand heb je %@ uitgegeven.";
+"siri.query.spending.lastMonth" = "Vorige maand heb je %@ uitgegeven.";
+"siri.query.spending.thisYear" = "Dit jaar heb je %@ uitgegeven.";
+"siri.query.balance.total" = "Je hebt in totaal %@.";
+"siri.query.balance.account" = "Saldo van %1$@: %2$@.";
+"siri.query.balance.expensesOnly" = "Yala staat in de modus Alleen uitgaven, zonder saldi. Deze maand heb je %@ uitgegeven.";
+"siri.query.accountNotFound" = "Ik kan die rekening niet vinden in Yala.";
+"siri.query.approximate" = "Het is een schatting: een wisselkoers moet nog bevestigd worden.";
+"siri.query.asOf" = "Volgens je gegevens van %@.";

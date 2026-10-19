@@ -7465,3 +7465,34 @@
 "accountCardGrouping.label" = "Carte con più valute";
 "export.column.card" = "Carta";
 "export.column.card.description" = "Nome della carta, se il conto fa parte di una carta con più valute.";
+
+/* Siri: preguntas sin abrir la app y abrir una cuenta (iOS 27, docs/siri-ios-27-2026-10.md) */
+"shortcut.spending.title" = "Consulta spese";
+"shortcut.spending.description" = "Ti dice quanto hai speso in un periodo, senza aprire Yala";
+"shortcut.spending.shortTitle" = "Le mie spese";
+"shortcut.balance.title" = "Consulta saldo";
+"shortcut.balance.description" = "Ti dice quanto hai in totale o su un conto, senza aprire Yala";
+"shortcut.balance.shortTitle" = "Il mio saldo";
+"shortcut.openAccount.title" = "Apri conto";
+"shortcut.openAccount.description" = "Apre la scheda di un conto in Yala";
+"siri.query.param.period" = "Periodo";
+"siri.query.param.account" = "Conto";
+"siri.query.period.type" = "Periodo";
+"siri.query.period.thisWeek" = "questa settimana";
+"siri.query.period.thisMonth" = "questo mese";
+"siri.query.period.lastMonth" = "il mese scorso";
+"siri.query.period.thisYear" = "quest'anno";
+"siri.entity.account" = "Conto";
+"siri.query.noData" = "Apri Yala una volta e richiedimelo.";
+"siri.query.groupsOnly" = "Su questo iPhone, Yala ha solo i tuoi gruppi.";
+"siri.query.stale" = "I tuoi numeri di quel periodo non sono aggiornati. Apri Yala e richiedimelo.";
+"siri.query.spending.thisWeek" = "Questa settimana hai speso %@.";
+"siri.query.spending.thisMonth" = "Questo mese hai speso %@.";
+"siri.query.spending.lastMonth" = "Il mese scorso hai speso %@.";
+"siri.query.spending.thisYear" = "Quest'anno hai speso %@.";
+"siri.query.balance.total" = "Hai %@ in totale.";
+"siri.query.balance.account" = "Saldo di %1$@: %2$@.";
+"siri.query.balance.expensesOnly" = "Yala è in modalità Solo spese, senza saldi. Questo mese hai speso %@.";
+"siri.query.accountNotFound" = "Non trovo quel conto in Yala.";
+"siri.query.approximate" = "È approssimativo: un tasso di cambio è ancora da confermare.";
+"siri.query.asOf" = "Secondo i tuoi dati del %@.";
