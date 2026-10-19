@@ -275,8 +275,8 @@ jobs:
           echo "run_tests=false" >> "$GITHUB_OUTPUT"
           echo "::notice title=Suite de simulador::SE SALTA — el diff es solo docs/tickets/marketing (ficheros: $total)"
 
-  # Suite de tests. Runner macos-26 (Tahoe): Xcode `latest-stable` (26.x) + sim
-  # iPhone 17 Pro. Build UNA vez + test-without-building.
+  # Suite de tests. Runner `xcode-27` (preview de GitHub, macOS 27): Xcode 27.1 + sim
+  # iPhone 17 Pro en iOS 27.0 (rama 2.2; ver el paso «Seleccionar Xcode 27.1»). Build UNA vez + test-without-building.
   #
   # LOS UNIT BLOQUEAN (2026-10-10, ticket `ci-warns-but-does-not-block`). Un unit en rojo pone
   # este job en rojo, y `tests` es check requerido del ruleset de `2.1`: el auto-merge (ADR-054 de
@@ -302,7 +302,7 @@ jobs:
     # Fail closed también aquí: si `changes` peta, su output llega vacío y '' != 'false',
     # así que la suite corre igual. Solo un 'false' explícito la salta.
     if: ${{ !cancelled() && needs.changes.outputs.run_tests != 'false' }}
-    runs-on: macos-26
+    runs-on: xcode-27
     # ------------------------------------------------------------------------------
     # TOPES DE TIEMPO (2026-09-07; tabla rehecha el 2026-10-09). Sin `timeout-minutes` GitHub aplica su default de
     # **360 minutos**, y este job no tenia ninguno: ni aqui ni a nivel de workflow. El
@@ -419,10 +419,18 @@ jobs:
         id: contexto
         run: echo "ui_tocaba=$UI_TOCABA" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
-      - name: Seleccionar Xcode (latest-stable 26.x)
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+      # XCODE 27.1 FIJO EN LA RAMA 2.2 (2026-10-18). 2.2 usa APIs que solo existen en el SDK de
+      # iOS 27 (el «Abrir cuenta» de Siri, PR #552) y con el 26.6 de `macos-26` no compilaba:
+      # `SiriQueryIntents.swift:195: … has no member 'open'`, cero tests corridos. La release de 2.2
+      # se compila con 27.1 en la Mini, asi que el CI usa ese mismo build (27A9275) y no un guard
+      # que dejaria sin compilar justo el codigo de iOS 27. La imagen `xcode-27` de GitHub lo trae
+      # en `/Applications/Xcode_27.1.app` (alias de `Xcode_27.1_Release_Candidate.app`, mismo build).
+      # Se elige con `xcode-select` y no con `setup-xcode`: la ruta es la del README de la imagen y
+      # el paso falla si el build no es el esperado, en vez de caer en silencio al 27.0 por defecto.
+      # El simulador sigue siendo un iPhone 17 Pro: la imagen no lo trae, y `ci-simulador.sh` lo
+      # crea en el runtime iOS 27.0, el unico que lleva. La rama 2.1 sigue en `macos-26` con 26.6.
+      - name: Seleccionar Xcode 27.1
+        run: bash qa/scripts/ci-xcode.sh
       # Secrets.xcconfig está gitignored (API keys); sin él el build falla. El template
       # (placeholders) basta en CI: los tests no llaman APIs reales (LLM/exchange-rate
       # son agentic, fuera de CI).
@@ -595,7 +603,7 @@ jobs:
     # Sin `needs`: arranca a la vez que `tests`. Tercera aparicion de la condicion de UI_TOCABA
     # (ver el `env:` del job `tests`).
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 150
     strategy:
       # Una tanda que falla no puede cancelar a las otras: perderiamos su parte de la suite.
@@ -613,10 +621,9 @@ jobs:
       ui_3: ${{ steps.salida.outputs.ui_3 }}
     steps:
       - uses: actions/checkout@v4
-      - name: Seleccionar Xcode (latest-stable 26.x)
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
+      # Mismo paso y mismo porque que en el job `tests`.
+      - name: Seleccionar Xcode 27.1
+        run: bash qa/scripts/ci-xcode.sh
       - name: Crear Secrets.xcconfig (placeholder para CI)
         run: cp Secrets.xcconfig.template Secrets.xcconfig
       # Mismo paso y mismo porque que en el job `tests`.
