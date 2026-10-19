@@ -19,7 +19,7 @@ import UIKit
 
 // MARK: - Período
 
-enum SiriSpendingPeriodOption: String, AppEnum {
+nonisolated enum SiriSpendingPeriodOption: String, AppEnum {
     case thisWeek
     case thisMonth
     case lastMonth

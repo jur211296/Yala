@@ -101,3 +101,8 @@ resuelve el sistema y no se pueden traducir desde la app en tiempo de ejecución
 4. Siri contesta «**Activa Yala Pro para usar registro con Siri.**» en español (antes: «Activate Yala Pro…»).
 
 Si el paso 3 y el 4 salen en español, el ticket pasa a `done`.
+
+**Medido en el simulador (2026-10-18, iPhone 17 Pro, iOS 27.0, `es-PE`, Yala Dev sin Pro, atajo con la acción «Anotar
+con Siri»)**: antes del cambio, «What do you want to record?» y «Activate Yala Pro to use Siri entry.»; después, «¿Qué
+quieres registrar?» y «Activa Yala Pro para usar registro con Siri.». Siguen en inglés los botones «Cancel / Done» y el
+«Text» del campo: los pinta el sistema (el «Text» es el título del parámetro, metadato que resuelve el sistema).

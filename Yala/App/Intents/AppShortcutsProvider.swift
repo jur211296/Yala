@@ -103,19 +103,18 @@ struct YalaShortcuts: AppShortcutsProvider {
             systemImageName: "text.bubble.fill"
         )
 
-        // Preguntas que Siri contesta sin abrir la app (`SiriQueryIntents.swift`). El período de la tercera frase sale
-        // de los títulos de `SiriSpendingPeriodOption` («esta semana», «el mes pasado»…), por eso van en minúscula.
+        // Preguntas que Siri contesta sin abrir la app (`SiriQueryIntents.swift`). Sin frase con el período a propósito:
+        // Atajos pinta entonces una tarjeta por período con el período suelto («este mes»), y su título propio
+        // (`ParameterPresentation`) no se puede comprobar en el simulador. Por voz es este mes; el período se elige en Atajos.
         AppShortcut(
             intent: SpendingQueryIntent(),
             phrases: [
                 // Spanish
                 "Cuánto gasté en \(.applicationName)",
                 "Cuánto llevo gastado en \(.applicationName)",
-                "Cuánto gasté \(\.$period) en \(.applicationName)",
                 // English
                 "How much did I spend in \(.applicationName)",
-                "My spending in \(.applicationName)",
-                "How much did I spend \(\.$period) in \(.applicationName)"
+                "My spending in \(.applicationName)"
             ],
             shortTitle: "shortcut.spending.shortTitle",
             systemImageName: "chart.bar.fill"

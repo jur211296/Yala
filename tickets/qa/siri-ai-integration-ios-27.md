@@ -49,7 +49,7 @@ el mínimo de iOS 26**: lo de iOS 27 va marcado para iOS 27.
 
 **Hecho (opción B, reversible y sin datos nuevos fuera del teléfono)**:
 
-- «¿Cuánto gasté en Yala?» (este mes por defecto, o esta semana, el mes pasado, este año) y «¿Cuánto tengo en Yala?»
+- «¿Cuánto gasté en Yala?» (por voz, este mes; en Atajos, también esta semana, el mes pasado o este año) y «¿Cuánto tengo en Yala?»
   (total o una cuenta): contestan sin abrir la app, con el iPhone desbloqueado, leyendo una foto de tus números que la
   app guarda en el teléfono junto a la de los widgets (`SiriFinanceSnapshot`). Si la foto es de otro mes, no inventa.
 - Entidad «cuenta» con búsqueda por nombre, sin índice de Spotlight.
@@ -69,9 +69,12 @@ Siri por voz no existe en el simulador: hace falta el iPhone.
 1. Instala el TestFlight de 2.2 que traiga este cambio y abre Yala una vez (así guarda la foto para Siri).
 2. Con el iPhone **desbloqueado**, di «Oye Siri, **¿Cuánto gasté en Yala?**». Debería decir lo que llevas gastado este
    mes, el mismo número del widget de gastos.
-3. Di «Oye Siri, **¿Cuánto gasté el mes pasado en Yala?**».
-4. Di «Oye Siri, **¿Cuánto tengo en Yala?**». El total, como el widget de saldo.
-5. Bloquea el iPhone y repite el paso 4: Siri tiene que pedirte desbloquear antes de decir el número.
-6. Desbloqueado, di «Oye Siri, **abre mi cuenta <nombre de una cuenta> en Yala**». Debería abrir su ficha.
+3. Di «Oye Siri, **¿Cuánto tengo en Yala?**». El total, como el widget de saldo.
+4. Bloquea el iPhone y repite el paso 3: Siri tiene que pedirte desbloquear antes de decir el número.
+5. Desbloqueado, di «Oye Siri, **abre mi cuenta <nombre de una cuenta> en Yala**». Debería abrir su ficha.
 
 Si algo de esto no pasa, dime qué contestó Siri, palabra por palabra.
+
+**Medido en el simulador (2026-10-18, iOS 27.0, es-PE)**: la pregunta «¿Qué quieres registrar?» y «Activa Yala Pro para
+usar registro con Siri.» salen en español con este cambio (antes, en inglés). Los botones «Cancel / Done» y el «Text» del
+campo los pinta el sistema y siguen en inglés en el simulador; no dependen de Yala. Capturas en el PR.

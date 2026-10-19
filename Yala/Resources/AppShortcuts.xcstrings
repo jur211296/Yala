@@ -89,28 +89,6 @@
         }
       }
     },
-    "Cuánto gasté ${period} en ${applicationName}": {
-      "localizations": {
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quanto gastei ${period} no ${applicationName}"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quanto gastei ${period} no ${applicationName}"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quanto gastei ${period} no ${applicationName}"
-          }
-        }
-      }
-    },
     "Cuánto gasté en ${applicationName}": {
       "localizations": {
         "pt": {
