@@ -1,11 +1,14 @@
 ---
 id: ci-2-2-builds-with-xcode-26-and-uses-ios-27-apis
-status: in-progress
+status: done
 priority: high
 area: "ci, testing"
 created: 2026-10-18
 updated: 2026-10-18
 source: rojo del CI en el merge del PR #552 a 2.2 (run 39185367867)
+qa-status: not-replicable
+qa-date: 2026-10-18
+qa-notes: es del CI, sin camino en un iPhone; PR 555 en verde en xcode-27 (run 39192432161, 10606 unit)
 ---
 
 # El CI de 2.2 compila con Xcode 26.6 y 2.2 ya usa APIs de iOS 27
@@ -43,3 +46,9 @@ en el CI justo el código nuevo de 2.2.
 
 La imagen `xcode-27` está en preview: GitHub avisa de colas mientras equilibra capacidad. Si
 una corrida se queda esperando runner, es eso y no el código.
+
+## Resultado
+
+PR #555, run `39192432161`: Xcode 27.1 build 27A9275, iPhone 17 Pro creado en iOS 27.0 al
+primer intento, 10 606 unit pure-logic en verde a la primera; job `tests` en 27,5 min, sin cola
+de runner.
