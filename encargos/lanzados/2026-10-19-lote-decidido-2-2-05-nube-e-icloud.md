@@ -99,3 +99,9 @@ Por qué: dicen «Continuar con…» como la maqueta y cumplen la 4.8. Alternati
 **D14 · L20-18, tres pantallas** → Cover del cierre de sesión, tarjeta de relanzamiento de Ajustes (ida, vuelta y vuelta cancelada) y aviso «iCloud ya disponible». Los checks dicen solo lo que es verdad en cada caso; el aviso es un `.alert` y lleva los mismos tres pasos en texto (no se convierte en hoja: tocaría la matriz de presentaciones). El relanzamiento del Welcome (L6-7) queda como está.
 
 **D15 · Review adversarial** → Sí, antes del PR: toca el arranque de la migración, el consentimiento y dos avisos que borran.
+
+**D16 · L20-15 «Seguir esperando» primero no cabe en una alerta** (salió al medir) → No se elige: el texto nuevo sí va, el orden queda como estaba y la card pasa a «espera decisión» con tres propuestas y capturas (A tres botones · B «Seguir esperando» abajo pero destacado, recomendada · C hoja propia).
+Por qué: con `role: .cancel` iOS lo baja al final y sin él SwiftUI añade un «Cancelar» que repite al primero (medido en el simulador). Es una decisión que cambia lo que ve la persona y ninguna opción sale de la decidida.
+
+**D17 · L20-17, el texto decidido no es verdad** → «Tus datos vuelven a vivir en este iPhone y en tu iCloud. No pierdes nada.» en vez de «Tus datos salen de la nube de Yala…»; la card va a Jürgen para que lo confirme.
+Por qué: al volver, la cuenta de la nube queda en pausa por si vuelves (`reverse_complete` la congela; lo dice la propia tarjeta). Mantener la frase decidida publicaría una afirmación falsa sobre dónde están los datos.
