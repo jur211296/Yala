@@ -174,14 +174,15 @@ struct PanelSheetsModifier: ViewModifier {
                 // está garantizado: el flag no debe quedarse puesto (tiraría los avisos de bandeja de TODAS las ventanas).
                 .onDisappear { navigation.isInboxSheetVisible = false }
             }
-            .sheet(isPresented: $sheets.showUpgradeForVoice) {
-                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
+            .proUpgradeSheet(isPresented: $sheets.showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+                openAIEntryAfterUnlock(.voice)
             }
-            .sheet(isPresented: $sheets.showUpgradeForImage) {
-                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+            .proUpgradeSheet(isPresented: $sheets.showUpgradeForImage, feature: .imageInput, context: .proFeature) {
+                openAIEntryAfterUnlock(.image)
             }
-            .sheet(isPresented: $sheets.showUpgradeForAccounts) {
-                UpgradePromptSheet(feature: .accounts, context: .limitReached)
+            .proUpgradeSheet(isPresented: $sheets.showUpgradeForAccounts, feature: .accounts, context: .limitReached) {
+                sheets.accountFormSheet = AccountFormSheet(account: nil)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
             .yalaAIChat(isPresented: $sheets.showChatSheet)
@@ -192,8 +193,8 @@ struct PanelSheetsModifier: ViewModifier {
                 launcher: .panel,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .sheet(isPresented: $sheets.showUpgradeForChat) {
-                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            .proUpgradeSheet(isPresented: $sheets.showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
+                openChatAfterUnlock()
             }
             .chatConsentAlert(isPresented: $sheets.showChatConsentAlert) {
                 // Consent recién aceptado por el alert. Decidimos siguiente paso vía pure-logic.
@@ -245,6 +246,32 @@ struct PanelSheetsModifier: ViewModifier {
             } message: {
                 Text(L10n.SetupChecklist.practiceMessage)
             }
+    }
+
+    /// Tras comprar Pro desde «Función Pro» (UX 2.2 · L17-9): el mismo camino que tocar Voz o Foto siendo Pro, con su
+    /// consentimiento de datos si aún no se dio.
+    private func openAIEntryAfterUnlock(_ input: PendingAIInput) {
+        guard appPreferences.aiDataConsentAccepted else {
+            sheets.pendingAIInput = input
+            sheets.showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: sheets.showVoiceRecording = true
+        case .image: sheets.showImageSelection = true
+        }
+    }
+
+    /// Tras comprar Pro desde «Función Pro»: el mismo camino que tocar Yala IA siendo Pro.
+    private func openChatAfterUnlock() {
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: sheets.showYalaAIOnboarding = true
+        case .chat: sheets.showChatSheet = true
+        case .consent: sheets.showChatConsentAlert = true
+        }
     }
 
     private func handleVoiceRecordingDismiss() {

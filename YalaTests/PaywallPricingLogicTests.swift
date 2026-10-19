@@ -137,30 +137,43 @@ struct PaywallPricingWiringTests {
             .joined(separator: "\n")
     }
 
+    /// Desde el lote decidido 06 (L17-2, L17-3) las tres hojas de compra pintan los planes de `store.planOffers`, que
+    /// arma `StoreKitManager.offer(for:)`: la promesa de la prueba vive en un solo sitio, y las vistas no la recalculan.
     static let paywalls = [
         "Yala/App/Views/Settings/SubscriptionView.swift",
         "Yala/App/Views/Subscription/ProTrialOfferSheet.swift",
+        "Yala/App/Views/Shared/UpgradePromptSheet.swift",
     ]
 
-    @Test("Las dos pantallas de venta prometen la prueba solo con derecho a ella", arguments: paywalls)
+    @Test("Las hojas de compra leen los planes ya filtrados por la elegibilidad, sin calcular la prueba", arguments: paywalls)
     func paywalls_gateTrialOnEligibility(_ path: String) throws {
         let s = try Self.code(path)
-        #expect(s.contains("PaywallPricingLogic.promisedTrialDays("))
-        #expect(s.contains("isEligible: store.isIntroOfferEligible"))
+        #expect(s.contains("store.planOffers"))
+        #expect(!s.contains("introductoryOffer"), "la vista vuelve a calcular la prueba, sin la elegibilidad")
         #expect(!s.contains("intro.period"), "el cálculo de días vuelve a vivir en la vista, sin la elegibilidad")
     }
 
-    @Test("El precio mensual va con su unidad, no con `perMonth(\"\")`", arguments: paywalls)
-    func paywalls_monthlyUnit(_ path: String) throws {
-        let s = try Self.code(path)
-        #expect(!s.contains("perMonth(\"\")"))
-        #expect(s.contains("L10n.Subscription.perMonthUnit"))
+    @Test("Cada plan promete la prueba solo con derecho a ella")
+    func storeKitManager_offersGateTheTrial() throws {
+        let s = try Self.code("Yala/App/Services/StoreKitManager.swift")
+        #expect(s.contains("PaywallPricingLogic.promisedTrialDays("))
+        #expect(s.contains("isEligible: isIntroOfferEligible"))
+        #expect(s.contains("PaywallPricingLogic.firstChargeDate("))
     }
 
-    @Test("La etiqueta de ahorro es sólida, sin degradado", arguments: paywalls)
-    func paywalls_saveBadgeSolid(_ path: String) throws {
-        let s = try Self.code(path)
+    @Test("El precio mensual va con su unidad, no con `perMonth(\"\")`")
+    func components_monthlyUnit() throws {
+        let s = try Self.code("Yala/App/Views/Subscription/ProPurchaseComponents.swift")
+        #expect(!s.contains("perMonth(\"\")"))
+        #expect(s.contains("L10n.UXPro.trialThenMonthly("))
+        #expect(s.contains("L10n.UXPro.priceMonthly("))
+    }
+
+    @Test("La etiqueta de ahorro es sólida, sin degradado")
+    func components_saveBadgeSolid() throws {
+        let s = try Self.code("Yala/App/Views/Subscription/ProPurchaseComponents.swift")
         #expect(!s.contains("DS.Gradients.subscription"))
+        #expect(!s.contains("LinearGradient"), "L17-2: sin degradados en las hojas de compra")
         #expect(s.contains("subscription_save_badge"))
     }
 
@@ -176,9 +189,11 @@ struct PaywallPricingWiringTests {
 
     @Test("El paywall avisa si no cargaron los precios, con reintento")
     func subscriptionView_pricesUnavailable() throws {
-        let s = try Self.code("Yala/App/Views/Settings/SubscriptionView.swift")
-        #expect(s.contains("productLoadFailed = store.products.isEmpty"))
-        #expect(s.contains("subscription_prices_unavailable"))
-        #expect(s.contains("subscription_prices_retry"))
+        let view = try Self.code("Yala/App/Views/Settings/SubscriptionView.swift")
+        #expect(view.contains("productLoadFailed = store.planOffers.isEmpty"))
+        #expect(view.contains("pricesFailed: productLoadFailed"))
+        let components = try Self.code("Yala/App/Views/Subscription/ProPurchaseComponents.swift")
+        #expect(components.contains("subscription_prices_unavailable"))
+        #expect(components.contains("subscription_prices_retry"))
     }
 }

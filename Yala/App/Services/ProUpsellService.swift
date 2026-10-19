@@ -74,6 +74,17 @@ final class ProUpsellService {
         return true
     }
 
+    /// Si este dispositivo vio alguna vez a la persona en la prueba. La hoja de fin de Pro lo usa para elegir su
+    /// título cuando no hay una marca más precisa (`StoreKitManager.lastActivePlanWasTrial`, UX 2.2 · L17-6).
+    var everWasInTrial: Bool {
+        defaults.bool(forKey: wasInTrialKey)
+    }
+
+    /// Si «Prueba terminada» (o la hoja de fin de Pro, que la sustituye) ya se enseñó.
+    var trialExpiredSheetWasShown: Bool {
+        defaults.bool(forKey: trialExpiredSheetShownKey)
+    }
+
     /// Whether the trial-expired sheet should appear (once per lifetime).
     func shouldShowTrialExpiredSheet() -> Bool {
         guard !isProUser() else { return false }

@@ -45,6 +45,26 @@ enum PaywallPricingLogic {
         }
     }
 
+    /// El día en que se cobraría por primera vez si la prueba empieza `start`: el final del periodo de la oferta
+    /// introductoria (L17-2, «Así funciona la prueba»). Con unidades de calendario, no `días × 30`: un mes de prueba
+    /// que empieza el 15 de octubre termina el 15 de noviembre.
+    static func firstChargeDate(
+        from start: Date,
+        unit: Product.SubscriptionPeriod.Unit,
+        value: Int,
+        calendar: Calendar = .current
+    ) -> Date? {
+        let component: Calendar.Component
+        switch unit {
+        case .day: component = .day
+        case .week: component = .weekOfYear
+        case .month: component = .month
+        case .year: component = .year
+        @unknown default: component = .day
+        }
+        return calendar.date(byAdding: component, value: value, to: start)
+    }
+
     /// Cómo se avisa de que «Restaurar compras» falló. `nil` = no se avisa (la persona canceló).
     static func restoreFailureAlert(isUserCancellation: Bool, message: String) -> (title: String, message: String)? {
         guard !isUserCancellation else { return nil }

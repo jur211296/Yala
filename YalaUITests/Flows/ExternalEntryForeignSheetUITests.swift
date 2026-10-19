@@ -36,7 +36,8 @@ final class ExternalEntryForeignSheetUITests: XCTestCase {
     ) -> (XCUIApplication, XCUIElement) {
         let app = XCUIApplication()
         // Pro y consentimiento: la foto compartida va directa a la lectura, sin la hoja de Pro ni la del consentimiento.
-        app.launchForUITest(pro: true, aiConsent: true, extraArguments: extraArguments)
+        // Con precios: la oferta de prueba solo sale si se sabe que la cuenta aún la tiene (UX 2.2 · L17-5).
+        app.launchForUITest(pro: true, aiConsent: true, fakePrices: true, extraArguments: extraArguments)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
 
         // Estadísticas es el 2.º tab del config default [panel, statistics, planning].

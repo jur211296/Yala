@@ -15,6 +15,10 @@ struct SubscriptionSuccessView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.yalaTheme) private var theme
 
+    /// La función de la que venía la compra (UX 2.2 · L17-9): el subtítulo dice «Ya puedes…» con ella, y al tocar
+    /// «Comenzar» quien abrió la compra la abre. `nil` desde el paywall.
+    var feature: ProFeature?
+
     // MARK: - State
 
     @State private var showConfetti = false
@@ -39,19 +43,12 @@ struct SubscriptionSuccessView: View {
             VStack(spacing: DS.Spacing.xxl) {
                 Spacer()
 
-                // Animated spark
-                ZStack {
-                    // Glow
-                    YalaSpark(size: .large, animated: false)
-                        .scaleEffect(5.0)
-                        .blur(radius: 30)
-                        .opacity(0.5)
-
-                    YalaSpark(size: .large, animated: true)
-                        .scaleEffect(4.0)
-                        .shadow(color: Color.orange.opacity(0.5), radius: 10, y: 5)
-                }
-                .scaleEffect(crownScale)
+                // La estrella, sólida y sin halo ni sombra (UX 2.2 · L17-9: la bienvenida pierde el brillo).
+                YalaSpark(size: .large, animated: true, solid: true)
+                    .scaleEffect(3.0)
+                    .frame(height: 100)
+                    .scaleEffect(crownScale)
+                    .accessibilityHidden(true)
 
                 // Title
                 VStack(spacing: DS.Spacing.md) {
@@ -60,7 +57,7 @@ struct SubscriptionSuccessView: View {
                         .foregroundStyle(.thPrimaryText)
                         .multilineTextAlignment(.center)
 
-                    Text(L10n.Subscription.Success.subtitle)
+                    Text(subtitle)
                         .font(DS.Typography.body)
                         .foregroundStyle(.thSecondaryText)
                         .multilineTextAlignment(.center)
@@ -78,6 +75,7 @@ struct SubscriptionSuccessView: View {
                 YalaPrimaryButton(L10n.Subscription.Success.continueButton) {
                     dismiss()
                 }
+                .accessibilityIdentifier("subscription_success_continue")
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.bottom, DS.Spacing.xxl)
             }
@@ -88,6 +86,21 @@ struct SubscriptionSuccessView: View {
     }
 
     // MARK: - Subviews
+
+    private var subtitle: String {
+        switch feature {
+        case .voiceInput: return L10n.UXPro.welcomeVoice
+        case .imageInput: return L10n.UXPro.welcomePhoto
+        case .smartInsightsAI: return L10n.UXPro.welcomeInsights
+        case .chatAssistant: return L10n.UXPro.welcomeChat
+        case .accounts: return L10n.UXPro.welcomeAccounts
+        case .budgets: return L10n.UXPro.welcomeBudgets
+        case .proThemes: return L10n.UXPro.welcomeTheme
+        case .premiumIcons: return L10n.UXPro.welcomeIcon
+        case .cashFlowAdvanced: return L10n.UXPro.welcomeCashFlow
+        case nil: return L10n.Subscription.Success.subtitle
+        }
+    }
 
     private var unlockedFeaturesList: some View {
         VStack(spacing: DS.Spacing.md) {

@@ -28,7 +28,8 @@ final class TrialOfferMomentUITests: XCTestCase {
 
         // El arranque de quien ya terminó el alta: la oferta sigue armada y NO sale.
         app.terminate()
-        app.launchForUITest(reset: false, seed: nil)
+        // Con precios: la oferta solo sale si se sabe que la cuenta aún tiene la prueba (UX 2.2 · L17-5).
+        app.launchForUITest(reset: false, seed: nil, fakePrices: true)
         XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente en el segundo arranque.")
         XCTAssertTrue(newRecord.waitForHittable(timeout: 15), "El Panel no quedó usable en el segundo arranque.")
         XCTAssertFalse(offer.waitForExistence(timeout: 8),

@@ -1402,6 +1402,16 @@ struct ProfileView: View {
     private var organizacionSection: some View {
         SectionBox(title: L10n.Settings.organization) {
             VStack(spacing: DS.Spacing.none) {
+                // «Yala Pro» con el estado del plan, arriba de la primera sección (UX 2.2 · L17-1). Antes era
+                // «Administrar suscripciones», la 14.ª fila, dentro de Seguridad, y no decía si eras Pro.
+                settingsLink(ProfileDestination.subscription) {
+                    settingsRowContent(
+                        icon: "sparkles", title: L10n.Subscription.title,
+                        subtitle: ProPresentation.settingsStatusLine, iconColor: .orange)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile_yala_pro")
+                SubsectionDivider()
                 profileRow(
                     icon: "creditcard.fill", title: L10n.Settings.accounts, iconColor: DS.Semantic.successForeground,
                     destination: .accounts)
@@ -1478,6 +1488,7 @@ struct ProfileView: View {
                     profileRow(
                         icon: "app.fill", title: L10n.Settings.appIcon,
                         iconColor: .blue, destination: .appIcon)
+                    .accessibilityIdentifier("profile_app_icon")
                     .coachMarkAnchor("settingsAppIcon")
                 }
                 SubsectionDivider()
@@ -1635,10 +1646,6 @@ struct ProfileView: View {
                     profileRow(
                         icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
                         iconColor: .indigo, destination: .aiPrivacy)
-                    SubsectionDivider()
-                    profileRow(
-                        icon: "creditcard.fill", title: L10n.Settings.subscriptions,
-                        iconColor: .purple, destination: .subscription)
                 }
                 #if DEBUG
                 if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {

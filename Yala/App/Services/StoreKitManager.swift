@@ -55,11 +55,11 @@ final class StoreKitManager {
     /// Subscription expiration date
     private(set) var subscriptionExpirationDate: Date?
 
-    /// Days remaining in trial
+    /// Días de calendario que le quedan a la prueba: 0 = termina hoy. Antes contaba bloques de 24 h y truncaba, y el
+    /// banner decía «termina hoy» la víspera (review del lote decidido 06).
     var trialDaysRemaining: Int {
         guard let endDate = trialEndDate else { return 0 }
-        let days = Calendar.current.dateComponents([.day], from: Date.now, to: endDate).day ?? 0
-        return max(0, days)
+        return ProPlanStatusLogic.calendarDaysRemaining(until: endDate, now: .now, calendar: .current)
     }
 
     /// Whether trial is expiring soon (5 days or less)
@@ -67,11 +67,49 @@ final class StoreKitManager {
         isInTrial && trialDaysRemaining <= 5 && trialDaysRemaining > 0
     }
 
+    /// El plan que la transacción local da por activo: anual o mensual, hasta cuándo, si es la prueba y si se renueva
+    /// (auditoría UX 2.2 · L17-1 y L17-8). `nil` sin transacción local (gratis, o Pro que viene de la cuenta de Yala).
+    private(set) var activePlan: ProActivePlan?
+
+    /// Si la última suscripción activa que vio este dispositivo era la prueba. La lee la hoja de fin de Pro para decir
+    /// «Tu prueba de Pro terminó» o «Tu suscripción terminó» (L17-6). `nil` = nunca se midió (se acabó antes de 2.2).
+    var lastActivePlanWasTrial: Bool? {
+        UserDefaults.standard.object(forKey: lastActivePlanWasTrialKey) as? Bool
+    }
+
+    /// Si ya se sabe si la cuenta tiene derecho a la prueba: solo se mide al cargar los precios. Sin saberlo, los
+    /// botones no prometen la prueba (L17-4) y la oferta espera al siguiente arranque (L17-5).
+    var isIntroOfferEligibilityKnown: Bool {
+        #if DEBUG
+        if UITestHooks.fakePrices != nil { return true }
+        #endif
+        return !products.isEmpty
+    }
+
+    /// Lo que las hojas de compra enseñan de cada plan, el anual primero. Vacío hasta que cargan los precios.
+    var planOffers: [ProPlanOffer] {
+        #if DEBUG
+        if let fake = UITestHooks.fakePrices { return Self.fakeOffers(trialAvailable: fake == .eligible) }
+        #endif
+        return products.map(offer(for:))
+    }
+
+    /// El precio del plan activo, para «luego $29.99 al año» (L17-7, L17-8). `nil` sin precios cargados.
+    func displayPrice(yearly: Bool) -> String? {
+        planOffers.first { $0.isYearly == yearly }?.displayPrice
+    }
+
+    /// Días de prueba que se le pueden prometer a esta cuenta (los del primer plan). `nil` sin precios o sin derecho.
+    var offeredTrialDays: Int? {
+        planOffers.compactMap(\.trialDays).first
+    }
+
     // MARK: - Downgrade Detection
 
     private let wasProUserKey = "yala.wasProUser"
     private let lastVerifiedProductIDKey = "yala.lastVerifiedProProductID"
     private let lastVerifiedExpirationKey = "yala.lastVerifiedProExpiresAt"
+    private let lastActivePlanWasTrialKey = "yala.lastActiveProPlanWasTrial"
 
     /// Whether user was previously a Pro user (persisted)
     var wasProUser: Bool {
@@ -162,13 +200,15 @@ final class StoreKitManager {
                 print("  - \(p.id): \(p.displayPrice), hasIntro: \(intro != nil), period: \(intro?.period.debugDescription ?? "none")")
             }
             #endif
+            // Quien ya usó la prueba no la vuelve a tener: el paywall no puede prometérsela (lote 17 · B4). Se mide
+            // ANTES de publicar los productos: con ellos puestos y el derecho aún sin medir, el `true` inicial de
+            // `isIntroOfferEligible` prometía la prueba durante el `await` (review del lote decidido 06).
+            if let subscription = storeProducts.first?.subscription {
+                isIntroOfferEligible = await subscription.isEligibleForIntroOffer
+            }
             // Sort: yearly first (better value), then monthly
             products = storeProducts.sorted { p1, _ in
                 p1.id == Self.proYearlyID
-            }
-            // Quien ya usó la prueba no la vuelve a tener: el paywall no puede prometérsela (lote 17 · B4).
-            if let subscription = storeProducts.first?.subscription {
-                isIntroOfferEligible = await subscription.isEligibleForIntroOffer
             }
         } catch {
             #if DEBUG
@@ -184,6 +224,9 @@ final class StoreKitManager {
     func purchase(_ product: Product) async -> Bool {
         isPurchasing = true
         defer { isPurchasing = false }
+        #if DEBUG
+        if UITestHooks.fakePurchase { return completeFakePurchase() }
+        #endif
 
         do {
             let result = try await product.purchase(
@@ -232,6 +275,19 @@ final class StoreKitManager {
                 : error.localizedDescription
             return false
         }
+    }
+
+    /// Compra un plan por su id. Sin el `Product` cargado no hay compra posible, salvo la simulada de QA.
+    func purchase(offerID: String) async -> Bool {
+        #if DEBUG
+        if UITestHooks.fakePurchase {
+            isPurchasing = true
+            defer { isPurchasing = false }
+            return completeFakePurchase()
+        }
+        #endif
+        guard let product = products.first(where: { $0.id == offerID }) else { return false }
+        return await purchase(product)
     }
 
     // MARK: - Purchase options (C-8)
@@ -294,6 +350,7 @@ final class StoreKitManager {
         // `isProUser = false`, deshaciendo el arg a mitad del arranque.
         if let uiTestForcedProTier {
             isProUser = uiTestForcedProTier
+            applyUITestPlan()
             syncToAppGroup()
             return
         }
@@ -384,10 +441,19 @@ final class StoreKitManager {
             isInTrial = transaction.offer?.type == .introductory
             trialEndDate = isInTrial ? transaction.expirationDate : nil
             subscriptionExpirationDate = transaction.expirationDate
+            let renewal = await Self.renewal(of: transaction)
+            activePlan = ProActivePlan(
+                isYearly: transaction.productID == Self.proYearlyID,
+                expirationDate: transaction.expirationDate,
+                isTrial: isInTrial,
+                willAutoRenew: renewal?.willAutoRenew,
+                renewsYearly: renewal.map { $0.renewsProductID == Self.proYearlyID })
+            UserDefaults.standard.set(isInTrial, forKey: lastActivePlanWasTrialKey)
         } else {
             isInTrial = false
             trialEndDate = nil
             subscriptionExpirationDate = nil
+            activePlan = nil
         }
 
         // Force chat FAB visible when transitioning to Pro
@@ -471,6 +537,38 @@ final class StoreKitManager {
     var yearlySavingsPercent: Int? {
         guard let monthly = monthlyProduct, let yearly = yearlyProduct else { return nil }
         return PaywallPricingLogic.yearlySavingsPercent(monthly: monthly.price, yearly: yearly.price)
+    }
+
+    // MARK: - Plan offers & renewal (UX 2.2 · lote decidido 06)
+
+    private func offer(for product: Product) -> ProPlanOffer {
+        let intro = product.subscription?.introductoryOffer
+        let days = PaywallPricingLogic.promisedTrialDays(
+            hasFreeTrialOffer: intro?.paymentMode == .freeTrial,
+            periodUnit: intro?.period.unit,
+            periodValue: intro?.period.value ?? 0,
+            isEligible: isIntroOfferEligible
+        )
+        var chargeDate: Date?
+        if days != nil, let period = intro?.period {
+            chargeDate = PaywallPricingLogic.firstChargeDate(from: .now, unit: period.unit, value: period.value)
+        }
+        return ProPlanOffer(
+            id: product.id,
+            isYearly: product.id == Self.proYearlyID,
+            displayPrice: product.displayPrice,
+            monthlyEquivalent: monthlyEquivalent(for: product),
+            trialDays: days,
+            firstChargeDate: chargeDate
+        )
+    }
+
+    /// Si la renovación sigue encendida y a qué plan renueva (quien pasó del anual al mensual renueva al mensual).
+    /// `nil` si Apple no da un estado verificado.
+    private static func renewal(of transaction: StoreKit.Transaction) async -> (willAutoRenew: Bool, renewsProductID: String)? {
+        guard let status = await transaction.subscriptionStatus,
+              case .verified(let renewal) = status.renewalInfo else { return nil }
+        return (renewal.willAutoRenew, renewal.autoRenewPreference ?? transaction.productID)
     }
 
     // MARK: - Private Helpers
@@ -616,8 +714,8 @@ final class StoreKitManager {
     ///    cura los simuladores YA contaminados (nada más las borraría) y garantiza que tras
     ///    cualquier launch uitest el disco quede como si `-uitest-pro` no existiera. `wasProUser`
     ///    importa más de lo que parece: sucia hace `justDowngraded == true` en el siguiente launch
-    ///    SIN el arg, y `checkForDowngrade` llega a `resetPremiumIconIfNeeded` (que cambia el icono
-    ///    del sistema) y a `resetProThemeIfNeeded`. `chatFABVisible` se borra en vez de escribirse a
+    ///    SIN el arg, y `checkForDowngrade` llega a `resetProThemeIfNeeded` (y, desde UX 2.2 · L16-11, la
+    ///    hoja de fin de Pro devuelve el icono del sistema). `chatFABVisible` se borra en vez de escribirse a
     ///    `true` porque `true` YA es su default en `AppPreferences` — mismo efecto, cero rastro.
     ///
     /// Sin guard de bundle `.dev`, al revés que el toggle: este método no es la preferencia de dev,
@@ -637,6 +735,56 @@ final class StoreKitManager {
         // intents verían el estado del launch anterior (paridad con el toggle que sustituye).
         syncToAppGroup()
         print("StoreKitManager: uitest Pro tier \(forced ? "ON" : "OFF") (efímero, sin persistir)")
+    }
+
+    /// Precios de mentira para las hojas de compra bajo `-uitest-fake-prices`: en `xcodebuild test` y en un
+    /// `simctl launch` la App Store de pruebas no devuelve nada, y sin precios no hay planes que pintar ni probar.
+    /// Los de `Configuration.storekit` (4,99 / 29,99, un mes gratis).
+    static func fakeOffers(trialAvailable: Bool) -> [ProPlanOffer] {
+        let charge = trialAvailable ? Calendar.current.date(byAdding: .month, value: 1, to: .now) : nil
+        return [
+            ProPlanOffer(id: proYearlyID, isYearly: true, displayPrice: "$29.99", monthlyEquivalent: "$2.50",
+                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge),
+            ProPlanOffer(id: proMonthlyID, isYearly: false, displayPrice: "$4.99", monthlyEquivalent: nil,
+                         trialDays: trialAvailable ? 30 : nil, firstChargeDate: charge),
+        ]
+    }
+
+    /// `-uitest-fake-purchase`: la compra «sale bien» sin StoreKit y deja Pro encendido en este proceso, como
+    /// `-uitest-pro`. En Yala Dev una compra de verdad no activa Pro (el early-return `.dev` de arriba), así que sin
+    /// esto no hay forma de probar lo que pasa DESPUÉS de comprar (L17-9).
+    private func completeFakePurchase() -> Bool {
+        applyUITestProTier(true)
+        applyUITestPlan()
+        if !SessionState.shared.isProUser { SessionState.shared.isProUser = true }
+        didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+        return true
+    }
+
+    /// El plan que fingen `-uitest-pro-trial-days <n>` y `-uitest-pro-plan <yearly|monthly|yearly-off>` (L17-1, L17-7,
+    /// L17-8). Solo con Pro forzado; sin esos argumentos, Pro sin plan (como el Pro que viene de la cuenta).
+    private func applyUITestPlan() {
+        guard isProUser else {
+            isInTrial = false
+            trialEndDate = nil
+            activePlan = nil
+            return
+        }
+        if let days = UITestHooks.proTrialDays {
+            // Dos horas de más: `trialDaysRemaining` trunca y un «3 días» exacto daría 2.
+            let end = Calendar.current.date(byAdding: .hour, value: days * 24 + 2, to: .now)
+            isInTrial = true
+            trialEndDate = end
+            activePlan = ProActivePlan(isYearly: true, expirationDate: end, isTrial: true, willAutoRenew: true)
+        } else if let plan = UITestHooks.proPlan {
+            let end = Calendar.current.date(byAdding: .day, value: 30, to: .now)
+            isInTrial = false
+            trialEndDate = nil
+            activePlan = ProActivePlan(isYearly: plan != "monthly", expirationDate: end, isTrial: false,
+                                       willAutoRenew: plan != "yearly-off")
+        } else {
+            activePlan = nil
+        }
     }
     #endif
 }

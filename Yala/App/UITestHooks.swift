@@ -35,6 +35,50 @@ final class UITestHooks {
     /// `-uitest-pro`: fuerza Pro (devForceProTier) al arranque.
     nonisolated static var forcePro: Bool { hasArg("-uitest-pro") }
 
+    // MARK: Yala Pro (auditoría UX 2.2 · lote decidido 06)
+
+    enum FakePrices: Equatable { case eligible, trialUsed }
+
+    /// `-uitest-fake-prices [trial-used]`: las hojas de compra pintan los planes de `Configuration.storekit` sin
+    /// StoreKit (en `xcodebuild test` y en `simctl launch` la tienda de pruebas no devuelve precios). Con `trial-used`,
+    /// la cuenta ya no tiene derecho a la prueba.
+    nonisolated static var fakePrices: FakePrices? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        guard isActive, args.contains("-uitest-fake-prices") else { return nil }
+        return parseValue(after: "-uitest-fake-prices", from: args) == "trial-used" ? .trialUsed : .eligible
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-fake-purchase`: comprar «sale bien» sin StoreKit y enciende Pro en este proceso (L17-9).
+    nonisolated static var fakePurchase: Bool { hasArg("-uitest-fake-purchase") }
+
+    /// `-uitest-pro-trial-days <n>` (con `-uitest-pro`): Pro en prueba, con `n` días por delante (L17-7, L17-1).
+    nonisolated static var proTrialDays: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-pro-trial-days", from: ProcessInfo.processInfo.arguments).flatMap { Int($0) }
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-pro-plan <yearly|monthly|yearly-off>` (con `-uitest-pro`): Pro pagado que se renueva en 30 días;
+    /// `yearly-off`, con la renovación apagada (L17-8, L17-1).
+    nonisolated static var proPlan: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-pro-plan", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
+    /// `-uitest-pro-ended-paid`: la hoja de fin de Pro habla de una suscripción pagada y no de la prueba (L17-6).
+    nonisolated static var proEndedPaid: Bool { hasArg("-uitest-pro-ended-paid") }
+
     /// `-uitest-skip-onboarding`: marca onboarding/chooser completados.
     nonisolated static var skipOnboarding: Bool { hasArg("-uitest-skip-onboarding") }
 

@@ -88,8 +88,9 @@ struct BudgetsFavoritesSettingsView: View {
         .sheet(isPresented: $viewModel.showEditor, onDismiss: { viewModel.closeEditor() }) {
             BudgetEditorView(budget: viewModel.budgetToEdit)
         }
-        .sheet(isPresented: $viewModel.showUpgradeSheet) {
-            UpgradePromptSheet(feature: .budgets, context: .limitReached)
+        // Si compra Pro ahí, al cerrarse se abre el presupuesto nuevo (UX 2.2 · L17-9).
+        .proUpgradeSheet(isPresented: $viewModel.showUpgradeSheet, feature: .budgets, context: .limitReached) {
+            viewModel.requestCreate()
         }
         .alert(
             L10n.Common.error,

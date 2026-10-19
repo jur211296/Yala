@@ -1335,7 +1335,20 @@ struct ContentView: View {
             // (consume-once persistente). Ver commitPendingInboxAlertSignatures.
             AppBootstrapper.shared.commitPendingInboxAlertSignatures()
         case .presentTrialOffer:
-            showProTrialOffer = true
+            // A quien ya usó la prueba no se le enseña la oferta (UX 2.2 · L17-5). Se re-mide aquí, al drenar: es lo
+            // último que se sabe. Sin precios no se sabe, y la oferta se queda armada para el arranque siguiente.
+            let store = StoreKitManager.shared
+            switch ProPlanStatusLogic.trialOfferDecision(
+                eligibilityKnown: store.isIntroOfferEligibilityKnown,
+                isEligible: store.offeredTrialDays != nil
+            ) {
+            case .present:
+                showProTrialOffer = true
+            case .dropForever:
+                break
+            case .holdForLater:
+                return
+            }
             // Drain == presentación real (mismo nodo que ancla el sheet, y con la
             // matriz completa solo drena con el anchor libre). Limpiar aquí — y no
             // en los productores — permite re-emitir tras un drop transient.
@@ -3758,6 +3771,8 @@ struct MainTabView: View {
     @State private var downgradeAccounts: [Account] = []
     @State private var downgradeBudgets: [Budget] = []
     @State private var showDowngradeResolution = false
+    /// La hoja de fin de Pro avisa y devuelve el icono de Pro al original (UX 2.2 · L16-11).
+    @State private var downgradeIconWillReset = false
     @State private var showTrialExpired = false
     /// Milestone number for the upgrade sheet — also drives sheet
     /// presentation (non-nil → shown). Carried by .presentMilestoneUpgrade.
@@ -3899,7 +3914,8 @@ struct MainTabView: View {
             .sheet(isPresented: $showDowngradeResolution) {
                 DowngradeResolutionSheet(
                     accounts: downgradeAccounts,
-                    budgets: downgradeBudgets
+                    budgets: downgradeBudgets,
+                    iconWillReset: downgradeIconWillReset
                 ) {
                     showDowngradeResolution = false
                 }
@@ -3949,6 +3965,30 @@ struct MainTabView: View {
             .onChange(of: showDowngradeResolution) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: showTrialExpired) { _, _ in publishMainTabModalVisibilityAndRedrain() }
             .onChange(of: activeMilestone) { _, _ in publishMainTabModalVisibilityAndRedrain() }
+        }
+    }
+
+    /// Lo que enseñaría la hoja de fin de Pro, o `nil` si no hay nada que decir: ni cuentas o presupuestos de más que
+    /// elegir, ni un icono de Pro que devolver al original (UX 2.2 · L17-6 y L16-11). Con un fetch fallido tampoco: no
+    /// se presenta con datos parciales, y el productor re-encola en el arranque siguiente mientras dure el downgrade.
+    private func endOfProSheetContent() -> (accounts: [Account], budgets: [Budget], iconWillReset: Bool)? {
+        do {
+            let accounts = try modelContext.fetch(FetchDescriptor<Account>())
+            let budgets = try modelContext.fetch(
+                FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
+            )
+            let hasExcess = accounts.billableUserAccounts.count > (ProFeature.accounts.freeLimit ?? Int.max)
+                || budgets.count > (ProFeature.budgets.freeLimit ?? Int.max)
+            let iconWillReset = !FeatureGateService.shared.isProUser && UIApplication.shared.alternateIconName != nil
+            guard ProPlanStatusLogic.endedSheetIsNeeded(hasExcess: hasExcess, iconWillReset: iconWillReset) else {
+                return nil
+            }
+            return (accounts, budgets, iconWillReset)
+        } catch {
+            #if DEBUG
+            print("ContentView: fetch downgrade falló: \(error)")
+            #endif
+            return nil
         }
     }
 
@@ -4098,29 +4138,22 @@ struct MainTabView: View {
                 navigation.selectMainTab(.groups)
             }
         case .presentDowngradeResolution:
-            do {
-                let accounts = try modelContext.fetch(FetchDescriptor<Account>())
-                let budgets = try modelContext.fetch(
-                    FetchDescriptor<Budget>(predicate: #Predicate { $0.isActive })
-                )
-                let billableAccounts = accounts.billableUserAccounts
-                if billableAccounts.count > (ProFeature.accounts.freeLimit ?? Int.max)
-                    || budgets.count > (ProFeature.budgets.freeLimit ?? Int.max) {
-                    downgradeAccounts = accounts
-                    downgradeBudgets = budgets
-                    showDowngradeResolution = true
-                }
-            } catch {
-                // No presentar con datos parciales: el productor re-encola en el
-                // siguiente cold launch mientras la condición de downgrade persista.
-                #if DEBUG
-                print("ContentView: fetch downgrade falló: \(error)")
-                #endif
-            }
+            // Se re-mide al drenar: un intent encolado mientras la persona reactivaba Pro desde la propia hoja no
+            // puede volver a pedirle que archive (review del lote decidido 06).
+            guard StoreKitManager.shared.justDowngraded, let ended = endOfProSheetContent() else { break }
+            downgradeAccounts = ended.accounts
+            downgradeBudgets = ended.budgets
+            downgradeIconWillReset = ended.iconWillReset
+            showDowngradeResolution = true
         case .presentTrialExpired:
-            // El one-shot se quema en el onAppear del sheet, no aquí: .mainTab
-            // drena aunque un cover superior lo tape y quemarlo drenado-tapado
-            // perdía el aviso de expiración PARA SIEMPRE.
+            // Una sola hoja al acabarse Pro (UX 2.2 · L17-6): si la de fin de Pro ya salió (quema este aviso al
+            // aparecer) o va a salir, esta no. El one-shot se quema en el onAppear del sheet, no aquí: .mainTab
+            // drena aunque un cover superior lo tape y quemarlo drenado-tapado perdía el aviso PARA SIEMPRE.
+            let endedSheetPending = StoreKitManager.shared.justDowngraded && endOfProSheetContent() != nil
+            guard ProPlanStatusLogic.trialExpiredPresents(
+                alreadyShown: ProUpsellService.shared.trialExpiredSheetWasShown,
+                endedSheetPending: endedSheetPending
+            ) else { break }
             showTrialExpired = true
         case .presentMilestoneUpgrade(let milestone):
             activeMilestone = milestone

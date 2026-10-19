@@ -68,6 +68,8 @@ struct AppIconSettingsView: View {
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var showUpgradeSheet = false
+    /// El icono Pro que se tocó: el muro lo enseña (UX 2.2 · L16-11) y, si se compra ahí, se pone (L17-9).
+    @State private var lockedIcon: AppIconOption?
 
     private var isProUser: Bool {
         FeatureGateService.shared.isProUser
@@ -125,14 +127,21 @@ struct AppIconSettingsView: View {
         .onAppear {
             loadCurrentIcon()
 
-            // If Free user has premium icon, reset to original
-            if !isProUser && selectedIcon.isPremium {
+            // Sin Pro y con un icono Pro, vuelve al original. Pero no mientras esté pendiente la hoja de fin de Pro: es
+            // ella la que avisa antes de devolverlo (UX 2.2 · L16-11), y aquí volvía sin decir nada.
+            if !isProUser && selectedIcon.isPremium && !StoreKitManager.shared.justDowngraded {
                 setAppIcon(.original)
             }
         }
-        .sheet(isPresented: $showUpgradeSheet) {
-            UpgradePromptSheet(feature: .premiumIcons, context: .proFeature)
-        }
+        .proUpgradeSheet(
+            isPresented: $showUpgradeSheet,
+            feature: .premiumIcons,
+            context: .proFeature,
+            preview: lockedIcon.map { .icon($0) },
+            onUnlocked: {
+                if let lockedIcon { setAppIcon(lockedIcon) }
+            }
+        )
         .alert(L10n.Common.error, isPresented: $showingError) {
             Button(L10n.Action.done, role: .cancel) {}
         } message: {
@@ -149,6 +158,7 @@ struct AppIconSettingsView: View {
 
         Button {
             if isLocked {
+                lockedIcon = icon
                 showUpgradeSheet = true
             } else {
                 setAppIcon(icon)
@@ -157,21 +167,8 @@ struct AppIconSettingsView: View {
             VStack(spacing: DS.Spacing.md) {
                 // Icon Preview - Load with fixed light trait to prevent dark mode changes
                 ZStack(alignment: .topTrailing) {
-                    if let uiImage = UIImage(named: icon.previewImageName)?
-                        .imageAsset?.image(with: UITraitCollection(userInterfaceStyle: .light)) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 80, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                            .opacity(isLocked ? 0.5 : 1.0)
-                    } else {
-                        // Fallback if image not found
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(Color.gray.opacity(0.3)) // A11Y-DM: placeholder fallback for missing icon
-                            .frame(width: 80, height: 80)
-                    }
+                    AppIconPreviewImage(icon: icon, size: 80)
+                        .opacity(isLocked ? 0.5 : 1.0)
 
                     // Lock badge for premium icons
                     if isLocked {
@@ -210,6 +207,7 @@ struct AppIconSettingsView: View {
             .selectedOptionFill(isSelected, radius: DS.Radius.lg, lineWidth: 2)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("app_icon_\(icon.rawValue)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -243,6 +241,33 @@ struct AppIconSettingsView: View {
                     selectedIcon = icon
                 }
             }
+        }
+    }
+}
+
+// MARK: - Icon Preview Image
+
+/// El icono tal como se ve en la pantalla de inicio, con el aspecto claro fijo (no cambia con el modo oscuro). Lo usan
+/// «Icono de la app» y la vista previa del muro de Pro (UX 2.2 · L16-11).
+struct AppIconPreviewImage: View {
+    let icon: AppIconOption
+    let size: CGFloat
+
+    var body: some View {
+        if let uiImage = UIImage(named: icon.previewImageName)?
+            .imageAsset?.image(with: UITraitCollection(userInterfaceStyle: .light)) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.225))
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .accessibilityLabel(icon.displayName)
+        } else {
+            // Fallback if image not found
+            RoundedRectangle(cornerRadius: size * 0.225)
+                .fill(Color.gray.opacity(0.3)) // A11Y-DM: placeholder fallback for missing icon
+                .frame(width: size, height: size)
         }
     }
 }

@@ -145,6 +145,8 @@ struct DetailContainerView: View {
                     showChatConsentAlert: $showChatConsentAlert,
                     showYalaAIOnboarding: $showYalaAIOnboarding,
                     pendingOpenChatAfterOnboarding: $pendingOpenChatAfterOnboarding,
+                    showAIConsentAlert: $showAIConsentAlert,
+                    pendingAIInput: $pendingAIInput,
                     modelContext: modelContext,
                     recalculateData: recalculateData,
                     reloadAndRecalculate: reloadAndRecalculate
@@ -690,6 +692,9 @@ private struct DetailContainerSheets: ViewModifier {
     @Binding var showChatConsentAlert: Bool
     @Binding var showYalaAIOnboarding: Bool
     @Binding var pendingOpenChatAfterOnboarding: Bool
+    /// Para pedir el consentimiento de datos al abrir voz o foto tras comprar Pro (UX 2.2 · L17-9).
+    @Binding var showAIConsentAlert: Bool
+    @Binding var pendingAIInput: PendingAIInput
     let modelContext: ModelContext
     let recalculateData: () -> Void
     let reloadAndRecalculate: () -> Void
@@ -711,11 +716,12 @@ private struct DetailContainerSheets: ViewModifier {
             .sheet(isPresented: $showImageSelection) {
                 ImageSelectionView()
             }
-            .sheet(isPresented: $showUpgradeForVoice) {
-                UpgradePromptSheet(feature: .voiceInput, context: .proFeature)
+            // Si se compra Pro en la hoja, al cerrarse se abre lo que se quería (UX 2.2 · L17-9).
+            .proUpgradeSheet(isPresented: $showUpgradeForVoice, feature: .voiceInput, context: .proFeature) {
+                openAIEntryAfterUnlock(.voice)
             }
-            .sheet(isPresented: $showUpgradeForImage) {
-                UpgradePromptSheet(feature: .imageInput, context: .proFeature)
+            .proUpgradeSheet(isPresented: $showUpgradeForImage, feature: .imageInput, context: .proFeature) {
+                openAIEntryAfterUnlock(.image)
             }
             // Yala IA: columna al lado en ventana ancha, la hoja de siempre en compacta.
             .yalaAIChat(isPresented: $showChatSheet, insideNavigationStack: true)
@@ -726,8 +732,8 @@ private struct DetailContainerSheets: ViewModifier {
                 launcher: .stats,
                 onPersistFlag: { appPreferences.hasShownYalaAIOnboarding = true }
             )
-            .sheet(isPresented: $showUpgradeForChat) {
-                UpgradePromptSheet(feature: .chatAssistant, context: .proFeature)
+            .proUpgradeSheet(isPresented: $showUpgradeForChat, feature: .chatAssistant, context: .proFeature) {
+                openChatAfterUnlock()
             }
             .chatConsentAlert(isPresented: $showChatConsentAlert) {
                 switch YalaAIOnboardingLogic.nextScreen(
@@ -917,5 +923,34 @@ private struct StatsRecordsPaneObservers: ViewModifier {
         print("DetailContainerView: el registro abierto ya no está, se cierra el panel")
         #endif
         recordsViewModel.openRecordID = nil
+    }
+}
+
+// MARK: - Tras comprar Pro (UX 2.2 · L17-9)
+
+extension DetailContainerSheets {
+    /// El mismo camino que tocar Voz o Foto siendo Pro, con su consentimiento de datos si aún no se dio.
+    fileprivate func openAIEntryAfterUnlock(_ input: PendingAIInput) {
+        guard appPreferences.aiDataConsentAccepted else {
+            pendingAIInput = input
+            showAIConsentAlert = true
+            return
+        }
+        switch input {
+        case .voice: showVoiceRecording = true
+        case .image: showImageSelection = true
+        }
+    }
+
+    /// El mismo camino que tocar Yala IA siendo Pro.
+    fileprivate func openChatAfterUnlock() {
+        switch YalaAIOnboardingLogic.nextScreen(
+            consentAccepted: appPreferences.aiChatConsentAccepted,
+            onboardingShown: appPreferences.hasShownYalaAIOnboarding
+        ) {
+        case .onboarding: showYalaAIOnboarding = true
+        case .chat: showChatSheet = true
+        case .consent: showChatConsentAlert = true
+        }
     }
 }
