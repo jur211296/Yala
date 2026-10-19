@@ -78,6 +78,11 @@ extension XCUIApplication {
         // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
         // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
         lastSeenAppVersion: String? = nil,
+        // `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de «iCloud
+        // no está disponible» (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). El simulador nunca tiene token de
+        // iCloud, así que sin el seam ese chequeo saldría en todo arranque sin seed. NOMBRADO por lo mismo que sus vecinos: un
+        // typo dejaría el caso positivo sin aviso y los controles en verde sin haber medido nada.
+        coldStartICloudCheck: Bool = false,
         // Idioma y región de la corrida. El default es el de toda la suite (ver abajo); solo lo cambia un test que
         // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
         // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
@@ -103,6 +108,7 @@ extension XCUIApplication {
         // pondría verde el control y rojo el caso, culpando al Welcome.
         if lateNoticeKeptGroups { args.append("-uitest-late-notice-kept-groups") }
         if welcomeAfterAdoptExit { args.append("-uitest-welcome-after-adopt-exit") }
+        if coldStartICloudCheck { args.append("-uitest-cold-start-icloud-check") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)

@@ -126,7 +126,10 @@ nonisolated struct RemoteWipeGraceLogic: Equatable {
     static func noticeDecision(iCloudTokenPresent: Bool, mirrorReportedNotAuthenticated: Bool,
                                firstImportCompleted: Bool, isImporting: Bool, lastImportActivityAt: Date?,
                                droppedAt: Date, now: Date) -> NoticeDecision {
-        guard iCloudTokenPresent, !mirrorReportedNotAuthenticated else { return .present(.iCloudUnavailable) }
+        guard !iCloudUnavailable(iCloudTokenPresent: iCloudTokenPresent,
+                                 mirrorReportedNotAuthenticated: mirrorReportedNotAuthenticated) else {
+            return .present(.iCloudUnavailable)
+        }
         if isImporting { return .waitForImport }
         if !firstImportCompleted {
             let sinceDrop = now.timeIntervalSince(droppedAt)
@@ -138,4 +141,58 @@ nonisolated struct RemoteWipeGraceLogic: Equatable {
         }
         return .present(.dataRemoved)
     }
+
+    /// **«iCloud no está disponible»**, la misma pregunta para la gracia y para el arranque en frío: sin token de iCloud
+    /// (iCloud Drive apagado, sin sesión de iCloud) o con CloudKit diciendo `notAuthenticated`. Un solo predicado, o el
+    /// arranque pediría un aviso que el drenaje no enseñaría.
+    static func iCloudUnavailable(iCloudTokenPresent: Bool, mirrorReportedNotAuthenticated: Bool) -> Bool {
+        !iCloudTokenPresent || mirrorReportedNotAuthenticated
+    }
+
+    // MARK: - El arranque en frío (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`)
+
+    /// **Si el ARRANQUE pide el aviso de «iCloud no está disponible».** Medido en el iPhone de QA el 19-oct: con Yala
+    /// CERRADA al apagar iCloud Drive, iOS vacía la copia local antes de que la app mida nada. `hasPersonalData` nace en
+    /// `false` y la primera medida también da `false`, así que no hay caída, la gracia no arranca y la app se quedaba
+    /// vacía y muda, también al relanzar. El arranque lo pide por su cuenta con las mismas condiciones que hacen verdad
+    /// el aviso: store personal vacío, onboarding hecho, una sesión de las que guardan sus datos en el iCloud del Apple ID
+    /// del teléfono (el eje de la gracia) e iCloud no disponible.
+    ///
+    /// Con iCloud disponible no pide nada: el store vacío puede ser la importación que trae los datos, y el arranque no
+    /// vio caer nada que justifique «tus datos fueron eliminados».
+    static func coldStartRequestsICloudNotice(hasPersonalData: Bool, hasCompletedOnboarding: Bool,
+                                              sessionObeysWipeSignal: Bool, iCloudTokenPresent: Bool,
+                                              mirrorReportedNotAuthenticated: Bool) -> Bool {
+        !hasPersonalData && hasCompletedOnboarding && sessionObeysWipeSignal
+            && iCloudUnavailable(iCloudTokenPresent: iCloudTokenPresent,
+                                 mirrorReportedNotAuthenticated: mirrorReportedNotAuthenticated)
+    }
+
+    /// **Una petición del arranque, al drenarse, solo enseña «iCloud no está disponible».** Si mientras esperaba turno
+    /// iCloud volvió, la decisión de la gracia esperaría a la importación y podría acabar en el aviso de borrado; aquí no
+    /// hubo caída, así que esa petición se retira sin aviso y los datos vuelven solos.
+    static func coldStartDrainPresents(_ decision: NoticeDecision) -> Bool {
+        decision == .present(.iCloudUnavailable)
+    }
+
+    /// **El arranque cede a la gracia cuando la caída es suya** (review del 19-oct). Si en este montaje ya se midieron
+    /// filas antes de re-medir, la medida que da «vacío» es una CAÍDA y la gracia la va a pedir; si la gracia ya está
+    /// armada o hay un aviso pendiente, también. Pedir los dos sacaba el mismo aviso dos veces: el segundo intent se
+    /// quedaba retenido detrás del primero y salía al contestar «Entendido».
+    static func coldStartDefersToTheGrace(sawRowsBeforeRemeasuring: Bool, graceArmed: Bool,
+                                          noticePending: Bool) -> Bool {
+        sawRowsBeforeRemeasuring || graceArmed || noticePending
+    }
+}
+
+/// **El estado del arranque en frío es del PROCESO, no de un `ContentView`** (review del 19-oct). Con varias ventanas
+/// —o un swap de contenedor— la líder se remonta: un `@State` moría con ella y el `ContentView` nuevo (a) volvía a pedir
+/// el aviso ya contestado y (b) drenaba la petición en cola como si fuera de la gracia, que con iCloud de vuelta podía
+/// acabar en «Tus datos fueron eliminados». Solo lo tocan `ContentView` y sus tests de cableado.
+@MainActor
+enum ColdStartICloudNotice {
+    /// La petición del aviso que espera en cola la hizo el arranque: el drenaje solo enseñará «iCloud no está disponible».
+    static var requestPending = false
+    /// El arranque ya decidió en este proceso, pidiera o no. Las caídas posteriores son de la gracia.
+    static var checkedThisProcess = false
 }
