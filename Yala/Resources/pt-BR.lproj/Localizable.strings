@@ -1079,7 +1079,7 @@
 "insights.perDay" = "por dia";
 "insights.ofTotal" = "do total";
 "insights.analyzingData" = "Analisando seus dados...";
-"insights.activateAITitle" = "Resumo inteligente disponível";
+"insights.activateAITitle" = "Resumo com IA disponível";
 "insights.activateAIBody" = "Ative e personalize em Perfil > Funcionalidades com IA.";
 "insights.activate" = "Ativar";
 "insights.goToSettings" = "Ir para ajustes";
@@ -2172,7 +2172,7 @@
 "tipkit.pro.voiceInput.message" = "Agora você pode ditar seus gastos. Fale e o Yala registra para você.";
 "tipkit.pro.imageInput.title" = "Registro com foto ou arquivo";
 "tipkit.pro.imageInput.message" = "Anexe uma foto de qualquer comprovante e o Yala extrai um ou mais registros para você.";
-"tipkit.pro.smartInsights.title" = "Resumo inteligente";
+"tipkit.pro.smartInsights.title" = "Resumo com IA";
 "tipkit.pro.smartInsights.message" = "Ative isso para que o Yala gere observações com IA sobre suas finanças.";
 "tipkit.pro.premiumIcons.title" = "Ícones exclusivos";
 "tipkit.pro.premiumIcons.message" = "Escolha entre ícones premium para personalizar seu app.";
@@ -2180,7 +2180,7 @@
 "tipkit.pro.proThemes.message" = "Descubra temas de cores exclusivos que dão seu toque pessoal ao Yala.";
 "tipkit.pro.chatFab.title" = "Seu assistente financeiro";
 "tipkit.pro.aiSummary.title" = "Seu resumo com IA";
-"tipkit.pro.aiSummary.message" = "Gere um resumo inteligente das suas finanças com um toque. Observações úteis, na hora.";
+"tipkit.pro.aiSummary.message" = "Seu resumo com IA das suas finanças, com um toque. Observações úteis, na hora.";
 "tipkit.aiCharts.pro.title" = "Observações com IA";
 "tipkit.aiCharts.pro.message" = "Toque aqui para obter observações inteligentes sobre seu fluxo de caixa.";
 "tipkit.aiCharts.free.title" = "Observações inteligentes";
@@ -2445,7 +2445,7 @@
 "featureGate.imageInput" = "Entrada por foto ou arquivo";
 "featureGate.premiumIcons" = "Ícones premium";
 "featureGate.proThemes" = "Temas Pro";
-"featureGate.smartInsightsAI" = "Análise com IA";
+"featureGate.smartInsightsAI" = "Resumo com IA";
 "featureGate.cashFlowAdvanced" = "Fluxo de caixa avançado";
 
 // Titles
@@ -2836,7 +2836,7 @@
 "aiPrivacy.title" = "Privacidade e dados de IA";
 "aiPrivacy.processingRow" = "Processamento (voz e imagem)";
 "aiPrivacy.chatRow" = "Assistente Pro";
-"aiPrivacy.insightsRow" = "Insights inteligentes";
+"aiPrivacy.insightsRow" = "Resumo com IA";
 "aiPrivacy.cloudExploreRow" = "Consultar sua conta na nuvem";
 "aiPrivacy.revokeConfirmTitle" = "Desativar esta função?";
 "aiPrivacy.revokeConfirmMessage" = "Pararemos de processar seus dados de IA para esta função. Você pode reativá-la quando quiser.";
@@ -2847,7 +2847,7 @@
 // MARK: - AI Consent
 "aiConsent.processingTitle" = "O Yala registra por você";
 "aiConsent.processingMessage" = "Você dita ou escolhe uma foto do recibo e o Yala registra o gasto. Para isso, envia o áudio ou a foto a um serviço de IA, só naquele momento. Eles não são usados para treinar a IA.";
-"aiConsent.insightsTitle" = "Resumo inteligente";
+"aiConsent.insightsTitle" = "Resumo com IA";
 "aiConsent.insightsMessage" = "O Yala analisa suas finanças e mostra como você está indo. Para isso, envia a um serviço de IA um resumo — totais e tendências por categoria, orçamentos e pagamentos recorrentes —, não seu histórico completo de registros. Ele não é usado para treinar a IA.";
 "aiConsent.accept" = "Aceitar e ativar";
 "aiConsent.privacyPolicy" = "Política de privacidade";
@@ -2857,7 +2857,7 @@
 
 // MARK: - Insights Settings
 "insights.aiSectionTitle" = "Inteligência Artificial";
-"insights.aiToggle" = "Resumo inteligente";
+"insights.aiToggle" = "Resumo com IA";
 "insights.metricsSection" = "Métricas";
 "insights.chartsSection" = "Gráficos";
 "insights.analysisSection" = "Análise";
@@ -3086,12 +3086,12 @@
 // MARK: - Pro Upgrade Banner
 
 "proBanner.title" = "Leve suas finanças ao próximo nível";
-"proBanner.subtitle" = "Desbloqueie entrada por voz, insights IA e contas ilimitadas.";
+"proBanner.subtitle" = "Desbloqueie voz, resumo com IA e contas ilimitadas.";
 
 // MARK: - Milestone Upgrade
 
 "milestone.message10" = "Você está criando um ótimo hábito. Com Yala Pro você pode ditar despesas por voz.";
-"milestone.message50" = "Impressionante! Com a análise com IA você descobre padrões nos seus gastos.";
+"milestone.message50" = "Impressionante! Com o resumo com IA você descobre padrões nos seus gastos.";
 "milestone.message100" = "Você é um expert em finanças. Desbloqueie a experiência completa com Yala Pro.";
 "milestone.notNow" = "Agora não";
 "milestone.unlimitedAccounts" = "Contas ilimitadas";
@@ -4159,8 +4159,8 @@
 "stats.insights.motivationalOne" = "1 registro · Bom começo";
 "stats.insights.motivationalMany %d" = "%d registros · Continue assim";
 "stats.insights.detailHeader" = "Seus números";
-"stats.insights.aiCardTitle" = "Resumo inteligente";
-"stats.insights.aiCardSubtitle" = "Personalizado com IA";
+"stats.insights.aiCardTitle" = "Resumo com IA";
+"stats.insights.aiCardSubtitle" = "Gerar com IA";
 "stats.insights.dailyAvgIn %@" = "por dia em %@";
 
 "stats.insights.need.dailyFormat %@" = "≈ %@/dia";
@@ -4172,10 +4172,10 @@
 "stats.trends.comparisonTitle" = "Comparação";
 "stats.trends.insightTitleFree %@" = "Seu %@ em poucas palavras";
 "stats.trends.insightTitlePro" = "Análise do período";
-"stats.trends.refineWithAI" = "Refinar com IA";
-"stats.trends.generateAI" = "Gerar análise com IA";
-"stats.trends.regenerate" = "Regenerar";
-"stats.trends.aiFootnote" = "Análise com IA";
+"stats.trends.refineWithAI" = "Gerar com IA";
+"stats.trends.generateAI" = "Gerar com IA";
+"stats.trends.regenerate" = "Atualizar";
+"stats.trends.aiFootnote" = "Resumo com IA";
 "stats.trends.heroOnset" = "Seu primeiro período com Yala";
 "stats.trends.heroStable" = "Seu saldo se mantém estável";
 "stats.trends.heroVarUp %d %@" = "%d%% acima vs %@ · Continue assim";
@@ -4186,7 +4186,7 @@
 "stats.distribution.heroSubtitle3 %d %d %d" = "%d categorias · %d subcategorias · %d etiquetas";
 "stats.distribution.insightTitleFree %@" = "Seu %@ de relance";
 "stats.distribution.insightTitlePro" = "Distribuição do período";
-"stats.distribution.aiFootnote" = "Análise com IA";
+"stats.distribution.aiFootnote" = "Resumo com IA";
 "stats.distribution.modeCharts" = "Gráficos";
 "stats.distribution.insight.onset %@" = "Seu período %@ está tomando forma. Em breve você verá padrões mais claros.";
 "stats.distribution.insight.newCategory %@ %@" = "Você experimentou %@ neste %@.";
@@ -7489,3 +7489,52 @@
 "siri.query.accountNotFound" = "Não encontro essa conta no Yala.";
 "siri.query.approximate" = "É aproximado: falta confirmar alguma taxa de câmbio.";
 "siri.query.asOf" = "Segundo seus dados de %@.";
+
+/* UX 2.2 · lote 11 · decisiones de Jürgen (2026-10-18) */
+"stats.l11d.trends.inAndOut" = "Entradas e saídas";
+"stats.l11d.trends.showPrevious.month" = "Ver o mês anterior";
+"stats.l11d.trends.showPrevious.week" = "Ver a semana anterior";
+"stats.l11d.trends.showPrevious.days7" = "Ver os 7 dias anteriores";
+"stats.l11d.trends.showPrevious.days30" = "Ver os 30 dias anteriores";
+"stats.l11d.trends.showPrevious.period" = "Ver o período anterior";
+"stats.l11d.trends.showPrevious.year" = "Ver o ano anterior";
+"notifications.report.closed.week.balance" = "Assim fechou seu saldo na semana passada: %@ 💰";
+"notifications.report.closed.week.expenses" = "Na semana passada você gastou %@ 📊";
+"notifications.report.closed.week.income" = "Na semana passada você recebeu %@ 🎉";
+"notifications.report.closed.week.topCategory" = "Seu maior gasto da semana passada: %@ 👀";
+"notifications.report.closed.week.noExpenses" = "Semana tranquila! Você não registrou gastos na semana passada ✨";
+"notifications.report.closed.month.balance" = "Assim fechou seu saldo em %1$@: %2$@ 💰";
+"notifications.report.closed.month.expenses" = "Em %1$@ você gastou %2$@ 📊";
+"notifications.report.closed.month.income" = "Em %1$@ você recebeu %2$@ 🎉";
+"notifications.report.closed.month.topCategory" = "Seu maior gasto de %1$@: %2$@ 👀";
+"notifications.report.closed.month.noExpenses" = "Você não registrou gastos em %@ ✨";
+"notifications.upcoming.week.expenses" = "Na %1$@ às %2$@, com o que você gastou de %3$@ a %4$@";
+"notifications.upcoming.week.income" = "Na %1$@ às %2$@, com o que você recebeu de %3$@ a %4$@";
+"notifications.upcoming.week.topCategory" = "Na %1$@ às %2$@, com seu maior gasto de %3$@ a %4$@";
+"notifications.upcoming.week.balance" = "Na %1$@ às %2$@, com seu saldo em %3$@";
+"notifications.upcoming.month.expenses" = "Em %1$@ às %2$@, com o que você gastou em %3$@";
+"notifications.upcoming.month.income" = "Em %1$@ às %2$@, com o que você recebeu em %3$@";
+"notifications.upcoming.month.topCategory" = "Em %1$@ às %2$@, com seu maior gasto de %3$@";
+"notifications.upcoming.month.balance" = "Em %1$@ às %2$@, com seu saldo no fechamento de %3$@";
+"stats.l11d.toPay.title" = "O que falta você pagar";
+"stats.l11d.toPay.total" = "Total: %@";
+"stats.l11d.toPay.payments" = "Pagamentos";
+"stats.l11d.toPay.subscriptions" = "Assinaturas";
+"stats.l11d.toPay.pendingCount" = "Pendentes: %d";
+"stats.l11d.budgets.title" = "Seus orçamentos";
+"stats.l11d.budgets.usage" = "%1$@ de %2$@ · %3$@";
+"stats.l11d.need.purpose" = "Assim seu gasto se divide entre o necessário, o importante e o que você poderia cortar.";
+"stats.l11d.title.inAFewWords.week" = "Sua semana em poucas palavras";
+"stats.l11d.title.inAFewWords.days7" = "Seus últimos 7 dias em poucas palavras";
+"stats.l11d.title.inAFewWords.days30" = "Seus últimos 30 dias em poucas palavras";
+"stats.l11d.title.inAFewWords.month" = "Seu mês em poucas palavras";
+"stats.l11d.title.inAFewWords.year" = "Seu ano em poucas palavras";
+"stats.l11d.title.inAFewWords.all" = "Todo o seu histórico em poucas palavras";
+"stats.l11d.title.inAFewWords.period" = "Seu período em poucas palavras";
+"stats.l11d.title.atAGlance.week" = "Sua semana num relance";
+"stats.l11d.title.atAGlance.days7" = "Seus últimos 7 dias num relance";
+"stats.l11d.title.atAGlance.days30" = "Seus últimos 30 dias num relance";
+"stats.l11d.title.atAGlance.month" = "Seu mês num relance";
+"stats.l11d.title.atAGlance.year" = "Seu ano num relance";
+"stats.l11d.title.atAGlance.all" = "Todo o seu histórico num relance";
+"stats.l11d.title.atAGlance.period" = "Seu período num relance";

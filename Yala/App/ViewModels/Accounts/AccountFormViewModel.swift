@@ -285,13 +285,13 @@ final class AccountFormViewModel {
 
     // MARK: - Computed Balance Properties
 
-    /// Current balance calculated from all transactions
+    /// El saldo de HOY de la cuenta: el mismo que enseña su tarjeta, sin los movimientos con fecha futura
+    /// (`LiveBalanceCalculator.TodayCutoff`). «Editar el saldo» corrige contra este número, así que lo que se
+    /// escribe es lo que la persona ve en su banco hoy.
     var currentBalance: Double {
         guard let account = accountToEdit else { return 0 }
-        return InitialBalanceService.currentBalance(
-            for: account,
-            allTransactions: allTransactions
-        )
+        let balance = AccountBalanceCalculator.currentBalance(for: account, allTransactions: allTransactions)
+        return (balance as NSDecimalNumber).doubleValue
     }
 
     /// Existing initial balance transaction amount (for editing)
@@ -299,9 +299,13 @@ final class AccountFormViewModel {
         guard let account = accountToEdit else { return 0 }
         // Need to get from context, but we don't have it here
         // So we calculate: current balance - sum of non-initial transactions
+        // Con el mismo corte de fecha que `currentBalance`: si no, un movimiento futuro restaría aquí sin haber
+        // sumado allí, y el saldo de partida saldría desplazado en su importe.
+        let cutoff = LiveBalanceCalculator.TodayCutoff()
         let nonInitialTransactions = allTransactions.filter {
             $0.account?.persistentModelID == account.persistentModelID
                 && $0.balanceAdjustmentType != InitialBalanceService.typeInitialBalance
+                && cutoff.counts($0.date)
         }
         let otherTransactionsSum = nonInitialTransactions.reduce(0.0) { $0 + $1.amount }
         return currentBalance - otherTransactionsSum
@@ -931,7 +935,10 @@ final class AccountFormViewModel {
         to target: String, hasPendingRows: Bool
     ) -> AccountCurrencyBalancePreviewLogic.Preview? {
         guard hasPendingRows, let context = modelContext ?? accountToEdit?.modelContext else { return nil }
-        let rows = accountTransactions.map {
+        // «Tu saldo pasará de X a Y» habla del saldo de hoy, el mismo que el «Saldo actual» de este formulario: sin lo
+        // fechado en el futuro (`LiveBalanceCalculator.TodayCutoff`). La conversión del histórico sí lo incluye.
+        let cutoff = LiveBalanceCalculator.TodayCutoff()
+        let rows = accountTransactions.filter { cutoff.counts($0.date) }.map {
             AccountCurrencyBalancePreviewLogic.Row(amount: $0.amount, currencyCode: $0.currencyCode, date: $0.date)
         }
         return AccountCurrencyBalancePreviewLogic.preview(rows: rows, to: target) { amount, from, to, date in

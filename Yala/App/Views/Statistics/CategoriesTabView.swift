@@ -1103,7 +1103,7 @@ struct CategoriesTabView: View {
                     .font(DS.Typography.body)
                     .foregroundStyle(theme.accent)
                     .accessibilityHidden(true)
-                Text(L10n.Stats.Distribution.insightTitleFree(periodDisplayName))
+                Text(L10n.UXL11D.atAGlance(viewModel.detailPeriod))
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
             }
@@ -1155,7 +1155,7 @@ struct CategoriesTabView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(theme.accent)
                 .accessibilityHidden(true)
-            Text(L10n.Stats.Distribution.insightTitlePro)
+            Text(L10n.UXL11D.atAGlance(viewModel.detailPeriod))
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
         }

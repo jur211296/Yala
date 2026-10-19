@@ -69,6 +69,9 @@ struct TrendsTabView: View {
     @State private var cashFlowByAccount: [PersistentIdentifier: CashFlowSummary] = [:]
     @State private var cashFlowByCurrency: [String: CashFlowSummary] = [:]
     @State private var cashFlowViewType: CashFlowViewType = .total
+    /// «Ver el mes anterior» encendido: la tarjeta de saldo superpone la curva punteada del período anterior (UX 2.2 ·
+    /// L11-10). Apagado por defecto: la tarjeta enseña lo de siempre.
+    @State private var showsPreviousPeriod = false
     @State private var accountCarouselPosition: PersistentIdentifier?
     @State private var currencyCarouselPosition: String?
     /// La vista por cuenta con una tarjeta con varias divisas: entera o línea a línea (entrega 4, Paso 0 D1-D2).
@@ -366,17 +369,23 @@ struct TrendsTabView: View {
 
     // MARK: - Charts Layout
 
-    /// Tendencia y, si hay período anterior, comparación. Dos hijos sueltos: el lado a lado en ancha lo pone la
-    /// rejilla en pares de la que cuelgan, igual que al resto de tarjetas.
+    /// La tarjeta de tendencia. Hasta el 2026-10-18 había debajo una segunda, «Comparativa · vs Período anterior», con
+    /// la misma cifra y el mismo porcentaje; ahora la comparación es «Ver el mes anterior» dentro de esta (UX 2.2 ·
+    /// L11-10, decisión B de Jürgen).
     @ViewBuilder
     private var chartsLayout: some View {
-        let hasComparison = appPreferences.showVariations
-            && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod)
-
         trendChartSection
-        if hasComparison {
-            comparisonChartSection
-        }
+    }
+
+    /// Hay un período anterior con el que comparar: el mismo criterio con el que salía la tarjeta Comparativa.
+    private var canShowPreviousPeriod: Bool {
+        appPreferences.showVariations
+            && PreviousPeriodHelper.isSelectorVisible(for: trendsViewModel.detailPeriod)
+    }
+
+    /// La curva anterior se dibuja: encendida, con período anterior y con datos.
+    private var isShowingPreviousPeriod: Bool {
+        showsPreviousPeriod && canShowPreviousPeriod && hasComparisonData
     }
 
     /// Check if there's trend data to display
@@ -412,7 +421,7 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var chartCardBody: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            // Header interno simétrico a comparisonChartBody:
+            // Header interno:
             //   left: trendType.displayName + KPI(.headline) + "vs S/ X" inline
             //   right: VariationChip(.medium) + "vs Abr 26" caption
             HStack(alignment: .top) {
@@ -477,7 +486,34 @@ struct TrendsTabView: View {
                 }
             }
 
-            if hasTrendData {
+            if hasTrendData, canShowPreviousPeriod {
+                showPreviousPeriodToggle
+            }
+
+            if hasTrendData, isShowingPreviousPeriod {
+                // La misma gráfica que tenía la tarjeta Comparativa: la curva de ahora y, punteada, la del período
+                // anterior, alineadas día a día (`DateAlignmentHelper`), con su leyenda.
+                AdaptiveChartHeight(base: 170) { chartHeight in
+                PeriodComparisonChartView(
+                    currentPeriodPoints: currentPeriodPoints,
+                    previousPeriodPoints: previousPeriodPoints,
+                    yDomain: comparisonYDomain,
+                    grouping: .day,
+                    currentInterval: trendsViewModel.currentInterval,
+                    previousInterval: PreviousPeriodHelper.previousInterval(
+                        for: trendsViewModel.detailPeriod,
+                        mode: sessionState.comparisonMode,
+                        customRange: sessionState.customDateRange
+                    ),
+                    currencyCode: defaultCurrencyCode,
+                    trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
+                    chartHeight: chartHeight,
+                    period: trendsViewModel.detailPeriod,
+                    comparisonMode: sessionState.comparisonMode
+                )
+                }
+                .accessibilityIdentifier("trends_previous_period_chart")
+            } else if hasTrendData {
                 // Más alta en los iPhone grandes, con la misma proporción que en el pequeño (`AdaptiveChartHeight`).
                 AdaptiveChartHeight(base: 170) { chartHeight in
                 TrendChartView(
@@ -510,122 +546,33 @@ struct TrendsTabView: View {
         .frame(height: 220)
     }
 
-    /// Dynamic title for period comparison card based on comparison mode
-    private var periodComparisonTitle: String {
-        switch sessionState.comparisonMode {
-        case .month:
-            return L10n.Statistics.vsPreviousPeriod
-        case .year:
-            return L10n.Statistics.vsPreviousYear
-        }
-    }
-
-    // MARK: - Comparison Chart Section (title afuera + M/A derecha + .panelCard)
-
-    @ViewBuilder
-    private var comparisonChartSection: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            // Título FUERA de la tarjeta y, debajo, con qué se compara en una frase (UX 2.2 · L11-4).
-            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-                Text(L10n.Stats.Trends.comparisonTitle)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
-                ComparisonModeSelector(
-                    period: trendsViewModel.detailPeriod,
-                    customRange: sessionState.customDateRange,
-                    dataEnd: currentPeriodPoints.last(where: { $0.value != 0 })?.date
-                )
+    /// «Ver el mes anterior»: enciende y apaga la curva punteada del período anterior dentro de la tarjeta. El rótulo
+    /// sigue al período y al modo de comparación («Ver la semana anterior», «Ver el año anterior»).
+    private var showPreviousPeriodToggle: some View {
+        Button {
+            dsWithAnimation(reduceMotion) { showsPreviousPeriod.toggle() }
+        } label: {
+            HStack(spacing: DS.Spacing.xs) {
+                Image(systemName: showsPreviousPeriod ? "checkmark" : "chart.line.flattrend.xyaxis")
+                    .font(DS.Typography.caption)
+                    .accessibilityHidden(true)
+                Text(L10n.UXL11D.showPrevious(
+                    period: trendsViewModel.detailPeriod, mode: sessionState.comparisonMode
+                ))
+                    .font(DS.Typography.caption)
+                    .fontWeight(.medium)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            comparisonChartBody
-                .panelCard()
+            .padding(.horizontal, DS.Spacing.md)
+            .padding(.vertical, DS.Spacing.xs)
+            .foregroundStyle(showsPreviousPeriod ? Color.white : theme.accent)
+            .background(
+                Capsule().fill(showsPreviousPeriod ? theme.accent : theme.accent.opacity(0.12))
+            )
+            .contentShape(Capsule())
         }
-    }
-
-    @ViewBuilder
-    private var comparisonChartBody: some View {
-        VStack(alignment: .leading, spacing: DS.Spacing.lg) {
-            if hasComparisonData {
-                // Header interno: KPI value left + variation chip top-right
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        // Subtítulo principal (simetría con trendChartBody "Saldo/Ingresos/Gastos")
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(periodComparisonTitle)
-                                .font(DS.Typography.subheadlineEmphasized)
-                                .foregroundStyle(.thPrimaryText)
-
-                            WidgetInfoButton(kind: .periodComparison)
-                        }
-
-                        HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
-                            AmountText(
-                                value: currentKPIValue,
-                                currencyCode: defaultCurrencyCode,
-                                font: DS.Typography.headline
-                            )
-
-                            if !kpiIsLiveBalance, let prevTotal = previousPeriodTotal {
-                                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xxs) {
-                                    Text(L10n.Common.vs)
-                                        .font(DS.Typography.caption)
-                                        .foregroundStyle(.thSecondaryText)
-                                    AmountText(
-                                        value: prevTotal,
-                                        currencyCode: defaultCurrencyCode,
-                                        font: DS.Typography.caption,
-                                        tint: .secondary
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-                        VariationChip(
-                            currentAmount: currentPeriodTotal,
-                            previousAmount: previousPeriodTotal,
-                            size: .medium,
-                            showNAWhenNil: true,
-                            isExpenseContext: trendsViewModel.selectedMetric == .expense
-                        )
-
-                        Text(comparisonPeriodText)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.thSecondaryText)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-
-                AdaptiveChartHeight(base: 170) { chartHeight in
-                PeriodComparisonChartView(
-                    currentPeriodPoints: currentPeriodPoints,
-                    previousPeriodPoints: previousPeriodPoints,
-                    yDomain: comparisonYDomain,
-                    grouping: .day,
-                    currentInterval: trendsViewModel.currentInterval,
-                    previousInterval: PreviousPeriodHelper.previousInterval(
-                        for: trendsViewModel.detailPeriod,
-                        mode: sessionState.comparisonMode,
-                        customRange: sessionState.customDateRange
-                    ),
-                    currencyCode: defaultCurrencyCode,
-                    trendType: mapMetricToTrendType(trendsViewModel.selectedMetric),
-                    chartHeight: chartHeight,
-                    period: trendsViewModel.detailPeriod,
-                    comparisonMode: sessionState.comparisonMode
-                )
-                }
-                .padding(.top, DS.Spacing.sm)
-            } else {
-                chartEmptyState
-            }
-        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(showsPreviousPeriod ? .isSelected : [])
+        .accessibilityIdentifier("trends_show_previous_toggle")
     }
 
     /// Short comparison period text (e.g., "vs Nov 25") for display below chips
@@ -767,7 +714,7 @@ struct TrendsTabView: View {
                     .font(DS.Typography.body)
                     .foregroundStyle(theme.accent)
                     .accessibilityHidden(true)
-                Text(L10n.Stats.Trends.insightTitleFree(periodDisplayName))
+                Text(L10n.UXL11D.inAFewWords(trendsViewModel.detailPeriod))
                     .font(DS.Typography.subheadlineEmphasized)
                     .foregroundStyle(.primary)
                     .accessibilityAddTraits(.isHeader)
@@ -812,7 +759,7 @@ struct TrendsTabView: View {
         }
     }
 
-    /// Header consistente entre pre-AI y post-AI (sparkles + "Análisis del período").
+    /// Header consistente entre pre-AI y post-AI (sparkles + «Tu mes en pocas palabras»).
     @ViewBuilder
     private var proInsightHeader: some View {
         HStack(spacing: DS.Spacing.sm) {
@@ -820,7 +767,9 @@ struct TrendsTabView: View {
                 .font(DS.Typography.body)
                 .foregroundStyle(theme.accent)
                 .accessibilityHidden(true)
-            Text(L10n.Stats.Trends.insightTitlePro)
+            // El mismo título que en gratis, con el sustantivo del período (UX 2.2 · L11-8): «Análisis del período» era el
+            // sexto nombre de la misma función.
+            Text(L10n.UXL11D.inAFewWords(trendsViewModel.detailPeriod))
                 .font(DS.Typography.subheadlineEmphasized)
                 .foregroundStyle(.primary)
                 .accessibilityAddTraits(.isHeader)
@@ -1071,15 +1020,15 @@ struct TrendsTabView: View {
     @ViewBuilder
     private var cashFlowWidget: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            HStack {
-                Text(L10n.CashFlow.title)
-                    .font(DS.Typography.headline)
-                    .foregroundStyle(.primary)
+            // «Entradas y salidas» y no «Flujo de Efectivo», que se confundía con el «Flujo de caja» de Reportes; y el
+            // selector en texto, que los tres iconos no decían qué cambiaban (UX 2.2 · L11-10). Solo aquí: el widget
+            // del Panel lo sigue en la sesión de los widgets (L15-1).
+            Text(L10n.UXL11D.inAndOut)
+                .font(DS.Typography.headline)
+                .foregroundStyle(.primary)
+                .accessibilityAddTraits(.isHeader)
 
-                Spacer()
-
-                cashFlowViewSelector
-            }
+            cashFlowViewSelector
 
             // Contenido NO envuelto — CashFlowWidget interno ya tiene su .solidCard(radius: DS.Panel.widgetRadius)
             switch cashFlowViewType {
@@ -1173,21 +1122,24 @@ struct TrendsTabView: View {
                 }
             }
         } label: {
-            Image(systemName: viewType.iconName)
-                .font(DS.Typography.labelSmall)
+            Text(viewType.title)
+                .font(DS.Typography.caption)
                 .fontWeight(.semibold)
+                .lineLimit(1)
                 .foregroundStyle(isSelected ? Color.white : theme.secondaryText)
-                .frame(width: 32, height: 32)
+                .padding(.horizontal, DS.Spacing.md)
+                .padding(.vertical, DS.Spacing.xs)
                 .background {
                     if isSelected {
-                        Circle()
+                        Capsule()
                             .fill(theme.accent)
                             .matchedGeometryEffect(id: "cashFlowSelector", in: cashFlowSelectorNamespace)
                     } else {
-                        Circle()
+                        Capsule()
                             .fill(.thSecondaryText.opacity(0.08))
                     }
                 }
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(viewType.title)

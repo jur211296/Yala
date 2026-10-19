@@ -71,6 +71,7 @@ struct TrendDataProcessor {
         currencyCode: String,
         adjustment: GroupBridgeStatsAdjustment = .none,
         liveBalanceOverride: LiveBalanceCalculator.LiveAnchorInfo? = nil,
+        asOf now: Date = .now,
         converter: CurrencyConverting = CurrencyConverter.shared
     ) -> TrendProcessingResult {
         let calendar = Calendar.current
@@ -138,7 +139,13 @@ struct TrendDataProcessor {
         let effectiveStart = max(firstTransactionDate, interval.start)
         // Add 1 second to include transactions at exactly lastTransactionDate
         // (DateInterval.contains uses date < end, so we need end > lastTransactionDate)
-        let effectiveEnd = min(lastTransactionDate.addingTimeInterval(1), interval.end)
+        let dataEnd = min(lastTransactionDate.addingTimeInterval(1), interval.end)
+        // El saldo llega hasta HOY (`LiveBalanceCalculator.TodayCutoff`): con un rango propio que acaba después, la curva
+        // seguía hasta el último movimiento futuro y acababa lejos de la cifra y de la curva por cuenta (review del
+        // 2026-10-18). Ingresos y gastos no cambian.
+        let effectiveEnd = metric == .balance
+            ? min(dataEnd, LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: calendar).startOfTomorrow)
+            : dataEnd
 
         // Create effective interval for filtering (must match bucket range)
         let bucketStartDate = grouping.dateKey(for: effectiveStart, calendar: calendar)

@@ -96,6 +96,17 @@ struct Commitments {
     let activeRecurringCount: Int            // PaymentCategory.recurring only
     let activeRecurringMonthly: Double
     let budgetsAtRisk: [BudgetAtRisk]
+
+    // «Lo que te falta pagar» (UX 2.2 · L11-5, decisión B): los pagos pendientes del período partidos en suscripciones y
+    // el resto. Suman `pendingPaymentsCount`/`pendingPaymentsAmount`; la suscripción pendiente se cuenta una sola vez.
+    var pendingSubscriptionsCount: Int = 0
+    var pendingSubscriptionsAmount: Double = 0
+    var pendingOtherPaymentsCount: Int = 0
+    var pendingOtherPaymentsAmount: Double = 0
+
+    /// «Tus presupuestos»: TODOS los activos, de más a menos usado. `budgetsAtRisk` sigue siendo los de ≥ 50 % (lo leen
+    /// Yala IA y las observaciones).
+    var budgets: [BudgetAtRisk] = []
 }
 
 struct BudgetAtRisk: Identifiable {
@@ -106,6 +117,8 @@ struct BudgetAtRisk: Identifiable {
     let spent: Double
     let limit: Double
     let colorHex: String?
+    /// Moneda de `spent` y `limit`: la del presupuesto.
+    var currencyCode: String = ""
 }
 
 struct NeedDistribution {
@@ -624,6 +637,10 @@ struct InsightsCalculator {
         var subscriptionMonthly: Double = 0
         var recurringCount = 0
         var recurringMonthly: Double = 0
+        var pendingSubscriptionsCount = 0
+        var pendingSubscriptionsAmount: Double = 0
+        var pendingOtherCount = 0
+        var pendingOtherAmount: Double = 0
 
         for payment in scheduledPayments {
             guard payment.isActive else { continue }
@@ -644,6 +661,13 @@ struct InsightsCalculator {
             if interval.contains(payment.nextDueDate) {
                 pendingCount += 1
                 pendingAmount += amount
+                if payment.paymentCategory == PaymentCategory.subscription.rawValue {
+                    pendingSubscriptionsCount += 1
+                    pendingSubscriptionsAmount += amount
+                } else {
+                    pendingOtherCount += 1
+                    pendingOtherAmount += amount
+                }
             }
         }
 
@@ -652,6 +676,7 @@ struct InsightsCalculator {
         let txnsByCategory = Dictionary(grouping: expenseTxns, by: { $0.category?.persistentModelID })
 
         var budgetsAtRisk: [BudgetAtRisk] = []
+        var allBudgets: [BudgetAtRisk] = []
         for budget in budgets {
             guard budget.isActive else { continue }
             guard budget.limitAmount > 0 else { continue }
@@ -674,21 +699,23 @@ struct InsightsCalculator {
             }
 
             let usage = (spent / budget.limitAmount) * 100
-            if usage >= 50 {
-                // Icon genérico en cold launch si M2M lazy nil — se auto-cura via hot
-                // path upstream. Refactor con iconLookup precomputado: ver Backlog.
-                budgetsAtRisk.append(BudgetAtRisk(
-                    id: budget.persistentModelID,
-                    name: budget.name,
-                    icon: budget.displayProperties.icon,
-                    usagePercent: usage,
-                    spent: spent,
-                    limit: budget.limitAmount,
-                    colorHex: budget.category?.colorHex
-                ))
-            }
+            // Icon genérico en cold launch si M2M lazy nil — se auto-cura via hot
+            // path upstream. Refactor con iconLookup precomputado: ver Backlog.
+            let row = BudgetAtRisk(
+                id: budget.persistentModelID,
+                name: budget.name,
+                icon: budget.displayProperties.icon,
+                usagePercent: usage,
+                spent: spent,
+                limit: budget.limitAmount,
+                colorHex: budget.category?.colorHex,
+                currencyCode: budget.currencyCode
+            )
+            allBudgets.append(row)
+            if usage >= 50 { budgetsAtRisk.append(row) }
         }
         budgetsAtRisk.sort { $0.usagePercent > $1.usagePercent }
+        allBudgets.sort { $0.usagePercent > $1.usagePercent }
 
         return Commitments(
             pendingPaymentsCount: pendingCount,
@@ -697,7 +724,12 @@ struct InsightsCalculator {
             activeSubscriptionsMonthly: subscriptionMonthly,
             activeRecurringCount: recurringCount,
             activeRecurringMonthly: recurringMonthly,
-            budgetsAtRisk: budgetsAtRisk
+            budgetsAtRisk: budgetsAtRisk,
+            pendingSubscriptionsCount: pendingSubscriptionsCount,
+            pendingSubscriptionsAmount: pendingSubscriptionsAmount,
+            pendingOtherPaymentsCount: pendingOtherCount,
+            pendingOtherPaymentsAmount: pendingOtherAmount,
+            budgets: allBudgets
         )
     }
 

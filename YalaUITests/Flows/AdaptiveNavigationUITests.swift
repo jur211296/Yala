@@ -417,18 +417,18 @@ final class AdaptiveNavigationUITests: XCTestCase {
         }
     }
 
-    /// Fase 2b: Estadísticas › Resumen en pares en ancho: «Tu salud financiera» y «Resumen inteligente» en la misma
+    /// Fase 2b: Estadísticas › Resumen en pares en ancho: «Tu salud financiera» y «Resumen con IA» en la misma
     /// fila. En iPhone, uno debajo de otro.
     func test_statisticsSummary_pairsTheCards_inWideWindow() {
         if expectsWideWindow { XCUIDevice.shared.orientation = .landscapeLeft }
         let app = launch(deeplink: "statistics")
         let health = label("Tu salud financiera", in: app)
-        let smart = label("Resumen inteligente", in: app)
+        let smart = label("Resumen con IA", in: app)
         XCTAssertTrue(health.waitForExistence(timeout: 15), "No está «Tu salud financiera».")
-        XCTAssertTrue(smart.waitForExistence(timeout: 10), "No está «Resumen inteligente».")
+        XCTAssertTrue(smart.waitForExistence(timeout: 10), "No está «Resumen con IA».")
 
         if expectsWideWindow {
-            XCTAssertGreaterThan(smart.frame.minX, health.frame.maxX, "«Resumen inteligente» no está al lado de la salud financiera.")
+            XCTAssertGreaterThan(smart.frame.minX, health.frame.maxX, "«Resumen con IA» no está al lado de la salud financiera.")
             XCTAssertLessThan(abs(smart.frame.midY - health.frame.midY), 60, "Las dos tarjetas no están en la misma fila.")
         } else {
             XCTAssertGreaterThan(smart.frame.minY, health.frame.maxY, "En iPhone el Resumen dejó de ir en una columna.")

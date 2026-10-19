@@ -29,8 +29,10 @@ nonisolated enum StatisticsDeepLink: Sendable {
     enum Period: String, Sendable, CaseIterable {
         /// El diario: hoy.
         case today
-        /// El semanal: los últimos 7 días.
+        /// El semanal del domingo: los últimos 7 días.
         case last7Days
+        /// El semanal del lunes: la semana de lunes a domingo que acaba de cerrar (UX 2.2 · L11-12).
+        case lastWeek
         /// El mensual del día 1: el mes que acaba de cerrar.
         case lastMonth
         /// El mensual del último día: el mes en curso.
@@ -72,7 +74,8 @@ nonisolated enum StatisticsDeepLink: Sendable {
     static func reportRequest(type: NotificationType, dayPreference: ReportDayPreference) -> Request {
         if type == .dailyReport { return Request(tab: .records, period: .today) }
         switch dayPreference {
-        case .sunday, .monday: return Request(tab: .insights, period: .last7Days)
+        case .sunday: return Request(tab: .insights, period: .last7Days)
+        case .monday: return Request(tab: .insights, period: .lastWeek)
         case .firstDay: return Request(tab: .insights, period: .lastMonth)
         case .lastDay: return Request(tab: .insights, period: .thisMonth)
         }
@@ -105,6 +108,10 @@ extension StatisticsDeepLink.Period {
                 .flatMap { calendar.date(byAdding: .second, value: -1, to: $0) } ?? now
             return PeriodStepLogic.Selection(period: .custom, customRange: DateInterval(start: start, end: end))
         case .last7Days: return PeriodStepLogic.Selection(period: .last7Days, customRange: nil)
+        case .lastWeek:
+            // Los mismos días que cuenta el aviso: no hay un período fijo «semana pasada», así que es un rango.
+            let week = ReportNotificationService.closedWeek(before: now, calendar: calendar)
+            return PeriodStepLogic.Selection(period: .custom, customRange: week)
         case .lastMonth: return PeriodStepLogic.Selection(period: .lastMonth, customRange: nil)
         case .thisMonth: return PeriodStepLogic.Selection(period: .thisMonth, customRange: nil)
         }

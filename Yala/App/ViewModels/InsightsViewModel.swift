@@ -42,6 +42,17 @@ final class InsightsViewModel {
     private var lastAccounts: [Account] = []
     private var lastCategories: [Category] = []
     private var lastTags: [Tag] = []
+    private var lastCustomRange: DateInterval?
+
+    /// Sube cada vez que cambia el contexto del análisis (período, filtros, datos). La vista lo usa como `id` de la tarea
+    /// que genera sola el «Resumen con IA» al abrir Observaciones (UX 2.2 · L11-7).
+    private(set) var aiContextVersion = 0
+
+    /// Dónde se guardan las respuestas por huella. Inyectable para los tests.
+    var aiResultStore: InsightsAIResultStore = .shared
+
+    /// La huella de la pregunta que va de camino al servicio de IA, si hay una.
+    private var inFlightAIFingerprint: String?
 
     // MARK: - Preferences
 
@@ -154,8 +165,11 @@ final class InsightsViewModel {
         criteria: FilterCriteria,
         accounts: [Account],
         categories: [Category],
-        tags: [Tag]
+        tags: [Tag],
+        customRange: DateInterval? = nil
     ) {
+        lastCustomRange = customRange
+        aiContextVersion &+= 1
         lastPeriod = period
         lastFilterHash = filterHash
         lastTxnCount = txnCount
@@ -167,8 +181,9 @@ final class InsightsViewModel {
         lastTags = tags
     }
 
-    /// Called from the "Generate AI Insights" button. Uses stored context.
-    func triggerAIGeneration() async {
+    /// Called from the "Generate AI Insights" button. Uses stored context. `refresh` («Actualizar») pide uno nuevo aunque
+    /// haya uno guardado para estos mismos datos.
+    func triggerAIGeneration(refresh: Bool = false) async {
         guard let period = lastPeriod else { return }
         aiActivated = true
         await generateAIInsights(
@@ -180,8 +195,59 @@ final class InsightsViewModel {
             criteria: lastCriteria,
             accounts: lastAccounts,
             categories: lastCategories,
+            tags: lastTags,
+            refresh: refresh
+        )
+    }
+
+    // MARK: - Resumen con IA automático en Pro (UX 2.2 · L11-7)
+
+    /// `true` si este usuario puede recibir el resumen sin tocar nada: Pro y con el consentimiento ya dado. Sin
+    /// consentimiento hace falta un toque, y no se puede saltar: es el que autoriza enviar el resumen al servicio de IA.
+    var canGenerateAIAutomatically: Bool {
+        FeatureGateService.shared.canAccess(.smartInsightsAI)
+            && UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiInsightsConsentAccepted)
+    }
+
+    /// La huella de lo que se enviaría ahora al servicio de IA (`InsightsAIResultStore.fingerprint`).
+    func currentAIFingerprint() -> String? {
+        guard let data = insightData, let period = lastPeriod else { return nil }
+        let aggregated = buildAggregatedData(
+            data,
+            currencyCode: lastCurrencyCode,
+            comparisonMode: lastComparisonMode,
+            criteria: lastCriteria,
+            accounts: lastAccounts,
+            categories: lastCategories,
             tags: lastTags
         )
+        return InsightsAIResultStore.fingerprint(
+            aggregatedData: aggregated,
+            period: period.rawValue,
+            customRange: period == .custom ? lastCustomRange : nil,
+            tone: currentTone,
+            focus: currentFocus,
+            currencyFormat: UserDefaults.standard.string(forKey: "currencyDisplayFormat") ?? "code"
+        )
+    }
+
+    /// Tras un recálculo: si hay un resumen guardado para estos mismos datos, se enseña ya, sin llamar a nadie.
+    func restoreSavedAIIfAvailable() {
+        guard canGenerateAIAutomatically,
+              let fingerprint = currentAIFingerprint(),
+              let saved = aiResultStore.response(for: fingerprint)
+        else { return }
+        aiInsights = saved
+        aiError = nil
+        isLoadingAI = false
+        aiActivated = true
+    }
+
+    /// Al abrir Observaciones en Pro: el resumen sale solo. Reusa el guardado si los datos no cambiaron; si no, lo pide.
+    func autoGenerateIfNeeded() async {
+        guard canGenerateAIAutomatically, insightData != nil, !isLoadingAI, aiInsights == nil, aiError == nil
+        else { return }
+        await triggerAIGeneration()
     }
 
     /// Resets AI state when period/filters change so the button reappears.
@@ -204,7 +270,8 @@ final class InsightsViewModel {
         criteria: FilterCriteria = .empty,
         accounts: [Account] = [],
         categories: [Category] = [],
-        tags: [Tag] = []
+        tags: [Tag] = [],
+        refresh: Bool = false
     ) async {
         guard let data = insightData else { return }
 
@@ -221,6 +288,20 @@ final class InsightsViewModel {
         let tone = currentTone
         let focus = currentFocus
 
+        // El guardado por huella va primero: mismos datos, misma respuesta, sin llamada (UX 2.2 · L11-7).
+        let fingerprint = currentAIFingerprint()
+        if !refresh, let fingerprint, let saved = aiResultStore.response(for: fingerprint) {
+            aiInsights = saved
+            aiError = nil
+            return
+        }
+        // La misma pregunta ya va de camino: se espera a su respuesta, que se pintará al llegar.
+        if !refresh, let fingerprint, fingerprint == inFlightAIFingerprint {
+            isLoadingAI = true
+            aiError = nil
+            return
+        }
+
         let key = InsightsLLMService.shared.cacheKey(
             period: period.rawValue,
             filterHash: filterHash,
@@ -231,7 +312,7 @@ final class InsightsViewModel {
         )
 
         // Check cache first
-        if let cached = InsightsLLMService.shared.getCached(key: key) {
+        if !refresh, let cached = InsightsLLMService.shared.getCached(key: key) {
             aiInsights = cached
             return
         }
@@ -250,15 +331,32 @@ final class InsightsViewModel {
             tags: tags
         )
 
+        // La respuesta se enseña solo si sigue describiendo lo que hay en pantalla: un cambio de período o de filtro
+        // mientras se espera la deja guardada con su huella, sin pintarla sobre otros datos. Y la misma pregunta en vuelo
+        // no se repite: un recálculo a mitad de la espera (cambiar de pestaña y volver) la esperaba con otra llamada, que
+        // además chocaba con el freno de 5 s del servicio y salía como error.
+        inFlightAIFingerprint = fingerprint
+        let contextVersion = aiContextVersion
+        func stillCurrent() -> Bool {
+            guard let fingerprint else { return contextVersion == aiContextVersion }
+            return currentAIFingerprint() == fingerprint
+        }
         do {
             let response = try await InsightsLLMService.shared.generateInsights(
                 aggregatedData: aggregated,
                 cacheKey: key,
                 tone: tone,
-                focus: focus
+                focus: focus,
+                bypassCache: refresh
             )
+            if inFlightAIFingerprint == fingerprint { inFlightAIFingerprint = nil }
+            if let fingerprint { aiResultStore.save(response, for: fingerprint) }
+            guard stillCurrent() else { return }
             aiInsights = response
+            aiActivated = true
         } catch {
+            if inFlightAIFingerprint == fingerprint { inFlightAIFingerprint = nil }
+            guard stillCurrent() else { return }
             aiError = AIInsightFailureLogic.failure(for: error, isConnected: NetworkMonitor.shared.isConnected)
             #if DEBUG
             print("InsightsViewModel: AI error: \(error)")
