@@ -2,3 +2,6 @@ self-hosted-runner:
   # Runner propio de la Mini (usuario ci). Ver qa/scripts/ci-runner/instalar.sh.
   labels:
     - yala-mini
+    # Imagen hospedada de GitHub, en preview: actionlint 1.7.12 aún no la conoce. La usan
+    # `tests` y `ui` de qa.yml en la rama 2.2 (Xcode 27.1). Ver qa/scripts/ci-xcode.sh.
+    - xcode-27
