@@ -2841,6 +2841,7 @@
 "aiPrivacy.processingRow" = "处理(语音和图片)";
 "aiPrivacy.chatRow" = "Pro 助理";
 "aiPrivacy.insightsRow" = "智能洞察";
+"aiPrivacy.cloudExploreRow" = "查询你的云端账户";
 "aiPrivacy.revokeConfirmTitle" = "禁用此功能?";
 "aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
 "aiPrivacy.revokeConfirmAction" = "禁用";
@@ -3399,7 +3400,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "财务助理";
-"aiConsent.chatMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务：账户余额和名称、按类别的总计、常用商家、预算和定期付款。这些数据仅用于回答你，不会用于训练 AI。";
+"aiConsent.chatMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务：账户余额和名称、按类别的总计、常用商家、预算、定期付款以及你本月最大的几笔支出。这些数据仅用于回答你，不会用于训练 AI。";
+"aiConsent.cloudExploreTitle" = "Yala AI 与你的云端账户";
+"aiConsent.cloudExploreMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务；当问题需要时，还会发送回答所需的云端账户数据：任意日期的记录及其备注、账户、预算和定期付款。这些数据仅用于回答你，不会用于训练 AI。";
 "aiConsent.inlineHintChat" = "你的财务摘要由 AI 服务处理以作答，不会被永久存储。";
 "aiConsent.inlineHintMultiple" = "多项功能使用 AI 服务处理你的数据，不会被永久存储。";
 
@@ -7364,7 +7367,7 @@
 "yalaAI.onboarding.l14.consent.title" = "开始之前";
 "yalaAI.onboarding.l14.consent.subtitle" = "为了回答你，Yala AI 会读取你的财务摘要。";
 "yalaAI.onboarding.l14.consent.readsTitle" = "读取什么";
-"yalaAI.onboarding.l14.consent.readsBody" = "最近 13 个月的账户余额和名称、按类别的总计、常用商家、预算和定期付款。";
+"yalaAI.onboarding.l14.consent.readsBody" = "最近 13 个月的账户余额和名称、按类别的总计、常用商家、预算和定期付款，以及你本月最大的几笔支出。";
 "yalaAI.onboarding.l14.consent.useTitle" = "不做什么";
 "yalaAI.onboarding.l14.consent.useBody" = "仅为了回答你而发送给 AI 服务，不会用于训练 AI。";
 "yalaAI.onboarding.l14.consent.decideTitle" = "由你决定";

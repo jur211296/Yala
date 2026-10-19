@@ -141,6 +141,9 @@ nonisolated enum CloudRemoteFlags {
     #if DEV_BUILD
     /// Panel DEBUG: simular el kill-switch (remote OFF) sin tocar staging. Solo DEV_BUILD.
     static let debugForceOffKey = "cloudSync.debug.remoteFlagsForceOff"
+    /// Panel DEBUG: encender Yala IA ampliada en este teléfono para el QA de N1 sin tocar el flag de ningún entorno.
+    /// Solo DEV_BUILD; con el gateway a 0 la pregunta se contesta como `chat.answer`.
+    static let debugAICloudExploreForceOnKey = "cloudSync.debug.aiCloudExploreForceOn"
     #endif
 
     /// Disponibilidad del Modo Nube (§j.1) — gatea SOLO entradas, jamás el runtime (decisión owner).
@@ -170,6 +173,9 @@ nonisolated enum CloudRemoteFlags {
     static var aiCloudExploreEnabled: Bool {
         if let override = aiCloudExploreEnabledTestOverride { return override }
         if isRunningTests || isUITestHost { return false }
+        #if DEV_BUILD
+        if UserDefaults.standard.bool(forKey: debugAICloudExploreForceOnKey) { return true }
+        #endif
         guard let snapshot = CloudRemoteConfigStore.readSnapshot() else { return false }
         return RemoteFlagDecisionLogic.isEnabled(
             percent: snapshot.aiCloudExploreRolloutPercent,

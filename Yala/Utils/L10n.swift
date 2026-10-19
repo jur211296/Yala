@@ -3026,6 +3026,7 @@ enum L10n {
         static var processingRow: String { ls("aiPrivacy.processingRow", comment: "") }
         static var chatRow: String { ls("aiPrivacy.chatRow", comment: "") }
         static var insightsRow: String { ls("aiPrivacy.insightsRow", comment: "") }
+        static var cloudExploreRow: String { ls("aiPrivacy.cloudExploreRow", comment: "") }
         static var revokeConfirmTitle: String { ls("aiPrivacy.revokeConfirmTitle", comment: "") }
         static var revokeConfirmMessage: String { ls("aiPrivacy.revokeConfirmMessage", comment: "") }
         static var revokeConfirmAction: String { ls("aiPrivacy.revokeConfirmAction", comment: "") }
@@ -3048,6 +3049,9 @@ enum L10n {
         static var inlineHintBoth: String { ls("aiConsent.inlineHintBoth", comment: "") }
         static var chatTitle: String { ls("aiConsent.chatTitle", comment: "") }
         static var chatMessage: String { ls("aiConsent.chatMessage", comment: "") }
+        /// N1: Yala IA con la cuenta en la nube puede consultar más datos (decisión 1A, 2026-10-18).
+        static var cloudExploreTitle: String { ls("aiConsent.cloudExploreTitle", comment: "") }
+        static var cloudExploreMessage: String { ls("aiConsent.cloudExploreMessage", comment: "") }
         static var inlineHintChat: String { ls("aiConsent.inlineHintChat", comment: "") }
         static var inlineHintMultiple: String { ls("aiConsent.inlineHintMultiple", comment: "") }
     }

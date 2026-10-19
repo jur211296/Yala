@@ -1251,6 +1251,7 @@ final class DataWipeService {
         defaults.removeObject(forKey: "aiInsightsMigratedV1")      // Sentinel de migración one-shot
         defaults.removeObject(forKey: "aiTogglesRemovedV2")        // Sentinel remove-ai-toggles refactor
         defaults.removeObject(forKey: "aiChatConsentAccepted")  // Default: false
+        defaults.removeObject(forKey: AppPreferences.Keys.aiCloudExploreConsent)  // Default: sin preguntar (N1)
         defaults.removeObject(forKey: "chatAssistantEnabled")   // Default: false
         defaults.removeObject(forKey: "chatFABVisible")         // Default: true
         defaults.removeObject(forKey: AppPreferences.Keys.cashFlowAIEnabled)  // Default: false

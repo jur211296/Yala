@@ -5,7 +5,8 @@
 //  Por qué camino sale una pregunta de Yala IA según el modo (`docs/ai-cloud-vs-private-2026-10.md`):
 //
 //  1. En privado, siempre `chat.answer`, y sin leer ni el flag ni la sesión.
-//  2. En la nube, `chat.explore` solo con el flag encendido y un token; si falta algo, el camino de siempre.
+//  2. En la nube, `chat.explore` solo con el flag encendido, el texto N1 aceptado y un token; si falta algo, el camino
+//     de siempre. Sin N1 aceptado ni se pide el token.
 //  3. Las cabeceras del camino ampliado son las que lee el gateway.
 //  4. El servicio del chat usa la ruta para la tarea, las cabeceras y el tiempo de espera.
 //
@@ -19,16 +20,20 @@ struct YalaIAChatRoutingTests {
 
     // MARK: - La decisión
 
-    @Test("tabla: solo nube + flag + token da el camino ampliado", arguments: [
-        (StorageMode.icloud, false, "jwt" as String?, false),
-        (StorageMode.icloud, true, "jwt", false),
-        (StorageMode.cloud, false, "jwt", false),
-        (StorageMode.cloud, true, nil, false),
-        (StorageMode.cloud, true, "   ", false),
-        (StorageMode.cloud, true, "jwt", true),
+    @Test("tabla: solo nube + flag + N1 aceptado + token da el camino ampliado", arguments: [
+        (StorageMode.icloud, false, YalaIACloudExploreConsent?.some(.accepted), "jwt" as String?, false),
+        (StorageMode.icloud, true, .accepted, "jwt", false),
+        (StorageMode.cloud, false, .accepted, "jwt", false),
+        (StorageMode.cloud, true, .accepted, nil, false),
+        (StorageMode.cloud, true, .accepted, "   ", false),
+        (StorageMode.cloud, true, nil, "jwt", false),
+        (StorageMode.cloud, true, .declined, "jwt", false),
+        (StorageMode.cloud, true, .accepted, "jwt", true),
     ])
-    func decisionTable(mode: StorageMode, flagOn: Bool, token: String?, explores: Bool) {
-        let route = YalaIAChatRouteLogic.decide(storageMode: mode, flagOn: flagOn, userToken: token, timeZone: "America/Lima")
+    func decisionTable(mode: StorageMode, flagOn: Bool, consent: YalaIACloudExploreConsent?, token: String?, explores: Bool) {
+        let route = YalaIAChatRouteLogic.decide(
+            storageMode: mode, flagOn: flagOn, consent: consent, userToken: token, timeZone: "America/Lima"
+        )
         #expect((route != .standard) == explores)
         if explores { #expect(route == .cloudExplore(userToken: "jwt", timeZone: "America/Lima")) }
     }
@@ -40,38 +45,53 @@ struct YalaIAChatRoutingTests {
 
     // MARK: - El cableado: perezoso en privado
 
-    @Test("privado: camino de siempre sin leer el flag ni pedir el token")
+    @Test("privado: camino de siempre sin leer el flag, N1 ni el token")
     func privateModeReadsNothing() async {
         var flagReads = 0
+        var consentReads = 0
         var tokenReads = 0
         let route = await YalaIAChatRouting.resolve(
             storageMode: .icloud,
             flagOn: { flagReads += 1; return true },
+            consent: { consentReads += 1; return .accepted },
             timeZone: "UTC",
             userToken: { tokenReads += 1; return "jwt" }
         )
         #expect(route == .standard)
         #expect(flagReads == 0)
+        #expect(consentReads == 0)
+        #expect(tokenReads == 0)
+    }
+
+    @Test("nube con flag y N1 sin aceptar (sin preguntar o rechazado): camino de siempre y el token no se pide",
+          arguments: [YalaIACloudExploreConsent?.none, .some(.declined)])
+    func cloudWithoutN1DoesNotTouchTheSession(consent: YalaIACloudExploreConsent?) async {
+        var tokenReads = 0
+        let route = await YalaIAChatRouting.resolve(
+            storageMode: .cloud, flagOn: { true }, consent: { consent }, timeZone: "UTC",
+            userToken: { tokenReads += 1; return "jwt" }
+        )
+        #expect(route == .standard)
         #expect(tokenReads == 0)
     }
 
     @Test("nube con el flag apagado: camino de siempre y el token no se pide")
     func cloudFlagOffDoesNotTouchTheSession() async {
         var tokenReads = 0
-        let route = await YalaIAChatRouting.resolve(storageMode: .cloud, flagOn: { false }, timeZone: "UTC", userToken: { tokenReads += 1; return "jwt" })
+        let route = await YalaIAChatRouting.resolve(storageMode: .cloud, flagOn: { false }, consent: { .accepted }, timeZone: "UTC", userToken: { tokenReads += 1; return "jwt" })
         #expect(route == .standard)
         #expect(tokenReads == 0)
     }
 
-    @Test("nube con flag y sesión: camino ampliado con el token y la zona del teléfono")
+    @Test("nube con flag, N1 aceptado y sesión: camino ampliado con el token y la zona del teléfono")
     func cloudFlagOnWithSessionExplores() async {
-        let route = await YalaIAChatRouting.resolve(storageMode: .cloud, flagOn: { true }, timeZone: "Europe/Madrid", userToken: { "jwt-de-supabase" })
+        let route = await YalaIAChatRouting.resolve(storageMode: .cloud, flagOn: { true }, consent: { .accepted }, timeZone: "Europe/Madrid", userToken: { "jwt-de-supabase" })
         #expect(route == .cloudExplore(userToken: "jwt-de-supabase", timeZone: "Europe/Madrid"))
     }
 
     @Test("nube con flag y sin token (sesión caducada o sin red): camino de siempre, nunca un error")
     func cloudFlagOnWithoutTokenFallsBack() async {
-        let route = await YalaIAChatRouting.resolve(storageMode: .cloud, flagOn: { true }, timeZone: "UTC", userToken: { nil })
+        let route = await YalaIAChatRouting.resolve(storageMode: .cloud, flagOn: { true }, consent: { .accepted }, timeZone: "UTC", userToken: { nil })
         #expect(route == .standard)
     }
 

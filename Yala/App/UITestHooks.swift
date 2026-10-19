@@ -494,6 +494,16 @@ final class UITestHooks {
     /// la columna de Yala IA en iPad: solo monta la vista, no envía nada.
     nonisolated static var aiChatReady: Bool { hasArg("-uitest-ai-chat-ready") }
 
+    /// `-uitest-ai-cloud-explore`: Yala IA lee «cuenta en la nube y camino ampliado encendido» al decidir si pregunta N1
+    /// y si enseña su fila en Privacidad de la IA (`YalaIAChatRouting.cloudExploreAvailableNow`). **Finge la ENTRADA, no
+    /// la decisión**: si sale N1 y qué hace cada respuesta lo decide `YalaIAChatRouteLogic`. No toca el modo guardado ni
+    /// el flag, y sin sesión la pregunta sale por el camino de siempre. Solo DEBUG.
+    nonisolated static var fakeAICloudExplore: Bool { hasArg("-uitest-ai-cloud-explore") }
+
+    /// `-uitest-chat-links`: la conversación de hoy que guarda `-uitest-chat-conversation` trae en la respuesta dos
+    /// enlaces markdown, uno a yala-app.pe y otro a otro dominio, para probar que solo el primero se puede tocar.
+    nonisolated static var chatLinks: Bool { hasArg("-uitest-chat-links") }
+
     /// `-uitest-chat-conversation`: deja guardada una conversación de hoy (una pregunta y su respuesta) donde el chat
     /// la lee al abrirse. Sin red no hay forma de conversar en un XCUITest, y hace falta una conversación para
     /// probar que redimensionar la ventana con Yala IA abierto no la pierde.

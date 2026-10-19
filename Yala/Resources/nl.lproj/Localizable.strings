@@ -2841,6 +2841,7 @@
 "aiPrivacy.processingRow" = "Verwerking (spraak & afbeelding)";
 "aiPrivacy.chatRow" = "Pro-assistent";
 "aiPrivacy.insightsRow" = "Slimme inzichten";
+"aiPrivacy.cloudExploreRow" = "Je cloudaccount raadplegen";
 "aiPrivacy.revokeConfirmTitle" = "Deze functie uitschakelen?";
 "aiPrivacy.revokeConfirmMessage" = "We stoppen met het verwerken van je AI-gegevens voor deze functie. Je kunt het altijd weer aanzetten.";
 "aiPrivacy.revokeConfirmAction" = "Uitschakelen";
@@ -3399,7 +3400,9 @@
 
 // MARK: - Chat Assistant Consent
 "aiConsent.chatTitle" = "Financiële assistent";
-"aiConsent.chatMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen. Die wordt alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
+"aiConsent.chatMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst: saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten, terugkerende betalingen en je grootste uitgaven van deze maand. Die wordt alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
+"aiConsent.cloudExploreTitle" = "Yala AI met je cloudaccount";
+"aiConsent.cloudExploreMessage" = "Yala beantwoordt je vragen over je financiën met je eigen cijfers. Daarvoor gaat er een samenvatting van de afgelopen 13 maanden naar een AI-dienst en, als een vraag erom vraagt, de gegevens uit je cloudaccount die nodig zijn om te antwoorden: boekingen van elke datum met hun notitie, rekeningen, budgetten en terugkerende betalingen. Ze worden alleen gebruikt om je te antwoorden, niet om de AI te trainen.";
 "aiConsent.inlineHintChat" = "Je financiële samenvatting wordt door een AI-dienst verwerkt om te antwoorden. Deze wordt niet permanent bewaard.";
 "aiConsent.inlineHintMultiple" = "Meerdere functies gebruiken een AI-dienst om je gegevens te verwerken. Ze worden niet permanent bewaard.";
 
@@ -7364,7 +7367,7 @@
 "yalaAI.onboarding.l14.consent.title" = "Voordat je begint";
 "yalaAI.onboarding.l14.consent.subtitle" = "Om je te antwoorden, leest Yala AI een samenvatting van je financiën.";
 "yalaAI.onboarding.l14.consent.readsTitle" = "Wat het leest";
-"yalaAI.onboarding.l14.consent.readsBody" = "Saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen van de afgelopen 13 maanden.";
+"yalaAI.onboarding.l14.consent.readsBody" = "Saldi en namen van je rekeningen, totalen per categorie, veelgebruikte verkopers, budgetten en terugkerende betalingen van de afgelopen 13 maanden, plus je grootste uitgaven van deze maand.";
 "yalaAI.onboarding.l14.consent.useTitle" = "Wat het niet doet";
 "yalaAI.onboarding.l14.consent.useBody" = "Het stuurt dit alleen naar een AI-dienst om je te antwoorden. Het wordt niet gebruikt om de AI te trainen.";
 "yalaAI.onboarding.l14.consent.decideTitle" = "Jij beslist";

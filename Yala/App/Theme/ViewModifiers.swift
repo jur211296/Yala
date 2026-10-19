@@ -421,6 +421,52 @@ extension View {
     }
 }
 
+// MARK: - Cloud Explore Consent Alert (N1)
+
+/// El texto N1 de Yala IA con la cuenta en la nube (decisión 1A de Jürgen, 2026-10-18). Lo presentan el chat, antes de
+/// la primera pregunta con el camino ampliado, y Ajustes › Privacidad de la IA, al encender su fila. Cada uno decide qué
+/// hace con cada respuesta: en el chat «Ahora no» se recuerda y la pregunta sale por el camino de siempre; en Ajustes no
+/// cambia nada. «Política de privacidad» no es una respuesta en ninguno de los dos.
+struct CloudExploreConsentAlertModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @Environment(\.openURL) private var openURL
+
+    var onAccept: () -> Void
+    var onDecline: () -> Void
+    var onPrivacyPolicy: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert(L10n.AIConsent.cloudExploreTitle, isPresented: $isPresented) {
+                Button(L10n.Common.accept) { onAccept() }
+                Button(L10n.AIConsent.privacyPolicy) {
+                    onPrivacyPolicy()
+                    openURL(AppConstants.privacyURL)
+                }
+                Button(L10n.Action.notNow, role: .cancel) { onDecline() }
+            } message: {
+                Text(L10n.AIConsent.cloudExploreMessage)
+            }
+    }
+}
+
+extension View {
+    /// Adds the N1 consent alert (Yala IA with the cloud account).
+    func cloudExploreConsentAlert(
+        isPresented: Binding<Bool>,
+        onAccept: @escaping () -> Void,
+        onDecline: @escaping () -> Void,
+        onPrivacyPolicy: @escaping () -> Void
+    ) -> some View {
+        modifier(CloudExploreConsentAlertModifier(
+            isPresented: isPresented,
+            onAccept: onAccept,
+            onDecline: onDecline,
+            onPrivacyPolicy: onPrivacyPolicy
+        ))
+    }
+}
+
 // MARK: - Insights Consent Alert
 
 /// Shared consent alert for AI-powered insights generation.

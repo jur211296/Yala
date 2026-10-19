@@ -53,9 +53,50 @@ final class ChatAssistantViewModel {
     /// Inyectable para tests (suite aislada); producción usa `.standard`.
     private let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    /// ¿Existe ahora el camino ampliado de la nube? Inyectable para tests; producción lee el modo y el flag.
+    private let cloudExploreAvailable: @MainActor () -> Bool
+
+    init(
+        defaults: UserDefaults = .standard,
+        cloudExploreAvailable: @escaping @MainActor () -> Bool = { @MainActor in YalaIAChatRouting.cloudExploreAvailableNow() }
+    ) {
         self.defaults = defaults
+        self.cloudExploreAvailable = cloudExploreAvailable
         self.contextHintDismissed = defaults.bool(forKey: "hasSeenChatContextHint")
+    }
+
+    // MARK: - N1: Yala IA con tu cuenta en la nube
+
+    /// La pregunta de N1 está en pantalla. La pinta `ChatSheetView`; la contestan los tres métodos de abajo.
+    var showsCloudExploreConsent = false
+
+    /// Lo que la persona quiso enviar cuando salió N1: sale en cuanto conteste.
+    private var questionAwaitingCloudExploreConsent: (text: String, forceIntent: ChatIntent?)?
+
+    /// «Aceptar»: se recuerda y la pregunta sale por el camino ampliado (lo decide `YalaIAChatRouteLogic`).
+    func acceptCloudExploreConsent() async {
+        YalaIACloudExploreConsentStore.write(.accepted, defaults)
+        await sendQuestionAwaitingCloudExploreConsent()
+    }
+
+    /// «Ahora no»: se recuerda el rechazo, N1 no vuelve a salir y la pregunta sale por el camino de siempre.
+    func declineCloudExploreConsent() async {
+        YalaIACloudExploreConsentStore.write(.declined, defaults)
+        await sendQuestionAwaitingCloudExploreConsent()
+    }
+
+    /// «Política de privacidad»: no es una respuesta. No se apunta nada, la pregunta vuelve a la caja y N1 saldrá otra
+    /// vez al enviarla.
+    func postponeCloudExploreConsent() {
+        guard let pending = questionAwaitingCloudExploreConsent else { return }
+        questionAwaitingCloudExploreConsent = nil
+        if inputText.isEmpty { inputText = pending.text }
+    }
+
+    private func sendQuestionAwaitingCloudExploreConsent() async {
+        guard let pending = questionAwaitingCloudExploreConsent else { return }
+        questionAwaitingCloudExploreConsent = nil
+        await sendQuestion(pending.text, forceIntent: pending.forceIntent)
     }
 
     // MARK: - Persistence (day-calendar `chat_session_<YYYY-MM-DD>`)
@@ -68,18 +109,20 @@ final class ChatAssistantViewModel {
 
     #if DEBUG
     /// `-uitest-chat-conversation`: guarda una conversación de hoy en el mismo sitio y formato que `persistSession`.
-    static func seedTodayConversationForUITest(defaults: UserDefaults = .standard) {
+    /// Con `withLinks` (`-uitest-chat-links`), la respuesta trae un tercer párrafo con dos enlaces markdown: uno a
+    /// yala-app.pe, que se puede tocar, y otro a otro dominio, que sale como texto (`YalaIAAnswerLinkPolicy`).
+    static func seedTodayConversationForUITest(defaults: UserDefaults = .standard, withLinks: Bool = false) {
         let now = Date.now
+        // Con negritas y dos párrafos, como responde el asistente (reglas 5 y 7 de su prompt): así la captura del hilo
+        // enseña la jerarquía del texto dentro de la burbuja.
+        var answer = "Este mes llevas **S/ 120** en Transporte, un **20% más** que el mes pasado (antes S/ 100).\n\n"
+            + "La mayor parte es **Taxi**: S/ 85 en 6 viajes."
+        if withLinks {
+            answer += "\n\nMás en la [ayuda de Yala](https://yala-app.pe/ayuda) o en [este enlace](https://example.com/?gasto=85)."
+        }
         let messages = [
             ChatMessage(role: .user, text: "¿Cuánto gasté en transporte este mes?", timestamp: now),
-            // Con negritas y dos párrafos, como responde el asistente (reglas 5 y 7 de su prompt): así la captura del
-            // hilo enseña la jerarquía del texto dentro de la burbuja.
-            ChatMessage(
-                role: .assistant,
-                text: "Este mes llevas **S/ 120** en Transporte, un **20% más** que el mes pasado (antes S/ 100).\n\n"
-                    + "La mayor parte es **Taxi**: S/ 85 en 6 viajes.",
-                timestamp: now
-            ),
+            ChatMessage(role: .assistant, text: answer, timestamp: now),
         ]
         do {
             let data = try JSONEncoder().encode(ChatPersistedSession(messages: messages, allTurns: []))
@@ -296,6 +339,18 @@ final class ChatAssistantViewModel {
         guard !trimmed.isEmpty else { return }
         guard let context = modelContext else { return }
         guard !isLoading else { return }
+
+        // N1 antes de la primera pregunta con el camino ampliado (decisión 1A). La respuesta se guarda en el teléfono,
+        // así que sale una sola vez; sin aceptarla, la ruta es la de siempre.
+        if YalaIAChatRouteLogic.needsCloudExploreConsentPrompt(
+            available: cloudExploreAvailable(),
+            consent: YalaIACloudExploreConsentStore.read(defaults)
+        ) {
+            questionAwaitingCloudExploreConsent = (trimmed, forceIntent)
+            inputText = ""
+            showsCloudExploreConsent = true
+            return
+        }
 
         errorMessage = nil
         isLoading = true

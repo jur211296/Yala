@@ -33,7 +33,7 @@ struct DataWipeServiceTests {
         // Features de entrada / AI
         "voiceInputEnabled", "voiceLanguage", "imageInputEnabled", "aiDataConsentAccepted",
         "aiInsightsConsentAccepted", "aiInsightsEnabled", "aiInsightsMigratedV1",
-        "aiTogglesRemovedV2", "aiChatConsentAccepted", "chatAssistantEnabled", "chatFABVisible",
+        "aiTogglesRemovedV2", "aiChatConsentAccepted", "aiCloudExploreConsent", "chatAssistantEnabled", "chatFABVisible",
         "cashFlowAIEnabled", "insightsTone", "insightsFocus", "autoFocusField",
         "financialMindset", "expensesOnlyMode",
         // Chat
