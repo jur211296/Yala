@@ -234,7 +234,7 @@ enum ICloudPersonalCorpusProbe {
         mirrorWillSync = { SwiftDataConfiguration.personalStoreMountedDecision.attachesCloudKitMirror }
         adoptRelevantRecords = { await findAdoptRelevantRecord() }
         foreignCorpusForReverse = { await measureForeignCorpusFromCloudKit() }
-        wipeForeignCorpusForReverse = { await deleteForeignRecordsFromCloudKit() }
+        wipeForeignCorpusForReverse = { onProgress in await deleteForeignRecordsFromCloudKit(onProgress: onProgress) }
     }
     #endif
 
@@ -576,8 +576,14 @@ extension ICloudPersonalCorpusProbe {
     /// que el espejo local ya conoce, y una copia propia grande no puede dejar la vuelta en «no pudimos revisar».
     static let foreignScanDeadline: TimeInterval = 60
 
-    /// Plazo del borrado de «Empezar sin ellos»: recorre la zona entera y borra por tandas.
-    static let foreignWipeDeadline: TimeInterval = 120
+    /// Plazo SIN AVANCE del borrado de «Empezar sin ellos». No es un plazo total: el borrado sigue mientras CloudKit
+    /// conteste algo útil (una página leída, una tanda con algún borrado) y solo se corta si pasa este rato sin nada.
+    /// Hasta el 2026-10-19 era un plazo total de 120 s, y un iCloud de 1.541 movimientos se cortaba siempre a la mitad
+    /// (QA guiado del 2026-10-19, 4nt6).
+    nonisolated static let foreignWipeStallLimit: TimeInterval = 120
+
+    /// Espera antes de repetir lo que CloudKit rechazó por estar ocupado, si no dice cuánto (`retryAfterSeconds`).
+    nonisolated static let foreignWipeRetryDelay: TimeInterval = 2
 
     /// Tamaño de tanda del borrado: el máximo de elementos que acepta una petición de CloudKit.
     static let foreignWipeBatchSize = 400
@@ -593,10 +599,12 @@ extension ICloudPersonalCorpusProbe {
         await measureForeignCorpusFromCloudKit()
     }
 
-    /// Borrado de producción de «Empezar sin ellos». Devuelve `nil` si fue bien, o el motivo del fallo.
-    static var wipeForeignCorpusForReverse: @MainActor () async -> String? = {
-        await deleteForeignRecordsFromCloudKit()
-    }
+    /// Borrado de producción de «Empezar sin ellos». `onProgress` recibe cuántos registros lleva borrados, para la
+    /// pantalla; la cifra solo crece.
+    static var wipeForeignCorpusForReverse:
+        @MainActor (_ onProgress: @escaping @MainActor (Int) -> Void) async -> ForeignWipeOutcome = { onProgress in
+            await deleteForeignRecordsFromCloudKit(onProgress: onProgress)
+        }
 
     // MARK: Recuento (puro)
 
@@ -685,21 +693,6 @@ extension ICloudPersonalCorpusProbe {
     /// token, borre también las filas locales que la enlazan.
     static func wipesForeignRecord(type: String, recordName: String, known: Set<String>) -> Bool {
         reverseWipedRecordTypes.contains(type) && !known.contains(recordName)
-    }
-
-    /// El primer fallo de una tanda de borrados, o `nil` si todos entraron. **Los fallos por registro llegan dentro del
-    /// resultado, en silencio** (la regla de `modifyRecordZones`): ignorarlos sería decir «borrado» de lo que sigue en
-    /// iCloud y que el espejo va a sumar. «Ya no estaba» (`unknownItem`) no es un fallo.
-    static func deleteFailure(in results: [CKRecord.ID: Result<Void, Error>]) -> String? {
-        for (_, result) in results {
-            guard case .failure(let error) = result else { continue }
-            if let ck = error as? CKError, ck.code == .unknownItem { continue }
-            #if DEBUG
-            print("ICloudPersonalCorpusProbe: foreign record delete failed: \(error)")
-            #endif
-            return (error as? CKError).map { "CKError.\($0.code.rawValue)" } ?? String(describing: type(of: error))
-        }
-        return nil
     }
 
     // MARK: Implementación de producción
@@ -791,62 +784,263 @@ extension ICloudPersonalCorpusProbe {
     /// el corpus de la persona. Borrar un registro que el espejo local no tiene no le cambia nada, **siempre que `known`
     /// esté completo**: por eso un metadato que no se lee entero es `.unreadable` y aquí no se borra nada.
     ///
-    /// Recorre la zona otra vez (sin tope: tiene que llegar a todo) en vez de reusar lo que contó la pregunta, para no
-    /// borrar con una lista vieja, y **borra cada página al leerla**: con el plazo vencido, lo borrado se queda borrado y
-    /// el reintento avanza con lo que quede. Un fallo por registro que no sea «ya no estaba» devuelve el motivo.
-    private static func deleteForeignRecordsFromCloudKit() async -> String? {
+    /// El recorrido es `runForeignWipe`, puro sobre `ForeignWipeIO`; esto solo le da el CloudKit real.
+    private static func deleteForeignRecordsFromCloudKit(
+        onProgress: @escaping @MainActor (Int) -> Void
+    ) async -> ForeignWipeOutcome {
         let known: Set<String>
         switch knownMirroredRecordNames() {
         case .success(let names): known = names
-        case .failure(let reason): return reason.text
+        case .failure(let reason): return .failed(reason.text, network: false)
         }
-        let startedAt = Date()
+        let outcome = await runForeignWipe(known: known, io: liveForeignWipeIO, onProgress: onProgress)
+        #if DEBUG
+        print("ICloudPersonalCorpusProbe: foreign wipe → \(outcome)")
+        #endif
+        return outcome
+    }
+
+    private static var liveForeignWipeIO: ForeignWipeIO<CKServerChangeToken> {
+        ForeignWipeIO(
+            zoneIDs: { try await mirrorZoneIDs() },
+            page: { zoneID, token in
+                do {
+                    let batch = try await privateDatabase.recordZoneChanges(
+                        inZoneWith: zoneID, since: token, desiredKeys: [])
+                    let records = batch.modificationResultsByID.map { recordID, result -> ForeignWipeRecord in
+                        switch result {
+                        case .success(let modification):
+                            return ForeignWipeRecord(id: recordID, type: modification.record.recordType)
+                        case .failure:
+                            return ForeignWipeRecord(id: recordID, type: nil)
+                        }
+                    }
+                    return ForeignWipePage(records: records, cursor: batch.changeToken, moreComing: batch.moreComing)
+                } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
+                    // La zona se fue entre la lista y la lectura: no queda nada que el espejo vaya a bajar de ella.
+                    return nil
+                }
+            },
+            delete: { recordIDs in
+                try await privateDatabase.modifyRecords(saving: [], deleting: recordIDs, atomically: false).deleteResults
+            },
+            // Reloj monotónico, no la hora del teléfono: cambiar la hora a mitad no puede alargar ni adelantar el
+            // corte por falta de avance.
+            now: { Date(timeIntervalSinceReferenceDate: ProcessInfo.processInfo.systemUptime) },
+            pause: { seconds in
+                do {
+                    try await Task.sleep(for: .seconds(seconds))
+                } catch {
+                    #if DEBUG
+                    print("ICloudPersonalCorpusProbe: foreign wipe pause interrupted: \(error)")
+                    #endif
+                }
+            }
+        )
+    }
+
+    // MARK: El recorrido del borrado (puro sobre `ForeignWipeIO`, lo fija `ReverseICloudPriorDataTests`)
+
+    /// Recorre las zonas del espejo y borra lo ajeno, **cada página al leerla**: lo borrado se queda borrado aunque el
+    /// recorrido se corte, y el intento siguiente vuelve a leer la zona y sigue con lo que quede.
+    ///
+    /// **Sigue mientras avance** (`foreignWipeStallLimit`): avanzar es una página leída o una tanda con algún borrado.
+    /// Lo que CloudKit rechaza por estar ocupado (`zoneBusy`, `requestRateLimited`, `serviceUnavailable`) se repite
+    /// tras una espera, y esa espera no cuenta como avance. Sin red es `.failed(network: true)`, que es el único caso
+    /// cuyo texto habla de la conexión. Un fallo por registro que no sea «ya no estaba» ni pasajero para el recorrido.
+    static func runForeignWipe<Cursor>(
+        known: Set<String>,
+        io: ForeignWipeIO<Cursor>,
+        stallLimit: TimeInterval = foreignWipeStallLimit,
+        retryDelay: TimeInterval = foreignWipeRetryDelay,
+        onProgress: @MainActor (Int) -> Void
+    ) async -> ForeignWipeOutcome {
+        var lastProgressAt = io.now()
+        var deleted = 0
+        func stalled() -> Bool { io.now().timeIntervalSince(lastProgressAt) > stallLimit }
+        /// La espera que pide CloudKit, sin pasar del rato sin avance que queda (más un segundo, para que la
+        /// comprobación siguiente corte): un `retryAfterSeconds` de minutos no puede alargar el corte.
+        func boundedPause(_ seconds: TimeInterval) -> TimeInterval {
+            let left = stallLimit - io.now().timeIntervalSince(lastProgressAt)
+            return max(0, min(seconds, left + 1))
+        }
+
+        /// Repite `operation` mientras CloudKit diga «ocupado» y el recorrido no se haya quedado parado.
+        func retryingBusy<T>(_ operation: () async throws -> T) async throws -> T {
+            while true {
+                do {
+                    return try await operation()
+                } catch let error as CKError where ForeignWipeErrorLogic.busyDelay(error, fallback: retryDelay) != nil {
+                    if stalled() { throw ForeignWipeStalled() }
+                    await io.pause(boundedPause(ForeignWipeErrorLogic.busyDelay(error, fallback: retryDelay) ?? retryDelay))
+                }
+            }
+        }
+
         do {
-            for zoneID in try await mirrorZoneIDs() {
-                var token: CKServerChangeToken?
+            let zones = try await retryingBusy { try await io.zoneIDs() }
+            lastProgressAt = io.now()
+            for zoneID in zones {
+                var cursor: Cursor?
                 var moreComing = true
                 while moreComing {
-                    let batch: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, Error>],
-                                deletions: [CKDatabase.RecordZoneChange.Deletion],
-                                changeToken: CKServerChangeToken, moreComing: Bool)
-                    do {
-                        batch = try await privateDatabase.recordZoneChanges(
-                            inZoneWith: zoneID, since: token, desiredKeys: [])
-                    } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
-                        break
-                    }
+                    guard let page = try await retryingBusy({ try await io.page(zoneID, cursor) }) else { break }
+                    lastProgressAt = io.now()
                     var foreign: [CKRecord.ID] = []
-                    for (recordID, result) in batch.modificationResultsByID {
-                        guard case .success(let modification) = result else { return "partialRecordFailure" }
-                        if wipesForeignRecord(type: modification.record.recordType, recordName: recordID.recordName,
-                                              known: known) {
-                            foreign.append(recordID)
+                    for record in page.records {
+                        guard let type = record.type else { return .failed("partialRecordFailure", network: false) }
+                        if wipesForeignRecord(type: type, recordName: record.id.recordName, known: known) {
+                            foreign.append(record.id)
                         }
                     }
                     var start = 0
                     while start < foreign.count {
                         let end = min(start + foreignWipeBatchSize, foreign.count)
-                        let (_, deleteResults) = try await privateDatabase.modifyRecords(
-                            saving: [], deleting: Array(foreign[start..<end]), atomically: false)
-                        if let failure = deleteFailure(in: deleteResults) { return failure }
+                        var pending = Array(foreign[start..<end])
+                        while !pending.isEmpty {
+                            let results = try await retryingBusy { try await io.delete(pending) }
+                            let verdict = ForeignWipeErrorLogic.classify(results, fallback: retryDelay)
+                            if verdict.gone > 0 {
+                                deleted += verdict.gone
+                                lastProgressAt = io.now()
+                                onProgress(deleted)
+                            }
+                            if let failure = verdict.failure {
+                                return .failed(failure, network: verdict.failureIsNetwork)
+                            }
+                            pending = verdict.retry
+                            if !pending.isEmpty {
+                                if stalled() { return .stalled }
+                                await io.pause(boundedPause(verdict.retryAfter))
+                            }
+                        }
                         start = end
                     }
-                    token = batch.changeToken
-                    moreComing = batch.moreComing
-                    if Date().timeIntervalSince(startedAt) > foreignWipeDeadline { return "wipeDeadline" }
+                    cursor = page.cursor
+                    moreComing = page.moreComing
+                    if stalled() { return .stalled }
                 }
             }
-            return nil
+            return .done
+        } catch is ForeignWipeStalled {
+            return .stalled
         } catch let error as CKError {
             #if DEBUG
             print("ICloudPersonalCorpusProbe: foreign wipe failed: \(error)")
             #endif
-            return "CKError.\(error.code.rawValue)"
+            return .failed("CKError.\(error.code.rawValue)", network: ForeignWipeErrorLogic.isNetwork(error))
         } catch {
             #if DEBUG
             print("ICloudPersonalCorpusProbe: foreign wipe failed: \(error)")
             #endif
-            return String(describing: type(of: error))
+            return .failed(String(describing: type(of: error)), network: false)
         }
+    }
+
+    private struct ForeignWipeStalled: Error {}
+}
+
+// MARK: - El borrado de «Empezar sin ellos»: tipos
+
+/// Cómo terminó el borrado de lo ajeno. El controller elige el texto por él: solo `.failed(network: true)` habla de la
+/// conexión.
+nonisolated enum ForeignWipeOutcome: Equatable, Sendable {
+    /// Recorrió todas las zonas y no queda nada ajeno.
+    case done
+    /// Pasó `foreignWipeStallLimit` sin que CloudKit contestara nada útil. Lo borrado se queda borrado.
+    case stalled
+    /// Un fallo que esperar no arregla, con su motivo para el canario. `network` = no había red.
+    case failed(String, network: Bool)
+
+    /// El motivo del canario `cloudReverseICloudPriorDataChoice("discardFailed:<motivo>")`.
+    var canaryReason: String? {
+        switch self {
+        case .done:                       return nil
+        case .stalled:                    return "wipeStalled"
+        case .failed(let reason, _):      return reason
+        }
+    }
+}
+
+/// Un registro de una página del recorrido: su id y su tipo, o `nil` si CloudKit no lo dejó leer.
+nonisolated struct ForeignWipeRecord: Sendable {
+    let id: CKRecord.ID
+    let type: String?
+}
+
+/// Una página del recorrido de una zona.
+nonisolated struct ForeignWipePage<Cursor> {
+    let records: [ForeignWipeRecord]
+    let cursor: Cursor
+    let moreComing: Bool
+}
+
+/// Lo que el recorrido necesita de CloudKit, para poder probarlo sin red y con un reloj propio. `Cursor` es el
+/// `CKServerChangeToken` en producción (no tiene init público) y cualquier cosa en los tests.
+struct ForeignWipeIO<Cursor> {
+    var zoneIDs: @MainActor () async throws -> [CKRecordZone.ID]
+    /// La página de `zone` que sigue a `cursor`, o `nil` si la zona ya no existe.
+    var page: @MainActor (_ zone: CKRecordZone.ID, _ cursor: Cursor?) async throws -> ForeignWipePage<Cursor>?
+    var delete: @MainActor (_ ids: [CKRecord.ID]) async throws -> [CKRecord.ID: Result<Void, Error>]
+    var now: @MainActor () -> Date
+    var pause: @MainActor (_ seconds: TimeInterval) async -> Void
+}
+
+/// Cómo se lee lo que CloudKit contesta al borrar. Pura.
+nonisolated enum ForeignWipeErrorLogic {
+
+    /// Lo que dice una tanda: cuántos ya no están, cuáles repetir y tras cuánto, o el fallo que la para.
+    struct BatchVerdict: Equatable {
+        var gone: Int
+        var retry: [CKRecord.ID]
+        var retryAfter: TimeInterval
+        var failure: String?
+        /// El fallo que para la tanda es la falta de red (llegó por registro, no por la operación entera).
+        var failureIsNetwork = false
+    }
+
+    /// «Ocupado, vuelve en un rato»: CloudKit no rechaza el borrado, lo aplaza. `nil` si el error es de otra clase.
+    static func busyDelay(_ error: CKError, fallback: TimeInterval) -> TimeInterval? {
+        switch error.code {
+        case .zoneBusy, .requestRateLimited, .serviceUnavailable:
+            return error.retryAfterSeconds ?? fallback
+        default:
+            return nil
+        }
+    }
+
+    /// Sin red: el único fallo cuyo texto habla de la conexión.
+    static func isNetwork(_ error: CKError) -> Bool {
+        error.code == .networkUnavailable || error.code == .networkFailure
+    }
+
+    /// Lee una tanda. «Ya no estaba» (`unknownItem`) cuenta como borrado: es lo que se pedía. Lo ocupado se repite.
+    /// Cualquier otro fallo por registro para el recorrido: **los fallos por registro llegan dentro del resultado, en
+    /// silencio** (la regla de `modifyRecordZones`), e ignorarlos sería decir «borrado» de lo que sigue en iCloud.
+    static func classify(_ results: [CKRecord.ID: Result<Void, Error>], fallback: TimeInterval) -> BatchVerdict {
+        var verdict = BatchVerdict(gone: 0, retry: [], retryAfter: fallback, failure: nil)
+        var longestDelay: TimeInterval?
+        for (recordID, result) in results {
+            switch result {
+            case .success:
+                verdict.gone += 1
+            case .failure(let error):
+                guard let ck = error as? CKError else {
+                    verdict.failure = verdict.failure ?? String(describing: type(of: error))
+                    continue
+                }
+                if ck.code == .unknownItem {
+                    verdict.gone += 1
+                } else if let delay = busyDelay(ck, fallback: fallback) {
+                    verdict.retry.append(recordID)
+                    longestDelay = max(longestDelay ?? 0, delay)
+                } else if verdict.failure == nil {
+                    verdict.failure = "CKError.\(ck.code.rawValue)"
+                    verdict.failureIsNetwork = isNetwork(ck)
+                }
+            }
+        }
+        if let longestDelay { verdict.retryAfter = longestDelay }
+        return verdict
     }
 }

@@ -511,6 +511,14 @@ struct StorageSettingsView: View {
                                 ProgressView()
                                 Text(L10n.Storage.Revert.Prior.checking)
                             }
+                        } else if let deleted = controller.priorICloudWipeDeleted {
+                            // «Empezar sin ellos» borrando: con un iCloud grande tarda minutos, y sin cifra parecía
+                            // colgado (QA guiado del 2026-10-19).
+                            HStack(spacing: DS.Spacing.sm) {
+                                ProgressView()
+                                Text(L10n.Storage.Revert.Prior.wiping(deleted))
+                                    .monospacedDigit()
+                            }
                         } else {
                             Text(L10n.Storage.Revert.button)
                         }

@@ -32,6 +32,17 @@ enum ReverseICloudPriorDataLogic {
         case needsICloud
     }
 
+    /// El texto de un borrado de «Empezar sin ellos» que no terminó. **Solo culpa a la conexión si no había red**: el
+    /// recorrido parado y cualquier otro fallo dicen que lo borrado se queda borrado y que el reintento sigue con lo que
+    /// quede, que es verdad porque cada intento vuelve a leer la zona (QA guiado del 2026-10-19: el texto culpaba a la
+    /// conexión de un corte por plazo).
+    static func wipeFailureMessage(_ outcome: ForeignWipeOutcome) -> String {
+        switch outcome {
+        case .failed(_, network: true): return L10n.Storage.Revert.Prior.wipeFailed
+        case .done, .stalled, .failed:  return L10n.Storage.Revert.Prior.wipeStopped
+        }
+    }
+
     /// ¿Pregunta esta vuelta a iCloud? Solo la de un teléfono nacido en la nube (`StorageModePersistence.isBornCloud`, una
     /// afirmación POSITIVA: su ausencia no lo es, y entonces la vuelta exige el mapa de una cuenta migrada).
     static func asksICloud(isBornCloud: Bool) -> Bool {

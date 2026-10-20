@@ -6731,6 +6731,8 @@
 "storage.revert.prior.checkFailedTitle" = "Non siamo riusciti a controllare il tuo iCloud";
 "storage.revert.prior.checkFailedBody" = "Prima di tornare controlliamo se il tuo iCloud ha già dati di Yala, per non mescolarli senza avvisarti. Potrebbe essere la connessione: riprova.";
 "storage.revert.prior.wipeFailed" = "Non siamo riusciti a finire di eliminare i dati precedenti dal tuo iCloud, quindi non abbiamo iniziato il ritorno: sei ancora nel cloud. Controlla la connessione e riprova.";
+"storage.revert.prior.wipeStopped" = "Non siamo riusciti a finire di eliminare i dati precedenti dal tuo iCloud, quindi non abbiamo iniziato il ritorno: sei ancora nel cloud. Ciò che è già stato eliminato resta eliminato: riprova e continueremo con il resto.";
+"storage.revert.prior.wiping" = "Eliminazione dei dati precedenti… %d finora";
 "storage.revert.prior.noAccountTitle" = "Accedi a iCloud su questo iPhone";
 "storage.revert.prior.noAccountBody" = "Prima di tornare controlliamo cosa c’è nel tuo iCloud, e questo iPhone non ha effettuato l’accesso a iCloud. Accedi dalle Impostazioni dell’iPhone e riprova.";
 
