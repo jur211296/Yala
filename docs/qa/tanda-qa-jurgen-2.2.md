@@ -101,6 +101,27 @@ sesión real (el correo sale de la sesión; el simulador solo enseña uno de mue
 3. «Oi Siri, Registre no Yala» → abre Nuevo registro.
 4. Vuelve a español.
 
+### E · Lote decidido 2.2 · 08: accesos del icono y iPad (unos 10 min; lo del iPad, solo si tienes uno)
+
+Sumado el 2026-10-20 por el lote decidido 2.2 · 08 (widgets, iPad y teclado). Va con la build de 2.2 que traiga ese PR.
+
+**E1 · Accesos del icono** (`ux-2-2-l15-15-no-hay-accesos-rapidos-al-vq9a`) · §4 la app cerrada de verdad y la ventana que viene de 2.1.
+1. Actualiza encima de la que tengas **sin cerrar Yala antes**. Abre Yala, ve al inicio, mantén pulsado el icono y toca «Nuevo registro»: abre Nuevo registro.
+2. Cierra Yala del todo (desliza hacia arriba en el selector de apps).
+3. Mantén pulsado el icono: salen «Nuevo registro», «Registrar por voz» y «Foto o archivo».
+4. Toca «Foto o archivo»: tras abrirse Yala, se abre Registrar con foto o archivo.
+
+**E2 · Soltar un recibo con algo abierto, y varios** (`ux-2-2-l15-12-soltar-un-recibo-en-el-ipa-neah`) · §4 iPad real: el simulador no arrastra entre apps.
+1. En Yala abre Ajustes (tu foto, arriba).
+2. Con Ajustes abierto, arrastra un PDF desde Archivos y suéltalo encima: no vuelve a su sitio.
+3. Cierra Ajustes: se abre Registrar con foto o archivo leyendo ese PDF.
+4. Sin nada abierto, arrastra 3 fotos de Fotos a la vez: se leen las 3 juntas.
+
+**E3 · La ventana que espera** (`ux-2-2-l15-11-una-ventana-de-yala-se-que-qo1l`) · §4 iPad real con sesión iniciada.
+1. En Registros mantén pulsado un registro → «Abrir en una ventana nueva»; ponlas lado a lado.
+2. En una, Ajustes › Tu cuenta de Yala › Cerrar sesión.
+3. La otra dice «Cerrando tu sesión en la otra ventana…» con «Ir a esa ventana», y el botón la trae al frente.
+
 ## Para aprobar con capturas
 
 | Card | Qué miras | Capturas |
@@ -132,6 +153,7 @@ sesión real (el correo sale de la sesión; el simulador solo enseña uno de mue
 | `yala-ia-en-la-nube-textos-…-gic9` | Ya hay evidencia | `YalaIACloudExploreConsentUITests` + textos P1/N1 contra el doc en 16 idiomas + capturas |
 
 | Lote decidido 2.2 · 04 (PR #558): `l20-6 lpj1`, `l20-10 4dwv`, `l19-15 0kj5`, `l19-17 7jxn`, `l19-18 yxsc`, `l19-19 zvwe` | Ya hay evidencia | `UXAudit22Lote04UITests` (6 casos) + `UXAudit22Lote04Tests` + antes/después en `~/Claude/entregas/Yala--lote-decidido-2-2-04-cuenta-sesion-y-modo-solo-grupos/antes-despues.jpg` |
+| Lote decidido 2.2 · 08: `l15-1 s3od`, `l15-2 d0k2`, `l15-3 n2iq`, `l15-13 dne1`, `l15-14 069n`, `l16-20 t8lh`, `l16-21 9dz2` | Ya hay evidencia (L16-21 ya estaba en 2.2 desde el lote 3) | `UXAudit22Lote08UITests` + `UXAudit22Lote08DecididasTests` + antes/después en `~/Claude/worktrees/_capturas/2026-10-20-lote-decidido-2-2-08-widgets-ipad-y-teclado/` (galería y widget sin datos en el iPhone con iOS 27, iPhone girado, Ajustes del iPad; ⌘Z medido con tecla HID en el iPad) |
 
 ## Lo que se queda
 
@@ -149,3 +171,6 @@ sesión real (el correo sale de la sesión; el simulador solo enseña uno de mue
 | `las-frases-de-siri-que-la-app-ensena-en-eol6` | §4 Siri por voz |
 | `tablero-ux-2-2-l20-9-tu-cuenta-de-yala-no-dice-q-vlc4` | §4 inicio de sesión real (B3) |
 | `tablero-ux-2-2-l20-7-cerrar-sesion-espera-45-seg-wtme` | §2.7 decisión: el orden de los tres botones no cabe en una alerta de iOS (A/B en la card). Lo demás, probado en el simulador con `UXAudit22Lote04UITests` |
+| `ux-2-2-l15-15-no-hay-accesos-rapidos-al-vq9a` | §4 la app cerrada de verdad y la ventana que viene de 2.1 (E1) |
+| `ux-2-2-l15-12-soltar-un-recibo-en-el-ipa-neah` | §4 iPad real: el simulador no arrastra entre apps (E2) |
+| `ux-2-2-l15-11-una-ventana-de-yala-se-que-qo1l` | §4 iPad real con sesión iniciada (E3) |
