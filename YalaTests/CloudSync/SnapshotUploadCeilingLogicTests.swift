@@ -168,7 +168,13 @@ struct SnapshotUploadCeilingLogicTests {
         #expect(card.contains("if controller.canCancelMigration {\n                cancelMigrationButton(controller)"))
         let button = try Self.body(of: "private func cancelMigrationButton(", in: view)
         #expect(button.contains("Task { await controller.cancelMigration() }"))
-        #expect(button.contains("isDisabled: controller.isWorking"),
+        // Desde el 2026-10-19 (ticket `cloud-activation-waits-for-icloud-with-no-way-out`) también se toca durante la
+        // pre-espera del import, que no ha tocado el runner: decide `MigrationImportWaitLogic.cancelEnabled`.
+        #expect(button.contains("""
+            isDisabled: !MigrationImportWaitLogic.cancelEnabled(
+                                            isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
+                                            cancelling: controller.isCancellingMigration)
+            """),
                 "con una pasada en vuelo el botón no se toca: la cancelación es de la subida APARCADA")
         let failure = try Self.body(of: "private func failureMessage(", in: view)
         #expect(failure.contains("snapshotExit: controller.snapshotExitReason"))

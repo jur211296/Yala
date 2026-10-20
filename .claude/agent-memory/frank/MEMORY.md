@@ -27,6 +27,8 @@
 - [Capturas en el chat antes de preguntar](feedback_capturas_en_el_chat_antes_de_preguntar.md) — SendUserFile o artifact antes de la pregunta; la ruta no sirve.
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
 ## Cómo mido y cómo entrego
+- [La telemetría de la card puede ser de otro aparato](feedback_la_telemetria_de_la_card_puede_ser_de_otro_aparato.md) — filtra por instalación; el 401 «medido» era del iPad.
+- [Un seam que deja algo pendiente contamina el test siguiente](feedback_un_seam_que_deja_algo_pendiente_contamina_al_siguiente_test.md) — `SessionState` lee antes del reset; lee la debug description.
 - [`tablero --nota`/`--enlace` sustituyen](feedback_tablero_nota_sustituye.md) — lee el campo antes y repite lo que había; borró una decisión y dos enlaces.
 - [Capturar widgets por galería](feedback_capturar_widgets_por_galeria.md) — un tamaño por página, vuelve a la 1 tras cada alta; seed + 2.º arranque.
 - [El marco de celda no es el bloque](feedback_el_marco_de_celda_no_es_el_bloque.md) — mide bordes de List en píxeles; los marcos XCUI mienten.

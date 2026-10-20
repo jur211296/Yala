@@ -2108,6 +2108,7 @@ final class GroupsSyncClient {
                     return .transient
                 }
             case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                AttestSessionProvider.reportRejected(sentIn: request)
                 // App Attest ausente con el JWT bueno: la guard solo llega a este código tras verificar el JWT, y
                 // este cliente no manda nada sin él. Ni volver a entrar ni un JWT nuevo lo arreglan, así que no es
                 // sesión caducada ni pasa por el refresh de abajo: pasajero, con su backoff y con su rastro
@@ -2440,6 +2441,7 @@ final class GroupsSyncClient {
                     return .transient
                 }
             case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+                AttestSessionProvider.reportRejected(sentIn: request)
                 // Mismo criterio que el push (ver allí): App Attest ausente con el JWT bueno → pasajero, sin refresh, y
                 // cuenta en la racha con su testigo.
                 GroupsSyncBreadcrumb.groupsAttestRequired(edge: "pull")

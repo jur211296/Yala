@@ -2746,16 +2746,26 @@ struct ContentView: View {
         guard SceneRegistry.shared.claimBootChecks(generation: PersonalContainerHost.shared.generation) else { return }
         resumeFullModeActivationIfPending()
         // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
-        if SessionState.shared.hasPrivateSession {
-            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
-                // Flag limpiado en el drain (presentación real) — ver onChange(showOnboarding).
-                Task {
-                    await waitForBootstrap()
-                    RouterEntryGate.shared.submit(.presentTrialOffer)
-                }
-            } else if let data = whatsNewDataIfPending() {
-                RouterEntryGate.shared.submit(.presentWhatsNew(features: data.features, version: data.version))
+        // Una hoja por arranque, y Novedades antes que una oferta de prueba pendiente (`WhatsNewLaunchLogic
+        // .returningUserSheet`): al actualizar con la oferta pendiente, Novedades salía en el segundo arranque.
+        let whatsNew = whatsNewDataIfPending()
+        switch WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: SessionState.shared.hasPrivateSession,
+            whatsNewPending: whatsNew != nil,
+            trialOfferPending: SessionState.shared.needsPostOnboardingTrial,
+            isPro: FeatureGateService.shared.isProUser) {
+        case .whatsNew:
+            if let whatsNew {
+                RouterEntryGate.shared.submit(.presentWhatsNew(features: whatsNew.features, version: whatsNew.version))
             }
+        case .trialOffer:
+            // Flag limpiado en el drain (presentación real) — ver onChange(showOnboarding).
+            Task {
+                await waitForBootstrap()
+                RouterEntryGate.shared.submit(.presentTrialOffer)
+            }
+        case .none:
+            break
         }
         Task { await AppUpdateService.shared.checkForUpdate() }
         // Paso 4 · el espejo que llega tarde. Va aquí y no en `presentNextOnboardingScreen` porque su
@@ -3260,6 +3270,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                         SessionState.shared.hasPrivateSession = true
                         completeOnboardingAsRestoreSkip()
                         hasCompletedOnboarding = true
+                        // Adoptar es elegir: el neutro que armó un enlace de invitación no puede sobrevivir a la nube.
+                        StorageModePersistence.retireNeutralMountOnChoice()
                     },
                     onFinishedToApp: {
                         showWelcomeCloudSignIn = false

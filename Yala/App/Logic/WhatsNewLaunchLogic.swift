@@ -35,6 +35,28 @@ nonisolated enum WhatsNewLaunchLogic {
         return majorMinor(currentVersion) != majorMinor(lastSeenVersion)
     }
 
+    /// Qué hoja enseña el arranque de quien vuelve, cuando las dos están pendientes. Una por arranque, como antes.
+    enum ReturningUserSheet: Equatable { case whatsNew, trialOffer, none }
+
+    /// **Novedades va ANTES que la oferta de prueba pendiente** (2026-10-19, ticket
+    /// `whats-new-yields-to-a-pending-trial-offer-after-updating`). Hasta ese día era al revés (`if trial … else if
+    /// novedades`), y quien actualizaba desde la 2.0.4 con la oferta pendiente no veía Novedades en el primer arranque sino
+    /// en el segundo. La 2.0.4 deja la oferta pendiente sin consumirla cuando el alta fue «Restaurar» con destino directo a la
+    /// app (`completeOnboardingAsRestoreSkip` pone `needsPostOnboardingTrial` y no pasa por el `onChange(showOnboarding)`
+    /// que la consumía): es el iPhone del QA guiado del 19-oct, cuyo onboarding privado traía datos de iCloud.
+    ///
+    /// La oferta no se pierde: su marca solo se borra al PRESENTARSE (el drain), así que sale en el arranque siguiente. Y
+    /// Novedades no vuelve, porque su versión se da por vista al cerrar la hoja.
+    ///
+    /// `hasPrivateSession` es la condición de siempre: quien entró solo por Grupos no ve ninguna de las dos.
+    static func returningUserSheet(hasPrivateSession: Bool, whatsNewPending: Bool,
+                                   trialOfferPending: Bool, isPro: Bool) -> ReturningUserSheet {
+        guard hasPrivateSession else { return .none }
+        if whatsNewPending { return .whatsNew }
+        if trialOfferPending && !isPro { return .trialOffer }
+        return .none
+    }
+
     /// "2.1.1" → "2.1". Una versión sin punto se devuelve tal cual; la vacía sigue vacía.
     static func majorMinor(_ version: String) -> String {
         let parts = version.split(separator: ".")

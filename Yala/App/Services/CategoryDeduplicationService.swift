@@ -287,7 +287,8 @@ enum CategoryDeduplicationService {
     static func repairCollapsedIdentityUUIDs(
         in context: ModelContext,
         now: Date = .now,
-        remapEmitter: CloudSyncEngine? = nil
+        remapEmitter: CloudSyncEngine? = nil,
+        migrationPhaseRead: (() -> JournaledPhaseRead)? = nil
     ) -> Int {
         do {
             let accounts = try context.fetch(FetchDescriptor<Account>())
@@ -332,6 +333,16 @@ enum CategoryDeduplicationService {
                     return 0
                 }
                 cloudEngine = engine
+            } else if CloudSyncEngine.identityRepairDefersInICloud(
+                by: migrationPhaseRead?() ?? MigrationPhaseStore.shared.currentPhaseRead) {
+                // En `.icloud` CON una ida en vuelo (2026-10-19, ticket `cloud-activation-verify-loops-on-accounts`): la
+                // migración ya asignó y subió las identidades, y regenerar aquí un `Account.shortcutID` —que ES su
+                // sync_id— sin remap deja en el backend la fila con la identidad vieja y en el teléfono la nueva. El Merkle
+                // de `accounts` de la verificación no cuadra nunca, y la ida vuelve a subir en bucle (75 % → 55 % en el QA
+                // guiado del 19-oct). Se difiere como en `.cloud`, con el mismo predicado; el próximo run lo repara con la
+                // fase estable.
+                CloudSyncBreadcrumb.identityRemapAborted(reason: "migrationInProgress")
+                return 0
             }
             //
             // MENOR 4 del review: el UUID FRESCO se acuña EVITANDO colisiones con toda identidad viva de los 3

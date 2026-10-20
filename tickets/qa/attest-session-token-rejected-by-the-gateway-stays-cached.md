@@ -1,10 +1,10 @@
 ---
 id: attest-session-token-rejected-by-the-gateway-stays-cached
-status: backlog
+status: qa
 priority: low
 area: "attest, gateway, groups"
 created: 2026-09-15
-updated: 2026-10-08
+updated: 2026-10-19
 source: "review adversarial de `groups-sync-reads-a-missing-attest-401-as-a-session-expiry` (2026-09-15)"
 ---
 
@@ -63,3 +63,17 @@ de `.icloud` y de solo grupos.
 - Ningún commit toca `AppAttestClient.swift` desde el 2026-09-16.
 
 Triage 2026-10-08: abierto · low → low · nada descarta el token cacheado al 401; exige rotar el secreto o un reloj atrasado, y el caso grave (24 h atrasado con el proceso vivo un día) es raro.
+
+## Resuelto (2026-10-19), opción 1
+
+Lo cierra `cloud-activation-stalls-without-uploading-until-relaunch`: los ocho sitios que leen el 401 `yala_attest_required`
+(push, pull, merkle, prefs ×2, Grupos sync ×2 y membresía) llaman `AttestSessionProvider.reportRejected(sentIn: request)`,
+y `AppAttestClient.discardSessionToken(ifEqualTo:)` olvida el guardado **solo si es el que viajó**
+(`AttestSessionTokenLogic.discardsCachedToken`). No se salta el single-flight ni la escalera: el reintento lo pone la
+cadencia de cada llamador. Fuera, a propósito: el Merkle de Grupos y el push token, que no distinguen ese 401. Verificable
+solo en producción (rotar el secreto o atrasar el reloj): queda para el device-QA del ticket que lo cierra.
+
+Fuera también, medido en la review del 19-oct: el proxy de IA y los tipos de cambio leen su propio 401 (con `yala_attest_invalid`)
+sin olvidar el token. Comparten la caché, así que en la nube lo cura cualquiera de los ocho; un teléfono sin nube con el reloj
+atrasado sigue mandando el rechazado a la IA hasta que caduca. Y aceptado: si el gateway rechazara también los tokens recién
+emitidos (un incidente de su configuración), cada 401 fuerza una assertion nueva, al ritmo de reintento de cada llamador.

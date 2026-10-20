@@ -196,6 +196,7 @@ final class SyncPullClient {
                 return .transient
             }
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            AttestSessionProvider.reportRejected(sentIn: request)
             // El JWT vale y el gateway no acepta el token de App Attest: pasajero, sin sumar a la racha del teléfono y con
             // su canario. Ver `SyncPushClient.pushBatch`.
             CloudSyncBreadcrumb.attestRequired(edge: "pull")

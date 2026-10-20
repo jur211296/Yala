@@ -123,6 +123,7 @@ final class SyncMerkleClient {
                 return .transient
             }
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            AttestSessionProvider.reportRejected(sentIn: request)
             // El JWT vale y el gateway no acepta el token de App Attest: pasajero, y NO es una sesión que renovar —
             // «vuelve a entrar» ahí manda a un gesto que no arregla nada. Es la misma lectura que el push y el pull
             // hacen desde el 2026-09-16 (`.claude/rules/gateway-attest.md`, «Los dos 401 de la guard»), y el Merkle
