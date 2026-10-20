@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (911)
+## Index (920)
 
 | id | status | path |
 |---|---|---|
@@ -131,7 +131,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
 | attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
-| attest-session-token-rejected-by-the-gateway-stays-cached | backlog | tickets/backlog/attest-session-token-rejected-by-the-gateway-stays-cached.md |
+| attest-session-token-rejected-by-the-gateway-stays-cached | qa | tickets/qa/attest-session-token-rejected-by-the-gateway-stays-cached.md |
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
 | aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app | done | tickets/done/aviso-de-nuevo-miembro-no-llega-hasta-abrir-la-app.md |
 | backend-account-kind-complete-or-groups-only | done | tickets/done/backend-account-kind-complete-or-groups-only.md |
@@ -211,6 +211,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
+| cloud-activation-stalls-without-uploading-until-relaunch | qa | tickets/qa/cloud-activation-stalls-without-uploading-until-relaunch.md |
+| cloud-activation-verify-loops-on-accounts | qa | tickets/qa/cloud-activation-verify-loops-on-accounts.md |
+| cloud-activation-waits-for-icloud-with-no-way-out | qa | tickets/qa/cloud-activation-waits-for-icloud-with-no-way-out.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
@@ -244,6 +247,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
 | cobertura-ui-diaria-cuelga-del-push | discarded | tickets/discarded/cobertura-ui-diaria-cuelga-del-push.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | done | tickets/done/cola-b-redesigns-must-hold-up-at-ipad-width.md |
+| complete-account-invite-adopt-can-pull-groups-before-the-guard | backlog | tickets/backlog/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |
 | converted-amount-sweep-blind-to-input-changes | backlog | tickets/backlog/converted-amount-sweep-blind-to-input-changes.md |
@@ -521,8 +525,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | backlog | tickets/backlog/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
 | invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness | backlog | tickets/backlog/invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness.md |
+| invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | qa | tickets/qa/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
+| invite-sign-in-with-a-complete-account-blocks-on-its-own-groups | qa | tickets/qa/invite-sign-in-with-a-complete-account-blocks-on-its-own-groups.md |
 | ipad-and-duo-panel-and-statistics-use-the-width | done | tickets/done/ipad-and-duo-panel-and-statistics-use-the-width.md |
 | ipad-drop-unreadable-file-fails-silently | done | tickets/done/ipad-drop-unreadable-file-fails-silently.md |
 | ipad-group-detail-keeps-the-first-group-after-switching | done | tickets/done/ipad-group-detail-keeps-the-first-group-after-switching.md |
@@ -590,6 +596,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account | backlog | tickets/backlog/migrate-retry-after-a-sign-out-meets-its-own-half-claimed-account.md |
 | migration-activation-ceiling-drops-origin-pending-effects | backlog | tickets/backlog/migration-activation-ceiling-drops-origin-pending-effects.md |
 | migration-activation-drops-pending-effects-it-never-restores | done | tickets/done/migration-activation-drops-pending-effects-it-never-restores.md |
+| migration-exits-stay-disabled-during-the-import-pre-wait | backlog | tickets/backlog/migration-exits-stay-disabled-during-the-import-pre-wait.md |
 | migration-started-during-a-sign-out-teardown-loses-its-session | backlog | tickets/backlog/migration-started-during-a-sign-out-teardown-loses-its-session.md |
 | migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived | done | tickets/done/migration-takeover-may-duplicate-rows-whose-leader-identities-never-arrived.md |
 | migration-takeover-uploads-without-a-lineage-check | done | tickets/done/migration-takeover-uploads-without-a-lineage-check.md |
@@ -923,6 +930,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-copy-blames-owner | discarded | tickets/discarded/welcome-copy-blames-owner.md |
 | welcome-destructive-buttons-are-plain-text-taps | backlog | tickets/backlog/welcome-destructive-buttons-are-plain-text-taps.md |
 | welcome-discard-gate-says-carry-on-right-after-asking-to-wipe | backlog | tickets/backlog/welcome-discard-gate-says-carry-on-right-after-asking-to-wipe.md |
+| welcome-fresh-install-neutral-mount-lasts-one-launch | backlog | tickets/backlog/welcome-fresh-install-neutral-mount-lasts-one-launch.md |
 | welcome-fresh-start-alert-leaves-blank-screen | done | tickets/done/welcome-fresh-start-alert-leaves-blank-screen.md |
 | welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe | backlog | tickets/backlog/welcome-fresh-start-failed-copy-says-data-is-still-here-after-partial-wipe.md |
 | welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen | backlog | tickets/backlog/welcome-groups-gate-button-identifiers-are-shadowed-by-their-screen.md |
@@ -933,6 +941,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | backlog | tickets/backlog/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
+| whats-new-yields-to-a-pending-trial-offer-after-updating | qa | tickets/qa/whats-new-yields-to-a-pending-trial-offer-after-updating.md |
 | widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
 | widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |
