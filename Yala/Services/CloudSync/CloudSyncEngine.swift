@@ -195,6 +195,18 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSync attestRequired edge=\(edge, privacy: .public)")
     }
 
+    /// Un refresh del token de App Attest llevaba más de su techo en vuelo y se abandonó (`AppAttestClient.awaitRefresh`).
+    /// `stage` = el paso en el que estaba. Ticket `cloud-activation-stalls-without-uploading-until-relaunch`.
+    static func attestRefreshAbandoned(stage: String) {
+        logger.notice("CloudSync attestRefreshAbandoned stage=\(stage, privacy: .public)")
+    }
+
+    /// La migración, la vuelta o el adopt no consiguieron token de App Attest para una petición: sale sin la cabecera
+    /// (`CloudMigrationController.migrationAttestProvider`). `errorType` = el tipo del error, sin PII.
+    static func migrationAttestUnavailable(errorType: String) {
+        logger.notice("CloudSyncMigration attestUnavailable error=\(errorType, privacy: .public)")
+    }
+
     /// El backend devolvió 403 → cuenta suspendida/deshabilitada (≠401).
     static func pushAccountUnavailable() {
         logger.notice("CloudSyncPush blocked=account-unavailable (403)")
@@ -4043,7 +4055,30 @@ extension CloudSyncEngine {
         // Con la LECTURA: un journal que no se deja leer bloquea el remap (ticket
         // `an-unreadable-migration-journal-reads-as-never-started`), porque no se sabe si el journal posee el outbox.
         let read = _testMigrationPhaseOverride.map(JournaledPhaseRead.phase) ?? MigrationPhaseStore.shared.currentPhaseRead
-        return BGTaskMigrationGate.decide(read: read, isImportQuiescent: false, role: .reader) != .run
+        return Self.identityRemapBlocked(by: read)
+    }
+
+    /// El predicado de arriba sobre una lectura dada. Lo usa también la reparación de identidades en `.icloud`
+    /// (`CategoryDeduplicationService.repairCollapsedIdentityUUIDs`), donde no hay motor: un journal en una fase transitoria
+    /// o ilegible bloquea.
+    nonisolated static func identityRemapBlocked(by read: JournaledPhaseRead) -> Bool {
+        BGTaskMigrationGate.decide(read: read, isImportQuiescent: false, role: .reader) != .run
+    }
+
+    /// La reparación de identidades en `.icloud` (sin motor): se difiere desde que la ida ASIGNA identidades. Antes —
+    /// `dryRun`, `consent`, `authenticating`, `claimingMigration`— no hay nada subido ni testigo escrito, y reparar ahí evita
+    /// que una colisión llegue a la subida como dos filas con el mismo sync_id (review adversarial del 2026-10-19). Ilegible
+    /// difiere.
+    nonisolated static func identityRepairDefersInICloud(by read: JournaledPhaseRead) -> Bool {
+        if case .phase(let phase) = read {
+            switch phase {
+            case .dryRun, .consent, .authenticating, .claimingMigration:
+                return false
+            default:
+                break
+            }
+        }
+        return identityRemapBlocked(by: read)
     }
 
     /// Emite el trío de identidad de §b.4 para cada `pair` regenerado, ENCOLÁNDOLO en `context` **SIN save** (el

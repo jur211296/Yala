@@ -6705,6 +6705,8 @@
 "storage.revert.prior.checkFailedTitle" = "iCloud を確認できませんでした";
 "storage.revert.prior.checkFailedBody" = "戻る前に、iCloud にすでに Yala のデータがあるか確認しています。知らないうちに混ざらないようにするためです。接続の問題かもしれません。もう一度お試しください。";
 "storage.revert.prior.wipeFailed" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。接続を確認して、もう一度お試しください。";
+"storage.revert.prior.wipeStopped" = "iCloud から以前のデータを削除しきれなかったため、iCloud に戻る処理を開始していません。クラウドのままです。削除済みのデータは元に戻りません。もう一度お試しいただくと、残りの削除を続けます。";
+"storage.revert.prior.wiping" = "以前のデータを削除しています…（%d 件完了）";
 "storage.revert.prior.noAccountTitle" = "この iPhone で iCloud にサインインしてください";
 "storage.revert.prior.noAccountBody" = "戻る前に iCloud の中身を確認しますが、この iPhone は iCloud にサインインしていません。iPhone の設定からサインインして、もう一度お試しください。";
 

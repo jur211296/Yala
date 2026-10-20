@@ -6719,6 +6719,8 @@
 "storage.revert.prior.checkFailedTitle" = "No pudimos revisar tu iCloud";
 "storage.revert.prior.checkFailedBody" = "Antes de volver miramos si tu iCloud ya tiene datos de Yala, para no mezclarlos sin avisarte. Puede ser la conexión: inténtalo otra vez.";
 "storage.revert.prior.wipeFailed" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en la nube. Revisa tu conexión y vuelve a intentarlo.";
+"storage.revert.prior.wipeStopped" = "No pudimos terminar de borrar los datos de antes de tu iCloud, así que no empezamos la vuelta: sigues en la nube. Lo que ya se borró queda borrado: vuelve a intentarlo y seguiremos con lo que falta.";
+"storage.revert.prior.wiping" = "Borrando los datos de antes… %d hasta ahora";
 "storage.revert.prior.noAccountTitle" = "Abre iCloud en este iPhone";
 "storage.revert.prior.noAccountBody" = "Antes de volver miramos qué hay en tu iCloud, y este iPhone no tiene iCloud abierto. Ábrelo en Ajustes del iPhone y vuelve a intentarlo.";
 

@@ -163,7 +163,11 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     // H-2026-07-18-4: un sign-in solo-grupos IN-SESSION no arrancaba el canal (startIfEligible
                     // solo corría en cold boot) → arrancarlo aquí cubre crear-grupo / invite / futuro CTA del
                     // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.
-                    GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
+                    // Salvo con una cuenta completa: su alta pasa por el guard cross-cuenta del Welcome, y los grupos que
+                    // el canal bajara ahora contarían como «datos de otra cuenta» (`GroupsSignInChannelStartLogic`).
+                    if GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino) {
+                        GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
+                    }
                     // C1: la sesión acaba de nacer, y es el instante en que (a) un consent aceptado sin red
                     // por fin tiene cuenta a la que atribuirse, (b) el consent LEGACY de este device —el
                     // que vivía en el iKV del Apple ID y nunca llegó a Yala— se sella y se registra, y (c)

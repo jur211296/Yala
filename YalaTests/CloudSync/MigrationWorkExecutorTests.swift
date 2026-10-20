@@ -38,7 +38,18 @@ private final class FakeSession: CloudSyncSessionProviding {
     /// `true` con `token = nil` es el caso nuevo: la renovación no volvió, pero la sesión sigue guardada.
     var canRenewSessionOverride: Bool?
     var canRenewSession: Bool { canRenewSessionOverride ?? (token != nil) }
-    func attestToken() async throws -> String? { nil }
+    /// Tokens de App Attest que irá dando, en orden (el último se repite). Vacío = `nil`, el trato de siempre.
+    var attestTokens: [String] = []
+    /// Si no es `nil`, `attestToken()` lanza esto (el teléfono no consigue token).
+    var attestError: Error?
+    private(set) var attestCallCount = 0
+    func attestToken() async throws -> String? {
+        attestCallCount += 1
+        if let attestError { throw attestError }
+        guard let first = attestTokens.first else { return nil }
+        if attestTokens.count > 1 { attestTokens.removeFirst() }
+        return first
+    }
 }
 
 /// El SDK BORRA la sesión dentro de la renovación, antes de devolver `nil`: el testigo solo dice la verdad leído DESPUÉS
@@ -151,6 +162,12 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
     var onPushRequest: (() -> Void)?
     private(set) var pushCallCount = 0
     var pushStatus = 200
+    /// Statuses del push en orden, por delante de `pushStatus` (se consumen; vacía = `pushStatus`).
+    var pushStatusQueue: [Int] = []
+    /// Cuerpo de la respuesta del push cuando no es 200 (el envelope del gateway separa los dos 401).
+    var pushErrorBody = Data()
+    /// La cabecera `X-Yala-Attest-Session` de cada push, en orden (`nil` = sin cabecera).
+    private(set) var pushAttestHeaders: [String?] = []
     /// 401 aquí = sesión caducada del pull, que es la mitad que `reverseDrainOnce` y `verify` no podían separar
     /// hasta el ticket `reverse-before-mount-stays-stuck-with-an-expired-session`.
     var pullStatus = 200
@@ -204,8 +221,10 @@ private final class RoutingStub: SyncHTTPSession, @unchecked Sendable {
         }
         if path.contains("sync/push") {
             pushCallCount += 1
+            pushAttestHeaders.append(request.value(forHTTPHeaderField: "X-Yala-Attest-Session"))
             onPushRequest?()
-            if pushStatus != 200 { return (Data(), resp(pushStatus)) }
+            let status = pushStatusQueue.isEmpty ? pushStatus : pushStatusQueue.removeFirst()
+            if status != 200 { return (pushErrorBody, resp(status)) }
             var results: [[String: Any]] = []
             if let json = try? JSONSerialization.jsonObject(with: request.httpBody ?? Data()) as? [String: Any],
                let deltas = json["deltas"] as? [[String: Any]] {
@@ -297,11 +316,12 @@ struct MigrationWorkExecutorTests {
         icloudMirrorReportedNotAuthenticated: (@MainActor () -> Bool)? = nil,
         icloudLastExportErrorAt: (@MainActor () -> Date?)? = nil,
         icloudLastSuccessfulExportAt: (@MainActor () -> Date?)? = nil,
-        snapshotPageSize: Int = 200
+        snapshotPageSize: Int = 200,
+        attest: @escaping () async -> String? = { nil }
     ) -> MigrationWorkExecutor {
         let token: () async -> String? = { "jwt" }
         let account = CloudAccountClient(baseURL: workerURL, urlSession: stub)
-        let push = SyncPushClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
+        let push = SyncPushClient(baseURL: workerURL, tokenProvider: token, attestProvider: attest, urlSession: stub)
         let pull = SyncPullClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
         let merkle = SyncMerkleClient(baseURL: workerURL, tokenProvider: token, urlSession: stub)
         // El registro fila → identidad vive junto al store del test, y el motor lee el mismo: con el de producción, dos tests
@@ -2180,6 +2200,78 @@ struct MigrationWorkExecutorTests {
         #expect(await executor.confirmMigrationLease() == .held)
         _ = await executor.uploadSnapshot(cursor: nil)
         #expect(!stub.pushedSyncIDs.isEmpty, "control: con la confirmación la página sube")
+    }
+
+    // MARK: - App Attest de la migración (ticket `cloud-activation-stalls-without-uploading-until-relaunch`)
+
+    /// El executor con el proveedor de attest de PRODUCCIÓN (`CloudMigrationController.migrationAttestProvider`) sobre
+    /// `session`, y el lease ya confirmado: la página está lista para subir.
+    private func attestExecutor(
+        _ stub: RoutingStub, session: FakeSession
+    ) async throws -> (MigrationWorkExecutor, ModelContext, URL) {
+        let dir = freshDir()
+        let context = try makeContext(dir)
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, session, FakeBeaconStore(),
+                                    personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    leaseClock: MutableLeaseClock(),
+                                    attest: CloudMigrationController.migrationAttestProvider(session: session))
+        context.insert(Category(name: "food", colorHex: "#ABCDEF", isIncome: false, isDefaultSeed: false))
+        try context.save()
+        try SyncIdentityService.backfillIdentities(context: context)
+        #expect(await executor.confirmMigrationLease() == .held)
+        return (executor, context, dir)
+    }
+
+    @Test("MUTACIÓN: el 401 `yala_attest_required` de la subida hace olvidar el token que viajó, y el reintento lleva otro")
+    func snapshot401AttestRequired_discardsTheSentToken_andTheRetryCarriesANewOne() async throws {
+        var rejected: [String?] = []
+        AttestSessionProvider.rejectionSink = { rejected.append($0) }
+        defer { AttestSessionProvider.rejectionSink = AttestSessionProvider.defaultRejectionSink }
+        let stub = RoutingStub()
+        stub.pushStatusQueue = [401]
+        stub.pushErrorBody = Data(#"{"error":{"type":"yala_attest_required","message":"x"}}"#.utf8)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestTokens = ["tokA", "tokB"]
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        let first = await executor.uploadSnapshot(cursor: nil)
+        #expect(first != .completed)
+        #expect(stub.pushedSyncIDs.isEmpty, "el gateway no aceptó nada")
+        #expect(rejected == ["tokA"], "se olvida exactamente el token que viajó")
+        #expect(stub.pushAttestHeaders == ["Bearer tokA"])
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushAttestHeaders == ["Bearer tokA", "Bearer tokB"], "el reintento pide un token nuevo")
+        #expect(!stub.pushedSyncIDs.isEmpty, "y con él la página sube")
+    }
+
+    @Test("Control: el 401 `yala_attest_invalid` (sesión caducada) NO toca el token de attest")
+    func snapshot401AttestInvalid_leavesTheAttestTokenAlone() async throws {
+        var rejected: [String?] = []
+        AttestSessionProvider.rejectionSink = { rejected.append($0) }
+        defer { AttestSessionProvider.rejectionSink = AttestSessionProvider.defaultRejectionSink }
+        let stub = RoutingStub()
+        stub.pushStatusQueue = [401]
+        stub.pushErrorBody = Data(#"{"error":{"type":"yala_attest_invalid","message":"x"}}"#.utf8)
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestTokens = ["tokA"]
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(stub.pushAttestHeaders == ["Bearer tokA"], "control del escenario: el push salió con el token")
+        #expect(rejected.isEmpty)
+    }
+
+    @Test("Sin token de attest la migración no se para ni lanza: la página sale sin cabecera")
+    func migrationAttestProvider_withoutAToken_sendsWithoutTheHeader() async throws {
+        let stub = RoutingStub()
+        let session = FakeSession(token: "jwt", userID: "sub-1")
+        session.attestError = AppAttestError.unavailable
+        let (executor, _, dir) = try await attestExecutor(stub, session: session); defer { cleanup(dir) }
+
+        _ = await executor.uploadSnapshot(cursor: nil)
+        #expect(session.attestCallCount >= 1, "el proveedor sí preguntó")
+        #expect(stub.pushAttestHeaders == [nil], "sin token, sin cabecera: el contrato «cabecera o nada»")
     }
 
     // MARK: - Adopt-reconcile (DIFERIDOS #30, mecanismo v1 DARK)

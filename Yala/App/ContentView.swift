@@ -304,6 +304,9 @@ struct ContentView: View {
             // + build local. DARK en prod (sin snapshot → false). El fetch de /config lo dispara
             // AppBootstrapper; aquí solo se lee el último snapshot conocido.
             ForceUpdateGate.shared.recompute()
+            // El store ya puede nacer vacío y entonces no habrá caída que pida el aviso de iCloud: lo pide el arranque.
+            // Va el ÚLTIMO de esta tarea porque espera al bootstrap, y no debe retrasar ni el splash ni lo de arriba.
+            await requestColdStartICloudNoticeAfterBootstrap()
         }
         .onReceive(NotificationCenter.default.publisher(for: .languageDidChange)) { _ in
             languageVersion &+= 1
@@ -973,6 +976,9 @@ struct ContentView: View {
                     SessionState.shared.hasPrivateSession = true
                     completeOnboardingAsRestoreSkip()
                     hasCompletedOnboarding = true
+                    // La sesión privada nació en caliente: si la de Grupos ya estaba viva, sus grupos son de
+                    // esta cuenta y no de la que el iCloud-KV del Apple ID recuerde (A · C1, 2026-10-19).
+                    GroupsAssociationRegistrar.syncFromLiveSessionNow()
                     reEmitInviteAfterRestore()
                 case .onboarding:
                     prefilledOnboardingData = summary
@@ -1074,6 +1080,8 @@ struct ContentView: View {
             // Eje 1: el onboarding personal terminado ES el nacimiento de la sesión privada.
             SessionState.shared.hasPrivateSession = true
             hasCompletedOnboarding = true
+            // Y la asociación de Grupos con la sesión viva, en el acto (A · C1, 2026-10-19).
+            GroupsAssociationRegistrar.syncFromLiveSessionNow()
             showOnboarding = false
             prefilledOnboardingData = nil
             reEmitInviteAfterRestore()
@@ -1763,6 +1771,61 @@ struct ContentView: View {
         wipeGraceTask?.cancel()
         wipeGraceTask = nil
         AppRouter.shared.drop { $0.id == RouterIntent.presentRemoteWipeNotice.id }
+        // El intent que se retira puede ser el del arranque en frío: su marca se va con él.
+        ColdStartICloudNotice.requestPending = false
+    }
+
+    /// **El segundo productor del aviso: el ARRANQUE en frío** (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`).
+    /// La gracia solo nace de una CAÍDA de las filas, y con Yala cerrada al apagar iCloud Drive iOS vacía la copia local
+    /// antes de la primera medida: no hay caída y la app se quedaba vacía y muda, también al relanzar. Lo llama
+    /// `requestColdStartICloudNoticeAfterBootstrap`, una vez por montaje.
+    ///
+    /// Pide «iCloud no está disponible» con las condiciones que lo hacen verdad (`RemoteWipeGraceLogic
+    /// .coldStartRequestsICloudNotice`), y lo pide **por la cola**, como la gracia: el arranque es asíncrono y el anchor
+    /// puede estar ocupado (regla (3) de Presentaciones). El eje se lee con la MISMA sentencia que la gracia y el drenaje:
+    /// el aviso habla del iCloud del Apple ID del teléfono y solo es para la sesión que guarda ahí sus datos. La marca
+    /// `ColdStartICloudNotice.requestPending` hace que el drenaje solo enseñe ese aviso, nunca el de borrado.
+    ///
+    /// **Bajo `-uitest` solo corre con `-uitest-cold-start-icloud-check`**: el simulador no tiene token de iCloud y sin el
+    /// seam el aviso saldría en todo XCUITest que arranca sin seed. El seam habilita al productor; decide producción.
+    /// **El arranque en frío decide DESPUÉS del bootstrap, no en el splash.** El eje de sesión lo escribe el backfill del
+    /// bootstrap (`PrivateSessionMark.backfillIfNeeded`), que corre en paralelo a `checkInitialSyncState`: leído en el
+    /// splash, el primer arranque tras actualizar —y todo XCUITest con `-uitest-reset`— lo encontraba ausente y callaba.
+    /// Medido en el XCUITest de este ticket. Se re-mide el store por lo mismo: lo de antes del bootstrap ya no vale.
+    ///
+    /// **Una vez por PROCESO** (`ColdStartICloudNotice.checkedThisProcess`): una ventana que asciende a líder monta otro
+    /// `ContentView`, y sin esto volvía a pedir un aviso ya contestado. Y **cede a la gracia** cuando la caída es suya
+    /// (`RemoteWipeGraceLogic.coldStartDefersToTheGrace`): si había filas antes de re-medir, la escritura de la re-medida
+    /// arranca la gracia en el render siguiente, y pedir los dos sacaba el aviso dos veces. Las dos, de la review del 19-oct.
+    @MainActor
+    private func requestColdStartICloudNoticeAfterBootstrap() async {
+        await waitForBootstrap()
+        guard !ColdStartICloudNotice.checkedThisProcess else { return }
+        ColdStartICloudNotice.checkedThisProcess = true
+        let sawRowsBeforeRemeasuring = hasPersonalData
+        remeasurePersonalData()
+        guard !RemoteWipeGraceLogic.coldStartDefersToTheGrace(
+            sawRowsBeforeRemeasuring: sawRowsBeforeRemeasuring, graceArmed: wipeGraceTask != nil,
+            noticePending: remoteWipeNoticePending) else { return }
+        requestColdStartICloudNoticeIfNeeded()
+    }
+
+    @MainActor
+    private func requestColdStartICloudNoticeIfNeeded() {
+        #if DEBUG
+        if UITestHooks.isActive && !UITestHooks.coldStartICloudCheck { return }
+        #endif
+        let sessionObeysWipeSignal = DestructiveScopeLogic.wipeSignalObeyedByThisSession(
+            confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
+            storageMode: CloudSyncFlags.storageMode)
+        let sync = iCloudSyncService.shared
+        guard RemoteWipeGraceLogic.coldStartRequestsICloudNotice(
+            hasPersonalData: hasPersonalData, hasCompletedOnboarding: hasCompletedOnboarding,
+            sessionObeysWipeSignal: sessionObeysWipeSignal,
+            iCloudTokenPresent: sync.isAccountAvailable,
+            mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated) else { return }
+        ColdStartICloudNotice.requestPending = true
+        RouterEntryGate.shared.submit(.presentRemoteWipeNotice)
     }
 
     /// **Lo que hace un borrado deliberado para que su propia caída no se lea como un vaciado remoto**, y se llama
@@ -1807,8 +1870,15 @@ struct ContentView: View {
     /// es otro, sin «Empezar de cero»; con una importación en marcha no se enseña nada todavía y se re-arma la
     /// gracia, que vuelve a pedirlo cuando se asiente. Va DETRÁS de los tres guards: esos dicen si hay aviso, ésta
     /// cuál.
+    ///
+    /// **Y una petición del ARRANQUE en frío solo enseña «iCloud no está disponible»** (card
+    /// `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`, `RemoteWipeGraceLogic.coldStartDrainPresents`): con otra
+    /// decisión se retira sin aviso y SIN re-armar la gracia, que esperaría a la importación y podría acabar en el aviso
+    /// de borrado sobre unos datos que nadie borró. La marca se consume al entrar, salga por donde salga.
     @MainActor
     private func presentRemoteWipeNoticeIfStillTrue() {
+        let fromColdStart = ColdStartICloudNotice.requestPending
+        ColdStartICloudNotice.requestPending = false
         // Medida VIVA y no la señal: ver `waitWhileAnImportCouldStillBringTheRowsBack`.
         remeasurePersonalData()
         guard !hasPersonalData else { return }
@@ -1817,7 +1887,9 @@ struct ContentView: View {
             confirmedPrivateSession: PrivateSessionMark.confirmedPrivateSession(),
             storageMode: CloudSyncFlags.storageMode)
         guard sessionObeysWipeSignal else { return }
-        guard case .present(let notice) = currentRemoteWipeNoticeDecision() else {
+        let decision = currentRemoteWipeNoticeDecision()
+        if fromColdStart && !RemoteWipeGraceLogic.coldStartDrainPresents(decision) { return }
+        guard case .present(let notice) = decision else {
             startRemoteWipeGrace()
             return
         }
@@ -2716,18 +2788,27 @@ struct ContentView: View {
         guard SceneRegistry.shared.claimBootChecks(generation: PersonalContainerHost.shared.generation) else { return }
         resumeFullModeActivationIfPending()
         // GC-08: Skip trial/What's New for groupInvite users — they have no context yet
-        if SessionState.shared.hasPrivateSession {
-            if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {
-                // Armada: solo vuelve a pedirse si su momento ya llegó y se perdió (UX 2.2 · L1-12). Sin
-                // momento, espera al primer registro; y mientras espera, Novedades no sale, como antes. El
-                // `!isProUser` se queda: quien ya es Pro no espera ninguna oferta y sí ve Novedades.
-                Task {
-                    await waitForBootstrap()
-                    TrialOfferMoments.note(.launch)
-                }
-            } else if let data = whatsNewDataIfPending() {
-                RouterEntryGate.shared.submit(.presentWhatsNew(features: data.features, version: data.version))
+        // Una hoja por arranque, y Novedades antes que una oferta de prueba pendiente (`WhatsNewLaunchLogic
+        // .returningUserSheet`): al actualizar con la oferta pendiente, Novedades salía en el segundo arranque.
+        let whatsNew = whatsNewDataIfPending()
+        switch WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: SessionState.shared.hasPrivateSession,
+            whatsNewPending: whatsNew != nil,
+            trialOfferPending: SessionState.shared.needsPostOnboardingTrial,
+            isPro: FeatureGateService.shared.isProUser) {
+        case .whatsNew:
+            if let whatsNew {
+                RouterEntryGate.shared.submit(.presentWhatsNew(features: whatsNew.features, version: whatsNew.version))
             }
+        case .trialOffer:
+            // Armada: solo vuelve a pedirse si su momento ya llegó y se perdió (UX 2.2 · L1-12). Sin momento,
+            // espera al primer registro. Quien ya es Pro no llega aquí (`returningUserSheet`).
+            Task {
+                await waitForBootstrap()
+                TrialOfferMoments.note(.launch)
+            }
+        case .none:
+            break
         }
         Task { await AppUpdateService.shared.checkForUpdate() }
         // Paso 4 · el espejo que llega tarde. Va aquí y no en `presentNextOnboardingScreen` porque su
@@ -3246,6 +3327,8 @@ private struct WelcomeFlowModifier: ViewModifier {
                         SessionState.shared.hasPrivateSession = true
                         completeOnboardingAsRestoreSkip()
                         hasCompletedOnboarding = true
+                        // Adoptar es elegir: el neutro que armó un enlace de invitación no puede sobrevivir a la nube.
+                        StorageModePersistence.retireNeutralMountOnChoice()
                     },
                     onFinishedToApp: {
                         showWelcomeCloudSignIn = false

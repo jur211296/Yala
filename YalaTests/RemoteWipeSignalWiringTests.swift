@@ -138,14 +138,15 @@ struct RemoteWipeSignalWiringTests {
 
     /// Y donde se DRENA: el único sitio que llama a `DataWipeService.wipeAllUserData` por una señal
     /// remota. Aquí el fallo es el borrado en sí.
-    /// **`ContentView` tiene TRES lecturas del eje desde el 2026-09-14, y las tres se miden.** El
+    /// **`ContentView` tiene CUATRO lecturas del eje desde el 2026-10-19** (la cuarta es el arranque en frío que
+    /// pide el aviso de iCloud no disponible). **Tenía TRES desde el 2026-09-14, y las tres se miden.** El
     /// drenaje —el que borra—, la gracia de 5 s (que decide si PIDE el aviso) y el drenaje de ese aviso
     /// (que decide si todavía es verdad cuando toca enseñarlo). Las tres calculan el valor con la misma
     /// sentencia literal, así que verificar solo la primera dejaba a las otras sin red sin que nada se
     /// pusiera rojo.
     @Test("MUTACIÓN: el drenaje calcula el eje con la lectura estricta, y ese valor es el que pasa")
     func drainWiresTheStrictReading() throws {
-        try assertWiring(path: "Yala/App/ContentView.swift", defaultsArg: "", lecturas: 3, daño: """
+        try assertWiring(path: "Yala/App/ContentView.swift", defaultsArg: "", lecturas: 4, daño: """
             el teléfono se vacía aunque la detección lo hubiera frenado, o el aviso de datos borrados
             vuelve a salirle a quien tiene el móvil prestado
             """)
@@ -243,20 +244,41 @@ struct RemoteWipeSignalWiringTests {
             Esperado exactamente: \(tramo)
             """)
 
-        // **DOS y no una, y las dos están nombradas**: la de arriba —el único productor de producción— y
-        // el seam de uitest de `AppBootstrapper`, que encola el intent bajo `UITestHooks` para poder
-        // probar la presentación (el productor real no es ejercitable: no hay forma de hacer desaparecer
-        // las filas del store bajo el proceso vivo). Un TERCER `submit` sube la cuenta y pone esto rojo,
-        // que es lo que se quiere: al que venga, ponle el mismo eje delante.
-        #expect(try Self.countInProduction("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)") == 2, """
-            el aviso de vaciado remoto se pide desde un número inesperado de sitios en `Yala/`. Son dos:
-            la gracia de `ContentView` (con el eje delante) y el seam de uitest de `AppBootstrapper`. Si
-            hay un productor nuevo, ponle el mismo eje: el aviso afirma que los datos borrados son los
-            del Apple ID de este teléfono, y eso solo es cierto en una sesión privada con su iCloud
-            detrás.
+        // **TRES y no dos desde el 2026-10-19, y las tres están nombradas**: la de arriba, el ARRANQUE en
+        // frío (abajo, con el mismo eje delante: card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`)
+        // y el seam de uitest de `AppBootstrapper`, que encola el intent bajo `UITestHooks` para poder
+        // probar la presentación (la gracia no es ejercitable: no hay forma de hacer desaparecer las filas
+        // del store bajo el proceso vivo). Un CUARTO `submit` sube la cuenta y pone esto rojo, que es lo
+        // que se quiere: al que venga, ponle el mismo eje delante.
+        #expect(try Self.countInProduction("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)") == 3, """
+            el aviso de vaciado remoto se pide desde un número inesperado de sitios en `Yala/`. Son tres:
+            la gracia de `ContentView` y su arranque en frío (los dos con el eje delante) y el seam de
+            uitest de `AppBootstrapper`. Si hay un productor nuevo, ponle el mismo eje: el aviso afirma un
+            hecho sobre el iCloud del Apple ID de este teléfono, y eso solo es verdad en una sesión privada
+            con su iCloud detrás.
             """)
-        #expect(Self.count("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)", in: vista) == 1,
-                "el productor de producción del aviso dejó de ser único dentro de `ContentView`")
+        #expect(Self.count("RouterEntryGate.shared.submit(.presentRemoteWipeNotice)", in: vista) == 2,
+                "los productores de producción del aviso dentro de `ContentView` ya no son la gracia y el arranque")
+
+        // **El arranque en frío, fijado entero**: eje → medida del store, onboarding y cuenta de iCloud por la
+        // decisión pura → marcar la petición como «de arranque» → pedir. Sin la marca, el drenaje trataría la
+        // petición como una de la gracia y, con iCloud de vuelta, esperaría a la importación y acabaría en
+        // «tus datos fueron eliminados» sin que nadie borrara nada.
+        let arranqueEsperado = "private func requestColdStartICloudNoticeIfNeeded() { "
+            + "#if DEBUG if UITestHooks.isActive && !UITestHooks.coldStartICloudCheck { return } #endif "
+            + Self.origenEsperado(defaultsArg: "")
+            + " let sync = iCloudSyncService.shared "
+            + "guard RemoteWipeGraceLogic.coldStartRequestsICloudNotice( "
+            + "hasPersonalData: hasPersonalData, hasCompletedOnboarding: hasCompletedOnboarding, "
+            + "sessionObeysWipeSignal: sessionObeysWipeSignal, "
+            + "iCloudTokenPresent: sync.isAccountAvailable, "
+            + "mirrorReportedNotAuthenticated: sync.mirrorReportedNotAuthenticated) else { return } "
+            + "ColdStartICloudNotice.requestPending = true "
+            + "RouterEntryGate.shared.submit(.presentRemoteWipeNotice) }"
+        #expect(Self.count(arranqueEsperado, in: vista) == 1, """
+            el productor del arranque en frío cambió de forma: va ENTERO y en este orden, sin nada delante del \
+            seam ni entre la decisión y la petición. Esperado exactamente: \(arranqueEsperado)
+            """)
         let seam = try Self.code("Yala/App/AppBootstrapper.swift")
         #expect(seam.contains("if UITestHooks.showRemoteWipeNotice { "
                               + "RouterEntryGate.shared.submit(.presentRemoteWipeNotice) }"), """
@@ -321,11 +343,17 @@ struct RemoteWipeSignalWiringTests {
     func theNoticeDrainRemeasuresBeforePresenting() throws {
         let vista = try Self.code("Yala/App/ContentView.swift")
 
-        let tramo = "remeasurePersonalData() guard !hasPersonalData else { return } "
+        // Desde el 2026-10-19 el drenaje consume primero la marca del arranque en frío, y una petición de
+        // arranque solo enseña «iCloud no está disponible»: con otra decisión se retira sin aviso y sin
+        // re-armar la gracia (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`).
+        let tramo = "let fromColdStart = ColdStartICloudNotice.requestPending ColdStartICloudNotice.requestPending = false "
+            + "remeasurePersonalData() guard !hasPersonalData else { return } "
             + "guard hasCompletedOnboarding else { return } "
             + Self.origenEsperado(defaultsArg: "")
             + " guard sessionObeysWipeSignal else { return } "
-            + "guard case .present(let notice) = currentRemoteWipeNoticeDecision() else { "
+            + "let decision = currentRemoteWipeNoticeDecision() "
+            + "if fromColdStart && !RemoteWipeGraceLogic.coldStartDrainPresents(decision) { return } "
+            + "guard case .present(let notice) = decision else { "
             + "startRemoteWipeGrace() return } "
             + "remoteWipeNoticeKind = notice "
             + "remoteWipeNoticePending = true mountRemoteWipeAlert() "

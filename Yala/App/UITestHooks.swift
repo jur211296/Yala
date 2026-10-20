@@ -314,9 +314,52 @@ final class UITestHooks {
         #endif
     }
 
-    /// `-uitest-reverse-prior-icloud-wipe-fails`: el borrado de «Empezar sin ellos» falla. Solo el fallo: un borrado que
-    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Solo DEBUG.
-    nonisolated static var fakeReverseForeignWipeFails: Bool { hasArg("-uitest-reverse-prior-icloud-wipe-fails") }
+    /// `-uitest-reverse-prior-icloud-wipe <network|stalled|progress>`: el borrado de «Empezar sin ellos» fingido. Sin
+    /// red, parado sin avanzar, o borrando sin terminar (para ver el progreso). Nunca termina bien: un borrado que
+    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Un valor desconocido se ignora. Solo
+    /// DEBUG.
+    nonisolated static var fakeReverseForeignWipe: FakeReverseForeignWipe? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-reverse-prior-icloud-wipe", from: ProcessInfo.processInfo.arguments) {
+        case "network":  return .network
+        case "stalled":  return .stalled
+        case "progress": return .progress
+        default:         return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Lo que finge `fakeReverseForeignWipe`. La cifra es la del QA guiado del 2026-10-19: el primer intento borró unos
+    /// 1.200 registros antes de cortarse.
+    enum FakeReverseForeignWipe {
+        case network, stalled, progress
+
+        static let deletedSoFar = 1_197
+
+        @MainActor
+        func run(_ onProgress: @MainActor (Int) -> Void) async -> ForeignWipeOutcome {
+            switch self {
+            case .network:
+                return .failed("uitest", network: true)
+            case .stalled:
+                onProgress(Self.deletedSoFar)
+                return .stalled
+            case .progress:
+                onProgress(Self.deletedSoFar)
+                // Se queda borrando: la tarjeta enseña el progreso hasta que el test termina.
+                while true {
+                    do {
+                        try await Task.sleep(for: .seconds(3_600))
+                    } catch {
+                        return .stalled
+                    }
+                }
+            }
+        }
+    }
 
     /// `-uitest-migration-journal-unreadable`: el fetch del journal de la migración que hace `CloudMigrationController` LANZA
     /// (ticket `an-unreadable-migration-journal-reads-as-never-started`). Existe para el XCUITest de la pantalla de
@@ -460,6 +503,14 @@ final class UITestHooks {
     /// producción. Y el store arranca vacío con `-uitest-reset`, que es la otra condición viva.
     nonisolated static var showRemoteWipeNotice: Bool { hasArg("-uitest-remote-wipe-notice") }
 
+    /// `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de
+    /// «iCloud no está disponible» (`ContentView.requestColdStartICloudNoticeIfNeeded`, card
+    /// `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). **Habilita al productor, no fuerza la decisión**: el
+    /// simulador nunca tiene token de iCloud, así que sin este flag el chequeo saldría en todo XCUITest que arranca sin
+    /// seed y con el onboarding hecho. Con él puesto, deciden el eje, la medida del store, el onboarding y la cuenta de
+    /// iCloud de producción. Fuera de `-uitest` el chequeo corre siempre. Solo DEBUG.
+    nonisolated static var coldStartICloudCheck: Bool { hasArg("-uitest-cold-start-icloud-check") }
+
     /// `-uitest-remote-wipe-notice-never-mounts`: el aviso de vaciado remoto «no llega a montarse» — la
     /// condición viva se enciende igual, pero su RED VISUAL (`showRemoteWipeAlert`) no, ni en el drenaje ni
     /// en los reintentos de la red. Es lo que pasa cuando UIKit descarta la presentación con el anchor
@@ -523,6 +574,12 @@ final class UITestHooks {
     /// ella el veredicto es cierto y la frase sería mentira (`GroupsAttestTabNoticeLogic`). Los dos args son
     /// ortogonales a propósito — el caso «racha sí, sesión no» es justo el que prueba esa mitad.
     nonisolated static var groupsAttestTerminal: Bool { hasArg("-uitest-groups-attest-terminal") }
+
+    /// `-uitest-pending-trial-offer`: el arranque deja la oferta de prueba PENDIENTE (`needsPostOnboardingTrial`), como la
+    /// deja la 2.0.4 tras un alta por «Restaurar» con destino directo a la app. No encola nada: decide el arranque del usuario
+    /// que vuelve (`WhatsNewLaunchLogic.returningUserSheet`). Lo usa `WhatsNewLaunchUITests` (ticket
+    /// `whats-new-yields-to-a-pending-trial-offer-after-updating`).
+    nonisolated static var pendingTrialOffer: Bool { hasArg("-uitest-pending-trial-offer") }
 
     /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
     /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —

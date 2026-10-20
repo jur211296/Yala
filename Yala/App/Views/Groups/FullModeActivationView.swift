@@ -633,6 +633,9 @@ struct FullModeActivationView: View {
         // por qué esta línea va ANTES de `selectMainTab(.panel)`: el guard GC-08 rechazaría `.panel`
         // mientras el eje siga apagado.
         sessionState.hasPrivateSession = true
+        // La sesión de Grupos de este solo-grupos pasa a ser la de una sesión privada: se asocia ya, no en el
+        // arranque siguiente (A · C1, 2026-10-19).
+        GroupsAssociationRegistrar.syncFromLiveSessionNow()
         // Y se paga en cuanto la puerta se abre, que es ahora. Sin deuda apuntada no hace nada; el arranque la paga
         // si este proceso muere antes.
         PrivateBirthKeyValueHandover.consumeIfArmed()

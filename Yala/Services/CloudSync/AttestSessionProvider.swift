@@ -55,4 +55,28 @@ enum AttestSessionProvider {
     nonisolated static let live: @MainActor () async -> String? = {
         try? await AppAttestClient.shared.currentSessionToken()
     }
+
+    /// El gateway contestó 401 `yala_attest_required` a `request`: el token que viajó en su `X-Yala-Attest-Session` ya no le
+    /// vale. Se olvida en `AppAttestClient` si es el guardado, para que el siguiente intento pida otro en vez de reenviarlo
+    /// hasta que caduque en el reloj del teléfono (ticket `attest-session-token-rejected-by-the-gateway-stays-cached`).
+    ///
+    /// La llaman los OCHO sitios que leen ese 401 (push, pull, merkle, prefs ×2, Grupos sync ×2 y membresía), en la
+    /// primera línea de su rama. El reintento no va aquí: lo pone la cadencia de cada llamador.
+    static func reportRejected(sentIn request: URLRequest) {
+        rejectionSink(sentToken(in: request))
+    }
+
+    /// El token de sesión que lleva `request`, sin el prefijo `Bearer `. `nil` si no lo lleva.
+    nonisolated static func sentToken(in request: URLRequest) -> String? {
+        guard let header = request.value(forHTTPHeaderField: "X-Yala-Attest-Session"), !header.isEmpty else { return nil }
+        let prefix = "Bearer "
+        return header.hasPrefix(prefix) ? String(header.dropFirst(prefix.count)) : header
+    }
+
+    /// A dónde va el token rechazado. Producción: `AppAttestClient.shared`. Los tests lo sustituyen para ver QUÉ token se
+    /// rechazó sin tocar el cliente real; restáuralo en `defer` (estático: la suite que lo use va `.serialized`).
+    static var rejectionSink: @MainActor (String?) -> Void = defaultRejectionSink
+    static let defaultRejectionSink: @MainActor (String?) -> Void = { token in
+        AppAttestClient.shared.discardSessionToken(ifEqualTo: token)
+    }
 }

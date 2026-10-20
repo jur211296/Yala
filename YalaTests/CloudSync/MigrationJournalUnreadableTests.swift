@@ -460,8 +460,10 @@ struct MigrationJournalUnreadableWiringTests {
         let reader = try Self.body(of: "private func readJournal() -> MigrationJournalRead {", in: Self.controllerPath)
         #expect(reader.contains("FetchDescriptor<MigrationState>()"))
         let code = Self.lines(src).joined(separator: "\n")
-        #expect(Self.occurrences(of: "try?", in: code) == 1, "solo queda el del attest del executor")
-        #expect(code.contains("let attest: () async -> String? = { try? await session.attestToken() }"))
+        // El del attest del executor se retiró el 2026-10-19 (ticket `cloud-activation-stalls-without-uploading-until-relaunch`):
+        // ahora deja rastro del fallo en `migrationAttestProvider`.
+        #expect(Self.occurrences(of: "try?", in: code) == 0)
+        #expect(code.contains("let attest = migrationAttestProvider(session: session)"))
     }
 
     /// El lector de `MigrationPhaseStore`, entero: su seam lanza ANTES del fetch real, así que un `catch` que devolviera
@@ -704,8 +706,15 @@ struct MigrationJournalUnreadableWiringTests {
                                               in: "Yala/Services/CloudSync/CloudSyncEngine.swift"))
         #expect(engine == [
             "let read = _testMigrationPhaseOverride.map(JournaledPhaseRead.phase) ?? MigrationPhaseStore.shared.currentPhaseRead",
-            "return BGTaskMigrationGate.decide(read: read, isImportQuiescent: false, role: .reader) != .run",
+            "return Self.identityRemapBlocked(by: read)",
         ])
+        // Desde el 2026-10-19 el predicado vive aparte para que lo use también la reparación en `.icloud` (ticket
+        // `cloud-activation-verify-loops-on-accounts`); su cuerpo sigue siendo el mismo, y un ilegible no concede.
+        let blocked = Self.lines(try Self.body(of: "nonisolated static func identityRemapBlocked(by read: JournaledPhaseRead) -> Bool {",
+                                               in: "Yala/Services/CloudSync/CloudSyncEngine.swift"))
+        #expect(blocked == ["BGTaskMigrationGate.decide(read: read, isImportQuiescent: false, role: .reader) != .run"])
+        let dedup = try Self.source("Yala/App/Services/CategoryDeduplicationService.swift")
+        #expect(dedup.contains("} else if CloudSyncEngine.identityRepairDefersInICloud(\n                by: migrationPhaseRead?() ?? MigrationPhaseStore.shared.currentPhaseRead) {"))
 
         let prefs = try Self.source("Yala/App/Services/PreferenceSyncService.swift")
         #expect(prefs.contains(
@@ -745,8 +754,12 @@ struct MigrationJournalUnreadableWiringTests {
                 + Self.occurrences(of: "return decide(phase:", in: code)
             if decides > 0 { phaseDecideUses[name] = decides }
         }
+        // `CategoryDeduplicationService.swift` entra el 2026-10-19 (ticket `cloud-activation-verify-loops-on-accounts`): la
+        // reparación de identidades en `.icloud` se difiere con la ida en vuelo, y pasa la lectura al mismo predicado que el
+        // remap (`CloudSyncEngine.identityRemapBlocked(by:)`): ilegible bloquea.
         #expect(readUses == ["BackgroundTaskManager.swift": 4, "CloudSyncRuntime.swift": 1, "CloudSyncEngine.swift": 1,
-                             "PreferenceSyncService.swift": 1, "CloudMigrationController.swift": 1])
+                             "PreferenceSyncService.swift": 1, "CloudMigrationController.swift": 1,
+                             "CategoryDeduplicationService.swift": 1])
         // La lectura del reposo se mudó a `currentJournalRead` el 2026-10-06 (ticket
         // `apple-id-change-check-stays-off-after-a-failed-migration`): fase y pendientes del mismo fetch. Sigue siendo UNA,
         // y su lector la pasa por `MigrationRestReading`, cuyos predicados derivan con `derive(read:)`: ilegible no concede.

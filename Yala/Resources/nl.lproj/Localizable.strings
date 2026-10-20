@@ -6705,6 +6705,8 @@
 "storage.revert.prior.checkFailedTitle" = "We konden je iCloud niet controleren";
 "storage.revert.prior.checkFailedBody" = "Voordat je teruggaat, kijken we of je iCloud al Yala-gegevens heeft, zodat we ze niet ongevraagd mengen. Misschien ligt het aan je verbinding: probeer het opnieuw.";
 "storage.revert.prior.wipeFailed" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Controleer je verbinding en probeer het opnieuw.";
+"storage.revert.prior.wipeStopped" = "We konden de oude gegevens niet helemaal uit je iCloud verwijderen, dus de terugkeer is niet begonnen: je zit nog in de cloud. Wat al verwijderd is, blijft verwijderd: probeer het opnieuw en we gaan verder met de rest.";
+"storage.revert.prior.wiping" = "Oude gegevens worden verwijderd… %d tot nu toe";
 "storage.revert.prior.noAccountTitle" = "Log in bij iCloud op deze iPhone";
 "storage.revert.prior.noAccountBody" = "Voordat je teruggaat, kijken we wat er in je iCloud staat, en deze iPhone is niet ingelogd bij iCloud. Log in via Instellingen op de iPhone en probeer het opnieuw.";
 

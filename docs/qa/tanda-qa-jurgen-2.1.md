@@ -21,9 +21,11 @@ Los ids de card van sin el prefijo `tablero-`. Cada prueba dice qué la retiene:
 
 1. **El esquema de iCloud va antes que el TestFlight.** Despliega el campo nuevo del flujo de caja (E · esquema, abajo)
    **antes** de instalar el 17 en ningún iPhone. Si el build llega antes, los ajustes de un mes siguen sin sincronizar.
-2. **El TestFlight 17 ya está subido** (16-oct, 2.1 (17), desde `2.1` en `55c473e03`, con el #527 dentro) y disponible
-   para pruebas internas. El TestFlight 16 (12-oct) no lleva nada de lo que entró desde el #514. Los bloques B, C y D
-   van con el 17.
+2. **El TestFlight 18 ya está subido** (19-oct, 2.1 (18), desde `2.1` en `3e59c0689`) y disponible para pruebas
+   internas. Respecto al 17 solo cambia una cosa que se note: el #535, dos teléfonos con el mismo ajuste de un mes
+   acaban con el mismo (D · ly22, pasos 1b y 4). Lo demás que entró (#528, #529, #530, #553) es documentación, el
+   número de build y el esquema del repo. Los bloques B, C y D van con el 18; donde abajo dice «TestFlight 17», usa
+   el 18.
 3. **El bloque A va con Yala Dev compilado desde ese mismo `2.1`**, contra staging.
 4. **Guarda dos instalaciones viejas:** un iPhone con el **TestFlight 16** para C · D2, y el iPhone A del bloque D con
    **Yala 2.0.4 de la App Store** para D · ly22. No las actualices antes de llegar a esas pruebas.

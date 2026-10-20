@@ -63,7 +63,7 @@ extension XCUIApplication {
         // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
         bornCloudStorage: Bool = false,
         reversePriorICloud: String? = nil,
-        reversePriorICloudWipeFails: Bool = false,
+        reversePriorICloudWipe: String? = nil,
         fakeMigrationIdentity: String? = nil,
         pendingMigrationBlock: String? = nil,
         migrationJournalUnreadable: Bool = false,
@@ -86,6 +86,14 @@ extension XCUIApplication {
         // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
         // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
         lastSeenAppVersion: String? = nil,
+        // `-uitest-pending-trial-offer`: la oferta de prueba queda pendiente, como la deja la 2.0.4 tras «Restaurar»
+        // (`UITestHooks.pendingTrialOffer`). NOMBRADO por lo mismo que sus vecinos.
+        pendingTrialOffer: Bool = false,
+        // `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de «iCloud
+        // no está disponible» (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). El simulador nunca tiene token de
+        // iCloud, así que sin el seam ese chequeo saldría en todo arranque sin seed. NOMBRADO por lo mismo que sus vecinos: un
+        // typo dejaría el caso positivo sin aviso y los controles en verde sin haber medido nada.
+        coldStartICloudCheck: Bool = false,
         // Idioma y región de la corrida. El default es el de toda la suite (ver abajo); solo lo cambia un test que
         // necesita otro a propósito, como la demo de marketing en es-MX (`DemoIAPizzaUITests`). Va aquí y no por
         // `extraArguments:` porque esos args van ANTES de los fijos: la clave saldría dos veces y cuál gana no es algo
@@ -127,6 +135,7 @@ extension XCUIApplication {
         // pondría verde el control y rojo el caso, culpando al Welcome.
         if lateNoticeKeptGroups { args.append("-uitest-late-notice-kept-groups") }
         if welcomeAfterAdoptExit { args.append("-uitest-welcome-after-adopt-exit") }
+        if coldStartICloudCheck { args.append("-uitest-cold-start-icloud-check") }
         if let deeplink {
             args.append("-uitest-deeplink")
             args.append(deeplink)
@@ -250,7 +259,11 @@ extension XCUIApplication {
             args.append("-uitest-reverse-prior-icloud")
             args.append(reversePriorICloud)
         }
-        if reversePriorICloudWipeFails { args.append("-uitest-reverse-prior-icloud-wipe-fails") }
+        // El borrado de «Empezar sin ellos» fingido: `network`, `stalled` o `progress` (`UITestHooks.fakeReverseForeignWipe`).
+        if let reversePriorICloudWipe {
+            args.append("-uitest-reverse-prior-icloud-wipe")
+            args.append(reversePriorICloudWipe)
+        }
         // La respuesta fingida de la puerta de identidad de «Migrar a la nube» (`personalData`, `proceed` u
         // `otherDeviceMigrating`). NOMBRADO por lo mismo que sus vecinos: un typo en el arg dejaría la puerta preguntando de
         // verdad, la comprobación no podría (sin sesión real) y el flujo seguiría al consentimiento, un rojo que culparía a la
@@ -290,6 +303,7 @@ extension XCUIApplication {
             args.append("-uitest-last-seen-version")
             args.append(lastSeenAppVersion)
         }
+        if pendingTrialOffer { args.append("-uitest-pending-trial-offer") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado

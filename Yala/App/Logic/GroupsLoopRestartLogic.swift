@@ -63,4 +63,17 @@ nonisolated enum GroupsLoopRestartLogic {
         guard flagOn, hasSession else { return false }
         return loopAlive
     }
+
+    /// ¿Arranca (o despierta) el canal la pestaña Grupos al aparecer? (QA guiado del 2026-10-19, D5: tras «Ya tengo
+    /// una cuenta» con una cuenta solo-grupos, nada lo arrancaba hasta relanzar.) Flag y sesión los mira
+    /// `startIfEligible`; aquí van las dos cosas que solo sabe quien llama:
+    ///
+    /// - `isUITesting` — bajo `-uitest` no, como los otros dos arranques de la app: la sesión fingida no tiene JWT.
+    /// - `exitInFlight` — un cierre de sesión o un desasociar en curso (`CloudSessionSignOut`). Esos gestos cortan el
+    ///   canal (teardown) ANTES de soltar la sesión, y la pestaña sigue a un toque: arrancarlo ahí devolvería un loop
+    ///   vivo encima de lo que el gesto está borrando. El primer plano no tiene este riesgo tan a mano —el gesto corre
+    ///   con la app delante—; la pestaña sí, y por eso la condición vive aquí.
+    static func tabStartsChannel(isUITesting: Bool, exitInFlight: Bool) -> Bool {
+        !isUITesting && !exitInFlight
+    }
 }

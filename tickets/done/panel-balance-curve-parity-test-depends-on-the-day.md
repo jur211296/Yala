@@ -29,3 +29,10 @@ primero.
 Medido: la semilla redondea la tasa del PEN a dos decimales (`DevSeedExchangeRates`), así que algún día la del día 1 es
 la de hoy. El control ya no se fija en el primer punto: basta con que ALGÚN punto pasado no valga lo mismo con la tasa de
 hoy, que es lo que el test quería probar (las tasas cambian por día). Verde con `realista` y `ficha-mx-vida`.
+
+## Sustituido (2026-10-20, merge de 2.1 en 2.2)
+
+Al fundir `2.1` en `2.2`, el test se quedó con la versión de 2.1 (PR #569, ticket
+`panel-balance-curve-parity-test-depends-on-the-clock`): sube la tasa de ayer a mano y no depende del paseo aleatorio de
+la semilla ni de que el mes tenga días pasados. El control de «algún punto pasado distingue» de este ticket ya no está en
+el código.
