@@ -13,6 +13,10 @@ paths:
   - "Yala/Services/TranscriptionParserService.swift"
   - "Yala/Services/AIPromptLanguage.swift"
   - "Yala/Services/InsightsLLMService.swift"
+  - "Yala/Services/ChatAssistantService.swift"
+  - "Yala/Services/Chat/**"
+  - "qa/ai-bank/**"
+  - "gateway/scripts/yala-ia-bank.ts"
 ---
 
 # Proxy de IA: el gateway decide, la app dice qué pide (2026-10-07)
@@ -119,3 +123,32 @@ usuario (`gateway/src/ai/explore/`). Diseño y decisiones pendientes: `docs/ai-c
   `service_role`. Una herramienta que lea otra tabla necesita añadirla ahí, o lanza sin tocar la red.
 - **Una pregunta = un uso de la cuota `chat`**, con topes por pregunta (`EXPLORE_LIMITS`). El log `ai_route` lleva
   rondas, nombres de herramientas, caracteres y tokens; nunca argumentos ni resultados (test).
+
+## Yala IA: el contexto, el prompt y la ruta del chat (2026-10-20)
+
+Revisión medida con un banco de 50 preguntas (`docs/ai/revision-ia-2-2.md`). Cinco cosas que no se tocan sin reabrirlo:
+
+- **Los saldos del contexto salen del libro ENTERO, las estadísticas de 13 meses.** `build(modelContext:)` lee todos los
+  movimientos y los pasa a `buildFromArrays(balanceLedger:)`; el saldo de cada cuenta va por `AccountBalanceCalculator` y
+  el total por `LiveBalanceCalculator`, con `asOf: now`. Con la ventana, un saldo inicial viejo dejaba el saldo de Yala IA
+  a la mitad del Panel. Lo fija `ChatContextLedgerAndHistoryTests` (mutante: rojo).
+- **«Hoy» es el día entero** (`LiveBalanceCalculator.TodayCutoff`): los períodos en curso cierran al final de hoy y la
+  elegibilidad no corta por instante. Foto y voz fechan a las 12:00.
+- **Todo dato nuevo del contexto cabe en el aviso P1** («un resumen de tus últimos 13 meses: saldos y nombres de
+  cuentas, totales por categoría, comercios frecuentes, presupuestos, pagos recurrentes y tus gastos más grandes de este
+  mes»): agregados de esos tipos y de esa ventana. Un tipo nuevo (notas, movimientos sueltos de otros meses, más de 13
+  meses) cambia lo que sale del teléfono y es decisión de Jürgen. Y cada carácter del JSON se paga en cada pregunta:
+  medir con el banco antes de añadir (de 8,2k a 12,8k tokens en esta revisión).
+- **Lo que el modelo calcula mal, se le da calculado**: mes más caro, totales por año, «el mismo mes del año pasado»,
+  lo que queda de los presupuestos. El banco midió que leyendo 12 filas se saltaba diciembre y que sumaba mal cuatro
+  presupuestos. Un campo agregado lleva un nombre que no se confunda con el de un elemento
+  (`all_budgets_remaining`, no `budgets_remaining`: con el segundo contestó «te quedan S/ 1.859 en Comidas fuera»).
+- **`ChatIntentClassifierService.preRoute` solo da `ask`, y nunca con una cifra o un verbo de apuntar.** Ahorra
+  `chat.intent` (~1,4 s) en las preguntas claras. `YalaIAQuestionRouteTests` lo pasa por las 115 frases del banco de
+  `chat.intent`: un patrón nuevo que contradiga una etiqueta lo pone rojo.
+
+**El banco se repite así**: `YalaIABankDumpTests` (apagado sin `TEST_RUNNER_YALA_AI_BANK_DIR`) vuelca las peticiones
+reales sobre `realista`, y `gateway/scripts/yala-ia-bank.ts` las manda a staging con el token del bypass de desarrollo.
+Baja el centinela de la semilla de categorías antes de sembrar: puesto, la semilla sale sin categorías y el banco mide
+un libro sin gastos.
+

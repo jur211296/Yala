@@ -306,9 +306,13 @@ describe("chat.answer: el cuerpo de ChatAssistantService.runAskFlow", () => {
     expect(p).not.toMatch(/\\\(|16\. Tono|17\. Enfoque/);
     for (const line of p.split("\n").map((l) => l.trim()).filter((l) => l && !/S\/|es-PE|tuteo/.test(l))) expect(src.has(line), line).toBe(true);
     expect(chatRegister("es-PE")).toBe("tuteo (tú)");
-    expect(chatRegister("es-ES")).toBe("informal you"); // `SupportedLocale.from` da «es-ES» y el switch solo mira «es»
+    // Desde el 2026-10-20 el chat pide el trato por el idioma BASE, y voseo en es-AR (`AIPromptLanguage.chatRegister`).
+    expect(chatRegister("es-ES")).toBe("tuteo (tú)");
+    expect(chatRegister("es-419")).toBe("tuteo (tú)");
+    expect(chatRegister("es-AR")).toBe("voseo (vos)");
     expect(chatRegister("de-DE")).toBe("du");
-    expect(chatRegister("pt-BR")).toBe("informal you");
+    expect(chatRegister("pt-BR")).toBe("você");
+    expect(chatRegister("en-GB")).toBe("informal you");
   });
 
   it("parte dinámica: el JSON como lo escribe JSONEncoder (claves ordenadas, nil fuera, barra escapada) y las fechas", () => {

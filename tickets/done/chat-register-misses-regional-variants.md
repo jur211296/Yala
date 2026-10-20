@@ -1,10 +1,10 @@
 ---
 id: chat-register-misses-regional-variants
-status: backlog
+status: done
 priority: low
 area: chat, ai, l10n
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-10-20
 source: banco de chat.answer (sesión 2 del gateway de IA, gateway/bench/results/2026-10-07/REPORT-chat-y-nota.md)
 ---
 
@@ -32,3 +32,10 @@ Con Yala en es-ES, es-AR, pt-BR, pt-PT o en-GB, el prompt del chat pide «inform
 - Inferido al leer `SupportedLocale.from`: también `es-419`, la base hispana de Yala, casa exacto y cae a «informal you» si el sistema o el override dan ese identificador.
 
 Triage 2026-10-08: abierto · low → low · el chat sigue pasando el código con región; afecta al tono, no a datos.
+
+## Resuelto (2026-10-20, revisión de Yala IA 2.2)
+
+El chat pide el trato a `AIPromptLanguage.chatRegister(for:)`: el del idioma BASE (es-ES y es-419 tuteo, pt-BR y pt-PT
+«você», en-GB «informal you») y voseo en es-AR (BRAND-VOICE §9.4). La línea de BRAND VOICE del prompt pasa de «Tutea»
+a «Trato: …». Test: `YalaIAQuestionRouteTests.chatRegister_*`; el banco (`gateway/bench/lib/chatAnswer.ts`) replica la
+regla y su test la fija.

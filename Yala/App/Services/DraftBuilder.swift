@@ -218,11 +218,15 @@ struct DraftBuilder {
     /// Date: prioriza `parsed.date`; si no hay, usa `Date.now`.
     /// Tags: matchea `parsed.tagHints` por nombre (case-insensitive) contra los Tags
     /// existentes del user. Tags no encontrados se ignoran (v1).
+    /// `expensesOnlyMode`: con el modo «solo gastos», el borrador nace como gasto aunque el modelo lea un ingreso, como en
+    /// Siri, el Atajo y Apple Pay (`SiriDraftService`). Ticket `chat-ignores-expenses-only-mode`.
     static func build(
         parsed: ParsedTransaction,
         defaultCurrency: String,
-        context: ModelContext
+        context: ModelContext,
+        expensesOnlyMode: Bool = false
     ) -> ChatTransactionDraft {
+        let isExpense = expensesOnlyMode ? true : parsed.isExpense
         let currency = parsed.currencyHint?.uppercased() ?? defaultCurrency.uppercased()
         let account = findAccount(byCurrency: currency, context: context)
 
@@ -231,12 +235,12 @@ struct DraftBuilder {
         // 2) Fallback a MerchantMemory (aprendizaje histórico de "Wong" → Supermercados).
         var subcategory: Subcategory?
         if let hint = parsed.subcategoryHint, !hint.isEmpty {
-            subcategory = matchSubcategoryByHint(hint: hint, isExpense: parsed.isExpense, context: context)
+            subcategory = matchSubcategoryByHint(hint: hint, isExpense: isExpense, context: context)
         }
         if subcategory == nil {
             subcategory = suggestSubcategory(
                 merchant: parsed.note,
-                isExpense: parsed.isExpense,
+                isExpense: isExpense,
                 context: context
             )
         }
@@ -251,7 +255,7 @@ struct DraftBuilder {
         return ChatTransactionDraft(
             amount: parsed.amount,
             currencyCode: currency,
-            isExpense: parsed.isExpense,
+            isExpense: isExpense,
             note: parsed.note,
             date: parsed.date ?? Date.now,
             accountID: account?.persistentModelID,
