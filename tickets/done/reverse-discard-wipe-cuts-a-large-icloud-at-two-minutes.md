@@ -1,10 +1,10 @@
 ---
 id: reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes
-status: qa
+status: done
 priority: high
 area: "nube, vuelta a iCloud"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 qa-status: needs-testing
 source: tarjeta del tablero `tablero-volver-a-icloud-empezar-sin-ellos-falla-9ttd` (QA guiado del 2026-10-19, A · 4nt6)
 ---
@@ -56,3 +56,5 @@ una cuenta nacida en la nube (cuenta B).
 3. **Esperado:** el botón dice «Borrando los datos de antes… N hasta ahora» y la cifra sube.
 4. **Esperado:** termina en **un solo intento** y la vuelta a iCloud sigue sola (la tarjeta pasa a la vuelta).
 5. Si se corta: el texto no debe decir «Revisa tu conexión» salvo que el teléfono esté sin red. Anota la cifra.
+
+Cerrado en el QA guiado 2026-10-20 (tanda del TestFlight 19): Yala Dev: «Empezar sin ellos» borró 1.501 registros de iCloud en un solo intento y la vuelta siguió sola.

@@ -1,10 +1,10 @@
 ---
 id: cloud-activation-stalls-without-uploading-until-relaunch
-status: qa
+status: done
 priority: high
 area: "attest, modo-nube"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 source: "tablero-activar-la-nube-se-queda-en-60-sin-subir-axgf (QA guiado 2026-10-19)"
 ---
 
@@ -42,3 +42,5 @@ Precio aceptado: si la tarea abandonada vuelve a la vez que la nueva, pueden cru
 ## Relación
 
 - vv0k (2.2, primera foto que falla al instante): forma distinta (falla en el acto, no se cuelga). Pista común, sin medir: el token guardado lleva el tier y podía ser de antes de la compra.
+
+Cerrado en el QA guiado 2026-10-20 (tanda del TestFlight 19): TestFlight 19 en producción: «Activar la nube» terminó sin reabrir a mitad y sin canario attestRefreshAbandoned (9,5 min; la lentitud sigue en ppxk, 2.2).

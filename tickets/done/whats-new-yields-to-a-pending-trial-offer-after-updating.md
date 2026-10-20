@@ -1,10 +1,10 @@
 ---
 id: whats-new-yields-to-a-pending-trial-offer-after-updating
-status: qa
+status: done
 priority: medium
 area: "onboarding, release"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 source: "tablero-al-actualizar-desde-la-2-0-4-mira-lo-nue-n2xn (QA guiado 2026-10-19)"
 ---
 
@@ -40,3 +40,5 @@ encima del avatar de Perfil, en orden y no aislados). Ahora el reset la baja tam
 1. Instala la 2.0.4 de la App Store y haz el alta por «Restaurar» desde tu iCloud (la del 19-oct).
 2. Sin volver a abrirla, instala el TestFlight 19 encima y ábrelo.
 3. Esperado: «Mira lo nuevo en Yala» en el primer arranque. Ciérrala con Continuar, cierra Yala del todo y ábrela: sale la oferta de prueba (si no eres Pro) y Novedades no vuelve.
+
+Cerrado en el QA guiado 2026-10-20 (tanda del TestFlight 19): TestFlight 19 encima de la 2.0.4 (alta por Restaurar, cerrada del todo): Novedades en el primer arranque y la oferta de Pro en el siguiente. Con la 2.0.4 en segundo plano no sale: card y2vg (2.2).

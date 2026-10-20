@@ -211,7 +211,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | clock-ahead-retried-older-change-beats-the-newer-one | backlog | tickets/backlog/clock-ahead-retried-older-change-beats-the-newer-one.md |
 | clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits | discarded | tickets/discarded/clock-drift-aborted-drain-lets-the-pull-overwrite-untranslated-edits.md |
 | cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv | backlog | tickets/backlog/cloud-activation-master-toggle-mirror-never-reaches-the-apple-id-kv.md |
-| cloud-activation-stalls-without-uploading-until-relaunch | qa | tickets/qa/cloud-activation-stalls-without-uploading-until-relaunch.md |
+| cloud-activation-stalls-without-uploading-until-relaunch | done | tickets/done/cloud-activation-stalls-without-uploading-until-relaunch.md |
 | cloud-activation-verify-loops-on-accounts | qa | tickets/qa/cloud-activation-verify-loops-on-accounts.md |
 | cloud-activation-waits-for-icloud-with-no-way-out | qa | tickets/qa/cloud-activation-waits-for-icloud-with-no-way-out.md |
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
@@ -401,7 +401,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-archived-group-rejects-join | done | tickets/done/groups-archived-group-rejects-join.md |
 | groups-archived-still-accepts-changes | done | tickets/done/groups-archived-still-accepts-changes.md |
-| groups-association-names-another-account-after-a-hot-private-birth | qa | tickets/qa/groups-association-names-another-account-after-a-hot-private-birth.md |
+| groups-association-names-another-account-after-a-hot-private-birth | done | tickets/done/groups-association-names-another-account-after-a-hot-private-birth.md |
 | groups-background-emitter-no-upload | done | tickets/done/groups-background-emitter-no-upload.md |
 | groups-batch-facts-plural-identity | backlog | tickets/backlog/groups-batch-facts-plural-identity.md |
 | groups-block-has-no-route-to-storage-settings | backlog | tickets/backlog/groups-block-has-no-route-to-storage-settings.md |
@@ -482,7 +482,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-sync-treats-an-infra-403-as-an-account-verdict | done | tickets/done/groups-sync-treats-an-infra-403-as-an-account-verdict.md |
 | groups-tab-does-not-say-this-phone-cannot-sync-groups | done | tickets/done/groups-tab-does-not-say-this-phone-cannot-sync-groups.md |
 | groups-tab-missing-panel-perf | done | tickets/done/groups-tab-missing-panel-perf.md |
-| groups-tab-stays-empty-after-signing-in-to-a-groups-only-account | qa | tickets/qa/groups-tab-stays-empty-after-signing-in-to-a-groups-only-account.md |
+| groups-tab-stays-empty-after-signing-in-to-a-groups-only-account | done | tickets/done/groups-tab-stays-empty-after-signing-in-to-a-groups-only-account.md |
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
 | guest-decline-has-no-screen | done | tickets/done/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
@@ -758,10 +758,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off | backlog | tickets/backlog/reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off.md |
 | reverse-claim-rejection-has-no-way-out-in-the-client | done | tickets/done/reverse-claim-rejection-has-no-way-out-in-the-client.md |
 | reverse-cutover-cerrado-para-cuentas-born-cloud | done | tickets/done/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
-| reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes | qa | tickets/qa/reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes.md |
+| reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes | done | tickets/done/reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes.md |
 | reverse-exit-alert-published-off-screen-never-shows | backlog | tickets/backlog/reverse-exit-alert-published-off-screen-never-shows.md |
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
-| reverse-exit-on-a-reverted-account-rejects-the-retry | qa | tickets/qa/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
+| reverse-exit-on-a-reverted-account-rejects-the-retry | done | tickets/done/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
 | reverse-hidden-on-a-born-cloud-second-device | backlog | tickets/backlog/reverse-hidden-on-a-born-cloud-second-device.md |
 | reverse-leaves-dangling-refs-it-can-no-longer-resolve | backlog | tickets/backlog/reverse-leaves-dangling-refs-it-can-no-longer-resolve.md |
 | reverse-mount-can-reimport-a-late-leader-identity | backlog | tickets/backlog/reverse-mount-can-reimport-a-late-leader-identity.md |
@@ -913,8 +913,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |
 | vision-reads-every-dollar-sign-as-usd | done | tickets/done/vision-reads-every-dollar-sign-as-usd.md |
-| voice-cancel-does-not-resume-other-apps-audio | qa | tickets/qa/voice-cancel-does-not-resume-other-apps-audio.md |
-| voice-entry-end-to-end | qa | tickets/qa/voice-entry-end-to-end.md |
+| voice-cancel-does-not-resume-other-apps-audio | done | tickets/done/voice-cancel-does-not-resume-other-apps-audio.md |
+| voice-entry-end-to-end | done | tickets/done/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |
 | voice-parser-sends-no-json-mode | done | tickets/done/voice-parser-sends-no-json-mode.md |
@@ -947,7 +947,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | backlog | tickets/backlog/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
-| whats-new-yields-to-a-pending-trial-offer-after-updating | qa | tickets/qa/whats-new-yields-to-a-pending-trial-offer-after-updating.md |
+| whats-new-yields-to-a-pending-trial-offer-after-updating | done | tickets/done/whats-new-yields-to-a-pending-trial-offer-after-updating.md |
 | widget-and-siri-entries-lost-on-background | done | tickets/done/widget-and-siri-entries-lost-on-background.md |
 | widget-and-siri-entries-wait-for-the-panel-tab | done | tickets/done/widget-and-siri-entries-wait-for-the-panel-tab.md |
 | widget-de-tc-no-localiza-separadores | done | tickets/done/widget-de-tc-no-localiza-separadores.md |

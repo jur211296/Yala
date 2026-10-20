@@ -1,10 +1,10 @@
 ---
 id: voice-cancel-does-not-resume-other-apps-audio
-status: qa
+status: done
 priority: medium
 area: "voz, audio"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 qa-status: needs-testing
 source: tarjeta del tablero `tablero-al-cancelar-la-voz-la-musica-de-otra-app-8171` (QA guiado del 2026-10-19, B · micrófono paso 3)
 ---
@@ -37,3 +37,5 @@ cableado de las tres salidas).
 2. Yala › Panel › Voz. La música se para mientras escucha.
 3. Toca «Cancelar». **Esperado:** la música vuelve a sonar sola en un segundo o dos.
 4. Repite con «Listo» tras decir un gasto. **Esperado:** la música vuelve al terminar de grabar.
+
+Cerrado en el QA guiado 2026-10-20 (tanda del TestFlight 19): Yala Dev: la música de otra app vuelve al cancelar y al terminar la voz.

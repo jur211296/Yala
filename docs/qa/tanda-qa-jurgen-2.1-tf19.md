@@ -134,3 +134,25 @@ aparato.
 - Cada card que pase, a done; `gk5w`, `h52f` y los tickets de `tickets/qa/` que cuelgan de ellas, también.
 - El iPad vuelve a tu iCloud personal.
 - Staging: Frank borra las cuentas de prueba de la tanda (las `i5-*` se quedan).
+
+---
+
+## Resultado (2026-10-20)
+
+**Pasan:** `8171` (la música vuelve), `9ttd` (1.501 borrados en un intento), `ewkw` (grupo sin relanzar), `cq2i` (Grupos
+nombra la cuenta correcta), `gk5w` · E2 (con el montaje bueno: el iPad adopta con «Activar en este dispositivo»),
+`n2xn` (Novedades al primer arranque, con la 2.0.4 cerrada) y `axgf` (producción: sin reabrir a mitad). `h52f` se cerró
+con `8171`.
+
+**Falla:** `t2q8`. Pasa el enlace directo con cuenta completa; fallan la entrada por «Vengo por un grupo › Tengo una
+invitación» con cuenta completa y el relanzamiento a mitad: los dos acaban en «Antes de unirte, este teléfono queda en
+blanco». Vuelve a in progress.
+
+**A 2.2 por decisión de Jürgen:** `ppxk` (sin bucle, pero 9,5 min en producción y ~2,5 en staging; prioridad alta, junto
+a `igt9` y `27z3`).
+
+**Cards nuevas:** 2.1 → `840m` (rechazar solicitudes en grupos de la nube; decisión A, implementarlo), `blqa` (la revisión
+de iCloud se pasa de 25 s; 2.1), `z81w` (la invitación tarda 10-15 s en la bienvenida; 2.1 con «Abriendo tu
+invitación…»). 2.2 → `ypit` («reabre Yala» solo al entrar en privado), `y2vg` (Novedades con la 2.0.4 en segundo plano),
+`9mc6` (bloqueo por una asociación vieja tras la 2.0.4), `vbf9` (el segundo aparato debería proponer la nube solo).
+Notas en `trc6`, `27z3`, `046l` (L12-17).

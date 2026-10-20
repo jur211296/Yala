@@ -1,10 +1,10 @@
 ---
 id: groups-tab-stays-empty-after-signing-in-to-a-groups-only-account
-status: qa
+status: done
 priority: high
 area: "grupos, sync"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 qa-status: needs-testing
 source: tarjeta del tablero `tablero-al-volver-a-tu-cuenta-de-grupos-por-ya-t-ewkw` (QA guiado del 2026-10-19, C · D5 paso 1)
 ---
@@ -43,3 +43,5 @@ Tests: `YalaTests/CloudSync/GroupsSyncClientTests` (`tabPull_withANeverStartedCh
 2. «Ya tengo una cuenta» › Google con admin@yala-app.pe (solo-grupos, admin de «QA D3»). Acepta el consentimiento.
 3. Entra en la pestaña Grupos **sin cerrar Yala**.
 4. **Esperado:** «QA D3» aparece en unos segundos, sin relanzar.
+
+Cerrado en el QA guiado 2026-10-20 (tanda del TestFlight 19): Yala Dev: «Ya tengo una cuenta» con una cuenta de solo grupos → el grupo apareció en Grupos al instante, sin relanzar.

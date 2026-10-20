@@ -1,10 +1,10 @@
 ---
 id: voice-entry-end-to-end
-status: qa
+status: done
 priority: medium
 area: "voz, registro, inbox, design-system"
 created: 2026-10-04
-updated: 2026-10-19
+updated: 2026-10-20
 qa-status: needs-testing
 source: tarjeta del tablero `tablero-mejorar-el-registro-por-voz-de-punta-a-p-u58k`; encargo `encargos/lanzados/2026-10-04-mejorar-el-registro-por-voz-de-punta-a-punta.md`
 ---
@@ -79,3 +79,5 @@ Barrido de QA 2026-10-15 · se queda: se queda para tu iPhone (B · voz): dictar
 Barrido de QA 2026-10-16 · se queda: su card (u58k) se cerró el 15-oct al aprobar la pantalla, pero el micrófono sigue sin probarse y la voz encabeza las Novedades de 2.1. La prueba se funde con la de la card h52f en «B · micrófono» de `docs/qa/tanda-qa-jurgen-2.1.md`. §4 micrófono.
 
 QA guiado 2026-10-19 (TestFlight 18): todo bien salvo el paso 4: la música de otra app no vuelve al cancelar (card tablero-al-cancelar-la-voz-la-musica-de-otra-app-8171). Falta repetir ese paso tras el arreglo.
+
+Cerrado en el QA guiado 2026-10-20 (tanda del TestFlight 19): el paso que faltaba (la música al cancelar) pasó el 20-oct en Yala Dev; el resto pasó el 19-oct en el TestFlight 18.

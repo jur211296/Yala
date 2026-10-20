@@ -1,10 +1,10 @@
 ---
 id: groups-association-names-another-account-after-a-hot-private-birth
-status: qa
+status: done
 priority: high
 area: "grupos, nube, asociación"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 qa-status: needs-testing
 source: tarjeta del tablero `tablero-donde-viven-tus-datos-dice-que-tus-grupo-cq2i` (QA guiado del 2026-10-19, A · C1)
 ---
@@ -57,3 +57,5 @@ Montaje: el iCloud-KV del Apple ID con una asociación de Grupos de OTRA cuenta 
 3. Vuelve y elige «Es mi primera vez › Tu cuenta en tu iCloud privado» › «Traer mis datos».
 4. **Sin cerrar Yala**, Ajustes › «Dónde viven tus datos».
 5. **Esperado:** la sección Grupos nombra admin@yala-app.pe y «Activar la nube» no sale bloqueado por otra cuenta.
+
+Cerrado en el QA guiado 2026-10-20 (tanda del TestFlight 19): Yala Dev desde ad6781f8a: tras «Activar Yala completo › privado», Grupos nombró admin@ y no la cuenta vieja; «Activar la nube» sin bloqueo.
