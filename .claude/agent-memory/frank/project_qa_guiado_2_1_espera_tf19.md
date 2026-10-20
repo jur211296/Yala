@@ -1,19 +1,25 @@
 ---
 name: qa-guiado-2-1-espera-tf19
-description: El QA guiado de 2.1 (sesión Yala--qa-guiado-2-1-tf17) quedó abierto a propósito el 2026-10-19, esperando 9 cards de 2.1 y un TestFlight 19 para una tanda corta.
+description: El QA guiado de 2.1 (sesión Yala--qa-guiado-2-1-tf17) sigue abierto a propósito; tras el TF19 (20-oct) espera 4 cards de 2.1 y un TestFlight 20 para otra tanda corta.
 metadata:
   type: project
 ---
 
-El QA guiado de 2.1 sobre el TestFlight 18 terminó el 2026-10-19 con 23 de 27 pasados (PR #563, abierto y SIN cola de
-merge). Jürgen pidió **no cerrar la sesión**: se sigue en ella cuando entren los arreglos.
+Sesión del QA guiado de 2.1 abierta a petición de Jürgen («no la cerremos aún, ya vendrán las cards que faltan»). PR
+#563 abierto, SIN cola de merge: lleva el resultado del TF18 (19-oct) y la tanda + resultado del TF19
+(`docs/qa/tanda-qa-jurgen-2.1-tf19.md`, 20-oct).
 
-**Why:** quedan 9 cards de 2.1 de Frank (en curso: cq2i, 9ttd, ewkw, 8171; lista para lanzar: axgf, ppxk, t2q8, n2xn) y
-tres en qa que dependen de ellas (gk5w ← axgf+ppxk; h52f ← 8171; d0ui: suscripciones, notas al revisor, capturas de Lola).
-n5zw pasó a 2.2 por decisión de Jürgen (el #562 no arregla el caso en el iPhone real).
+**Why:** el 20-oct, sobre el TF19, pasaron 8171, 9ttd, ewkw, cq2i, gk5w (E2), n2xn, axgf; falló t2q8 (bienvenida ›
+invitación con cuenta completa, y relanzamiento a mitad → «queda en blanco»); ppxk pasó a 2.2 alta. Quedan para 2.1,
+con las decisiones de Jürgen ya en las cards y enviadas al bot Frank: t2q8, 840m (rechazar solicitud en grupo de la
+nube: implementarlo en backend), blqa (revisión de iCloud > 25 s: 2.1), z81w (invitación 10-15 s en la bienvenida: 2.1
+con pantalla «Abriendo tu invitación…»).
 
-**How to apply:** al retomar, subir un TestFlight 19 con esas cards y hacer una tanda corta: C6 paso 4, micrófono paso 3,
-D · E2 completa y una prueba por cada card arreglada. Estado de los aparatos al pausar: iPhone de QA con Yala (TestFlight)
-apuntando a una cuenta de producción ya borrada (borrar la app antes) y Yala Dev en privado; el iPad con iCloud
-`test@yala-app.pe` (Jürgen tiene que volver a su iCloud personal). Producción y staging quedaron sin cuentas de prueba
-(salvo las i5-* fijas de staging). Relacionado: [[el-guion-se-adapta-al-estado-del-telefono]].
+**How to apply:** cuando Frank cierre esas 4, subir un TestFlight 20 (lanzar-sesion como el 19, receta en
+`encargos/lanzados/2026-10-20-subida-testflight-19-2-1.md`) y hacer una tanda corta **en Yala Dev contra staging**
+salvo lo que exija producción ([[qa-en-yala-dev-antes-que-prod]]). Estado al pausar: staging y producción SIN cuentas de
+prueba (solo las i5-* fijas de staging); el iPhone de QA tiene Yala Dev (privado) y una Yala de TestFlight que apunta a
+una cuenta borrada; el iPad tiene iCloud `test@yala-app.pe` hasta que Jürgen lo devuelva. Yala Dev de `ad6781f8a` en
+`/Volumes/ExtDev/DD-qa-guiado-tf17/…/Debug-Dev-iphoneos/Yala.app` (recompilar desde origin/2.1 al retomar).
+E2 de verdad exige que el segundo aparato ADOPTE («Activar en este dispositivo»), no que entre con «Ya tengo una cuenta».
+Relacionado: [[el-guion-se-adapta-al-estado-del-telefono]].
