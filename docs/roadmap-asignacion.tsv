@@ -1,0 +1,674 @@
+titulo	version_actual	version_propuesta	motivo
+Checklist de envío de 2.1 a App Store, verificada contra el código	2.1	2.1	Lanzamiento y parche de 2.1 · Es el envío de 2.1
+Aplicar plan Superapp al lanzar 2.1 (nombre/subtítulo ASO, corregir privacidad en listing, prueba Apple Ads US$5/día)	sin versión	2.1	Personalidad y marca · Plan de ASO al lanzar 2.1; es de Lola
+Ficha de la App Store: quitar «detección de gastos hormiga» de los textos guardados, porque la app no la tiene	2.2	2.1	Personalidad y marca · La ficha promete algo que la app no tiene. Toca marketing/ (de Lola); la función llega en 2.3
+Rediseño de sesiones: seguir el orden de implementación ticket a ticket	sin versión	2.1	Robustez de la nube y las sesiones · Probablemente obsoleta: es el runbook del rediseño de sesiones, que sale en 2.1
+IA sesión 2: la app manda su tarea, las 12 llamadas por el banco, voz en 10 idiomas y cupo free 5+5	2.1	2.1	Yala IA · Ya está en producción del gateway; solo falta su QA
+Al actualizar desde la 2.0.4, «Mira lo nuevo en Yala» no sale en el primer arranque, sino en el segundo	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; listo para lanzar, entra en el parche
+Al cancelar la voz, la música de otra app no vuelve a sonar	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; si no entra en un build nuevo antes del envío, va en el parche
+Al volver a tu cuenta de Grupos por «Ya tengo una cuenta», tus grupos no aparecen hasta cerrar y abrir Yala	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; si no entra en un build nuevo antes del envío, va en el parche
+La primera foto tras instalar falla al momento con «No pude leerla esta vez» y la segunda funciona	2.2	2.1.1	Lanzamiento y parche de 2.1 · Falla la primera foto de quien acaba de pagar Pro: golpea al cliente más valioso en su primer minuto
+Llevar a 2.1 el guard que impide bajar el manifest del Worker	2.2	2.1.1	Lanzamiento y parche de 2.1 · Dice «llevar a 2.1»: es un guard de despliegue del Worker y debe estar antes de cualquier deploy desde 2.1
+Unirse por enlace en una instalación nueva bloquea por los datos privados del propio iCloud	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; listo para lanzar, entra en el parche
+«Activar la nube» con 6 movimientos espera más de 5 min a que iCloud «termine de sincronizar» y solo sigue al volver a la app	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; listo para lanzar, entra en el parche
+«Activar la nube» se queda en ~60 % sin subir nada hasta cerrar y abrir Yala (App Attest en producción)	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; listo para lanzar, entra en el parche
+«Dónde viven tus datos» dice que tus grupos usan una cuenta vieja y bloquea «Activar la nube»	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; si no entra en un build nuevo antes del envío, va en el parche
+«Volver a iCloud › Empezar sin ellos» falla con un iCloud grande: el borrado se corta a los 2 minutos	2.1	2.1.1	Lanzamiento y parche de 2.1 · Bug visto en el QA guiado del build 18; si no entra en un build nuevo antes del envío, va en el parche
+Al activar la nube con muchos movimientos, la barra se queda quieta en ~60 % y parece colgada	2.2	2.1.1	Robustez de la nube y las sesiones · La barra quieta hace creer que la app se colgó y empuja a cerrarla a mitad de migración: riesgo de datos
+Con iCloud Drive apagado antes de abrir Yala, la app arranca vacía y no avisa de nada	2.2	2.1.1	Robustez de la nube y las sesiones · Probablemente ya resuelta: el PR #562 se mergeó a 2.1 hoy con este arreglo; confirmar y cerrar
+En el segundo dispositivo de una cuenta que ya volvió a iCloud, salir de la espera impide volver a intentar «Volver a iCloud»	2.1	2.1.1	Robustez de la nube y las sesiones · Arreglo de backend para cuentas que ya volvieron a iCloud; no depende de la app
+Device-QA de Yala: 27 tickets en tickets/qa esperan un iPhone	sin versión	2.1.1	Tarea de Jürgen · Paraguas del device-QA pendiente de 2.1
+Con el texto muy grande en un iPhone SE, la Bandeja no deja ver ni aprobar los borradores	sin versión	2.2	Accesibilidad y textos · Accesibilidad o texto; va con el pulido de 2.2
+El índigo de marca como texto pequeño no llega a AA sobre los temas oscuros	2.2	2.2	Accesibilidad y textos · Contraste por debajo de AA en temas oscuros y de color; va con el pulido visual de 2.2
+En es-419, los nombres de categorías usan palabras peruanas	2.2	2.2	Accesibilidad y textos · Textos y traducciones; van con la pasada de copy de 2.2
+En iPad, el texto de almacenamiento de Grupos dice «este iPhone»	2.2	2.2	Accesibilidad y textos · Textos y traducciones; van con la pasada de copy de 2.2
+En los temas Rosa, Teal y Minimalista el texto blanco de los botones no llega a AA	2.2	2.2	Accesibilidad y textos · Contraste por debajo de AA en temas oscuros y de color; va con el pulido visual de 2.2
+En modo oscuro, los importes de ingresos se leen mal: el turquesa no llega al contraste mínimo	sin versión	2.2	Accesibilidad y textos · Accesibilidad o texto; va con el pulido de 2.2
+Las fechas cortas salen «13 Oct» también en inglés de EE. UU.	2.2	2.2	Accesibilidad y textos · Textos y traducciones; van con la pasada de copy de 2.2
+Las frases de Siri que la app enseña en portugués no activan Siri	2.2	2.2	Accesibilidad y textos · Ya hecho (frases de Siri en portugués); espera QA
+Los textos de categorías en pt-BR siguen con «Eliminar» y sin acentos	2.2	2.2	Accesibilidad y textos · Textos y traducciones; van con la pasada de copy de 2.2
+Unas 260 cadenas antiguas en francés salen sin tildes	2.2	2.2	Accesibilidad y textos · Textos y traducciones; van con la pasada de copy de 2.2
+VoiceOver lee un gasto en divisa extranjera con el símbolo de la divisa preferida	sin versión	2.2	Accesibilidad y textos · Accesibilidad o texto; va con el pulido de 2.2
+pt-PT: su bloque de respaldo quedó con el pt-BR viejo	2.2	2.2	Accesibilidad y textos · Textos y traducciones; van con la pasada de copy de 2.2
+Al tocar un segmento de una gráfica con exclusiones activas, que la app pregunte si excluirlo o ver solo ese segmento	2.2	2.2	Auditoría UX 2.2 · Pregunta de UI que espera a Jürgen
+Al volver a entrar por «Vengo por un grupo» con la misma cuenta, Yala pide otra vez el consentimiento de Grupos y tu nombre	2.2	2.2	Auditoría UX 2.2 · Visto en el QA guiado; mejora de flujo que encaja en la auditoría UX
+Auditoría UX 2.2 · lote 5: primeros días, guías y tips	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+Auditoría de UX por flujos para 2.2: mapa de todos los flujos y revisión con cinco tipos de usuario	2.2	2.2	Auditoría UX 2.2 · Es el eje de 2.2: la auditoría por flujos
+Auditoría del modo «Solo gastos»: qué enseña y qué esconde cada pantalla	2.2	2.2	Auditoría UX 2.2 · Visto en el QA guiado; mejora de flujo que encaja en la auditoría UX
+Diez avisos de App Attest siguen diciendo «la verificación de seguridad que pide nuestro servidor»	2.2	2.2	Auditoría UX 2.2 · Copy decidido por Jürgen el 19-oct; va con 2.2
+Entrada a Yala: las pantallas se cierran y se abren enteras; buscar una transición más bonita	2.2	2.2	Auditoría UX 2.2 · Pulido del Welcome; va con la auditoría UX
+Flujo de caja tiene que sentirse la misma app: alinear sus pantallas con el diseño del resto	2.2	2.2	Auditoría UX 2.2 · Coherencia visual: es el criterio de salida de 2.2
+Grupos tiene que sentirse la misma app: alinear sus pantallas con el diseño nuevo de Registros y Estadísticas	2.2	2.2	Auditoría UX 2.2 · Coherencia visual: es el criterio de salida de 2.2
+Las notas de entrar del Welcome dicen que la cuenta queda ligada a un método (y no es así)	2.2	2.2	Auditoría UX 2.2 · Visto en el QA guiado; mejora de flujo que encaja en la auditoría UX
+Quien entra por «Ya tengo una cuenta» vuelve a ver todos los tips de principiante	2.2	2.2	Auditoría UX 2.2 · Visto en el QA guiado; mejora de flujo que encaja en la auditoría UX
+Registro por voz: onda de voz y texto en vivo mientras hablas	2.2	2.2	Auditoría UX 2.2 · Pulido visual del registro por voz; acotado
+Revisar el diseño de la hoja de la cuenta eliminada (mover o borrar movimientos)	2.2	2.2	Auditoría UX 2.2 · Revisión de diseño pedida para un lote de la auditoría
+Revisar las Novedades de 2.2 antes de publicarla	2.2	2.2	Auditoría UX 2.2 · Novedades de 2.2: se cierran justo antes de publicar
+Revisar si «Seguridad y cuenta» en Ajustes se divide en dos subsecciones	2.2	2.2	Auditoría UX 2.2 · Revisión de Ajustes dentro de la auditoría UX
+Tras confirmar «Borrar y volver a iCloud», la pantalla no dice que está trabajando	2.2	2.2	Auditoría UX 2.2 · Visto en el QA guiado; mejora de flujo que encaja en la auditoría UX
+UI 2.2 · L12-10 · Al guardar un grupo no se propone invitar a nadie	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UI 2.2 · L15-10 · En la guía, «Listo» compite con «Hecho» y deja terminar sin hacer los pasos	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L15-4 · «Siri y Atajos» enseña frases pero no deja hacer nada, y nombra las acciones distinto que Atajos	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L17-6 · Al terminar la prueba salen dos hojas seguidas y la primera alarma	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UI 2.2 · L18-11 · La tira de meses y el resumen no dicen qué es cada número	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L18-3 · La tabla no dice qué es cada número, y «P-1» y «A-1» son jerga	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L18-5 · Crear el plan pide revisar 29 líneas y empieza con S/ 0 teniendo S/ 83,666	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L19-1 · Una solicitud para unirse es un punto rojo, y se acepta con dos iconos sin texto	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L19-5 · Archivar, desarchivar y eliminar salen en rojo, igual de graves	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L19-6 · El presupuesto del grupo se teclea en una alerta, sin decir qué pasa al llegar al tope	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UI 2.2 · L2-16 · El monto no dice qué es ni en qué moneda hasta que eliges cuenta	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UI 2.2 · L2-17 · «Calcular mi parte» da un número suelto: no se ve cómo se reparte ni de dónde sale	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UI 2.2 · L2-18 · El tipo de cambio se puede cambiar, pero no lo parece	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UI 2.2 · L2-19 · Lo que eliges solo cambia de contorno: sobre el glass no destaca	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UI 2.2 · L2-20 · Todo pesa igual: «Calcular», «Favorito» y «Recurrente» son círculos grises y «Guardar» no destaca al estar listo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UI 2.2 · L2-21 · Elegir no se siente: el chip cambia de golpe y nada celebra que ya puedes guardar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UI 2.2 · L2-22 · Las hojas a media altura dejan ver el formulario borroso detrás: el rosa del monto se mezcla con el contenido	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UI 2.2 · L20-11 · Activar la nube: cuatro pasos antes de entrar, «Migrar» y «Activar», y la vista previa parece código	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · Entrar con Google en un iPhone que usó Apple: «Esa cuenta usa otro método» confunde y el consentimiento se pide dos veces	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L1-9 · onboarding «control»: de 8 pasos a 6 fusionando cómo organizas y el tipo de cuenta	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L10-13 · Tocar un recordatorio abre la lista, no el pago, y el monto del aviso no sigue la preferencia de divisa	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L10-14 · El aviso de pago de la tarjeta de crédito no lleva a ningún sitio	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L11-12 · El editor del informe no dice qué días entran, «Probar» sin permiso no hace nada y el mensual del día 1 dice «este mes»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L11-7 · Quien paga Pro y no ha generado la IA ve menos que quien no paga: «Observaciones» queda vacía	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L12-1 · En el grupo, «Estadísticas» se corta y «Balances» es una palabra prestada	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-11 · Si para crear hubo que iniciar sesión y aceptar, al terminar no vuelve al formulario	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-12 · «Crear mi primer grupo» desde la bienvenida son 9 pantallas (10 sin cuenta) y «Crear mi grupo» abre otro formulario	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-14 · El enlace se manda solo, sin un texto que diga qué es ni qué hacer	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-15 · La web de invitación no dice qué hacer tras instalar ni quién invita, y «Abrir en Yala» falla sin la app	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-16 · «Pega tu enlace» no tiene botón de pegar y rechaza el mensaje de WhatsApp entero	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-17 · Se pide cuenta y consentimiento antes de enseñar a qué grupo te unes	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-18 · «¡Todo listo!» no dice a qué grupo entraste ni qué hacer ahora	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-19 · Mientras se conecta, la pestaña dice «Sin grupos · Crea un grupo» debajo de «Conectando con tu grupo…»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-20 · Al que espera aprobación se le pide volver a mirar y no se le avisa; y hay dos textos para lo mismo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-21 · Jerga y frases raras en los avisos: «Pídele al admin que regenere uno», «se sincronizan con un iCloud»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-3 · «Un último paso · Continuar» no dice qué paso es	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-4 · El paso 3 del educativo y el consentimiento cuentan lo mismo: dos pantallas para una sola decisión	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-5 · El consentimiento habla de «alias», repite el título y lleva cuatro iconos de información iguales en azul de sistema	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-6 · «Puedes cambiar este comportamiento en Ajustes de Grupos» no dice qué comportamiento	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-7 · «Iniciar sesión con Apple» y «Crear cuenta con Google»: dos verbos para lo mismo, y el título dos veces	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-8 · El permiso de avisos de grupo se pide en una alerta suelta, en cuanto aparece el primer grupo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L12-9 · El formulario habla como un contador: «Simplificar deudas», «Moneda única para deudas», «División predeterminada»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-10 · Los saldos iniciales están al fondo de Miembros y el formulario no explica qué son	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-11 · Al convertir un borrador en gasto de grupo, desaparece sin decir adónde fue	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-12 · Las hojas para completar un borrador de grupo no hablan igual	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-13 · «¿Quién ha hecho más pagos?» mide dinero, no pagos	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-14 · Activar y desactivar el puente no hablan igual, y borrar de tus cuentas no pide confirmación	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-15 · No hay forma de enlazar un gasto de grupo con un movimiento que ya apuntaste a mano	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-4 · Borrar un gasto solo dice «Eliminar»: no avisa de que desaparece para todos ni de que se borra tu movimiento	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-5 · Cinco palabras para lo mismo: «Liquidar», «Registrar pago», «Liquidaciones», «saldar», «Salda pagos»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-6 · Saldos y el resumen para compartir dan cifras distintas para la misma deuda	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-7 · «Sí, registrar» no registra: deja un borrador en la Bandeja y no lo dice	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-8 · Desde el Panel sin grupos, «Grupo» lleva a «¿Cómo funcionan los grupos?» y el formulario aparece después, sin explicarlo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L13-9 · «Guardar» se apaga sin decir qué falta	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-1 · La misma función tiene siete nombres según la pantalla	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-10 · «Personalizar IA» son dos menús sin explicación, y en Ajustes no está el tono	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-11 · Privacidad IA usa nombres internos, y deja aceptar el permiso de una función que no puedes usar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-12 · Un usuario Pro no puede ocultar el botón de Yala IA	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-13 · El paywall de Yala IA no dice qué hace	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-6 · «Temas» repite las mismas tres sugerencias del saludo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-7 · «Reiniciar contexto de conversación» es jerga y borra la conversación entera sin preguntar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-8 · No se sabe que hay un límite de preguntas hasta las últimas diez, ni cuándo se renueva	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L14-9 · La tarjeta de registro no dice si es gasto o ingreso, y con varios hay que guardar uno por uno	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-1 · Los widgets se llaman distinto que lo que abren	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-11 · Una ventana de Yala se queda con un indicador de carga sin decir por qué	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-12 · Soltar un recibo en el iPad con algo abierto no hace nada	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-13 · Atajos de teclado: «Configuración» en vez de «Ajustes», ⌘K abre Yala IA y no hay deshacer	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-14 · Con el iPhone girado o en el iPad, los botones flotantes tapan el contenido	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-15 · No hay accesos rápidos al mantener pulsado el icono	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-2 · Sin datos, los widgets enseñan ceros o «todo pagado» sin decir por qué	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-3 · Widgets que enseñan lo mismo llevan a sitios distintos	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-5 · En 10 de los 16 idiomas, ninguna frase de Siri funciona	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-6 · Sin Pro, Siri dice «Activa Yala Pro» y no lleva a ningún sitio	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-7 · Un dictado de Siri no avisa dentro de la app	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-8 · La notificación de Apple Pay dice «Se ha registrado» algo que aún no está registrado	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L15-9 · La guía de Apple Pay describe el Atajos de iOS 26	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-1 · Ajustes no se llama «Ajustes» en ningún sitio	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-10 · Elegir un tema (o un idioma) te saca de Ajustes	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-11 · Un tema o un icono Pro no se puede ver antes de pagar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L16-13 · La barra de pestañas habla de «Tabs» y no explica sus límites	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-14 · Permisos te saca de Yala sin avisar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-15 · «Calificar y recomendar» solo califica, y a veces no hace nada	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-16 · Los tutoriales felicitan por algo que no se hizo y enseñan una versión vieja	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-17 · Las preguntas frecuentes no cubren lo nuevo y no tienen salida	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-18 · El formulario de soporte no dice qué pasa al enviar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-19 · Privacidad y términos te sacan de Yala	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-2 · Editar el nombre obliga a borrar «Usuario» y la hoja no dice cómo se guarda	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-20 · En el iPad, la lista de Ajustes no marca qué ajuste está abierto	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-21 · El tamaño de un widget del Panel se esconde detrás del «?»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-4 · Los tipos de cambio de divisas débiles no se pueden leer	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-5 · El idioma de la app solo se cambia si lo elegiste en el onboarding, y cambiarlo te saca de Ajustes	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-6 · Activar «Solo gastos» parece borrar algo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-7 · Personalización habla en jerga y no dice dónde se ve cada ajuste	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L16-8 · «Personalizar resumen de IA» controla Estadísticas › Resumen, y casi nada es IA	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L17-7 · El banner de prueba invita a «Suscribirse» a quien ya está suscrito	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L17-8 · La pantalla de Pro activo está casi vacía	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L17-9 · Tras comprar, Yala no te devuelve a lo que querías hacer	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L18-1 · Reportes queda al fondo de «Más» y sus dos tarjetas no dicen para qué sirven	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-10 · Cambiar el saldo inicial: un lápiz que parece «prohibido» y una hoja sin divisa	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-12 · Las gráficas no dicen de qué período son y sus cifras no casan con el detalle del mes	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-13 · «Agregar línea» ofrece tres caminos sin decir cuál conviene	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-2 · La Comparativa abre en «Todo el tiempo», donde no hay nada que comparar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-4 · El desglose habla en jerga: «Profundizar», «Tipo», «Naturaleza», «Flujo neto»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-6 · Tres explicaciones apiladas al entrar, y la primera dice «hasta fin de mes»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-7 · Una vez creado el plan, una línea no se puede cambiar ni borrar a la vista	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-8 · «Este mes y futuros» cambia también los meses pasados y el actual	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L18-9 · Ajustar un monto: el campo no dice qué es y el teclado tapa «Guardar»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-10 · «Eliminar» bloqueado no dice qué saldo lo bloquea, y a veces son dos céntimos	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-11 · Salir o eliminar no dicen qué pasa con tu dinero	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-13 · Los grupos que no se pudieron dejar dicen «Eres administrador y hay otros miembros»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-14 · Desasociar la cuenta de grupos se explica con jerga y dos salidas difíciles	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-2 · «¿Carla entra con saldo inicial?» es jerga, y casi nadie lo necesita	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-3 · No se puede hacer administrador a nadie en un grupo de la nube	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-4 · Quitar a alguien que debe no dice cuánto ni a quién	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-7 · Las opciones del grupo hablan en jerga, y el nombre no parece editable	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-8 · Archivar sin deudas no pregunta ni avisa: el grupo desaparece	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L19-9 · Un grupo archivado no lo dice, y su deuda deja de sumar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · L2-1 · La cuenta nunca viene puesta, ni siquiera cuando solo hay una	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-10 · Las etiquetas quedan fuera de la pantalla, y crear una pide icono, color, «Estado» y un código hexadecimal	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-11 · Al apuntar en dólares no ves cuánto es en soles, y «TC» no se explica	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-12 · «Calcular» no dice qué calcula, empieza en porcentaje y el resultado queda como «% ÷ 3 personas»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-13 · Favoritos: la misma estrella para guardar y para usar, y usar uno cuesta cuatro toques	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-14 · Un favorito guardado desde una transferencia queda «Sin configurar»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-15 · «Recurrente» abre un formulario largo y no avisa de que también guarda el de hoy	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-2 · «Guardar» apagado no dice qué falta, y la guía pide «monto y categoría» cuando también hace falta la cuenta	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-3 · «Subcategoría» en el chip, «categoría» en la guía, y 50 opciones sin buscador	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-4 · Deslizar hacia abajo cierra el formulario y se pierde lo escrito	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-5 · Una pantalla entera de «¡Listo!» tras cada registro	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-6 · Con una sola cuenta, la transferencia dice «Aún no tienes cuentas»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-7 · Elegir «ayer» cuesta tres toques y los días futuros salen grises sin explicación	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-8 · «Usa @ cuenta, ! categoría, # etiqueta» es jerga y el campo no da un ejemplo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L2-9 · Necesidad: «discrecionales», «naturaleza»… y nada dice para qué sirve	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2, lote 2 (el formulario de registro, la pantalla más usada)
+UX 2.2 · L20-12 · El consentimiento de la nube es un muro de texto con jerga	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L20-17 · «Volver a iCloud» pide dos confirmaciones que dicen lo mismo	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L20-7 · Cerrar sesión espera 45 segundos con un pie gris, y el aviso ofrece «Cerrar sesión igualmente» primero, sin exportar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L20-8 · Cerrar sesión sin copia y eliminar una cuenta de la nube no ofrecen «Exportar antes»	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L20-9 · «Tu cuenta de Yala» no dice qué cuenta es, y contradice a la pantalla de entrar	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: ya implementado, espera QA
+UX 2.2 · L6-13 · «Conectando con tu cuenta…» puede tardar minutos sin decir cuánto falta	2.2	2.2	Auditoría UX 2.2 · Auditoría UX 2.2: decidido y listo para lanzar
+UX 2.2 · «Vengo por un grupo» no ofrece salida a quien ya tiene una cuenta de Grupos	2.2	2.2	Auditoría UX 2.2 · Visto en el QA guiado; mejora de flujo de la bienvenida
+«Ahora mismo no puedes volver a iCloud desde este dispositivo» no dice que en ese aparato no se podrá nunca	2.2	2.2	Auditoría UX 2.2 · Copy decidido por Jürgen el 19-oct; va con 2.2
+«Quitar mis datos de este iPhone» lleva a avisos que dicen «Cerrar sesión»	2.2	2.2	Auditoría UX 2.2 · Copy decidido por Jürgen el 19-oct; va con 2.2
+Al filtrar el Panel por una cuenta excluida de estadísticas, el saldo grande enseña el total y los widgets enseñan 0	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+Al terminar de importar un archivo no sale «Importación completada»	2.2	2.2	Bugs de la app · Bug visto en el QA guiado; leve, va con 2.2
+Apple Pay, la voz y la Bandeja pueden poner a un gasto una subcategoría de ingreso aprendida del comercio	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+Bug 2.2 · En es-ES, es-AR, en-GB y pt-PT los recuentos de uno salen en plural	2.2	2.2	Bugs de la app · Bug ya apuntado para 2.2; se queda
+Bug 2.2 · En «Ocultar», con una sola moneda marcada, el monto se filtra en la moneda que se oculta	2.2	2.2	Bugs de la app · Bug ya apuntado para 2.2; se queda
+Bug 2.2 · «¡Gasto agregado!» puede decir que se apuntó algo que el puente no escribió (casos raros)	2.2	2.2	Bugs de la app · Bug ya apuntado para 2.2; se queda
+Bug · Al reabrir la calculadora del saldo con 1.000 o más, dice 0	2.2	2.2	Bugs de la app · Bug ya apuntado para 2.2; se queda
+Bug · El aviso de error de StoreKit no se vacía en el paywall ni en la oferta	2.2	2.2	Bugs de la app · Bug ya apuntado para 2.2; se queda
+Bug · Un recibo compartido que choca con «Función Pro» se descarta	2.2	2.2	Bugs de la app · Bug ya apuntado para 2.2; se queda
+Con varias cuentas filtradas, el Panel cuenta mal tus cuentas y el formulario precarga una al azar, incluso una excluida	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+Desde un movimiento en dólares de una cuenta en soles, «Guardar como favorito» y «Hacer recurrente» lo crean en soles	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+El aviso de una notificación puede perderse con la app cerrada	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+El saldo de arriba del Panel y la hoja «¿Cuánto tienes hoy?» dan cifras distintas del mismo dinero	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+El «vs mes pasado» de los heros de Tendencias y del Panel cuenta un día de más si el gasto se fechó a medianoche	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+Estadísticas › Distribución arranca en Gráficas; debería abrir en Detalle	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+Gráfica del Saldo: «apr 26» pisa a «oct 26» y la pastilla «Today» tapa «100K»	2.2	2.2	Bugs de la app · Bug visual leve; va con 2.2
+Ingresos y gastos del mismo mes salen distintos según la pantalla cuando un movimiento no tiene categoría o su signo la contradice	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+La cifra y la curva del widget de saldo no cuentan lo mismo con movimientos sin cuenta	2.2	2.2	Bugs de la app · Bug visual leve; va con 2.2
+Lo importado desde CSV no se distingue de lo escrito a mano y puede caer en una categoría de ingreso siendo un gasto	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+MainTab publica su hoja después de que ContentView drene	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+Por dentro, el Excel sigue diciendo «Transacciones» y el archivo de grupos lleva la hora en cifras	2.2	2.2	Bugs de la app · Detalle del export ya apuntado para 2.2
+Tendencias no se entera de que editaste el importe de un movimiento	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+UX 2.2 · En modo duplicados, sin el criterio «Fecha», no se ve de qué día es cada registro	2.2	2.2	Bugs de la app · Bug visto en el barrido del lote 8; va con 2.2
+Un pago planificado de «Una sola vez» aparece como «Mensual» en la lista de Pagos planificados	sin versión	2.2	Bugs de la app · Bug de la app de prioridad media
+Al leer un recibo completo con la cámara, «Guardar» sale apagado en los tests de iOS 27	sin versión	2.2	Deuda técnica interna · Interno; frena el gate o la fiabilidad del CI de cada PR
+Cruzar tickets abiertos con el tablero y deduplicar cards	2.2	2.2	Deuda técnica interna · Saneamiento del tablero decidido para después del envío de 2.1
+El golden 20 del gateway (la cuenta congelada sigue pudiendo leer) cae por timeout y nadie comprueba ese invariante	sin versión	2.2	Deuda técnica interna · Interno; deja sin vigilar una red que el gate o el CI dan por buena
+El script de reintentos del CI trata el error de arranque del simulador como un test y deja el job en rojo sin repetir nada	2.2	2.2	Deuda técnica interna · Deja el CI en rojo sin motivo: frena cada PR de 2.2
+Hay 11 canarios y 8 rastros que nadie emite, el índice de cobertura los cita como red, y el gate Pro de Siri no deja señal	sin versión	2.2	Deuda técnica interna · Interno; deja sin vigilar una red que el gate o el CI dan por buena
+Los XCUITest no pueden fingir qué contesta el servidor sobre una cuenta, y el bloque de identidad del Welcome queda sin cobertura de UI	sin versión	2.2	Deuda técnica interna · Interno; frena el gate o la fiabilidad del CI de cada PR
+Release-Dev habla con el gateway de producción con el bundle .dev y no obtiene sesión (¿debe ir a staging?)	2.2	2.2	Deuda técnica interna · Configuración de Release-Dev; afecta a las pruebas de 2.2
+Revisión de traducciones con Sonnet antes de cada release (16 idiomas)	sin versión	2.2	Deuda técnica interna · Revisión de traducciones antes de cada release; empieza con 2.2
+Sentry: avisos de errores y caídas en la app y el backend	2.2	2.2	Deuda técnica interna · Avisos de errores en producción antes de crecer; pide revisar la política de privacidad
+Si los avisos de Grupos dejan de llegar, el servidor no deja rastro y nadie se entera	sin versión	2.2	Deuda técnica interna · Interno; frena el gate o la fiabilidad del CI de cada PR
+Test · DemoIAPizzaUITests no encuentra «Registrado» en la card del gasto (rojo también en 2.2 limpio)	2.2	2.2	Deuda técnica interna · Test rojo en 2.2 limpio: frena el gate de cada PR
+Test · RecordsLote8UITests cuenta filas visibles y da por no borrado un registro borrado (rojo también en 2.2 limpio)	2.2	2.2	Deuda técnica interna · Test rojo en 2.2 limpio: frena el gate de cada PR
+Un test de la marca ≈ del resumen de Registros falla en la suite completa y pasa aislado	sin versión	2.2	Deuda técnica interna · Interno; frena el gate o la fiabilidad del CI de cada PR
+El saldo cuenta los movimientos con fecha futura y la curva no los dibuja	2.2	2.2	Divisas y cifras exactas · Ya en QA; pide decisión sobre el saldo de hoy con fechas futuras
+Los totales de «Este mes» cuentan un movimiento fechado mañana a las 00:00	2.2	2.2	Divisas y cifras exactas · Cifras que no cuadran entre pantallas: va con la coherencia de 2.2
+Panel y Planificación pueden decir distinto lo que queda de un presupuesto	2.2	2.2	Divisas y cifras exactas · Cifras que no cuadran entre pantallas: va con la coherencia de 2.2
+Aceptar el consentimiento de Grupos desde la pestaña queda registrado como si vinieras de una invitación	2.2	2.2	Grupos · Bug de diagnóstico de Grupos; leve
+Crear un grupo, aprobar o expulsar a alguien sin conexión enseña «Error de Yala.GroupsRPCError 1»	sin versión	2.2	Grupos · Bug de Grupos de prioridad media: va con el rediseño de Grupos de 2.2
+El canal de Grupos no declara su versión de columnas: cada columna nueva apaga la verificación Merkle a los teléfonos sin actualizar	sin versión	2.2	Grupos · Bug de Grupos de prioridad media: va con el rediseño de Grupos de 2.2
+Importar archivo deja elegir la cuenta interna de Grupos («Grupos PEN»)	2.2	2.2	Grupos · Bug visto en el QA guiado; va con 2.2
+Si la creación de un grupo falla tras guardarse en el servidor, quien lo creó no aparece como dueño	sin versión	2.2	Grupos · Bug de Grupos de prioridad media: va con el rediseño de Grupos de 2.2
+Tocar una notificación de grupo no abre el grupo, y cualquier push dispara una sincronización completa	sin versión	2.2	Grupos · Bug de Grupos de prioridad media: va con el rediseño de Grupos de 2.2
+El aviso de saldo de una cuenta no lleva a ningún sitio al tocarlo	2.2	2.2	Notificaciones · Mismo arreglo que «El aviso de pago de la tarjeta de crédito no lleva a ningún sitio»
+Con la semilla ficha-mx-vida el saldo cae de golpe el último día	2.2	2.2	Personalidad y marca · Afea las capturas de la ficha; avisar a Lola antes de tocar la semilla
+README de marca todavía trae brillos y degradados (choca con la regla nueva)	sin versión	2.2	Personalidad y marca · Toca la guía de marca; revisar si vive en marketing/ (de Lola)
+Widgets extragrandes en el iPhone con iOS 27	2.2	2.2	Plataformas nuevas · Widget extragrande de iOS 27: cambio acotado, ya listo para lanzar
+UX 2.2 · El tema de Pro vuelve al de siempre en silencio al perder Pro	2.2	2.2	Pro y monetización · Espera decisión de Jürgen; el arreglo es pequeño una vez decidido
+UX 2.2 · La bienvenida a Pro sigue con los nombres viejos de las funciones	2.2	2.2	Pro y monetización · Espera decisión de Jürgen; el arreglo es pequeño una vez decidido
+UX 2.2 · La prueba se anuncia como «30 días» y es de un mes	2.2	2.2	Pro y monetización · Espera decisión de Jürgen; el arreglo es pequeño una vez decidido
+Al volver a iCloud, el arranque dispara una falsa alarma de «modo nube con espejo de iCloud»	2.2	2.2	Robustez de la nube y las sesiones · Falsa alarma de diagnóstico; leve
+Con iCloud Drive apagado y el espejo adjunto, los borrados del Welcome no empiezan nunca	2.2	2.2	Robustez de la nube y las sesiones · Bug de iCloud Drive apagado ya apuntado para 2.2; va con su hermano del PR #562
+Con iCloud Drive apagado, la pantalla de iCloud dice que iCloud no está activo aunque sincroniza	2.2	2.2	Robustez de la nube y las sesiones · Bug de iCloud Drive apagado ya apuntado para 2.2; va con su hermano del PR #562
+UX 2.2 · L20-15 · «Datos no disponibles»: el botón que borra va primero en un aviso que nadie pidió	2.2	2.2	Robustez de la nube y las sesiones · Espera decisión de Jürgen; el arreglo es pequeño una vez decidido
+«¿Borrarlos de tu iCloud?» no enseña ninguna salida: solo «Borrar y volver a iCloud»	2.2	2.2	Robustez de la nube y las sesiones · Aviso sin salida visible: regla B6; ya apuntado para 2.2
+Aplicar en producción el DDL de parentAccountID de Modo Nube	2.2	2.2	Tarea de Jürgen · Prerrequisito de 2.2: DDL de producción para la tarjeta multidivisa
+DMARC sigue en p=none: la re-comprobación del 15-sep venció	sin versión	2.2	Tarea de Jürgen · Re-comprobación de DMARC vencida; tarea de Jürgen
+Declarar el entitlement de App Attest después de activarlo en el App ID	2.2	2.2	Tarea de Jürgen · Tarea de Jürgen en developer.apple.com; prerrequisito de App Attest en 2.2
+Desplegar CD_parentAccountID a Production en CloudKit	2.2	2.2	Tarea de Jürgen · Prerrequisito de 2.2: despliegue de esquema en CloudKit (asignada a Lola, pero es una tarea de consola de Jürgen)
+El token de gestión de Supabase en la Mini (~/Secrets/yala-supabase-mgmt/pat) da Invalid access token: rotarlo y guardarlo en 1Password	2.2	2.2	Tarea de Jürgen · Credencial caducada; solo Jürgen puede rotarla
+Pedir la beta review para que el grupo externo vea el TestFlight	sin versión	2.2	Tarea de Jürgen · Tarea de Jürgen en App Store Connect
+Revocar el token de gestión de Supabase «yala-mcp-fase0» (no consta que se hiciera)	sin versión	2.2	Tarea de Jürgen · Revocar un token: tarea de seguridad de Jürgen
+Ajustar tarjeta de crédito: fecha de corte, fecha de pago y aviso antes de pagar	2.2	2.2	Tarjetas y cuentas · Paridad con Pablo y misma ventana de cambio de esquema que la tarjeta multidivisa: una sola migración
+Tarjeta con varias divisas, entrega 2: la tarjeta con sus líneas en el Panel, la ficha, Ajustes y el formulario	2.2	2.2	Tarjetas y cuentas · Tarjeta con varias divisas: ya implementada, espera QA
+Tarjeta con varias divisas, entrega 3: se elige la tarjeta y la divisa del importe decide la línea	2.2	2.2	Tarjetas y cuentas · Tarjeta con varias divisas: ya implementada, espera QA
+Tarjeta con varias divisas, entrega 4: informes, flujo de caja y exportación por tarjeta	2.2	2.2	Tarjetas y cuentas · Tarjeta con varias divisas: ya implementada, espera QA
+Encender Yala IA ampliada en la nube (staging → producción)	2.2	2.2	Yala IA · El código ya está en 2.2 y apagado; encenderlo es decisión de Jürgen
+Integrar Yala con el nuevo Siri con IA de iOS 27	2.2	2.2	Yala IA · Siri con IA de iOS 27: ya implementado, espera QA
+La política solo nombra a OpenAI: actualizarla antes de encender Gemini u otro proveedor	2.2	2.2	Yala IA · Hay que actualizar la política antes de encender otro proveedor de IA en el gateway
+Revisar a fondo cómo usa Yala la IA (privada y en la nube) para dar mejores respuestas	2.2	2.2	Yala IA · Revisión (no implementación) que alimenta lo que se construye en 2.5
+Siri con IA: ¿tus cuentas y movimientos en Spotlight? ¿Las preguntas a Siri, gratis o Pro?	2.2	2.2	Yala IA · Decisión pendiente sobre Siri con IA, que ya está en 2.2
+Yala IA calcula los saldos solo con los últimos 13 meses de movimientos	2.2	2.2	Yala IA · La IA da saldos equivocados: bug de alta prioridad ya en 2.2
+Yala IA no cuenta hasta el mediodía un gasto de hoy leído de una foto o de una nota de voz	2.2	2.2	Yala IA · Bug de fechas en la IA; ya apuntado para 2.2
+Rediseñar por completo los tutoriales y actualizarlos	2.2	2.3	Auditoría UX 2.2 · Rediseño de tutoriales: después de que la UX de 2.2 se asiente, para no rehacerlos dos veces
+Al volver a Yala, una pantalla podría quedarse sin actualizar sus números hasta volver a salir de la app (sin medir)	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+Cambiar el tamaño del texto con Exportar abierto devuelve las cuentas a «todas»	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+Con dos necesidades filtradas desde Registros, el Panel enseña solo una en su chip y en el widget de necesidades	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+Con «Todo el tiempo», el Sankey de Distribución se recalcula en cada repintado	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+Distribución recalcula dos veces cada vez que tocas el filtro de ingresos o gastos	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+En «Profundizar» de Reportes, el centro de la fila no añade la dimensión	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+La ayuda dice que mantener pulsado un registro abre la edición masiva, y lo que abre es su menú	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+Las etiquetas de un registro cambian de orden cada vez que abres Yala, y con más de tres cambian las que se ven	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+Un aviso de la cola que no llega a enseñar nada podría dejar esperando al siguiente	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+«No se pudo guardar» aparece aunque los cambios de la cuenta ya se ven en el resto de la app	sin versión	2.3	Bugs de la app · Bug de la app de prioridad baja
+Bienvenida: proponer importar el último estado de cuenta para empezar con datos	2.3	2.3	Captura automática (paridad) · Paridad con Clever y Pablo: va con «Yala apunta sola»
+Detectar gastos hormiga y decir cuánto suman al mes	sin versión	2.3	Captura automática (paridad) · Gastos hormiga: paridad con Pablo y Clever; hoy la ficha lo promete sin tenerlo
+Detectar pagos recurrentes y suscripciones en el historial y proponer convertirlos en pagos planificados	2.3	2.3	Captura automática (paridad) · Paridad con Clever y Pablo: va con «Yala apunta sola»
+El CSV que exporta Yala no se puede volver a importar en Yala	sin versión	2.3	Captura automática (paridad) · Importar lo que la app exporta: va con importar el estado de cuenta en la bienvenida
+Logos de suscripción en pagos planificados (Netflix, Spotify…)	2.2	2.3	Captura automática (paridad) · Logos de suscripción: va con la detección de suscripciones de 2.3
+Modo manos libres: aprobar sola la Bandeja cuando Yala está segura y mandar un resumen diario	2.3	2.3	Captura automática (paridad) · Paridad con Clever y Pablo: va con «Yala apunta sola»
+Panel: ranking de comercios y reparto del gasto por cuenta o tarjeta	2.3	2.3	Captura automática (paridad) · Paridad con Clever y Pablo: va con «Yala apunta sola»
+Registrar movimientos desde correos de alertas del banco	2.2	2.3	Captura automática (paridad) · Lectura del correo del banco: la función estrella de la paridad. Necesita un buzón por usuario en el backend; se saca de 2.2, que ya va llena
+Registrar movimientos desde la notificación del banco (Atajos + App Intent)	2.2	2.3	Captura automática (paridad) · Captura desde la notificación del banco: va con el bloque de captura automática
+Reglas para clasificar gastos dichas en lenguaje natural («lo menor a S/5 va a Gastos hormiga»)	2.3	2.3	Captura automática (paridad) · Paridad con Clever y Pablo: va con «Yala apunta sola»
+Soporte por WhatsApp para quien escribe a Yala	2.3	2.3	Captura automática (paridad) · Soporte por WhatsApp: cambio pequeño de canal; necesita el número de WhatsApp Business de Jürgen
+/l10n-check corre 13 de los 17 tests de paridad y no puede notarlo	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+ADR-013 de casa no dice que Yala tiene su propio hook commit-msg	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+CI: un runner lento agota el tope de 45 min y frena un PR que iba en verde	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Cada corrida de tests unitarios deja ficheros de preferencias huérfanos en el simulador, y llena el disco poco a poco	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Cinco lecturas locales que fallan en silencio dejan un rastro falso o ninguno, y confunden el diagnóstico de una avería	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Con la cola de métricas llena, un envío puede borrar canarios del Modo Nube que nunca salieron	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Dos bancos de pruebas del gate y del CI no los ejecuta nadie, así que no vigilan nada	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El --dry-run del avisador de Grok envía el aviso de verdad si va con --avisar	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El CI sigue usando `actions/checkout@v4`, que GitHub ya fuerza a correr sobre otro Node	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El XCUITest de ⌘F para abrir Buscar pasa en un iPad recién creado y falla tras varias corridas	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El XCUITest del aviso de pérdida al cambiar de Apple ID falla en iOS 27	sin versión	2.3	Deuda técnica interna · Test o herramienta; no cambia la app, se hace en el carril técnico
+El aviso de cierre de una sesión puede citar el PR de otra o ninguno, sin avisar	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El botón «OK» del aviso de cierre de sesión bloqueado no tiene identificador, así que ningún XCUITest puede pulsarlo	sin versión	2.3	Deuda técnica interna · Test o herramienta; no cambia la app, se hace en el carril técnico
+El candado anti-atribución no ve rebase, cherry-pick, revert ni los merges hechos en GitHub	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El gate local no corre el check de aislamiento de tests que el CI sí bloquea	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El gate no ve los warnings de los ficheros de test y lee los de la app de un build incremental	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El gate puede filtrar tests por el nombre del fichero y correr menos suites de las pedidas sin avisar	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El guion de la tanda de QA vuelve a dejar fuera, sin avisar, tickets que esperan prueba en el iPhone	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El panel de depuración de la nube dice «red 0» en una vuelta a iCloud parada por red y no enseña su reloj	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El sello del gate cambia al mover un renombrado dentro o fuera del índice, y no ve el fichero borrado del renombrado	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El test del aviso de divisa secundaria sale rojo en el iPhone SE porque vuelve atrás con el primer botón de la barra	sin versión	2.3	Deuda técnica interna · Test o herramienta; no cambia la app, se hace en el carril técnico
+El test del paywall retenido tras el aviso de la Bandeja falla solo cuando corre en lote con otras cinco clases	sin versión	2.3	Deuda técnica interna · Test o herramienta; no cambia la app, se hace en el carril técnico
+El test que obliga al aislamiento del espejo de grupos no vigila wipeLocalGroupsDomain	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+El texto de «no pudimos desasociar» se decide dentro de la vista y ningún test de comportamiento lo alcanza	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+En el iPad, el test de la barra lateral falla cuando corre detrás de los tests que estrechan la ventana	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Falta un seam de UI-test que siembre la asociación de grupos, y por eso dos estados de «¿Dónde viven tus datos?» no se prueban en pantalla	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Falta un test que pruebe que una sesión en la nube no encola el vaciado remoto del Apple ID	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Filtro de tickets con Haiku: duplicados y ya resueltos antes de lanzar	sin versión	2.3	Deuda técnica interna · Herramienta interna de triaje
+Los XCUITest de navegación buscan la barra de pestañas del iPhone y en iPad fallan	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los XCUITest del registro por imagen no llegan al botón flotante en el iPad	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los botones de las pantallas de la puerta de Grupos no tienen su identificador de accesibilidad en runtime	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los comentarios del re-arranque del canal de Grupos prometen una protección que ya no existe	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los dos tests de edición masiva (`BulkEditUITests`) fallan en el iPhone SE	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los ejes 4a y 4b del spike del borrado del store salen rojos de vez en cuando en el gate, también con la suite aislada	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los goldens del gateway hacen en serie las llamadas que el Worker lanza en paralelo: el fetch de Node 26 encola los POST	2.2	2.3	Deuda técnica interna · Herramienta de pruebas del gateway; no cambia la app
+Los tests borran el fichero SQLite con la conexión todavía abierta, y eso llena el log de avisos de integridad	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los tests del cambio de divisa preferida copian la lógica en vez de ejecutarla	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Los unit tests dejan entradas en el espejo real del App Group del simulador, y otros tests pueden leerlas	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Ningún perfil de seed de Grupos tiene un heredero, así que «Transferir y salir» no se puede ver en el simulador	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+No hay datos de prueba con una solicitud de grupo rechazada, así que su aviso no se puede ver en el simulador	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Perfil de prueba de voz two pone Taxi en Restaurantes	sin versión	2.3	Deuda técnica interna · Semilla de pruebas
+Probar momentic.ai (E2E con IA) en Yala, plan gratis	sin versión	2.3	Deuda técnica interna · Espera decisión de Jürgen; herramienta de pruebas, no cambia la app
+Recetas de traducción y el /qa usan el simulador compartido sin pedir turno, y pueden dar rojos falsos	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Relanzar sin -uitest-reset a veces enseña el Panel con todas las secciones	2.2	2.3	Deuda técnica interna · Test que falla en iPad; herramienta de capturas
+Relanzar un UI-test con la misma siembra y sin reset duplica todos los datos, y parece un error de cálculo	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Restaurar desde iCloud no deja rastro en el log cuando encuentra tus datos, el único desenlace sin miga	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Un PR que solo toca encargos/ en markdown dispara la suite entera de iOS en CI	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+Una corrida de tests deja el onboarding marcado como visto en el simulador	sin versión	2.3	Deuda técnica interna · Interno; no cambia la app, se hace en el carril técnico
+`test_recordSelectorsOpenAtMediumDetent` falla porque toca el chip de etiquetas cuando está fuera de pantalla	sin versión	2.3	Deuda técnica interna · Test o herramienta; no cambia la app, se hace en el carril técnico
+Analizar una mascota en la app	sin versión	2.3	Personalidad y marca · Análisis de la mascota: se decide en 2.3 para construirla (con las rachas) en 2.5
+Al entrar con tu cuenta, el Pro pagado puede no aparecer hasta volver a abrir la app	sin versión	2.3	Pro y monetización · El Pro pagado no aparece al entrar: confianza en el cobro
+Avisar unos días antes de que termine la prueba gratis de Yala Pro	2.3	2.3	Pro y monetización · Confianza al cobrar; acotado
+Al activar la nube, algunas categorías y movimientos antiguos pueden salir duplicados en todos tus teléfonos	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Al darse de alta en la nube, el consentimiento se registra antes de saber si podrás entrar, y puede quedar en el iCloud del dueño	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Al reinstalar con conexión, Restaurar puede decir «No encontramos tus datos» porque el aviso de la cuenta en la nube aún no ha llegado	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Al reinstalar, Restaurar puede decir que tus datos están a salvo en una cuenta ya borrada, o traerte una copia vieja sin avisar	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Cambiar la divisa de una cuenta en un teléfono puede dejar el otro con movimientos en la divisa vieja	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Cancelar la activación desde la bienvenida mientras comprueba tus datos te deja en la barra al 35 % sin salida	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Con Ajustes abierto, un aviso importante (cambio de Apple ID, vaciado remoto) puede perderse hasta el siguiente arranque	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Con Apple solo puedes entrar en la nube con el Apple ID del teléfono	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Con iCloud Drive apagado, cerrar sesión con grupos puede guardar en plena importación de iCloud y cerrar la app	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Decidir qué hacer con lo que llega a iCloud después de la comprobación del adopt	2.1	2.3	Robustez de la nube y las sesiones · Espera decisión de Jürgen con números de device-QA; va con el bloque de nube de 2.3
+En una cuenta en la nube, el idioma de la app no llega a tus otros dispositivos y va al iCloud del teléfono	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+En una sesión solo de grupos, «Dónde viven tus datos» dice que tus datos viven en tu iCloud privado	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Medir en un iPhone por qué fallan filas al volver a iCloud, y decidir qué motivos cuentan	sin versión	2.3	Robustez de la nube y las sesiones · Medición en iPhone que decide qué motivos cuentan; va con el bloque de nube de 2.3
+Si la app se cierra mientras borra tus datos viejos de iCloud, pueden volver a aparecer	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Si reinstalas Yala o cierras sesión a mitad de activar la nube, ese iPhone no puede volver a intentarlo	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Tras cerrar la sesión privada para prestar el móvil, la otra persona ve tu nombre y tu moneda	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Tras «Vaciar datos», los gastos de grupo no vuelven a Registros y al Panel hasta que la app se cierra y se abre de nuevo	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Una compra de Apple Pay en una sesión solo grupos se convierte en un borrador personal que esa sesión no enseña	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Volver atrás desde el acceso a la nube deja el Welcome como ya elegido, y si la app se cierra ahí se salta la comprobación de iCloud	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+«Dónde viven tus datos» dice «Todo al día» con la sincronización parada y tus movimientos sin subir	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+«Tengo una invitación» pide reabrir Yala para encender una copia en iCloud que ese camino no usa	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+«Volver a iCloud» no aparece en el segundo dispositivo de quien creó su cuenta en la nube	sin versión	2.3	Robustez de la nube y las sesiones · Nube, prioridad media: el bloque de nube de 2.3 ataca todas las de su severidad
+Ninguna llamada de IA pone tope a la longitud de la respuesta: una respuesta desbocada cuesta tokens y puede acabar en error en el chat	sin versión	2.3	Yala IA · Control de coste de IA antes de que la captura por correo multiplique las llamadas
+No se guarda cuántos tokens gasta cada función de IA, así que no hay coste por pregunta, foto o nota de voz	sin versión	2.3	Yala IA · Control de coste de IA antes de que la captura por correo multiplique las llamadas
+Yala IA: guía con ejemplos de cómo pedirle las cosas	2.3	2.3	Yala IA · Guía de cómo pedirle cosas a Yala IA; contenido, acotado
+En iPad, 19 hojas de Yala se abren a media altura aunque la ventana sea enorme	sin versión	2.3	iPad, iPhone Duo y otros tamaños · iPad: va con el bloque de tamaños (iPad y iPhone Duo) de 2.3
+En iPad, Ajustes puede no salir con lista y ajuste lado a lado según desde dónde lo abras	sin versión	2.3	iPad, iPhone Duo y otros tamaños · iPad: va con el bloque de tamaños (iPad y iPhone Duo) de 2.3
+En iPad, Reportes y Buscar estiran sus filas a todo el ancho de la pantalla	sin versión	2.3	iPad, iPhone Duo y otros tamaños · iPad: va con el bloque de tamaños (iPad y iPhone Duo) de 2.3
+En iPad, con Yala IA abierto en Registros, el texto «Elige un registro para verlo aquí» sale medio tapado por la lista	sin versión	2.3	iPad, iPhone Duo y otros tamaños · iPad: va con el bloque de tamaños (iPad y iPhone Duo) de 2.3
+En iPad, la lista no marca qué registro o presupuesto tienes abierto al lado	sin versión	2.3	iPad, iPhone Duo y otros tamaños · iPad: va con el bloque de tamaños (iPad y iPhone Duo) de 2.3
+ReceiptDropUITests: test_lockedPDF falla 2 de 5 en iPad (crash de UIKit al retirar la contraseña enfocada; soltar sin hoja)	2.2	2.3	iPad, iPhone Duo y otros tamaños · Test rojo en iPad; va con el bloque de iPad de 2.3
+Simulador del iPhone Duo: Xcode 27.1 ya está; falta el runtime iOS 27.1 y crear el simulador	2.2	2.3	iPad, iPhone Duo y otros tamaños · Entorno para el iPhone Duo; va con el bloque de tamaños de 2.3
+Yala en el iPhone Duo: barras laterales, el pliegue y pantalla completa	2.2	2.3	iPad, iPhone Duo y otros tamaños · Depende del simulador del Duo; va con el bloque de tamaños de 2.3
+Con VoiceOver, algunos controles que muestran un importe solo leen su nombre y no la cifra	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+Con el texto muy grande, importes y rótulos aún se cortan en pantallas secundarias	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+Con el texto muy grande, la hoja de «datos viejos en tu iCloud» puede dejar sus botones fuera de la pantalla	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+Con texto grande, la fila de entradas y salidas del hero de Estadísticas sale cortada	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+En el iPhone SE con texto grande quedan textos cortados, dos pantallas de éxito sin medir y una tarjeta de la guía que puede salirse	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+En español de Argentina, «Dónde viven tus datos» y otros avisos salen en tuteo y el resto de la app en voseo	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+Si exportar tus datos falla, el aviso sale en español aunque tengas la app en otro idioma	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+Yala IA no usa el trato que toca (tuteo, voseo, «você») cuando la app está en una variante regional del idioma	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+«Inicia sesión para subir 1 cambios» sale sin plural en «Dónde viven tus datos»	sin versión	2.4	Accesibilidad y textos · Accesibilidad o texto; va con el pase de estrés de 2.4
+Al cambiar de divisa preferida, la app pide las tasas de la divisa que dejas y no de la nueva	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Al tocar un día del gráfico de flujo, su detalle nunca dice si ese día es aproximado	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Cambiar la divisa de una cuenta con mucho histórico tapa la pantalla minutos, sin progreso ni forma de cancelar	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Con dos filas de tasas del mismo día, un gasto en otra divisa puede convertirse distinto en cada iPhone	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Con el iPhone en calendario budista o japonés, las conversiones de divisa usan la tabla aproximada y las tasas se guardan con otro año	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+El barrido que corrige tasas 1:1 antiguas no deja ningún dato de cuántas filas curó	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+El importe del mes anterior con el que comparas nunca dice si es aproximado	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+El saldo de un mes cerrado nunca lleva «≈» aunque sus tasas fueran aproximadas	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+El total de «Análisis del gasto» no lleva la marca ≈ aunque el Panel sí la pone al mismo número	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+El total de «Gasto promedio por día» no lleva la marca ≈ aunque el mismo gasto la lleva en Resumen	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+El widget de tasas deja de enseñar tu divisa, sin explicación, cuando la tasa del día no la trae	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Estadísticas y el widget de inicio no se corrigen solos cuando llegan las tasas del día con la app abierta	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Importar movimientos más antiguos que el saldo inicial deja su conversión con la tasa del día viejo	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Informes enseña como exactos los mismos importes que el Panel marca con «≈»	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Las categorías del desglose no dicen cuál hace que el total del mes sea aproximado	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Las páginas de un extracto en PDF que no escriben la divisa salen sin cuenta	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Ningún detector caza que se cambie la divisa, el importe o la fecha de un movimiento sin recalcular su conversión	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Si falta la divisa preferida, cada parte de la app supone una distinta (región, soles o dólares)	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Tres caminos guardan tasas sin avisar a la app, y la marca «≈» puede quedarse con la tasa buena ya guardada	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Un gasto de grupo que cambia de divisa deja tu movimiento con el importe viejo, sin aviso, si el puente está apagado	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Una divisa fuera del catálogo se trata como dólares y se presenta como conversión exacta	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Volver a Yala en un día nuevo no pide las tasas de hoy y el «≈» puede quedarse todo el día	sin versión	2.4	Divisas y cifras exactas · Cifras y conversiones exactas: va con «Tu mes real»
+Ciclo del mes según tu día de pago (por ejemplo, del 25 al 25)	2.2	2.4	Finanzas más hondas · Es el «Mes financiero»: cambia todos los selectores de período, encaja con «Tu mes real»
+El hero de cada vista: que el usuario elija qué muestra (disponible del mes, saldo actual u otro)	2.2	2.4	Finanzas más hondas · Elegir qué muestra el hero cambia el significado de las cifras: va con «Tu mes real»
+Exportar los insights en un resumen sencillo y fácil de compartir	sin versión	2.4	Finanzas más hondas · Compartir insights: va con «Tu mes real»
+Pagos en cuotas: registrar una compra a plazos y ver lo que queda por pagar	2.2	2.4	Finanzas más hondas · Pagos en cuotas: va con «Tu mes real»
+Predicción del gasto del mes en curso dentro de cada línea del flujo de caja	sin versión	2.4	Finanzas más hondas · Presupuestos y flujo de caja más listos: «Tu mes real»
+Presupuesto que se adapta a tus ingresos o a tus gastos	sin versión	2.4	Finanzas más hondas · Presupuestos y flujo de caja más listos: «Tu mes real»
+Presupuestos recomendados con IA	sin versión	2.4	Finanzas más hondas · Presupuestos y flujo de caja más listos: «Tu mes real»
+Seguimiento de ahorros con metas	2.2	2.4	Finanzas más hondas · Ahorros con metas y vista de ahorros: paridad con Pablo (metas) y pieza central de «Tu mes real»
+Seguimiento de deudas personales	2.2	2.4	Finanzas más hondas · Deudas personales: va con «Tu mes real»
+Al abrir una invitación con la bienvenida en pantalla, otra hoja en cola puede abrirse encima de la bienvenida	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Al entrar en Yala por un grupo, la app olvida el idioma que acabas de elegir y vuelve a preguntarlo	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Al unirte a un grupo por enlace, tu nombre no lleva la marca «(tú)» hasta que reabres la app	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Ante un empate, «quién paga a quién» en un grupo puede salir distinto en cada apertura y en cada resumen compartido	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Buscar gastos dentro de un grupo por descripción, importe o quién pagó	sin versión	2.4	Grupos · Buscar dentro de un grupo: función nueva de Grupos
+Con la hora del teléfono atrasada o tras un cambio en el servidor, los cambios de mis grupos dejan de subir un rato aunque todo esté bien	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Con un segundo dispositivo sin actualizar, aprobar allí el aviso de importe cambiado de una liquidación suma el pago dos veces	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Cuando Grupos te bloquea una cuenta ya completa, la opción de usarla para tus finanzas es solo un texto, sin botón a Ajustes	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Cuando «Empezar de cero» se para un momento, la cifra del aviso a veces deja fuera los cambios de grupos de otra cuenta	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Dos procesos de grupos siguen decidiendo por fila en vez de por grupo cuando hay duplicados antiguos	sin versión	2.4	Grupos · Decisiones por fila con duplicados viejos: integridad de Grupos
+El pull de Grupos hace 5 peticiones por cada grupo aunque no haya cambios, y con ~200 grupos chocaría con el límite del Worker	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+El recordatorio de deuda dice «lleva semanas sin moverse» tras registrar un pago con fecha atrasada o editar un gasto viejo	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+En Archivados, el aviso de una liquidación que dejé con su importe anterior parece un pago que rechacé	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+En el widget, el saldo cuenta las patas de préstamo de los gastos de grupo que el gasto del mismo widget excluye	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Importar un grupo desde el export de Splitwise o Tricount para seguir con los mismos saldos	sin versión	2.4	Grupos · Importar de Splitwise o Tricount: acelera la llegada de usuarios por Grupos
+Quien venía a crear su primer grupo lo pierde si la app tiene que relanzarse al entrar con su cuenta	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Si abres una invitación de grupo mientras Yala borra el teléfono en la bienvenida, al terminar la app sale igual por el camino privado	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Si el dispositivo que vació repone justo cuando el otro deja de esperarle, un gasto o un pago de grupo sale dos veces	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Si falla el guardado al preparar tus cambios de grupos, quedan a medio escribir con su copia de seguridad puesta	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Si la nota de hasta dónde bajó cada grupo no se deja leer, la app vuelve a bajar todos los grupos desde cero	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Si me rechazaron de un grupo y vuelvo a pedir entrada sin buena red, la invitación puede perderse mientras se envía	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Si un reparto de un gasto de grupo llega repetido, Balances muestra el doble de lo que cada uno debe	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Si una invitación interrumpe la bienvenida justo al comprobar Grupos, Ajustes puede quedarse sin responder hasta relanzar	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Tras «Empezar desde cero» la app no pregunta si traer los gastos de grupo a tus finanzas	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Una invitación a un grupo que falla por algo pasajero caduca a los 7 días sin avisar a la persona	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+Una invitación a un grupo que falló sin red no se reintenta al volver la red, aunque la pantalla diga que sí	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+«Salir de todos mis grupos» cuenta mi segunda fila de miembro como otra persona y clasifica mal el grupo	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+«Transferir y salir» desde Ajustes del grupo no se retoma solo si la app se cierra entre ceder el grupo y salir	sin versión	2.4	Grupos · Bug de Grupos de prioridad baja
+2.2 · Notificaciones dentro de la Bandeja	sin versión	2.4	Notificaciones · Va con el rediseño de notificaciones (el título dice 2.2 pero la card no tiene versión)
+Notificaciones inteligentes con IA	sin versión	2.4	Notificaciones · Notificaciones con IA: va con el rediseño de notificaciones
+Rediseñar las notificaciones desde cero	2.2	2.4	Notificaciones · Rediseño de notificaciones: proyecto propio, fuera de la auditoría de 2.2
+Al cancelar la vuelta a iCloud, lo que iCloud bajó durante la espera sube a tu cuenta de la nube, incluso movimientos que habías borrado	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Al cerrar sesión en la nube, las preferencias que no subieron se pierden sin aviso	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Al entrar en tu cuenta de la nube, un importe que cambias justo antes de reabrir puede subir con el valor viejo que trajo iCloud	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Al entrar en una cuenta de la nube vacía, lo que iCloud baje antes de reabrir sube a la cuenta sin que nada lo cuente	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Al volver a iCloud, algunos movimientos podrían aparecer dos veces si otro teléfono exportó tarde sus datos viejos	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Con el reloj del iPhone atrasado, tus datos dejan de subir a la nube cada hora y Yala te pide volver a iniciar sesión	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Con la hora del iPhone atrasada, tu edición de un gasto que otro ya cambió se pierde en el servidor sin aviso	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Crear una cuenta nueva en la nube puede subirle los datos que iCloud ya bajó al teléfono, aunque sean de otra persona	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+El reparto de «Vaciar datos» ocupa el almacén de iCloud sin techo y no se retira nunca	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+El servidor acepta un importe «NaN» al subir cambios, y eso rompe la verificación de integridad de la cuenta o el grupo	sin versión	2.4	Robustez de la nube y las sesiones · El servidor acepta un dato que rompe la verificación de integridad: integridad de datos
+En la nube, aceptar perder tus cambios cuando el aviso no pudo contarlos se lleva también lo que apuntes después	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+La primera vez que arranca la nube en un teléfono, un cambio tuyo a medio guardar podría no subir nunca	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+La vuelta a iCloud de una cuenta migrada suma lo que otro dispositivo escribió en ese iCloud después de migrar	2.2	2.4	Robustez de la nube y las sesiones · Riesgo de datos duplicados en la vuelta a iCloud: va con el bloque de integridad de 2.4
+Leer la cuenta de Grupos asociada borra preferencias si el dato está corrupto, y esa lectura corre en cada pintado de Ajustes	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Repetir «Desasociar» tras un fallo puede duplicar en tu Panel los gastos de grupo que conservaste	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si dos teléfonos se cruzan en el servidor en el mismo instante de la activación, el segundo puede volver a subir todos sus datos encima	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si el llavero falla al leerse, alguien que nunca tuvo cuenta en la nube no puede cerrar su sesión privada	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si el teléfono no puede leer sus presupuestos al fusionar cuentas duplicadas, un presupuesto sigue filtrando por una cuenta borrada	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si falla una lectura mientras se reparan etiquetas o cuentas duplicadas, la reparación puede quedar a medias y dejar etiquetas huérfanas	sin versión	2.4	Robustez de la nube y las sesiones · Reparación a medias que deja datos huérfanos: integridad de datos
+Si iCloud no termina nunca de importar, entrar en tu cuenta de la nube no se rinde nunca y «Cancelar» no hace nada	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si la app se cierra justo después de guardar el onboarding de la nube, repetir la activación puede duplicar cuentas y categorías	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si llega «Vaciar datos» desde otro dispositivo mientras este cambia de modo, la señal se pierde para siempre y este nunca se vacía	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si sales a mitad de «Volver a iCloud», lo que ya subió se queda en iCloud y puede reaparecer como una copia vieja	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si soltar la cuenta de grupos falla a medias sin asociación guardada, nunca aparece «Terminar de soltar»	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Si un teléfono ya tenía dos relojes para un movimiento, la app puede leer el viejo y pisar el importe bueno de una transferencia	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Tras soltar y volver a asociar tu cuenta de grupos, borrar un borrador conservado deja el gasto del grupo sin su movimiento	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Tras vaciar datos en un dispositivo, un gasto de grupo puede salir dos veces en el otro con dos borradores	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Tras vaciar los datos en solo-grupos y restaurar, un cobro de grupo ya aprobado puede volver a pedir cuenta y contar doble	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Tras vaciar los datos en un dispositivo, algunos gastos de grupo pueden salir dos veces en otro, con dos borradores en la Bandeja	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Un cambio de grupo apuntado sin sesión antes de actualizar no se sube nunca, y al cerrar sesión Yala dice que es de otra cuenta	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Un gasto apuntado sin red después de vaciar los datos en otro dispositivo puede quedarse sin su cuenta o su etiqueta	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Un gasto de grupo apuntado mientras el cierre de la sesión privada espera a iCloud se borra sin aviso	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Un movimiento que borro en el segundo teléfono mientras el primero está callado reaparece al terminar de activar la nube	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Una edición o un borrado que el primer teléfono aún no subió puede perder frente a la copia que subió el segundo al entrar en la cuenta	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Una referencia que queda colgada durante «Volver a iCloud» no se vuelve a resolver nunca	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Vaciar los datos en dos dispositivos seguidos puede duplicar gastos de grupo en tus cuentas	sin versión	2.4	Robustez de la nube y las sesiones · Nube con riesgo de perder, duplicar o no subir datos: la integridad va antes que los textos
+Ajustes › Cuentas: lista clara con el nombre, tocar abre la vista de la cuenta y desarchivar en lote	sin versión	2.4	Tarjetas y cuentas · Rediseño de cuentas: va con 2.4
+Archivar una cuenta: decidir si oculta su historial, y qué pasa con el downgrade y las archivadas antiguas	sin versión	2.4	Tarjetas y cuentas · Decisión pendiente sobre archivar cuentas; va con el rediseño de cuentas
+Colecciones de cuentas: agrupar cuentas («Casa», «Negocio») para filtrar el Panel por ellas de un toque	sin versión	2.4	Tarjetas y cuentas · Colecciones de cuentas: va con «Perfil Empresa y Personal»
+Formulario de cuenta: vista previa en vivo, elegir color y editar el saldo bien explicado	sin versión	2.4	Tarjetas y cuentas · Rediseño del formulario de cuenta: va con el bloque de cuentas
+Las cuentas se ven poco: darles más presencia en la app	2.2	2.4	Tarjetas y cuentas · Pregunta de UI abierta; va con el rediseño de cuentas de 2.4
+Perfil Empresa y Personal: separar los gastos del negocio de los de la casa	2.3	2.4	Tarjetas y cuentas · Separar negocio y casa: va con colecciones de cuentas en 2.4
+Al deslizar las gráficas de Distribución, el total de arriba cambia de estilo en cada página	sin versión	2.5	Bugs de la app · Bug o pulido de prioridad muy baja
+El botón «+» de nuevo registro aparece de golpe, sin la animación que tienen sus botones hermanos	sin versión	2.5	Bugs de la app · Bug o pulido de prioridad muy baja
+En Insights, un presupuesto en riesgo puede salir con el icono genérico al abrir la app en frío	sin versión	2.5	Bugs de la app · Bug o pulido de prioridad muy baja
+La rama por cuenta de Tendencias no limpia el saldo de hoy del cálculo anterior, aunque hoy ninguna pantalla llega a ella	sin versión	2.5	Bugs de la app · Bug o pulido de prioridad muy baja
+Los cinco métodos de edición masiva de TransactionService son una copia muerta de los del ViewModel	sin versión	2.5	Bugs de la app · Bug o pulido de prioridad muy baja
+`ensureRatesForExistingTransactions` no la llama nadie: retirarla o cablearla	sin versión	2.5	Bugs de la app · Bug o pulido de prioridad muy baja
+Asistente de Yala por WhatsApp: anotar gastos, preguntar y recibir avisos sin abrir la app	2.3	2.5	Captura automática (paridad) · Asistente por WhatsApp: necesita cuenta en la nube, verificación de Meta y coste por conversación; va tras la captura por correo
+Conectar Yala en Claude iniciando sesión con Apple o Google	sin versión	2.5	Conector de Claude (MCP) · Va con la salida del conector de Claude
+Desconectar Claude desde Claude deja abierta una sesión huérfana en Supabase	sin versión	2.5	Conector de Claude (MCP) · Va con la salida del conector de Claude
+El conector de Claude da otro «saldo de hoy» que la app con un movimiento de fecha futura	2.2	2.5	Conector de Claude (MCP) · El conector de Claude sale a producción en 2.5; se arregla antes de esa salida
+Endurecer el conector MCP en producción cuando la nube esté estable	2.2	2.5	Conector de Claude (MCP) · El conector sale a producción en 2.5, con la nube ya endurecida
+Opcional: publicar el issue redactado para supabase/auth y probar el conector MCP de staging desde Claude	2.2	2.5	Conector de Claude (MCP) · Opcional; va con la salida del conector
+Plugin de Yala para Claude: que Claude lea tus finanzas de la nube, sin poder tocarlas	sin versión	2.5	Conector de Claude (MCP) · Plugin de Claude: sale con la nube endurecida
+Que el conector de Claude sepa en qué zona horaria vives para que «este mes» cuadre con la app	2.2	2.5	Conector de Claude (MCP) · El conector de Claude sale a producción en 2.5; se arregla antes de esa salida
+Yala en ChatGPT, Claude y Grok: diseñar el servidor MCP de solo lectura	2.2	2.5	Conector de Claude (MCP) · Probablemente obsoleta: el conector ya existe en staging (ADR del 26-sep); lo que queda es su salida en 2.5
+Adoptar el formato JSON del proyecto de Xcode cuando 27.2 sea estable	sin versión	2.5	Deuda técnica interna · Depende de que Xcode 27.2 sea estable
+Al fallar el borrado del desasociar, el rastro de diagnóstico queda abierto como si hubiera crasheado	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+BalanceTrendCalculator y BalanceHelper.initialBalanceForTrend no tienen llamadores de producción	2.2	2.5	Deuda técnica interna · Código muerto; se limpia cuando se toque el área
+Comentarios del código que aún hablan de la sesión de visita retirada	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+Documentar que los worktrees heredan el candado anti-atribución por la ruta absoluta de core.hooksPath	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+El /gate dice que todo el repo es Swift Testing, y los XCUITest son XCTest	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área
+El Atlas de flujos de Modo Nube describe pantallas que el rediseño de sesiones ya retiró (58 fallos)	sin versión	2.5	Deuda técnica interna · Doc interna con 58 fallos: decidir re-anclar o retirar
+El README de las migraciones de la nube no tiene entrada para g13_04 ni g13_05, y una migración remite a ella	sin versión	2.5	Deuda técnica interna · Documentación interna de migraciones; prioridad muy baja
+El barrido de tasas corre también durante los XCUITest, al revés que los demás barridos del arranque	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+El comentario de `resolveEmptyState` promete una cancelación que su `Task` suelto no recibe nunca	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+El recuento `_meta.counts` del índice de QA no coincide con las áreas que tiene	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área
+El turno del simulador se toma también para compilar, y durante ese rato el simulador está parado	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+El volumen de CI de hoy no cabría en la Mini si Yala pasara a privado	sin versión	2.5	Deuda técnica interna · Condicional a pasar el repo a privado, que no está decidido
+El workflow del CI remite tres veces a `TESTING-STRATEGY.md`, un documento que no está en el repo	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+La carpeta tickets/qa/ guarda capturas de tickets que ya no están en qa	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+La sesión gráfica del usuario `ci` en la Mini arranca servicios que el runner no usa	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+Los unit tests pueden borrar la racha de App Attest de la app del simulador que un device-QA de 24 h necesita	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+Ningún test fija qué reloj publican el canario y el rastro de espera de la subida y de la vuelta a iCloud	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+Un XCUITest de cierre de sesión que falla deja el borrado armado en el simulador	sin versión	2.5	Deuda técnica interna · Interno y de prioridad muy baja; se hace al tocar el área, como tarde en el endurecimiento de 2.5
+Un importe de 0,0001 o menos en otra divisa se guarda con una tasa 1:1 falsa marcada como exacta	sin versión	2.5	Divisas y cifras exactas · Cifras y conversiones exactas: prioridad muy baja; endurecimiento de 2.5
+Al abrir Grupos o un grupo, la app lee del disco dos veces seguidas	sin versión	2.5	Grupos · Bug de Grupos de prioridad muy baja o teórico
+Con el almacén dañado, la app vuelve a repasar todos los gastos de grupo en cada arranque, sin parar nunca	sin versión	2.5	Grupos · Bug de Grupos de prioridad muy baja o teórico
+Con el drain de Grupos atascado, otra cuenta y el historial ilegible, el aviso nombra solo el atasco	sin versión	2.5	Grupos · Bug de Grupos de prioridad muy baja o teórico
+Con tres fallos de grupos a la vez, el aviso nombra dos de las tres causas	sin versión	2.5	Grupos · Bug de Grupos de prioridad muy baja o teórico
+Dentro de un grupo, Miembros y Ajustes no comprueban si tu solicitud sigue pendiente	sin versión	2.5	Grupos · Bug de Grupos de prioridad muy baja o teórico
+Los avisos de cambios de grupos de otra cuenta dicen «con ella» aunque puedan ser de varias	sin versión	2.5	Grupos · Bug de Grupos de prioridad muy baja o teórico
+Si otra persona cambia el sentido o la divisa de una liquidación que ya aprobé, mi cuenta del banco no se entera	sin versión	2.5	Grupos · Bug de Grupos teórico (ninguna versión edita liquidaciones hoy)
+Un enlace de invitación sin el parámetro «s» abre la web en vez de la app	sin versión	2.5	Grupos · Bug de Grupos de prioridad muy baja o teórico
+Idea: rachas de registros (umbral, recordatorios, y la mascota si se decide)	sin versión	2.5	Personalidad y marca · Rachas (y mascota si se aprueba): paridad con Pablo y la diferencia de personalidad
+Al activar Yala completo en privado, tus otros dispositivos no se enteran de que terminaste el alta	sin versión	2.5	Robustez de la nube y las sesiones · Nube, caso estrecho sin pérdida de datos: endurecimiento antes de la web
+Al activar la nube, si la sesión caduca al verificar, la app reintenta como si faltara conexión y acaba diciendo que falló	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al cerrar la sesión privada, el aviso de cambios sin subir puede volver a salir con otra cifra tras tocar «Cerrar sesión igualmente»	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al cerrar la sesión privada, el aviso de «no pudimos confirmar» puede salir después de soltar la sesión en vez de antes	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al cerrar sesión en Ajustes, la hoja promete que tus grupos siguen en tu cuenta aunque esa cuenta ya no exista o sea de otra persona	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al cerrar sesión esperando a otro dispositivo, el aviso pide terminar desde aquí un paso de datos que solo se puede dejar de esperar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al confirmar «Empezar desde cero» la app promete una cuenta nueva sin tus datos, y lo que abre es otra comprobación de iCloud	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al crear un enlace de invitación, Yala te pide revisar la conexión aunque el fallo sea del servidor o de la sesión	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al migrar a la nube, si tu sesión se borra en el paso del 22 %, Yala no te lo dice hasta pasados 15 minutos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al pasar a la nube, la activación sigue adelante aunque no pudo leer lo que iCloud sabe de tus datos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al volver a iCloud, un «Cancelar» tocado en el momento justo borra el aviso que acababa de salir y no confirma nada	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Auditar las marcas `cloudSync.*` que sobreviven al borrado del cierre de sesión	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Borrar la cuenta en una sesión solo de grupos no espera a que lo último llegue a iCloud	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Cerrar la app justo después de borrar mis datos de iCloud me devuelve a «Restaurar», sobre un iCloud ya vacío	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Cerrar sesión en la nube no comprueba si hay una vuelta a iCloud a medias	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Cerrar sesión en la nube puede borrar un cambio guardado en el instante entre la subida y el cierre	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Cerrar una sesión privada sin cuenta de grupos deja en el teléfono los grupos antiguos de la época CloudKit	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Comprobar en Supabase si algún grupo quedó a la vez en iCloud y en el servidor	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Con el reloj del teléfono atrasado, salir de un grupo puede decir «Tu sesión caducó» con red y sesión buenas	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Con el servidor sin poder guardar, cerrar sesión dice «Un momento más… espera unos segundos» una y otra vez	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Con la hora del teléfono adelantada, un cambio que falla y se reintenta puede devolver un gasto a su importe viejo en todos los teléfonos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Con otra cuenta abierta en el teléfono, cerrar sesión dice «Tu sesión caducó» y manda a un «Iniciar sesión» que no aparece	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Durante el paso a la nube, un dispositivo privado deja de obedecer el vaciado remoto: no resetea sus preferencias y calla el aviso	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El alta de un móvil prestado se cierra sola con «Listo, tus datos están aquí» cuando el dueño termina su alta en otro dispositivo	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El ancla de subida a iCloud acepta eventos de cualquier contenedor y supone que un export con éxito lo subió todo	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El aviso de «No pudimos soltar la cuenta» dice que tus grupos siguen en el iPhone cuando ya se borraron	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El aviso de «datos viejos en tu iCloud» puede ofrecer borrarlos mientras tus datos se están subiendo a la nube	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El aviso pendiente de «vuelta a iCloud terminada» se manda con la sesión de la cuenta que esté abierta, aunque sea otra	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El aviso «Cerraste tu sesión de grupos» ya no lo enciende nadie y queda como código muerto	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+El aviso «No pudimos preparar este teléfono» puede salir días después sin que se haya intentado nada	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El aviso «no pudimos comprobar tus datos» se decide mirando Supabase, pero la configuración se pide al gateway	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+El barrido de tasas 1:1 viejas puede sellarse con la restauración de iCloud a medio bajar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El comentario de StorageRowGateLogic dice que producción sirve la nube al 0 % cuando sirve el 100 %	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+El marcador de la activación de la nube se escribe sin la cuenta si la sesión falta en ese instante	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+El sello del claim se apunta a la cuenta que hay al volver, no a la que mandó el claim	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+El servidor responde «atestación inválida» cuando lo que falla es su propia base de datos, y el teléfono puede acabar sin sincronizar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+En la bienvenida, «Empezar desde cero» sin poder comprobar iCloud responde «Puedes seguir»	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+En la sesión privada, el aviso de sesión de grupos caducada pide volver a entrar sin decir dónde	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+En los teléfonos de QA que tuvieron una sesión de visita, la sesión de nube de la otra persona sobrevive a su retirada	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+En modo nube, si la sincronización personal se para, tus grupos también dejan de sincronizar y volver a la app no lo arregla	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+En tres de los cuatro cierres de sesión, el rastro dice cuántos cambios quedaban pero no qué aviso vio la persona	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+En un iPhone restaurado, «Activar la nube» puede pasar tus finanzas a otra cuenta antes de saber cuál es la de tus grupos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Esperando a otro teléfono, «Dejar de esperar» puede quedarse gris hasta cinco minutos sin que la tarjeta diga por qué	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Falta la red que impida que un nuevo sitio cambie el perfil financiero sin sincronizarlo	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+La bienvenida dice «Revisa tu conexión» cuando otro dispositivo tomó el relevo de la activación	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+La limpieza de borradores de grupo corre una vez por lote de importación de iCloud en vez de una al final	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+La nota que justifica tener el motor de sync encendido dice que todo dispositivo de producción es iCloud, y ya no es cierto	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+La pantalla de error de «Restaurar desde iCloud» existe y está traducida, pero nada la muestra nunca	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Los borradores que crea la espera del cierre de sesión no aparecen en la Bandeja hasta el siguiente refresco	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Mientras esperas la vuelta a iCloud, «Dónde viven tus datos» puede engancharse cada 30 s con muchos movimientos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Mientras «Activar la nube» comprueba la cuenta, «Asociar» y «Desasociar» de Grupos siguen activos y pueden tapar el consentimiento	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Reparar una identidad colapsada igual en dos teléfonos (líneas de tarjeta)	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Repetir el alta en la nube sobre tu propia cuenta vacía la marca como nacida en la nube sin comprobar si el teléfono tuvo iCloud	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Restaurar decide su desenlace con una señal de descarga que puede venir de antes de esta búsqueda	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Restaurar desde iCloud puede contar grupos borrados y no contar los archivados	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Restaurar dice «Eliminaste tus datos en este dispositivo» aunque el borrado se hizo en otro	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si Restaurar solo encuentra presupuestos, el onboarding no te pregunta tu moneda y la da por sabida	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si Yala se cierra a mitad de «Activar la nube», la cuenta con la que entraste se queda como tu cuenta de grupos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si atrasas la fecha del iPhone durante la vuelta a iCloud y luego la corriges, la vuelta puede cancelarse sola	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si cambias la categoría de un movimiento que esperaba la suya de la nube, la app puede devolverle la vieja	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si cancelas el camino privado y eliges Restaurar, días después «Empezar de cero» del aviso de iCloud deja grupos que no eran tuyos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si cancelas «Migrar a la nube», cierras sesión y vuelves, Yala dice que esa cuenta ya tiene datos y no puedes terminar la migración	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si confirmas «Cancelar la activación» justo cuando vence el plazo, ves la tarjeta de fallo en vez de volver a empezar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si el arranque no puede leer el estado de la migración, el aviso de cambio de Apple ID no sale hasta el siguiente arranque en frío	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si el segundo dispositivo entró a la nube tras borrar algo, un tercero con el mismo iCloud puede quedarse siempre en «espera a iCloud»	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si el servidor rechaza un token de App Attest válido, tus cambios no suben y ningún aviso te lo dice	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si el teléfono no puede leer su propia base al mover los datos a la nube, la pantalla dice que falta conexión	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si iCloud aún está bajando datos al desasociar, el aviso dice que quedan cambios de tus grupos sin subir	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si instalas una versión anterior de Yala, la tarjeta de la nube te pide reabrir la app cuando lo que hace falta es actualizarla	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la app se cierra justo al terminar de entrar en tu cuenta de la nube, puede quedarse sin sincronizar diciendo que todo va bien	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la app se cierra mientras sale de una activación de la nube fallida, el arranque siguiente registra esa sesión como tu cuenta de Grupos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la bienvenida se queda esperando a iCloud y luego activas la nube desde Almacenamiento, la sesión no se cierra al pararse otra vez	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la cuenta no te deja entrar, la bienvenida puede decir «Escríbenos» y a la vez ofrecer un «Reintentar» que no arregla nada	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la hoja del aviso tardío de iCloud se cierra justo tras borrar, el borrado se repite al abrir la app otra vez	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la sesión se renueva justo después de soltar la cuenta de grupos, la sesión vuelve y los grupos pueden volver a bajar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la subida a la nube choca con un error que esperar no arregla, al cerrar sesión Yala te dice que lo intentes en un rato	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si la vuelta a iCloud se rinde mientras estás en otra pantalla, al abrir «Dónde viven tus datos» no sale ningún aviso	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si se corta la red al crear tu cuenta en la nube y eliges iCloud, «Migrar a la nube» con esa cuenta dice que ya tiene datos y no es así	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si se pierde la marca de sesión, la app enseña todas las pestañas vacías y calla el aviso de datos borrados	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Si tocas «Volver a iCloud» mientras la app retoma algo por su cuenta, el toque no hace nada y no lo dice	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si «Activar la nube» se agota en el paso del 22 %, la vuelta a iCloud que quedó pendiente en el servidor ya no se completa	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si «Cerrar sesión» no puede borrar los datos al reabrir Yala en una sesión privada, vuelves a entrar sin ningún aviso	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si «Cerrar sesión» se para porque la sesión sigue abierta, el Pro de la cuenta puede verse apagado hasta reintentar o reabrir Yala	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si «Empezar de cero» del aviso de iCloud falla a medias, puede saltar después el aviso de «tus datos se borraron desde otro dispositivo»	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si «Empiezo de cero» falla a medias, el aviso dice «Tus datos siguen aquí» cuando parte ya se borró	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si «Terminar de borrar» falla pronto, la pantalla vuelve igual y no dice que lo intentó	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Si «Vaciar datos» falla a medias, desaparece el borrador que preguntaba a qué cuenta llegó un cobro de grupo	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Sin App Attest y con la sesión caducada, el aviso de cerrar sesión manda a un «Iniciar sesión» que no aparece	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tocar «Volver a iCloud» con la tarjeta desfasada cancela la vuelta anterior en vez de empezar una nueva	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tras activar Yala completo en la nube, apagar los avisos de pagos programados no sobrevive a reinstalar la app	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tras cambiar de cuenta de iCloud, la app sigue creyendo que hay datos bajando de la cuenta anterior	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tras cancelar sin conexión la vuelta a iCloud, mis cambios en la nube no suben hasta que salgo y vuelvo a la app	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tras un borrado a medias, la pantalla de «faltan cambios de grupos» dice «No borramos nada» aunque iCloud ya se borró	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tras un «Volver a iCloud» que el servidor no concede, un teléfono con la migración a medias deja de sincronizar hasta reabrir Yala	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tras «Empezar desde cero», el teléfono puede quedar en modo nube sin sesión y pedir a la persona nueva entrar en una cuenta ajena	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Tras «Vaciar datos» en otro dispositivo, algunas cuentas o categorías viejas sin uso pueden sobrevivir y volver	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Un aviso pasajero de iCloud justo antes de cerrar Yala hace que, al volver horas después, la vuelta a iCloud se cancele en el acto	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Un cambio de preferencia hecho cuando el teléfono no puede leer su cola de pendientes no llega a tus otros dispositivos	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Un enlace de tarjeta cambiado en v1 sube con la hora de la subida, no con la suya	sin versión	2.5	Robustez de la nube y las sesiones · Solo ocurre si la app sale antes que el Worker; prioridad muy baja
+Un error pasajero al subir a iCloud queda apuntado hasta cerrar la app aunque después todo suba bien	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Un gasto que iCloud baja mientras entras en tu cuenta de la nube se queda en este iPhone y no llega a la nube	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Un inicio de sesión que Yala rechaza deja igual mi suscripción Pro vinculada a esa otra cuenta	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Un modo de almacenamiento que la versión instalada no reconoce se lee como iCloud y podría montar el espejo sobre datos en la nube	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Un teléfono que espera a otro puede esperar para siempre si la reserva del servidor no tiene latido	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Una migración a la nube que empieza mientras se cierra la sesión se queda sin sesión y pide volver a entrar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Una preferencia que acabas de cambiar vuelve un momento al valor de la nube antes de que tu cambio suba	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Una preferencia que el servidor rechaza siempre se vuelve a mandar en cada sincronización, sin fin y sin avisar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Una referencia mal formada desde la nube deja viva la nota vieja de «esto va con tal categoría»	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+Una sincronización con iCloud que falla por un error interno cuenta como completada en el estado de sync	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Volver desde la revisión de iCloud tras «Empezar desde cero» lleva a «Es mi primera vez» en vez de a Restaurar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Volviendo a iCloud, si la sesión caduca mientras se limpian los restos de la nube, la barra se para sin decir nada	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Activar Yala completo → nube» con una cuenta que ya es completa te hace el onboarding y luego te pide cerrar sesión	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Activar la nube» desde la bienvenida empieza aunque el registro de la migración no se pueda leer, y se queda al 0 % sin «Cancelar»	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Crear mi primer grupo» te pide cerrar sesión desde Ajustes en una bienvenida donde no hay Ajustes	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Crear otra cuenta» que acaba en «reinicia Yala» no dice que entraste en tu cuenta	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Descargando tus datos…» sigue en pantalla aunque ya haya movimientos visibles	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Descargando tus datos…» sigue girando cuando la nube ya dejó de intentar descargar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Empezar desde cero» al activar Yala completo deja en el teléfono los datos de iCloud si otro dispositivo ya vació iCloud	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Empezar desde cero» en Restaurar es texto suelto: sin rol destructivo y con un área táctil menor de 44 pt	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Encontramos tus datos en iCloud» cuenta también tus grupos, que no están en iCloud sino en tu cuenta de Yala	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Sincronizar ahora» de iCloud responde OK sin tocar la red si ya había un sync en curso	sin versión	2.5	Robustez de la nube y las sesiones · Nube, prioridad muy baja o población teórica: endurecimiento final antes de la web
+«Terminar de soltar la cuenta» dice «Estás cerrando sesión» cuando en realidad acabas de volver a entrar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Tu cuenta está lista» sale sin comprobar que la sincronización arrancó	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Vaciar datos», «Empezar de cero» y el vaciado desde otro dispositivo no esperan a que termine el paso de tus datos a la nube	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+«Volver a iCloud» se ofrece en un iPhone sin iCloud activo, y la vuelta no puede terminar	sin versión	2.5	Robustez de la nube y las sesiones · Nube, aviso o texto confuso sin pérdida de datos: endurecimiento antes de la web (3.0)
+Al dictar en el chat no se respeta el idioma de voz elegido en Ajustes, y la hoja de voz no filtra las frases inventadas del silencio	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Analizar que Yala AI responda por voz (GPT Voice)	sin versión	2.5	Yala IA · Respuestas por voz: va con el bloque de IA de 2.5
+Con el modo «solo gastos» activo, el chat de Yala IA puede proponer un borrador de ingreso	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+El chat de Yala IA reenvía todos los turnos del día en cada pregunta y paga tokens que no usa	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+El chat registra como máximo cinco movimientos por mensaje y no alcanza para pegar un mes entero	sin versión	2.5	Yala IA · Límite del chat al registrar: va con el bloque de IA
+El prompt del resumen de Tendencias pide el idioma solo con el código y cita «gasto» entre comillas	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Explorar si Yala IA puede ayudar en Flujo de caja, y cómo	2.2	2.5	Yala IA · Exploración de IA; va con el bloque de IA de 2.5
+Las respuestas de IA piden «un JSON» y no un esquema fijo: un campo que falta se rellena en silencio con un valor por defecto	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Las sugerencias del chat descartan las que nombran un pago recurrente del usuario	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Los comentarios de IA pueden malinterpretar tus datos: tres etiquetas que la app le manda inducen a error	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Registrar un gasto de grupo desde el chat o por voz («cena 120 dividida entre todos»)	sin versión	2.5	Yala IA · Gasto de grupo por chat o voz: va con el bloque de IA
+Si el contexto del chat no se puede preparar, Yala IA contesta que no tiene datos en vez de avisar del error	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Si rechazas el permiso de IA al compartir una foto, la próxima vez que registres por imagen sale esa foto vieja	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Si sales del análisis de IA y vuelves en menos de 5 segundos, sale un error aunque la respuesta ya esté guardada	sin versión	2.5	Yala IA · Calidad de Yala IA: va con el bloque de IA de 2.5
+Yala AI haga más que crear registros	sin versión	2.5	Yala IA · Que Yala IA haga más: va con el bloque de IA (se solapa con la revisión de la IA de 2.2)
+Yala IA entiende Grupos como un contenedor aparte de lo personal	2.2	2.5	Yala IA · Yala IA y Grupos: va con el bloque de IA de 2.5
+Yala en la web: ver el Panel y registrar gastos desde el navegador	2.3	3.0	Plataformas nuevas · La web exige que los datos personales vivan en la nube: es versión mayor
+Cuentas y presupuestos compartidos de pareja o familia: propuesta	sin versión	3.1	Finanzas compartidas · Plan dúo: cambia quién es dueño de una cuenta; pide nube y se apoya en la web
+App de Yala para Apple Watch: apuntar y consultar un gasto desde el reloj	sin versión	3.2	Plataformas nuevas · Apple Watch: prioridad baja (Jürgen, 9-sep); después de web y finanzas compartidas
+Yala para Android	sin versión	4.0	Plataformas nuevas · Android nativo: plataforma nueva, después de la web (orden decidido iOS → web → Android)
