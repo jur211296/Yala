@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (920)
+## Index (921)
 
 | id | status | path |
 |---|---|---|
@@ -628,6 +628,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | owner-preferences-return-via-ikv-after-private-sign-out | backlog | tickets/backlog/owner-preferences-return-via-ikv-after-private-sign-out.md |
 | panel-accounts-redesign | done | tickets/done/panel-accounts-redesign.md |
 | panel-balance-chart-contradicts-its-own-figure | done | tickets/done/panel-balance-chart-contradicts-its-own-figure.md |
+| panel-balance-curve-parity-test-depends-on-the-clock | done | tickets/done/panel-balance-curve-parity-test-depends-on-the-clock.md |
 | panel-colapsa-la-seleccion-de-cuentas-a-la-primera | done | tickets/done/panel-colapsa-la-seleccion-de-cuentas-a-la-primera.md |
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
 | panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | backlog | tickets/backlog/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |

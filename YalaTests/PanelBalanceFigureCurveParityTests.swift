@@ -36,9 +36,32 @@ struct PanelBalanceFigureCurveParityTests {
 
     /// Siembra la semilla en el store de test y deja las cuentas que suman y sus filas, como las filtra el Panel
     /// sin filtros puestos (`computeEligibleAccounts` + `balanceTransactions`).
-    private func corpus(_ profile: DevSeedProfile) async throws -> Corpus {
+    ///
+    /// Con `movingTheRateOf`, sube un 10 % la tasa de la divisa preferida en la fila de ese día. La semilla genera las
+    /// tasas con un paseo aleatorio anclado a hoy y redondeado a dos decimales, así que la tasa de un día pasado
+    /// coincide a veces con la de hoy, y cuál coincide depende del día del mes en que corre el test (ticket
+    /// `panel-balance-curve-parity-test-depends-on-the-clock`). Con la fila movida, ese día no vale lo mismo a su tasa
+    /// que a la de hoy, corra cuando corra.
+    private func corpus(_ profile: DevSeedProfile, movingTheRateOf day: Date? = nil) async throws -> Corpus {
         let context = try makeTestContext()
         await DevSeedService().seed(in: context, profile: profile)
+        let preferred = profile == .fichaMXVida ? "MXN" : "PEN"
+        if let day {
+            // Las filas van por fecha local de calendario (`DevSeedExchangeRates`), y el converter lee la del día local
+            // de cada punto (`BalanceValuation.rateDay`): es la misma clave.
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            let key = formatter.string(from: day)
+            let row = try #require(
+                try context.fetch(FetchDescriptor<ExchangeRate>(predicate: #Predicate { $0.dateKey == key })).first,
+                "la semilla \(profile.rawValue) no tiene tasa para \(key)"
+            )
+            var rates = row.decodedRates()
+            let rate = try #require(rates[preferred], "la fila \(key) no trae \(preferred)")
+            rates[preferred] = rate * 1.1
+            row.rates = try DevSeedExchangeRates.encodeScale8StringFaceBlob(rates)
+            try context.save()
+        }
         let converter = CurrencyConverter()
         converter.setContext(context)
         let accounts = try context.fetch(FetchDescriptor<Account>()).filter { !$0.excludeFromStatistics }
@@ -49,22 +72,19 @@ struct PanelBalanceFigureCurveParityTests {
         }
         // La semilla tiene que ser multimoneda, o este test no distinguiría nada.
         #expect(Set(transactions.map(\.currencyCode)).count >= 2, "la semilla \(profile.rawValue) no mezcla divisas")
-        return Corpus(
-            accounts: accounts, transactions: transactions,
-            preferred: profile == .fichaMXVida ? "MXN" : "PEN", converter: converter
-        )
+        return Corpus(accounts: accounts, transactions: transactions, preferred: preferred, converter: converter)
     }
 
-    private func interval(_ period: DetailPeriod, _ c: Corpus) -> DateInterval {
-        let base = period.dateInterval()
+    private func interval(_ period: DetailPeriod, _ c: Corpus, now: Date = .now) -> DateInterval {
+        let base = period.dateInterval(now: now)
         guard period == .allTime, let first = c.transactions.map(\.date).min() else { return base }
         return DateInterval(start: first, end: base.end)
     }
 
-    private func trend(_ period: DetailPeriod, _ c: Corpus) -> (
+    private func trend(_ period: DetailPeriod, _ c: Corpus, now: Date = .now) -> (
         result: TrendDataProcessor.TrendProcessingResult, figure: LiveBalanceCalculator.LiveAnchorInfo?
     ) {
-        let interval = interval(period, c)
+        let interval = interval(period, c, now: now)
         let override = LiveBalanceCalculator.liveBalanceOverride(
             for: .balance, interval: interval, accounts: c.accounts, transactions: c.transactions,
             preferredCurrencyCode: c.preferred, converter: c.converter
@@ -114,30 +134,45 @@ struct PanelBalanceFigureCurveParityTests {
         return (total as NSDecimalNumber).doubleValue
     }
 
-    /// Cada punto de «Este mes» que no es hoy vale el saldo de ese día por la tasa de ese día.
+    /// Cada punto de «Este mes» y de «Últimos 30 días» que no es hoy vale el saldo de ese día por la tasa de ese día.
+    ///
+    /// No depende del reloj: lee la hora una vez; «Últimos 30 días» tiene días pasados también los días 1 a 3 del
+    /// mes, cuando «Este mes» no llega a tres; y el control final se mide en ayer, con su tasa movida a propósito
+    /// (ver `corpus`), en vez de fiarse de que la semilla no repita la tasa de hoy.
     @Test(arguments: [DevSeedProfile.fichaMXVida, .realista])
     func everyPastPoint_isThatDaysBalanceAtThatDaysRate(_ profile: DevSeedProfile) async throws {
-        let c = try await corpus(profile)
-        let (result, _) = trend(.thisMonth, c)
         let calendar = Calendar.current
-        let startOfToday = calendar.startOfDay(for: .now)
-        let past = result.rawPoints.filter { $0.date < startOfToday }
-        try #require(past.count >= 3, "el mes tiene que tener días pasados con datos para que esto mida algo")
-        var wrong: [String] = []
-        for point in past {
-            let endOfDay = calendar.date(byAdding: .day, value: 1, to: point.date)!.addingTimeInterval(-1)
-            let expected = expectedValue(c, closingAt: endOfDay)
-            if !close(point.value, expected) { wrong.append("\(point.date): \(point.value) ≠ \(expected)") }
+        let now = Date.now
+        let startOfToday = calendar.startOfDay(for: now)
+        let yesterday = try #require(calendar.date(byAdding: .day, value: -1, to: startOfToday))
+        let c = try await corpus(profile, movingTheRateOf: yesterday)
+        // El último segundo del día que empieza en `day`: el comienzo del día siguiente, menos uno.
+        let endOfDay = { (day: Date) -> Date? in calendar.date(byAdding: .day, value: 1, to: day)?.addingTimeInterval(-1) }
+        var yesterdaysPoint: Double?
+        for period in [DetailPeriod.thisMonth, .last30Days] {
+            let (result, _) = trend(period, c, now: now)
+            let past = result.rawPoints.filter { $0.date < startOfToday }
+            if period == .last30Days {
+                try #require(past.count >= 3, "\(period) tiene que tener días pasados con datos para que esto mida algo")
+            }
+            var wrong: [String] = []
+            for point in past {
+                let closing = try #require(endOfDay(point.date))
+                let expected = expectedValue(c, closingAt: closing)
+                if !close(point.value, expected) { wrong.append("\(point.date): \(point.value) ≠ \(expected)") }
+                if period == .last30Days, calendar.isDate(point.date, inSameDayAs: yesterday) { yesterdaysPoint = point.value }
+            }
+            #expect(wrong.isEmpty, "\(profile.rawValue) \(period): \(wrong.prefix(5))")
         }
-        #expect(wrong.isEmpty, "\(profile.rawValue): \(wrong.prefix(5))")
-        // Y las tasas de la semilla cambian por día: con «todo al tipo de hoy» estos puntos saldrían otros.
-        let first = try #require(past.first)
-        let todaysRate = LiveBalanceCalculator.liveBalance(
+        // Y la regla se distingue de «todo al tipo de hoy»: ayer, con su tasa movida, saldría otro número.
+        let yesterdayValue = try #require(yesterdaysPoint, "\(profile.rawValue): «Últimos 30 días» no trae el punto de ayer")
+        let endOfYesterday = try #require(endOfDay(yesterday))
+        let atTodaysRate = LiveBalanceCalculator.liveBalance(
             accounts: c.accounts,
-            transactions: c.transactions.filter { $0.date <= calendar.date(byAdding: .day, value: 1, to: first.date)!.addingTimeInterval(-1) },
+            transactions: c.transactions.filter { $0.date <= endOfYesterday },
             preferredCurrencyCode: c.preferred, converter: c.converter
         )
-        #expect(!close(first.value, todaysRate), "\(profile.rawValue): el primer punto no distingue la tasa de su día de la de hoy")
+        #expect(!close(yesterdayValue, atTodaysRate), "\(profile.rawValue): el punto de ayer no distingue la tasa de su día de la de hoy")
     }
 
     /// Un periodo cerrado no lleva cifra viva: la cifra es el último punto, y vale el saldo al CIERRE del periodo con
