@@ -108,6 +108,7 @@
 - [Capturas: en `_capturas/<slug>`](reference_capturas_sobreviven_en_worktrees_capturas.md) — el worktree se retira; capturas/ dentro muere y ensucia el status.
 - [Regresión aparente: se mide contra la base](feedback_regresion_aparente_se_mide_contra_la_base.md) — worktree de origin y mismos toques antes de arreglar o culparte.
 - [Capturas con un conductor XCUITest](feedback_capturas_con_conductor_xcuitest.md) — build del árbol sin tocar, capturas en segundo plano y editar mientras.
+- [La captura es del binario que lanzas](feedback_la_captura_es_del_binario_que_lanzas.md) — `-configuration Debug` deja otro bundle; lanza el .dev recién compilado.
 - [El «antes» sale del build del rojo](feedback_el_antes_sale_del_build_del_rojo.md) — un build con el arreglo revertido da el rojo del XCUITest y la captura.
 - [Tras un mutante, la app instalada es el mutante](feedback_tras_un_mutante_la_app_instalada_es_el_mutante.md) — recompila antes de capturar; axe type, no type_text.
 - [La gráfica se queda el gesto](feedback_la_grafica_se_queda_el_gesto.md) — swipe por x=8, despacio; el banner, en ráfaga.

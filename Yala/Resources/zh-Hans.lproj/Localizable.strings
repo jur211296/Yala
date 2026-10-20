@@ -780,9 +780,9 @@
 "scheduled.calendar.month.empty" = "本月没有付款";
 
 "widget.sizeLabel" = "大小";
-"widget.chatFab.toggle" = "问 Yala";
+"widget.chatFab.toggle" = "Yala AI";
 "widget.chatFab.description" = "显示 AI 财务助手按钮。";
-"widget.chatFab.hint" = "控制聊天按钮是否在主屏幕显示。";
+"widget.chatFab.hint" = "在主要页面显示 Yala AI 按钮。";
 "widget.aiCapabilities.header" = "AI 能力";
 
 "common.all" = "全部";
@@ -1080,7 +1080,7 @@
 "settings.organization" = "组织";
 "settings.preferences" = "偏好";
 "settings.aiFeatures" = "AI 功能";
-"settings.customizeAISummary" = "自定义 AI 摘要";
+"settings.customizeAISummary" = "概览中显示的内容";
 "settings.customizeAISummaryHint" = "选择智能概览中显示哪些指标和图表。";
 "settings.data" = "数据";
 "settings.security" = "安全与账户";
@@ -2169,7 +2169,7 @@
 "tipkit.pro.premiumIcons.message" = "从高级图标中选一个,个性化你的应用。";
 "tipkit.pro.proThemes.title" = "高级主题";
 "tipkit.pro.proThemes.message" = "发现专属配色主题,让 Yala 充满你的个人风格。";
-"tipkit.pro.chatFab.title" = "你的财务助理";
+"tipkit.pro.chatFab.title" = "Yala AI";
 "tipkit.pro.aiSummary.title" = "你的 AI 摘要";
 "tipkit.pro.aiSummary.message" = "一键获取你的财务 AI 总结。实用观察，即刻呈现。";
 "tipkit.aiCharts.pro.title" = "AI 观察";
@@ -2817,22 +2817,20 @@
 
 // MARK: - AI Settings (Personalization Sheet from Chat)
 
-"aiSettings.title" = "自定义 AI";
+"aiSettings.title" = "Yala AI 的语气";
 "aiSettings.toneSection" = "语气";
 "aiSettings.styleSection" = "风格";
-"aiSettings.appliesHint" = "这些设置应用于洞察、助理和面板 Hero。";
-
+"aiSettings.appliesHint" = "适用于 Yala AI 和统计中的 AI 总结。";
 // MARK: - AI Privacy (sub-view from Profile > Security)
 
 "aiPrivacy.title" = "AI 隐私与数据";
-"aiPrivacy.processingRow" = "处理(语音和图片)";
-"aiPrivacy.chatRow" = "Pro 助理";
+"aiPrivacy.processingRow" = "用语音或照片记账";
+"aiPrivacy.chatRow" = "Yala AI";
 "aiPrivacy.insightsRow" = "AI 总结";
 "aiPrivacy.cloudExploreRow" = "查询你的云端账户";
-"aiPrivacy.revokeConfirmTitle" = "禁用此功能?";
 "aiPrivacy.revokeConfirmMessage" = "我们将停止处理此功能的 AI 数据。你随时可以重新启用。";
 "aiPrivacy.revokeConfirmAction" = "禁用";
-"aiPrivacy.footerHint" = "只有在你使用洞察、助理或语音/图片输入时，你的数据才会被发送，并经由我们的服务器传给 AI 服务。我们不会出售你的数据，也不会将其用于广告。";
+"aiPrivacy.footerHint" = "只有在你使用这些功能时，你的数据才会被发送，并经由我们的服务器传给 AI 服务。我们不会出售你的数据，也不会将其用于广告。";
 "aiPrivacy.policyLink" = "隐私政策";
 
 // MARK: - AI Consent
@@ -3321,12 +3319,11 @@
 "guide.favoritesManage.message" = "把你的常用支出存在这里。记录时点击收藏即可自动填入全部内容。";
 
 // MARK: - Chat Assistant
-"chat.title" = "问 Yala";
 "chat.inputPlaceholder" = "输入你的问题...";
 "chat.send" = "发送";
 "chat.emptySubtitle" = "用问题探索你的财务";
 "chat.errorTimeout" = "回复时间过长。请重试。";
-"chat.errorOffline" = "使用助手需要网络连接。";
+"chat.errorOffline" = "使用 Yala AI 需要网络连接。";
 "chat.errorGeneric" = "出了点问题。请重试。";
 "chat.errorNoData" = "未找到该查询的数据。能更具体一点吗?";
 "chat.dailyLimitReached" = "你今天的提问次数已用完。明天再来!";
@@ -3345,7 +3342,7 @@
 "chat.errorTranscription" = "我无法转写音频。请重试。";
 "chat.errorMicPermission" = "我需要使用麦克风的权限。";
 "chat.topics.title" = "对话话题";
-"chat.resetContext" = "重置对话上下文";
+"chat.resetContext" = "新对话";
 "chat.listening" = "正在聆听…";
 "chat.transcribing" = "正在转写…";
 "chat.preparingAI" = "正在准备 AI…";
@@ -3385,7 +3382,7 @@
 "chat.draft.overflowFormat" = "我检测到 %d 条条目。先保存前 %d 条;其余请在另一条消息中发送。";
 
 // MARK: - Chat Assistant Consent
-"aiConsent.chatTitle" = "财务助理";
+"aiConsent.chatTitle" = "Yala AI";
 "aiConsent.chatMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务：账户余额和名称、按类别的总计、常用商家、预算、定期付款以及你本月最大的几笔支出。这些数据仅用于回答你，不会用于训练 AI。";
 "aiConsent.cloudExploreTitle" = "Yala AI 与你的云端账户";
 "aiConsent.cloudExploreMessage" = "Yala 会根据你自己的数字回答你的财务问题。为此，它会把你最近 13 个月的摘要发送给 AI 服务；当问题需要时，还会发送回答所需的云端账户数据：任意日期的记录及其备注、账户、预算和定期付款。这些数据仅用于回答你，不会用于训练 AI。";
@@ -3393,10 +3390,9 @@
 "aiConsent.inlineHintMultiple" = "多项功能使用 AI 服务处理你的数据，不会被永久存储。";
 
 // MARK: - Chat Assistant Feature Gate & Settings
-"featureGate.chatAssistant" = "聊天助理";
+"featureGate.chatAssistant" = "Yala AI";
 "settings.chatAssistant" = "问 Yala";
-"subscription.feature.aiAssistant" = "AI 财务助理";
-
+"subscription.feature.aiAssistant" = "Yala AI";
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "付款人";
 "groups.expense.selectAll" = "全选";
@@ -4107,7 +4103,7 @@
 
 "welcome.hero.cards.capture.title" = "拍照即录";
 "welcome.hero.cards.capture.body" = "拍下来,Yala 自动识别。";
-"welcome.hero.cards.assistant.title" = "语音 + AI 助手";
+"welcome.hero.cards.assistant.title" = "语音 + Yala AI";
 "welcome.hero.cards.assistant.body" = "跟它说,问它。Yala 都懂。";
 "welcome.hero.cards.groups.title" = "共享账目";
 "welcome.hero.cards.groups.body" = "跟谁都能分账。";
@@ -6928,7 +6924,7 @@
 "tipkit.stepProgress" = "第 %1$d/%2$d 步";
 "tipkit.pro.quickEntry.title" = "现在可以语音记账和识别收据了";
 "tipkit.pro.quickEntry.message" = "点按“语音”口述一笔支出，或点按“照片”识别收据。Yala 帮你记下来。";
-"tipkit.pro.quickAI.message" = "点按“AI”，向 Yala 询问你的支出、预算等。";
+"tipkit.pro.quickAI.message" = "点按“Yala AI”，询问你的支出、预算等。";
 "milestone.nextGoal" = "下一个目标：%d 条记录";
 "notificationPrimer.scheduled.title" = "要在每次付款前提醒你吗？";
 "notificationPrimer.scheduled.benefit" = "每笔计划付款到期前提醒你，不会错过。";
@@ -7712,3 +7708,29 @@
 "uxpro.welcome.theme" = "现在可以使用这个主题了。";
 "uxpro.welcome.icon" = "现在可以使用这个图标了。";
 "uxpro.welcome.cashFlow" = "现在可以使用进阶现金流了。";
+
+/* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
+"chat.l14d.conversationDeleted" = "对话已删除";
+"chat.l14d.limitBox" = "明天再来吧：你的提问次数会在午夜重置";
+"chat.l14d.draft.saveAll" = "全部保存（%d 条）";
+"chat.l14d.topics.areaSpending" = "支出";
+"chat.l14d.topics.areaBudgets" = "预算";
+"chat.l14d.topics.areaPayments" = "计划付款";
+"chat.l14d.topics.areaLog" = "记账";
+"chat.l14d.topics.spendingTop" = "这个月我在哪方面花得最多？";
+"chat.l14d.topics.spendingCategory" = "这个月我在%@上花了多少？";
+"chat.l14d.topics.spendingVsLastMonth" = "我比上个月花得多还是少？";
+"chat.l14d.topics.budgetLeft" = "预算“%@”还剩多少？";
+"chat.l14d.topics.budgetOnTrack" = "预算“%@”进展正常吗？";
+"chat.l14d.topics.budgetWorst" = "这个月哪个预算最吃紧？";
+"chat.l14d.topics.paymentsThisWeek" = "这周我有哪些付款？";
+"chat.l14d.topics.paymentWhen" = "%@ 什么时候要付？";
+"chat.l14d.topics.logExample" = "在%@上花了 20";
+"chat.l14d.topics.logExampleDefault" = "用卡打车花了 25";
+"chat.l14d.topics.logRowHint" = "写入输入框，发送前你可以修改。";
+"aiPrivacy.l14d.processingLine" = "把你说的话或拍的照片变成一条记录。";
+"aiPrivacy.l14d.chatLine" = "回答你关于钱的问题，并在聊天中记录支出。";
+"aiPrivacy.l14d.insightsLine" = "在统计中为你的数字写下观察。";
+"aiPrivacy.l14d.cloudExploreLine" = "问题需要时，Yala AI 也会查看你的云端账户。";
+"aiPrivacy.l14d.revokeTitle" = "要关闭%@吗？";
+"settings.l14d.summaryWhere" = "显示在 %@。";

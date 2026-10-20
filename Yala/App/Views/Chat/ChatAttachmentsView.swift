@@ -16,6 +16,7 @@ struct ChatAttachmentsView: View {
 
     @Environment(SessionState.self) private var sessionState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.yalaTheme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
@@ -56,6 +57,27 @@ struct ChatAttachmentsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.Chat.Draft.viewRecordsButton)
+    }
+
+    /// «Guardar los N» al pie de las tarjetas (UX 2.2 · L14-9, opción D): solo con dos o más registros pendientes y
+    /// completos. Con uno, su propio «Guardar» basta; los incompletos siguen pidiendo lo que falta en su tarjeta.
+    @ViewBuilder
+    private var saveAllButton: some View {
+        let ready = viewModel.draftsReadyToSave(messageID: messageID)
+        if ready.count >= 2 {
+            Button {
+                Task { await viewModel.saveAllReadyDrafts(messageID: messageID) }
+            } label: {
+                Text(L10n.UXL14D.saveAll(ready.count))
+                    .font(DS.Typography.label)
+                    .foregroundStyle(Color.contrastingText(for: theme.accent))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(Capsule().fill(theme.accent))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("chat_draft_save_all")
+        }
     }
 
     @ViewBuilder
@@ -120,6 +142,7 @@ struct ChatAttachmentsView: View {
                         }
                     )
                 }
+                saveAllButton
             }
         case .ambiguous(_, let choices):
             HStack(spacing: DS.Spacing.sm) {

@@ -1646,6 +1646,7 @@ struct ProfileView: View {
                     profileRow(
                         icon: "hand.raised.fill", title: L10n.Settings.aiPrivacy,
                         iconColor: .indigo, destination: .aiPrivacy)
+                    .accessibilityIdentifier("profile_ai_privacy")
                 }
                 #if DEBUG
                 if Bundle.main.bundleIdentifier?.hasSuffix(".dev") == true {

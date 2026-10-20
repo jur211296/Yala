@@ -16,6 +16,18 @@ struct SmartInsightsSettingsView: View {
         @Bindable var prefs = appPreferences
         return NavigationStack {
             YalaSettingsList {
+                // UX 2.2 · L16-8: la hoja no decía dónde se ve lo que enciende. El camino se arma con los títulos
+                // reales de la pestaña y del chip, así que no nombra una pantalla que no existe en ese idioma.
+                Section {
+                    Text(L10n.UXL14D.summaryWhere("\(L10n.Tab.statistics) › \(L10n.Insights.title)"))
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.thSecondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: DS.Spacing.sm, bottom: 0, trailing: DS.Spacing.sm))
+                        .accessibilityIdentifier("ai_summary_where")
+                }
+
                 YalaSettingsSection(L10n.Insights.metricsSection) {
                     YalaSettingsToggleRow(L10n.Insights.quickStats, isOn: $prefs.insightsShowQuickStats)
                 }
@@ -32,7 +44,11 @@ struct SmartInsightsSettingsView: View {
 
                 YalaSettingsSection(L10n.Insights.analysisSection) {
                     YalaSettingsToggleRow(L10n.Insights.needDistribution, isOn: $prefs.insightsShowNature)
-                    YalaSettingsToggleRow(L10n.Insights.intelligentInsights, isOn: $prefs.insightsShowTexts)
+                    // De todo lo que enciende esta hoja, solo las Observaciones las escribe la IA: la marca va solo aquí.
+                    YalaSettingsToggleRow(L10n.Insights.intelligentInsights, isOn: $prefs.insightsShowTexts) {
+                        aiMark
+                    }
+                    .accessibilityIdentifier("ai_summary_row_observations")
                 }
 
                 // Restore Defaults: suelto bajo los bloques, sin fondo, como antes.
@@ -57,6 +73,21 @@ struct SmartInsightsSettingsView: View {
                 }
             }
         }
+    }
+
+    /// La marca de IA de la app (destellos + «IA», la de Flujo de caja), en gris: informa, no se toca.
+    private var aiMark: some View {
+        HStack(spacing: DS.Chip.spacing) {
+            Image(systemName: "sparkles")
+                .font(DS.Typography.labelTiny)
+            Text(L10n.CashFlowPlan.aiChipLabel)
+                .font(DS.Typography.labelSmall.weight(.semibold))
+        }
+        .foregroundStyle(.thSecondaryText)
+        .padding(.horizontal, DS.Chip.paddingV)
+        .padding(.vertical, DS.Spacing.xxs)
+        .background(Capsule().fill(.thSecondaryText.opacity(0.12)))
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Restore Defaults

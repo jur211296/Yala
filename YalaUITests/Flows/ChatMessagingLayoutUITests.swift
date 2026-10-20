@@ -46,7 +46,11 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         let chatEntry = app.buttons["fab_chat"]
         XCTAssertTrue(chatEntry.waitForExistence(timeout: 15), "No aparece la entrada de Yala IA en Registros.")
         chatEntry.tap()
-        XCTAssertTrue(app.textFields["chat_input"].waitForExistence(timeout: 10), "No se abrió Yala IA.")
+        // Con el tope del día la caja de escribir no existe: en su sitio va el aviso de cuándo vuelve (L14-8).
+        let opened = (questionsToday ?? 0) >= 75
+            ? app.descendants(matching: .any)["chat_limit_box"]
+            : app.textFields["chat_input"]
+        XCTAssertTrue(opened.waitForExistence(timeout: 10), "No se abrió Yala IA.")
         return app
     }
 
@@ -169,8 +173,9 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         XCTAssertEqual(currency.label, "S/", "Con el formato «Símbolo», la hoja debe decir «S/», como la tarjeta.")
     }
 
-    /// Con una pregunta por delante, el contador no rompe el plural; con el tope alcanzado, dice por qué no se puede
-    /// enviar en vez de «Te quedan 0 preguntas hoy» (lote 14 de la auditoría UX 2.2).
+    /// Con una pregunta por delante, el contador no rompe el plural (lote 14). Con el tope alcanzado, la caja se apaga
+    /// y dice cuándo vuelven las preguntas, sin dejar escribir (UX 2.2 · L14-8); la línea del contador se va para no
+    /// repetir «vuelve mañana».
     func test_questionCounter_readsWellWithOneLeft_andExplainsTheLimit() {
         let oneLeft = openChat(conversation: true, questionsToday: 74)
         let counter = oneLeft.staticTexts["chat_question_counter"]
@@ -179,8 +184,11 @@ final class ChatMessagingLayoutUITests: XCTestCase {
         oneLeft.terminate()
 
         let none = openChat(conversation: true, questionsToday: 75)
-        let limit = none.staticTexts["chat_question_counter"]
-        XCTAssertTrue(limit.waitForExistence(timeout: 10), "Con el tope alcanzado debe verse el aviso.")
-        XCTAssertEqual(limit.label, "Has usado tus preguntas de hoy. ¡Vuelve mañana!")
+        let box = none.descendants(matching: .any)["chat_limit_box"]
+        XCTAssertTrue(box.waitForExistence(timeout: 10), "Con el tope alcanzado la caja debe decir cuándo vuelve.")
+        XCTAssertEqual(box.label, "Vuelve mañana: tus preguntas se renuevan a medianoche")
+        XCTAssertFalse(none.textFields["chat_input"].exists, "Con el tope no se debe poder escribir.")
+        XCTAssertFalse(none.staticTexts["chat_question_counter"].exists, "La línea del contador repetiría el aviso.")
+        XCTAssertFalse(none.buttons["chat_topics"].isEnabled, "Con el tope, Temas tampoco puede enviar nada.")
     }
 }

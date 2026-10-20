@@ -780,9 +780,9 @@
 "scheduled.calendar.month.empty" = "今月の支払いはありません";
 
 "widget.sizeLabel" = "サイズ";
-"widget.chatFab.toggle" = "Yalaに聞く";
+"widget.chatFab.toggle" = "Yala AI";
 "widget.chatFab.description" = "AI金融アシスタントのボタンを表示します。";
-"widget.chatFab.hint" = "メイン画面にチャットボタンを表示するか制御します。";
+"widget.chatFab.hint" = "メイン画面にYala AIのボタンを表示します。";
 "widget.aiCapabilities.header" = "AI機能";
 
 "common.all" = "すべて";
@@ -1080,7 +1080,7 @@
 "settings.organization" = "整理";
 "settings.preferences" = "設定";
 "settings.aiFeatures" = "AI機能";
-"settings.customizeAISummary" = "AIサマリーをカスタマイズ";
+"settings.customizeAISummary" = "概要に表示する項目";
 "settings.customizeAISummaryHint" = "スマート概要に表示する指標やグラフを選んでください。";
 "settings.data" = "データ";
 "settings.security" = "セキュリティとアカウント";
@@ -2169,7 +2169,7 @@
 "tipkit.pro.premiumIcons.message" = "プレミアムアイコンからアプリを自分仕様に。";
 "tipkit.pro.proThemes.title" = "プレミアムテーマ";
 "tipkit.pro.proThemes.message" = "Yalaに自分らしい彩りを加える限定カラーテーマを発見。";
-"tipkit.pro.chatFab.title" = "金融アシスタント";
+"tipkit.pro.chatFab.title" = "Yala AI";
 "tipkit.pro.aiSummary.title" = "AIサマリー";
 "tipkit.pro.aiSummary.message" = "家計のAIサマリーを1タップで。役立つ気づきがすぐに。";
 "tipkit.aiCharts.pro.title" = "AIインサイト";
@@ -2817,22 +2817,20 @@
 
 // MARK: - AI Settings (Personalization Sheet from Chat)
 
-"aiSettings.title" = "AIをカスタマイズ";
+"aiSettings.title" = "Yala AIの話し方";
 "aiSettings.toneSection" = "トーン";
 "aiSettings.styleSection" = "スタイル";
-"aiSettings.appliesHint" = "これらの設定はインサイト、アシスタント、パネルヒーローに適用されます。";
-
+"aiSettings.appliesHint" = "Yala AIと、統計のAIサマリーに適用されます。";
 // MARK: - AI Privacy (sub-view from Profile > Security)
 
 "aiPrivacy.title" = "AIプライバシーとデータ";
-"aiPrivacy.processingRow" = "処理(音声・画像)";
-"aiPrivacy.chatRow" = "Proアシスタント";
+"aiPrivacy.processingRow" = "音声や写真で記録";
+"aiPrivacy.chatRow" = "Yala AI";
 "aiPrivacy.insightsRow" = "AIサマリー";
 "aiPrivacy.cloudExploreRow" = "クラウドのアカウントを参照";
-"aiPrivacy.revokeConfirmTitle" = "この機能を無効にしますか？";
 "aiPrivacy.revokeConfirmMessage" = "この機能のAIデータ処理を停止します。いつでも再有効化できます。";
 "aiPrivacy.revokeConfirmAction" = "無効化";
-"aiPrivacy.footerHint" = "データが送信されるのは、インサイト、アシスタント、音声・画像入力を使うときだけで、当社のサーバーを経由してAIサービスに届きます。データを販売したり、広告に使ったりすることはありません。";
+"aiPrivacy.footerHint" = "データが送信されるのは、これらの機能を使うときだけで、当社のサーバーを経由してAIサービスに届きます。データの販売や広告への利用は行いません。";
 "aiPrivacy.policyLink" = "プライバシーポリシー";
 
 // MARK: - AI Consent
@@ -3321,12 +3319,11 @@
 "guide.favoritesManage.message" = "頻繁な支出をここに保存。記録時はお気に入りをタップするだけですべて自動で埋まります。";
 
 // MARK: - Chat Assistant
-"chat.title" = "Yalaに聞く";
 "chat.inputPlaceholder" = "質問を入力...";
 "chat.send" = "送信";
 "chat.emptySubtitle" = "質問で資産状況を探検";
 "chat.errorTimeout" = "応答に時間がかかりすぎました。もう一度お試しください。";
-"chat.errorOffline" = "アシスタントを使うにはインターネット接続が必要です。";
+"chat.errorOffline" = "Yala AIを使うにはインターネット接続が必要です。";
 "chat.errorGeneric" = "問題が発生しました。もう一度お試しください。";
 "chat.errorNoData" = "その質問に該当するデータが見つかりませんでした。もう少し具体的にお願いします。";
 "chat.dailyLimitReached" = "今日の質問回数を使い切りました。明日また来てください！";
@@ -3345,7 +3342,7 @@
 "chat.errorTranscription" = "音声を文字起こしできませんでした。もう一度お試しください。";
 "chat.errorMicPermission" = "マイクの使用許可が必要です。";
 "chat.topics.title" = "会話のトピック";
-"chat.resetContext" = "会話のコンテキストをリセット";
+"chat.resetContext" = "新しい会話";
 "chat.listening" = "聞いています…";
 "chat.transcribing" = "文字起こし中…";
 "chat.preparingAI" = "AIを準備中…";
@@ -3385,7 +3382,7 @@
 "chat.draft.overflowFormat" = "%d件の記録を検出しました。最初の%d件を保存します、残りは別のメッセージで送信してください。";
 
 // MARK: - Chat Assistant Consent
-"aiConsent.chatTitle" = "金融アシスタント";
+"aiConsent.chatTitle" = "Yala AI";
 "aiConsent.chatMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要（口座の残高と名前、カテゴリ別の合計、よく利用する店舗、予算、定期的な支払い、今月の大きな支出）をAIサービスに送ります。回答のためだけに使われ、AIの学習には使われません。";
 "aiConsent.cloudExploreTitle" = "Yala AIとクラウドのアカウント";
 "aiConsent.cloudExploreMessage" = "Yalaがあなた自身の数字をもとに、お金に関する質問にお答えします。そのために、直近13か月の概要をAIサービスに送ります。質問に必要な場合は、回答に必要なクラウドアカウントのデータ（任意の日付の記録とそのメモ、口座、予算、定期的な支払い）も送ります。回答のためだけに使われ、AIの学習には使われません。";
@@ -3393,10 +3390,9 @@
 "aiConsent.inlineHintMultiple" = "複数の機能がAIサービスでデータを処理します。永続的に保存されることはありません。";
 
 // MARK: - Chat Assistant Feature Gate & Settings
-"featureGate.chatAssistant" = "チャットアシスタント";
+"featureGate.chatAssistant" = "Yala AI";
 "settings.chatAssistant" = "Yalaに聞く";
-"subscription.feature.aiAssistant" = "AI金融アシスタント";
-
+"subscription.feature.aiAssistant" = "Yala AI";
 // GC-05: Expense Form
 "groups.expense.paidByTitle" = "支払者";
 "groups.expense.selectAll" = "すべて選択";
@@ -4107,7 +4103,7 @@
 
 "welcome.hero.cards.capture.title" = "レシートを撮影";
 "welcome.hero.cards.capture.body" = "カメラを向けるだけ。Yalaが読み取ります。";
-"welcome.hero.cards.assistant.title" = "音声とAIアシスタント";
+"welcome.hero.cards.assistant.title" = "音声とYala AI";
 "welcome.hero.cards.assistant.body" = "話しかけるだけ。Yalaが答えます。";
 "welcome.hero.cards.groups.title" = "グループ精算";
 "welcome.hero.cards.groups.body" = "誰とでも割り勘。";
@@ -6928,7 +6924,7 @@
 "tipkit.stepProgress" = "%1$d/%2$d";
 "tipkit.pro.quickEntry.title" = "音声入力とレシートの読み取りが使えます";
 "tipkit.pro.quickEntry.message" = "「音声」で支出を話すか、「写真」でレシートを読み取れます。記録はYalaにおまかせ。";
-"tipkit.pro.quickAI.message" = "「AI」をタップして、支出や予算についてYalaに質問しましょう。";
+"tipkit.pro.quickAI.message" = "「Yala AI」をタップして、支出や予算について質問しましょう。";
 "milestone.nextGoal" = "次の目標：%d件の記録";
 "notificationPrimer.scheduled.title" = "支払いの前にお知らせしましょうか？";
 "notificationPrimer.scheduled.benefit" = "予定した支払いの期日前にお知らせするので、払い忘れを防げます。";
@@ -7712,3 +7708,29 @@
 "uxpro.welcome.theme" = "このテーマが使えるようになりました。";
 "uxpro.welcome.icon" = "このアイコンが使えるようになりました。";
 "uxpro.welcome.cashFlow" = "高度なキャッシュフローが使えるようになりました。";
+
+/* UX 2.2 · lote decidido 07 · Yala IA (L14-6 a L14-11, L16-8) */
+"chat.l14d.conversationDeleted" = "会話を削除しました";
+"chat.l14d.limitBox" = "また明日どうぞ。質問の回数は午前0時にリセットされます";
+"chat.l14d.draft.saveAll" = "%d件をすべて保存";
+"chat.l14d.topics.areaSpending" = "支出";
+"chat.l14d.topics.areaBudgets" = "予算";
+"chat.l14d.topics.areaPayments" = "予定の支払い";
+"chat.l14d.topics.areaLog" = "記録する";
+"chat.l14d.topics.spendingTop" = "今月いちばんお金を使ったのは何？";
+"chat.l14d.topics.spendingCategory" = "今月、%@にいくら使った？";
+"chat.l14d.topics.spendingVsLastMonth" = "先月より使いすぎてる？";
+"chat.l14d.topics.budgetLeft" = "予算「%@」はあといくら残ってる？";
+"chat.l14d.topics.budgetOnTrack" = "予算「%@」は順調？";
+"chat.l14d.topics.budgetWorst" = "今月いちばん厳しい予算はどれ？";
+"chat.l14d.topics.paymentsThisWeek" = "今週の支払いは？";
+"chat.l14d.topics.paymentWhen" = "%@の支払いはいつ？";
+"chat.l14d.topics.logExample" = "%@に20使った";
+"chat.l14d.topics.logExampleDefault" = "カードでタクシーに25使った";
+"chat.l14d.topics.logRowHint" = "入力欄に書き込みます。送る前に変更できます。";
+"aiPrivacy.l14d.processingLine" = "話した内容や撮った写真を記録にします。";
+"aiPrivacy.l14d.chatLine" = "お金についての質問に答え、チャットから支出を記録します。";
+"aiPrivacy.l14d.insightsLine" = "統計で、あなたの数字についての気づきを書きます。";
+"aiPrivacy.l14d.cloudExploreLine" = "質問に必要なときは、Yala AIがクラウドのアカウントも確認します。";
+"aiPrivacy.l14d.revokeTitle" = "%@をオフにしますか？";
+"settings.l14d.summaryWhere" = "%@で表示されます。";

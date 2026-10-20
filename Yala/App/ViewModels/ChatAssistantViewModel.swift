@@ -678,14 +678,49 @@ final class ChatAssistantViewModel {
         Task { await loadSuggestions() }
     }
 
-    /// Reinicia el contexto de conversación sin afectar el listado de mensajes visible
-    /// — útil para "Reiniciar contexto": el user limpia memoria del LLM y empieza fresh
-    /// pero conserva la persistencia / sugerencias.
-    func resetConversationContext() {
+    /// «Nueva conversación» (UX 2.2 · L14-7, opción C): borra el hilo y lo que la IA recuerda del día, sin preguntar.
+    /// Devuelve lo borrado para el «Deshacer» del aviso; `nil` si no había nada que borrar.
+    @discardableResult
+    func resetConversationContext() -> ChatConversationSnapshot? {
+        let snapshot = messages.isEmpty ? nil : ChatConversationSnapshot(messages: messages, allTurns: allTurns)
         messages = []
         allTurns = []
         errorMessage = nil
         clearPersistedSession()
+        return snapshot
+    }
+
+    /// «Deshacer» del aviso «Conversación borrada»: devuelve el hilo tal como estaba y lo vuelve a guardar. Si desde el
+    /// borrado ya se empezó otra conversación —también una pregunta en vuelo o esperando el permiso de la nube, que aún
+    /// no está en el hilo—, no hace nada: mezclar las dos daría un hilo que nadie escribió.
+    @discardableResult
+    func restoreConversation(_ snapshot: ChatConversationSnapshot) -> Bool {
+        guard messages.isEmpty, allTurns.isEmpty, !isLoading, questionAwaitingCloudExploreConsent == nil else {
+            return false
+        }
+        messages = snapshot.messages
+        allTurns = snapshot.allTurns
+        persistSession()
+        return true
+    }
+
+    // MARK: - Guardar los N (UX 2.2 · L14-9)
+
+    /// Los registros de un mensaje que «Guardar los N» guardaría: pendientes y con todo lo que `saveDraft` exige.
+    func draftsReadyToSave(messageID: UUID) -> [ChatTransactionDraft] {
+        guard let message = messages.first(where: { $0.id == messageID }) else { return [] }
+        return (message.attachments ?? []).flatMap { attachment -> [ChatTransactionDraft] in
+            guard case .drafts(let drafts) = attachment else { return [] }
+            return drafts.filter { $0.status == .pending && $0.isReadyToSave }
+        }
+    }
+
+    /// Guarda uno tras otro, por el mismo camino que el «Guardar» de cada tarjeta. `saveDraft` marca `.saving` antes de
+    /// su primer `await`, así que un segundo toque mientras corre salta los que ya están en vuelo y no duplica nada.
+    func saveAllReadyDrafts(messageID: UUID) async {
+        for draft in draftsReadyToSave(messageID: messageID) {
+            await saveDraft(messageID: messageID, draftID: draft.id)
+        }
     }
 
     // MARK: - Draft Lifecycle (chat → register)
@@ -1150,4 +1185,10 @@ final class ChatAssistantViewModel {
         }
     }
 
+}
+
+/// Lo que «Nueva conversación» borra, para poder deshacerlo.
+struct ChatConversationSnapshot {
+    let messages: [ChatMessage]
+    let allTurns: [QAPair]
 }

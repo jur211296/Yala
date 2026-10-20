@@ -111,12 +111,31 @@ struct ChatTransactionDraftCard: View {
 
             Spacer(minLength: DS.Spacing.sm)
 
-            Text(draft.amount == nil ? L10n.Chat.Draft.missingAmount : savedFormattedAmount)
-                .font(draft.amount == nil ? DS.Typography.caption : DS.Typography.headline)
-                .foregroundStyle(
-                    draft.amount == nil ? AnyShapeStyle(DS.Semantic.warningForeground) : AnyShapeStyle(savedAmountColor)
-                )
-                .monospacedDigit()
+            if draft.amount == nil {
+                Text(L10n.Chat.Draft.missingAmount)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(DS.Semantic.warningForeground)
+            } else {
+                // UX 2.2 · L14-9 (opción D): «Gasto» o «Ingreso» delante y el importe con signo, como en Registros.
+                // Antes el importe iba sin signo y el tipo solo se veía al abrir «Detalles».
+                // El importe no se parte nunca en dos líneas: cede el título, que ya se corta con «…».
+                HStack(alignment: .firstTextBaseline, spacing: DS.Spacing.xs) {
+                    Text(draft.isExpense ? L10n.Chat.Draft.chipExpense : L10n.Chat.Draft.chipIncome)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .fixedSize()
+                    Text(savedFormattedAmount)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(savedAmountColor)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                .layoutPriority(1)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("chat_draft_amount")
+            }
         }
         .padding(.top, DS.ListRow.paddingV)
         .padding(.bottom, DS.Spacing.sm)
@@ -237,9 +256,7 @@ struct ChatTransactionDraftCard: View {
 
     private var isSaving: Bool { draft.status == .saving }
 
-    private var canSave: Bool {
-        draft.amount != nil && draft.accountID != nil && draft.subcategoryID != nil
-    }
+    private var canSave: Bool { draft.isReadyToSave }
 
     private var editing: ChatDraftEditing {
         ChatDraftEditing(
@@ -424,7 +441,8 @@ struct ChatTransactionDraftCard: View {
     }
 
     private var savedFormattedAmount: String {
-        guard let amount = draft.amount else { return "–" }
+        // Con signo, como la fila de Registros (`RecordRowView`): el gasto en negativo, el ingreso sin signo.
+        guard let amount = draft.signedAmount else { return "–" }
         let dbl = NSDecimalNumber(decimal: amount).doubleValue
         // La divisa que se estampó de verdad: `saveDraft` la congela en el borrador al guardar.
         return appPreferences.currency(

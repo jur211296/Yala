@@ -141,7 +141,9 @@ struct FABStackView: View {
         .fabButtonStyle(usesMaterial: theme.usesMaterial)
         .dsFloatingShadow()
         .coachMarkAnchor("proChatFab")
-        .accessibilityLabel(L10n.Chat.title)
+        // UX 2.2 · L14-1: VoiceOver dice el mismo nombre que la píldora del Panel y la cabecera del chat (antes leía
+        // «Pregúntale a Yala»).
+        .accessibilityLabel(L10n.Chat.assistantName)
         .accessibilityIdentifier("fab_chat")
     }
 
