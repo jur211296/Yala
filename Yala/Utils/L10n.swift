@@ -7769,6 +7769,10 @@ enum L10n {
                 static var checkFailedTitle: String { ls("storage.revert.prior.checkFailedTitle", comment: "") }
                 static var checkFailedBody: String { ls("storage.revert.prior.checkFailedBody", comment: "") }
                 static var wipeFailed: String { ls("storage.revert.prior.wipeFailed", comment: "") }
+                static var wipeStopped: String { ls("storage.revert.prior.wipeStopped", comment: "") }
+                static func wiping(_ deleted: Int) -> String {
+                    String(format: ls("storage.revert.prior.wiping", comment: ""), deleted)
+                }
                 static var noAccountTitle: String { ls("storage.revert.prior.noAccountTitle", comment: "") }
                 static var noAccountBody: String { ls("storage.revert.prior.noAccountBody", comment: "") }
             }

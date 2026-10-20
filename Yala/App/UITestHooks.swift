@@ -261,9 +261,52 @@ final class UITestHooks {
         #endif
     }
 
-    /// `-uitest-reverse-prior-icloud-wipe-fails`: el borrado de «Empezar sin ellos» falla. Solo el fallo: un borrado que
-    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Solo DEBUG.
-    nonisolated static var fakeReverseForeignWipeFails: Bool { hasArg("-uitest-reverse-prior-icloud-wipe-fails") }
+    /// `-uitest-reverse-prior-icloud-wipe <network|stalled|progress>`: el borrado de «Empezar sin ellos» fingido. Sin
+    /// red, parado sin avanzar, o borrando sin terminar (para ver el progreso). Nunca termina bien: un borrado que
+    /// termina empieza la vuelta de verdad, y eso no se conduce en el simulador. Un valor desconocido se ignora. Solo
+    /// DEBUG.
+    nonisolated static var fakeReverseForeignWipe: FakeReverseForeignWipe? {
+        #if DEBUG
+        guard isActive else { return nil }
+        switch parseValue(after: "-uitest-reverse-prior-icloud-wipe", from: ProcessInfo.processInfo.arguments) {
+        case "network":  return .network
+        case "stalled":  return .stalled
+        case "progress": return .progress
+        default:         return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
+    /// Lo que finge `fakeReverseForeignWipe`. La cifra es la del QA guiado del 2026-10-19: el primer intento borró unos
+    /// 1.200 registros antes de cortarse.
+    enum FakeReverseForeignWipe {
+        case network, stalled, progress
+
+        static let deletedSoFar = 1_197
+
+        @MainActor
+        func run(_ onProgress: @MainActor (Int) -> Void) async -> ForeignWipeOutcome {
+            switch self {
+            case .network:
+                return .failed("uitest", network: true)
+            case .stalled:
+                onProgress(Self.deletedSoFar)
+                return .stalled
+            case .progress:
+                onProgress(Self.deletedSoFar)
+                // Se queda borrando: la tarjeta enseña el progreso hasta que el test termina.
+                while true {
+                    do {
+                        try await Task.sleep(for: .seconds(3_600))
+                    } catch {
+                        return .stalled
+                    }
+                }
+            }
+        }
+    }
 
     /// `-uitest-migration-journal-unreadable`: el fetch del journal de la migración que hace `CloudMigrationController` LANZA
     /// (ticket `an-unreadable-migration-journal-reads-as-never-started`). Existe para el XCUITest de la pantalla de

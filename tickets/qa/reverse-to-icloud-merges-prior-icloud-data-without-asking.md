@@ -80,7 +80,7 @@ pueden llegar sin su grupo. Que después no se puedan descartar de la Bandeja va
   QA (`ICloudForeignTallyTests`), lector de metadatos con un SQLite a mano (`MirroredRecordNamesTests`) y cableado por
   source-scan (`ReverseICloudPriorDataWiringTests`).
 - XCUITest (5, `ReverseICloudPriorDataUITests`) con dos seams que fingen la entrada: `-uitest-born-cloud-storage` y
-  `-uitest-reverse-prior-icloud <found|foundGroups|none|failed>`, más `-uitest-reverse-prior-icloud-wipe-fails`.
+  `-uitest-reverse-prior-icloud <found|foundGroups|none|failed>`, más `-uitest-reverse-prior-icloud-wipe <network|stalled|progress>` (hasta el 2026-10-19, `-uitest-reverse-prior-icloud-wipe-fails`; ver `reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes`).
 - Review adversarial con tres lentes (datos, flujo de pantalla, tests y copy): todo lo sólido se corrigió en el mismo PR
   (lectura estricta de metadatos, sin iCloud no se empieza, comprobaciones antes del borrado, doble toque, reintento,
   borrado por páginas, frase del borrado que prometía de más, tests que faltaban).

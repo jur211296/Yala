@@ -967,6 +967,9 @@ struct ContentView: View {
                     SessionState.shared.hasPrivateSession = true
                     completeOnboardingAsRestoreSkip()
                     hasCompletedOnboarding = true
+                    // La sesión privada nació en caliente: si la de Grupos ya estaba viva, sus grupos son de
+                    // esta cuenta y no de la que el iCloud-KV del Apple ID recuerde (A · C1, 2026-10-19).
+                    GroupsAssociationRegistrar.syncFromLiveSessionNow()
                     reEmitInviteAfterRestore()
                 case .onboarding:
                     prefilledOnboardingData = summary
@@ -1052,6 +1055,8 @@ struct ContentView: View {
             // Eje 1: el onboarding personal terminado ES el nacimiento de la sesión privada.
             SessionState.shared.hasPrivateSession = true
             hasCompletedOnboarding = true
+            // Y la asociación de Grupos con la sesión viva, en el acto (A · C1, 2026-10-19).
+            GroupsAssociationRegistrar.syncFromLiveSessionNow()
             showOnboarding = false
             prefilledOnboardingData = nil
             reEmitInviteAfterRestore()

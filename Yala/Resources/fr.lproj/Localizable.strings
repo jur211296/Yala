@@ -6722,6 +6722,8 @@
 "storage.revert.prior.checkFailedTitle" = "Impossible de vérifier ton iCloud";
 "storage.revert.prior.checkFailedBody" = "Avant de revenir, on vérifie si ton iCloud contient déjà des données Yala, pour ne pas les mélanger sans te prévenir. C’est peut-être la connexion : réessaie.";
 "storage.revert.prior.wipeFailed" = "Nous n’avons pas pu finir de supprimer les anciennes données de ton iCloud, donc le retour n’a pas commencé : tu restes dans le cloud. Vérifie ta connexion et réessaie.";
+"storage.revert.prior.wipeStopped" = "Nous n’avons pas pu finir de supprimer les anciennes données de ton iCloud, donc le retour n’a pas commencé : tu restes dans le cloud. Ce qui est déjà supprimé le reste : réessaie et nous continuerons avec le reste.";
+"storage.revert.prior.wiping" = "Suppression des anciennes données… %d pour l’instant";
 "storage.revert.prior.noAccountTitle" = "Connecte-toi à iCloud sur cet iPhone";
 "storage.revert.prior.noAccountBody" = "Avant de revenir, on vérifie ce que contient ton iCloud, et cet iPhone n’est pas connecté à iCloud. Connecte-toi dans les Réglages de l’iPhone et réessaie.";
 

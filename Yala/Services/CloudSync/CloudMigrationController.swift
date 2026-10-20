@@ -346,6 +346,9 @@ final class CloudMigrationController {
     /// «Volver a iCloud» le está preguntando a iCloud qué sumaría (`checkICloudBeforeReverse`). La tarjeta lo pinta en el
     /// botón y no deja tocarlo otra vez.
     private(set) var isCheckingICloudBeforeReverse = false
+    /// «Empezar sin ellos» está borrando lo ajeno de iCloud: cuántos registros lleva. `nil` fuera del borrado. La tarjeta
+    /// lo pinta en el botón, para que un iCloud grande no parezca colgado.
+    private(set) var priorICloudWipeDeleted: Int?
     /// Mensaje de error localizado (para el `.alert` de la vista). `nil` = sin error.
     var lastError: String?
 
@@ -1342,20 +1345,23 @@ final class CloudMigrationController {
         }
         isWorking = true
         lastError = nil
-        let failure: String?
+        priorICloudWipeDeleted = 0
+        let onProgress: @MainActor (Int) -> Void = { [weak self] deleted in self?.priorICloudWipeDeleted = deleted }
+        let outcome: ForeignWipeOutcome
         #if DEBUG
-        if UITestHooks.fakeReverseForeignWipeFails {
-            failure = "uitest"
+        if let fake = UITestHooks.fakeReverseForeignWipe {
+            outcome = await fake.run(onProgress)
         } else {
-            failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()
+            outcome = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse(onProgress)
         }
         #else
-        failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()
+        outcome = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse(onProgress)
         #endif
         isWorking = false
-        if let failure {
+        priorICloudWipeDeleted = nil
+        if let failure = outcome.canaryReason {
             MetricsService.cloudReverseICloudPriorDataChoice("discardFailed:\(failure)")
-            lastError = L10n.Storage.Revert.Prior.wipeFailed
+            lastError = ReverseICloudPriorDataLogic.wipeFailureMessage(outcome)
             return
         }
         MetricsService.cloudReverseICloudPriorDataChoice("discard")

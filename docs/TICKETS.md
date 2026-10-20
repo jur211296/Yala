@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (906)
+## Index (911)
 
 | id | status | path |
 |---|---|---|
@@ -395,6 +395,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-approval-banner-stays | done | tickets/done/groups-approval-banner-stays.md |
 | groups-archived-group-rejects-join | done | tickets/done/groups-archived-group-rejects-join.md |
 | groups-archived-still-accepts-changes | done | tickets/done/groups-archived-still-accepts-changes.md |
+| groups-association-names-another-account-after-a-hot-private-birth | qa | tickets/qa/groups-association-names-another-account-after-a-hot-private-birth.md |
 | groups-background-emitter-no-upload | done | tickets/done/groups-background-emitter-no-upload.md |
 | groups-batch-facts-plural-identity | backlog | tickets/backlog/groups-batch-facts-plural-identity.md |
 | groups-block-has-no-route-to-storage-settings | backlog | tickets/backlog/groups-block-has-no-route-to-storage-settings.md |
@@ -475,6 +476,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-sync-treats-an-infra-403-as-an-account-verdict | done | tickets/done/groups-sync-treats-an-infra-403-as-an-account-verdict.md |
 | groups-tab-does-not-say-this-phone-cannot-sync-groups | done | tickets/done/groups-tab-does-not-say-this-phone-cannot-sync-groups.md |
 | groups-tab-missing-panel-perf | done | tickets/done/groups-tab-missing-panel-perf.md |
+| groups-tab-stays-empty-after-signing-in-to-a-groups-only-account | qa | tickets/qa/groups-tab-stays-empty-after-signing-in-to-a-groups-only-account.md |
 | groups-transfer-leave-write-ahead | backlog | tickets/backlog/groups-transfer-leave-write-ahead.md |
 | guest-decline-has-no-screen | done | tickets/done/guest-decline-has-no-screen.md |
 | guest-journey-dead-screens | done | tickets/done/guest-journey-dead-screens.md |
@@ -743,6 +745,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off | backlog | tickets/backlog/reverse-claim-exit-with-a-restored-failing-effect-keeps-the-engine-off.md |
 | reverse-claim-rejection-has-no-way-out-in-the-client | done | tickets/done/reverse-claim-rejection-has-no-way-out-in-the-client.md |
 | reverse-cutover-cerrado-para-cuentas-born-cloud | done | tickets/done/reverse-cutover-cerrado-para-cuentas-born-cloud.md |
+| reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes | qa | tickets/qa/reverse-discard-wipe-cuts-a-large-icloud-at-two-minutes.md |
 | reverse-exit-alert-published-off-screen-never-shows | backlog | tickets/backlog/reverse-exit-alert-published-off-screen-never-shows.md |
 | reverse-exit-leaves-a-partial-copy-in-icloud | backlog | tickets/backlog/reverse-exit-leaves-a-partial-copy-in-icloud.md |
 | reverse-exit-on-a-reverted-account-rejects-the-retry | qa | tickets/qa/reverse-exit-on-a-reverted-account-rejects-the-retry.md |
@@ -753,6 +756,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | reverse-offered-on-a-device-without-icloud | backlog | tickets/backlog/reverse-offered-on-a-device-without-icloud.md |
 | reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last | done | tickets/done/reverse-pre-mount-ceiling-charges-a-stall-to-whoever-stops-it-last.md |
 | reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out | done | tickets/done/reverse-pre-mount-ceiling-has-no-alert-and-leaves-network-verify-out.md |
+| reverse-prior-icloud-scan-has-a-fixed-deadline | backlog | tickets/backlog/reverse-prior-icloud-scan-has-a-fixed-deadline.md |
 | reverse-tap-is-lost-while-a-resume-is-running | backlog | tickets/backlog/reverse-tap-is-lost-while-a-resume-is-running.md |
 | reverse-tap-on-a-stale-card-aborts-instead-of-starting | backlog | tickets/backlog/reverse-tap-on-a-stale-card-aborts-instead-of-starting.md |
 | reverse-to-icloud-merges-prior-icloud-data-without-asking | qa | tickets/qa/reverse-to-icloud-merges-prior-icloud-data-without-asking.md |
@@ -896,6 +900,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | vigilante-margen-menor-que-el-retraso-real-del-cron | done | tickets/done/vigilante-margen-menor-que-el-retraso-real-del-cron.md |
 | vision-amount-sign-contract-is-only-a-prompt-example | discarded | tickets/discarded/vision-amount-sign-contract-is-only-a-prompt-example.md |
 | vision-reads-every-dollar-sign-as-usd | done | tickets/done/vision-reads-every-dollar-sign-as-usd.md |
+| voice-cancel-does-not-resume-other-apps-audio | qa | tickets/qa/voice-cancel-does-not-resume-other-apps-audio.md |
 | voice-entry-end-to-end | qa | tickets/qa/voice-entry-end-to-end.md |
 | voice-language-and-silence-handling-differ-between-chat-and-sheet | backlog | tickets/backlog/voice-language-and-silence-handling-differ-between-chat-and-sheet.md |
 | voice-note-parser-prompt-knows-six-currencies | done | tickets/done/voice-note-parser-prompt-knows-six-currencies.md |

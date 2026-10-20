@@ -231,17 +231,41 @@ struct ICloudForeignTallyTests {
                                                               known: known))
     }
 
-    /// Un fallo por registro llega dentro del resultado: no se puede dar el borrado por hecho. «Ya no estaba», sí.
-    @Test func aPartialDeleteFailure_isAFailure_butAMissingRecordIsNot() {
+    /// Un fallo por registro llega dentro del resultado: no se puede dar el borrado por hecho. «Ya no estaba» cuenta como
+    /// borrado, y «ocupado» se repite en vez de parar el recorrido.
+    @Test func aDeleteBatch_readsGoneRetryAndFailurePerRecord() {
         let id1 = CKRecord.ID(recordName: "a", zoneID: zone)
         let id2 = CKRecord.ID(recordName: "b", zoneID: zone)
-        #expect(ICloudPersonalCorpusProbe.deleteFailure(in: [:]) == nil)
-        #expect(ICloudPersonalCorpusProbe.deleteFailure(in: [
+        let id3 = CKRecord.ID(recordName: "c", zoneID: zone)
+        let empty = ForeignWipeErrorLogic.classify([:], fallback: 2)
+        #expect(empty == .init(gone: 0, retry: [], retryAfter: 2, failure: nil))
+
+        let goneAndMissing = ForeignWipeErrorLogic.classify([
             id1: .success(()), id2: .failure(CKError(.unknownItem)),
-        ]) == nil)
-        #expect(ICloudPersonalCorpusProbe.deleteFailure(in: [
-            id1: .success(()), id2: .failure(CKError(.zoneBusy)),
-        ]) == "CKError.\(CKError.Code.zoneBusy.rawValue)")
+        ], fallback: 2)
+        #expect(goneAndMissing.gone == 2 && goneAndMissing.failure == nil && goneAndMissing.retry.isEmpty)
+
+        let busy = ForeignWipeErrorLogic.classify([
+            id1: .success(()), id2: .failure(CKError(.zoneBusy)), id3: .failure(CKError(.requestRateLimited)),
+        ], fallback: 2)
+        #expect(busy.gone == 1 && busy.failure == nil)
+        #expect(Set(busy.retry) == [id2, id3])
+
+        let definitive = ForeignWipeErrorLogic.classify([
+            id1: .success(()), id2: .failure(CKError(.permissionFailure)),
+        ], fallback: 2)
+        #expect(definitive.failure == "CKError.\(CKError.Code.permissionFailure.rawValue)")
+    }
+
+    /// Solo la falta de red es «de conexión»; ocupado se espera; lo demás no es ni una cosa ni otra.
+    @Test func wipeErrors_separateNetworkFromBusy() {
+        #expect(ForeignWipeErrorLogic.isNetwork(CKError(.networkUnavailable)))
+        #expect(ForeignWipeErrorLogic.isNetwork(CKError(.networkFailure)))
+        #expect(!ForeignWipeErrorLogic.isNetwork(CKError(.zoneBusy)))
+        #expect(ForeignWipeErrorLogic.busyDelay(CKError(.zoneBusy), fallback: 2) == 2)
+        #expect(ForeignWipeErrorLogic.busyDelay(CKError(.serviceUnavailable), fallback: 3) == 3)
+        #expect(ForeignWipeErrorLogic.busyDelay(CKError(.networkFailure), fallback: 2) == nil)
+        #expect(ForeignWipeErrorLogic.busyDelay(CKError(.permissionFailure), fallback: 2) == nil)
     }
 
     /// Solo CloudKit declara «no hay cuenta»; todo lo demás es «no se supo», que no deja empezar.
@@ -447,20 +471,27 @@ struct ReverseICloudPriorDataWiringTests {
         let pendingExit = try #require(body.firstIndex(
             of: "if hasPendingReverseExit, MigrationRuntimeGate.isDomainStablePhase(journal.phase) {"))
         let wipe = try #require(body.firstIndex(
-            of: "failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()"))
+            of: "outcome = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse(onProgress)"))
         #expect(checks < journal && journal < pendingExit && pendingExit < wipe)
-        let failure = try #require(body.firstIndex(of: "if let failure {"))
+        let failure = try #require(body.firstIndex(of: "if let failure = outcome.canaryReason {"))
         let start = try #require(body.firstIndex(of: "await startReverse()"))
         #expect(Array(body[failure...(failure + 4)]) == [
-            "if let failure {",
+            "if let failure = outcome.canaryReason {",
             "MetricsService.cloudReverseICloudPriorDataChoice(\"discardFailed:\\(failure)\")",
-            "lastError = L10n.Storage.Revert.Prior.wipeFailed",
+            "lastError = ReverseICloudPriorDataLogic.wipeFailureMessage(outcome)",
             "return",
             "}",
         ])
         #expect(failure < start)
         #expect(body.filter { $0 == "await startReverse()" }.count == 1)
-        #expect(body.contains("failure = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse()"))
+        // Dos veces: la rama DEBUG (tras el seam) y la de release.
+        #expect(body.filter {
+            $0 == "outcome = await ICloudPersonalCorpusProbe.wipeForeignCorpusForReverse(onProgress)"
+        }.count == 2)
+        // El progreso se pone a cero antes de borrar y se retira al terminar, antes de decidir.
+        let progressOn = try #require(body.firstIndex(of: "priorICloudWipeDeleted = 0"))
+        let progressOff = try #require(body.firstIndex(of: "priorICloudWipeDeleted = nil"))
+        #expect(progressOn < wipe && wipe < progressOff && progressOff < failure)
     }
 
     /// Los seams de producción son las implementaciones contra CloudKit: sin esto, el teléfono preguntaría a un stub.
@@ -472,9 +503,14 @@ struct ReverseICloudPriorDataWiringTests {
                 }
             """))
         #expect(probe.contains("""
-            static var wipeForeignCorpusForReverse: @MainActor () async -> String? = {
-                    await deleteForeignRecordsFromCloudKit()
-                }
+            static var wipeForeignCorpusForReverse:
+                    @MainActor (_ onProgress: @escaping @MainActor (Int) -> Void) async -> ForeignWipeOutcome = { onProgress in
+                        await deleteForeignRecordsFromCloudKit(onProgress: onProgress)
+                    }
             """))
+        // El borrado de producción pasa por el recorrido que fijan los tests del bucle, con el plazo SIN AVANCE.
+        #expect(probe.contains(
+            "let outcome = await runForeignWipe(known: known, io: liveForeignWipeIO, onProgress: onProgress)"))
+        #expect(!probe.contains("foreignWipeDeadline"))
     }
 }

@@ -513,8 +513,8 @@ struct PrivateSessionMarkWiringTests {
     /// y la aserción de arriba pasaría verde sin medir nada — la familia de «Executed 0 tests».
     @Test("control: el escáner de producción encuentra algo")
     func theProductionScannerActuallyFindsThings() {
-        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 18, """
-            el eje 1 tiene DIECIOCHO consumidores de la lectura conservadora. Si este número cambia, hay un
+        #expect(Self.countInProduction("PrivateSessionMark.hasPrivateSession(") == 19, """
+            el eje 1 tiene DIECINUEVE consumidores de la lectura conservadora. Si este número cambia, hay un
             constructor nuevo y hay que decidir con qué lectura contesta — y si el consumidor nuevo
             alcanza datos de FUERA de este teléfono, la lectura que le toca es la otra.
 
@@ -546,6 +546,13 @@ struct PrivateSessionMarkWiringTests {
             Y bajó a DIECIOCHO el 2026-10-10: el párrafo de «Vaciar datos» dejó de leer la marca a pelo y
             sale de `scopeOperation` (ticket `wipe-copy-reads-one-axis-while-the-sheet-reads-two`). La
             pantalla la sigue leyendo una vez, dentro de `scopeOperation`.
+
+            Y volvió a DIECINUEVE el 2026-10-19 con `GroupsAssociationRegistrar.syncFromLiveSessionNow`, el
+            registrador de la asociación de Grupos en los nacimientos de la sesión privada en caliente (QA guiado,
+            A · C1). Escribe en el iCloud-KV del Apple ID, así que alcanza datos de fuera, pero lee la MISMA
+            lectura que el registrador del arranque —es el mismo constructor— y sus tres llamadores la acaban de
+            escribir en `true` en el mismo gesto: ahí las dos lecturas coinciden, porque solo difieren con la marca
+            AUSENTE.
             """)
     }
 
