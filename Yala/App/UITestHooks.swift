@@ -516,6 +516,12 @@ final class UITestHooks {
     /// ortogonales a propósito — el caso «racha sí, sesión no» es justo el que prueba esa mitad.
     nonisolated static var groupsAttestTerminal: Bool { hasArg("-uitest-groups-attest-terminal") }
 
+    /// `-uitest-pending-trial-offer`: el arranque deja la oferta de prueba PENDIENTE (`needsPostOnboardingTrial`), como la
+    /// deja la 2.0.4 tras un alta por «Restaurar» con destino directo a la app. No encola nada: decide el arranque del usuario
+    /// que vuelve (`WhatsNewLaunchLogic.returningUserSheet`). Lo usa `WhatsNewLaunchUITests` (ticket
+    /// `whats-new-yields-to-a-pending-trial-offer-after-updating`).
+    nonisolated static var pendingTrialOffer: Bool { hasArg("-uitest-pending-trial-offer") }
+
     /// `-uitest-trial-offer`: tras el seed, encola `.presentTrialOffer` para presentar
     /// el ProTrialOfferSheet sin depender de StoreKit ni del post-onboarding real —
     /// las emisiones AUTOMÁTICAS de monetización están suprimidas en uitest, este

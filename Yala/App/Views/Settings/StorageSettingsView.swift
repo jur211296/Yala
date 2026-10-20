@@ -136,7 +136,10 @@ struct StorageSettingsView: View {
                 // para que el tope llegue a evaluarse. Un empujón cada 30 s lo resuelve sin loop: el gate puro
                 // `MigrationForegroundRekick.shouldRekick` ya descarta fases estables y trabajo en vuelo.
                 tick += 1
-                if tick % 30 == 0 { await controller?.rekickIfParked() }
+                // Sin `await` (2026-10-19, ticket `cloud-activation-waits-for-icloud-with-no-way-out`): el re-kick puede
+                // quedarse hasta 300 s en la pre-espera del import, y esperándolo este bucle dejaba de refrescar —la
+                // pantalla congelada en el paso viejo—. `rekickIfParked` ya no hace nada con trabajo en vuelo.
+                if tick % 30 == 0, let controller { Task { await controller.rekickIfParked() } }
                 do { try await Task.sleep(for: .seconds(1)) } catch { break }
             }
         }
@@ -875,7 +878,9 @@ struct StorageSettingsView: View {
     /// toca con la activación aparcada.
     private func cancelMigrationButton(_ controller: CloudMigrationController) -> some View {
         YalaSecondaryButton(L10n.Storage.Progress.cancelMigration, icon: "xmark.circle",
-                            isDisabled: controller.isWorking) {
+                            isDisabled: !MigrationImportWaitLogic.cancelEnabled(
+                                isWorking: controller.isWorking, waitingForImport: controller.resumeWaitingForImport,
+                                cancelling: controller.isCancellingMigration)) {
             confirmCancelMigration = true
         }
         .accessibilityIdentifier("storage_cancel_migration_button")

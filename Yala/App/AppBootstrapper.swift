@@ -978,6 +978,16 @@ final class AppBootstrapper {
             let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
             UserDefaults.standard.set(currentVersion, forKey: "lastSeenAppVersion")
         }
+        // La oferta de prueba pendiente que deja la 2.0.4 tras «Restaurar» (`UITestHooks.pendingTrialOffer`). Y con
+        // `-uitest-reset` sin el seam, la de la memoria se baja también: `SessionState` la leyó de `UserDefaults` al
+        // construirse, ANTES de que el reset borrara la clave, así que una oferta que un test anterior dejó sin presentar
+        // (el seam, o un onboarding que la arma y termina antes de drenarla) tapaba el siguiente test entero (medido en el
+        // gate del 2026-10-19: once XCUITest con la oferta encima del avatar de Perfil).
+        if UITestHooks.pendingTrialOffer {
+            SessionState.shared.needsPostOnboardingTrial = true
+        } else if UITestHooks.shouldReset {
+            SessionState.shared.needsPostOnboardingTrial = false
+        }
 
         // Adopción del dominio Grupos dada por hecha en uitest: los XCUITests prueban la
         // funcionalidad de Grupos, no el acto de adoptarla, y con el sello del handover puesto un

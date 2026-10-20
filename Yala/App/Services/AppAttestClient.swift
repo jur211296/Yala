@@ -11,6 +11,10 @@
 //  - Caché NEGATIVA (`AttestRefreshBackoffLogic`): el single-flight colapsa lo SIMULTÁNEO, no lo
 //    SUCESIVO. Sin recordar el último fallo, los ~6 llamadores independientes del token producían la
 //    tormenta medida en producción el 2026-07-31 — 17 `POST /v1/attest/challenge` en 3 segundos.
+//  - Techo de la espera (2026-10-19): un refresh en vuelo que no vuelve en 90 s se abandona y el siguiente llamador
+//    arranca otro (`AttestSessionTokenLogic`). Sin él, una tarea colgada dejaba esperando para siempre a todo el que
+//    pidiera token: la subida de «Activar la nube» se quedaba al 55 % hasta cerrar Yala. Y un 401 `yala_attest_required`
+//    hace olvidar el token que viajó (`discardSessionToken(ifEqualTo:)`), para no reenviarlo hasta que caduque.
 //  - Recuperación: si la key guardada ya no sirve, se descarta y se re-registra. Cubre las DOS formas,
 //    que no son la misma (medido en device el 2026-07-31): el gateway no la reconoce (`unknownKey`) O
 //    `generateAssertion` la rechaza LOCALMENTE porque la key murió con la instalación anterior mientras
@@ -60,6 +64,21 @@ final class AppAttestClient {
 
     private var cached: (token: String, expiry: Date)?
     private var refreshTask: Task<String, Error>?
+    /// Cuándo arrancó `refreshTask`, en reloj monotónico: lo lee el techo de la espera (`AttestSessionTokenLogic`).
+    private var refreshStartedAt: ContinuousClock.Instant?
+    /// En qué paso va el refresh en vuelo. Solo lo lee el canario del abandono: si una espera vence, dice DÓNDE se colgó
+    /// (la causa del ticket `cloud-activation-stalls-without-uploading-until-relaunch` quedó inferida, no medida).
+    private var refreshStage = "start"
+    /// Qué refresh es el single-flight vigente. Una tarea abandonada que sigue corriendo ya no es la vigente, y sus pasos no
+    /// pisan `refreshStage` (lo cazó la review: el canario de un segundo abandono habría dicho el paso de la primera).
+    private var refreshGeneration = 0
+    @TaskLocal private static var runningGeneration = 0
+
+    /// Apunta el paso del refresh en vuelo, solo si quien lo dice es el vigente.
+    private func noteStage(_ stage: String) {
+        guard Self.runningGeneration == refreshGeneration else { return }
+        refreshStage = stage
+    }
     /// Caché NEGATIVA: el último fallo del refresh y su racha. La política (cuánto callar, cuándo volver
     /// a intentar) vive entera en `AttestRefreshBackoffLogic`; aquí solo se guarda el estado y el error.
     private var lastFailure: (error: Error, state: AttestRefreshBackoffLogic.FailureState)?
@@ -83,8 +102,8 @@ final class AppAttestClient {
         if let cached, cached.expiry > Date.now.addingTimeInterval(Self.refreshMargin) {
             return cached.token
         }
-        if let refreshTask {
-            return try await refreshTask.value
+        if let refreshTask, let refreshStartedAt {
+            return try await awaitRefresh(refreshTask, startedAt: refreshStartedAt)
         }
         if !ignoringBackoff, let lastFailure,
             case .suppress(let retryAfter) = AttestRefreshBackoffLogic.decide(
@@ -102,18 +121,83 @@ final class AppAttestClient {
             throw lastFailure.error
         }
         let previousFailure = lastFailure?.state
-        let task = Task<String, Error> { try await self.performRefresh() }
+        refreshStage = "start"
+        refreshGeneration += 1
+        let generation = refreshGeneration
+        let task = Task<String, Error> {
+            try await Self.$runningGeneration.withValue(generation) { try await self.performRefresh() }
+        }
+        let startedAt = ContinuousClock.now
         refreshTask = task
+        refreshStartedAt = startedAt
         do {
-            let token = try await task.value
-            refreshTask = nil
+            let token = try await awaitRefresh(task, startedAt: startedAt)
+            clearRefresh(task)
             lastFailure = nil
             return token
         } catch {
-            refreshTask = nil
+            clearRefresh(task)
             lastFailure = (error, AttestRefreshBackoffLogic.record(previous: previousFailure, now: .now))
             throw error
         }
+    }
+
+    /// El gateway acaba de rechazar con 401 `yala_attest_required` el token `rejected`. Si es el guardado, se olvida: el
+    /// siguiente `currentSessionToken()` pide uno nuevo en vez de reenviar el rechazado hasta que caduque en el reloj del
+    /// teléfono. Uno distinto se queda: ya es más nuevo. Decide `AttestSessionTokenLogic.discardsCachedToken`.
+    ///
+    /// No toca ni el single-flight ni la caché negativa: el reintento lo pone la cadencia de cada llamador.
+    func discardSessionToken(ifEqualTo rejected: String?) {
+        guard AttestSessionTokenLogic.discardsCachedToken(cached: cached?.token, rejected: rejected) else { return }
+        cached = nil
+        #if DEBUG
+        print("AppAttestClient: token de sesión rechazado por el gateway, se pedirá otro")
+        #endif
+    }
+
+    /// Espera a `task` como mucho lo que le quede del techo (`AttestSessionTokenLogic.refreshStallCeiling`, contado desde
+    /// que arrancó). Vencido, la tarea se ABANDONA —deja de ser el single-flight y el siguiente llamador arranca otra— y se
+    /// lanza un error de red: pasajero para todos los consumidores y sin sumar a la racha del teléfono (estar sin respuesta
+    /// no habla del attest). El dueño apunta el fallo en la caché negativa, así que lo normal es que el refresh siguiente
+    /// espere la primera ventana del backoff (2 s); si un tercer llamador llega justo entre el abandono y ese apunte, arranca
+    /// antes. Aceptado: es una ventana de una vuelta del main actor.
+    ///
+    /// Se espera con una continuación y no con un `TaskGroup`: el grupo espera a TODOS sus hijos al cerrar, y el hijo que
+    /// espera a la tarea colgada no responde a la cancelación (`Task.value` espera aunque cancelen a quien espera).
+    private func awaitRefresh(_ task: Task<String, Error>, startedAt: ContinuousClock.Instant) async throws -> String {
+        let remaining = AttestSessionTokenLogic.remainingRefreshWait(elapsed: ContinuousClock.now - startedAt)
+        let outcome: Result<String, Error>? = await withCheckedContinuation { continuation in
+            let once = AttestRefreshWaitResume(continuation)
+            let timer = Task { @MainActor in
+                do {
+                    try await Task.sleep(for: remaining)
+                } catch {
+                    return
+                }
+                once.resume(nil)
+            }
+            Task { @MainActor in
+                let result = await task.result
+                timer.cancel()
+                once.resume(result)
+            }
+        }
+        guard let outcome else {
+            if refreshTask == task {
+                CloudSyncBreadcrumb.attestRefreshAbandoned(stage: refreshStage)
+                MetricsService.canary(.attestRefreshAbandoned, detail: refreshStage)
+                clearRefresh(task)
+            }
+            throw AppAttestError.network(URLError(.timedOut))
+        }
+        return try outcome.get()
+    }
+
+    /// Suelta el single-flight solo si sigue siendo `task`: una tarea abandonada que vuelve tarde no puede soltar la nueva.
+    private func clearRefresh(_ task: Task<String, Error>) {
+        guard refreshTask == task else { return }
+        refreshTask = nil
+        refreshStartedAt = nil
     }
 
     /// **¿Puede este teléfono conseguir un token de sesión?** Es la primera decisión de `performRefresh`, en un booleano:
@@ -145,6 +229,7 @@ final class AppAttestClient {
         // cero bytes da "" y NO nil ⇒ un `if let` pelado dejaría pasar un keyId vacío al assert.
         if let keyId = KeychainService.getString(forKey: Self.keyIdKeychainKey), !keyId.isEmpty {
             do {
+                noteStage("assert")
                 return try await runAssert(service: service, keyId: keyId)
             } catch {
                 // UN solo punto de decisión, en `AttestKeyRecoveryLogic`: el fallo del assert puede venir
@@ -198,15 +283,20 @@ final class AppAttestClient {
         {
             keyId = pending
         } else {
+            noteStage("generateKey")
             keyId = try await service.generateKey()
             KeychainService.setString(keyId, forKey: Self.pendingKeyIdKeychainKey)
         }
 
         do {
+            noteStage("register-challenge")
             let challenge = try await fetchChallenge()
             let clientDataHash = Data(SHA256.hash(data: Data(challenge.utf8)))
+            noteStage("attestKey")
             let attestation = try await service.attestKey(keyId, clientDataHash: clientDataHash)
+            noteStage("register-storekit")
             let storeKitJWS = await StoreKitManager.shared.fetchActiveTransactionJWS()
+            noteStage("register-post")
             let resp: SessionResponse = try await postJSON(
                 "v1/attest/register",
                 body: [
@@ -243,10 +333,14 @@ final class AppAttestClient {
     }
 
     private func runAssert(service: DCAppAttestService, keyId: String) async throws -> String {
+        noteStage("assert-challenge")
         let challenge = try await fetchChallenge()
         let clientDataHash = Data(SHA256.hash(data: Data(challenge.utf8)))
+        noteStage("generateAssertion")
         let assertion = try await service.generateAssertion(keyId, clientDataHash: clientDataHash)
+        noteStage("assert-storekit")
         let storeKitJWS = await StoreKitManager.shared.fetchActiveTransactionJWS()
+        noteStage("assert-post")
         let resp: SessionResponse = try await postJSON(
             "v1/attest/assert",
             body: [
@@ -334,6 +428,22 @@ final class AppAttestClient {
         } catch {
             throw AppAttestError.server("decode")
         }
+    }
+}
+
+/// Reanuda la espera de `awaitRefresh` UNA vez: la gana el primero de los dos (la tarea o el techo).
+@MainActor
+private final class AttestRefreshWaitResume {
+    private var continuation: CheckedContinuation<Result<String, Error>?, Never>?
+
+    init(_ continuation: CheckedContinuation<Result<String, Error>?, Never>) {
+        self.continuation = continuation
+    }
+
+    func resume(_ value: Result<String, Error>?) {
+        guard let continuation else { return }
+        self.continuation = nil
+        continuation.resume(returning: value)
     }
 }
 

@@ -134,6 +134,20 @@ enum MetricsCanary: String {
     /// a la racha del teléfono (`GroupsAttestStreakStore`). Nació el 2026-09-16 para que esa regresión no pase un día sin
     /// contarse.
     case cloudSyncAttestRequired
+    /// Un refresh del token de App Attest no volvió en 90 s y se abandonó (`AppAttestClient`, `AttestSessionTokenLogic`).
+    /// `detail` = el paso en el que se quedó (`assert-challenge`, `generateAssertion`, `assert-storekit`, `attestKey`,
+    /// `register-post`…). Nació el 2026-10-19 (ticket `cloud-activation-stalls-without-uploading-until-relaunch`): la causa de
+    /// «Activar la nube» parada al 55 % quedó INFERIDA —el push nunca salió y el único `await` sin techo era este—, y este
+    /// canario es lo que la confirma o la refuta en la flota. Distinto de cero = había teléfonos que se quedaban esperando
+    /// para siempre a un token.
+    case attestRefreshAbandoned
+    /// «Activar la nube» venció los 300 s de pre-espera a que iCloud termine de importar
+    /// (`CloudMigrationController.awaitImportQuiescenceForResume`). Una vez por proceso. `detail` =
+    /// `<importing|recentImport>|<0|1-10|11-50|gt50>`: si al vencer seguía un import en curso o habían terminado imports
+    /// recientes, y cuántos terminaron durante la espera (`MigrationImportWaitLogic.stallDetail`). Nació el 2026-10-19
+    /// (ticket `cloud-activation-waits-for-icloud-with-no-way-out`): con 6 movimientos la espera pasó de 5 min y la causa
+    /// quedó inferida.
+    case cloudMigrationImportNotSettled
     case cloudSyncOutboxMirrorRehydrated
     case cloudSyncOutboxMirrorDivergence
     case cloudSyncMutationRejected

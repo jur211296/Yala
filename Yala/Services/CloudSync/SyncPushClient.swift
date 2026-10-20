@@ -400,6 +400,7 @@ final class SyncPushClient {
                 return .transient
             }
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            AttestSessionProvider.reportRejected(sentIn: request)
             // El JWT vale y el gateway no acepta el token de App Attest: ni volver a entrar ni un JWT nuevo lo arreglan, así
             // que no es sesión caducada sino pasajero, con su backoff (decisión de Jürgen para Grupos, 2026-09-15).
             // **Y NO suma a la racha del teléfono, a diferencia de Grupos.** Desde el motor de sync, la puerta de

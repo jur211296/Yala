@@ -7,6 +7,7 @@
 //  instalación nueva (`versionToMarkSeenAtLaunch`), después la decisión (`shouldPresent`).
 //
 
+import Foundation
 import Testing
 
 @testable import Yala
@@ -84,5 +85,62 @@ struct WhatsNewLaunchLogicTests {
         #expect(WhatsNewLaunchLogic.majorMinor("2.1.1") == "2.1")
         #expect(WhatsNewLaunchLogic.majorMinor("2.1") == "2.1")
         #expect(WhatsNewLaunchLogic.majorMinor("") == "")
+    }
+
+    // MARK: - Qué hoja enseña el arranque de quien vuelve (ticket `whats-new-yields-to-a-pending-trial-offer-after-updating`)
+
+    @Test("MUTACIÓN: con Novedades y la oferta de prueba pendientes, sale Novedades (la oferta, en el arranque siguiente)")
+    func returningUser_whatsNewBeatsAPendingTrialOffer() {
+        #expect(WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: true, whatsNewPending: true, trialOfferPending: true, isPro: false) == .whatsNew)
+    }
+
+    @Test("Controles: lo que el arranque viejo ya hacía bien")
+    func returningUser_controls() {
+        // Solo la oferta pendiente: sale la oferta.
+        #expect(WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: true, whatsNewPending: false, trialOfferPending: true, isPro: false) == .trialOffer)
+        // Solo Novedades: salen Novedades.
+        #expect(WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: true, whatsNewPending: true, trialOfferPending: false, isPro: false) == .whatsNew)
+        // Pro no ve la oferta.
+        #expect(WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: true, whatsNewPending: false, trialOfferPending: true, isPro: true) == .none)
+        // Sin sesión privada (solo Grupos), ninguna de las dos.
+        #expect(WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: false, whatsNewPending: true, trialOfferPending: true, isPro: false) == .none)
+        #expect(WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: true, whatsNewPending: false, trialOfferPending: false, isPro: false) == .none)
+    }
+
+    @Test("El arranque de quien vuelve decide con la tabla y encola lo que dice")
+    func returningUser_wiring() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let src = try String(contentsOf: root.appendingPathComponent("Yala/App/ContentView.swift"), encoding: .utf8)
+        let start = try #require(src.range(of: "private func runReturningUserPostChecks() {"))
+        let end = try #require(src.range(of: "private func resumeFullModeActivationIfPending() {", range: start.upperBound..<src.endIndex))
+        let body = src[start.upperBound..<end.lowerBound].components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && !$0.hasPrefix("//") }
+            .joined(separator: "\n")
+        #expect(body.contains("""
+            switch WhatsNewLaunchLogic.returningUserSheet(
+            hasPrivateSession: SessionState.shared.hasPrivateSession,
+            whatsNewPending: whatsNew != nil,
+            trialOfferPending: SessionState.shared.needsPostOnboardingTrial,
+            isPro: FeatureGateService.shared.isProUser) {
+            case .whatsNew:
+            if let whatsNew {
+            RouterEntryGate.shared.submit(.presentWhatsNew(features: whatsNew.features, version: whatsNew.version))
+            }
+            case .trialOffer:
+            Task {
+            await waitForBootstrap()
+            RouterEntryGate.shared.submit(.presentTrialOffer)
+            }
+            case .none:
+            break
+            }
+            """))
+        #expect(!body.contains("} else if let data = whatsNewDataIfPending() {"), "el orden viejo (oferta primero) volvió")
     }
 }

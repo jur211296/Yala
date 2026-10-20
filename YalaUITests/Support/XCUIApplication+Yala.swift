@@ -78,6 +78,9 @@ extension XCUIApplication {
         // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
         // vecinos: un typo dejaría la versión actual y el caso de «viene de actualizar» saldría rojo culpando a la hoja.
         lastSeenAppVersion: String? = nil,
+        // `-uitest-pending-trial-offer`: la oferta de prueba queda pendiente, como la deja la 2.0.4 tras «Restaurar»
+        // (`UITestHooks.pendingTrialOffer`). NOMBRADO por lo mismo que sus vecinos.
+        pendingTrialOffer: Bool = false,
         // `-uitest-cold-start-icloud-check`: enciende bajo `-uitest` el chequeo del ARRANQUE en frío que pide el aviso de «iCloud
         // no está disponible» (card `tablero-con-icloud-drive-apagado-antes-de-abrir-n5zw`). El simulador nunca tiene token de
         // iCloud, así que sin el seam ese chequeo saldría en todo arranque sin seed. NOMBRADO por lo mismo que sus vecinos: un
@@ -250,6 +253,7 @@ extension XCUIApplication {
             args.append("-uitest-last-seen-version")
             args.append(lastSeenAppVersion)
         }
+        if pendingTrialOffer { args.append("-uitest-pending-trial-offer") }
         // Args crudos adicionales (aditivo — p.ej. "-uitest-cloud-chooser").
         args.append(contentsOf: extraArguments)
         // Idioma FIJO para toda la suite. Los seeds nombran sus datos con copy localizado
