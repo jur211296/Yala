@@ -9,7 +9,7 @@ Un cambio en `/v1/chat/completions` o `/v1/audio/transcriptions` del gateway no 
 de App Attest. Lo que Jürgen eligió el 2026-10-07 (encargo `gpt-4-1-nano-shuts-down-on-october-23`):
 
 - **Staging:** prueba él con **Yala Dev** en su iPhone (una foto + un mensaje en Yala IA) mientras yo leo
-  `wrangler tail`. El `DEV_SHARED_SECRET` de staging no está guardado en ningún sitio. Necesita los pasos exactos:
+  `wrangler tail`. El `DEV_SHARED_SECRET` de staging está desde el 7-oct en `~/Secrets/yala-gateway/staging-dev-shared-secret` (medido el 2026-10-19). Necesita los pasos exactos:
   preguntó «¿qué debo hacer?» y «¿cómo sé si es la última versión?». Para un cambio del gateway la versión de la app
   da igual, y conviene decírselo.
 - **Producción:** aprobó acuñar un token de **15 min** para un `sub` ficticio (`frank-verify-AAAA-MM-DD`, tier Pro)
