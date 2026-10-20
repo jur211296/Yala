@@ -44,6 +44,9 @@ struct BudgetsEntry: TimelineEntry {
     let budgets: [WidgetBudget]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    /// La persona no tiene ningún presupuesto activo: el widget invita a crear uno (UX 2.2 · L15-2). Con default para
+    /// el placeholder, que trae ejemplos.
+    var hasNoBudgets: Bool = false
 
     static var placeholder: BudgetsEntry {
         BudgetsEntry(
@@ -155,25 +158,21 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
 
     private func createEntry(for configuration: BudgetsWidgetIntent, family: WidgetFamily) -> BudgetsEntry {
         let limit = Self.budgetLimit(for: family)
-        var budgets: [WidgetBudget]
+        let budgets: [WidgetBudget]
 
-        if configuration.selectionMode == .custom,
-           let selected = configuration.selectedBudgets,
-           !selected.isEmpty {
-            // Custom mode: filter by selected IDs
-            let selectedIDs = Set(selected.map(\.id))
-            let allBudgets = WidgetDataService.getBudgets(sortByCritical: false)
-            budgets = allBudgets.filter { selectedIDs.contains($0.id) }
-            // Maintain selection order
-            budgets = selected.compactMap { entity in
-                allBudgets.first { $0.id == entity.id }
-            }
-            budgets = Array(budgets.prefix(limit))
-        } else {
-            // Automatic mode: top N by % used
-            budgets = WidgetDataService.getBudgets(sortByCritical: true)
-            budgets = Array(budgets.prefix(limit))
-        }
+        // Lo elegido a mano que ya no existe no deja el widget diciendo «no hay»: vuelve a los más usados
+        // (UX 2.2 · L15-2, `WidgetSelectionFallback`).
+        let allBudgets = WidgetDataService.getBudgets(sortByCritical: true)
+        let selectedIDs = configuration.selectionMode == .custom
+            ? (configuration.selectedBudgets ?? []).map(\.id)
+            : []
+        budgets = WidgetSelectionFallback.resolve(
+            selectedIDs: selectedIDs,
+            available: allBudgets,
+            automatic: allBudgets,
+            id: \.id,
+            limit: limit
+        )
 
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
@@ -181,7 +180,8 @@ struct BudgetsWidgetProvider: AppIntentTimelineProvider {
             date: Date(),
             budgets: budgets,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false
+            isPlaceholder: false,
+            hasNoBudgets: allBudgets.isEmpty
         )
     }
 }
@@ -200,7 +200,11 @@ struct BudgetsWidgetView: View {
                 icon: "chart.pie"
             )
 
-            if entry.budgets.isEmpty {
+            if entry.hasNoBudgets {
+                Spacer()
+                WidgetCreateFirstView(icon: "chart.pie", message: "widget.empty.noBudgetsYet")
+                Spacer()
+            } else if entry.budgets.isEmpty {
                 Spacer()
                 HStack {
                     Spacer()
@@ -229,7 +233,7 @@ struct BudgetsWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "budgets"))
+        .widgetURL(WidgetURLHelper.url(for: entry.hasNoBudgets ? WidgetDeepLink.newBudget : "budgets"))
     }
 }
 
@@ -327,6 +331,7 @@ struct BudgetsWidget: Widget {
             provider: BudgetsWidgetProvider()
         ) { entry in
             BudgetsWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

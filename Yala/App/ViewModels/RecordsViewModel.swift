@@ -300,7 +300,10 @@ final class RecordsViewModel: Filterable {
         ) as? Bool ?? true
 
         // Pre-filter: hide transactions from accounts excluded from statistics
+        // Lo que espera su borrado con «Deshacer» no se ve (UX 2.2 · L15-13, `RecordPendingDeletion`).
+        let pendingDeletion = RecordPendingDeletion.shared
         let eligibleTransactions = transactions.filter { tx in
+            if pendingDeletion.hides(tx.persistentModelID, transferPairID: tx.transferPairID) { return false }
             guard let account = tx.account else { return true }
             if account.excludeFromStatistics { return false }
             if !includeGroupTxs && (tx.splitExpenseID != nil || tx.splitSettlementID != nil) {
@@ -636,10 +639,54 @@ final class RecordsViewModel: Filterable {
         isConfirmingSingleDelete = true
     }
 
-    func confirmPendingDelete(context: ModelContext) {
+    func confirmPendingDelete(context: ModelContext, undoName: String?) {
         guard let id = pendingDeleteRecordID else { return }
         pendingDeleteRecordID = nil
-        deleteRecords(ids: [id], context: context)
+        // ⌫ con el registro abierto en la columna: la columna se vacía, como con «Eliminar» del propio detalle.
+        if openRecordID == id { openRecordID = nil }
+        deleteRecordWithUndo(id: id, undoName: undoName, context: context)
+    }
+
+    /// Un registro borrado desde el menú, ⌫ o su detalle espera unos segundos con «Deshacer» (y ⌘Z) antes de borrarse
+    /// de verdad (UX 2.2 · L15-13, `RecordPendingDeletion`). El modo selección y el editor siguen borrando en el acto.
+    /// Lo de un grupo no entra: `deleteRecords` lo rechaza igual, y aquí ni se esconde.
+    private func deleteRecordWithUndo(id: PersistentIdentifier, undoName: String?, context: ModelContext) {
+        do {
+            // Un fetch y no `model(for:)`, que fabrica un objeto aunque el registro ya se haya borrado.
+            var descriptor = FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.persistentModelID == id })
+            descriptor.fetchLimit = 1
+            guard let record = try context.fetch(descriptor).first,
+                  RecordBulkActionLogic.allows(.delete, .init(record: record))
+            else { return }
+            let transferPairID = record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer
+                ? record.transferPairID : nil
+            RecordPendingDeletion.shared.request(
+                id: id,
+                transferPairID: transferPairID,
+                name: undoName ?? RecordDeleteConfirmationLogic.displayName(
+                    note: record.note, subcategoryName: record.subcategory?.name, categoryName: record.category?.name)
+                    ?? String(format: "%.2f", abs(record.amount))
+            ) {
+                // Fuerte a propósito: si la persona sale de Registros en esos segundos, el borrado se tiene que hacer
+                // igual. Solo lo retiene la tarea del aviso, que termina. Y con un fetch antes: si entretanto se borró
+                // por otro camino (Buscar, su pareja de transferencia), `model(for:)` fabricaría un objeto muerto.
+                var stillThere = FetchDescriptor<TransactionItem>(predicate: #Predicate { $0.persistentModelID == id })
+                stillThere.fetchLimit = 1
+                do {
+                    guard try context.fetchCount(stillThere) > 0 else { return }
+                } catch {
+                    #if DEBUG
+                    print("RecordsViewModel: Error checking record before delete: \(error)")
+                    #endif
+                    return
+                }
+                self.deleteRecords(ids: [id], context: context)
+            }
+        } catch {
+            #if DEBUG
+            print("RecordsViewModel: Error fetching record to delete: \(error)")
+            #endif
+        }
     }
 
     /// ↑↓: abre en la columna el registro vecino del abierto, en el orden de la lista.
@@ -721,6 +768,7 @@ final class RecordsViewModel: Filterable {
     /// Detalle › Eliminar, ya confirmado en el propio detalle. La hoja se cierra primero y el borrado corre en su
     /// `onDismiss` (`consumePendingDeleteAfterDetail`): así la hoja no repinta un registro que ya no existe.
     private var pendingDeleteAfterDetail: PersistentIdentifier?
+    private var pendingDeleteAfterDetailName: String?
 
     /// Detalle › Duplicar (hoja): se cierra el detalle y el editor sube ya como copia, por el mismo encadenado que
     /// Editar.
@@ -729,24 +777,29 @@ final class RecordsViewModel: Filterable {
         requestEditFromDetail()
     }
 
-    func requestDeleteFromDetail(_ record: TransactionItem) {
+    func requestDeleteFromDetail(_ record: TransactionItem, undoName: String) {
         pendingDeleteAfterDetail = record.persistentModelID
+        pendingDeleteAfterDetailName = undoName
         showTransactionDetail = false
     }
 
-    /// En el `onDismiss` del detalle: borra lo que se pidió borrar desde él. `true` si había algo.
+    /// En el `onDismiss` del detalle: borra lo que se pidió borrar desde él, con unos segundos para deshacerlo. `true` si
+    /// había algo.
     func consumePendingDeleteAfterDetail(context: ModelContext) -> Bool {
         guard let id = pendingDeleteAfterDetail else { return false }
         pendingDeleteAfterDetail = nil
-        deleteRecords(ids: [id], context: context)
+        let name = pendingDeleteAfterDetailName
+        pendingDeleteAfterDetailName = nil
+        deleteRecordWithUndo(id: id, undoName: name, context: context)
         return true
     }
 
-    /// Eliminar desde la columna o el panel de una ventana ancha: se cierra lo abierto y se borra.
-    func deleteOpenRecord(_ record: TransactionItem, context: ModelContext) {
+    /// Eliminar desde la columna o el panel de una ventana ancha: se cierra lo abierto y se borra, con unos segundos para
+    /// deshacerlo.
+    func deleteOpenRecord(_ record: TransactionItem, context: ModelContext, undoName: String) {
         let id = record.persistentModelID
         if openRecordID == id { openRecordID = nil }
-        deleteRecords(ids: [id], context: context)
+        deleteRecordWithUndo(id: id, undoName: undoName, context: context)
     }
 
     /// «Deshacer» del aviso tras cambiar la subcategoría desde el menú (L8-9): deja la subcategoría y la categoría que

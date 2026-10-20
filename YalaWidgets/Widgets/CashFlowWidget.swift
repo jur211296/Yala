@@ -178,7 +178,7 @@ struct SmallCashFlowView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "panel"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.inAndOut))
     }
 
     /// Compact income/expense summary row con icon + amount jerarquizado.
@@ -314,7 +314,7 @@ struct MediumCashFlowView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "panel"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.inAndOut))
     }
 }
 
@@ -401,7 +401,7 @@ struct LargeCashFlowView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "panel"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.inAndOut))
     }
 
     /// Formateador de la leyenda del `.large`. **Sin marca a propósito, y no por descuido**: no
@@ -785,6 +785,7 @@ struct CashFlowWidget: Widget {
             provider: CashFlowWidgetProvider()
         ) { entry in
             CashFlowWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

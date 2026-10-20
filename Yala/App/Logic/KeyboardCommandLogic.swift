@@ -180,4 +180,27 @@ enum ReceiptDropLogic {
     static func decide(canAccessImageInput: Bool) -> Decision {
         canAccessImageInput ? .present : .upgrade
     }
+
+    /// Los estados en los que lo soltado se RECHAZA (UX 2.2 · L15-12). Con una hoja o un aviso cualquiera abiertos se
+    /// acepta y la hoja de lectura espera a que se cierren, como una foto compartida. Aquí no: la ventana no opera
+    /// (arranque, cierre de sesión, borrado, actualización obligatoria) o hay una pregunta del sistema que contestar
+    /// antes de usar Yala (`FollowerWindowGateLogic.attentionBlockers`), y lo soltado se quedaría en `PendingImages/`
+    /// esperando a algo que no se sabe cuándo llega.
+    static let refusingBlockers: Set<String> = FollowerWindowGateLogic.attentionBlockers.union([
+        "splash", "bootstrapPending", "forceUpdate", "wipingData", "signOutRelaunch", "signOutWorking",
+        "followerBusy", "followerNeedsLeader",
+    ])
+
+    static func refusesWhile(shellBlocker: String?) -> Bool {
+        guard let shellBlocker else { return false }
+        return refusingBlockers.contains(shellBlocker)
+    }
+
+    /// El nombre de un archivo de una tanda soltada: el de `SharedImageBatch` (que la hoja agrupa y cuenta), con `.pdf`
+    /// si es un PDF para que la hoja lo trocee en páginas.
+    static func batchFileName(batchID: String, index: Int, droppedCount: Int, isPDF: Bool) -> String {
+        let name = SharedImageBatch.fileName(batchID: batchID, index: index, sharedCount: max(droppedCount, index + 1))
+        guard isPDF else { return name }
+        return (name as NSString).deletingPathExtension + ".pdf"
+    }
 }

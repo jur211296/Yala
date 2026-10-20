@@ -6,65 +6,65 @@
 */
 
 // MARK: - Gallery (widget gallery names and descriptions)
-"widget.gallery.scheduledPayments" = "即将到期付款";
-"widget.gallery.scheduledPayments.desc" = "你即将到期的付款和订阅";
-"widget.gallery.quickManual" = "新建记录";
-"widget.gallery.quickManual.desc" = "手动记录支出或收入";
+"widget.gallery.scheduledPayments" = "计划付款";
+"widget.gallery.scheduledPayments.desc" = "你接下来的付款和订阅。轻点查看计划付款。";
+"widget.gallery.quickManual" = "新条目";
+"widget.gallery.quickManual.desc" = "手动记录一笔支出或收入。轻点打开新条目。";
 "widget.gallery.quickVoice" = "语音记录";
-"widget.gallery.quickVoice.desc" = "口述你的支出或收入";
-"widget.gallery.quickImage" = "扫描收据";
-"widget.gallery.quickImage.desc" = "从照片或收据记录";
-"widget.gallery.cashFlow" = "现金流";
-"widget.gallery.cashFlow.desc" = "你的净现金流";
-"widget.gallery.balance" = "余额";
-"widget.gallery.balance.desc" = "你的总余额及趋势";
+"widget.gallery.quickVoice.desc" = "口述你的支出或收入。轻点开始口述。";
+"widget.gallery.quickImage" = "照片或文件";
+"widget.gallery.quickImage.desc" = "通过照片或文件记录。轻点选择。";
+"widget.gallery.cashFlow" = "收入与支出";
+"widget.gallery.cashFlow.desc" = "本期的收入与支出。轻点在趋势中查看。";
+"widget.gallery.balance" = "可用";
+"widget.gallery.balance.desc" = "你的可用资金及其走势。轻点查看首页。";
 "widget.gallery.budgets" = "预算";
-"widget.gallery.budgets.desc" = "你的预算进度";
+"widget.gallery.budgets.desc" = "你的预算进度。轻点查看预算。";
 "widget.gallery.latestRecords" = "最新记录";
-"widget.gallery.latestRecords.desc" = "你最近的记录";
+"widget.gallery.latestRecords.desc" = "你最近的记录。轻点查看记录。";
 "widget.gallery.expense" = "支出";
-"widget.gallery.expense.desc" = "你本时段的总支出";
-"widget.gallery.categoriesPie" = "类别(饼图)";
-"widget.gallery.categoriesPie.desc" = "按类别的支出分布";
-"widget.gallery.subcategoriesPie" = "子类别(饼图)";
-"widget.gallery.subcategoriesPie.desc" = "按子类别的支出分布";
-"widget.gallery.topCategories" = "热门类别";
-"widget.gallery.topCategories.desc" = "你支出最多的类别";
-"widget.gallery.topSubcategories" = "热门子类别";
-"widget.gallery.topSubcategories.desc" = "你支出最多的子类别";
+"widget.gallery.expense.desc" = "本期的支出。轻点查看统计中的概览。";
+"widget.gallery.categoriesPie" = "分类圆环";
+"widget.gallery.categoriesPie.desc" = "你的钱花在哪些分类上。轻点查看分布。";
+"widget.gallery.subcategoriesPie" = "子分类圆环";
+"widget.gallery.subcategoriesPie.desc" = "你的钱花在哪些子分类上。轻点按子分类查看分布。";
+"widget.gallery.topCategories" = "支出最多的分类";
+"widget.gallery.topCategories.desc" = "你支出最多的分类。轻点查看分布。";
+"widget.gallery.topSubcategories" = "支出最多的子分类";
+"widget.gallery.topSubcategories.desc" = "你支出最多的子分类。轻点按子分类查看分布。";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "余额";
-"widget.gallery.accessoryBalance.desc" = "锁屏上的余额";
+"widget.gallery.accessoryBalance" = "可用";
+"widget.gallery.accessoryBalance.desc" = "在锁定屏幕上显示可用资金。轻点查看首页。";
 "widget.gallery.accessoryExpense" = "支出";
-"widget.gallery.accessoryExpense.desc" = "锁屏上的支出";
+"widget.gallery.accessoryExpense.desc" = "在锁定屏幕上显示支出。轻点查看统计中的概览。";
 "widget.gallery.accessoryBudget" = "预算";
-"widget.gallery.accessoryBudget.desc" = "你最常用的预算";
+"widget.gallery.accessoryBudget.desc" = "你使用最多的预算。轻点查看预算。";
 "widget.gallery.accessoryPayment" = "下一笔付款";
-"widget.gallery.accessoryPayment.desc" = "你的下一笔计划付款";
+"widget.gallery.accessoryPayment.desc" = "你的下一笔计划付款。轻点查看计划付款。";
 
 // MARK: - Intent titles and descriptions
-"widget.intent.cashFlow.title" = "现金流";
-"widget.intent.cashFlow.desc" = "显示你的净现金流";
-"widget.intent.balance.title" = "余额";
-"widget.intent.balance.desc" = "显示你的总余额";
+"widget.intent.cashFlow.title" = "收入与支出";
+"widget.intent.cashFlow.desc" = "显示本期的收入与支出";
+"widget.intent.balance.title" = "可用";
+"widget.intent.balance.desc" = "显示你的可用资金";
 "widget.intent.expense.title" = "支出";
 "widget.intent.expense.desc" = "显示你的总支出";
-"widget.intent.categoriesPie.title" = "类别(饼图)";
+"widget.intent.categoriesPie.title" = "分类圆环";
 "widget.intent.categoriesPie.desc" = "按类别的支出分布";
-"widget.intent.subcategoriesPie.title" = "子类别(饼图)";
+"widget.intent.subcategoriesPie.title" = "子分类圆环";
 "widget.intent.subcategoriesPie.desc" = "按子类别的支出分布";
-"widget.intent.topCategories.title" = "热门类别";
+"widget.intent.topCategories.title" = "支出最多的分类";
 "widget.intent.topCategories.desc" = "显示你支出最多的类别";
-"widget.intent.topSubcategories.title" = "热门子类别";
+"widget.intent.topSubcategories.title" = "支出最多的子分类";
 "widget.intent.topSubcategories.desc" = "显示你支出最多的子类别";
 "widget.intent.budgets.title" = "预算";
 "widget.intent.budgets.desc" = "显示你的预算进度";
-"widget.intent.scheduledPayments.title" = "即将到期付款";
+"widget.intent.scheduledPayments.title" = "计划付款";
 "widget.intent.scheduledPayments.desc" = "显示你即将到期的计划付款";
 "widget.intent.latestRecords.title" = "最新记录";
 "widget.intent.latestRecords.desc" = "显示你最近的记录";
-"widget.intent.accessoryBalance.title" = "余额";
+"widget.intent.accessoryBalance.title" = "可用";
 "widget.intent.accessoryBalance.desc" = "时段余额";
 "widget.intent.accessoryExpense.title" = "支出";
 "widget.intent.accessoryExpense.desc" = "时段支出";
@@ -72,7 +72,7 @@
 "widget.intent.accessoryBudget.desc" = "最常用预算";
 "widget.intent.accessoryPayment.title" = "下一笔付款";
 "widget.intent.accessoryPayment.desc" = "下一笔计划付款";
-"widget.intent.quickEntry.title" = "快速记录";
+"widget.intent.quickEntry.title" = "新条目";
 "widget.intent.quickEntry.desc" = "配置快速操作小组件以添加记录";
 
 // MARK: - Selection Mode
@@ -99,19 +99,19 @@
 "widget.ui.expenses" = "支出";
 "widget.ui.balance" = "余额";
 "widget.ui.netFlow" = "净流量";
-"widget.ui.cashFlow" = "现金流";
+"widget.ui.cashFlow" = "收入与支出";
 "widget.ui.total" = "总计";
 "widget.ui.ofLimit" = "/ %@";
-"widget.ui.newRecord" = "快速记录";
+"widget.ui.newRecord" = "新条目";
 "widget.ui.voiceRecord" = "语音记录";
 "widget.ui.scanReceipt" = "照片或文件";
-"widget.ui.upcomingPayments" = "即将到期付款";
+"widget.ui.upcomingPayments" = "计划付款";
 "widget.ui.budgets" = "预算";
 "widget.ui.latestRecords" = "最新记录";
 "widget.ui.categories" = "类别";
 "widget.ui.subcategories" = "子类别";
-"widget.ui.topCategories" = "热门类别";
-"widget.ui.topSubcategories" = "热门子类别";
+"widget.ui.topCategories" = "支出最多的分类";
+"widget.ui.topSubcategories" = "支出最多的子分类";
 "widget.ui.noNote" = "无备注";
 
 // MARK: - Date labels
@@ -147,7 +147,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "本月概览";
-"widget.gallery.monthSummary.desc" = "本月的余额、按类别的支出和预算";
+"widget.gallery.monthSummary.desc" = "本月的余额、按分类的支出和预算。轻点查看首页。";
 "widget.ui.monthSummary" = "本月概览";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
@@ -155,3 +155,12 @@
 
 /* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
 "widget.groupsOnly.cta" = "激活完整 Yala";
+
+/* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
+"widget.ui.available" = "可用";
+"widget.empty.openYalaBalance" = "打开 Yala 查看你的余额";
+"widget.empty.openYala" = "打开 Yala 查看你的数据";
+"widget.empty.openYalaShort" = "打开 Yala";
+"widget.empty.noPaymentsYet" = "你还没有计划付款";
+"widget.empty.noBudgetsYet" = "你还没有预算";
+"widget.empty.createOne" = "轻点创建";

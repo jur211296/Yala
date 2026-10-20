@@ -39,9 +39,19 @@ nonisolated enum StatisticsDeepLink: Sendable {
         case thisMonth
     }
 
+    /// Una parte concreta de la pestaña que el enlace pide tener a la vista (UX 2.2 · L15-3): los widgets abren la
+    /// pantalla que amplía lo que enseñan, no la pestaña a secas.
+    enum Focus: String, Sendable, CaseIterable {
+        /// Tendencias › «Entradas y salidas» (el widget del mismo nombre).
+        case inAndOut = "in-and-out"
+        /// Distribución con las subcategorías (los dos widgets de subcategorías).
+        case subcategories
+    }
+
     struct Request: Equatable, Sendable {
         let tab: Tab?
         let period: Period?
+        var focus: Focus? = nil
     }
 
     static let prefix = "statistics/"
@@ -60,12 +70,16 @@ nonisolated enum StatisticsDeepLink: Sendable {
         return request(fromComponents: link.dropFirst(prefix.count).split(separator: "/").map(String.init))
     }
 
-    /// La petición de las partes de la ruta de una URL (`yala://statistics/trends` → `["trends"]`).
+    /// La petición de las partes de la ruta de una URL (`yala://statistics/trends` → `["trends"]`). Tras la pestaña
+    /// puede venir un período (`statistics/insights/last7Days`) o una parte de la pestaña
+    /// (`statistics/trends/in-and-out`); una parte solo cuenta si es de esa pestaña.
     static func request(fromComponents components: [String]) -> Request? {
         let parts = components.filter { $0 != "/" && !$0.isEmpty }
         guard let first = parts.first, let tab = Tab(rawValue: first) else { return nil }
-        let period = parts.dropFirst().first.flatMap(Period.init(rawValue:))
-        return Request(tab: tab, period: period)
+        let rest = parts.dropFirst()
+        let period = rest.lazy.compactMap(Period.init(rawValue:)).first
+        let focus = rest.lazy.compactMap(Focus.init(rawValue:)).first.flatMap { $0.tab == tab ? $0 : nil }
+        return Request(tab: tab, period: period, focus: focus)
     }
 
     /// La pestaña y el período de un informe, con los mismos días que cuenta su texto
@@ -84,6 +98,16 @@ nonisolated enum StatisticsDeepLink: Sendable {
     static func reportDeepLink(type: NotificationType, dayPreference: ReportDayPreference) -> String {
         let request = reportRequest(type: type, dayPreference: dayPreference)
         return deepLink(tab: request.tab ?? .insights, period: request.period)
+    }
+}
+
+extension StatisticsDeepLink.Focus {
+    /// La pestaña a la que pertenece esta parte.
+    nonisolated var tab: StatisticsDeepLink.Tab {
+        switch self {
+        case .inAndOut: return .trends
+        case .subcategories: return .categories
+        }
     }
 }
 

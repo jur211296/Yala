@@ -52,10 +52,22 @@ enum RecordDeleteConfirmationText {
         return L10n.UXL8.deleteNamedTitle(summary)
     }
 
-    /// Una transferencia se borra con su otra mitad: se dice.
-    static func message(for record: TransactionItem) -> String {
-        guard record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer else { return L10n.Common.cannotUndo }
-        return "\(L10n.UXL8.deleteTransferAlsoPair) \(L10n.Common.cannotUndo)"
+    /// Una transferencia se borra con su otra mitad: se dice. `undoable`: el borrado espera unos segundos con «Deshacer»
+    /// (UX 2.2 · L15-13: menú, ⌫ y el detalle), y la pregunta no puede decir que no se puede deshacer.
+    static func message(for record: TransactionItem, undoable: Bool = false) -> String {
+        let tail = undoable ? L10n.UXL08D.undoSeconds : L10n.Common.cannotUndo
+        guard record.balanceAdjustmentType == TransactionItem.adjustmentTypeTransfer else { return tail }
+        return "\(L10n.UXL8.deleteTransferAlsoPair) \(tail)"
+    }
+
+    /// Cómo se llama el registro en el aviso «Eliminaste «Uber · S/ 26»»: como en la pregunta, sin los signos.
+    static func undoName(for record: TransactionItem, preferences: AppPreferences) -> String {
+        let amount = preferences.currency(abs(record.amount), currencyCode: record.currencyCode)
+        return RecordDeleteConfirmationLogic.displayName(
+            note: record.note,
+            subcategoryName: record.subcategory?.name,
+            categoryName: record.category?.name
+        ).map { RecordDeleteConfirmationLogic.summary(name: $0, amount: amount) } ?? amount
     }
 }
 
@@ -128,6 +140,15 @@ struct RecordRowContextMenu: ViewModifier {
             Button(L10n.Action.delete, systemImage: "trash", role: .destructive) {
                 viewModel.requestDelete(record)
             }
+        } else if record.splitExpenseID != nil || record.splitSettlementID != nil {
+            // Lo de un grupo se borra desde el grupo: «Eliminar» sale, apagado y con el porqué, en vez de no salir
+            // (UX 2.2 · L15-13).
+            Divider()
+            Button(role: .destructive) {} label: {
+                Label(L10n.Action.delete, systemImage: "trash")
+                Text(L10n.UXL08D.deleteFromGroup)
+            }
+            .disabled(true)
         }
     }
 }
@@ -147,7 +168,11 @@ struct RecordRowActionsPresenter: ViewModifier {
             .alert(pendingDeleteTitle, isPresented: $viewModel.isConfirmingSingleDelete) {
                 Button(L10n.Action.cancel, role: .cancel) {}
                 Button(L10n.Action.delete, role: .destructive) {
-                    viewModel.confirmPendingDelete(context: modelContext)
+                    viewModel.confirmPendingDelete(
+                        context: modelContext,
+                        undoName: pendingDeleteRecord.map {
+                            RecordDeleteConfirmationText.undoName(for: $0, preferences: appPreferences)
+                        })
                 }
             } message: {
                 Text(pendingDeleteMessage)
@@ -170,6 +195,6 @@ struct RecordRowActionsPresenter: ViewModifier {
     }
 
     private var pendingDeleteMessage: String {
-        pendingDeleteRecord.map { RecordDeleteConfirmationText.message(for: $0) } ?? L10n.Common.cannotUndo
+        pendingDeleteRecord.map { RecordDeleteConfirmationText.message(for: $0, undoable: true) } ?? L10n.UXL08D.undoSeconds
     }
 }

@@ -238,6 +238,13 @@ enum WidgetDataService {
 
     // MARK: - Public API
 
+    /// ¿La app ya escribió sus datos en el App Group? Sin ellos todo widget de datos pintaría ceros (en dólares si no
+    /// hay preferencia guardada), así que invita a abrir Yala (UX 2.2 · L15-2, `WidgetNoDataInviteModifier`). No
+    /// decodifica: basta con que la clave exista.
+    static var hasSnapshot: Bool {
+        sharedDefaults?.data(forKey: cacheKey) != nil
+    }
+
     /// Loads the cached widget data snapshot
     /// Returns nil if no data is available or data is corrupted
     ///

@@ -10,7 +10,7 @@ import Foundation
 
 /// Por qué no salió el registro, contado como lo vive el usuario. Nunca se le enseña `localizedDescription`: los errores
 /// de la pasarela vienen en técnico, y antes un fallo del servicio se leía como «No se detectaron transacciones».
-enum ImageEntryFailure: Equatable {
+nonisolated enum ImageEntryFailure: Equatable, Sendable {
     case noConnection
     /// La foto se leyó y no trae ningún importe.
     case noAmount

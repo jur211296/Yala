@@ -148,7 +148,7 @@ struct SmallExpenseView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "panel"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.expenses))
     }
 }
 
@@ -312,7 +312,7 @@ struct MediumExpenseView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "panel"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.expenses))
     }
 }
 
@@ -328,6 +328,7 @@ struct ExpenseWidget: Widget {
             provider: ExpenseWidgetProvider()
         ) { entry in
             ExpenseWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

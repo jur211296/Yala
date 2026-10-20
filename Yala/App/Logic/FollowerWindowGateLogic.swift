@@ -89,3 +89,55 @@ enum FollowerWindowGateLogic {
     }
 
 }
+
+/// Qué dice una ventana que espera y a qué ventana lleva su botón (UX 2.2 · L15-11). Decisión pura: la lee `WindowBusyView`.
+enum WindowBusyLogic {
+
+    enum Reason: Equatable {
+        /// Otra ventana está cerrando la sesión.
+        case signingOut
+        /// Se están borrando los datos. Puede lanzarlo esta misma ventana (Ajustes › Vaciar datos), así que ni el texto
+        /// habla de «la otra ventana» ni hay botón.
+        case wiping
+        /// La líder arranca, o todavía no hay líder.
+        case starting
+    }
+
+    /// El texto: «en la otra ventana» solo cuando hay otra ventana a la que ir.
+    enum Text: Equatable {
+        case signingOutElsewhere, signingOut, wiping, starting
+    }
+
+    static func text(for reason: Reason, hasTarget: Bool) -> Text {
+        switch reason {
+        case .signingOut: hasTarget ? .signingOutElsewhere : .signingOut
+        case .wiping: .wiping
+        case .starting: .starting
+        }
+    }
+
+    /// El mismo orden que `FollowerWindowGateLogic.state`: el borrado pesa más que el cierre de sesión.
+    static func reason(isWipingData: Bool, signOutWorking: Bool) -> Reason {
+        if isWipingData { return .wiping }
+        if signOutWorking { return .signingOut }
+        return .starting
+    }
+
+    /// La ventana que hace lo que esta espera: la que lanzó el cierre de sesión, o la líder. `nil` si es esta misma o ya
+    /// no está viva: entonces no hay a dónde ir y el botón no sale.
+    static func target(
+        for reason: Reason,
+        windowID: UUID,
+        signOutDriverID: UUID?,
+        leaderID: UUID?,
+        aliveIDs: [UUID]
+    ) -> UUID? {
+        let candidate: UUID? = switch reason {
+        case .signingOut: signOutDriverID
+        case .wiping: nil
+        case .starting: leaderID
+        }
+        guard let candidate, candidate != windowID, aliveIDs.contains(candidate) else { return nil }
+        return candidate
+    }
+}

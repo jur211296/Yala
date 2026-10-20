@@ -27,6 +27,9 @@ struct DetailContainerView: View {
 
     // MARK: - ViewModels
 
+    /// La pantalla tiene poco alto: Yala IA y «+» en fila (UX 2.2 · L15-14).
+    @State private var fabShortContainer = false
+
     @State private var dataViewModel = DetailContainerViewModel()
     @State private var recordsViewModel: RecordsViewModel
     @State private var trendsViewModel: StatisticsViewModel
@@ -271,6 +274,7 @@ struct DetailContainerView: View {
                             isImageLocked: isImageLocked,
                             isChatLocked: !FeatureGateService.shared.canAccess(.chatAssistant),
                             chatFABVisible: appPreferences.chatFABVisible,
+                            isShortContainer: fabShortContainer,
                             onVoiceTap: { showVoiceRecording = true },
                             onImageTap: { showImageSelection = true },
                             onManualTap: { recordsViewModel.showNewTransaction = true },
@@ -290,6 +294,8 @@ struct DetailContainerView: View {
                         )
                     }
                 }
+                // Con poco alto, los dos botones van en fila (UX 2.2 · L15-14).
+                .measuresShortContainer($fabShortContainer)
                 // Con el registro abierto al lado, los flotantes van sobre la lista, como en la página Registros.
                 .frame(width: recordsListWidth)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -403,7 +409,10 @@ struct DetailContainerView: View {
     /// exista).
     private var openPaneRecord: TransactionItem? {
         guard let id = recordsViewModel.openRecordID else { return nil }
-        return dataViewModel.allTransactions.first { $0.persistentModelID == id }
+        // Lo que espera su borrado con «Deshacer» ya no se enseña (UX 2.2 · L15-13).
+        return dataViewModel.allTransactions.first {
+            $0.persistentModelID == id && !RecordPendingDeletion.shared.hides(id, transferPairID: $0.transferPairID)
+        }
     }
 
     /// Los mismos hijos en todos los tamaños —la lista siempre la primera— para que redimensionar no la
@@ -445,7 +454,10 @@ struct DetailContainerView: View {
                 onEdit: { recordsViewModel.editOpenRecord(record) },
                 onClose: { recordsViewModel.openRecordID = nil },
                 onDuplicate: { recordsViewModel.duplicateRecord(record) },
-                onDelete: { recordsViewModel.deleteOpenRecord(record, context: modelContext) }
+                onDelete: { recordsViewModel.deleteOpenRecord(
+                    record, context: modelContext,
+                    undoName: RecordDeleteConfirmationText.undoName(for: record, preferences: appPreferences)) },
+                deleteIsUndoable: true
             )
             .id(record.persistentModelID)
         } else {
@@ -778,7 +790,10 @@ private struct DetailContainerSheets: ViewModifier {
                         transaction: transaction,
                         onEdit: { recordsViewModel.requestEditFromDetail() },
                         onDuplicate: { recordsViewModel.requestDuplicateFromDetail() },
-                        onDelete: { recordsViewModel.requestDeleteFromDetail(transaction) }
+                        onDelete: { recordsViewModel.requestDeleteFromDetail(
+                            transaction,
+                            undoName: RecordDeleteConfirmationText.undoName(for: transaction, preferences: appPreferences)) },
+                        deleteIsUndoable: true
                     )
                 }
             }

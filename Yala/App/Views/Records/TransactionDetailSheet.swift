@@ -58,6 +58,10 @@ struct TransactionDetailSheet: View {
     /// (L8-7). `nil`: no se ofrece.
     var onDelete: (() -> Void)? = nil
 
+    /// El host borra con unos segundos para deshacer (`RecordPendingDeletion`, UX 2.2 · L15-13): Registros y Estadísticas
+    /// › Registros. Los demás (Buscar, el Panel) borran en el acto, y la pregunta no puede prometer lo contrario.
+    var deleteIsUndoable = false
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.tagCatalog) private var tagCatalog
@@ -199,7 +203,8 @@ struct TransactionDetailSheet: View {
     }
 
     private var deleteMessage: String {
-        RecordDeleteConfirmationText.message(for: transaction)
+        // Desde Registros se puede deshacer unos segundos (UX 2.2 · L15-13); desde Buscar o el Panel, no.
+        RecordDeleteConfirmationText.message(for: transaction, undoable: deleteIsUndoable)
     }
 
     // MARK: - Gasto de grupo (L8-5)

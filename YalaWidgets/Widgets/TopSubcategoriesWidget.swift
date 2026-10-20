@@ -143,7 +143,7 @@ struct TopSubcategoriesWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "statistics/categories"))
+        .widgetURL(WidgetURLHelper.url(for: WidgetDeepLink.subcategories))
     }
 }
 
@@ -235,6 +235,7 @@ struct TopSubcategoriesWidget: Widget {
             provider: TopSubcategoriesWidgetProvider()
         ) { entry in
             TopSubcategoriesWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

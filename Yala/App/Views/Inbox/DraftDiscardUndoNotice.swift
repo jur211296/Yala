@@ -29,10 +29,20 @@ enum DraftDiscardUndoNotice {
 
     private static var window: UIWindow?
     private static var hideTask: Task<Void, Never>?
+    /// El «Deshacer» del aviso de un borrado en pantalla: ⌘Z lo pulsa mientras dura (UX 2.2 · L15-13).
+    private static var activeUndo: (@MainActor () -> Void)?
+
+    /// ⌘Z: pulsa el «Deshacer» del aviso en pantalla. `false` si no hay ninguno.
+    @discardableResult
+    static func performActiveUndo() -> Bool {
+        guard let activeUndo else { return false }
+        activeUndo()
+        return true
+    }
 
     /// Enseña el aviso en la ventana que está delante. `onUndo` corre al tocar «Deshacer» y el aviso se va.
     static func show(onUndo: @escaping @MainActor () -> Void) {
-        show(message: L10n.Inbox.movedToArchived, onUndo: onUndo)
+        show(message: L10n.Inbox.movedToArchived, undoesDeletion: true, onUndo: onUndo)
     }
 
     /// El mismo aviso con otro texto e icono: Registros lo usa tras cambiar la subcategoría desde el menú de una fila
@@ -43,6 +53,7 @@ enum DraftDiscardUndoNotice {
         undoTitle: String? = nil,
         noticeIdentifier: String = "draft_discard_notice",
         undoIdentifier: String = "draft_discard_undo",
+        undoesDeletion: Bool = false,
         onUndo: @escaping @MainActor () -> Void
     ) {
         hide()
@@ -61,6 +72,15 @@ enum DraftDiscardUndoNotice {
             }
         )
         host.view.backgroundColor = .clear
+        // ⌘Z deshace el último BORRADO mientras dura su aviso (UX 2.2 · L15-13). Los avisos que no deshacen un borrado
+        // (saltar una fecha, cambiar la subcategoría, «Ver» tras guardar) siguen con su botón y nada más.
+        if undoesDeletion {
+            activeUndo = {
+                onUndo()
+                hide()
+            }
+            UndoNoticeState.shared.isActive = true
+        }
 
         let bounds = scene.effectiveGeometry.coordinateSpace.bounds
         let safeArea = scene.windows.first { $0.isKeyWindow }?.safeAreaInsets ?? .zero
@@ -95,6 +115,8 @@ enum DraftDiscardUndoNotice {
         hideTask = nil
         window?.isHidden = true
         window = nil
+        activeUndo = nil
+        UndoNoticeState.shared.isActive = false
     }
 
     /// La escena de la ventana que está delante; si el registro aún no la conoce, la escena activa.
@@ -106,6 +128,15 @@ enum DraftDiscardUndoNotice {
             .compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive }
     }
+}
+
+/// ¿Hay en pantalla el aviso de un borrado con «Deshacer»? Observable para que el atajo ⌘Z se encienda solo mientras dura
+/// (`RootCommandActions.canUndoDeletion`).
+@MainActor
+@Observable
+final class UndoNoticeState {
+    static let shared = UndoNoticeState()
+    var isActive = false
 }
 
 /// El aviso: el mensaje y «Deshacer», en una cápsula de cristal.

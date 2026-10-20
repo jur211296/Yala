@@ -6,65 +6,65 @@
 */
 
 // MARK: - Gallery (widget gallery names and descriptions)
-"widget.gallery.scheduledPayments" = "Aankomende betalingen";
-"widget.gallery.scheduledPayments.desc" = "Je aankomende betalingen en abonnementen";
+"widget.gallery.scheduledPayments" = "Geplande betalingen";
+"widget.gallery.scheduledPayments.desc" = "Je volgende betalingen en abonnementen. Tik om Geplande betalingen te zien.";
 "widget.gallery.quickManual" = "Nieuwe boeking";
-"widget.gallery.quickManual.desc" = "Boek handmatig een uitgave of inkomst";
-"widget.gallery.quickVoice" = "Boeking via spraak";
-"widget.gallery.quickVoice.desc" = "Dicteer je uitgave of inkomst";
-"widget.gallery.quickImage" = "Bonnetje scannen";
-"widget.gallery.quickImage.desc" = "Boek vanaf een foto of bonnetje";
-"widget.gallery.cashFlow" = "Cashflow";
-"widget.gallery.cashFlow.desc" = "Je netto cashflow";
-"widget.gallery.balance" = "Saldo";
-"widget.gallery.balance.desc" = "Je totale saldo met trend";
+"widget.gallery.quickManual.desc" = "Boek een uitgave of inkomst met de hand. Tik om Nieuwe boeking te openen.";
+"widget.gallery.quickVoice" = "Boeken via spraak";
+"widget.gallery.quickVoice.desc" = "Spreek je uitgave of inkomst in. Tik om te beginnen met inspreken.";
+"widget.gallery.quickImage" = "Foto of bestand";
+"widget.gallery.quickImage.desc" = "Boek vanuit een foto of bestand. Tik om het te kiezen.";
+"widget.gallery.cashFlow" = "In en uit";
+"widget.gallery.cashFlow.desc" = "Wat er deze periode in- en uitging. Tik om het in Trends te zien.";
+"widget.gallery.balance" = "Beschikbaar";
+"widget.gallery.balance.desc" = "Je beschikbare geld en het verloop. Tik om Start te zien.";
 "widget.gallery.budgets" = "Budgetten";
-"widget.gallery.budgets.desc" = "De voortgang van je budgetten";
+"widget.gallery.budgets.desc" = "Hoe je budgetten ervoor staan. Tik om Budgetten te zien.";
 "widget.gallery.latestRecords" = "Recente boekingen";
-"widget.gallery.latestRecords.desc" = "Je meest recente boekingen";
+"widget.gallery.latestRecords.desc" = "Je meest recente boekingen. Tik om Boekingen te zien.";
 "widget.gallery.expense" = "Uitgaven";
-"widget.gallery.expense.desc" = "Je totale uitgaven over de periode";
-"widget.gallery.categoriesPie" = "Categorieën (taart)";
-"widget.gallery.categoriesPie.desc" = "Verdeling van uitgaven per categorie";
-"widget.gallery.subcategoriesPie" = "Subcategorieën (taart)";
-"widget.gallery.subcategoriesPie.desc" = "Verdeling van uitgaven per subcategorie";
-"widget.gallery.topCategories" = "Topcategorieën";
-"widget.gallery.topCategories.desc" = "Je categorieën met de meeste uitgaven";
-"widget.gallery.topSubcategories" = "Topsubcategorieën";
-"widget.gallery.topSubcategories.desc" = "Je subcategorieën met de meeste uitgaven";
+"widget.gallery.expense.desc" = "Je uitgaven deze periode. Tik om het Overzicht in Statistieken te zien.";
+"widget.gallery.categoriesPie" = "Categorieën in een cirkel";
+"widget.gallery.categoriesPie.desc" = "Aan welke categorieën je geld opgaat. Tik om Verdeling te zien.";
+"widget.gallery.subcategoriesPie" = "Subcategorieën in een cirkel";
+"widget.gallery.subcategoriesPie.desc" = "Aan welke subcategorieën je geld opgaat. Tik om Verdeling per subcategorie te zien.";
+"widget.gallery.topCategories" = "Categorieën met de meeste uitgaven";
+"widget.gallery.topCategories.desc" = "Je categorieën met de meeste uitgaven. Tik om Verdeling te zien.";
+"widget.gallery.topSubcategories" = "Subcategorieën met de meeste uitgaven";
+"widget.gallery.topSubcategories.desc" = "Je subcategorieën met de meeste uitgaven. Tik om Verdeling per subcategorie te zien.";
 
 // MARK: - Gallery (Lock Screen accessory widgets)
-"widget.gallery.accessoryBalance" = "Saldo";
-"widget.gallery.accessoryBalance.desc" = "Je saldo op het toegangsscherm";
+"widget.gallery.accessoryBalance" = "Beschikbaar";
+"widget.gallery.accessoryBalance.desc" = "Je beschikbare geld op het toegangsscherm. Tik om Start te zien.";
 "widget.gallery.accessoryExpense" = "Uitgaven";
-"widget.gallery.accessoryExpense.desc" = "Je uitgaven op het toegangsscherm";
+"widget.gallery.accessoryExpense.desc" = "Je uitgaven op het toegangsscherm. Tik om het Overzicht in Statistieken te zien.";
 "widget.gallery.accessoryBudget" = "Budget";
-"widget.gallery.accessoryBudget.desc" = "Je meest gebruikte budget";
+"widget.gallery.accessoryBudget.desc" = "Je meest gebruikte budget. Tik om Budgetten te zien.";
 "widget.gallery.accessoryPayment" = "Volgende betaling";
-"widget.gallery.accessoryPayment.desc" = "Je volgende geplande betaling";
+"widget.gallery.accessoryPayment.desc" = "Je volgende geplande betaling. Tik om Geplande betalingen te zien.";
 
 // MARK: - Intent titles and descriptions
-"widget.intent.cashFlow.title" = "Cashflow";
-"widget.intent.cashFlow.desc" = "Toont je netto cashflow";
-"widget.intent.balance.title" = "Saldo";
-"widget.intent.balance.desc" = "Toont je totale saldo";
+"widget.intent.cashFlow.title" = "In en uit";
+"widget.intent.cashFlow.desc" = "Toont wat er deze periode in- en uitging";
+"widget.intent.balance.title" = "Beschikbaar";
+"widget.intent.balance.desc" = "Toont je beschikbare geld";
 "widget.intent.expense.title" = "Uitgaven";
 "widget.intent.expense.desc" = "Toont je totale uitgaven";
-"widget.intent.categoriesPie.title" = "Categorieën (taart)";
+"widget.intent.categoriesPie.title" = "Categorieën in een cirkel";
 "widget.intent.categoriesPie.desc" = "Verdeling van uitgaven per categorie";
-"widget.intent.subcategoriesPie.title" = "Subcategorieën (taart)";
+"widget.intent.subcategoriesPie.title" = "Subcategorieën in een cirkel";
 "widget.intent.subcategoriesPie.desc" = "Verdeling van uitgaven per subcategorie";
-"widget.intent.topCategories.title" = "Topcategorieën";
+"widget.intent.topCategories.title" = "Categorieën met de meeste uitgaven";
 "widget.intent.topCategories.desc" = "Toont je categorieën met de meeste uitgaven";
-"widget.intent.topSubcategories.title" = "Topsubcategorieën";
+"widget.intent.topSubcategories.title" = "Subcategorieën met de meeste uitgaven";
 "widget.intent.topSubcategories.desc" = "Toont je subcategorieën met de meeste uitgaven";
 "widget.intent.budgets.title" = "Budgetten";
 "widget.intent.budgets.desc" = "Toont de voortgang van je budgetten";
-"widget.intent.scheduledPayments.title" = "Aankomende betalingen";
+"widget.intent.scheduledPayments.title" = "Geplande betalingen";
 "widget.intent.scheduledPayments.desc" = "Toont je aankomende geplande betalingen";
 "widget.intent.latestRecords.title" = "Recente boekingen";
 "widget.intent.latestRecords.desc" = "Toont je meest recente boekingen";
-"widget.intent.accessoryBalance.title" = "Saldo";
+"widget.intent.accessoryBalance.title" = "Beschikbaar";
 "widget.intent.accessoryBalance.desc" = "Saldo van de periode";
 "widget.intent.accessoryExpense.title" = "Uitgaven";
 "widget.intent.accessoryExpense.desc" = "Uitgaven van de periode";
@@ -72,7 +72,7 @@
 "widget.intent.accessoryBudget.desc" = "Meest gebruikte budget";
 "widget.intent.accessoryPayment.title" = "Volgende betaling";
 "widget.intent.accessoryPayment.desc" = "Volgende geplande betaling";
-"widget.intent.quickEntry.title" = "Snelle invoer";
+"widget.intent.quickEntry.title" = "Nieuwe boeking";
 "widget.intent.quickEntry.desc" = "Stel widgets in voor snelle acties om boekingen toe te voegen";
 
 // MARK: - Selection Mode
@@ -99,19 +99,19 @@
 "widget.ui.expenses" = "Uitgaven";
 "widget.ui.balance" = "Saldo";
 "widget.ui.netFlow" = "Nettostroom";
-"widget.ui.cashFlow" = "Cashflow";
+"widget.ui.cashFlow" = "In en uit";
 "widget.ui.total" = "Totaal";
 "widget.ui.ofLimit" = "van %@";
-"widget.ui.newRecord" = "Snelle invoer";
-"widget.ui.voiceRecord" = "Spraakinvoer";
+"widget.ui.newRecord" = "Nieuwe boeking";
+"widget.ui.voiceRecord" = "Boeken via spraak";
 "widget.ui.scanReceipt" = "Foto of bestand";
-"widget.ui.upcomingPayments" = "Aankomende betalingen";
+"widget.ui.upcomingPayments" = "Geplande betalingen";
 "widget.ui.budgets" = "Budgetten";
 "widget.ui.latestRecords" = "Recente boekingen";
 "widget.ui.categories" = "Categorieën";
 "widget.ui.subcategories" = "Subcategorieën";
-"widget.ui.topCategories" = "Topcategorieën";
-"widget.ui.topSubcategories" = "Topsubcategorieën";
+"widget.ui.topCategories" = "Categorieën met de meeste uitgaven";
+"widget.ui.topSubcategories" = "Subcategorieën met de meeste uitgaven";
 "widget.ui.noNote" = "Geen notitie";
 
 // MARK: - Date labels
@@ -137,7 +137,7 @@
 "widget.paymentCategory.subscription" = "Abonnementen";
 
 // MARK: - Control Widgets
-"widget.control.voiceExpense" = "Spraakinvoer";
+"widget.control.voiceExpense" = "Boeken via spraak";
 "widget.control.voiceExpense.desc" = "Dicteer je boeking aan Yala";
 "widget.control.photoExpense" = "Foto of bestand";
 "widget.control.photoExpense.desc" = "Boek met een foto of bestand in Yala";
@@ -147,7 +147,7 @@
 
 /* MARK: iPad — widget extragrande «Resumen del mes» */
 "widget.gallery.monthSummary" = "Maandoverzicht";
-"widget.gallery.monthSummary.desc" = "Je saldo, uitgaven per categorie en budgetten van deze maand";
+"widget.gallery.monthSummary.desc" = "Je saldo, uitgaven per categorie en budgetten van de maand. Tik om Start te zien.";
 "widget.ui.monthSummary" = "Maandoverzicht";
 
 /* Widget en una sesión solo grupos: no hay finanzas personales que mostrar */
@@ -155,3 +155,12 @@
 
 /* Widget solo grupos: llamada a activar Yala completo (mismo texto que groups.activate.title) */
 "widget.groupsOnly.cta" = "Volledige Yala activeren";
+
+/* UX 2.2 · lote decidido 08 — estados vacíos de los widgets (L15-2) */
+"widget.ui.available" = "Beschikbaar";
+"widget.empty.openYalaBalance" = "Open Yala om je saldo te zien";
+"widget.empty.openYala" = "Open Yala om je gegevens te zien";
+"widget.empty.openYalaShort" = "Open Yala";
+"widget.empty.noPaymentsYet" = "Je hebt nog geen geplande betalingen";
+"widget.empty.noBudgetsYet" = "Je hebt nog geen budgetten";
+"widget.empty.createOne" = "Tik om er een te maken";

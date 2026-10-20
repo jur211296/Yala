@@ -977,7 +977,7 @@
 "cashFlow.income" = "Ingresos";
 "cashFlow.net" = "Yala";
 "cashFlow.netFlow" = "Flujo neto";
-"cashFlow.title" = "Flujo de Efectivo";
+"cashFlow.title" = "Entradas y salidas";
 "cashFlowPlan.accumulated" = "Acumulado";
 "cashFlowPlan.accumulatedBalance" = "Saldo acumulado";
 "cashFlowPlan.accumulatedHintMessage" = "Tu saldo total desde que empezó el plan. Suma lo disponible de cada mes.";
@@ -2330,7 +2330,7 @@
 "panel.widgetInfo.cashFlow.mediumWhatQ" = "¿Qué estás viendo?";
 "panel.widgetInfo.cashFlow.smallWhatA" = "Tu balance del periodo: la diferencia entre lo que ingresaste y lo que gastaste, con dos barras que comparan ambos totales.";
 "panel.widgetInfo.cashFlow.smallWhatQ" = "¿Qué estás viendo?";
-"panel.widgetInfo.cashFlow.title" = "Flujo de caja";
+"panel.widgetInfo.cashFlow.title" = "Entradas y salidas";
 "panel.widgetInfo.categoriesPie.chip1" = "Categorías";
 "panel.widgetInfo.categoriesPie.chip2" = "Período actual";
 "panel.widgetInfo.categoriesPie.chip3" = "Podés tocarla";
@@ -2798,7 +2798,7 @@
 "settings.theme.rosa" = "Rosa";
 "settings.theme.teal" = "Teal";
 "settings.theme.translucent" = "Traslúcido";
-"settings.title" = "Configuración";
+"settings.title" = "Ajustes";
 "settings.tutorials" = "Tutoriales";
 "settings.version" = "Versión";
 "settings.versionInfo" = "Versión %1$@ (Build %2$@)";
@@ -3556,7 +3556,7 @@
 "widget.total" = "Total";
 "widget.visible" = "Visible";
 "widgetType.budgets" = "Presupuestos";
-"widgetType.cashFlow" = "Flujo de efectivo";
+"widgetType.cashFlow" = "Entradas y salidas";
 "widgetType.categoriesPie" = "Categorías";
 "widgetType.exchangeRate" = "Tipo de cambio";
 "widgetType.expensesByNeed" = "Necesidades";
@@ -7031,3 +7031,11 @@
 "uxpro.welcome.theme" = "Ya podés usar este tema.";
 "uxpro.welcome.icon" = "Ya podés usar este icono.";
 "uxpro.welcome.cashFlow" = "Ya podés usar el flujo de caja avanzado.";
+
+/* UX 2.2 · lote decidido 08 — ventanas del iPad y teclado (L15-11, L15-13) */
+"window.busy.signingOutElsewhere" = "Cerrando tu sesión en la otra ventana…";
+"window.busy.signingOut" = "Cerrando tu sesión…";
+"window.busy.wiping" = "Borrando tus datos…";
+"window.busy.starting" = "Yala se está abriendo…";
+"records.l15.deleteFromGroup" = "Se borra desde el grupo";
+"records.l15.undoSeconds" = "Vas a tener unos segundos para deshacerlo.";

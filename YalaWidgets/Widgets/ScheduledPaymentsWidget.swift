@@ -44,6 +44,9 @@ struct ScheduledPaymentsEntry: TimelineEntry {
     let payments: [WidgetScheduledPayment]
     let currencyDisplayFormat: String
     let isPlaceholder: Bool
+    /// La persona no tiene ningún pago planificado: el widget invita a crear uno en vez de enseñar «Sin pagos
+    /// pendientes» con un ✓, que se leía como «estás al día» (UX 2.2 · L15-2).
+    var hasNoPayments: Bool = false
 
     static var placeholder: ScheduledPaymentsEntry {
         ScheduledPaymentsEntry(
@@ -175,21 +178,21 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
 
     private func createEntry(for configuration: ScheduledPaymentsWidgetIntent, family: WidgetFamily) -> ScheduledPaymentsEntry {
         let limit = Self.paymentLimit(for: family)
-        var payments: [WidgetScheduledPayment]
+        let payments: [WidgetScheduledPayment]
 
-        if configuration.selectionMode == .custom,
-           let selected = configuration.selectedPayments,
-           !selected.isEmpty {
-            // Custom mode: filter by selected IDs and maintain selection order
-            let allPayments = WidgetDataService.getScheduledPayments(filter: .all, limit: 100)
-            payments = selected.compactMap { entity in
-                allPayments.first { $0.id == entity.id }
-            }
-            payments = Array(payments.prefix(limit))
-        } else {
-            // Automatic mode: next N by date (overdue first)
-            payments = WidgetDataService.getScheduledPayments(filter: .all, limit: limit)
-        }
+        // Automático: los próximos por fecha (vencidos primero). Lo elegido a mano que ya no existe vuelve a eso en vez
+        // de dejar el widget vacío (UX 2.2 · L15-2, `WidgetSelectionFallback`).
+        let allPayments = WidgetDataService.getScheduledPayments(filter: .all, limit: 100)
+        let selectedIDs = configuration.selectionMode == .custom
+            ? (configuration.selectedPayments ?? []).map(\.id)
+            : []
+        payments = WidgetSelectionFallback.resolve(
+            selectedIDs: selectedIDs,
+            available: allPayments,
+            automatic: allPayments,
+            id: \.id,
+            limit: limit
+        )
 
         let displayFormat = WidgetDataService.getCurrencyDisplayFormat()
 
@@ -197,7 +200,8 @@ struct ScheduledPaymentsProvider: AppIntentTimelineProvider {
             date: Date(),
             payments: payments,
             currencyDisplayFormat: displayFormat,
-            isPlaceholder: false
+            isPlaceholder: false,
+            hasNoPayments: allPayments.isEmpty
         )
     }
 }
@@ -216,7 +220,11 @@ struct ScheduledPaymentsWidgetView: View {
                 icon: "calendar.badge.clock"
             )
 
-            if entry.payments.isEmpty {
+            if entry.hasNoPayments {
+                Spacer()
+                WidgetCreateFirstView(icon: "calendar.badge.plus", message: "widget.empty.noPaymentsYet")
+                Spacer()
+            } else if entry.payments.isEmpty {
                 Spacer()
                 HStack {
                     Spacer()
@@ -245,7 +253,8 @@ struct ScheduledPaymentsWidgetView: View {
         }
         .padding(WDS.Spacing.xs)
         .clipped()
-        .widgetURL(WidgetURLHelper.url(for: "planning/scheduled-payments"))
+        .widgetURL(WidgetURLHelper.url(
+            for: entry.hasNoPayments ? WidgetDeepLink.newScheduledPayment : "planning/scheduled-payments"))
     }
 }
 
@@ -361,6 +370,7 @@ struct ScheduledPaymentsWidget: Widget {
             provider: ScheduledPaymentsProvider()
         ) { entry in
             ScheduledPaymentsWidgetView(entry: entry)
+                .invitesToOpenYalaWithoutData(isPlaceholder: entry.isPlaceholder)
                 .invitesToActivateFullWhenGroupsOnly()
                 .containerBackground(Color(.secondarySystemGroupedBackground), for: .widget)
         }

@@ -137,6 +137,8 @@ struct TrendsTabView: View {
     // MARK: - Body
 
     var body: some View {
+        // El lector del scroll deja «Entradas y salidas» a la vista cuando lo pide el widget (UX 2.2 · L15-3).
+        ScrollViewReader { scrollProxy in
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.md) {
                 heroSummary
@@ -156,6 +158,7 @@ struct TrendsTabView: View {
                     PairedCardsStack(rowSpacing: DS.Spacing.xl) {
                         chartsLayout
                         cashFlowWidget
+                            .id(StatisticsDeepLink.Focus.inAndOut)
                         weekdayChartSection
                         trendInsightCard            // mueve al final: cierre narrativo
                     }
@@ -166,6 +169,8 @@ struct TrendsTabView: View {
                 }
             }
             .padding(.top, DS.Spacing.sm)
+        }
+        .modifier(StatisticsFocusScroll(focus: .inAndOut, proxy: scrollProxy))
         }
         .scrollViewGlassEdges()
         .onAppear {
@@ -1021,8 +1026,8 @@ struct TrendsTabView: View {
     private var cashFlowWidget: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             // «Entradas y salidas» y no «Flujo de Efectivo», que se confundía con el «Flujo de caja» de Reportes; y el
-            // selector en texto, que los tres iconos no decían qué cambiaban (UX 2.2 · L11-10). Solo aquí: el widget
-            // del Panel lo sigue en la sesión de los widgets (L15-1).
+            // selector en texto, que los tres iconos no decían qué cambiaban (UX 2.2 · L11-10). El widget del Panel y
+            // el de la pantalla de inicio se llaman igual desde L15-1.
             Text(L10n.UXL11D.inAndOut)
                 .font(DS.Typography.headline)
                 .foregroundStyle(.primary)

@@ -437,6 +437,13 @@ paths:
 - **Lo que un menú o un atajo presenta cuelga del host, no de la lista** (`RecordRowActionsPresenter` en
   `RecordsStandaloneView` y `DetailContainerView`): en el iPad la lista puede estar apartada (`.detailOnly`) y una
   confirmación anclada ahí no tendría dónde salir. Un solo anchor por observable.
+- **Un atajo con la tecla de uno del SISTEMA (⌘Z, ⌘C, ⌘V…) no se suma a su grupo: lo sustituye, y solo mientras haga
+  falta (medido el 2026-10-20, iOS 27.0, lote decidido 2.2 · 08).** `CommandGroup(after: .undoRedo) { Button(…)
+  .keyboardShortcut("z") }` deja dos ⌘Z en el menú principal y, al reconstruirlo, UIKit **cierra la app** con
+  `NSInvalidArgumentException: Replacement elements contain duplicates` — también en el iPhone, donde no hay menú a la
+  vista: reventaba en cuanto salía el aviso de «Deshacer». Lo cazó un XCUITest, no el build. La salida:
+  `if condición { CommandGroup(replacing: .undoRedo) { … } }` (el `if` vale en `Commands`), y fuera de la condición el
+  grupo del sistema queda intacto con el deshacer de los campos de texto. Molde: `YalaCommands`, ⌘Z del borrado.
 - **Resaltado del puntero = `.pointerHighlight(cornerRadius:)`** con el radio de la pieza (`nil` = cápsula): da la
   forma al resaltado y a la vista previa del menú contextual. En iPhone no hace nada.
 
