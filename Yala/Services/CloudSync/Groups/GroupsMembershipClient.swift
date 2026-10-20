@@ -391,6 +391,7 @@ final class GroupsMembershipClient {
             GroupsAttestStreakStore.recordAcceptance()
             return data
         case 401 where GatewayErrorEnvelope.isAttestRequired(data):
+            AttestSessionProvider.reportRejected(sentIn: request)
             // App Attest ausente con el JWT bueno: el mismo criterio que el canal de sync (ver
             // `GroupsSyncClient.pushChunk`). No es sesión caducada: `.transient` con el status del 401, y por tanto
             // con el reintento corto de `callWithRetry`. La guard rechaza antes de llamar al RPC, así que no hay

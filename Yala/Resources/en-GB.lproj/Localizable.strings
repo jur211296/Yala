@@ -5990,6 +5990,8 @@
 "storage.revert.prior.checkFailedTitle" = "We couldn’t check your iCloud";
 "storage.revert.prior.checkFailedBody" = "Before returning, we check whether your iCloud already has Yala data, so we don’t mix it in without telling you. It might be your connection: try again.";
 "storage.revert.prior.wipeFailed" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. Check your connection and try again.";
+"storage.revert.prior.wipeStopped" = "We couldn’t finish deleting the earlier data from your iCloud, so we didn’t start the return: you’re still in the cloud. What’s already deleted stays deleted: try again and we’ll carry on with the rest.";
+"storage.revert.prior.wiping" = "Deleting the earlier data… %d so far";
 "storage.revert.prior.noAccountTitle" = "Sign in to iCloud on this iPhone";
 "storage.revert.prior.noAccountBody" = "Before returning, we check what’s in your iCloud, and this iPhone isn’t signed in to iCloud. Sign in from the iPhone’s Settings and try again.";
 

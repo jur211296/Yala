@@ -134,9 +134,9 @@ struct TrialOfferMomentLogicTests {
         #expect(tramo.contains("needsPostOnboardingTrial = false"))
         #expect(tramo.contains("trialOfferMomentReached = false"))
         #expect(content.contains("TrialOfferMoments.note(.launch)"))
-        // Quien ya es Pro no espera ninguna oferta: sin el `!isProUser`, una oferta armada que nunca drena le
-        // escondería Novedades en cada arranque.
-        #expect(content.contains("if SessionState.shared.needsPostOnboardingTrial && !FeatureGateService.shared.isProUser {"))
+        // Quien ya es Pro no espera ninguna oferta: el arranque decide con `WhatsNewLaunchLogic.returningUserSheet`, que
+        // recibe `isPro` (desde el merge de 2.1, Novedades va además antes que una oferta pendiente).
+        #expect(content.contains("isPro: FeatureGateService.shared.isProUser) {"))
 
         for file in ["Yala/App/Views/Transactions/TransactionSuccessView.swift",
                      "Yala/App/Views/Inbox/InboxApproveSuccessView.swift",

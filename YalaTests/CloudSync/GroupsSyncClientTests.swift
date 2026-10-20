@@ -1676,6 +1676,60 @@ struct GroupsSyncClientTests {
         #expect(stub.callCount == 1)  // una sola vuelta corrió (no se duplicó el loop)
     }
 
+    // MARK: - Test 10e-bis · La pestaña Grupos arranca el canal que el alta no arrancó (QA guiado 2026-10-19, D5)
+
+    /// El bug: tras «Ya tengo una cuenta» con una cuenta solo-grupos, el canal no arrancó en ese proceso (el arranque
+    /// en frío fue sin sesión) y el pull que pide la pestaña al aparecer no llega a la red: falta el `context`.
+    @Test func tabPull_withANeverStartedChannel_reachesNoNetwork() async throws {
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        let stub = StubHTTPSession()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { true })
+
+        let pulled = await client.syncNowFromUI(timeout: .seconds(1))
+
+        #expect(!pulled)
+        #expect(stub.callCount == 0)
+    }
+
+    /// El arreglo: la pestaña arranca el canal (`trigger: "groups-tab"`) y, con la sesión viva, el primer pull sale
+    /// sin esperar al siguiente arranque.
+    @Test func tabStart_withALiveSession_pullsWithoutARelaunch() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        // 401 sin refresh y con la sesión borrada: el loop hace UNA vuelta y para (el porqué, en Test 10).
+        let stub = StubHTTPSession(statusCode: 401)
+        let fuse = LoopFuse()
+        let client = GroupsSyncClient(tokenProvider: { "jwt" }, urlSession: stub, sessionCheck: { fuse.allows() },
+                                      forceRefreshTokenProvider: { nil }, canRenewSession: { false })
+        client.sleeper = { _ in }
+
+        client.startIfEligible(context: context, trigger: "groups-tab")
+        await client._testLoopTask?.value
+
+        #expect(stub.callCount == 1)
+        #expect(stub.lastRequest?.url?.path.hasSuffix("/groups/pull") == true)
+    }
+
+    /// Control: sin sesión, no arrancar es lo correcto —la pestaña pide iniciar sesión— y no se toca la red.
+    @Test func tabStart_withoutASession_staysOff() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
+        CloudSyncFlags.groupsBackendEnabled = true
+        let stub = StubHTTPSession()
+        let client = GroupsSyncClient(tokenProvider: { Issue.record("token pedido sin sesión"); return nil },
+                                      urlSession: stub, sessionCheck: { false })
+
+        client.startIfEligible(context: context, trigger: "groups-tab")
+
+        #expect(client._testLoopTask == nil)
+        #expect(stub.callCount == 0)
+        #expect(!(await client.syncNowFromUI(timeout: .seconds(1))))
+    }
+
     // MARK: - Test 10f · Volver a primer plano despierta el loop dormido (2026-09-16)
 
     /// Sueño de test CORTABLE. El primero duerme de verdad —400 ms, bajo el tope de 0,5 s de la regla— y

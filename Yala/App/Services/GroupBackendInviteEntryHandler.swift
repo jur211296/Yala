@@ -196,6 +196,15 @@ enum GroupBackendInviteEntryHandler {
         // intent en `.correctAndClear` —el member residual `rejected` sigue local— y nunca llamaba a
         // `join_group`, así que el enlace nuevo no hacía nada con la app cerrada.
         armInviteTap(groupID: groupID)
+        // Una instalación nueva que entra por el enlace conserva su montaje neutro aunque se relance a mitad del recorrido:
+        // sin esto, el arranque siguiente adjuntaba el espejo y bajaba los datos privados del iCloud del aparato
+        // (`GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry`).
+        if GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry(
+            mounted: SwiftDataConfiguration.personalStoreMountedDecision,
+            hasCompletedPersonalOnboarding: UserDefaults.standard.bool(forKey: "hasCompletedOnboarding"),
+            hasShownWelcomeChooser: UserDefaults.standard.bool(forKey: "hasShownWelcomeChooser")) {
+            StorageModePersistence.armNeutralMountIfUnarmed()
+        }
         let existing = PendingJoinStore.entry(zoneName: groupID)
         var legacyMemberKey: String?
         if let group = GroupService.shared.group(for: groupID),

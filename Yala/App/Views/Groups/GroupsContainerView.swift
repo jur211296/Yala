@@ -308,6 +308,18 @@ struct GroupsContainerView: View {
                 if CloudAuthService.shared.hasSession {
                     GroupsSessionHistoryMarker.markSessionSeen()
                 }
+                // Arranca el canal si este proceso no lo arrancó: tras «Ya tengo una cuenta» con una cuenta
+                // solo-grupos la sesión nace con la app abierta, el arranque en frío fue sin sesión y nada más lo
+                // arranca hasta relanzar o volver a primer plano. Sin él, el pull de abajo no llega a la red (le
+                // falta el `context`) y la pestaña se queda en «Sin grupos» (QA guiado del 2026-10-19, D5). Con
+                // el loop vivo solo lo despierta; sin sesión o con el flag apagado no hace nada. Ni bajo `-uitest`
+                // ni con un cierre de sesión o un desasociar en curso (`GroupsLoopRestartLogic.tabStartsChannel`).
+                if GroupsLoopRestartLogic.tabStartsChannel(
+                    isUITesting: UITestHooks.isActive,
+                    exitInFlight: CloudSessionSignOut.shared.phase != .idle || CloudSessionSignOut.shared.isDetaching
+                ) {
+                    GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "groups-tab")
+                }
                 // Traer cambios remotos de grupos al entrar al tab (el engine no auto-fetchea sin
                 // push; debounced + gateado por quiescencia dentro de syncNow), luego recarga.
                 Task {

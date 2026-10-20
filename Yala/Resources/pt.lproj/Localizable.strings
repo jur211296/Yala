@@ -6693,6 +6693,8 @@
 "storage.revert.prior.checkFailedTitle" = "Não conseguimos verificar seu iCloud";
 "storage.revert.prior.checkFailedBody" = "Antes de voltar, verificamos se seu iCloud já tem dados do Yala, para não misturá-los sem avisar. Pode ser a conexão: tente de novo.";
 "storage.revert.prior.wipeFailed" = "Não conseguimos terminar de apagar os dados antigos do seu iCloud, então não começamos a volta: você continua na nuvem. Verifique sua conexão e tente de novo.";
+"storage.revert.prior.wipeStopped" = "Não conseguimos terminar de apagar os dados antigos do seu iCloud, então não começamos a volta: você continua na nuvem. O que já foi apagado continua apagado: tente de novo e seguiremos com o resto.";
+"storage.revert.prior.wiping" = "Apagando os dados antigos… %d até agora";
 "storage.revert.prior.noAccountTitle" = "Entre no iCloud neste iPhone";
 "storage.revert.prior.noAccountBody" = "Antes de voltar, verificamos o que há no seu iCloud, e este iPhone não está com o iCloud ativo. Entre nos Ajustes do iPhone e tente de novo.";
 

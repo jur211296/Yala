@@ -423,6 +423,40 @@ struct IdentityRemapEmissionTests {
         }
     }
 
+    @Test("MUTACIÓN: en .icloud CON una ida en vuelo el repair se DIFIERE (ids intactos); con la fase estable, repara")
+    func repairIntegrated_icloud_forwardMigrationInFlight_defers() throws {
+        // Ticket `cloud-activation-verify-loops-on-accounts`: regenerar un sync_id entre la subida y la verificación deja
+        // la identidad vieja en el backend y la nueva aquí, y el Merkle de la ida no cuadra nunca.
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let x = UUID()
+        let tag1 = makeTag(context, name: "T1"); tag1.id = x
+        let tag2 = makeTag(context, name: "T2"); tag2.id = x
+        try context.save()
+
+        withStorageMode(.icloud) {
+            for fase in [MigrationPhase.uploadingSnapshot, .verifying, .assigningIdentity] {
+                let repaired = CategoryDeduplicationService.repairCollapsedIdentityUUIDs(
+                    in: context, now: now, remapEmitter: nil, migrationPhaseRead: { .phase(fase) })
+                #expect(repaired == 0, "\(fase): con la ida en vuelo no se regenera nada")
+                #expect(tag1.id == x && tag2.id == x)
+            }
+            let ilegible = CategoryDeduplicationService.repairCollapsedIdentityUUIDs(
+                in: context, now: now, remapEmitter: nil, migrationPhaseRead: { .unreadable })
+            #expect(ilegible == 0, "un journal ilegible no concede")
+            // Antes de asignar identidades no hay nada subido: reparar ahí evita que la colisión llegue a la subida.
+            for fase in [MigrationPhase.consent, .authenticating, .claimingMigration] {
+                #expect(!CloudSyncEngine.identityRepairDefersInICloud(by: .phase(fase)), "\(fase)")
+            }
+            #expect(CloudSyncEngine.identityRepairDefersInICloud(by: .phase(.waitingForLeader)))
+            // Control: con la fase estable el comportamiento de siempre (reparar en .icloud) sigue intacto.
+            let repaired = CategoryDeduplicationService.repairCollapsedIdentityUUIDs(
+                in: context, now: now, remapEmitter: nil, migrationPhaseRead: { .phase(.notStarted) })
+            #expect(repaired == 2)
+            #expect(tag1.id != tag2.id)
+        }
+    }
+
     // MARK: - 8b. MENOR 5 del review: .cloud SIN motor → PREFLIGHT aborta (jamás regenerar sin outbox)
 
     @Test("en .cloud sin motor resoluble el repair ABORTA en preflight (ids intactos, 0 reparos, outbox vacío)")

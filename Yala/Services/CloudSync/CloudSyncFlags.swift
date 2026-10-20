@@ -221,6 +221,25 @@ nonisolated enum StorageModePersistence {
         defaults.removeObject(forKey: icloudCorpusWipeOwnsNeutralMountKey)
     }
 
+    /// El neutro durable de una instalación nueva que entra por un enlace de invitación
+    /// (`GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry`). **No es su dueño**: si ya estaba armado —por un cierre de
+    /// sesión o por el borrado del corpus de iCloud— no toca nada, ni la marca de quién lo armó. Caduca igual, con
+    /// `hasShownWelcomeChooser`.
+    static func armNeutralMountIfUnarmed(_ defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: neutralMountArmedKey) else { return }
+        defaults.set(true, forKey: neutralMountArmedKey)
+    }
+
+    /// Adoptar una cuenta completa ES elegir (`onAdoptStarted`): el neutro durable deja de tener sentido. Por el Welcome ya
+    /// caducaba solo —el chooser está marcado—, pero por el enlace de invitación el chooser no se marca y el neutro se
+    /// quedaba vivo: «Volver a iCloud» meses después habría montado sin espejo y el teléfono dejaría de sincronizar (review
+    /// adversarial de `invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch`). El del borrado del corpus de
+    /// iCloud no se toca: lo retira su propio desarme.
+    static func retireNeutralMountOnChoice(_ defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: icloudCorpusWipeOwnsNeutralMountKey) else { return }
+        defaults.removeObject(forKey: neutralMountArmedKey)
+    }
+
     static func isNeutralMountArmed(_ defaults: UserDefaults = .standard) -> Bool {
         defaults.bool(forKey: neutralMountArmedKey)
     }

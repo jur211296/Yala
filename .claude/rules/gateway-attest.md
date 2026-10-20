@@ -438,3 +438,23 @@ device no tenía sesión de nube, sus gates de Grupos estaban OFF y no podía to
 caída de Apple —su status page daba App Attest operativo. **Una sonda de tres `print` dio la respuesta en una
 corrida.** Cuando el error es invisible por diseño, instrumentar es más barato que razonar: es la misma
 lección que la fila del `rollback()` en la Lista Negra.
+
+## La espera al token tiene techo, y el token rechazado se olvida (2026-10-19)
+
+Ticket `cloud-activation-stalls-without-uploading-until-relaunch` (QA guiado del 19-oct: «Activar la nube» al 55 % sin subir
+nada hasta reabrir; el teléfono no emitió ni un 401 de attest, así que el push nunca salió). Cuatro cosas que no se tocan
+sin reabrirlo:
+
+- **`AppAttestClient` espera a un refresh en vuelo como mucho 90 s** (`AttestSessionTokenLogic.refreshStallCeiling`):
+  `DCAppAttestService` y `Transaction.currentEntitlements` no traen timeout, y el single-flight hacía esperar a TODOS los
+  llamadores a la misma tarea colgada. Vencido, la tarea se abandona (deja de ser el single-flight) y se lanza
+  `AppAttestError.network(URLError(.timedOut))`: pasajero y sin racha. Canario `attestRefreshAbandoned` con el paso.
+- **La espera va con una continuación, nunca con un `TaskGroup`**: el grupo espera a todos sus hijos al cerrar, y el que
+  espera a la tarea colgada no responde a la cancelación. `clearRefresh` suelta el single-flight solo si sigue siendo
+  esa tarea: una abandonada que vuelve tarde no suelta la nueva.
+- **Un 401 `yala_attest_required` hace olvidar el token que viajó** (`AttestSessionProvider.reportRejected(sentIn:)`, en
+  la primera línea de la rama, en los ocho sitios que lo leen). Solo si es el guardado: uno distinto ya es más nuevo. El
+  reintento no va ahí: lo pone la cadencia de cada llamador. **Un cliente nuevo que lea ese 401 llama a lo mismo**, y
+  `AttestSessionTokenWiringTests` cuenta los ocho.
+- **Precio aceptado**: si la tarea abandonada vuelve a la vez que la nueva, pueden cruzarse dos assertions con la misma key
+  y el gateway rechaza la de contador menor. Un error más, con su backoff.

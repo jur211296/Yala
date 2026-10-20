@@ -755,3 +755,124 @@ struct GroupsAssociationWiringTests {
             """)
     }
 }
+
+// MARK: - La sesión privada que nace en caliente asocia la sesión de Grupos viva (QA guiado 2026-10-19, A · C1)
+
+/// Entrar por «Ya tengo una cuenta» con una cuenta solo-grupos (Y) y seguir por «Es mi primera vez → privado» dejaba la
+/// sesión de Grupos de Y viva y sin asociación local: el registrador solo corría en el arranque, y `read()` caía al
+/// iCloud-KV del Apple ID, que recordaba la cuenta de grupos de otra persona (X). «Dónde viven tus datos» nombraba a X y
+/// «Activar la nube» se bloqueaba con `.anotherGroupsAccountAssociated`.
+@Suite("GroupsAssociationRegistrar · la sesión privada que nace en caliente")
+struct GroupsAssociationPrivateBirthTests {
+
+    /// Un teléfono cuyo iCloud-KV recuerda la asociación de X y que no tiene registro local.
+    @MainActor
+    private func phoneRememberingAnotherAccount() -> (GroupsAccountAssociation, UserDefaults) {
+        let kv = FakeKV()
+        let otherPhone = GroupsAccountAssociation(iKV: kv, defaults: isolatedDefaults())
+        _ = otherPhone.associate(sub: "x-sub", provider: "google", email: "x@ejemplo.com", kind: .groupsOnly,
+                                 sessionOpenedByThisSignIn: true)
+        let defaults = isolatedDefaults()
+        return (GroupsAccountAssociation(iKV: kv, defaults: defaults), defaults)
+    }
+
+    @MainActor
+    @Test("Con la sesión de Grupos de Y viva, la asociación pasa a Y y la puerta de la nube no bloquea")
+    func laSesionVivaGanaALaDelKV() {
+        let (store, defaults) = phoneRememberingAnotherAccount()
+        #expect(store.read()?.sub == "x-sub")
+        #expect(store.isAssociated(sub: "y-sub") == false)   // el bug: la puerta de «Activar la nube» bloquea
+
+        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
+            deviceState: .privateSession,
+            identity: .init(hasSession: true, sub: "y-sub", provider: "google", email: "y@ejemplo.com"),
+            kind: .groupsOnly, store: store, defaults: defaults)
+
+        #expect(store.read()?.sub == "y-sub")
+        #expect(store.read()?.email == "y@ejemplo.com")
+        #expect(store.isAssociated(sub: "y-sub") == true)
+    }
+
+    /// Control: sin sesión de Grupos viva —el segundo teléfono del mismo Apple ID— la asociación del KV es la verdad, y
+    /// bloquear «Activar la nube» con otra cuenta sigue siendo lo correcto.
+    @MainActor
+    @Test("Sin sesión de Grupos viva, se respeta la asociación del KV")
+    func sinSesionSeRespetaElKV() {
+        let (store, defaults) = phoneRememberingAnotherAccount()
+
+        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
+            deviceState: .privateSession,
+            identity: .init(hasSession: false, sub: nil, provider: nil, email: nil),
+            kind: nil, store: store, defaults: defaults)
+
+        #expect(store.read()?.sub == "x-sub")
+        #expect(store.isAssociated(sub: "y-sub") == false)
+    }
+
+    /// Con el retiro de la sesión de la persona anterior armado, la sesión viva es de OTRA persona: no se asocia, y el
+    /// iCloud-KV del Apple ID no recibe su correo. Control: sin el arm, la misma sesión sí se asocia.
+    @MainActor
+    @Test("Con el retiro de la sesión anterior pendiente, no se asocia la sesión viva")
+    func conElRetiroPendienteNoSeAsocia() {
+        let (store, defaults) = phoneRememberingAnotherAccount()
+        CloudSessionRetirement.arm(defaults: defaults)
+
+        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
+            deviceState: .privateSession,
+            identity: .init(hasSession: true, sub: "de-la-anterior", provider: "google", email: "anterior@ejemplo.com"),
+            kind: .groupsOnly, store: store, defaults: defaults)
+
+        #expect(store.read()?.sub == "x-sub")
+        #expect(store.read()?.email != "anterior@ejemplo.com")
+
+        defaults.removeObject(forKey: CloudSessionRetirement.armedKey)
+        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
+            deviceState: .privateSession,
+            identity: .init(hasSession: true, sub: "y-sub", provider: "google", email: "y@ejemplo.com"),
+            kind: .groupsOnly, store: store, defaults: defaults)
+        #expect(store.read()?.sub == "y-sub")
+    }
+
+    /// Control: con el onboarding aún sin completar (`.fresh`) no hay sesión privada a la que ligarla.
+    @MainActor
+    @Test("Antes de que nazca la sesión privada, no se asocia nada")
+    func antesDelNacimientoNoSeAsocia() {
+        let (store, defaults) = phoneRememberingAnotherAccount()
+
+        GroupsAssociationRegistrar.syncFromLiveSessionIfNeeded(
+            deviceState: .fresh,
+            identity: .init(hasSession: true, sub: "y-sub", provider: "google", email: "y@ejemplo.com"),
+            kind: .groupsOnly, store: store, defaults: defaults)
+
+        #expect(store.read()?.sub == "x-sub")
+    }
+
+    private static func codeLines(_ relative: String) throws -> [String] {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()  // YalaTests/
+            .deletingLastPathComponent()  // repo root
+            .appendingPathComponent(relative)
+        return try String(contentsOf: url, encoding: .utf8)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !$0.hasPrefix("//") }
+    }
+
+    /// Los tres nacimientos en caliente llaman al registrador DESPUÉS de dejar el eje y el onboarding escritos: antes,
+    /// `deviceState` daría `.fresh` y no haría nada.
+    @Test("Cada nacimiento de la sesión privada en caliente llama al registrador detrás del eje")
+    func cadaNacimientoLlamaAlRegistrador() throws {
+        let call = "GroupsAssociationRegistrar.syncFromLiveSessionNow()"
+        let content = try Self.codeLines("Yala/App/ContentView.swift")
+        let calls = content.indices.filter { content[$0] == call }
+        #expect(calls.count == 2)
+        for index in calls {
+            let before = content[max(0, index - 3)..<index]
+            #expect(before.contains("hasCompletedOnboarding = true"), "llamada sin el onboarding completo detrás")
+            #expect(content[max(0, index - 4)..<index].contains("SessionState.shared.hasPrivateSession = true"))
+        }
+        let activation = try Self.codeLines("Yala/App/Views/Groups/FullModeActivationView.swift")
+        let axis = try #require(activation.firstIndex(of: "sessionState.hasPrivateSession = true"))
+        #expect(activation[axis + 1] == call)
+    }
+}

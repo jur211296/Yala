@@ -4,7 +4,7 @@ status: backlog
 priority: medium
 area: testing, records
 created: 2026-10-18
-updated: 2026-10-18
+updated: 2026-10-20
 source: gate de la implementación UX 2.2 · lotes 11 y 16 (encargo 2026-10-18-implementar-2-2-l11-l16-estadisticas-y-ajustes)
 ---
 
@@ -26,3 +26,8 @@ etiqueta) ya no está, no el recuento.
 ## Hecho cuando
 
 El caso distingue «se borró» de «no se borró» con cualquier tamaño de semilla, y pasa en `2.2`.
+
+## Remedido (2026-10-20, merge de 2.1 en 2.2)
+
+Sigue rojo en la suite completa de UI del merge (centinela «estuviste solo», 445 casos, «("13") is not less than
+("13")»), aislado sobre la rama del merge y aislado sobre `origin/2.2` limpio (`bb2e66a8c`). No lo trae el merge.
