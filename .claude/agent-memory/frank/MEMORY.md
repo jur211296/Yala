@@ -1,6 +1,7 @@
 # Memoria de Frank — Yala
 
 ## Cómo trabaja Jürgen
+- [QA en Yala Dev antes que prod](feedback_qa_en_yala_dev_antes_que_prod.md) — TestFlight solo para lo que exige producción (App Store, attest enforce, StoreKit).
 - [QA guiado 2.1 espera el TF19](project_qa_guiado_2_1_espera_tf19.md) — 19-oct: sesión abierta a propósito; 9 cards de 2.1 y luego tanda corta.
 - [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions.
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
