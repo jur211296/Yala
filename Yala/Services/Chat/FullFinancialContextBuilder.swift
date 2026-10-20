@@ -23,11 +23,13 @@
 //   - comparar el mes en curso → `periods.last_month_to_date` y `total_last_month_to_date`: el
 //     mes pasado hasta el día equivalente a hoy, la misma alineación que el hero de Tendencias
 //   - tx.balanceAdjustmentType != nil → filtrado
-//   - tx.date > now → filtrado (drafts en futuro)
+//   - fecha futura → filtrado, con el corte del saldo de hoy (`LiveBalanceCalculator.TodayCutoff`, por DÍA): un gasto de
+//     hoy fechado a las 12:00 (foto, voz) cuenta desde por la mañana, como en el Panel (card `…qrv9`, 2026-10-20)
 //   - multi-currency → `chatAmount` (guardado si su divisa principal es la vigente; si no, reconvertido)
 //     y la pata real de un gasto de grupo con `CashFlowCalculator.resolvedAmount`; guard isFinite
 //   - budget.limitAmount == 0 → status="no_limit", usage_pct=null
-//   - 5+ años de data → fetch acotado a últimos 13 meses
+//   - los SALDOS salen del libro entero, como en el Panel; los totales, de los últimos 13 meses (card `…646z`,
+//     2026-10-20: con la ventana, un saldo inicial de hace más de 13 meses dejaba el saldo de Yala IA a la mitad)
 //
 
 import Foundation
@@ -69,12 +71,17 @@ final class FullFinancialContextBuilder {
     ) -> FullFinancialContext {
         let calendar = Calendar.current
         let fetchStart = calendar.date(byAdding: .month, value: -13, to: now) ?? now
-        let transactions = fetchTransactions(modelContext, from: fetchStart, to: now)
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: calendar)
+        // El libro ENTERO, para los saldos (los suma el Panel así: un saldo inicial de hace dos años cuenta). Lo que se
+        // resume para el modelo sigue siendo la ventana de 13 meses, hasta el final de HOY.
+        let ledger = fetchAllTransactions(modelContext)
+        let transactions = ledger.filter { $0.date >= fetchStart && cutoff.counts($0.date) }
         // Proyección de gastos de grupo bridgeados → "mi parte" (neto). Se construye del set MÁS
         // AMPLIO (raw fetch, con AMBAS hermanas del bridge antes de filtros por cuenta/tag/eligibilidad).
         let adjustment = GroupBridgeStatsAdjustment.build(from: transactions, context: modelContext)
         return buildFromArrays(
             transactions: transactions,
+            balanceLedger: ledger,
             budgets: fetchBudgets(modelContext),
             accounts: fetchAccounts(modelContext),
             tags: fetchTags(modelContext),
@@ -103,8 +110,12 @@ final class FullFinancialContextBuilder {
     /// `includeGroupTransactionsInStats` es «Incluir gastos de grupo en estadísticas»
     /// (`AppPreferences.includeGroupTransactionsInStats`), el interruptor que siguen el Panel y Estadísticas.
     /// También lo pasa quien construye el contexto, y su default `true` también es el del ajuste.
+    ///
+    /// `balanceLedger` son TODOS los movimientos, para los saldos. `nil` = los de `transactions` (los tests que ya pasan
+    /// el libro entero).
     func buildFromArrays(
         transactions: [TransactionItem],
+        balanceLedger: [TransactionItem]? = nil,
         budgets: [Budget],
         accounts: [Account],
         tags: [Tag],
@@ -140,11 +151,13 @@ final class FullFinancialContextBuilder {
             .filter { $0.excludeFromStatistics }
             .map(\.name)
 
-        // Filter excluded/balance-adjustment/future TX once
+        // Filter excluded/balance-adjustment/future TX once. «Futuro» es después de HOY, no de este instante: la foto y la
+        // voz fechan a las 12:00 y el Panel las cuenta desde por la mañana (card `…qrv9`).
+        let cutoff = LiveBalanceCalculator.TodayCutoff(asOf: now, calendar: calendar)
         let eligibleTx = allTx.filter { tx in
             tx.balanceAdjustmentType == nil
                 && tx.account?.excludeFromStatistics != true
-                && tx.date <= now
+                && cutoff.counts(tx.date)
         }
         // Lo que cuentan las estadísticas: con el interruptor de grupos apagado, sin movimientos de grupo
         // (pata real y pata de préstamo), con la misma regla que el Panel. Los presupuestos siguen con
@@ -157,7 +170,7 @@ final class FullFinancialContextBuilder {
             )
         }
 
-        let intervals = buildIntervals(now: now, calendar: calendar)
+        let intervals = buildIntervals(now: now, calendar: calendar, endOfToday: cutoff.startOfTomorrow.addingTimeInterval(-1))
         // `!= true` keeps tx with category=nil in the expense bucket → uncategorized
         // bucket sees them. Income tx (isIncome==true) are excluded.
         let currentMonthExpenseTx = statsTx.filter {
@@ -178,9 +191,10 @@ final class FullFinancialContextBuilder {
             accounts: PanelTotalAccountsLogic.countableAccounts(allAccounts),
             lineRoles: allAccounts.lineRoles,
             includeGroupsInTotal: includeGroupsInTotal,
-            allRawTx: allTx,
+            allRawTx: balanceLedger ?? allTx,
             preferredCurrency: currencyCode,
-            converter: converter
+            converter: converter,
+            now: now
         )
 
         let periods = buildPeriods(
@@ -198,6 +212,23 @@ final class FullFinancialContextBuilder {
             intervals: intervals,
             currencyCode: currencyCode,
             converter: converter,
+            adjustment: adjustment
+        )
+
+        let incomeCategories = buildIncomeCategories(
+            tx: statsTx,
+            intervals: intervals,
+            currencyCode: currencyCode,
+            converter: converter,
+            adjustment: adjustment
+        )
+
+        let monthlyHistory = buildMonthlyHistory(
+            tx: statsTx,
+            monthStart: intervals.currentMonth.start,
+            currencyCode: currencyCode,
+            converter: converter,
+            calendar: calendar,
             adjustment: adjustment
         )
 
@@ -239,6 +270,7 @@ final class FullFinancialContextBuilder {
             currencyCode: currencyCode,
             converter: converter,
             now: now,
+            endOfToday: cutoff.startOfTomorrow.addingTimeInterval(-1),
             calendar: calendar,
             adjustment: adjustment
         )
@@ -282,7 +314,24 @@ final class FullFinancialContextBuilder {
             patterns: patterns,
             tagsTop10: tagsTop10,
             topTxBySubcategory: topTxBySubcategory,
-            anomalies: anomalies
+            anomalies: anomalies,
+            monthlyHistory: monthlyHistory,
+            incomeCategories: incomeCategories,
+            fxRates: buildFxRates(
+                accounts: PanelTotalAccountsLogic.countableAccounts(allAccounts),
+                preferredCurrency: currencyCode,
+                converter: converter
+            ),
+            monthlyHistorySummary: Self.historySummary(
+                monthlyHistory, currentMonth: periods.currentMonth, now: now, calendar: calendar),
+            monthOutlook: Self.monthOutlook(
+                budgets: budgets,
+                recurring: recurring,
+                currencyCode: currencyCode,
+                now: now,
+                monthEnd: (calendar.dateInterval(of: .month, for: now)?.end ?? now).addingTimeInterval(-1),
+                calendar: calendar
+            )
         )
 
         cache = CacheEntry(
@@ -316,10 +365,16 @@ final class FullFinancialContextBuilder {
         let threeMonthsAgo: DateInterval
         let currentYear: DateInterval
         let last30Days: DateInterval
+        let yesterday: DateInterval
+        let sameMonthLastYear: DateInterval
     }
 
-    private func buildIntervals(now: Date, calendar: Calendar) -> Intervals {
+    /// Los períodos EN CURSO cierran al final de hoy (`endOfToday`), no en este instante: un gasto de hoy fechado a las
+    /// 12:00 cuenta desde por la mañana (card `…qrv9`).
+    private func buildIntervals(now: Date, calendar: Calendar, endOfToday: Date) -> Intervals {
         let startOfToday = calendar.startOfDay(for: now)
+        let startOfYesterday = calendar.date(byAdding: .day, value: -1, to: startOfToday) ?? startOfToday
+        let startOfTodayMinusOneSecond = calendar.date(byAdding: .second, value: -1, to: startOfToday) ?? startOfToday
         let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? startOfToday
         let prevWeekStart = calendar.date(byAdding: .weekOfYear, value: -1, to: weekStart) ?? startOfToday
         let weekStartMinusOneSecond = calendar.date(byAdding: .second, value: -1, to: weekStart) ?? weekStart
@@ -348,11 +403,11 @@ final class FullFinancialContextBuilder {
         let lastMonth = DateInterval(start: lastMonthStart, end: monthStartMinusOneSecond)
 
         return Intervals(
-            today: DateInterval(start: startOfToday, end: now),
-            currentWeek: DateInterval(start: weekStart, end: now),
+            today: DateInterval(start: startOfToday, end: endOfToday),
+            currentWeek: DateInterval(start: weekStart, end: endOfToday),
             lastWeek: DateInterval(start: prevWeekStart, end: weekStartMinusOneSecond),
             last4Weeks: weeks,
-            currentMonth: DateInterval(start: monthStart, end: now),
+            currentMonth: DateInterval(start: monthStart, end: endOfToday),
             lastMonth: lastMonth,
             lastMonthToDate: Self.lastMonthToDateInterval(
                 monthStart: monthStart,
@@ -362,8 +417,14 @@ final class FullFinancialContextBuilder {
             ),
             twoMonthsAgo: DateInterval(start: twoMonthsAgoStart, end: lastMonthStartMinusOneSecond),
             threeMonthsAgo: DateInterval(start: threeMonthsAgoStart, end: twoMonthsAgoStartMinusOneSecond),
-            currentYear: DateInterval(start: yearStart, end: now),
-            last30Days: DateInterval(start: last30Start, end: now)
+            currentYear: DateInterval(start: yearStart, end: endOfToday),
+            last30Days: DateInterval(start: last30Start, end: endOfToday),
+            yesterday: DateInterval(start: startOfYesterday, end: startOfTodayMinusOneSecond),
+            sameMonthLastYear: {
+                let start = calendar.date(byAdding: .month, value: -12, to: monthStart) ?? monthStart
+                let next = calendar.date(byAdding: .month, value: 1, to: start) ?? start
+                return DateInterval(start: start, end: calendar.date(byAdding: .second, value: -1, to: next) ?? next)
+            }()
         )
     }
 
@@ -404,6 +465,96 @@ final class FullFinancialContextBuilder {
         return DateInterval(start: aligned.start, end: end)
     }
 
+    /// El mes más caro y el más barato de la historia, y las medias. `nil` sin historia.
+    static func historySummary(
+        _ months: [FullFinancialContext.MonthSummary],
+        currentMonth: FullFinancialContext.PeriodSummary,
+        now: Date,
+        calendar: Calendar
+    ) -> FullFinancialContext.MonthlyHistorySummary? {
+        guard let highest = months.max(by: { $0.expense < $1.expense }),
+              let lowest = months.min(by: { $0.expense < $1.expense }) else { return nil }
+        let count = Double(months.count)
+        // Por año natural, con el mes en curso dentro (el año en curso lleva hasta hoy).
+        var years: [String: (months: Int, income: Double, expense: Double)] = [:]
+        for month in months {
+            let year = String(month.month.prefix(4))
+            years[year, default: (0, 0, 0)].months += 1
+            years[year, default: (0, 0, 0)].income += month.income
+            years[year, default: (0, 0, 0)].expense += month.expense
+        }
+        let currentYear = String(calendar.component(.year, from: now))
+        years[currentYear, default: (0, 0, 0)].months += 1
+        years[currentYear, default: (0, 0, 0)].income += currentMonth.income
+        years[currentYear, default: (0, 0, 0)].expense += currentMonth.expense
+        let byYear = years.keys.sorted(by: >).compactMap { year -> FullFinancialContext.YearTotal? in
+            guard let totals = years[year] else { return nil }
+            return FullFinancialContext.YearTotal(
+                year: year, months: totals.months, income: cents(totals.income), expense: cents(totals.expense))
+        }
+        return FullFinancialContext.MonthlyHistorySummary(
+            highestExpenseMonth: highest.month,
+            highestExpense: highest.expense,
+            lowestExpenseMonth: lowest.month,
+            lowestExpense: lowest.expense,
+            averageExpense: cents(months.reduce(0) { $0 + $1.expense } / count),
+            averageIncome: cents(months.reduce(0) { $0 + $1.income } / count),
+            averageBalance: cents(months.reduce(0) { $0 + $1.balance } / count),
+            byYear: byYear
+        )
+    }
+
+    /// AAAA-MM de cada período mensual: el mes en curso y los tres anteriores.
+    static func periodMonths(now: Date, calendar: Calendar) -> [String: String] {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = calendar.timeZone
+        formatter.dateFormat = "yyyy-MM"
+        let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
+        var out: [String: String] = [:]
+        for (key, back) in [("current_month", 0), ("last_month", 1), ("two_months_ago", 2), ("three_months_ago", 3)] {
+            if let date = calendar.date(byAdding: .month, value: -back, to: monthStart) {
+                out[key] = formatter.string(from: date)
+            }
+        }
+        return out
+    }
+
+    /// Lo que queda del mes. Los presupuestos que suman son los mensuales en la divisa principal (otra divisa no se
+    /// suma en crudo), y los programados, los de `pending_next_30_days` que vencen antes del final del mes.
+    static func monthOutlook(
+        budgets: [FullFinancialContext.BudgetEntry],
+        recurring: FullFinancialContext.RecurringSection,
+        currencyCode: String,
+        now: Date,
+        monthEnd: Date,
+        calendar: Calendar
+    ) -> FullFinancialContext.MonthOutlook {
+        let budgetsRemaining = budgets
+            .filter { $0.periodType == "monthly" && $0.limit > 0 && $0.currency == currencyCode }
+            .reduce(0.0) { $0 + max(0, $1.limit - $1.spent) }
+        let monthEndKey = isoDateFormatter.string(from: monthEnd)
+        let thisMonth = recurring.pendingNext30Days.filter { $0.dueDate <= monthEndKey }
+        return FullFinancialContext.MonthOutlook(
+            daysLeft: daysLeftInMonth(now: now, calendar: calendar),
+            budgetsRemaining: cents(budgetsRemaining),
+            pendingPaymentsUntilMonthEnd: cents(thisMonth.filter { !$0.isIncome }.reduce(0) { $0 + $1.amount }),
+            pendingIncomeUntilMonthEnd: cents(thisMonth.filter(\.isIncome).reduce(0) { $0 + $1.amount })
+        )
+    }
+
+    /// Redondeo a céntimos: `0.1 + 0.2` escribía `6737.4000000000015` en el JSON.
+    static func cents(_ value: Double) -> Double {
+        (value * 100).rounded() / 100
+    }
+
+    /// Días que quedan del mes contando hoy (el 30 de un mes de 31 → 2).
+    static func daysLeftInMonth(now: Date, calendar: Calendar) -> Int {
+        guard let month = calendar.range(of: .day, in: .month, for: now) else { return 1 }
+        return max(1, month.count - calendar.component(.day, from: now) + 1)
+    }
+
     // MARK: - Sub-builders
 
     private func buildMetadata(
@@ -431,7 +582,8 @@ final class FullFinancialContextBuilder {
             currencyDisplay: currencyDisplay,
             language: language,
             country: country,
-            excludedAccounts: excludedAccountNames
+            excludedAccounts: excludedAccountNames,
+            periodMonths: Self.periodMonths(now: now, calendar: calendar)
         )
     }
 
@@ -443,7 +595,8 @@ final class FullFinancialContextBuilder {
         includeGroupsInTotal: Bool,
         allRawTx: [TransactionItem],
         preferredCurrency: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        now: Date
     ) -> FullFinancialContext.BalancesSection {
         // Una tarjeta con varias divisas sale una vez, con sus líneas dentro (entrega 4): suelta, el modelo las leía como
         // dos cuentas y podía sumarlas en crudo. Como la tarjeta del Panel (`PanelViewModel.orderedActiveAccountCards`):
@@ -453,11 +606,12 @@ final class FullFinancialContextBuilder {
         var entries: [FullFinancialContext.AccountEntry] = []
         for card in accounts.accountCards(roles: lineRoles) {
             let live = AccountCard(head: card.head, lines: card.lines.filter { !$0.isArchived })
-            entries.append(accountEntry(live, allRawTx: allRawTx, preferredCurrency: preferredCurrency, converter: converter))
+            entries.append(accountEntry(
+                live, allRawTx: allRawTx, preferredCurrency: preferredCurrency, converter: converter, now: now))
             for archived in card.lines where archived.isArchived {
                 entries.append(accountEntry(
                     AccountCard(head: archived, lines: []), allRawTx: allRawTx, preferredCurrency: preferredCurrency,
-                    converter: converter))
+                    converter: converter, now: now))
             }
         }
         // Balance enviado al LLM: TC actual sobre saldo nativo (LiveBalanceCalculator)
@@ -471,6 +625,7 @@ final class FullFinancialContextBuilder {
             ),
             transactions: allRawTx,
             preferredCurrencyCode: preferredCurrency,
+            asOf: now,
             converter: converter
         )
         return FullFinancialContext.BalancesSection(
@@ -484,10 +639,13 @@ final class FullFinancialContextBuilder {
         _ card: AccountCard<Account>,
         allRawTx: [TransactionItem],
         preferredCurrency: String,
-        converter: CurrencyConverting
+        converter: CurrencyConverting,
+        now: Date
     ) -> FullFinancialContext.AccountEntry {
+        // El saldo de cada cuenta, como el del Panel (`AccountBalanceCalculator`): el libro entero y el corte de hoy.
         func balance(_ account: Account) -> Double {
-            InitialBalanceService.currentBalance(for: account, allTransactions: allRawTx)
+            let value = AccountBalanceCalculator.currentBalance(for: account, allTransactions: allRawTx, asOf: now)
+            return (value as NSDecimalNumber).doubleValue
         }
         var entry = FullFinancialContext.AccountEntry(
             name: card.head.name,
@@ -495,7 +653,16 @@ final class FullFinancialContextBuilder {
             balance: safeDouble(balance(card.head)),
             currency: card.head.currencyCode
         )
-        guard card.hasLines else { return entry }
+        guard card.hasLines else {
+            // En otra divisa: también en la principal, con la tasa más reciente (la regla del saldo vivo).
+            if normalizeCurrencyCode(card.head.currencyCode) != normalizeCurrencyCode(preferredCurrency) {
+                let outcome = converter.convertCheckedWithLatestRate(
+                    Decimal(entry.balance), from: card.head.currencyCode, to: preferredCurrency)
+                entry.balanceInMainCurrency = safeDouble((outcome.amount as NSDecimalNumber).doubleValue)
+                entry.balanceInMainCurrencyIsApproximate = !outcome.quality.isExact
+            }
+            return entry
+        }
         entry.lines = card.lines.map { line in
             FullFinancialContext.LineEntry(name: line.name, balance: safeDouble(balance(line)), currency: line.currencyCode)
         }
@@ -588,7 +755,9 @@ final class FullFinancialContextBuilder {
             lastMonthToDate: summarize(intervals.lastMonthToDate),
             twoMonthsAgo: summarize(intervals.twoMonthsAgo),
             threeMonthsAgo: summarize(intervals.threeMonthsAgo),
-            currentYear: summarize(intervals.currentYear)
+            currentYear: summarize(intervals.currentYear),
+            yesterday: summarize(intervals.yesterday),
+            sameMonthLastYear: summarize(intervals.sameMonthLastYear)
         )
     }
 
@@ -602,6 +771,7 @@ final class FullFinancialContextBuilder {
         let currentTx = tx.filter { intervals.currentMonth.contains($0.date) && $0.category?.isIncome == false }
         let lastMonthTx = tx.filter { intervals.lastMonth.contains($0.date) && $0.category?.isIncome == false }
         let twoMonthsAgoTx = tx.filter { intervals.twoMonthsAgo.contains($0.date) && $0.category?.isIncome == false }
+        let currentYearTx = tx.filter { intervals.currentYear.contains($0.date) && $0.category?.isIncome == false }
 
         // Totales por periodo de una categoría o subcategoría. `lastToDate` es la parte del mes
         // pasado hasta el día equivalente a hoy (`intervals.lastMonthToDate`, contenido en `last`).
@@ -611,6 +781,7 @@ final class FullFinancialContextBuilder {
             var lastToDate: Double = 0
             var twoBack: Double = 0
             var count: Int = 0
+            var year: Double = 0
         }
 
         // Group by category name for each period
@@ -641,10 +812,17 @@ final class FullFinancialContextBuilder {
         for tx in twoMonthsAgoTx {
             add(tx) { $0.twoBack += $1 }
         }
+        for tx in currentYearTx {
+            add(tx) { $0.year += $1 }
+        }
 
-        // Top 10 categories by current month total (or last month if no current)
+        // Top 10 por el mes en curso; a igualdad, por lo que va del año y por nombre (orden estable: con el año dentro
+        // hay muchas categorías a 0 este mes, y el orden de un diccionario no lo es).
         let ranked = catAgg.keys.sorted { (a, b) in
-            (catAgg[a]?.current ?? 0) > (catAgg[b]?.current ?? 0)
+            let (ta, tb) = (catAgg[a] ?? Totals(), catAgg[b] ?? Totals())
+            if ta.current != tb.current { return ta.current > tb.current }
+            if ta.year != tb.year { return ta.year > tb.year }
+            return a < b
         }
         let topCats = Array(ranked.prefix(10))
 
@@ -654,6 +832,7 @@ final class FullFinancialContextBuilder {
             // Subcategorías con tx > 0 en cualquiera de los 3 meses
             var subEntries: [FullFinancialContext.SubcategoryEntry] = []
             if let subDict = subAgg[catName] {
+                // Solo las que se movieron en los tres últimos meses, como antes: con el año dentro salían todas.
                 let activeSubs = subDict.filter { $0.value.current > 0 || $0.value.last > 0 || $0.value.twoBack > 0 }
                 let sortedSubs = activeSubs.sorted { $0.value.current > $1.value.current }
                 subEntries = sortedSubs.map { (name, val) in
@@ -664,7 +843,8 @@ final class FullFinancialContextBuilder {
                         totalLastMonthToDate: safeDouble(val.lastToDate),
                         totalTwoMonthsAgo: safeDouble(val.twoBack),
                         variationPercentVsLastMonthToDate: Self.variationPercent(val.current, vs: val.lastToDate),
-                        txCountCurrentMonth: val.count
+                        txCountCurrentMonth: val.count,
+                        totalCurrentYear: safeDouble(val.year)
                     )
                 }
             }
@@ -677,7 +857,8 @@ final class FullFinancialContextBuilder {
                 totalTwoMonthsAgo: safeDouble(cat.twoBack),
                 variationPercentVsLastMonthToDate: Self.variationPercent(cat.current, vs: cat.lastToDate),
                 txCountCurrentMonth: cat.count,
-                subcategories: subEntries
+                subcategories: subEntries,
+                totalCurrentYear: safeDouble(cat.year)
             )
         }
     }
@@ -688,6 +869,152 @@ final class FullFinancialContextBuilder {
         guard lastToDate > 0 else { return nil }
         let value = ((current - lastToDate) / lastToDate) * 100
         return value.isFinite ? value : 0
+    }
+
+    /// Ingresos por categoría y subcategoría: el mes en curso, el pasado y lo que va del año.
+    private func buildIncomeCategories(
+        tx: [TransactionItem],
+        intervals: Intervals,
+        currencyCode: String,
+        converter: CurrencyConverting,
+        adjustment: GroupBridgeStatsAdjustment
+    ) -> [FullFinancialContext.IncomeCategoryEntry] {
+        struct Totals { var current = 0.0, last = 0.0, year = 0.0 }
+        var catAgg: [String: Totals] = [:]
+        var subAgg: [String: [String: Totals]] = [:]
+        for tx in tx where tx.category?.isIncome == true && !adjustment.isSuppressed(tx) {
+            let inCurrent = intervals.currentMonth.contains(tx.date)
+            let inLast = intervals.lastMonth.contains(tx.date)
+            let inYear = intervals.currentYear.contains(tx.date)
+            guard inCurrent || inLast || inYear else { continue }
+            let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
+            let cat = tx.category?.name ?? "Other"
+            func apply(_ t: inout Totals) {
+                if inCurrent { t.current += amount }
+                if inLast { t.last += amount }
+                if inYear { t.year += amount }
+            }
+            apply(&catAgg[cat, default: Totals()])
+            if let sub = tx.subcategory?.name { apply(&subAgg[cat, default: [:]][sub, default: Totals()]) }
+        }
+        return catAgg
+            .sorted { $0.value.year != $1.value.year ? $0.value.year > $1.value.year : $0.key < $1.key }
+            .prefix(10)
+            .map { name, totals in
+                let subs = (subAgg[name] ?? [:])
+                    .sorted { $0.value.year != $1.value.year ? $0.value.year > $1.value.year : $0.key < $1.key }
+                    .prefix(10)
+                    .map {
+                        FullFinancialContext.IncomeSubcategoryEntry(
+                            name: $0.key,
+                            totalCurrentMonth: safeDouble($0.value.current),
+                            totalLastMonth: safeDouble($0.value.last),
+                            totalCurrentYear: safeDouble($0.value.year)
+                        )
+                    }
+                return FullFinancialContext.IncomeCategoryEntry(
+                    name: name,
+                    totalCurrentMonth: safeDouble(totals.current),
+                    totalLastMonth: safeDouble(totals.last),
+                    totalCurrentYear: safeDouble(totals.year),
+                    subcategories: Array(subs)
+                )
+            }
+    }
+
+    /// Los 12 meses CERRADOS antes de `monthStart`, del más reciente al más antiguo: ingresos, gastos y neto con la
+    /// regla de `periods` (`CashFlowCalculator`), y las categorías y subcategorías que más pesaron. Junto al mes en
+    /// curso son los 13 meses del aviso. Cada mes cierra un segundo antes del siguiente (`DateInterval` es cerrado).
+    private func buildMonthlyHistory(
+        tx: [TransactionItem],
+        monthStart: Date,
+        currencyCode: String,
+        converter: CurrencyConverting,
+        calendar: Calendar,
+        adjustment: GroupBridgeStatsAdjustment
+    ) -> [FullFinancialContext.MonthSummary] {
+        let keyFormatter = DateFormatter()
+        keyFormatter.calendar = Calendar(identifier: .gregorian)
+        keyFormatter.locale = Locale(identifier: "en_US_POSIX")
+        keyFormatter.timeZone = calendar.timeZone
+        keyFormatter.dateFormat = "yyyy-MM"
+
+        var months: [FullFinancialContext.MonthSummary] = []
+        for back in 1...12 {
+            guard let start = calendar.date(byAdding: .month, value: -back, to: monthStart),
+                  let next = calendar.date(byAdding: .month, value: 1, to: start),
+                  let end = calendar.date(byAdding: .second, value: -1, to: next) else { continue }
+            let interval = DateInterval(start: start, end: end)
+            let monthTx = tx.filter { interval.contains($0.date) }
+            let cashFlow = CashFlowCalculator.calculateCashFlow(
+                transactions: monthTx,
+                interval: interval,
+                grouping: .day,
+                currencyCode: currencyCode,
+                adjustment: adjustment,
+                converter: converter
+            )
+            var byCategory: [String: Double] = [:]
+            var bySub: [String: (category: String, total: Double)] = [:]
+            var incomeBySub: [String: Double] = [:]
+            for tx in monthTx where !adjustment.isSuppressed(tx) {
+                let amount = convertAmount(tx, currencyCode: currencyCode, converter: converter, adjustment: adjustment)
+                let category = tx.category?.name ?? "Other"
+                if tx.category?.isIncome == true {
+                    incomeBySub[tx.subcategory?.name ?? category, default: 0] += amount
+                } else if tx.category?.isIncome == false {
+                    byCategory[category, default: 0] += amount
+                    if let sub = tx.subcategory?.name {
+                        bySub[sub, default: (category, 0)].total += amount
+                    }
+                }
+            }
+            func top(_ totals: [String: Double], _ n: Int) -> [FullFinancialContext.NamedTotal] {
+                totals.filter { $0.value > 0 }
+                    .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+                    .prefix(n)
+                    .map { FullFinancialContext.NamedTotal(name: $0.key, total: safeDouble($0.value.rounded())) }
+            }
+            let topSubs = bySub.filter { $0.value.total > 0 }
+                .sorted { $0.value.total != $1.value.total ? $0.value.total > $1.value.total : $0.key < $1.key }
+                .prefix(5)
+                .map {
+                    FullFinancialContext.NamedTotal(
+                        name: $0.key, category: $0.value.category, total: safeDouble($0.value.total.rounded()))
+                }
+            // Cifras a dos decimales y tops cortos: son 12 meses y cada carácter se paga en cada pregunta (el banco midió
+            // +60 % de contexto con seis categorías, ocho subcategorías y los flags siempre escritos).
+            months.append(FullFinancialContext.MonthSummary(
+                month: keyFormatter.string(from: start),
+                income: Self.cents(safeDouble(cashFlow.totalIncome)),
+                expense: Self.cents(safeDouble(cashFlow.totalExpense)),
+                balance: Self.cents(safeDouble(cashFlow.netFlow)),
+                incomeIsApproximate: cashFlow.incomeAmountsAreApproximate ? true : nil,
+                expenseIsApproximate: cashFlow.expenseAmountsAreApproximate ? true : nil,
+                topExpenseCategories: top(byCategory, 6),
+                topExpenseSubcategories: Array(topSubs),
+                topIncomeSubcategories: top(incomeBySub, 2)
+            ))
+        }
+        return months
+    }
+
+    /// La tasa más reciente de cada divisa de las cuentas que cuentan, a la principal.
+    private func buildFxRates(
+        accounts: [Account],
+        preferredCurrency: String,
+        converter: CurrencyConverting
+    ) -> [FullFinancialContext.FxRateEntry] {
+        let main = normalizeCurrencyCode(preferredCurrency)
+        let codes = Set(accounts.map { normalizeCurrencyCode($0.currencyCode) }).subtracting([main]).sorted()
+        return codes.map { code in
+            let outcome = converter.convertCheckedWithLatestRate(1, from: code, to: main)
+            return FullFinancialContext.FxRateEntry(
+                currency: code,
+                rateToMainCurrency: safeDouble((outcome.amount as NSDecimalNumber).doubleValue),
+                isApproximate: !outcome.quality.isExact
+            )
+        }
     }
 
     private func buildUncategorized(
@@ -871,7 +1198,8 @@ final class FullFinancialContextBuilder {
                                 dueDate: Self.isoDateFormatter.string(from: date),
                                 category: payment.subcategory?.category?.name,
                                 subcategory: payment.subcategory?.name,
-                                type: type
+                                type: type,
+                                isIncome: payment.transactionType == "income"
                             ))
                         }
                     }
@@ -890,8 +1218,54 @@ final class FullFinancialContextBuilder {
             totals: FullFinancialContext.RecurringTotals(
                 subscriptionsMonthly: safeDouble(subscriptions),
                 recurringMonthly: safeDouble(recurring)
-            )
+            ),
+            active: buildActiveRecurring(
+                active, currencyCode: currencyCode, converter: converter, now: now, calendar: calendar)
         )
+    }
+
+    /// Cada pago programado activo, con su importe en la divisa principal y su próxima fecha (la primera del calendario
+    /// del pago desde hoy que no está saltada). Hasta 30, ordenados por fecha.
+    private func buildActiveRecurring(
+        _ payments: [ScheduledPayment],
+        currencyCode: String,
+        converter: CurrencyConverting,
+        now: Date,
+        calendar: Calendar
+    ) -> [FullFinancialContext.RecurringActiveEntry] {
+        let startOfToday = calendar.startOfDay(for: now)
+        let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? startOfToday
+        let entries = payments.map { payment -> FullFinancialContext.RecurringActiveEntry in
+            var next: Date?
+            for offset in 0...13 where next == nil {
+                guard let month = calendar.date(byAdding: .month, value: offset, to: monthStart) else { continue }
+                next = ScheduledPaymentDateCalculator.paymentDatesInMonth(
+                    params: payment.dateCalculatorParams, month: month, calendar: calendar
+                )
+                .sorted()
+                .first { $0 >= startOfToday && !payment.isDateSkipped($0) }
+            }
+            let amount: Double
+            if normalizeCurrencyCode(payment.currencyCode) == normalizeCurrencyCode(currencyCode) {
+                amount = abs(payment.amount)
+            } else {
+                let converted = converter.convert(
+                    Decimal(abs(payment.amount)), from: payment.currencyCode, to: currencyCode, on: next ?? now)
+                amount = safeDouble(NSDecimalNumber(decimal: converted).doubleValue)
+            }
+            let frequency = payment.isRecurring ? (RecurrenceType(rawValue: payment.recurrenceType) ?? .monthly).rawValue : "once"
+            return FullFinancialContext.RecurringActiveEntry(
+                name: payment.name,
+                amount: amount,
+                isIncome: payment.transactionType == "income",
+                type: payment.isRecurring ? payment.paymentCategory : "one_time",
+                frequency: frequency,
+                every: payment.recurrenceInterval > 1 ? payment.recurrenceInterval : nil,
+                nextDate: next.map { Self.isoDateFormatter.string(from: $0) },
+                subcategory: payment.subcategory?.name
+            )
+        }
+        return Array(entries.sorted { ($0.nextDate ?? "9999") < ($1.nextDate ?? "9999") }.prefix(30))
     }
 
     private func monthlyTotal(
@@ -932,11 +1306,12 @@ final class FullFinancialContextBuilder {
         currencyCode: String,
         converter: CurrencyConverting,
         now: Date,
+        endOfToday: Date,
         calendar: Calendar,
         adjustment: GroupBridgeStatsAdjustment
     ) -> FullFinancialContext.PatternsSection {
         let last30Start = calendar.date(byAdding: .day, value: -30, to: now) ?? now
-        let last30Interval = DateInterval(start: last30Start, end: now)
+        let last30Interval = DateInterval(start: last30Start, end: endOfToday)
         let last30Tx = tx.filter { last30Interval.contains($0.date) && $0.category?.isIncome == false }
 
         let weekdayData = WeekdaySpendingCalculator.calculate(
@@ -960,7 +1335,7 @@ final class FullFinancialContextBuilder {
 
         // Needs breakdown for current month expenses
         let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? now
-        let currentMonthTx = tx.filter { $0.date >= monthStart && $0.date <= now && $0.category?.isIncome == false }
+        let currentMonthTx = tx.filter { $0.date >= monthStart && $0.date <= endOfToday && $0.category?.isIncome == false }
         var essential = 0.0, priority = 0.0, optional = 0.0, unclassified = 0.0
         for tx in currentMonthTx {
             if adjustment.isSuppressed(tx) { continue }
@@ -1068,9 +1443,10 @@ final class FullFinancialContextBuilder {
 
     // MARK: - Fetchers
 
-    private func fetchTransactions(_ ctx: ModelContext, from: Date, to: Date) -> [TransactionItem] {
+    /// Todos los movimientos: los saldos los necesitan enteros (el Panel los suma así). La ventana de 13 meses se corta
+    /// en memoria.
+    private func fetchAllTransactions(_ ctx: ModelContext) -> [TransactionItem] {
         let descriptor = FetchDescriptor<TransactionItem>(
-            predicate: #Predicate<TransactionItem> { $0.date >= from && $0.date <= to },
             sortBy: [SortDescriptor(\TransactionItem.date, order: .reverse)]
         )
         do {

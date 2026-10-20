@@ -1,11 +1,11 @@
 ---
 id: chat-ignores-expenses-only-mode
-status: backlog
+status: done
 priority: low
 area: "chat"
 created: 2026-09-08
 source: hallazgo de camino en chat-draft-drops-the-expense-sign (2026-09-08)
-updated: 2026-10-08
+updated: 2026-10-20
 ---
 
 # El modo «solo gastos» no llega al chat
@@ -55,3 +55,9 @@ con…»), pero es una inferencia sobre la intención, no algo escrito en una de
 - Decisión pendiente. A) el chat respeta el modo y el borrador nace como gasto, con la forma de `SiriDraftService`; B) el chat es la vía deliberada para apuntar un ingreso sin salir del modo, y se documenta. Recomendada: A, por coherencia con las otras tres capturas; con ella sigue `low` (el borrador pasa por el Inbox antes de entrar).
 
 Triage 2026-10-08: abierto · low → low · el chat sigue sin leer `expensesOnlyMode` y falta decidir A/B; el borrador aún pasa por el Inbox.
+
+## Resuelto (2026-10-20, revisión de Yala IA 2.2)
+
+Decidido en autónomo (Paso 0 del encargo, D5): el chat respeta el modo, como Siri, el Atajo y Apple Pay.
+`DraftBuilder.build(…, expensesOnlyMode:)` fuerza gasto; `ChatAssistantService.runRegisterFlow` lee el modo del App
+Group como `SiriDraftService`. Test: `ChatDraftExpensesOnlyModeTests`.

@@ -1,10 +1,10 @@
 ---
 id: chat-context-encoding-failure-is-silent
-status: backlog
+status: done
 priority: low
 area: chat, ai
 created: 2026-10-07
-updated: 2026-10-08
+updated: 2026-10-20
 source: revisión del uso de IA (docs/ai-usage-review-2026-10.md, hallazgo H11)
 ---
 
@@ -38,3 +38,9 @@ y **no** llama al modelo.
 - `FullFinancialContext.toJSONString()` (`Yala/Services/Chat/FullFinancialContext.swift:43`) sigue con `guard let data = try? encoder.encode(self) … else { return "{}" }`.
 
 Triage 2026-10-08: abierto · low → low · el `try?` que devuelve `{}` sigue; hace falta un valor no codificable en el contexto, raro desde que el sync rechaza NaN.
+
+## Resuelto (2026-10-20, revisión de Yala IA 2.2)
+
+`FullFinancialContext.toJSONString()` lanza; `ChatAssistantService.makeAskQuery` también, y `runAskFlow` lo convierte
+en `.parseFailed` (el error genérico del chat) sin llamar al modelo. Test:
+`YalaIAQuestionRouteTests.contextThatCannotBeEncoded_throws_insteadOfSendingAnEmptyObject`.

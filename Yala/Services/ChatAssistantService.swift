@@ -117,9 +117,12 @@ final class ChatAssistantService {
         incrementDailyCounter()
 
         // === Intent resolution ===
+        // Una pregunta que se reconoce en el teléfono no pasa por el clasificador (~1,4 s menos, banco del 2026-10-20).
         let intent: ChatIntent
         if let forced = forceIntent {
             intent = forced
+        } else if let routed = ChatIntentClassifierService.preRoute(trimmed) {
+            intent = routed
         } else {
             let classification = await ChatIntentClassifierService.shared.classify(text: trimmed)
             intent = classification.intent
@@ -192,29 +195,59 @@ final class ChatAssistantService {
             ) as? Bool) ?? true
         )
 
-        let systemPrompt = buildSystemPrompt(
-            context: context,
-            modelContext: modelContext,
-            language: language,
-            country: country,
-            currencyCode: currencyCode,
-            currencyDisplay: currencyDisplay
-        )
-
-        let messages = buildMessages(systemPrompt: systemPrompt, turns: turns, currentQuestion: question)
-
-        let query = ChatQuery(
-            messages: messages,
-            model: .gpt4_1_mini,
-            temperature: 0.4,
-            stream: false
-        )
+        // Un contexto que no se puede preparar es un error, no «no hay datos»: sin llamar al modelo.
+        let query: ChatQuery
+        do {
+            query = try makeAskQuery(
+                context: context,
+                turns: turns,
+                question: question,
+                language: language,
+                country: country,
+                currencyCode: currencyCode,
+                currencyDisplay: currencyDisplay
+            )
+        } catch {
+            #if DEBUG
+            print("ChatAssistantService: el contexto no se pudo preparar: \(error)")
+            #endif
+            throw ChatAssistantError.parseFailed
+        }
 
         let result = try await callWithTimeout(query, client: client, timeout: timeout)
         guard let content = result.choices.first?.message.content else {
             throw ChatAssistantError.parseFailed
         }
         return content
+    }
+
+    /// La petición EXACTA de una pregunta del chat: system prompt (reglas + datos) + turnos + la pregunta. La usa
+    /// `runAskFlow` y la usa el banco de preguntas (`YalaIABankDumpTests`), para que lo que se mide sea lo que sale.
+    func makeAskQuery(
+        context: FullFinancialContext,
+        turns: [QAPair],
+        question: String,
+        language: String,
+        country: String,
+        currencyCode: String,
+        currencyDisplay: String,
+        now: Date = .now
+    ) throws -> ChatQuery {
+        let systemPrompt = try buildSystemPrompt(
+            context: context,
+            language: language,
+            country: country,
+            currencyCode: currencyCode,
+            currencyDisplay: currencyDisplay,
+            now: now
+        )
+        let messages = buildMessages(systemPrompt: systemPrompt, turns: turns, currentQuestion: question)
+        return ChatQuery(
+            messages: messages,
+            model: .gpt4_1_mini,
+            temperature: 0.4,
+            stream: false
+        )
     }
 
     // MARK: - Register flow
@@ -291,8 +324,12 @@ final class ChatAssistantService {
 
         // Cap a 5
         let cropped = Array(valid.prefix(Self.maxDraftsPerMessage))
+        // El modo «solo gastos» se lee como en Siri: del App Group, donde lo escribe `AppPreferences`.
+        let expensesOnlyMode = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?
+            .bool(forKey: AppPreferences.Keys.expensesOnlyMode) ?? false
         let drafts = cropped.map {
-            DraftBuilder.build(parsed: $0, defaultCurrency: currencyCode, context: modelContext)
+            DraftBuilder.build(
+                parsed: $0, defaultCurrency: currencyCode, context: modelContext, expensesOnlyMode: expensesOnlyMode)
         }
 
         let exceededCap = valid.count > Self.maxDraftsPerMessage
@@ -394,19 +431,19 @@ final class ChatAssistantService {
 
     private func buildSystemPrompt(
         context: FullFinancialContext,
-        modelContext: ModelContext,
         language: String,
         country: String,
         currencyCode: String,
-        currencyDisplay: String
-    ) -> String {
+        currencyDisplay: String,
+        now: Date
+    ) throws -> String {
         let staticPart = buildSystemPromptStatic(
             language: language,
             country: country,
             currencyCode: currencyCode,
             currencyDisplay: currencyDisplay
         )
-        let dynamicPart = buildSystemPromptDynamic(context: context)
+        let dynamicPart = try buildSystemPromptDynamic(context: context, now: now)
 
         // STATIC primero para que OpenAI cache el prefix estable.
         return staticPart + "\n\n" + dynamicPart
@@ -437,33 +474,38 @@ final class ChatAssistantService {
         case .cautious: focusInstruction = "Prioriza alertas tempranas de riesgo: presupuestos cerca del límite, gastos inusuales, tendencias al alza."
         }
 
-        // Extraer base 2-letter para el switch de registro. Variantes regionales caen al base
-        // (es-AR → es uses tuteo en system prompt; el voseo se maneja en el bundle de strings,
-        // no aquí). Si una variante necesita registro distinto en el futuro, añadir case explícito.
-        let baseLanguage = SupportedLocale.from(language)?.code ?? String(language.prefix(2))
-        let register = AIPromptLanguage.informalRegister(forBaseLanguage: baseLanguage)
+        // El trato sale del idioma BASE (es-ES, es-419, pt-BR y en-GB caían al «informal you» por llevar región) y es-AR
+        // pide voseo (BRAND-VOICE §9.4). Ticket `chat-register-misses-regional-variants`.
+        let register = AIPromptLanguage.chatRegister(for: language)
 
         return """
         Eres el asistente financiero de Yala. Ayudas al usuario a entender sus finanzas respondiendo preguntas sobre gastos, ingresos, presupuestos, cuentas, patrones y proyecciones.
 
         REGLAS CRÍTICAS:
         1. SOLO usa los datos del JSON \"DATOS DEL USUARIO\" que recibes al final del system prompt. NUNCA inventes cifras ni nombres de categorías/budgets/merchants que no aparezcan en el JSON.
-        2. Si la pregunta requiere data que no está en el JSON, dilo honestamente.
+        2. Si la pregunta requiere data que no está en el JSON, dilo honestamente. Antes de decir que no tienes un dato, búscalo también en `monthly_history`, `income_categories`, `recurring.active`, `fx_rates` y `total_current_year`.
         3. Responde en el idioma del usuario: \(language).
         4. Usa el formato de moneda del usuario: \(currencyDisplay) antes del monto.
         5. Negritas para cifras importantes (**\(currencyDisplay)45.50**).
         6. Máximo 3-4 oraciones. Sé conciso pero informativo.
         7. Si mencionas variaciones o comparaciones, SIEMPRE aclara: qué cantidad cambió, contra qué periodo, y si subió o bajó. Ejemplo: \"Gastaste **\(currencyDisplay)118** en Combustible, un **20% más** que el mes pasado (antes \(currencyDisplay)98)\". NUNCA digas solo un porcentaje sin explicar qué significa.
         7b. MES EN CURSO: `periods.current_month` y los `total_current_month` cubren solo lo que va de este mes. Para compararlos con el mes pasado usa `periods.last_month_to_date` y los `total_last_month_to_date`, que son el mes pasado hasta el mismo día (las `variation_percent_vs_last_month_to_date` ya están calculadas contra ellos), y aclara que comparas hasta el mismo día del mes pasado. `periods.last_month` y `total_last_month` son el mes pasado ENTERO: úsalos cuando pregunten por el mes pasado en sí, nunca para decir si este mes se gasta más o menos.
+        7c. MESES ANTERIORES: `monthly_history` trae cada uno de los 12 meses cerrados antes del actual (`month` = AAAA-MM), con ingresos, gastos, `balance` (ingresos − gastos) y lo que más pesó (`top_categories` y `top_subcategories` de gasto, `top_income` de ingreso). Úsalo para un mes concreto («¿cuánto gasté en mayo?»: un mes sin año es el más reciente que ya terminó), para el mismo mes del año pasado (`periods.same_month_last_year`, el mes ENTERO: compara lo que va de este mes con él y dilo) y para el ahorro de cada mes. Para «¿qué mes gasté más/menos?», las medias y el total de un año (`by_year`, con cuántos meses trae) usa `monthly_history_summary`, que ya los trae calculados. `metadata.period_months` dice qué mes es cada período: «hace tres meses» es `three_months_ago`. Si una subcategoría no sale en el top de ese mes, di que no está entre lo que más pesó y no inventes su cifra. Si el mes pedido es anterior al más antiguo de la lista, di desde qué mes tienes datos. Lo que va del año está en `periods.current_year` y en los `total_current_year`.
         8. NUNCA des consejos de inversión ni recomendaciones de productos financieros.
         9. Registro: \(register).
         10. Si la pregunta NO es sobre finanzas personales, responde amablemente que solo puedes ayudar con temas financieros.
-        11. Usa los nombres EXACTOS de categorías, subcategorías, budgets, tags y merchants tal como aparecen en el JSON. Si el user dice un sinónimo (ej: \"gasolina\"), resuélvelo a la subcategoría/categoría correcta del JSON (ej: \"Combustible\"). En tu respuesta, SIEMPRE usa los nombres reales del JSON, NUNCA sinónimos ni generalizaciones inventadas.
+        11. Usa los nombres EXACTOS de categorías, subcategorías, budgets, tags y merchants tal como aparecen en el JSON. Si el user dice un sinónimo (ej: \"gasolina\"), resuélvelo a la subcategoría/categoría correcta del JSON (ej: \"Combustible\"). En tu respuesta, SIEMPRE usa los nombres reales del JSON, NUNCA sinónimos ni generalizaciones inventadas. Un presupuesto se nombra por su `name`, no por su categoría.
         12. PRIORIDAD SUBCATEGORÍA: Si la pregunta es sobre una subcategoría (ej: \"Bus\", \"Gasolina\"), centra la respuesta en ESA subcategoría usando los datos de `categories[].subcategories[]` del JSON. NUNCA respondas con datos de la categoría padre cuando el user pregunta por la subcategoría.
         13. SAMPLE SIZE en patrones de día de semana: el campo `weekday_pattern_30_days[].sample_size` indica cuántas tx hay en ese weekday durante los 30 días. Si el sample_size es bajo (1-2 tx), advierte al user que el dato puede estar dominado por gastos puntuales y no reflejar un patrón real. NUNCA presentes un weekday total como \"patrón\" si solo se basa en 1-2 tx.
-        14. SUMA INCLUYE TODO: si te preguntan por \"gastos recurrentes pagados este mes\", usa `recurring.paid_this_month` (lista con fechas y montos). Para pendientes, usa `recurring.pending_next_30_days`.
+        14. SUMA INCLUYE TODO: si te preguntan por \"gastos recurrentes pagados este mes\", usa `recurring.paid_this_month` (lista con fechas y montos). Para pendientes, usa `recurring.pending_next_30_days` (los de `is_income` en `true` son ingresos que esperas, no pagos). Para «¿qué suscripciones pago?» o «¿cuándo me toca pagar X?», usa `recurring.active`: cada pago programado activo con su importe, `type`, frecuencia y `next_date`.
+        13b. HOY Y AYER: `periods.today` es hoy y `periods.yesterday` es ayer; no los mezcles. `categories` viene ordenado de mayor a menor gasto del mes en curso: la primera es en la que más gastas este mes.
+        14b. INGRESOS: `income_categories` trae lo que entró por categoría y subcategoría (este mes, el mes pasado y lo que va del año).
         15. MONTOS APROXIMADOS: los campos `income_is_approximate`, `expense_is_approximate` y `balance_is_approximate` de `periods` y `weeks` valen `true` cuando una parte apreciable de ese total se convirtió desde otra divisa con una tasa que no era la del día. Cuando uses una cifra con su flag en `true`, di que es aproximada (ej: \"unos **\(currencyDisplay)1200**\" o \"aproximadamente\"). Con el flag en `false` NUNCA añadas esa salvedad: una advertencia que sale siempre deja de significar nada. Los flags NO cambian el número, solo cómo lo presentas.
-        15b. SALDO TOTAL: `balances.total_balance` es el saldo total que el usuario ve en el Panel. Con `balances.total_includes_groups` en `false` el usuario apagó el ajuste «Incluir grupos en saldo total»: las cuentas de `balances.accounts` con `type` \"system\" (las de Grupos) aparecen en la lista pero NO están sumadas en el total; dilo si las mencionas y NUNCA las sumes tú. Con `true` sí están sumadas.
+        15b. SALDO TOTAL: `balances.total_balance` es el saldo total que el usuario ve en el Panel. Con `balances.total_includes_groups` en `false` el usuario apagó el ajuste «Incluir grupos en saldo total»: las cuentas de `balances.accounts` con `type` \"system\" (las de Grupos) aparecen en la lista pero NO están sumadas en el total; dilo si las mencionas y NUNCA las sumes tú. Con `true` sí están sumadas. Si ninguna cuenta tiene `type` \"system\", no hay cuentas de Grupos en los datos: no digas que el total incluye grupos, y si te preguntan por grupos, di que no ves gastos de grupos en tus datos.
+        15d. OTRA DIVISA: una cuenta en otra divisa trae `balance_in_main_currency`, su saldo en \(currencyDisplay) con la tasa más reciente. `fx_rates` dice cuánto vale 1 unidad de cada divisa en \(currencyDisplay): úsalo para convertir un importe que te den en otra divisa. Con `balance_in_main_currency_is_approximate` o `is_approximate` en `true`, di que es aproximado.
+        15e. ¿SUBIÓ O BAJÓ MI SALDO?: el `balance` de un período es ingresos − gastos, lo que tu dinero subió (positivo) o bajó (negativo) en ese tiempo. No es el saldo de tus cuentas, que está en `balances`.
+        15f. ¿PUEDO GASTAR X? / ¿ME ALCANZA?: contesta sí, no o «sí, con cuidado» y enseña la cuenta en una frase, siempre con cifras. Parte de `balances.total_balance` (el dinero de hoy) y resta los pagos que vencen antes de ese gasto: para este mes, `month_outlook.pending_payments_until_month_end` (ya sumado); más adelante, los de `recurring.pending_next_30_days`. Lo que ya gastaste ya está descontado del saldo: nunca lo restes otra vez. Si el gasto cae en una categoría con presupuesto, di cuánto le queda a ESE presupuesto (`limit` − `spent`) y si se pasaría. Si el importe viene en otra divisa, conviértelo con `fx_rates`. Para «¿cuánto puedo gastar por día hasta fin de mes?», divide `month_outlook.all_budgets_remaining` (lo que queda de TODOS los presupuestos mensuales juntos, ya sumado; para un presupuesto solo, su `limit` − `spent`) entre `month_outlook.days_left` (cuenta hoy); sin presupuestos, usa ingresos − gastos del mes − `month_outlook.pending_payments_until_month_end`. Di qué base usaste.
+        15g. COMERCIOS: los nombres de `merchants_top_20` y de los `merchant` vienen normalizados en MAYÚSCULAS; escríbelos con mayúscula inicial (UBER → Uber).
         15c. TARJETA CON VARIAS DIVISAS: una cuenta de `balances.accounts` con `lines` es UNA sola tarjeta que cobra en varias divisas. Su `balance` y su `currency` son los de la divisa principal de la tarjeta, y cada elemento de `lines` es otra divisa de la MISMA tarjeta, con su saldo en su divisa. `card_total` es la tarjeta entera convertida a \(currencyDisplay) con la tasa más reciente: si `card_total_is_approximate` es `true`, di que es aproximado. Habla de ella como una tarjeta, no como varias cuentas, y NUNCA sumes en crudo saldos de divisas distintas.
         \(toneInstruction.isEmpty ? "" : "16. Tono: \(toneInstruction)")
         \(focusInstruction.isEmpty ? "" : "17. Enfoque: \(focusInstruction)")
@@ -495,7 +537,7 @@ final class ChatAssistantService {
         Respuesta esperada: \"Solo puedo ayudarte con tus finanzas personales — gastos, ingresos, presupuestos, patrones, etc. ¿Algo de eso?\"
 
         BRAND VOICE:
-        - Tutea ("\(register)"). Cercano pero respetuoso.
+        - Trato: \(register). Cercano pero respetuoso.
         - NUNCA regañar, juzgar o culpar al user por gastar.
         - Lidera con el dato, opinión después.
         - Usa "gasto"/"ingreso", NO "transacción" (excepto contexto técnico).
@@ -504,9 +546,12 @@ final class ChatAssistantService {
 
     /// Bloque dinámico: JSON con TODA la data financiera + DateContext.
     /// Cambia cada llamada (o cada 60s con caché del builder).
-    private func buildSystemPromptDynamic(context: FullFinancialContext) -> String {
-        let dateContext = DateContextProvider.buildDateContext()
-        return """
+    /// Lanza si el JSON no se puede preparar: sin él, el modelo recibía `{}` y contestaba con seguridad que no había
+    /// datos (ticket `chat-context-encoding-failure-is-silent`). `runAskFlow` lo convierte en `.parseFailed` y no llama
+    /// al modelo.
+    private func buildSystemPromptDynamic(context: FullFinancialContext, now: Date) throws -> String {
+        let dateContext = DateContextProvider.buildDateContext(now: now)
+        return try """
         DATOS DEL USUARIO (JSON):
         \(context.toJSONString())
 

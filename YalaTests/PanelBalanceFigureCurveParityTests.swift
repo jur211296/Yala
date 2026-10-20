@@ -130,14 +130,20 @@ struct PanelBalanceFigureCurveParityTests {
             if !close(point.value, expected) { wrong.append("\(point.date): \(point.value) ≠ \(expected)") }
         }
         #expect(wrong.isEmpty, "\(profile.rawValue): \(wrong.prefix(5))")
-        // Y las tasas de la semilla cambian por día: con «todo al tipo de hoy» estos puntos saldrían otros.
-        let first = try #require(past.first)
-        let todaysRate = LiveBalanceCalculator.liveBalance(
-            accounts: c.accounts,
-            transactions: c.transactions.filter { $0.date <= calendar.date(byAdding: .day, value: 1, to: first.date)!.addingTimeInterval(-1) },
-            preferredCurrencyCode: c.preferred, converter: c.converter
-        )
-        #expect(!close(first.value, todaysRate), "\(profile.rawValue): el primer punto no distingue la tasa de su día de la de hoy")
+        // Y las tasas de la semilla cambian por día: con «todo al tipo de hoy» estos puntos saldrían otros. Basta con UNO:
+        // la semilla redondea la tasa a dos decimales y algún día coincide con la de hoy (el 2026-10-20 el día 1 de
+        // realista valía lo mismo y el control fijo en el primer punto salía rojo; ticket
+        // `panel-balance-curve-parity-test-depends-on-the-day`).
+        let distinguishing = past.contains { point in
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: point.date)!.addingTimeInterval(-1)
+            let atTodaysRate = LiveBalanceCalculator.liveBalance(
+                accounts: c.accounts,
+                transactions: c.transactions.filter { $0.date <= endOfDay },
+                preferredCurrencyCode: c.preferred, converter: c.converter
+            )
+            return !close(point.value, atTodaysRate)
+        }
+        #expect(distinguishing, "\(profile.rawValue): ningún punto distingue la tasa de su día de la de hoy")
     }
 
     /// Un periodo cerrado no lleva cifra viva: la cifra es el último punto, y vale el saldo al CIERRE del periodo con

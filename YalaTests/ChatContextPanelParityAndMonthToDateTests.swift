@@ -194,7 +194,7 @@ struct ChatContextPanelParityAndMonthToDateTests {
         #expect(context.periods.lastMonthToDate.dailyAvg == 500.0 / 15.0)
 
         // Lo que ve el modelo: la clave y su valor en el JSON del prompt.
-        let json = context.toJSONString()
+        let json = try context.toJSONString()
         let periods = try #require(
             (try JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])?["periods"] as? [String: Any]
         )

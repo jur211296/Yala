@@ -17,31 +17,26 @@ import type { Grade } from "./grading";
 
 const SWIFT = {
   chat: "Yala/Services/ChatAssistantService.swift",
-  locales: "Yala/Utils/SupportedLocale.swift",
   anomaly: "Yala/Services/Chat/AnomalyKeywords.swift",
 } as const;
 
 // ---------- prompt ----------
 
-/** `SupportedLocale.from(language)?.code ?? String(language.prefix(2))`, con los casos leídos del Swift. */
-function baseLanguageCode(language: string): string {
-  const codes = [...readRepoFile(SWIFT.locales).matchAll(/^\s*case \w+ = "([^"]+)"/gm)].map((m) => m[1]);
-  if (codes.includes(language)) return language;
-  const base = language.slice(0, 2);
-  return codes.includes(base) ? base : base;
-}
-
 /**
- * El registro que la app pide según el idioma: el chat calcula su código base y lo busca en la tabla de
- * `AIPromptLanguage.informalRegister(forBaseLanguage:)`, que comparte con Insights desde el 2026-10-07.
+ * El registro que la app pide según el idioma: `AIPromptLanguage.chatRegister(for:)` (2026-10-20, ticket
+ * `chat-register-misses-regional-variants`): voseo en es-AR y, si no, la tabla de
+ * `AIPromptLanguage.informalRegister(forBaseLanguage:)` con el idioma BASE (antes una variante con región caía al
+ * «informal you»).
  */
 export function chatRegister(language: string): string {
   const src = readRepoFile(SWIFT.chat);
   const fn = src.slice(src.indexOf("private func buildSystemPromptStatic("));
-  if (!fn.includes("AIPromptLanguage.informalRegister(forBaseLanguage: baseLanguage)")) {
-    throw new Error("chatAnswer: el chat ya no pide el trato a AIPromptLanguage con su código base");
+  if (!fn.includes("AIPromptLanguage.chatRegister(for: language)")) {
+    throw new Error("chatAnswer: el chat ya no pide el trato a AIPromptLanguage.chatRegister(for:)");
   }
-  return informalRegister(baseLanguageCode(language));
+  const normalized = language.replace(/_/g, "-");
+  if (normalized === "es-AR" || normalized.startsWith("es-AR-")) return "voseo (vos)";
+  return informalRegister(normalized.split("-")[0]);
 }
 
 const TONE_KEY = 'toneInstruction.isEmpty ? "" : "16. Tono: \\(toneInstruction)"';

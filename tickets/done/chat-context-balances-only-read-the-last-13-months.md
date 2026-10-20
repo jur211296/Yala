@@ -1,10 +1,10 @@
 ---
 id: chat-context-balances-only-read-the-last-13-months
-status: backlog
+status: done
 priority: high
 area: yala-ia
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-20
 source: review adversarial del saldo de hoy con fechas futuras (lote decidido 2.2 · 01, 2026-10-18)
 ---
 
@@ -25,3 +25,11 @@ Panel y no en la IA.
   tiene la ventana de 13 meses, así que no lo ven.
 
 Leído, sin medir en el simulador. Ya existía antes del 2026-10-18.
+
+## Resuelto (2026-10-20, revisión de Yala IA 2.2)
+
+`FullFinancialContextBuilder.build` lee el libro entero y los saldos salen de él con las reglas del Panel
+(`AccountBalanceCalculator` por cuenta y `LiveBalanceCalculator` para el total, con el corte de hoy); las estadísticas
+siguen siendo de 13 meses (`buildFromArrays(balanceLedger:)`). Medido con la semilla `realista`: Yala IA decía
+S/ 37.631 y ahora S/ 71.568,75, la cifra del Panel. Test: `ChatContextLedgerAndHistoryTests` (mutante: con los saldos
+de la ventana, rojo). El corte por instante es la card `…qrv9`, cerrada en el mismo cambio.
