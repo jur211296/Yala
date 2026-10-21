@@ -617,8 +617,25 @@ final class AppBootstrapper {
         // materializó tarde). El save del ensure comitea el mainContext compartido
         // → gated por quiescencia (patrón retryPendingBridges). Idempotente: si no
         // asienta, el propio reconciler difiere y reintenta en foreground/fetch.
+        //
+        // **Salvo con un enlace en este arranque y sin espejo montado** (card z81w, 2026-10-20): ahí no hay import que
+        // pueda chocar con ese guardado, y la espera (`forceFetchAndWait(timeout: 15)` de un import que no va a llegar) era
+        // lo que dejaba la bienvenida 10-15 s delante de «Conecta tu cuenta».
+        let routesInviteNow = InviteOpeningLogic.routesWithoutImportWait(
+            mountAttachesMirror: CloudSessionSignOut.personalMountAttachesMirror,
+            storageMode: CloudSyncFlags.storageMode,
+            tappedBackendInviteThisLaunch: PendingJoinStore.all().contains {
+                guard let groupID = $0.backendGroupID else { return false }
+                return GroupBackendInviteEntryHandler.isInviteTapArmed(groupID: groupID)
+            })
         Task { @MainActor in
-            guard await awaitPersonalStoreReady() else {
+            let storeReady: Bool
+            if routesInviteNow {
+                storeReady = true
+            } else {
+                storeReady = await awaitPersonalStoreReady()
+            }
+            guard storeReady else {
                 SaveBreadcrumb.deferred("AppBootstrapper.groupJoinReconcile", "import not quiescent")
                 return
             }
@@ -2724,11 +2741,24 @@ final class AppBootstrapper {
         // con la app cerrada, que cae en el `!isInitialized` de abajo.
         let branded = InviteLinkService.extractMetadata(from: url)
 
-        switch GroupInviteChannelRoutingLogic.route(
+        let route = GroupInviteChannelRoutingLogic.route(
             isBackendLink: backendInvite != nil,
             flagEnabled: CloudSyncFlags.groupsBackendEnabled,
             didRefreshFlags: didRefreshFlags
-        ) {
+        )
+        // «Abriendo tu invitación…» desde el primer instante (card z81w): con la bienvenida delante, un enlace que se va a
+        // encaminar la tapa hasta que la cadena del invitado la releve; uno que no se puede abrir la devuelve.
+        switch route {
+        case .backend, .refreshFlagsThenRetry:
+            if InviteOpeningLogic.showsOpeningScreen(
+                hasCompletedOnboarding: UserDefaults.standard.bool(forKey: AppPreferences.Keys.hasCompletedOnboarding)) {
+                InviteOpeningState.shared.begin(origin: isInitialized ? "warm" : "cold")
+            }
+        case .ckShare, .backendUnavailable:
+            InviteOpeningState.shared.finish(.linkFailed)
+        }
+
+        switch route {
         case .ckShare:
             // **Fase 3: este canal ya no existe.** Un link de CKShare no puede unir a nadie —el transporte
             // que aceptaba el share se borró—, así que la rama INFORMA en vez de quedarse muda. Un apagón

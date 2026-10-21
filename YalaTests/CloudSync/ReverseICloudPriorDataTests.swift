@@ -117,7 +117,7 @@ struct ReverseICloudPriorDataLogicTests {
         #expect(ICloudForeignCorpusCheck.measured(corpus(other: 1)).canaryDetail == "found")
         #expect(ICloudForeignCorpusCheck.measured(.empty).canaryDetail == "none")
         #expect(ICloudForeignCorpusCheck.noAccount.canaryDetail == "noAccount")
-        #expect(ICloudForeignCorpusCheck.failed("scanDeadline").canaryDetail == "failed:scanDeadline")
+        #expect(ICloudForeignCorpusCheck.failed("scanStalled").canaryDetail == "failed:scanStalled")
     }
 }
 
@@ -277,7 +277,7 @@ struct ICloudForeignTallyTests {
         #expect(ICloudPersonalCorpusProbe.foreignCheckOutcome(
             for: ICloudPersonalCorpusProbe.ForeignScanError.partialRecordFailure) == .failed("partialRecordFailure"))
         #expect(ICloudPersonalCorpusProbe.foreignCheckOutcome(
-            for: ICloudPersonalCorpusProbe.ForeignScanError.deadline) == .failed("scanDeadline"))
+            for: ICloudPersonalCorpusProbe.ForeignScanError.stalled) == .failed("scanStalled"))
     }
 }
 

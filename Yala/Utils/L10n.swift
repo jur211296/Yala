@@ -5864,6 +5864,10 @@ enum L10n {
             static var noAccountCta: String { ls("welcome.privateICloud.noAccountCta", comment: "") }
             static var errorTitle: String { ls("welcome.privateICloud.errorTitle", comment: "") }
             static var errorBody: String { ls("welcome.privateICloud.errorBody", comment: "") }
+            /// La revisión de iCloud se quedó sin avanzar (card blqa): no culpa a la conexión.
+            static var stalledTitle: String { ls("welcome.privateICloud.stalledTitle", comment: "") }
+            static var stalledBody: String { ls("welcome.privateICloud.stalledBody", comment: "") }
+            static var discardStalledBody: String { ls("welcome.privateICloud.discardStalledBody", comment: "") }
             /// **El cuerpo de `.unreachable` cuando la puerta VUELVE atrás en vez de seguir** (decisión de
             /// Jürgen, 2026-09-14). `errorBody` no sirve ahí: dice «Inténtalo otra vez **antes de
             /// seguir**», y en esa puerta no se ofrece ningún «seguir». Nombra el reintento igual que él,
@@ -6111,6 +6115,11 @@ enum L10n {
         /// R2 · terminal del Welcome cuando el destino elegido necesita el espejo de iCloud y este proceso
         /// montó el store NEUTRO. Copy propio y NO `Storage.Relaunch.*`: aquel describe una migración de un
         /// corpus que ya existe; aquí el usuario acaba de elegir y todavía no tiene datos.
+        /// «Abriendo tu invitación…» (card z81w): la bienvenida mientras se abre un enlace en una instalación nueva.
+        enum InviteOpening {
+            static var title: String { ls("welcome.inviteOpening.title", comment: "") }
+        }
+
         enum MirrorRelaunch {
             static var title: String { ls("welcome.mirrorRelaunch.title", comment: "") }
             /// Por qué hay que reabrir (UX 2.2 · L1-4, decisión de Jürgen: el reinicio se queda y se explica).

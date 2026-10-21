@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1002)
+## Index (1007)
 
 | id | status | path |
 |---|---|---|
@@ -234,6 +234,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-attest-notice-does-not-cover-a-gateway-rejected-token | backlog | tickets/backlog/cloud-attest-notice-does-not-cover-a-gateway-rejected-token.md |
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
+| cloud-group-reject-can-expel-a-member-approved-on-another-device | backlog | tickets/backlog/cloud-group-reject-can-expel-a-member-approved-on-another-device.md |
+| cloud-group-reject-request-always-fails | qa | tickets/qa/cloud-group-reject-request-always-fails.md |
 | cloud-hydration-banner-does-not-see-data-that-arrives-after-mount | backlog | tickets/backlog/cloud-hydration-banner-does-not-see-data-that-arrives-after-mount.md |
 | cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped | backlog | tickets/backlog/cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped.md |
 | cloud-hydration-spinner-never-gives-up-without-attest | done | tickets/done/cloud-hydration-spinner-never-gives-up-without-attest.md |
@@ -564,6 +566,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-backend-stale-config | done | tickets/done/invite-backend-stale-config.md |
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | done | tickets/done/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
+| invite-link-on-a-fresh-install-shows-the-welcome-first | qa | tickets/qa/invite-link-on-a-fresh-install-shows-the-welcome-first.md |
 | invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness | backlog | tickets/backlog/invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness.md |
 | invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | qa | tickets/qa/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
@@ -727,8 +730,10 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-gate-device-notice-has-no-forward-exit | done | tickets/done/private-gate-device-notice-has-no-forward-exit.md |
 | private-gate-device-wipe-navigates-after-its-gate-unmounted | backlog | tickets/backlog/private-gate-device-wipe-navigates-after-its-gate-unmounted.md |
 | private-gate-leave-after-a-halfway-wipe-forgets-the-zone | done | tickets/done/private-gate-leave-after-a-halfway-wipe-forgets-the-zone.md |
+| private-gate-notices-overflow-at-the-largest-text-size | backlog | tickets/backlog/private-gate-notices-overflow-at-the-largest-text-size.md |
 | private-gate-remote-wipe-can-strand-its-arm | done | tickets/done/private-gate-remote-wipe-can-strand-its-arm.md |
 | private-gate-wipe-failure-copy-claims-icloud-is-intact | done | tickets/done/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
+| private-icloud-check-gives-up-on-a-large-history | qa | tickets/qa/private-icloud-check-gives-up-on-a-large-history.md |
 | private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
 | private-sign-out-counts-group-writes-without-capturing-them | done | tickets/done/private-sign-out-counts-group-writes-without-capturing-them.md |

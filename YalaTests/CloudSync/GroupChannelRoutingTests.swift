@@ -375,9 +375,10 @@ struct GroupChannelRoutingTests {
         #expect(pending.memberStatus == .pendingApproval)
     }
 
-    /// Si el servidor ya lo tenía como miembro (lo aprobaron en otro sitio), `remove_member` lo deja `removed`:
-    /// el estado local sigue a la respuesta y no apunta un `rejected` que nunca ocurrió.
-    @Test func rejectMember_backendGroup_serverSaysRemoved_localFollowsTheServer() async throws {
+    /// Si el servidor ya lo tenía como miembro (lo aprobaron en otro sitio), `remove_member` lo deja `removed`: en local
+    /// no se apunta un `rejected` que nunca ocurrió, ni se adelanta el `removed`: lo trae el pull. Contrato de 2.1
+    /// (card 840m), que el merge de 2.1 en 2.2 (2026-10-20) mantiene sobre el `.removed` local del lote 19.
+    @Test func rejectMember_backendGroup_serverSaysRemoved_localWaitsForThePull() async throws {
         let dir = freshDir(); defer { cleanup(dir) }
         let context = try makeContext(dir)
         GroupService.shared.setContext(context)
@@ -405,13 +406,7 @@ struct GroupChannelRoutingTests {
         try await GroupService.shared.rejectMember(member, in: group)
 
         #expect(s.callCount == 1)
-        #expect(member.memberStatus == .removed)
-    }
-
-    @Test func localStatusAfterRejectRPC_followsTheServer() {
-        #expect(GroupService.localStatusAfterRejectRPC("rejected") == .rejected)
-        #expect(GroupService.localStatusAfterRejectRPC("removed") == .removed)
-        #expect(GroupService.localStatusAfterRejectRPC("algo-nuevo") == .rejected)
+        #expect(member.memberStatus == .pendingApproval)
     }
 
     /// Flag OFF → `rejectMember` no toca la red (camino CloudKit de siempre) y marca `.rejected` en local.
