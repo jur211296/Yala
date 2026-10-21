@@ -513,6 +513,19 @@ final class UITestHooks {
     /// el aviso trae SOLO borradores de Siri; con `-uitest-inbox-alert`, la muestra de siempre y la línea de Siri.
     nonisolated static var showInboxAlertSiri: Bool { hasArg("-uitest-inbox-alert-siri") }
 
+    /// `-uitest-siri-model <available|deviceNotEligible|appleIntelligenceNotEnabled|modelNotReady|languageNotSupported>`:
+    /// finge el estado del modelo del iPhone para «Anotar con Siri» sin Pro (L15-6, encendido el 2026-10-21). El
+    /// simulador no tiene el modelo de Apple: con `available` la lectura del dictado es un stub fijo
+    /// (`SiriOnDeviceEntry.parse`). La decisión del gate se prueba sin este seam, en `SiriEntryRouteTests`.
+    nonisolated static var siriModelOverride: String? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-siri-model", from: ProcessInfo.processInfo.arguments)
+        #else
+        return nil
+        #endif
+    }
+
     /// Lo que encola el aviso de la Bandeja simulado, o `nil` sin ninguno de los dos args.
     static var inboxAlertPayload: PendingInboxNotification? {
         guard showInboxAlert || showInboxAlertSiri else { return nil }

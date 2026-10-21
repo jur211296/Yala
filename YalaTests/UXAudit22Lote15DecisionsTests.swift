@@ -4,7 +4,7 @@
 //
 //  Las siete decisiones de Jürgen sobre el lote 15 de la auditoría UX 2.2 («Desde fuera de la app», 2026-10-18):
 //  · L15-4 «Siri y Atajos» con los nombres de Atajos y un botón que abre la página de Yala en Atajos.
-//  · L15-6 Sin Pro, Siri abre la hoja de Pro, y el modelo del iPhone detrás de un interruptor apagado.
+//  · L15-6 Sin Pro, Siri abre la hoja de Pro; con el modelo del iPhone listo, lee el dictado ahí (encendido el 21-oct).
 //  · L15-7 El aviso de la Bandeja con su línea «Borradores de Siri: N».
 //  · L15-8 La notificación de Apple Pay: «Pago de … por revisar», en la moneda del borrador.
 //  · L15-9 La guía de Apple Pay con capturas de iOS 27.
@@ -13,6 +13,7 @@
 //
 
 import Foundation
+import FoundationModels
 import Testing
 import UIKit
 @testable import Yala
@@ -113,29 +114,70 @@ struct SiriShortcutsScreenNamesTests {
 
 // MARK: - L15-6
 
-@Suite("Lote 15 · L15-6 Sin Pro, Siri abre la hoja de Pro")
+@Suite("Lote 15 · L15-6 Siri gratis con el modelo del iPhone; sin él, la hoja de Pro")
 struct SiriEntryRouteTests {
 
-    @Test func pro_leeEnElServidor_sinMirarElTelefono() {
-        #expect(SiriEntryRoute.decide(isPro: true, onDeviceEnabled: false, onDeviceAvailable: false) == .server)
-        #expect(SiriEntryRoute.decide(isPro: true, onDeviceEnabled: true, onDeviceAvailable: true) == .server)
+    private static let notReady: [SiriOnDeviceModelState] = [
+        .deviceNotEligible, .appleIntelligenceNotEnabled, .modelNotReady, .languageNotSupported, .unavailable,
+    ]
+
+    /// Pro lee en el servidor, con el modelo del teléfono o sin él: el camino de siempre.
+    @Test(arguments: SiriOnDeviceModelState.allCases)
+    func pro_leeEnElServidor_tengaONoElModelo(model: SiriOnDeviceModelState) {
+        #expect(SiriEntryRoute.decide(isPro: true, onDeviceEnabled: true, model: model) == .server)
+        #expect(SiriEntryRoute.decide(isPro: true, onDeviceEnabled: false, model: model) == .server)
     }
 
-    @Test func sinPro_abreLaHojaDePro_salvoConElModeloDelTelefonoEncendidoYDisponible() {
-        #expect(SiriEntryRoute.decide(isPro: false, onDeviceEnabled: false, onDeviceAvailable: true) == .upgrade)
-        #expect(SiriEntryRoute.decide(isPro: false, onDeviceEnabled: true, onDeviceAvailable: false) == .upgrade)
-        #expect(SiriEntryRoute.decide(isPro: false, onDeviceEnabled: false, onDeviceAvailable: false) == .upgrade)
-        #expect(SiriEntryRoute.decide(isPro: false, onDeviceEnabled: true, onDeviceAvailable: true) == .onDevice)
+    /// Gratis y con el modelo listo: el dictado se lee en el teléfono y deja el borrador en la Bandeja.
+    @Test func gratis_conElModeloListo_leeEnElTelefono() {
+        #expect(SiriEntryRoute.decide(isPro: false, onDeviceEnabled: true, model: .available) == .onDevice)
     }
 
-    /// Pro se mira ANTES de pedir el texto: dictarlo para tirarlo era perderlo. Y la salida abre Yala en la hoja de Pro
-    /// de la voz (el atajo `voice-entry`, que sin Pro la presenta).
-    @Test func elCableado_preguntaProAntesDelTexto_yAbreYala() throws {
+    /// Gratis y sin el modelo —no disponible, apagado, sin descargar, sin el idioma—: la hoja de Pro, como antes.
+    @Test(arguments: notReady)
+    func gratis_sinElModelo_abreLaHojaDePro(model: SiriOnDeviceModelState) {
+        #expect(SiriEntryRoute.decide(isPro: false, onDeviceEnabled: true, model: model) == .upgrade)
+    }
+
+    /// Con el interruptor apagado, ni el modelo listo abre el camino del teléfono.
+    @Test func gratis_conElInterruptorApagado_abreLaHojaDePro() {
+        #expect(SiriEntryRoute.decide(isPro: false, onDeviceEnabled: false, model: .available) == .upgrade)
+    }
+
+    /// Lo que dice `FoundationModels`, motivo a motivo. El idioma solo se pregunta con el modelo disponible.
+    @Test func elEstadoDelModelo_traduceCadaMotivo() {
+        #expect(SiriOnDeviceModelState.from(.available) { true } == .available)
+        #expect(SiriOnDeviceModelState.from(.available) { false } == .languageNotSupported)
+        #expect(SiriOnDeviceModelState.from(.unavailable(.deviceNotEligible)) { true } == .deviceNotEligible)
+        #expect(SiriOnDeviceModelState.from(.unavailable(.appleIntelligenceNotEnabled)) { true } == .appleIntelligenceNotEnabled)
+        #expect(SiriOnDeviceModelState.from(.unavailable(.modelNotReady)) { true } == .modelNotReady)
+        var asked = false
+        _ = SiriOnDeviceModelState.from(.unavailable(.modelNotReady)) { asked = true; return true }
+        #expect(!asked, "Sin modelo no hay idioma que preguntar.")
+    }
+
+    /// Encendido en todos los builds desde la decisión A de Jürgen (2026-10-21). Sin clave de DEBUG que lo apague.
+    @Test func elModeloDelTelefono_vaEncendido() throws {
+        #expect(SiriOnDeviceEntry.isEnabled)
+        let source = Lote15Repo.codeOnly(try Lote15Repo.text("Yala/App/Intents/SiriOnDeviceEntry.swift"))
+        #expect(source.contains("static let isEnabled = true"))
+        #expect(!source.contains("debug.siriOnDeviceFreeEntry"))
+    }
+
+    /// Pro se mira ANTES de pedir el texto: dictarlo para tirarlo era perderlo. El gate decide con el estado real del
+    /// modelo, deja su señal antes de salir por la hoja de Pro, y la salida abre Yala en la hoja de Pro de la voz (el
+    /// atajo `voice-entry`, que sin Pro la presenta).
+    @Test func elCableado_preguntaProAntesDelTexto_dejaSenal_yAbreYala() throws {
         let source = Lote15Repo.codeOnly(try Lote15Repo.text("Yala/App/Intents/QuickExpenseIntent.swift"))
         let intent = try Lote15Repo.slice(source, from: "struct SiriNaturalEntryIntent", to: "enum LastUsedAccountStore")
         let decide = try #require(intent.range(of: "SiriEntryRoute.decide("))
         let ask = try #require(intent.range(of: "$text.requestValue("))
         #expect(decide.lowerBound < ask.lowerBound, "Se pide el texto antes de mirar Pro.")
+        let gate = try Lote15Repo.slice(intent, from: "let modelState = SiriOnDeviceEntry.modelState", to: "if route == .upgrade {")
+        #expect(gate.contains("onDeviceEnabled: SiriOnDeviceEntry.isEnabled,"))
+        #expect(gate.contains("model: modelState"))
+        #expect(gate.contains("MetricsService.canaryFromIntent("), "La señal del gate va antes de la salida por la hoja de Pro.")
+        #expect(gate.contains(".siriEntryRoute, detail: \"route=\\(route.rawValue) model=\\(modelState.rawValue)\""))
         #expect(intent.contains("static var supportedModes: IntentModes { [.background, .foreground(.dynamic)] }"))
         let exit = try Lote15Repo.slice(intent, from: "private func openProSheet()", to: "static func parseTransactions(")
         #expect(exit.contains("try await continueInForeground(nil, alwaysConfirm: false)"))
@@ -144,12 +186,24 @@ struct SiriEntryRouteTests {
         #expect(!intent.contains("guard isProUser else"), "Vuelve la puerta vieja, que contestaba y no llevaba a ningún sitio.")
     }
 
-    /// El modelo del teléfono va APAGADO en producción hasta que Jürgen decida encenderlo.
-    @Test func elModeloDelTelefono_vaApagadoFueraDeDebug() throws {
-        let source = Lote15Repo.codeOnly(try Lote15Repo.text("Yala/App/Intents/SiriOnDeviceEntry.swift"))
-        let flag = try Lote15Repo.slice(source, from: "static var isEnabled: Bool {", to: "static var isAvailable")
-        let release = try Lote15Repo.slice(flag, from: "#else", to: "#endif")
-        #expect(release.split(whereSeparator: \.isWhitespace) == ["#else", "false"], "Fuera de DEBUG: «\(release)».")
+    /// La lectura en el teléfono deja su señal en los dos desenlaces, y el fallo cae a la lectura local (relanza).
+    @Test func laLecturaEnElTelefono_dejaSenal_yAlFallarCaeALaLocal() throws {
+        let source = Lote15Repo.codeOnly(try Lote15Repo.text("Yala/App/Intents/QuickExpenseIntent.swift"))
+        let onDevice = try Lote15Repo.slice(source, from: "if route == .onDevice {", to: "return try await TranscriptionParserService")
+        let parse = try #require(onDevice.range(of: "try await SiriOnDeviceEntry.parse("))
+        let ok = try #require(onDevice.range(of: "Self.reportOnDeviceParse(parsed.contains { $0.amount != nil } ? \"ok\" : \"noAmount\", since: started)"))
+        let failed = try #require(onDevice.range(of: "Self.reportOnDeviceParse(SiriOnDeviceEntry.failureDetail(error), since: started)"))
+        let rethrow = try #require(onDevice.range(of: "throw error"))
+        #expect(parse.upperBound < ok.lowerBound)
+        #expect(failed.upperBound < rethrow.lowerBound)
+    }
+
+    /// El detalle de un fallo no lleva el mensaje del error (puede citar el dictado): tipo y código.
+    @Test func elDetalleDelFallo_noLlevaElMensaje() {
+        struct Boom: LocalizedError { var errorDescription: String? { "20 soles en almuerzo" } }
+        let detail = SiriOnDeviceEntry.failureDetail(Boom())
+        #expect(detail.hasPrefix("failed:Boom#"))
+        #expect(!detail.contains("almuerzo"))
     }
 }
 

@@ -202,13 +202,17 @@ struct SiriNaturalEntryIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         // Step 1: ¿Pro? Se mira ANTES de pedir el texto: sin Pro, dictarlo para tirarlo era perderlo. Sin Pro, Siri lo
         // dice y abre Yala en la hoja de Pro de la voz (auditoría UX 2.2, lote 15, L15-6, opción B). Si el modelo del
-        // iPhone está encendido y disponible, el usuario gratis anota igual leyendo el texto en el teléfono
-        // (`SiriOnDeviceEntry`, apagado hasta que Jürgen decida).
+        // iPhone está listo, el usuario gratis anota igual leyendo el texto en el teléfono (`SiriOnDeviceEntry`,
+        // encendido el 2026-10-21). Cada invocación deja la señal del gate (`siriEntryRoute`), sin datos personales.
         let isProUser = UserDefaults(suiteName: WidgetURLHelper.appGroupIdentifier)?.bool(forKey: AppPreferences.Keys.isProUser) ?? false
+        let modelState = SiriOnDeviceEntry.modelState
         let route = SiriEntryRoute.decide(
             isPro: isProUser,
             onDeviceEnabled: SiriOnDeviceEntry.isEnabled,
-            onDeviceAvailable: SiriOnDeviceEntry.isEnabled && SiriOnDeviceEntry.isAvailable
+            model: modelState
+        )
+        MetricsService.canaryFromIntent(
+            .siriEntryRoute, detail: "route=\(route.rawValue) model=\(modelState.rawValue)"
         )
         if route == .upgrade {
             return .result(dialog: await openProSheet(), view: EmptyView())
@@ -250,11 +254,20 @@ struct SiriNaturalEntryIntent: AppIntent {
             consentAccepted: route == .onDevice || aiConsentAccepted
         ) { text in
             if route == .onDevice {
-                return try await SiriOnDeviceEntry.parse(
-                    text,
-                    expenseSubcategories: cachedContext?.expenseSubcategories ?? [],
-                    incomeSubcategories: cachedContext?.incomeSubcategories ?? []
-                )
+                let started = ContinuousClock.now
+                do {
+                    let parsed = try await SiriOnDeviceEntry.parse(
+                        text,
+                        expenseSubcategories: cachedContext?.expenseSubcategories ?? [],
+                        incomeSubcategories: cachedContext?.incomeSubcategories ?? []
+                    )
+                    Self.reportOnDeviceParse(parsed.contains { $0.amount != nil } ? "ok" : "noAmount", since: started)
+                    return parsed
+                } catch {
+                    // Cae a la lectura local del monto (`parseTransactions`): el borrador básico de siempre.
+                    Self.reportOnDeviceParse(SiriOnDeviceEntry.failureDetail(error), since: started)
+                    throw error
+                }
             }
             return try await TranscriptionParserService.shared.parseMultiple(
                 text: text,
@@ -343,6 +356,14 @@ struct SiriNaturalEntryIntent: AppIntent {
             await UIApplication.shared.open(url)
         }
         return dialog
+    }
+
+    /// La señal de una lectura en el teléfono: cómo salió y cuánto tardó (para medirla frente al servidor).
+    @MainActor
+    private static func reportOnDeviceParse(_ detail: String, since started: ContinuousClock.Instant) {
+        let elapsed = ContinuousClock.now - started
+        let milliseconds = Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15
+        MetricsService.canaryFromIntent(.siriOnDeviceParse, detail: detail, value: milliseconds.rounded())
     }
 
     /// Lee el texto dictado. Con el consentimiento de IA lo manda a `remote` (el LLM, a través del servidor) y, si
