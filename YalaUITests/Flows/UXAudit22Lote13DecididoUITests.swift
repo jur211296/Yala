@@ -170,6 +170,64 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         capture(app, "despues-L13-7-exito-bandeja")
     }
 
+    // MARK: - L13-14
+
+    /// Con un gasto ya reflejado en tus cuentas, dejar de reflejar y elegir «Eliminar de mis cuentas» pregunta antes
+    /// cuántos movimientos se borran.
+    func test_stopReflecting_deleteAsksHowManyFirst() {
+        let app = launch()
+        openCusco(app)
+
+        // Un gasto que pagaste tú, con su cuenta: el puente lo deja en tus cuentas.
+        let fab = app.buttons["group_detail_fab_new_expense"]
+        XCTAssertTrue(fab.waitForExistence(timeout: 10), "No apareció «Nuevo gasto».")
+        fab.tap()
+        let description = app.textFields["group_expense_description"]
+        XCTAssertTrue(description.waitForExistence(timeout: 5), "No montó el formulario.")
+        description.tap()
+        description.typeText("Cena")
+        let amount = app.textFields["group_expense_amount"]
+        amount.tap()
+        amount.typeText("90")
+        let accountRow = app.buttons["group_expense_account_row"]
+        XCTAssertTrue(accountRow.waitForExistence(timeout: 5), "Pagaste tú y no se pidió la cuenta.")
+        accountRow.tap()
+        let firstAccount = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'account_selector_row_'"))
+            .firstMatch
+        XCTAssertTrue(firstAccount.waitForExistence(timeout: 5), "El selector de cuenta no listó ninguna.")
+        firstAccount.tap()
+        app.buttons["group_expense_save"].tap()
+        let accept = app.buttons["group_expense_success_accept"]
+        XCTAssertTrue(accept.waitForExistence(timeout: 10), "No llegó la pantalla de éxito.")
+        accept.tap()
+
+        let back = app.buttons["group_detail_back"]
+        XCTAssertTrue(back.waitForExistence(timeout: 5), "No apareció «Atrás».")
+        back.tap()
+        let settings = app.buttons["groups_global_settings_button"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10), "No apareció «Ajustes de Grupos».")
+        settings.tap()
+        let bridge = app.switches["groups_bridge_toggle"]
+        XCTAssertTrue(bridge.waitForExistence(timeout: 5), "No apareció el interruptor.")
+        bridge.switches.firstMatch.tap()
+
+        let continueButton = app.buttons["bridge_deactivation_continue"]
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 8), "Apagar con movimientos reflejados no preguntó qué hacer.")
+        capture(app, "despues-L13-14-dejar-de-reflejar")
+        let deleteOption = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Eliminar de mis cuentas'")).firstMatch
+        XCTAssertTrue(deleteOption.exists, "No está la opción de eliminar de tus cuentas.")
+        deleteOption.tap()
+        continueButton.tap()
+
+        let confirm = app.buttons["bridge_deactivation_delete_confirm"].firstMatch
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5), "«Eliminar de mis cuentas» no pidió confirmación (L13-14).")
+        let count = app.alerts.staticTexts.matching(NSPredicate(format: "label CONTAINS '1'")).firstMatch
+        XCTAssertTrue(count.exists, "La confirmación no dice cuántos movimientos se borran.")
+        capture(app, "despues-L13-14-confirmar-borrado")
+        confirm.tap()
+        XCTAssertTrue(continueButton.waitForNonExistence(timeout: 8), "Tras confirmar, la hoja no se cerró.")
+    }
+
     // MARK: - L13-12
 
     /// El borrador de un pago de grupo ya no dice «Sin descripción»: confirmas que Ana te pagó y la Bandeja lo nombra
