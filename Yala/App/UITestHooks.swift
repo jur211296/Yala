@@ -884,6 +884,11 @@ final class UITestHooks {
         return value.hasPrefix("-") ? nil : value
     }
 
+    /// `-uitest-seed-marketing`: la semilla `ficha` para material público de lanzamiento. Los grupos son los de casa
+    /// («Depa compartido», «Almuerzos de la oficina») en vez de los viajes, y el presupuesto de mascota no lleva nombre
+    /// propio. Ver `DevSeedGroups.FichaCasa`.
+    nonisolated static var marketingSeed: Bool { hasArg("-uitest-seed-marketing") }
+
     nonisolated private static func hasArg(_ flag: String) -> Bool {
         #if DEBUG
         return isActive && ProcessInfo.processInfo.arguments.contains(flag)
