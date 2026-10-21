@@ -4265,14 +4265,9 @@
 "groups.onboarding.step2.card3.body" = "完成付款,清零开始。不用争论,不用 Excel。";
 
 "groups.onboarding.step2.bridgeAwareness" = "当你支付一笔支出时,我们也会自动将其记录到你的个人账户,让你的余额始终反映真实情况。";
-"groups.onboarding.step3.title" = "隐私优先";
-"groups.onboarding.step3.subtitle" = "只共享必要内容,不多不少。";
-"groups.onboarding.step3.point1" = "每位成员都需要一个 Yala 账户。";
-"groups.onboarding.step3.point2" = "你的个人数据不会与群组同步,只有共享开支会同步。";
 "groups.onboarding.step3.cta" = "前往群组";
 "groups.onboarding.step3.signInCTA" = "登录";
 
-"groups.onboarding.step3.bridgeAwareness" = "你可以在群组设置中更改此行为。";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ 已被删除";
@@ -4771,7 +4766,7 @@
 "groups.consent.point1" = "群组天生就是共享的：它们保存在 Yala 云端，让每个成员都能看到同样的最新支出。";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "与群组分享的只有最少的信息：你的昵称和群组的支出。其他成员看不到你的邮箱。";
+"groups.consent.point2" = "与群组分享的只有最少的信息：你的名字和群组的支出。其他成员看不到你的邮箱。";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "你的个人财务不会移动：它们留在你选择的地方，一如既往地私密。";
@@ -5353,14 +5348,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "返回";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "你叫什么名字？";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "群组里的其他人会看到这个名字。";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "创建我的群组";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "群组是怎么用的？";
@@ -5373,12 +5364,10 @@
 "groups.empty.createAccount.action" = "创建我的账户";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "最后一步";
+"groups.empty.needsConsent.title" = "同意群组的保存方式";
 "groups.empty.needsConsent.message" = "我们会告诉你哪些内容会保存在 Yala 云端，由你决定。";
-"groups.empty.needsConsent.action" = "继续";
+"groups.empty.needsConsent.action" = "查看并同意";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "你记在群组里的支出会保存在 Yala 的服务器上，让所有人都能看到最新的内容。";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "创建我的账户";
@@ -7938,3 +7927,35 @@
 
 /* Título del diálogo de borrar un gasto de grupo sin descripción. */
 "groups.expense.deleteTitleUnnamed" = "删除这笔支出？";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "如果不需要，可以在群组设置中关闭。";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "如果你已有账户就直接登录，没有的话会为你创建。";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "例如：库斯科之旅";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "减少你们之间的付款";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yala 会合并欠款，减少转账次数。";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "全部用一种货币";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "通常怎么分摊";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "你在群组里的名字";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "要分摊一笔支出，请先创建一个群组";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "现在记下这笔支出";

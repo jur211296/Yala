@@ -3013,15 +3013,6 @@ enum L10n {
             static var step2BridgeAwareness: String { ls("groups.onboarding.step2.bridgeAwareness", comment: "") }
 
             // Step 3 — Privacy + CTA
-            static var step3Title: String { ls("groups.onboarding.step3.title", comment: "") }
-            static var step3Subtitle: String { ls("groups.onboarding.step3.subtitle", comment: "") }
-            /// C2 · el HECHO sustantivo, y va el primero. Los otros dos puntos tranquilizan («tu privacidad,
-            /// primero») sin decir nunca DÓNDE se guardan los gastos del grupo; el consent sí lo dice, pero
-            /// llega después de pedir identidad. Sin promesa de cifrado, a propósito: `GroupsConsentView`
-            /// evita esa palabra por lo mismo (G7 no aterrizó — «protegidos» es lo honesto).
-            static var step3Point0: String { ls("groups.onboarding.step3.point0", comment: "") }
-            static var step3Point1: String { ls("groups.onboarding.step3.point1", comment: "") }
-            static var step3Point2: String { ls("groups.onboarding.step3.point2", comment: "") }
             static var step3CTA: String { ls("groups.onboarding.step3.cta", comment: "") }
             /// A1 (D-A7): CTA de sign-in del cierre. Solo se pinta sin sesión Yala viva
             /// (`GroupsOnboardingLogic.shouldShowSignInCTA`).
@@ -3029,8 +3020,6 @@ enum L10n {
             /// C2 · la variante del mismo CTA para quien NUNCA tuvo cuenta. «Iniciar sesión» le pide volver
             /// a un sitio donde no ha estado; el hecho es que se le está creando una cuenta de Yala.
             static var step3CreateAccountCTA: String { ls("groups.onboarding.step3.createAccountCTA", comment: "") }
-            /// F6 awareness: hint que el bridge es configurable en Ajustes de Grupos.
-            static var step3BridgeAwareness: String { ls("groups.onboarding.step3.bridgeAwareness", comment: "") }
         }
     }
 
@@ -6112,10 +6101,7 @@ enum L10n {
             static var neutralMigrationBody: String { ls("welcome.groups.neutralMigrationBody", comment: "") }
             /// CTA de las pantallas con una sola salida: vuelta al step con las otras vías intactas.
             static var gateBack: String { ls("welcome.groups.gateBack", comment: "") }
-            /// G3 · el único dato que el alta del organizador pide (decisión del owner: solo nombre).
-            static var nameTitle: String { ls("welcome.groups.nameTitle", comment: "") }
             static var nameBody: String { ls("welcome.groups.nameBody", comment: "") }
-            static var nameCta: String { ls("welcome.groups.nameCta", comment: "") }
         }
 
         /// Alta born-cloud desde la card «nube» de "Soy nuevo" (A5 de D-A7). Solo tres keys propias:

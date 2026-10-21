@@ -4265,14 +4265,9 @@
 "groups.onboarding.step2.card3.body" = "Sluit betalingen af en begin weer bij nul. Geen ruzies, geen Excel.";
 
 "groups.onboarding.step2.bridgeAwareness" = "Wanneer je een uitgave betaalt, leggen we die automatisch ook vast op je persoonlijke rekening — zodat je saldo altijd de werkelijkheid weerspiegelt.";
-"groups.onboarding.step3.title" = "Jouw privacy staat voorop";
-"groups.onboarding.step3.subtitle" = "Je deelt alleen het noodzakelijke, niets meer.";
-"groups.onboarding.step3.point1" = "Elk lid heeft een eigen Yala-account nodig.";
-"groups.onboarding.step3.point2" = "Je persoonlijke gegevens worden niet met de groep gesynchroniseerd, alleen gedeelde uitgaven.";
 "groups.onboarding.step3.cta" = "Naar groepen";
 "groups.onboarding.step3.signInCTA" = "Aanmelden";
 
-"groups.onboarding.step3.bridgeAwareness" = "Je kunt dit gedrag wijzigen in Groepsinstellingen.";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@ is verwijderd";
@@ -4771,7 +4766,7 @@
 "groups.consent.point1" = "Groepen zijn van nature gedeeld: ze leven in de cloud van Yala zodat iedereen dezelfde uitgaven ziet, altijd actueel.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Met de groep wordt alleen het minimale gedeeld: je alias en de uitgaven van de groep. Andere leden zien je e-mail niet.";
+"groups.consent.point2" = "Met de groep wordt alleen het minimale gedeeld: je naam en de uitgaven van de groep. Andere leden zien je e-mail niet.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Je persoonlijke financiën verhuizen niet: ze blijven waar jij hebt gekozen, privé zoals altijd.";
@@ -5353,14 +5348,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "Terug";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "Hoe heet je?";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "Dit is de naam die de anderen in de groep zien.";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "Mijn groep maken";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "Hoe werken groepen?";
@@ -5373,12 +5364,10 @@
 "groups.empty.createAccount.action" = "Account aanmaken";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "Nog één stap";
+"groups.empty.needsConsent.title" = "Accepteer hoe je groepen worden bewaard";
 "groups.empty.needsConsent.message" = "We vertellen je wat er in de Yala-cloud wordt bewaard, en jij beslist.";
-"groups.empty.needsConsent.action" = "Doorgaan";
+"groups.empty.needsConsent.action" = "Bekijken en accepteren";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "Uitgaven die je in een groep noteert, worden bewaard op de servers van Yala, zodat iedereen ze bijgewerkt ziet.";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Account aanmaken";
@@ -7938,3 +7927,35 @@
 
 /* Título del diálogo de borrar un gasto de grupo sin descripción. */
 "groups.expense.deleteTitleUnnamed" = "Deze uitgave verwijderen?";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "Wil je dit niet, zet het dan uit in Groepsinstellingen.";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "Heb je al een account, dan log je in; zo niet, dan wordt er een aangemaakt.";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "Bijv. Reis naar Cusco";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "Minder betalingen onderling";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yala voegt de schulden samen zodat er minder overboekingen nodig zijn.";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "Alles in één valuta";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "Hoe jullie meestal verdelen";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "Je naam in de groep";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "Om een uitgave te delen, maak eerst een groep";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "Voer nu de uitgave in";

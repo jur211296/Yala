@@ -4231,10 +4231,6 @@
 "groups.onboarding.step2.card2.body" = "Wählen Sie, wie jede Ausgabe geteilt wird. Yala berechnet, wer was schuldet.";
 "groups.onboarding.step2.card3.title" = "Schulden mit wenigen Taps begleichen";
 "groups.onboarding.step2.card3.body" = "Zahlungen abschließen und auf Null setzen. Keine Diskussionen, kein Excel.";
-"groups.onboarding.step3.title" = "Ihre Privatsphäre zuerst";
-"groups.onboarding.step3.subtitle" = "Sie teilen nur das Nötige, nichts weiter.";
-"groups.onboarding.step3.point1" = "Jedes Mitglied benötigt ein eigenes Yala-Konto.";
-"groups.onboarding.step3.point2" = "Ihre persönlichen Daten werden nicht mit der Gruppe synchronisiert, nur geteilte Ausgaben.";
 "groups.onboarding.step3.cta" = "Zu Gruppen";
 "groups.onboarding.step3.signInCTA" = "Anmelden";
 
@@ -4265,7 +4261,6 @@
 "groups.settings.personalIntegrationHintLocalOff" = "Nur in dieser Gruppe: deaktiviert.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Um es hier zu aktivieren, aktivieren Sie es zuerst in den Gruppeneinstellungen.";
 "groups.onboarding.step2.bridgeAwareness" = "Wenn Sie eine Ausgabe bezahlen, wird sie auch automatisch in Ihrem persönlichen Konto erfasst — damit Ihr Saldo immer die Realität widerspiegelt.";
-"groups.onboarding.step3.bridgeAwareness" = "Sie können dieses Verhalten in den Gruppeneinstellungen ändern.";
 
 // MARK: B-16 — groups.reconnect.backToStart
 "groups.reconnect.backToStart" = "Zum Anfang";
@@ -4759,7 +4754,7 @@
 "groups.consent.point1" = "Gruppen sind von Natur aus geteilt: Sie leben in der Yala-Cloud, damit alle dieselben Ausgaben aktuell sehen.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Mit der Gruppe wird nur das Nötigste geteilt: dein Alias und die Ausgaben der Gruppe. Die anderen Mitglieder sehen deine E-Mail nicht.";
+"groups.consent.point2" = "Mit der Gruppe wird nur das Nötigste geteilt: dein Name und die Ausgaben der Gruppe. Die anderen Mitglieder sehen deine E-Mail nicht.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Deine persönlichen Finanzen bleiben, wo du sie gewählt hast – privat wie immer.";
@@ -5341,14 +5336,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "Zurück";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "Wie heißt du?";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "Diesen Namen sehen die anderen in der Gruppe.";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "Meine Gruppe erstellen";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "Wie funktionieren Gruppen?";
@@ -5361,12 +5352,10 @@
 "groups.empty.createAccount.action" = "Konto erstellen";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "Ein letzter Schritt";
+"groups.empty.needsConsent.title" = "Akzeptiere, wie deine Gruppen gespeichert werden";
 "groups.empty.needsConsent.message" = "Wir sagen dir, was in der Yala-Cloud gespeichert wird – du entscheidest.";
-"groups.empty.needsConsent.action" = "Weiter";
+"groups.empty.needsConsent.action" = "Ansehen und akzeptieren";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "Ausgaben, die du in einer Gruppe erfasst, werden auf den Servern von Yala gespeichert, damit alle sie aktuell sehen.";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Konto erstellen";
@@ -7926,3 +7915,35 @@
 
 /* Título del diálogo de borrar un gasto de grupo sin descripción. */
 "groups.expense.deleteTitleUnnamed" = "Diese Ausgabe löschen?";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "Wenn du das nicht möchtest, schalte es in den Gruppeneinstellungen aus.";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "Wenn du schon ein Konto hast, meldest du dich an; sonst wird eins erstellt.";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "z. B. Reise nach Cusco";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "Weniger Zahlungen untereinander";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yala fasst die Schulden zusammen, damit es weniger Überweisungen gibt.";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "Alles in einer Währung";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "Wie ihr meistens aufteilt";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "Dein Name in der Gruppe";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "Um eine Ausgabe zu teilen, erstelle zuerst eine Gruppe";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "Trag jetzt die Ausgabe ein";

@@ -396,6 +396,44 @@ struct GroupsConsentRegistrarTests {
         }
     }
 
+    /// UX 2.2 · L12-4: el paso 3 del educativo acepta SIN sesión. El snapshot va sin sello y guarda por dónde se
+    /// aceptó; al entrar, la adopción lo sella y arma el registro con ESE `path`, no con «adopt-legacy», que haría
+    /// indistinguible en el servidor una aceptación en la app de una migración del formato viejo.
+    @Test func acceptedWithoutSession_keepsItsPath_andTheAdoptionRegistersWithIt() async {
+        await withIsolatedStores {
+            let session = StubSession(responseData: recordOK())
+            let unsigned = makeSUT(session: session, userID: nil)
+            unsigned.register(path: "tab", now: t0)
+            #expect(GroupsConsentState.readSnapshot()?.userID == nil)
+            #expect(GroupsConsentState.readSnapshot()?.path == "tab")
+            #expect(!GroupsConsentPendingIntent.isArmed, "sin sesión no hay cuenta a la que atribuirlo todavía")
+
+            let signedIn = makeSUT(session: session, userID: "sub-A")
+            await signedIn.adoptLegacyIfNeeded(now: t0.addingTimeInterval(60))
+
+            #expect(GroupsConsentState.readSnapshot()?.userID == "sub-A")
+            #expect(GroupsConsentPendingIntent.pending?.path == "tab")
+            #expect(GroupsConsentPendingIntent.pending?.acceptedAt == t0, "se registra la hora de la aceptación")
+        }
+    }
+
+    /// UX 2.2 · L12-4 · la frontera de persona retira el consentimiento SIN sello (el que dejó quien aceptó en el
+    /// educativo sin iniciar sesión) y no toca el sellado, al que protege su sello.
+    @Test func handoverFrontier_removesTheUnsealedConsent_andKeepsTheSealedOne() async {
+        await withIsolatedStores {
+            let d = GroupsConsentState.defaults
+            GroupsConsentState.write(GroupsConsentSnapshot(
+                userID: nil, textVersion: GroupsConsentText.version, acceptedAt: t0, path: "tab"))
+            DataWipeService.removeGroupsDomainPreferenceKeys(from: d)
+            #expect(GroupsConsentState.readSnapshot() == nil, "el consentimiento sin sello sobrevivió al relevo")
+
+            GroupsConsentState.write(GroupsConsentSnapshot(
+                userID: "sub-A", textVersion: GroupsConsentText.version, acceptedAt: t0))
+            GroupsConsentState.removeUnsealedSnapshot(in: d)
+            #expect(GroupsConsentState.readSnapshot()?.userID == "sub-A", "se retiró un consentimiento sellado")
+        }
+    }
+
     @Test func adoptLegacy_doesNotTouchAConsentOfAnotherAccount() async {
         await withIsolatedStores {
             GroupsConsentState.write(GroupsConsentSnapshot(
