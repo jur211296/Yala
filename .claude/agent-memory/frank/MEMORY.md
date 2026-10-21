@@ -29,6 +29,8 @@
 
 - [Capturas en el chat antes de preguntar](feedback_capturas_en_el_chat_antes_de_preguntar.md) — SendUserFile o artifact antes de la pregunta; la ruta no sirve.
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
+- [Planificar con él es iterar](feedback_planificar_con_el_es_iterar.md) — acepta lo recomendado y vuelve con ideas; re-pregunta «¿bueno?».
+- [Tablero: una tanda a la vez](feedback_tablero_una_tanda_a_la_vez.md) — dos tandas se pisan (409); ajustes en pasada final.
 ## Cómo mido y cómo entrego
 - [La decisión vive en la nota de la card](feedback_la_decision_vive_en_la_nota_de_la_card.md) — `listar --json` no trae `note`: `tablero ver` antes de lanzar.
 - [Agentes en paralelo: textos por JSON](feedback_agentes_en_paralelo_merge_de_textos.md) — textos como JSON + script, no `union`; el barrido cazó 6 defectos que no ven.
