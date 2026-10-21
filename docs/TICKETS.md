@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1010)
+## Index (1012)
 
 | id | status | path |
 |---|---|---|
@@ -162,13 +162,14 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | canarios-y-breadcrumbs-sin-emisor | backlog | tickets/backlog/canarios-y-breadcrumbs-sin-emisor.md |
 | cancel-reverse-wipes-the-alert-that-just-appeared | backlog | tickets/backlog/cancel-reverse-wipes-the-alert-that-just-appeared.md |
 | capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc | backlog | tickets/backlog/capability-upgrade-reemits-a-v1-link-edit-with-a-fresh-hlc.md |
-| cash-flow-plan-asks-the-starting-balance-the-account-already-has | backlog | tickets/backlog/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
+| cash-flow-plan-asks-the-starting-balance-the-account-already-has | done | tickets/done/cash-flow-plan-asks-the-starting-balance-the-account-already-has.md |
 | cashflow-ai-comment-does-not-check-pro | backlog | tickets/backlog/cashflow-ai-comment-does-not-check-pro.md |
+| cashflow-amount-changes-from-two-phones-overwrite-each-other | backlog | tickets/backlog/cashflow-amount-changes-from-two-phones-overwrite-each-other.md |
 | cashflow-line-context-menu-deletes-without-asking | done | tickets/done/cashflow-line-context-menu-deletes-without-asking.md |
 | cashflow-override-synced-to-an-old-version-stays-invisible-after-updating | done | tickets/done/cashflow-override-synced-to-an-old-version-stays-invisible-after-updating.md |
 | cashflow-scheduled-line-ignores-payment-currency | done | tickets/done/cashflow-scheduled-line-ignores-payment-currency.md |
 | cashflow-spend-prediction | backlog | tickets/backlog/cashflow-spend-prediction.md |
-| cashflow-this-and-future-adjustment-rewrites-past-months | backlog | tickets/backlog/cashflow-this-and-future-adjustment-rewrites-past-months.md |
+| cashflow-this-and-future-adjustment-rewrites-past-months | qa | tickets/qa/cashflow-this-and-future-adjustment-rewrites-past-months.md |
 | cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two | done | tickets/done/cashflow-two-devices-with-the-same-month-adjustment-end-up-with-two.md |
 | cerrar-total-para-ante-un-check-rojo-que-no-bloquea | discarded | tickets/discarded/cerrar-total-para-ante-un-check-rojo-que-no-bloquea.md |
 | changing-an-account-currency-orphans-its-whole-history | done | tickets/done/changing-an-account-currency-orphans-its-whole-history.md |
@@ -266,6 +267,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloudsync-witnesses-survive-the-sign-out-wipe | backlog | tickets/backlog/cloudsync-witnesses-survive-the-sign-out-wipe.md |
 | cobertura-ui-diaria-cuelga-del-push | discarded | tickets/discarded/cobertura-ui-diaria-cuelga-del-push.md |
 | cola-b-redesigns-must-hold-up-at-ipad-width | done | tickets/done/cola-b-redesigns-must-hold-up-at-ipad-width.md |
+| comparative-and-statistics-pick-the-comparison-with-different-controls | backlog | tickets/backlog/comparative-and-statistics-pick-the-comparison-with-different-controls.md |
 | complete-account-invite-adopt-can-pull-groups-before-the-guard | backlog | tickets/backlog/complete-account-invite-adopt-can-pull-groups-before-the-guard.md |
 | completed-mode-escalates-a-second-groups-only-device | discarded | tickets/discarded/completed-mode-escalates-a-second-groups-only-device.md |
 | consecutive-wipes-whole-convergence-ignores-the-second-division | backlog | tickets/backlog/consecutive-wipes-whole-convergence-ignores-the-second-division.md |

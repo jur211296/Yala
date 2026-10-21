@@ -1,10 +1,10 @@
 ---
 id: cash-flow-plan-asks-the-starting-balance-the-account-already-has
-status: backlog
+status: done
 area: cash-flow-plan
 priority: medium
 created: 2026-10-14
-updated: 2026-10-14
+updated: 2026-10-21
 source: auditoría UX 2.2, lote 5 (primeros días), encontrado fuera del lote — es del lote 18
 ---
 
@@ -23,3 +23,9 @@ Capturas: `~/Claude/entregas/Yala--auditoria-ux-2-2-lote-5-primeros-dias/captura
 ## Qué decidir
 
 Si el saldo inicial del plan propone el saldo de las cuentas, y cómo se explica (criterio de calculadoras claras).
+
+## Resuelto (2026-10-21, lote decidido 2.2 · 10, L18-5 y L18-10)
+
+Crear el plan arranca con «¿Con cuánto empiezas?» y lo que hay hoy en las cuentas (las que suman en el Panel), con
+«Cambiar el monto» en una hoja con la cifra y «Usar este monto». Verificado en el simulador y en
+`CashFlowPlanUITests#test_setup_startsWithTodaysBalance_andTheVariableExpensesUnfold`.
