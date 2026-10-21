@@ -283,3 +283,9 @@ importa más que antes, no menos.
 - Sigue: `qa/coverage-index.json` cita aún `cloudkitGroupEnqueueDroppedNoEngine`, `cloudkitGroupSyncPromotedToAuto` y `groupsIdentityBootMismatch` (×2) como cobertura; los 4 `groupsCk*` sin aviso; `intentFailed` sin reponer; `cloudReverseDegradedNoMap` sin emitir.
 
 Triage 2026-10-08: abierto · medium → medium · re-medido con su script: siguen 11 canarios y 8 breadcrumbs sin emisor, el índice de cobertura los cita y el gate Pro del atajo sigue sin señal (`QuickExpenseIntent.swift:209`).
+
+2026-10-21 (encargo `siri-gratis-modelo-iphone`, PR a 2.2): **el gate Pro de Siri ya deja señal.** `SiriNaturalEntryIntent`
+emite `siriEntryRoute` (`route=<server|onDevice|upgrade> model=<estado>`) en cada invocación, y `siriOnDeviceParse` en
+cada lectura con el modelo del iPhone, por `MetricsService.canaryFromIntent` (al spool si el servicio no arrancó en ese
+proceso). El bug de abril (el gate leía «sin Pro» a usuarios Pro) se vería como un salto de `route=upgrade` frente a
+`route=server` tras un release; no lo separa por persona, porque la señal lee el mismo App Group que el gate. El resto de este ticket (11 canarios y 8 rastros huérfanos, sus citas en `coverage-index.json`) sigue igual.

@@ -429,6 +429,16 @@ enum MetricsCanary: String {
     /// El cierre siguió sin subir esos cambios personales, con la persona conforme: se pierden con el borrado del arranque.
     /// `detail` = `cause=noSession pending=N`. Frente al primero, cuántos eligieron salir sin volver a entrar.
     case cloudSignOutPersonalLossDiscarded
+
+    // «Anotar con Siri» (auditoría UX 2.2, L15-6: el modelo del iPhone para quien no tiene Pro, encendido el 2026-10-21)
+    /// Cada invocación del atajo: qué camino eligió el gate. `detail` = `route=<server|onDevice|upgrade> model=<estado>`
+    /// (`SiriOnDeviceModelState`), sin PII. Cuenta INVOCACIONES, no personas. `upgrade` es la hoja de Pro; sostenido con
+    /// `model=available` = el gate no enciende el camino del teléfono (antes de esto, el gate Pro de Siri no dejaba
+    /// señal: así pasó desapercibido el bug de abril que decía «necesitas Pro» a usuarios Pro).
+    case siriEntryRoute
+    /// Una lectura del dictado con el modelo del iPhone. `detail` = `ok` | `noAmount` (leyó, pero sin importe) |
+    /// `failed:<tipo>#<código>`; `value` = milisegundos que tardó. Sin el texto, nunca.
+    case siriOnDeviceParse
 }
 
 // MARK: - Servicio
@@ -527,6 +537,18 @@ enum MetricsService {
         #endif
         MetricsSpool.enqueue(.canary(name: name.rawValue, detail: detail, value: value), defaults: defaults)
         kickDrain()
+    }
+
+    /// Canario desde un App Intent. El sistema puede lanzar Yala solo para el intent, sin el arranque que pone en marcha
+    /// el servicio: entonces el evento va directo al spool (`.standard`, el mismo que lee `start()`) y sale en el
+    /// siguiente arranque o primer plano. Bajo `-uitest` y en tests, nada.
+    static func canaryFromIntent(_ name: MetricsCanary, detail: String?, value: Double = 1) {
+        if isStarted {
+            canary(name, detail: detail, value: value)
+            return
+        }
+        guard !UITestHooks.isActive, !SwiftDataConfiguration.isRunningTests else { return }
+        MetricsSpool.enqueue(.canary(name: name.rawValue, detail: detail, value: value), defaults: .standard)
     }
 
     /// Canario dedupeado por sesión de proceso (clave compuesta) — paridad `trackOnce`.

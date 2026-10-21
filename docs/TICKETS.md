@@ -912,7 +912,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-ai-content-in-spotlight-and-pro-decision | backlog | tickets/backlog/siri-ai-content-in-spotlight-and-pro-decision.md |
 | siri-ai-integration-ios-27 | qa | tickets/qa/siri-ai-integration-ios-27.md |
 | siri-ai-visual-redesign | discarded | tickets/discarded/siri-ai-visual-redesign.md |
-| siri-free-users-on-device-model-awaits-decision | backlog | tickets/backlog/siri-free-users-on-device-model-awaits-decision.md |
+| siri-free-users-on-device-model-awaits-decision | qa | tickets/qa/siri-free-users-on-device-model-awaits-decision.md |
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-phrases-shown-in-portuguese-do-not-trigger-siri | qa | tickets/qa/siri-phrases-shown-in-portuguese-do-not-trigger-siri.md |
 | siri-settings-screen-does-not-show-the-new-questions | backlog | tickets/backlog/siri-settings-screen-does-not-show-the-new-questions.md |

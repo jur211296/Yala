@@ -1130,6 +1130,10 @@ final class AppBootstrapper {
             // con `-uitest-seed` las dos se quedaban vacías hasta el primer cambio, cosa que en un arranque real con
             // datos no pasa. Medido el 2026-10-18 con `SiriIntentsUITests` (Siri no veía ninguna cuenta).
             WidgetDataCache.updateCache(context: context)
+            // Lo mismo con la caché que lee «Anotar con Siri» (cuentas y subcategorías): el arranque bajo `-uitest` no la
+            // escribe, y la del arranque anterior decía «sin cuentas» y el intent salía sin encolar. Medido el
+            // 2026-10-21 con `SiriOnDeviceEntryUITests` (verde a solas, rojo detrás de otro caso).
+            SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
             UITestHooks.shared.markReady()
         }
         // Excluyente con `-uitest-seed-desync`: el seed aleatorio del perfil contaminaría los
