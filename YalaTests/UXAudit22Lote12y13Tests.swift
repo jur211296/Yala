@@ -165,11 +165,11 @@ struct GroupExpensePersonalOutcomeTests {
 
     private func outcome(
         caseA: Bool, groupsOnly: Bool = false, bridge: Bool = true, account: String? = "Cuenta Principal",
-        creation: Bool = true, optIn: Bool? = nil, myShare: Double = 50
+        creation: Bool = true, optIn: GroupExpenseOptInResolution? = nil, myShare: Double = 50
     ) -> GroupExpensePersonalOutcome {
         GroupExpenseSuccessLogic.personalOutcome(
             isCaseA: caseA, isGroupsOnlySession: groupsOnly, bridgeEnabled: bridge, accountName: account,
-            isCreation: creation, optInDraftCreated: optIn, myShare: myShare)
+            isCreation: creation, optIn: optIn, myShare: myShare)
     }
 
     @Test func paidByMe_withTheBridge_chargesTheAccount() {
@@ -180,11 +180,15 @@ struct GroupExpensePersonalOutcomeTests {
     }
 
     @Test func paidByMe_bridgeOff_dependsOnTheAnswer() {
-        #expect(outcome(caseA: true, bridge: false, optIn: true) == .waitingInInbox)
-        #expect(outcome(caseA: true, bridge: false, optIn: false) == .shareAsGroupExpense(amount: 50))
+        // L13-7: «Sí, registrar» pide la cuenta ahí mismo; elegida, el gasto está en esa cuenta.
+        #expect(outcome(caseA: true, bridge: false, optIn: .registered(accountName: "Ahorros"))
+                == .chargedToAccount(accountName: "Ahorros"))
+        // Cerró sin elegir: el borrador espera en la Bandeja.
+        #expect(outcome(caseA: true, bridge: false, optIn: .waitingInInbox) == .waitingInInbox)
+        #expect(outcome(caseA: true, bridge: false, optIn: .declined) == .shareAsGroupExpense(amount: 50))
         #expect(outcome(caseA: true, bridge: false, optIn: nil) == .none)
         // En una edición no se sabe si queda la transacción real de un «Sí» anterior.
-        #expect(outcome(caseA: true, bridge: false, creation: false, optIn: false) == .none)
+        #expect(outcome(caseA: true, bridge: false, creation: false, optIn: .declined) == .none)
     }
 
     @Test func paidBySomeoneElse_isYourShare() {

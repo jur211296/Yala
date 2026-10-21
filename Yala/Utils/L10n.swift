@@ -2165,6 +2165,8 @@ enum L10n {
         enum Stats {
             static var totalSpent: String { ls("groups.stats.totalSpent", comment: "") }
             static var myPortion: String { ls("groups.stats.myPortion", comment: "") }
+            /// UX 2.2 · L13-13: bajo «Mi parte», qué mide («lo que te tocaba»).
+            static var myPortionHint: String { ls("groups.stats.myPortionHint", comment: "") }
             static var whoMadeMostPayments: String { ls("groups.stats.whoMadeMostPayments", comment: "") }
             static var categories: String { ls("groups.stats.categories", comment: "") }
             static var monthlyTrend: String { ls("groups.stats.monthlyTrend", comment: "") }
@@ -2186,6 +2188,8 @@ enum L10n {
         // MARK: - Bridge (A0-Bridge)
 
         enum OpeningBalance {
+            /// UX 2.2 · L13-10: línea de ayuda bajo el título del formulario.
+            static var formHelp: String { ls("groups.openingBalance.formHelp", comment: "") }
             /// Descripción del SplitExpense de saldo inicial (también label base del feed).
             static var entryDescription: String { ls("groups.openingBalance.entryDescription", comment: "") }
             /// Fila del feed: "%1$@ le debe a %2$@".
@@ -2248,6 +2252,12 @@ enum L10n {
             static var deactivateOptionKeep: String { ls("groups.bridge.deactivateOptionKeep", comment: "") }
             // Deactivation sheet (F5)
             static var deactivationSheetTitle: String { ls("groups.bridge.deactivationSheetTitle", comment: "") }
+            /// UX 2.2 · L13-14: confirmación de «Eliminar de mis cuentas». El cuerpo lleva el número entre los dos puntos y el
+            /// punto, sin concordancia de plural a propósito.
+            static var deleteConfirmTitle: String { ls("groups.bridge.deleteConfirmTitle", comment: "") }
+            static func deleteConfirmMessage(_ count: Int) -> String {
+                String(format: ls("groups.bridge.deleteConfirmMessage", comment: ""), count)
+            }
             static var deactivationSheetBody: String { ls("groups.bridge.deactivationSheetBody", comment: "") }
             static var deactivationOptionFreeze: String { ls("groups.bridge.deactivationOptionFreeze", comment: "") }
             static var deactivationOptionDelete: String { ls("groups.bridge.deactivationOptionDelete", comment: "") }
@@ -2378,6 +2388,8 @@ enum L10n {
             static var personalIntegrationHintInheritOn: String { ls("groups.settings.personalIntegrationHintInheritOn", comment: "") }
             static var personalIntegrationHintLocalOff: String { ls("groups.settings.personalIntegrationHintLocalOff", comment: "") }
             static var personalIntegrationHintBlockedByGlobal: String { ls("groups.settings.personalIntegrationHintBlockedByGlobal", comment: "") }
+            /// UX 2.2 · L13-14: enlace bajo el aviso, abre Ajustes de Grupos.
+            static var openGroupsSettings: String { ls("groups.settings.openGroupsSettings", comment: "") }
         }
 
         enum Errors {
@@ -2734,6 +2746,20 @@ enum L10n {
             static var remaining: String { ls("groups.expense.remaining", comment: "") }
             static func remainingAmount(_ amount: String) -> String { String(format: ls("groups.expense.remainingAmount", comment: ""), amount) }
             static var balanced: String { ls("groups.expense.balanced", comment: "") }
+            /// UX 2.2 · L13-4: «¿Eliminar «Mercado»?» y su alcance.
+            static func deleteTitle(_ name: String) -> String {
+                name.trimmingCharacters(in: .whitespaces).isEmpty
+                    ? ls("groups.expense.deleteTitleUnnamed", comment: "")
+                    : String(format: ls("groups.expense.deleteTitle", comment: ""), name)
+            }
+            static var deleteMessage: String { ls("groups.expense.deleteMessage", comment: "") }
+            /// UX 2.2 · L13-9: la línea sobre «Guardar» con lo que falta.
+            static var missingDescription: String { ls("groups.expense.missingDescription", comment: "") }
+            static var missingAmount: String { ls("groups.expense.missingAmount", comment: "") }
+            static var missingPayer: String { ls("groups.expense.missingPayer", comment: "") }
+            static var missingParticipants: String { ls("groups.expense.missingParticipants", comment: "") }
+            static var missingSplit: String { ls("groups.expense.missingSplit", comment: "") }
+            static var missingAccount: String { ls("groups.expense.missingAccount", comment: "") }
             static var eachPays: String { ls("groups.expense.eachPays", comment: "") }
         }
 
@@ -6660,6 +6686,13 @@ enum L10n {
             static var banner: String { ls("inbox.groupSettlementDraft.banner", comment: "") }
             /// Error al finalizar el borrador de una liquidación cuyo pago ya está registrado (hay marca de aprobación).
             static var alreadyRegistered: String { ls("inbox.groupSettlementDraft.alreadyRegistered", comment: "") }
+            /// UX 2.2 · L13-12: el borrador de un pago, con nombre. «Pago a Ana · Viaje a Cusco» / «Pago de Ana · …».
+            static func paidTo(_ name: String, group: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.paidTo", comment: ""), name, group)
+            }
+            static func paidBy(_ name: String, group: String) -> String {
+                String(format: ls("inbox.groupSettlementDraft.paidBy", comment: ""), name, group)
+            }
         }
 
         /// Aviso de que cambió el importe de una liquidación ya aprobada a una cuenta real (ticket
@@ -6717,6 +6750,10 @@ enum L10n {
         enum GroupDraft {
             static var finalize: String { ls("inbox.groupDraft.finalize", comment: "") }
             static var fromGroup: String { ls("inbox.groupDraft.fromGroup", comment: "") }
+            /// UX 2.2 · L13-15: «¿Ya lo apuntaste?» con los movimientos parecidos del día.
+            static var linkTitle: String { ls("inbox.groupDraft.linkTitle", comment: "") }
+            static var linkHint: String { ls("inbox.groupDraft.linkHint", comment: "") }
+            static var linkRowHint: String { ls("inbox.groupDraft.linkRowHint", comment: "") }
         }
         static var pending: String {
             ls("inbox.pending", comment: "")
@@ -6886,6 +6923,11 @@ enum L10n {
         static var deleteForever: String { ls("inbox.draft.deleteForever", comment: "Draft editor menu — deletes the draft for good") }
         /// Aviso tras descartar desde el editor, con su botón para deshacerlo.
         static var movedToArchived: String { ls("inbox.draft.movedToArchived", comment: "Toast after discarding a draft") }
+        /// UX 2.2 · L13-11: aviso tras convertir un borrador en gasto de grupo, con «Ver».
+        static func movedToGroup(_ group: String) -> String {
+            String(format: ls("inbox.movedToGroup", comment: ""), group)
+        }
+        static var movedToGroupView: String { ls("inbox.movedToGroupView", comment: "") }
         static var undoDiscard: String { ls("inbox.draft.undo", comment: "Toast button — undo the discard") }
         /// Editor de un descartado: «Lo descartaste el 13 oct.» (UX 2.2 · L4-9).
         static func discardedOn(_ date: String) -> String {

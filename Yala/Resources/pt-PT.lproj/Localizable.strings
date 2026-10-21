@@ -48,11 +48,11 @@
 "filters.includeGroupTransactionsHint" = "Quando ativo, os registos gerados por gastos partilhados aparecem na tua lista.";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "Este gasto tem liquidações posteriores. Exclua ou regularize as liquidações antes de removê-lo.";
+"groups.bridge.deleteExpenseBlocked" = "Este gasto tem pagamentos posteriores. Elimina ou ajusta esses pagamentos antes de o eliminares.";
 "groups.bridge.editFromGroup" = "Este registo sincroniza com um grupo. Edita-o no gasto partilhado.";
 "groups.bridge.assignFromInbox" = "Atribua uma subcategoria pela Caixa de Entrada para finalizá-la.";
-"groups.bridge.editSettlementInGroup" = "Este registo vem de uma liquidação. Edita-o no grupo.";
-"groups.bridge.activateTitle" = "Ativar registos automáticos";
+"groups.bridge.editSettlementInGroup" = "Este registo vem de um pagamento de grupo. Edita-o no grupo.";
+"groups.bridge.activateTitle" = "Refletir nas tuas contas";
 "groups.bridge.activateBody" = "A partir de agora, as despesas partilhadas aparecerão nas suas contas pessoais. Despesas anteriores nos seus grupos: %d. O que fazemos com elas?";
 "groups.bridge.activateOptionFromNow" = "Começar a partir de agora";
 "groups.bridge.activateOptionFromNowHint" = "Apenas os gastos novos serão refletidos.";
@@ -78,7 +78,7 @@
 "subcategory.system.settlementSent" = "Liquidação enviada";
 "subcategory.system.settlementReceived" = "Liquidação recebida";
 "inbox.sourceGroupExpense" = "Gasto compartilhado";
-"inbox.sourceGroupSettlement" = "Liquidação";
+"inbox.sourceGroupSettlement" = "Pagamento de grupo";
 "inbox.sourceManual" = "Manual";
 "inbox.groupDraftCannotDelete" = "Este registo só pode ser removido no grupo de origem.";
 
@@ -87,9 +87,9 @@
 "groups.settlement.fromAccountNone" = "Nenhuma — finalizar depois";
 "inbox.openInbox" = "Abrir Caixa";
 "groups.detail.openGroup" = "Abrir grupo";
-"inbox.groupExpenseDraft.title" = "Atribuir subcategoria";
+"inbox.groupExpenseDraft.title" = "Escolhe a subcategoria";
 "inbox.groupExpenseDraft.assignSubcategory" = "Subcategoria";
-"inbox.groupSettlementDraft.title" = "Atribuir conta";
+"inbox.groupSettlementDraft.title" = "Escolhe a conta";
 "inbox.groupSettlementDraft.assignAccount" = "Conta de destino";
 "inbox.groupDraft.finalize" = "Finalizar";
 "inbox.groupDraft.fromGroup" = "Grupo: %@";
@@ -285,7 +285,7 @@
 "groups.balance.noDebts" = "Tudo em dia!";
 "groups.balance.pending" = "Pendente";
 "groups.balance.pendingDebts" = "Dívidas pendentes";
-"groups.balance.settlements" = "Liquidações";
+"groups.balance.settlements" = "Pagamentos";
 "groups.balance.title" = "Saldos";
 "groups.bridge.alertTitle" = "Problema com o grupo";
 "groups.bridge.draftReasonCurrencyChanged" = "A moeda da despesa em %@ mudou. Escolhe uma conta para registar a tua parte.";
@@ -382,7 +382,7 @@
 "groups.nudge.invitedMonthTwo.message" = "Seus grupos representam %d%% dos seus gastos. O resto não está sendo acompanhado.";
 "groups.nudge.invitedMonthTwo.title" = "Você só está vendo uma parte";
 "groups.nudge.invitedPostSettlement.cta" = "Ativar Yala completo";
-"groups.nudge.invitedPostSettlement.message" = "Você acabou de quitar uma dívida. Quer registrar de onde veio o dinheiro?";
+"groups.nudge.invitedPostSettlement.message" = "Acabaste de saldar uma dívida. Queres registar de onde veio o dinheiro?";
 "groups.nudge.invitedPostSettlement.title" = "Pagamento registrado";
 "groups.nudge.invitedSocialProof.cta" = "Ativar Yala completo";
 "groups.nudge.invitedSocialProof.message" = "%d pessoas no seu grupo já usam Yala completo.";
@@ -413,8 +413,8 @@
 "groups.onboarding.step2.card2.body" = "Escolhe como cada despesa se divide. O Yala calcula quem deve o quê.";
 "groups.onboarding.step2.card2.title" = "Regista despesas e o Yala divide-as";
 "groups.onboarding.step2.card3.body" = "Fecha pagamentos e volta a zero. Sem discussões, sem Excel.";
-"groups.onboarding.step2.card3.title" = "Liquida dívidas com alguns toques";
-"groups.onboarding.step2.subtitle" = "O Yala divide, regista e liquida por ti.";
+"groups.onboarding.step2.card3.title" = "Salda dívidas com alguns toques";
+"groups.onboarding.step2.subtitle" = "O Yala divide, regista e salda por ti.";
 "groups.onboarding.step2.title" = "Três passos, zero folhas de cálculo";
 "groups.onboarding.step3.cta" = "Ir para Grupos";
 "groups.onboarding.step3.signInCTA" = "Iniciar sessão";
@@ -431,7 +431,7 @@
 "groups.settings.dangerZone" = "Zona de perigo";
 "groups.settings.deleteGroup" = "Eliminar grupo";
 "groups.settings.deleteGroupConfirm" = "Eliminar este grupo?";
-"groups.settings.deleteGroupDisabledHint" = "Liquida as dívidas pendentes antes de eliminar";
+"groups.settings.deleteGroupDisabledHint" = "Salda as dívidas pendentes antes de eliminar";
 "groups.settings.deleteGroupFinalConfirm" = "O grupo desaparecerá para todos os membros. Esta ação é irreversível.";
 "groups.settings.generatingInvite" = "Gerando link…";
 "groups.settings.hideArchived" = "Ocultar arquivados";
@@ -1526,13 +1526,13 @@
 "groups.bridge.deactivationOptionDelete" = "Excluir das minhas contas";
 "groups.bridge.deactivationOptionFreeze" = "Manter como histórico";
 "groups.bridge.deactivationSheetBody" = "Já tens registos criados automaticamente nas tuas contas. Escolhe o que fazer com eles.";
-"groups.bridge.deactivationSheetTitle" = "Desativar integração pessoal";
+"groups.bridge.deactivationSheetTitle" = "Deixar de refletir nas tuas contas";
 "groups.bridge.optoutAlertBody" = "Podes criar um registo pessoal na tua conta para refletir esta despesa, ou deixá-la apenas dentro do grupo.";
 "groups.bridge.optoutAlertNo" = "Só no grupo";
 "groups.bridge.optoutAlertTitle" = "Registrar também no seu Yala pessoal?";
 "groups.bridge.optoutAlertYes" = "Sim, registrar";
-"groups.globalSettings.bridgeCaption" = "Quando ativado, cada despesa que você paga ou liquida também é registrada na conta pessoal que você escolher. Seu saldo reflete a realidade.";
-"groups.globalSettings.bridgeSectionTitle" = "Integração com seu Yala pessoal";
+"groups.globalSettings.bridgeCaption" = "Quando ativado, cada despesa que pagas ou saldas também é registada na conta pessoal que escolheres. O teu saldo reflete a realidade.";
+"groups.globalSettings.bridgeSectionTitle" = "Refletir nas tuas contas";
 "groups.globalSettings.bridgeToggleLabel" = "Registrar despesas de grupos nas minhas contas pessoais";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Incluir registos de grupos em Registos";
 "groups.globalSettings.title" = "Ajustes de Grupos";
@@ -1543,7 +1543,7 @@
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Para ativar esta opção aqui, ative primeiro em Ajustes de Grupos.";
 "groups.settings.personalIntegrationHintInheritOn" = "Herda do seu ajuste geral (Ativado).";
 "groups.settings.personalIntegrationHintLocalOff" = "Só neste grupo: desativado.";
-"groups.settings.personalIntegrationSectionTitle" = "Integração pessoal";
+"groups.settings.personalIntegrationSectionTitle" = "Refletir nas tuas contas";
 "groups.settings.personalIntegrationToggleLabel" = "Registrar despesas deste grupo nas minhas contas pessoais";
 "guide.accountForm.messageCash" = "O dinheiro que você carrega em espécie. Ajuda a saber quanto ainda tem sem verificar a carteira.";
 "guide.accountForm.messageChecking" = "Sua conta bancária do dia a dia. O saldo deve corresponder ao que você vê no app do banco.";
@@ -1749,7 +1749,7 @@
 "inbox.errorNoAmount" = "Specify amount";
 "inbox.errorNoSubcategory" = "Select subcategory";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Conta de origem";
-"inbox.groupExpenseAccountDraft.title" = "Atribuir conta";
+"inbox.groupExpenseAccountDraft.title" = "Escolhe a conta";
 "inbox.keepEditing" = "Continuar editando";
 "inbox.missingLabel" = "Faltam dados";
 "inbox.needsAccount" = "Selecionar conta";
@@ -3626,20 +3626,20 @@
 "groups.card.youOwe" = "Deves a %@";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
-"inbox.groupExpenseAccountDraft.banner" = "Despesa do grupo %@. Só tens de atribuir a conta de onde saiu o dinheiro; o valor e a data são geridos pelo grupo.";
+"inbox.groupExpenseAccountDraft.banner" = "Do grupo “%@”.";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
-"inbox.groupExpenseDraft.banner" = "Despesa do grupo %@. Só tens de escolher uma subcategoria para o classificar; o valor e a data são geridos pelo grupo.";
+"inbox.groupExpenseDraft.banner" = "Do grupo “%@”.";
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
-"inbox.groupSettlementDraft.banner" = "Liquidação do grupo %@. Só tens de atribuir uma conta; o valor e a data são geridos pelo grupo.";
+"inbox.groupSettlementDraft.banner" = "Do grupo “%@”.";
 "inbox.groupSettlementDraft.alreadyRegistered" = "Este pagamento já está registado nas tuas contas. Podes descartar este rascunho.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "Atribuir conta e subcategoria";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Escolhe a conta e a subcategoria";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
-"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Despesa do grupo %@. Atribui a conta de onde saiu o dinheiro e escolhe uma subcategoria para o classificar; o valor e a data são geridos pelo grupo.";
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Do grupo “%@”.";
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "Esta despesa partilhada já não existe no grupo.";
@@ -4485,7 +4485,7 @@
 "settings.batchLeaveStoppedBody" = "Podes retomar quando quiseres em «Limpar dados».";
 
 /* Feed row title for a confirmed settlement in group records */
-"groups.settlement.entryDescription" = "Liquidação";
+"groups.settlement.entryDescription" = "Pagamento";
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@ pagou a %2$@";
@@ -4556,16 +4556,16 @@
 "groups.signin.retryLater" = "Hmm, não conseguimos ligar a tua conta agora. O teu grupo continua aqui e não perdes nada — tenta mais tarde.";
 
 /* Groups > Balances: menu item on a confirmed settlement row (destructive) */
-"groups.settlement.deleteAction" = "Eliminar liquidação";
+"groups.settlement.deleteAction" = "Eliminar pagamento";
 
 /* Groups > Balances: title of the delete-settlement confirmation dialog */
-"groups.settlement.deleteTitle" = "Eliminar esta liquidação?";
+"groups.settlement.deleteTitle" = "Eliminar este pagamento?";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
 "groups.settlement.deleteMessage" = "Os saldos que ela fechou voltam a ficar pendentes. E se ela criou um registo nas tuas contas, ele também é eliminado.";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
-"groups.settlement.deleteFailed" = "Não foi possível eliminar a liquidação. Tente de novo.";
+"groups.settlement.deleteFailed" = "Não foi possível eliminar o pagamento. Tenta de novo.";
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "Não conseguimos abrir este convite agora. Guardámos o teu pedido: tenta novamente dentro de um momento.";
@@ -4784,7 +4784,7 @@
 "groups.shareableSummary.action" = "Partilhar resumo";
 
 /* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
-"groups.shareableSummary.hint" = "Uma imagem com os totais do grupo e os pagamentos mínimos para acertar tudo. Inclui todo o histórico.";
+"groups.shareableSummary.hint" = "Uma imagem com os totais do grupo e os pagamentos para acertar tudo. Inclui todo o histórico.";
 
 /* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
 "groups.shareableSummary.totalSpent" = "Total gasto";
@@ -4883,7 +4883,7 @@
 "account.currencyChange.blockedReasonGroupExpense" = "despesas de grupo";
 
 /* Lowercase, used inside a list */
-"account.currencyChange.blockedReasonGroupSettlement" = "acertos de grupo";
+"account.currencyChange.blockedReasonGroupSettlement" = "pagamentos de grupo";
 
 /* %1 old currency, %2 new currency */
 "account.currencyChange.confirmMessage" = "Estão registados em %1$@ e passarão para %2$@ com a taxa de câmbio da data de cada um. Esta ação não pode ser anulada.";
@@ -5738,7 +5738,7 @@
 "inbox.groupSettlementAmountChange.bannerSent" = "O teu pagamento a %1$@ em “%2$@” mudou: era %3$@ e agora é %4$@. Em %5$@ tens %6$@ registados.";
 
 /* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
-"inbox.groupSettlementAmountChange.bannerUnnamed" = "Esta liquidação em “%1$@” mudou: era %2$@ e agora é %3$@. Em %4$@ tens %5$@ registados.";
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "Este pagamento em “%1$@” mudou: era %2$@ e agora é %3$@. Em %4$@ tens %5$@ registados.";
 
 /* Primary button: set my transaction to the new amount */
 "inbox.groupSettlementAmountChange.adjust" = "Ajustar para %@";
@@ -7190,3 +7190,66 @@
 
 /* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
 "report.l18.inPeriod" = "em %@";
+
+/* Título del diálogo de borrar un gasto de grupo. %@ = descripción del gasto. */
+"groups.expense.deleteTitle" = "Eliminar “%@”?";
+
+/* Mensaje del diálogo de borrar un gasto de grupo: alcance del borrado. */
+"groups.expense.deleteMessage" = "É eliminado para todo o grupo e os saldos são recalculados. Se estiver nas tuas contas, também sai de lá.";
+
+/* Línea sobre «Guardar» cuando falta la descripción del gasto. */
+"groups.expense.missingDescription" = "Falta a descrição";
+
+/* Línea sobre «Guardar» cuando falta el monto. */
+"groups.expense.missingAmount" = "Falta o valor";
+
+/* Línea sobre «Guardar» cuando no se eligió quién pagó. */
+"groups.expense.missingPayer" = "Escolhe quem pagou";
+
+/* Línea sobre «Guardar» cuando nadie participa del gasto. */
+"groups.expense.missingParticipants" = "Escolhe quem participa";
+
+/* Línea sobre «Guardar» cuando el reparto no suma el monto. */
+"groups.expense.missingSplit" = "A divisão não soma o valor";
+
+/* Línea sobre «Guardar» cuando pagaste tú y falta la cuenta. */
+"groups.expense.missingAccount" = "Escolhe de que conta saiu";
+
+/* Línea de ayuda bajo el título del formulario de saldo inicial. */
+"groups.openingBalance.formHelp" = "O que alguém já devia antes de usar o Yala";
+
+/* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
+"inbox.movedToGroup" = "Movido para “%@”";
+
+/* Botón del aviso «Movido a…»: abre el grupo. */
+"inbox.movedToGroupView" = "Ver";
+
+/* Nombre del borrador de un pago que hiciste. %1$@ = a quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidTo" = "Pagamento a %1$@ · %2$@";
+
+/* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidBy" = "Pagamento de %1$@ · %2$@";
+
+/* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
+"groups.stats.myPortionHint" = "o que te cabia";
+
+/* Confirmación de «Eliminar de mis cuentas» al dejar de reflejar los gastos de grupo. */
+"groups.bridge.deleteConfirmTitle" = "Eliminar das tuas contas?";
+
+/* Cuerpo de la confirmación. %d = movimientos que se borran (sin concordancia de plural a propósito). */
+"groups.bridge.deleteConfirmMessage" = "Registos que serão eliminados: %d. Não é possível desfazer.";
+
+/* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
+"groups.settings.openGroupsSettings" = "Abrir Ajustes de Grupos";
+
+/* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
+"inbox.groupDraft.linkTitle" = "Já anotaste?";
+
+/* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
+"inbox.groupDraft.linkHint" = "Toca no registo e ligamo-lo a este gasto, sem o duplicar.";
+
+/* Pista de VoiceOver de cada movimiento parecido. */
+"inbox.groupDraft.linkRowHint" = "Liga-o ao gasto do grupo";
+
+/* Título del diálogo de borrar un gasto de grupo sin descripción. */
+"groups.expense.deleteTitleUnnamed" = "Eliminar este gasto?";

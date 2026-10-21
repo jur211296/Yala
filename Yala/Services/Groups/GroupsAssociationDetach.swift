@@ -202,6 +202,24 @@ nonisolated enum GroupsDetachedBridgeLedger {
     ///
     /// El `associatedSub` se pasa por parámetro y no se lee aquí a propósito: el bridge corre en caliente
     /// y esta pregunta se le hace una vez por gasto.
+    /// UX 2.2 · L13-15: ¿el libro guarda este movimiento como lo que dejó un gasto o pago al desasociar? Enlazarlo con
+    /// OTRO gasto lo convertiría en la pata de ese otro mientras el libro sigue frenando el suyo: el primero quedaría
+    /// contado cero veces. Por identidad o por huella (la misma de `presence`), en cualquier libro: ante la duda, no se
+    /// ofrece. Un libro sin movimientos (anterior al 2026-10-01) no puede reclamar nada concreto.
+    static func claimsMovement(_ tx: TransactionItem, defaults: UserDefaults = .standard) -> Bool {
+        guard let stored = read(defaults: defaults) else { return false }
+        let movements = (stored.expenseMovements ?? [:]).values.flatMap { $0 }
+            + (stored.settlementMovements ?? [:]).values.flatMap { $0 }
+        let id = tx.persistentModelID
+        return movements.contains { movement in
+            movement.id == id
+                || (abs(movement.date.timeIntervalSince(tx.date)) <= dateTolerance
+                    && abs(movement.amount - tx.amount) <= amountTolerance
+                    && movement.currencyCode == tx.currencyCode
+                    && movement.note == tx.note)
+        }
+    }
+
     static func isConserved(expenseID: String, associatedSub: String?, defaults: UserDefaults = .standard) -> Bool {
         guard let stored = read(defaults: defaults), let associatedSub, stored.sub == associatedSub else {
             return false

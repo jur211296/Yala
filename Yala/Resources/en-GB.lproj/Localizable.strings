@@ -113,11 +113,11 @@
 "filters.includeGroupTransactionsHint" = "When on, records created from shared expenses appear in your list.";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "This expense has settlements after its date. Delete or reconcile the settlements first before removing it.";
+"groups.bridge.deleteExpenseBlocked" = "This expense has later payments linked to it. Delete or adjust those payments first to remove it.";
 "groups.bridge.editFromGroup" = "This record syncs with a group. Edit it from the shared expense.";
 "groups.bridge.assignFromInbox" = "Assign a subcategory from your Inbox to finalize it.";
-"groups.bridge.editSettlementInGroup" = "This record comes from a settlement. Edit it from the group.";
-"groups.bridge.activateTitle" = "Enable automatic records";
+"groups.bridge.editSettlementInGroup" = "This record comes from a group payment. Edit it from the group.";
+"groups.bridge.activateTitle" = "Show in your accounts";
 "groups.bridge.activateBody" = "From now on, shared expenses will show up in your personal accounts. Previous expenses in your groups: %d. What should we do with them?";
 "groups.bridge.activateOptionFromNow" = "Start from now";
 "groups.bridge.activateOptionFromNowHint" = "Only new expenses will be reflected.";
@@ -143,7 +143,7 @@
 "subcategory.system.settlementSent" = "Settlement sent";
 "subcategory.system.settlementReceived" = "Settlement received";
 "inbox.sourceGroupExpense" = "Shared expense";
-"inbox.sourceGroupSettlement" = "Settlement";
+"inbox.sourceGroupSettlement" = "Group payment";
 "inbox.sourceManual" = "Manual";
 "inbox.groupDraftCannotDelete" = "This record can only be removed from its group.";
 
@@ -152,9 +152,9 @@
 "groups.settlement.fromAccountNone" = "None — finish later";
 "inbox.openInbox" = "Open Inbox";
 "groups.detail.openGroup" = "Open group";
-"inbox.groupExpenseDraft.title" = "Assign subcategory";
+"inbox.groupExpenseDraft.title" = "Choose the subcategory";
 "inbox.groupExpenseDraft.assignSubcategory" = "Subcategory";
-"inbox.groupSettlementDraft.title" = "Assign account";
+"inbox.groupSettlementDraft.title" = "Choose the account";
 "inbox.groupSettlementDraft.assignAccount" = "Destination account";
 "inbox.groupDraft.finalize" = "Finalise";
 "inbox.groupDraft.fromGroup" = "Group: %@";
@@ -350,13 +350,13 @@
 "groups.balance.noDebts" = "All settled up!";
 "groups.balance.pending" = "Pending";
 "groups.balance.pendingDebts" = "Pending debts";
-"groups.balance.settlements" = "Settlements";
+"groups.balance.settlements" = "Payments";
 "groups.balance.title" = "Balances";
 "groups.bridge.alertTitle" = "Group sync issue";
 "groups.bridge.deactivationOptionDelete" = "Delete from my accounts";
 "groups.bridge.deactivationOptionFreeze" = "Keep as historical";
 "groups.bridge.deactivationSheetBody" = "You already have records created automatically in your accounts. Choose what to do with them.";
-"groups.bridge.deactivationSheetTitle" = "Disable personal integration";
+"groups.bridge.deactivationSheetTitle" = "Stop showing in your accounts";
 "groups.bridge.draftReasonCurrencyChanged" = "The currency of the expense in %@ changed. Choose an account to record your share.";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@ registered this expense in %2$@. Choose an account to track it in your records.";
 "groups.bridge.editPartialBanner" = "This expense comes from the group. You can edit the account, category and tags. Amount and date sync with the group.";
@@ -418,7 +418,7 @@
 "groups.form.simplifyDebts" = "Simplify debts";
 "groups.form.simplifyDebtsHint" = "Reduces the number of payments needed between members";
 "groups.globalSettings.bridgeCaption" = "When on, every expense you pay or settle is also logged in the personal account you choose. Your balance reflects reality.";
-"groups.globalSettings.bridgeSectionTitle" = "Personal Yala integration";
+"groups.globalSettings.bridgeSectionTitle" = "Show in your accounts";
 "groups.globalSettings.bridgeToggleLabel" = "Log group expenses in my personal accounts";
 "groups.globalSettings.includeGroupTransactionsInFeedLabel" = "Include group records in Records";
 "groups.globalSettings.title" = "Groups Settings";
@@ -528,7 +528,7 @@
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "To enable this here, first enable it in Groups Settings.";
 "groups.settings.personalIntegrationHintInheritOn" = "Inheriting your general setting (Enabled).";
 "groups.settings.personalIntegrationHintLocalOff" = "Only in this group: disabled.";
-"groups.settings.personalIntegrationSectionTitle" = "Personal integration";
+"groups.settings.personalIntegrationSectionTitle" = "Show in your accounts";
 "groups.settings.personalIntegrationToggleLabel" = "Log this group's expenses in my personal accounts";
 "groups.settings.showArchived" = "Show archived";
 "groups.settings.showArchivedCount" = "Show archived (%d)";
@@ -537,12 +537,12 @@
 "groups.settlement.confirm" = "Confirm";
 "groups.settlement.confirmQuestion" = "Mark this payment as confirmed?";
 "groups.settlement.payTo" = "pays to";
-"groups.settlement.registerPayment" = "Record payment";
+"groups.settlement.registerPayment" = "Log payment";
 "groups.settlement.reject" = "Reject";
 "groups.settlement.rejectQuestion" = "Reject this payment?";
 "groups.settlement.settle" = "Settle";
-"groups.settlement.settleHint" = "Opens the form to register this payment";
-"groups.settlement.title" = "Record payment";
+"groups.settlement.settleHint" = "Opens the form to log this payment";
+"groups.settlement.title" = "Log payment";
 "groups.stats.allTime" = "All time";
 "groups.stats.assignCategoriesHint" = "Assign categories to your expenses to see the breakdown by type.";
 "groups.stats.categories" = "Categories";
@@ -1781,7 +1781,7 @@
 "inbox.errorNoAmount" = "You must specify an amount";
 "inbox.errorNoSubcategory" = "You must select a subcategory";
 "inbox.groupExpenseAccountDraft.assignAccount" = "Source account";
-"inbox.groupExpenseAccountDraft.title" = "Assign account";
+"inbox.groupExpenseAccountDraft.title" = "Choose the account";
 "inbox.keepEditing" = "Keep editing";
 "inbox.missingLabel" = "Missing data";
 "inbox.needsAccount" = "Select account";
@@ -3621,20 +3621,20 @@
 "groups.card.youOwe" = "You owe %@";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
-"inbox.groupExpenseAccountDraft.banner" = "Expense from group %@. Just assign the account the money came from; the amount and date are managed by the group.";
+"inbox.groupExpenseAccountDraft.banner" = "From the group “%@”.";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
-"inbox.groupExpenseDraft.banner" = "Expense from group %@. Just pick a subcategory to classify it; the amount and date are managed by the group.";
+"inbox.groupExpenseDraft.banner" = "From the group “%@”.";
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
-"inbox.groupSettlementDraft.banner" = "Settlement from group %@. Just assign an account; the amount and date are managed by the group.";
+"inbox.groupSettlementDraft.banner" = "From the group “%@”.";
 "inbox.groupSettlementDraft.alreadyRegistered" = "This payment is already recorded in your accounts. You can dismiss this draft.";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "Assign account and subcategory";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "Choose the account and subcategory";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
-"inbox.groupExpenseAccountSubcategoryDraft.banner" = "Expense from group %@. Assign the account the money came from and pick a subcategory to classify it; the amount and date are managed by the group.";
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "From the group “%@”.";
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "This shared expense no longer exists in the group.";
@@ -3723,7 +3723,7 @@
 "groups.expense.splitSheet.sharesHint" = "Assign shares to each person; the total splits proportionally.";
 
 /* Header del gráfico de quién pagó más en el grupo */
-"groups.stats.whoMadeMostPayments" = "Who's paid the most?";
+"groups.stats.whoMadeMostPayments" = "Who put in the most?";
 
 /* Stats de grupo (modo Todas): nota bajo el donut indicando la moneda a la que se convirtió */
 "groups.stats.convertedToNote" = "≈ converted to %@";
@@ -4480,7 +4480,7 @@
 "settings.batchLeaveStoppedBody" = "You can pick it up again any time from “Clear Data”.";
 
 /* Feed row title for a confirmed settlement in group records */
-"groups.settlement.entryDescription" = "Settlement";
+"groups.settlement.entryDescription" = "Payment";
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@ paid %2$@";
@@ -4551,16 +4551,16 @@
 "groups.signin.retryLater" = "Hmm, we couldn't connect your account right now. Your group is still here and nothing is lost — try again later.";
 
 /* Groups > Balances: menu item on a confirmed settlement row (destructive) */
-"groups.settlement.deleteAction" = "Delete settlement";
+"groups.settlement.deleteAction" = "Delete payment";
 
 /* Groups > Balances: title of the delete-settlement confirmation dialog */
-"groups.settlement.deleteTitle" = "Delete this settlement?";
+"groups.settlement.deleteTitle" = "Delete this payment?";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
 "groups.settlement.deleteMessage" = "The balances it cleared will be pending again. And if it created a record in your accounts, that one goes too.";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
-"groups.settlement.deleteFailed" = "We couldn't delete the settlement. Please try again.";
+"groups.settlement.deleteFailed" = "We couldn't delete the payment. Please try again.";
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "We couldn't open this invitation right now. We saved your request — try again in a moment.";
@@ -4779,7 +4779,7 @@
 "groups.shareableSummary.action" = "Share summary";
 
 /* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
-"groups.shareableSummary.hint" = "An image with the group totals and the fewest payments needed to settle up. Covers the whole history.";
+"groups.shareableSummary.hint" = "An image with the group totals and the payments needed to settle up. Covers the whole history.";
 
 /* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
 "groups.shareableSummary.totalSpent" = "Total spent";
@@ -4878,7 +4878,7 @@
 "account.currencyChange.blockedReasonGroupExpense" = "group expenses";
 
 /* Lowercase, used inside a list */
-"account.currencyChange.blockedReasonGroupSettlement" = "group settlements";
+"account.currencyChange.blockedReasonGroupSettlement" = "group payments";
 
 /* %1 old currency, %2 new currency */
 "account.currencyChange.confirmMessage" = "They're recorded in %1$@ and will move to %2$@ using the exchange rate from each one's date. This can't be undone.";
@@ -5733,7 +5733,7 @@
 "inbox.groupSettlementAmountChange.bannerSent" = "Your payment to %1$@ in “%2$@” changed: it was %3$@ and is now %4$@. You have %6$@ recorded in %5$@.";
 
 /* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
-"inbox.groupSettlementAmountChange.bannerUnnamed" = "This settlement in “%1$@” changed: it was %2$@ and is now %3$@. You have %5$@ recorded in %4$@.";
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "This payment in “%1$@” changed: it was %2$@ and is now %3$@. You have %5$@ recorded in %4$@.";
 
 /* Primary button: set my transaction to the new amount */
 "inbox.groupSettlementAmountChange.adjust" = "Adjust to %@";
@@ -7185,3 +7185,66 @@
 
 /* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
 "report.l18.inPeriod" = "in %@";
+
+/* Título del diálogo de borrar un gasto de grupo. %@ = descripción del gasto. */
+"groups.expense.deleteTitle" = "Delete “%@”?";
+
+/* Mensaje del diálogo de borrar un gasto de grupo: alcance del borrado. */
+"groups.expense.deleteMessage" = "It's deleted for the whole group and balances are recalculated. If it's in your accounts, it's removed there too.";
+
+/* Línea sobre «Guardar» cuando falta la descripción del gasto. */
+"groups.expense.missingDescription" = "Add a description";
+
+/* Línea sobre «Guardar» cuando falta el monto. */
+"groups.expense.missingAmount" = "Add the amount";
+
+/* Línea sobre «Guardar» cuando no se eligió quién pagó. */
+"groups.expense.missingPayer" = "Choose who paid";
+
+/* Línea sobre «Guardar» cuando nadie participa del gasto. */
+"groups.expense.missingParticipants" = "Choose who's in";
+
+/* Línea sobre «Guardar» cuando el reparto no suma el monto. */
+"groups.expense.missingSplit" = "The split doesn't add up to the amount";
+
+/* Línea sobre «Guardar» cuando pagaste tú y falta la cuenta. */
+"groups.expense.missingAccount" = "Choose the account it came from";
+
+/* Línea de ayuda bajo el título del formulario de saldo inicial. */
+"groups.openingBalance.formHelp" = "What someone already owed before using Yala";
+
+/* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
+"inbox.movedToGroup" = "Moved to “%@”";
+
+/* Botón del aviso «Movido a…»: abre el grupo. */
+"inbox.movedToGroupView" = "View";
+
+/* Nombre del borrador de un pago que hiciste. %1$@ = a quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidTo" = "Payment to %1$@ · %2$@";
+
+/* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidBy" = "Payment from %1$@ · %2$@";
+
+/* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
+"groups.stats.myPortionHint" = "what was yours to pay";
+
+/* Confirmación de «Eliminar de mis cuentas» al dejar de reflejar los gastos de grupo. */
+"groups.bridge.deleteConfirmTitle" = "Delete from your accounts?";
+
+/* Cuerpo de la confirmación. %d = movimientos que se borran (sin concordancia de plural a propósito). */
+"groups.bridge.deleteConfirmMessage" = "Records to delete: %d. This can't be undone.";
+
+/* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
+"groups.settings.openGroupsSettings" = "Open Groups Settings";
+
+/* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
+"inbox.groupDraft.linkTitle" = "Already logged it?";
+
+/* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
+"inbox.groupDraft.linkHint" = "Tap the record and we'll link it to this expense, without duplicating it.";
+
+/* Pista de VoiceOver de cada movimiento parecido. */
+"inbox.groupDraft.linkRowHint" = "Links it to the group expense";
+
+/* Título del diálogo de borrar un gasto de grupo sin descripción. */
+"groups.expense.deleteTitleUnnamed" = "Delete this expense?";

@@ -527,6 +527,8 @@ enum GroupSheet: Identifiable {
     case editExpense(SplitExpense)
     case openingBalanceDetail(SplitExpense)
     case editOpeningBalance(SplitExpense)
+    /// UX 2.2 · L13-10: «Añadir saldo inicial» desde Saldos.
+    case newOpeningBalance
     case settlement(Debt)
 
     var id: String {
@@ -538,6 +540,7 @@ enum GroupSheet: Identifiable {
         case .editExpense(let e): "editExpense-\(e.id)"
         case .openingBalanceDetail(let e): "openingBalanceDetail-\(e.id)"
         case .editOpeningBalance(let e): "editOpeningBalance-\(e.id)"
+        case .newOpeningBalance: "newOpeningBalance"
         case .settlement(let d): "settlement-\(d.id)"
         }
     }

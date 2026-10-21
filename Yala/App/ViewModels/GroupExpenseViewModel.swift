@@ -203,12 +203,21 @@ final class GroupExpenseViewModel {
     }
 
     var canSave: Bool {
-        isAmountValid
-            && isDescriptionValid
-            && hasSelectedMembers
-            && isPaidByValid
-            && isSharesBalanced
-            && (!isAccountRequired || isAccountCompatibleWithCurrency)
+        firstMissingField == nil
+    }
+
+    /// UX 2.2 · L13-9: lo primero que falta para guardar. `canSave` es su negación, así que lo que la línea dice y lo que
+    /// deja guardar no pueden divergir.
+    var firstMissingField: GroupExpenseMissingField? {
+        GroupExpenseMissingFieldLogic.firstMissing(
+            descriptionValid: isDescriptionValid,
+            amountValid: isAmountValid,
+            payerValid: isPaidByValid,
+            hasParticipants: hasSelectedMembers,
+            sharesBalanced: isSharesBalanced,
+            accountRequired: isAccountRequired,
+            accountCompatible: isAccountCompatibleWithCurrency
+        )
     }
 
     /// Llamado desde el form `onChange(of: currencyCode)`. Limpia selectedAccount si la moneda

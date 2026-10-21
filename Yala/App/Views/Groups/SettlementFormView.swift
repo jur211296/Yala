@@ -44,6 +44,13 @@ struct SettlementFormView: View {
     // Opt-out: alert post-save cuando bridge effective OFF en Caso C.
     @State private var pendingOptInSettlementID: String?
     @State private var showOptInAlert: Bool = false
+    /// UX 2.2 · L13-7: tras «Sí, registrar», el borrador del pago se completa ahí mismo con la hoja de la Bandeja.
+    @State private var optInDraftToComplete: InboxDraft?
+    /// Del «Sí» al cierre: el botón sigue apagado (el pago ya está apuntado; tocarlo otra vez lo duplicaría) y el cierre
+    /// corre una sola vez.
+    @State private var optInInFlight = false
+    /// La hoja llegó a montarse (solo su `onAppear` lo prueba).
+    @State private var optInSheetAppeared = false
 
     // Toggle del segmented control superior: alterna entre el monto original
     // (`debt.currencyCode`) y el sugerido convertido a `group.currencyCode`.
@@ -124,7 +131,7 @@ struct SettlementFormView: View {
                     YalaPrimaryButton(L10n.Groups.Settlement.registerPayment, icon: "checkmark.circle.fill") {
                         handleSave()
                     }
-                    .disabled(parsedAmount <= 0 || isSaving)
+                    .disabled(parsedAmount <= 0 || isSaving || optInInFlight)
                     .padding(.horizontal, DS.Spacing.lg)
                 }
                 .padding(.top, DS.Spacing.lg)
@@ -152,6 +159,11 @@ struct SettlementFormView: View {
                 Button(L10n.Groups.Bridge.optoutAlertNo, role: .cancel) { declineOptIn() }
             } message: {
                 Text(L10n.Groups.Bridge.optoutAlertBody)
+            }
+            // Elegir la cuenta lo registra; cerrar sin elegir lo deja en la Bandeja. En los dos casos el formulario se cierra.
+            .sheet(item: $optInDraftToComplete, onDismiss: finishOptIn) { draft in
+                GroupSettlementDraftFinalizationSheet(draft: draft, onApproved: {})
+                    .onAppear { optInSheetAppeared = true }
             }
             .sheet(isPresented: $showAccountSelector) {
                 AccountSelectorSheet(
@@ -392,10 +404,13 @@ struct SettlementFormView: View {
         }
     }
 
+    /// «Sí, registrar» pide la cuenta ahí mismo (UX 2.2 · L13-7, decisión B): crea el borrador del pago y abre su hoja.
     private func confirmOptIn() {
         guard let settlementID = pendingOptInSettlementID else { return }
+        pendingOptInSettlementID = nil
+        let draft: InboxDraft
         do {
-            try DraftService.shared.createGroupSettlementOptInDraft(
+            draft = try DraftService.shared.createGroupSettlementOptInDraft(
                 splitSettlementID: settlementID,
                 groupZoneID: group.cloudKitZoneID
             )
@@ -403,8 +418,36 @@ struct SettlementFormView: View {
             #if DEBUG
             print("SettlementFormView: createGroupSettlementOptInDraft failed: \(error)")
             #endif
+            onSave()
+            dismiss()
+            return
         }
-        pendingOptInSettlementID = nil
+        optInSheetAppeared = false
+        optInInFlight = true
+        presentOptInSheet(draft, attempt: 1)
+    }
+
+    /// La alerta se está cerrando: la hoja se pide un momento después y se comprueba que llegó. Si UIKit la descarta,
+    /// un reintento; si tampoco, el borrador se queda en la Bandeja y el formulario se cierra igual.
+    private func presentOptInSheet(_ draft: InboxDraft, attempt: Int) {
+        Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+            guard optInInFlight else { return }
+            optInDraftToComplete = draft
+            do { try await Task.sleep(for: .milliseconds(1500)) } catch { return }
+            guard optInInFlight, !optInSheetAppeared else { return }
+            optInDraftToComplete = nil
+            if attempt < 2 {
+                presentOptInSheet(draft, attempt: attempt + 1)
+            } else {
+                finishOptIn()
+            }
+        }
+    }
+
+    private func finishOptIn() {
+        guard optInInFlight else { return }
+        optInInFlight = false
         onSave()
         dismiss()
     }

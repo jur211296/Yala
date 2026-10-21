@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: groups
 created: 2026-09-07
-updated: 2026-10-08
+updated: 2026-10-21
 source: review adversarial de groups-shareable-summary (2026-09-07)
 ---
 
@@ -64,3 +64,11 @@ Medido al arreglar `groups-stats-no-deduplica-gastos`: `GroupStatsViewModel.comp
 `recalculateDualTotals` suman `allShares` sin deduplicar por `id`. Los gastos ya se deduplican desde
 ese arreglo, pero un reparto repetido dobla «Mi parte» en Estadísticas. Se arregla con el mismo molde
 de una línea; no entró en ese cambio porque son repartos, no gastos.
+
+## Medido en 2.2 (lote decidido 2.2 · 11, 2026-10-21)
+
+- Desde L13-6 el resumen para compartir sigue la opción «Simplificar deudas» del grupo, igual que Saldos. Con eso, **este
+  ticket es la única diferencia que queda entre las dos pantallas**: el resumen deduplica los repartos y Saldos no, así
+  que con un reparto repetido por el sync la imagen y la pestaña dan cifras distintas para la misma deuda (lo cazó la
+  review adversarial del lote). Arreglarlo aquí cierra también esa diferencia.
+- No se tocó en el lote a propósito: es el servicio de media docena de pantallas y sus AC piden su propia verificación.

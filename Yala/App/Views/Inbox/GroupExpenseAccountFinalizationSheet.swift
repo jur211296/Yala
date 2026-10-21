@@ -22,6 +22,9 @@ struct GroupExpenseAccountFinalizationSheet: View {
 
     let draft: InboxDraft
     let onApproved: () -> Void
+    /// UX 2.2 · L13-7: quien abre la hoja justo tras «Sí, registrar» necesita saber en qué cuenta quedó (la pantalla de
+    /// éxito lo dice). Recibe el nombre de la cuenta al aprobar o al enlazar un movimiento.
+    var onRegistered: ((String) -> Void)? = nil
 
     // MARK: - Environment
 
@@ -37,6 +40,8 @@ struct GroupExpenseAccountFinalizationSheet: View {
     @State private var resolvedCurrency: String = ""
     @State private var saveErrorMessage: String? = nil
     @State private var showSaveError: Bool = false
+    /// UX 2.2 · L13-15: movimientos que ya apuntaste y pueden ser este gasto.
+    @State private var linkCandidates: [TransactionItem] = []
 
     // MARK: - Body
 
@@ -50,7 +55,10 @@ struct GroupExpenseAccountFinalizationSheet: View {
                 date: draft.effectiveDate,
                 hint: hintMessage,
                 finalizeDisabled: selectedAccount == nil,
-                onFinalize: { handleFinalize() }
+                onFinalize: { handleFinalize() },
+                accessory: linkCandidates.isEmpty ? nil : AnyView(
+                    GroupDraftLinkCandidatesView(candidates: linkCandidates) { link($0) }
+                )
             ) {
                 SelectionChip(
                     icon: "creditcard",
@@ -134,6 +142,31 @@ struct GroupExpenseAccountFinalizationSheet: View {
         } else {
             groupName = draft.originGroupName ?? ""
         }
+        do {
+            linkCandidates = try DraftService.shared.groupExpenseLinkCandidates(for: draft)
+        } catch {
+            #if DEBUG
+            print("GroupExpenseAccountFinalizationSheet: link candidates failed: \(error)")
+            #endif
+            linkCandidates = []
+        }
+    }
+
+    /// UX 2.2 · L13-15: enlaza el movimiento elegido con el gasto y cierra, como al finalizar.
+    private func link(_ transaction: TransactionItem) {
+        do {
+            let linked = try DraftService.shared.linkGroupExpenseDraft(draft, to: transaction)
+            DS.Haptic.success()
+            onRegistered?(linked.account?.name ?? "")
+            onApproved()
+            dismiss()
+        } catch {
+            #if DEBUG
+            print("GroupExpenseAccountFinalizationSheet: link failed: \(error)")
+            #endif
+            saveErrorMessage = GroupsUserFacingErrorLogic.message(for: error)
+            showSaveError = true
+        }
     }
 
     private func handleFinalize() {
@@ -142,6 +175,7 @@ struct GroupExpenseAccountFinalizationSheet: View {
         do {
             _ = try DraftService.shared.approveDraft(draft, currencyConverter: currencyConverter)
             DS.Haptic.success()
+            onRegistered?(account.name)
             onApproved()
             dismiss()
         } catch {

@@ -34,6 +34,9 @@ struct GroupBalancesView: View {
     /// Eliminar una liquidación YA CONFIRMADA. Las pendientes se rechazan (`onRejectSettlement`),
     /// no se eliminan: son dos gestos distintos sobre estados distintos.
     var onDeleteSettlement: ((SplitSettlement) -> Void)?
+    /// UX 2.2 · L13-10: «Añadir saldo inicial» también aquí, junto a las deudas. Solo quien creó el grupo puede (`nil`
+    /// para los demás: no se pinta).
+    var onAddOpeningBalance: (() -> Void)?
 
     @ScaledMetric(relativeTo: .body) private var avatarSize: CGFloat = 32 // A11Y-DT: @ScaledMetric
     @ScaledMetric(relativeTo: .body) private var largeAvatarSize: CGFloat = 40 // A11Y-DT: @ScaledMetric
@@ -66,7 +69,10 @@ struct GroupBalancesView: View {
         if balances.isEmpty && debts.isEmpty && pending.isEmpty {
             YalaEmptyState(
                 icon: "checkmark.circle",
-                title: L10n.Groups.Balance.noDebts
+                title: L10n.Groups.Balance.noDebts,
+                actionTitle: onAddOpeningBalance == nil ? nil : L10n.Groups.OpeningBalance.addButton,
+                action: onAddOpeningBalance,
+                actionAccessibilityIdentifier: "balances_opening_balance_add"
             )
         } else {
             ScrollView {
@@ -85,6 +91,10 @@ struct GroupBalancesView: View {
 
                     if !debts.isEmpty {
                         debtsSection
+                    }
+
+                    if let onAddOpeningBalance {
+                        addOpeningBalanceButton(onAddOpeningBalance)
                     }
 
                     let listed = listedSettlements
@@ -371,6 +381,22 @@ struct GroupBalancesView: View {
     private func amountColor(_ card: GroupBalancesPresentationLogic.DebtCard) -> Color {
         guard card.involvesMe else { return .secondary }
         return Color.amountTint(isIncome: card.isOwedToMe)
+    }
+
+    // MARK: - L13-10 · Saldos iniciales
+
+    /// La misma entrada que en Miembros («Añadir saldo inicial»), aquí, donde se buscan las deudas.
+    private func addOpeningBalanceButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(L10n.Groups.OpeningBalance.addButton, systemImage: "plus.circle.fill")
+                .font(DS.Typography.label)
+                .foregroundStyle(theme.accent)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, DS.Spacing.sm)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("balances_opening_balance_add")
     }
 
     // MARK: - Settlements Section
