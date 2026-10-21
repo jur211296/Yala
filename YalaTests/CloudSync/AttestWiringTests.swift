@@ -396,6 +396,36 @@ struct AttestHeaderTransportTests {
         #expect(session.lastRequest?.value(forHTTPHeaderField: header) == nil)
     }
 
+    // MARK: POST /groups/rpc/set_member_role — L19-3 (g22_01)
+
+    /// Método nuevo en un cliente ya cableado: el escáner no lo cubre (cuenta el `attestProvider:` del init), así que
+    /// lleva su par (`.claude/rules/gateway-attest.md`).
+    @Test func setMemberRole_sendsAttest_whenProviderIsLive() async throws {
+        let session = stub(#"{"group_id":"SplitGroup-Z","member_key":"sub-2","role":"admin","changed":true}"#)
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { "jwt" },
+            attestProvider: { "attest-tok" }, urlSession: session)
+        client.sleeper = { _ in }
+
+        _ = try await client.setMemberRole(groupID: "SplitGroup-Z", memberKey: "sub-2", role: "admin")
+
+        #expect(session.lastRequest?.url?.absoluteString.contains("groups/rpc/set_member_role") == true)
+        #expect(session.lastRequest?.value(forHTTPHeaderField: header) == "Bearer attest-tok")
+    }
+
+    @Test func setMemberRole_omitsAttest_whenProviderIsNil() async throws {
+        let session = stub(#"{"group_id":"SplitGroup-Z","member_key":"sub-2","role":"admin","changed":true}"#)
+        let client = GroupsMembershipClient(
+            baseURL: base, tokenProvider: { "jwt" },
+            attestProvider: { nil }, urlSession: session)
+        client.sleeper = { _ in }
+
+        _ = try await client.setMemberRole(groupID: "SplitGroup-Z", memberKey: "sub-2", role: "admin")
+
+        #expect(session.lastRequest?.value(forHTTPHeaderField: header) == nil,
+                "bajo `enforce` esto es un 401 y el cambio de rol no llega nunca al servidor.")
+    }
+
     // MARK: POST /push/register
 
     @Test func pushTokenRegistrationClient_sendsAttest_whenProviderIsLive() async throws {

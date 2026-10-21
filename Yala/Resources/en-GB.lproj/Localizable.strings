@@ -7443,3 +7443,131 @@
 "welcome.cloud.otherAccountUsedTitle" = "This iPhone has already used another account";
 "welcome.cloud.otherAccountUsedBody" = "This iPhone has already used a Yala account created with %1$@, and the %2$@ one is a different account. Are you sure you want to use a different account? To keep using your usual one, sign in with %1$@.";
 "welcome.cloud.otherAccountUsedBodyGeneric" = "This iPhone has already used a Yala account created with another method, and the %@ one is a different account. Are you sure you want to use a different account? To keep using your usual one, sign in with the method you used before.";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "Admin";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "Make admin";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "Remove as admin";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "Make %@ an admin?";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@ will be able to accept or decline join requests, remove members, change the group’s name and budget, archive it and make others admins.";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "Remove %@ as admin?";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@ stays in the group but can no longer accept requests, remove members, change the name and budget, or archive the group.";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "Remove from group";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "Remove %@ from the group?";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@ will no longer see the group. The expenses they added stay.";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "If you remove %@ from the group, what’s pending stays unsettled.";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "Settle up first";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@ owes you %2$@.";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "You owe %1$@ %2$@.";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@ owes %3$@ %2$@.";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@ owes %2$@";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "You owe %@";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "If you leave, you’ll stop seeing this group and that debt; %@ will still see it.";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "If you leave, you’ll stop seeing this group and those debts; the others will still see them.";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "It disappears for everyone. What you recorded in your accounts stays.";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "Archive or delete";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "Archive";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "It moves to Archived for the whole group. Expenses and debts are kept, and you can bring it back whenever you like.";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "It goes back to everyone’s list, with its expenses and debts.";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "It disappears for everyone and can’t be undone.";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "You can delete it once everything is settled.";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "If you want to leave, transfer it and leave.";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "If you just want it off the list, archive it: the debts are kept.";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "See balances";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "Moved to Archived";
+/* Deshacer el archivado */
+"groups.l19.undo" = "Undo";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "Archived group";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "Only an admin can unarchive it.";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "Unarchive";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ %@ owed to you in archived groups";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ %@ you owe in archived groups";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "What’s the most you all want to spend?";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "Spent so far: %@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "No expenses in the group yet.";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "You’d already be %@ over";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "%@ left";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "The whole group sees it, not just you.";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "We let everyone know at half, three quarters, almost at the limit and at the limit.";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "Fewer payments between you";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "If Ana owes you and you owe Beto, Ana pays Beto directly.";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "Show debts in one currency";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "Only the person who created the group can change this.";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "How a new expense is split";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "In your accounts";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "Record what I pay here in my accounts";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "Same as in Groups Settings.";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "Owes you";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "You owe";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "You created it and nobody else can take it over yet. Open it to archive or delete it.";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "Open its settings";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "Your groups leave this iPhone; they stay in your account and come back if you connect it again.";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "Keep what I paid in my accounts";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "Remove that from my accounts too";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "If you keep it, the expenses you paid stay in your accounts: %1$d (%2$@).";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "If you remove it, they leave your accounts too.";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "Whoever created the group is always an admin, so that role can’t be removed.";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "The group needs at least one admin.";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "This person needs to rejoin the group with their account before they can be an admin.";

@@ -34,7 +34,7 @@ enum GroupsRPCError: Error, Equatable {
     case memberNotFound          // yala_member_not_found
     case cannotRemoveOwner       // yala_cannot_remove_owner
     case ownerCannotLeave        // yala_owner_cannot_leave
-    /// HTTP 400 con un `yala_*` fuera de los 10 conocidos (A5) — rechazo PERMANENTE, jamás reintentable.
+    /// HTTP 400 con un `yala_*` fuera de los 13 conocidos (A5) — rechazo PERMANENTE, jamás reintentable.
     case permanentRejected(code: String)
     /// 403 `yala_groups_disabled` — el KILL-SWITCH server-side del canal está puesto
     /// (`GROUPS_BACKEND_ROLLOUT_PERCENT = 0`). Apagado DELIBERADO, no un fallo de red: `callWithRetry`
@@ -62,8 +62,16 @@ enum GroupsRPCError: Error, Equatable {
     /// `nsErrorCode_perCase_isMeasuredNotInferred` documenta que ya costó un diagnóstico en agosto. La
     /// agrupación semántica se paga con un comentario; la numeración, con una tarde de diagnóstico.
     case groupArchived           // yala_group_archived
+    /// Los tres de `set_member_role` (g22_01, auditoría UX 2.2 · L19-3). AL FINAL por la misma razón que
+    /// `groupArchived`: el número que imprime `NSError` no se corre para los casos ya publicados.
+    /// yala_cannot_change_owner_role — al creador del grupo no se le quita el admin.
+    case cannotChangeOwnerRole   // yala_cannot_change_owner_role
+    /// yala_last_admin — quitárselo dejaría el grupo sin ningún admin activo.
+    case lastAdmin               // yala_last_admin
+    /// yala_member_not_eligible — el miembro es un hueco sin reclamar (grupo migrado, sin cuenta detrás).
+    case memberNotEligible       // yala_member_not_eligible
 
-    /// Traduce un código `yala_*` del DDL a su caso. `nil` si no es uno de los 10 conocidos.
+    /// Traduce un código `yala_*` del DDL a su caso. `nil` si no es uno de los 13 conocidos.
     init?(yalaCode: String) {
         switch yalaCode {
         case "yala_not_authorized":     self = .notAuthorized
@@ -76,6 +84,9 @@ enum GroupsRPCError: Error, Equatable {
         case "yala_member_not_found":   self = .memberNotFound
         case "yala_cannot_remove_owner": self = .cannotRemoveOwner
         case "yala_owner_cannot_leave": self = .ownerCannotLeave
+        case "yala_cannot_change_owner_role": self = .cannotChangeOwnerRole
+        case "yala_last_admin":         self = .lastAdmin
+        case "yala_member_not_eligible": self = .memberNotEligible
         default: return nil
         }
     }
@@ -113,6 +124,21 @@ struct MemberActionResult: Decodable, Equatable {
         case groupID = "group_id"
         case memberKey = "member_key"
         case status
+    }
+}
+
+/// `set_member_role` (g22_01): el rol que el miembro tiene AHORA en el servidor y si esta llamada lo cambió.
+/// `changed == false` es el no-op idempotente (ya lo tenía): un reintento tras una respuesta perdida cae ahí.
+struct SetMemberRoleResult: Decodable, Equatable {
+    let groupID: String
+    let memberKey: String
+    let role: String
+    let changed: Bool
+    enum CodingKeys: String, CodingKey {
+        case groupID = "group_id"
+        case memberKey = "member_key"
+        case role
+        case changed
     }
 }
 
@@ -291,6 +317,12 @@ final class GroupsMembershipClient {
     ///   groups_forget_user           | SÍ               | destructivo pero convergente (re-aplicable)
     ///   transfer_group_ownership     | SÍ               | idempotente-suave: 2º call tras 502 → ya no soy
     ///                                |                  | owner → already:true (sin re-transferir a otro heredero)
+    ///   set_member_role              | SÍ               | ya tiene ese rol → changed:false sin escribir (g22_01,
+    ///                                |                  | regla 7). Reintentar no duplica ni deshace nada; el 2º
+    ///                                |                  | intento SÍ puede rechazar si entre medias cambió el
+    ///                                |                  | grupo (el objetivo salió, a quien llama le quitaron el
+    ///                                |                  | admin, o ya no queda otro admin) — un rechazo legítimo,
+    ///                                |                  | no un efecto del reintento
     ///   record_groups_consent        | SÍ               | PK (user_id, text_version) + ON CONFLICT DO NOTHING
     ///                                |                  | → un ack perdido post-COMMIT no duplica ni re-fecha
     ///   groups_consent_state         | SÍ               | lectura pura
@@ -456,7 +488,7 @@ final class GroupsMembershipClient {
         }
     }
 
-    // MARK: - Métodos tipados (11)
+    // MARK: - Métodos tipados (13)
 
     func createGroup(
         groupID: String,
@@ -549,6 +581,17 @@ final class GroupsMembershipClient {
     func transferOwnership(groupID: String) async throws -> TransferOwnershipResult {
         let data = try await callWithRetry(fn: "transfer_group_ownership", args: ["p_group_id": groupID])
         return try decode(TransferOwnershipResult.self, from: data)
+    }
+
+    /// L19-3 (g22_01): hace admin (`role == "admin"`) o quita el admin (`"member"`) a un miembro ACTIVO del grupo.
+    /// Idempotente → seguro reintentar `.transient` (NO está en `neverRetryTransient`). Los rechazos propios:
+    /// `.cannotChangeOwnerRole`, `.lastAdmin`, `.memberNotEligible`, más `.notAuthorized`, `.badInput` y
+    /// `.memberNotFound`.
+    func setMemberRole(groupID: String, memberKey: String, role: String) async throws -> SetMemberRoleResult {
+        let data = try await callWithRetry(fn: "set_member_role", args: [
+            "p_group_id": groupID, "p_member_key": memberKey, "p_role": role,
+        ])
+        return try decode(SetMemberRoleResult.self, from: data)
     }
 
     // MARK: - Consent de Grupos (C1)

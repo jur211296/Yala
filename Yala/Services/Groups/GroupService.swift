@@ -70,9 +70,8 @@ final class GroupService {
     /// `flag && group.isBackendGroup`, y con un `SplitGroup` DUPLICADO **mixto** en la zona el MISMO grupo se
     /// enrutaba por un canal u otro según qué fila tuviera el caller en la mano: los siete call-sites de esta
     /// función eligen entre «RPC server-first» y «CloudKit», y equivocarse hacia CloudKit produce un ÉXITO
-    /// LOCAL FALSO —`leaveGroup` no llama a `leave_group`, `approveMember`/`removeMember`/`rejectMember` no llaman a
-    /// su RPC, el guard defensivo de `changeRole` deja de lanzar— con el usuario intacto
-    /// server-side (y, en el caso del leave, todavía `is_group_writer`).
+    /// LOCAL FALSO —`leaveGroup` no llama a `leave_group`, `approveMember`/`removeMember`/`rejectMember`/`changeRole`
+    /// no llaman a su RPC— con el usuario intacto server-side (y, en el caso del leave, todavía `is_group_writer`).
     ///
     /// El fetch degrada a la fila en mano si no hay contexto o si lanza: nunca peor que el criterio anterior.
     ///
@@ -281,7 +280,12 @@ final class GroupService {
             members: members,
             settlements: settlements
         )
-        guard balances.allSatisfy({ abs($0.netBalance) <= 0.01 }) else {
+        // L19-10: el residuo de redondeo no bloquea (`GroupRoundingResidueLogic`): cuentan las deudas de persona a
+        // persona. Es la misma regla que pinta el botón de Ajustes del grupo: si las dos divergieran, «Eliminar» saldría
+        // activo y el borrado lanzaría.
+        let debts = GroupRoundingResidueLogic.outstandingDebts(
+            expenses: expenses, shares: shares, settlements: settlements)
+        guard !GroupRoundingResidueLogic.hasOutstanding(debts: debts, balances: balances) else {
             throw GroupServiceError.outstandingBalance
         }
 
@@ -457,11 +461,33 @@ final class GroupService {
         try transitionPendingMember(member, to: .rejected, in: group)
     }
 
-    /// ¿Ofrece la app «Cambiar rol» en este grupo? No en uno del canal backend: el servidor no tiene cómo cambiar un
-    /// rol (`group_members` está congelado para UPDATE directo y no hay RPC), así que `changeRole` lanzaría siempre
-    /// `backendActionUnavailable`. Lote 19 de la auditoría UX: el botón estaba a la vista y fallaba siempre.
-    func offersRoleChange(in group: SplitGroup) -> Bool {
-        !routesMembershipToBackend(group)
+    /// Qué cambio de rol ofrece la app para este miembro, o `nil` si ninguno.
+    enum RoleChangeOffer: Equatable {
+        /// «Hacer admin»: el miembro no lo es.
+        case makeAdmin
+        /// «Quitar admin»: el miembro lo es.
+        case removeAdmin
+    }
+
+    /// **Por qué existe:** el botón de cambiar rol no puede estar a la vista donde `changeRole` va a fallar siempre.
+    /// Hasta el lote 19 de la auditoría UX (2.2) estaba en todos los grupos y en los de la nube fallaba sin remedio
+    /// (no había RPC); el lote lo escondió ahí (`offersRoleChange`), y L19-3 construyó el RPC (`set_member_role`,
+    /// g22_01), así que ahora la pregunta es por MIEMBRO y por SENTIDO, no por grupo.
+    ///
+    /// `nil` —no se ofrece nada— si el miembro no está activo (un pendiente se aprueba, no se asciende), si es el
+    /// creador del grupo (al creador no se le quita el admin, y ya lo es) o si el grupo está congelado. En la nube
+    /// tampoco se ofrece hacer admin a un hueco sin reclamar (`userID == nil`): el servidor lo rechaza
+    /// (`yala_member_not_eligible`), no hay cuenta detrás que pueda administrar.
+    ///
+    /// **Residual medido:** en un grupo de la nube `isGroupOwner` solo lo tiene puesto el teléfono del creador (el
+    /// pull no lo escribe, `GroupsSyncClient.applyMember`), así que en el de otro admin el creador sale con
+    /// `.removeAdmin` y el servidor lo rechaza con `yala_cannot_change_owner_role`. No se cambia nada, y el texto es el
+    /// de la acción fallida (`GroupActionErrorLogic`).
+    func roleChangeOffer(for member: SplitMember, in group: SplitGroup) -> RoleChangeOffer? {
+        guard member.isActive, !member.isGroupOwner, !group.isMigratedFrozen else { return nil }
+        if member.role == "admin" { return .removeAdmin }
+        if member.userID == nil && routesMembershipToBackend(group) { return nil }
+        return .makeAdmin
     }
 
     /// Las comprobaciones de `transitionPendingMember`, sin escribir nada.
@@ -498,10 +524,17 @@ final class GroupService {
         SessionState.shared.incrementDataVersion()
     }
 
-    /// Change a member's role.
-    func changeRole(_ member: SplitMember, to newRole: String, in group: SplitGroup) throws {
-        // Guard defensivo (review G5-A): no existe RPC de cambio de rol — evitar falso éxito local.
-        guard !routesMembershipToBackend(group) else { throw GroupServiceError.backendActionUnavailable }
+    /// Hace admin (`newRole == "admin"`) o quita el admin (`"member"`) a un miembro.
+    ///
+    /// Grupo del canal backend → RPC `set_member_role` SERVER-FIRST (g22_01, L19-3). Las validaciones locales van
+    /// TODAS antes de la red, así que con un grupo congelado, sin ser admin, con un rol inventado, con el miembro
+    /// inactivo o de otro grupo, quitándole el admin al creador o al último admin, el RPC no sale. Solo con éxito se
+    /// escribe el rol en local, el que dice el servidor; si el servidor rechaza, lanza su `GroupsRPCError`
+    /// (`.cannotChangeOwnerRole`, `.lastAdmin`, `.memberNotEligible`, …) y lo local queda intacto. El `save()`
+    /// no viaja: `group_members` es pull-only y el drain no emite `SplitMember`; el pull confirma.
+    /// Flag OFF / grupo local → camino de siempre, sin red.
+    func changeRole(_ member: SplitMember, to newRole: String, in group: SplitGroup) async throws {
+        let toBackend = routesMembershipToBackend(group)
         let context = try requireContext()
         // C-10: red service-level. El detalle de un grupo congelado pasó a ser alcanzable, y estas
         // escrituras irían a una zona CloudKit muerta: se perderían en silencio.
@@ -513,13 +546,30 @@ final class GroupService {
         guard member.isActive else { throw GroupServiceError.inactiveMember }
         guard !member.isGroupOwner || newRole == "admin" else { throw GroupServiceError.ownerMemberImmutable }
 
-        // Cannot demote the last admin
+        // Cannot demote the last admin. En el canal backend, con el criterio de `set_member_role` (g22_01, regla 6):
+        // tiene que quedar OTRO admin activo CON CUENTA; un hueco admin sin reclamar (`userID == nil`) no puede
+        // administrar y no cuenta. Fuera del backend, el conteo de siempre (el mismo de `removeMemberLocal`).
         if member.role == "admin" && newRole == "member" {
-            let adminCount = try activeAdminCount(in: group, context: context)
-            guard adminCount > 1 else { throw GroupServiceError.lastAdmin }
+            if toBackend {
+                let others = try otherActiveAdminsWithAccount(excluding: member, in: group, context: context)
+                guard others > 0 else { throw GroupServiceError.lastAdmin }
+            } else {
+                let adminCount = try activeAdminCount(in: group, context: context)
+                guard adminCount > 1 else { throw GroupServiceError.lastAdmin }
+            }
         }
 
-        member.role = newRole
+        if toBackend {
+            // El RPC espera `member.memberKey` + `group.cloudKitZoneID` — JAMÁS `member.id`.
+            guard let memberKey = member.memberKey else { throw GroupServiceError.missingMemberKey }
+            let result = try await backendMembershipFactory().setRole(
+                groupID: group.cloudKitZoneID, memberKey: memberKey, role: newRole)
+            // Lo local sigue al servidor: su `role` es el que el miembro tiene AHORA allí (el pedido, o el que ya
+            // tenía si fue un no-op).
+            member.role = result.role
+        } else {
+            member.role = newRole
+        }
 
         do {
             try context.save()
@@ -1504,6 +1554,22 @@ final class GroupService {
         return try context.fetch(adminDesc).filter(\.isActive).count
     }
 
+    /// Admins activos de la zona, CON CUENTA (`userID != nil`) y distintos de `member`. Es el conteo de la regla 6 de
+    /// `set_member_role` (g22_01) y solo lo usa `changeRole` en el canal backend; `removeMemberLocal` y el camino
+    /// local siguen con `activeAdminCount`.
+    private func otherActiveAdminsWithAccount(
+        excluding member: SplitMember, in group: SplitGroup, context: ModelContext
+    ) throws -> Int {
+        let zoneName = group.cloudKitZoneID
+        let adminDesc = FetchDescriptor<SplitMember>(
+            predicate: #Predicate { $0.groupZoneID == zoneName && $0.role == "admin" }
+        )
+        let excludedID = member.id
+        return try context.fetch(adminDesc)
+            .filter { $0.isActive && $0.userID != nil && $0.id != excludedID }
+            .count
+    }
+
     // MARK: - Cascade Delete
 
     /// Delete all local models for a group zone (members, expenses, shares, settlements).
@@ -1807,10 +1873,10 @@ enum GroupServiceError: LocalizedError {
             // — el materializador siempre lo setea). Reusa la copy genérica de acción fallida.
             return L10n.Groups.Errors.actionFailed
         case .backendActionUnavailable:
-            // Guard defensivo (review G5-A, lente CloudKit #3): changeRole NO está ruteado al backend (no existe
-            // RPC de cambio de rol) — sin este guard mutaría local sin sync, dando falsa sensación de éxito hasta
-            // que el pull revierta. Desde el lote 19 la UI no lo ofrece ahí (`offersRoleChange`), y el reject sí va
-            // al backend (`remove_member`).
+            // Nació como guard defensivo de `changeRole` (review G5-A): no había RPC de cambio de rol y sin él la
+            // app mutaba en local sin sync. Rechazar (lote 19) y cambiar el rol (L19-3, `set_member_role`) van ya
+            // al backend, así que HOY NADIE LO LANZA. Se conserva el caso para una acción futura que el servidor
+            // aún no sepa hacer; no lo vuelvas a lanzar desde `changeRole`.
             return L10n.Groups.Errors.actionFailed
         case .movedToBackend:
             return L10n.Groups.Errors.movedToBackend

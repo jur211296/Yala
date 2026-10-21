@@ -505,6 +505,21 @@ describe("notifyMembershipChange — el emisor elige la audiencia (g8_03)", () =
     expect(calls.length).toBe(0);
   });
 
+  it("set_member_role tampoco dispara nada: cambiar un rol no avisa, los demás lo ven al sincronizar (L19-3)", async () => {
+    const pem = await makePem();
+    const calls: Recorded[] = [];
+    stubFetch(() => APPLE_OK(), calls);
+    const pending: Promise<unknown>[] = [];
+    notifyMembershipChange(fakeCtx(makeFanoutEnv(pem), pending), AUTH, "set_member_role", {
+      group_id: "g-1",
+      member_key: "mk-42",
+      role: "admin",
+      changed: true,
+    });
+    await Promise.all(pending);
+    expect(calls.length).toBe(0);
+  });
+
   it("sin ExecutionContext no lanza: el aviso se omite, el RPC no se convierte en 500", async () => {
     const pem = await makePem();
     const calls: Recorded[] = [];

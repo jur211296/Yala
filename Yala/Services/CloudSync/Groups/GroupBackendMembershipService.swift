@@ -18,7 +18,7 @@
 //  lanza `sessionExpired` ANTES de tocar la red o el contexto (no-op verificable en tests).
 //
 //  **UNA EXCEPCIÓN, deliberada y asimétrica (D-R1 paso 2): `forgetUser()`.** Todos los demás métodos son
-//  ENTRADAS —crear, unirse, invitar, revocar, aprobar, expulsar, salir, renombrarse— y el kill remoto
+//  ENTRADAS —crear, unirse, invitar, revocar, aprobar, expulsar, salir, renombrarse, cambiar un rol— y el kill remoto
 //  existe justo para cerrarlas. `forgetUser` es un TEARDOWN: lo invoca el borrado de cuenta para
 //  anonimizar y transferir lo que el usuario YA subió, y eso sigue existiendo con el canal apagado. Si
 //  compartiera el gate compuesto, un kill remoto no retendría datos «hasta que se levante»: haría fallar
@@ -251,6 +251,13 @@ final class GroupBackendMembershipService {
     func remove(groupID: String, memberKey: String) async throws -> MemberActionResult {
         try ensureEligible()
         return try await client.removeMember(groupID: groupID, memberKey: memberKey)
+    }
+
+    /// L19-3: RPC only (`set_member_role`, g22_01). Es una ENTRADA más: gate compuesto, la corta el kill. Quien
+    /// escribe el rol en local tras el éxito es `GroupService.changeRole`, no este service.
+    func setRole(groupID: String, memberKey: String, role: String) async throws -> SetMemberRoleResult {
+        try ensureEligible()
+        return try await client.setMemberRole(groupID: groupID, memberKey: memberKey, role: role)
     }
 
     func leave(groupID: String) async throws -> MemberActionResult {
