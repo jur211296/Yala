@@ -716,6 +716,11 @@ enum EntityEmissionMap {
             ColumnEmitter("estimation_method") { m, _ in .string(m.estimationMethod) },
             ColumnEmitter("manual_amount") { m, _ in Emit.money(m.manualAmount) },
             ColumnEmitter("custom_months_raw") { m, _ in Emit.csvTextArray(m.customMonthsRaw) },
+            // UX 2.2 · L18-8: los cambios de monto «desde este mes», tal cual se guardan (`yyyy-MM=monto,…`). Columna
+            // posterior al lanzamiento: no viaja hasta que el backend anuncia la versión que la conoce.
+            ColumnEmitter("amount_changes_raw", since: SyncCapability.cashFlowAmountChangesSince) { m, _ in
+                Emit.text(m.amountChangesRaw)
+            },
             ColumnEmitter("category_ref") { m, _ in Emit.ref(m.category?.syncID) },
             ColumnEmitter("subcategory_ref") { m, _ in Emit.ref(m.subcategory?.shortcutID) },
             ColumnEmitter("scheduled_payment_ref") { m, _ in Emit.ref(m.scheduledPayment?.id) },
@@ -729,6 +734,7 @@ enum EntityEmissionMap {
             \CashFlowLine.estimationMethod: ["estimation_method"],
             \CashFlowLine.manualAmount: ["manual_amount"],
             \CashFlowLine.customMonthsRaw: ["custom_months_raw"],
+            \CashFlowLine.amountChangesRaw: ["amount_changes_raw"],
             \CashFlowLine.category: ["category_ref"],
             \CashFlowLine.subcategory: ["subcategory_ref"],
             \CashFlowLine.scheduledPayment: ["scheduled_payment_ref"],

@@ -78,6 +78,7 @@ DEFINE SCHEMA
     );
 
     RECORD TYPE CD_CashFlowLine (
+        CD_amountChangesRaw STRING,
         CD_category         STRING QUERYABLE SEARCHABLE SORTABLE,
         CD_customMonthsRaw  STRING,
         CD_entityName       STRING QUERYABLE SEARCHABLE SORTABLE,

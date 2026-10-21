@@ -677,14 +677,14 @@
 "report.noSubcategory" = "无子类别";
 "report.noTag" = "无标签";
 "report.noAccount" = "无账户";
-"report.grouping.type" = "类型";
+"report.grouping.type" = "收入和支出";
 "report.grouping.category" = "类别";
 "report.grouping.subcategory" = "子类别";
 "report.grouping.tag" = "标签";
 "report.grouping.account" = "账户";
 "report.grouping.currency" = "货币";
 "report.grouping.nature" = "需求";
-"report.grouping.drillDown" = "深入查看";
+"report.grouping.drillDown" = "细分";
 "report.grouping.hint" = "添加层级以查看更多详情。拖动以重新排序优先级。";
 "report.grouping.active" = "活跃";
 "report.grouping.available" = "可用";
@@ -834,7 +834,7 @@
 "cashFlowPlan.monthsActive" = "个月";
 "cashFlowPlan.suggestedSource" = "基于 %d 个月的活动";
 "cashFlowPlan.bannerTitle" = "什么是现金流?";
-"cashFlowPlan.bannerBody" = "这是你逐月的收入和支出计划。它告诉你钱是否够用,或是需要做些调整。";
+"cashFlowPlan.bannerBody" = "逐月查看你的收入能否覆盖支出。";
 "cashFlowPlan.available" = "可用";
 "cashFlowPlan.accumulated" = "累计";
 "cashFlowPlan.accumulatedShort" = "累计";
@@ -903,7 +903,7 @@
 "cashFlowPlan.monthSummaryOnTrack" = "本月你已支出预估的 %d%%";
 "cashFlowPlan.monthSummaryOver" = "本月你超出预估 %d%%";
 "cashFlowPlan.monthSummaryUnder" = "只支出了 %d%% — 本月你做得很棒";
-"cashFlowPlan.configureHorizon" = "配置时间范围";
+"cashFlowPlan.configureHorizon" = "显示几个月";
 "cashFlowPlan.monthsAhead" = "向后月数";
 "cashFlowPlan.monthsBack" = "向前月数";
 "cashFlowPlan.showAccumulatedBalance" = "显示累计";
@@ -4300,8 +4300,8 @@
 "more.subtitle.distribution" = "了解你的钱花在哪里";
 "more.subtitle.budgets" = "设定限额，掌握节奏";
 "more.subtitle.scheduledPayments" = "即将到来：账单和订阅";
-"more.subtitle.comparative" = "并排比较各个周期";
-"more.subtitle.cashFlow" = "进账与出账一目了然";
+"more.subtitle.comparative" = "比上个月花得多还是少?";
+"more.subtitle.cashFlow" = "接下来几个月钱够用吗?";
 "more.subtitle.records" = "所有记录尽在一处";
 "more.subtitle.groups" = "轻松分摊共同支出";
 "more.subtitle.profile" = "你的账户与偏好";
@@ -7723,3 +7723,155 @@
 "shortcut.applePay.notification.title" = "%2$@ 的 %1$@ 付款待审核";
 "shortcut.applePay.notification.titleNoMerchant" = "%@ 付款待审核";
 "shortcut.applePay.notification.body" = "轻点以批准。";
+
+/* VoiceOver: el cambio entre dos períodos redondea a cero */
+"accessibility.variationNoChange" = "没有变化";
+/* Comparativa en «Todo el tiempo»: tarjeta que invita a elegir un período */
+"report.l18.allTime.title" = "要比较,请选择一个月或一年";
+/* Comparativa: qué se compara con qué; %1$@ = «Octubre», %2$@ = «septiembre» */
+"report.l18.heading" = "%1$@与%2$@对比";
+/* Comparativa: igual, con un tramo de días; %1$@ = «Octubre», %2$@ = «1–21 de septiembre» */
+"report.l18.headingRange" = "%1$@与%2$@对比";
+/* Comparativa: chip para comparar con el mes anterior */
+"report.l18.chip.previousMonth" = "与上个月比";
+/* Comparativa: chip para comparar con la semana anterior */
+"report.l18.chip.previousWeek" = "与上周比";
+/* Comparativa: chip para comparar con los 7 días anteriores */
+"report.l18.chip.previous7Days" = "与前7天比";
+/* Comparativa: chip para comparar con los 30 días anteriores */
+"report.l18.chip.previous30Days" = "与前30天比";
+/* Comparativa: chip para comparar con el período anterior */
+"report.l18.chip.previousPeriod" = "与上一期比";
+/* Comparativa: chip para comparar con el mismo período del año pasado; %@ = «octubre de 2025» */
+"report.l18.chip.yearAgo" = "与%@比";
+/* Comparativa: cabecera de la columna del cambio */
+"report.l18.column.change" = "变化";
+/* Comparativa: ingresos menos gastos cuando sobra */
+"report.l18.net.gain" = "结余";
+/* Comparativa: ingresos menos gastos cuando falta */
+"report.l18.net.loss" = "缺口";
+/* Comparativa: qué es «Te quedó» */
+"report.l18.net.caption" = "收入减去支出。";
+/* Comparativa: qué es «Te quedó» y cuánto quedó antes; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionGainBefore" = "收入减去支出。%1$@结余%2$@。";
+/* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionLossBefore" = "收入减去支出。%1$@缺口%2$@。";
+/* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
+"report.l18.row.amountsA11y" = "%2$@ %1$@,%4$@ %3$@";
+/* Desglosar: título del ejemplo de cómo quedará la tabla */
+"report.l18.example.title" = "表格会是这样";
+/* Desglosar, ejemplo: el nivel de ingresos y gastos */
+"report.l18.example.expenses" = "支出";
+/* Desglosar, ejemplo: una categoría */
+"report.l18.example.category" = "餐饮";
+/* Desglosar, ejemplo: una subcategoría */
+"report.l18.example.subcategory" = "超市";
+/* Desglosar, ejemplo: una etiqueta */
+"report.l18.example.tag" = "旅行";
+/* Desglosar, ejemplo: una cuenta */
+"report.l18.example.account" = "银行卡";
+/* Desglosar, ejemplo: una divisa */
+"report.l18.example.currency" = "人民币";
+/* Desglosar, ejemplo: una necesidad */
+"report.l18.example.need" = "必需";
+/* Desglosar: sin niveles elegidos, la tabla solo separa ingresos y gastos */
+"report.l18.onlyIncomeAndExpenses" = "只有收入和支出。在下方添加一个层级。";
+/* Crear el plan: rótulo del saldo con el que empieza el plan */
+"cashflow.l18.start.title" = "你从多少钱开始?";
+/* Crear el plan: de dónde sale el saldo (una cuenta) */
+"cashflow.l18.start.captionOne" = "你今天账户里的钱";
+/* Crear el plan: de dónde sale el saldo; %d = número de cuentas (2 o más) */
+"cashflow.l18.start.caption" = "你今天%d个账户里的钱";
+/* Crear el plan: sin cuentas que sumen, el saldo se escribe a mano */
+"cashflow.l18.start.captionNone" = "输入你的起始金额";
+/* Crear el plan: el saldo lo escribió la persona */
+"cashflow.l18.start.captionTyped" = "你输入的金额";
+/* Crear el plan: enlace para cambiar el saldo inicial */
+"cashflow.l18.start.change" = "修改金额";
+/* Crear el plan: título de la sección de ingresos */
+"cashflow.l18.section.in" = "进账";
+/* Crear el plan: título de la sección de gastos */
+"cashflow.l18.section.out" = "出账";
+/* Crear el plan: fila plegada con los gastos que cambian; %d = cuántos */
+"cashflow.l18.variable.title" = "变动支出 · %d";
+/* Crear el plan: qué son los gastos que cambian; %@ = ejemplos («Restaurantes, Taxis») */
+"cashflow.l18.variable.caption" = "%@……我们按平均值计入。";
+/* Crear el plan: desplegar los gastos que cambian */
+"cashflow.l18.variable.show" = "查看";
+/* Crear el plan: plegar los gastos que cambian */
+"cashflow.l18.variable.hide" = "收起";
+/* Crear el plan: total de ingresos al mes */
+"cashflow.l18.summary.income" = "每月收入";
+/* Crear el plan: total de gastos al mes */
+"cashflow.l18.summary.expense" = "每月支出";
+/* Crear el plan: lo que sobra al mes */
+"cashflow.l18.summary.surplus" = "每月结余";
+/* Crear el plan: lo que falta al mes */
+"cashflow.l18.summary.shortfall" = "每月缺口";
+/* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
+"cashflow.l18.sheet.todayBalance" = "你今天账户里有%@";
+/* Hoja del saldo inicial: usar el saldo de hoy */
+"cashflow.l18.sheet.useThisAmount" = "使用这个金额";
+/* Flujo de caja: con cuánto empezó el plan; %@ = monto */
+"cashflow.l18.startedWith" = "起始金额:%@";
+/* Flujo de caja: botón para cambiar algo (el saldo inicial, cómo se calcula una línea) */
+"cashflow.l18.change" = "修改";
+/* Detalle de una línea: rótulo de cómo se calcula el monto */
+"cashflow.l18.detail.howItsCalculated" = "计算方式";
+/* Detalle de una línea: monto nuevo desde un mes; %1$@ = «noviembre», %2$@ = monto */
+"cashflow.l18.detail.changeFrom" = "从%1$@起:每月%2$@";
+/* Ajustar monto: rótulo del campo; %@ = «noviembre» */
+"cashflow.l18.detail.amountFor" = "%@的金额";
+/* Ajustar monto: a qué meses se aplica; %1$@ y %2$@ = el mismo mes («noviembre») */
+"cashflow.l18.scope.question" = "只改%1$@,还是%2$@及之后的月份?";
+/* Ajustar monto: solo el mes elegido */
+"cashflow.l18.scope.onlyThatMonth" = "只改那个月";
+/* Ajustar monto: el mes elegido y los siguientes */
+"cashflow.l18.scope.alsoFollowing" = "那个月及之后";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
+"cashflow.l18.hero.surplusThisMonth" = "本月结余";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
+"cashflow.l18.hero.shortfallThisMonth" = "本月缺口";
+/* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
+"cashflow.l18.hero.surplusFuture" = "%@预计结余";
+/* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
+"cashflow.l18.hero.shortfallFuture" = "%@预计缺口";
+/* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
+"cashflow.l18.hero.surplusPast" = "%@结余";
+/* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
+"cashflow.l18.hero.shortfallPast" = "%@缺口";
+/* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
+"cashflow.l18.hero.projectedEnd" = "照这样下去,%1$@底你会有%2$@";
+/* Flujo de caja: cuánto se lleva gastado del plan del mes; %d = porcentaje */
+"cashflow.l18.month.spentShare" = "已花掉计划的%d%%";
+/* Flujo de caja: en un ingreso, lo que falta recibir */
+"cashflow.l18.row.toReceive" = "待收入";
+/* Flujo de caja: en un ingreso, lo recibido de más */
+"cashflow.l18.row.receivedExtra" = "多收到";
+/* Flujo de caja: una línea con un monto nuevo desde un mes; %@ = «noviembre» */
+"cashflow.l18.row.fromMonth" = "从%@起";
+/* Gráficas: el período; %1$@ = «agosto», %2$@ = «febrero de 2027» */
+"cashflow.l18.chart.periodRange" = "%1$@至%2$@";
+/* Gráficas: de qué es la cifra de la proyección; %@ = «febrero» */
+"cashflow.l18.chart.projectionKPI" = "%@底余额";
+/* Gráficas: de qué es la cifra del ahorro; %1$d = meses, %2$@ = «De agosto a octubre» */
+"cashflow.l18.chart.savingsKPI" = "%1$d个月的平均(%2$@)";
+/* Gráficas: el período de «Gastos por revisar»; %@ = «De agosto a octubre» */
+"cashflow.l18.chart.deviationPeriod" = "月平均。%@。所以与单月明细不一致。";
+/* Gráficas: gastado frente a lo planeado al mes; %1$@ = gastado, %2$@ = planeado */
+"cashflow.l18.chart.deviationLine" = "每月%2$@中的%1$@";
+/* Agregar línea: ejemplo del camino «Desde mis gastos» */
+"cashflow.l18.add.historyExpense" = "用你这几个月的支出,比如超市";
+/* Agregar línea: ejemplo del camino «Desde mis ingresos» */
+"cashflow.l18.add.historyIncome" = "用你这几个月的收入,比如工资";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (gasto) */
+"cashflow.l18.add.scheduledExpense" = "你已设好的计划付款,比如房租";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (ingreso) */
+"cashflow.l18.add.scheduledIncome" = "你已设好的计划收款,比如工资";
+/* Agregar línea: ejemplo del camino «Línea personalizada» */
+"cashflow.l18.add.custom" = "你还没记录的,比如储蓄或旅行";
+/* Agregar línea: lo que movió una categoría en 6 meses; %@ = monto */
+"cashflow.l18.add.inSixMonths" = "6个月共%@";
+
+/* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
+"report.l18.inPeriod" = "%@";

@@ -264,7 +264,10 @@ struct CashFlowChartsSheet: View {
     private var projectionChart: some View {
         chartCard(
             title: L10n.CashFlowPlan.chartProjection,
-            subtitle: L10n.CashFlowPlan.chartProjectionSubtitle,
+            subtitle: projectionPeriodText,
+            kpiLabel: projection.months.last(where: { $0.accumulatedBalance != nil }).map {
+                L10n.UXL18.projectionKPI(CashFlowMonthSummaryLogic.monthName($0.date))
+            },
             kpiValue: appPreferences.currency(projection.months.last(where: { $0.accumulatedBalance != nil })?.accumulatedBalance ?? 0, currencyCode: currencyCode)
         ) {
             let today = Calendar.current.startOfDay(for: Date.now)
@@ -366,10 +369,15 @@ struct CashFlowChartsSheet: View {
                     }
                 }
 
-                // Today marker
+                // Today marker, con su «Hoy» como la tarjeta de Tendencias.
                 RuleMark(x: .value("Today", today))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
                     .foregroundStyle(.thSecondaryText.opacity(0.5))
+                    .annotation(position: .top, alignment: .center) {
+                        Text(L10n.Widget.today)
+                            .font(DS.Typography.labelTiny)
+                            .foregroundStyle(.thSecondaryText)
+                    }
 
                 // Danger zone (zero line)
                 RuleMark(y: .value("Zero", 0))
@@ -448,7 +456,7 @@ struct CashFlowChartsSheet: View {
                 }
             }
             .chartXSelection(value: $draggingDate)
-            .frame(height: 220)
+            .modifier(AdaptiveChartFrame(base: 220))
         }
     }
 
@@ -545,7 +553,9 @@ struct CashFlowChartsSheet: View {
     private var deviationChart: some View {
         chartCard(
             title: L10n.CashFlowPlan.chartDeviation,
-            subtitle: L10n.CashFlowPlan.chartDeviationSubtitle,
+            subtitle: cachedPastMonths.isEmpty
+                ? L10n.CashFlowPlan.chartDeviationSubtitle
+                : L10n.UXL18.deviationPeriod(rangeText(cachedPastMonths.map(\.date))),
             kpiValue: nil
         ) {
             if cachedDeviations.isEmpty {
@@ -555,59 +565,56 @@ struct CashFlowChartsSheet: View {
                     allWithinPlanView
                 }
             } else {
-                let maxTotal = cachedDeviations.map(\.total).max() ?? 1
-
+                // Lienzo «Una sola Yala» (6A): cada línea con la fila de Presupuestos, y no barras rosas sueltas.
+                // Son promedios por mes de los meses que ya pasaron (L18-12): el subtítulo lo dice.
                 VStack(spacing: DS.Spacing.md) {
                     ForEach(cachedDeviations, id: \.lineID) { item in
-                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                            HStack(spacing: DS.Spacing.sm) {
-                                Image(systemName: item.iconName)
-                                    .font(.system(size: DS.Icon.sizeSmall, weight: .medium))
-                                    .foregroundStyle(.white)
-                                    .frame(width: DS.Icon.badgeSmall, height: DS.Icon.badgeSmall)
-                                    .background(Color(hex: item.colorHex))
-                                    .clipShape(Circle())
-
-                                GeometryReader { geo in
-                                    let barWidthRatio: CGFloat = 0.55
-                                    let barAreaWidth = geo.size.width * barWidthRatio
-                                    let totalBarWidth = max(4, barAreaWidth * (item.total / maxTotal))
-                                    let planLineX = barAreaWidth * (item.plannedAmount / maxTotal)
-
-                                    HStack(spacing: DS.Spacing.xs) {
-                                        ZStack(alignment: .leading) {
-                                            RoundedRectangle(cornerRadius: DS.Radius.xs)
-                                                .fill(Color.hotPink.gradient)
-                                                .frame(width: totalBarWidth)
-
-                                            // Plan dotted line
-                                            Path { path in
-                                                path.move(to: CGPoint(x: planLineX, y: 0))
-                                                path.addLine(to: CGPoint(x: planLineX, y: geo.size.height))
-                                            }
-                                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [3, 2]))
-                                            .foregroundStyle(.thPrimaryText.opacity(0.7))
-                                        }
-                                        .frame(width: totalBarWidth)
-
-                                        Text(YalaFormatter.axisK(item.total) + " (+" + YalaFormatter.axisK(item.deviation) + ")")
-                                            .font(DS.Typography.labelTiny)
-                                            .foregroundStyle(Color.hotPink)
-                                            .fixedSize()
-                                    }
-                                }
-                                .frame(height: DS.Icon.badgeSmall)
-                            }
-
-                            Text(item.name + " · Plan: " + appPreferences.currency(item.plannedAmount, currencyCode: currencyCode))
-                                .font(DS.Typography.captionSmall)
-                                .foregroundStyle(.thSecondaryText)
-                                .padding(.leading, DS.Icon.badgeSmall + DS.Spacing.sm)
-                        }
+                        deviationRow(item)
                     }
                 }
             }
         }
+    }
+
+    private func deviationRow(_ item: DeviationItem) -> some View {
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: item.iconName)
+                    .font(DS.Typography.label)
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(Color(hex: item.colorHex)))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                    Text(item.name)
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.thPrimaryText)
+                        .lineLimit(1)
+                    Text(L10n.UXL18.deviationLine(
+                        appPreferences.currency(item.total, currencyCode: currencyCode),
+                        appPreferences.currency(item.plannedAmount, currencyCode: currencyCode)
+                    ))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                }
+                Spacer(minLength: DS.Spacing.sm)
+                VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                    Text(L10n.UXL9.overLabel)
+                        .font(DS.Typography.captionSmall)
+                        .foregroundStyle(Color.overBudgetText)
+                    Text(appPreferences.currency(item.deviation, currencyCode: currencyCode))
+                        .font(DS.Typography.headline)
+                        .foregroundStyle(.thPrimaryText)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+            }
+            BudgetProgressBar(percentage: 100, color: "", isExceeded: true, simplified: true)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("cashflow_chart_deviation_row")
     }
 
     private var deviationCommentCard: some View {
@@ -628,6 +635,9 @@ struct CashFlowChartsSheet: View {
         return chartCard(
             title: L10n.CashFlowPlan.chartSavings,
             subtitle: L10n.CashFlowPlan.chartSavingsSubtitle,
+            kpiLabel: pastSavings.count >= 2
+                ? L10n.UXL18.savingsKPI(pastSavings.count, rangeText(pastSavings.map(\.date)))
+                : nil,
             kpiValue: pastSavings.count >= 2
                 ? appPreferences.currency(avgSavings, currencyCode: currencyCode)
                 : nil
@@ -709,7 +719,7 @@ struct CashFlowChartsSheet: View {
                         }
                     }
                 }
-                .frame(height: 180)
+                .modifier(AdaptiveChartFrame(base: 180))
             }
         }
     }
@@ -719,6 +729,7 @@ struct CashFlowChartsSheet: View {
     private func chartCard<Content: View>(
         title: String,
         subtitle: String? = nil,
+        kpiLabel: String? = nil,
         kpiValue: String?,
         @ViewBuilder content: () -> Content
     ) -> some View {
@@ -731,6 +742,14 @@ struct CashFlowChartsSheet: View {
                     Text(subtitle)
                         .font(DS.Typography.caption)
                         .foregroundStyle(.thSecondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                // L18-12: la cifra dice de qué es («Saldo a fin de febrero», «Promedio de 3 meses…»).
+                if let kpiLabel, kpiValue != nil {
+                    Text(kpiLabel)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.thSecondaryText)
+                        .padding(.top, DS.Spacing.xs)
                 }
                 if let kpi = kpiValue {
                     Text(kpi)
@@ -765,18 +784,39 @@ struct CashFlowChartsSheet: View {
     @ViewBuilder
     private func ruleCommentCard(_ comment: String) -> some View {
         if !comment.isEmpty {
-            HStack(alignment: .top, spacing: DS.Spacing.sm) {
+            // El aviso de la app (lienzo «Una sola Yala»): icono en su círculo y el texto al lado.
+            HStack(alignment: .top, spacing: DS.Spacing.md) {
                 Image(systemName: "lightbulb.fill")
-                    .foregroundStyle(.secondary)
                     .font(DS.Typography.subheadline)
+                    .foregroundStyle(theme.accent)
+                    .frame(width: 32, height: 32)
+                    .background(theme.accent.opacity(0.12), in: Circle())
+                    .accessibilityHidden(true)
                 Text(LocalizedStringKey(comment))
                     .font(DS.Typography.caption)
                     .foregroundStyle(.thPrimaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(DS.Spacing.md)
-            .solidCard()
+            .solidCard(padding: DS.Spacing.lg, radius: DS.Radius.lg)
         }
+    }
+
+    // MARK: - Períodos (L18-12)
+
+    /// «De agosto a febrero de 2027»: del primer al último mes con saldo.
+    private var projectionPeriodText: String {
+        let dates = projection.months.filter { $0.accumulatedBalance != nil }.map(\.date)
+        return dates.count >= 2 ? rangeText(dates) : L10n.CashFlowPlan.chartProjectionSubtitle
+    }
+
+    /// Del primer al último mes de `dates`.
+    private func rangeText(_ dates: [Date]) -> String {
+        guard let first = dates.min(), let last = dates.max() else { return "" }
+        return L10n.UXL18.periodRange(
+            CashFlowMonthSummaryLogic.monthName(first),
+            CashFlowMonthSummaryLogic.monthName(last)
+        )
     }
 
     // MARK: - Cached Data Builders
@@ -838,4 +878,15 @@ struct CashFlowChartsSheet: View {
         let isPast: Bool
     }
 
+}
+
+/// El alto adaptable de las gráficas de Tendencias (`AdaptiveChartHeight`), como modificador.
+private struct AdaptiveChartFrame: ViewModifier {
+    let base: CGFloat
+
+    func body(content: Content) -> some View {
+        AdaptiveChartHeight(base: base) { height in
+            content.frame(height: height)
+        }
+    }
 }

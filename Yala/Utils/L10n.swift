@@ -3240,6 +3240,8 @@ enum L10n {
         static var newPayment: String { ls("accessibility.newPayment", comment: "") }
         static var importingHint: String { ls("accessibility.importingHint", comment: "") }
         static func variationIncrease(_ value: String) -> String { String(format: ls("accessibility.variationIncrease %@", comment: ""), value) }
+        /// Un cambio que redondea a cero (UX 2.2 · L18-4): «Sin cambio», no «Aumento +0 %».
+        static var variationNoChange: String { ls("accessibility.variationNoChange", comment: "") }
         static func variationDecrease(_ value: String) -> String { String(format: ls("accessibility.variationDecrease %@", comment: ""), value) }
         static var processing: String { ls("accessibility.processing", comment: "") }
         static func removeTab(_ name: String) -> String { String(format: ls("accessibility.removeTab %@", comment: ""), name) }

@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "canon_version": "c1",
   "description": "SSOT of the Modo Nube cloud schema capability-set (I5). Per entity, the DOMAIN columns the iOS client understands, each declaring EXACTLY ONE of {\"safe\":true (independent field-level unit) | \"group_key\":<money|split|budget> (atomic coherence group, d.4bis)}. No silent safe-by-omission default: an unclassified column FAILS the parity build. Server-authored + identity columns are NOT listed (see server_only_columns / identity_columns). Append-only: a column never leaves nor changes its type/scale/group. A column added after launch declares \"since\": <the manifest_version that introduced it> (absent = 1); capability-set \"vN\" (header X-Yala-Capability-Set) is every column with since <= N, so a client that declares an older version never receives, writes nor hashes a newer column. The Worker advertises its manifest_version on /sync/pull and /sync/merkle and the iOS client declares the lower of both (SyncCapability.swift).",
   "server_only_columns": [
@@ -267,6 +267,12 @@
           "pg_type": "text[]",
           "format": "text_array",
           "safe": true
+        },
+        "amount_changes_raw": {
+          "pg_type": "text",
+          "format": "utf8",
+          "safe": true,
+          "since": 3
         },
         "category_ref": {
           "pg_type": "uuid",

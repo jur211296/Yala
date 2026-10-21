@@ -31,6 +31,10 @@ struct FinancialReportView: View {
     @Environment(\.yalaTheme) private var theme
     @Environment(\.scenePhase) private var scenePhase
 
+    /// Anchos de las columnas de la tabla (UX 2.2 · L18-3), escalados con el tamaño de texto.
+    @ScaledMetric(relativeTo: .caption) private var currentColumnWidth: CGFloat = 96
+    @ScaledMetric(relativeTo: .caption) private var changeColumnWidth: CGFloat = 56
+
     // MARK: - Queries
 
     @Query(sort: \TransactionItem.date, order: .reverse) private var transactions: [TransactionItem]
@@ -232,13 +236,15 @@ struct FinancialReportView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: DS.Spacing.xl) {
                 filterBar
+                comparisonHeader
                 GroupingChipsBar(state: $viewModel.groupingState)
                 accountCardGroupingPicker
 
                 if viewModel.hasData {
+                    allTimeCard
                     pivotTable
 
-                    // "Flujo neto" (= neto con signo) no aplica en Solo Gastos (sin ingresos);
+                    // «Te quedó» (= neto con signo) no aplica en Solo Gastos (sin ingresos);
                     // el comparativo de gasto ya está en la fila raíz "Gastos" del pivot.
                     if !sessionState.isExpensesOnlyMode {
                         NetFlowSummaryView(
@@ -246,7 +252,8 @@ struct FinancialReportView: View {
                             previousAmount: viewModel.netFlowPrevious,
                             variation: viewModel.netFlowVariation,
                             currencyCode: preferredCurrencyCode,
-                            showsComparison: viewModel.supportsComparison
+                            showsComparison: viewModel.supportsComparison,
+                            previousPeriodName: comparedPeriodName?.inSentence ?? ""
                         )
                     }
                 } else {
@@ -270,14 +277,45 @@ struct FinancialReportView: View {
         }
     }
 
+    private var pivotColumnWidths: PivotColumnWidths {
+        PivotColumnWidths(current: currentColumnWidth, change: changeColumnWidth)
+    }
+
+    /// El nombre del período que se mira («Octubre»).
+    private var currentPeriodName: ComparativeLabelsLogic.Name {
+        ComparativeLabelsLogic.currentName(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
+    }
+
+    /// El nombre del tramo con el que se compara («setiembre», «1–21 sept»); `nil` en «Todo el tiempo».
+    private var comparedPeriodName: ComparativeLabelsLogic.Name? {
+        guard viewModel.supportsComparison else { return nil }
+        return ComparativeLabelsLogic.comparedName(
+            period: viewModel.detailPeriod,
+            mode: sessionState.comparisonMode,
+            customRange: viewModel.customDateRange,
+            dataEnd: viewModel.currentDataEnd
+        )
+    }
+
     private var pivotTable: some View {
         LazyVStack(spacing: DS.Spacing.none) {
+            if comparedPeriodName != nil {
+                PivotHeaderRow(
+                    currentName: currentPeriodName.column,
+                    widths: pivotColumnWidths
+                )
+                Divider()
+            }
             ForEach(viewModel.flattenedRows) { row in
                 PivotRowView(
                     node: row.node,
                     level: row.level,
                     preferredCurrency: preferredCurrencyCode,
-                    showsComparison: viewModel.supportsComparison
+                    showsComparison: viewModel.supportsComparison,
+                    widths: pivotColumnWidths,
+                    currentPeriodName: currentPeriodName.inSentence,
+                    previousPeriodName: comparedPeriodName?.inSentence ?? "",
+                    previousPeriodColumnName: comparedPeriodName?.column ?? ""
                 )
 
                 if row.id != viewModel.flattenedRows.last?.id {
@@ -304,6 +342,7 @@ struct FinancialReportView: View {
                 transactions: transactions,
                 categories: categories,
                 scheduledPayments: scheduledPayments,
+                accounts: accounts,
                 currencyCode: preferredCurrencyCode
             )
         } else {
@@ -312,6 +351,7 @@ struct FinancialReportView: View {
                 transactions: transactions,
                 scheduledPayments: scheduledPayments,
                 categories: categories,
+                accounts: accounts,
                 currencyCode: preferredCurrencyCode
             )
         }
@@ -321,51 +361,54 @@ struct FinancialReportView: View {
 
     @ToolbarContentBuilder
     private var reportToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Group {
-                if effectiveReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
-                    HStack(spacing: DS.Spacing.md) {
-                        Button {
-                            cashFlowViewModel.showChartsSheet = true
-                        } label: {
-                            Image(systemName: "chart.bar.xaxis")
-                                .font(DS.Typography.bodyBold)
-                                .foregroundStyle(.thToolbarIcon)
-                        }
-                        .accessibilityLabel(L10n.Accessibility.cashFlowChart)
-
-                        Menu {
-                            Button {
-                                showHorizonConfig = true
-                            } label: {
-                                Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
-                            }
-                            .accessibilityIdentifier("cashflow_configure_horizon")
-                            Divider()
-                            Button(role: .destructive) {
-                                showResetConfirmation = true
-                            } label: {
-                                Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
-                            }
-                            .accessibilityIdentifier("cashflow_reset_plan")
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .font(DS.Typography.bodyBold)
-                                .foregroundStyle(.thToolbarIcon)
-                        }
-                        .accessibilityIdentifier("cashflow_more_menu")
-                    }
-                } else if effectiveReportTab == .comparativa {
-                    Button {
-                        viewModel.showFiltersSheet = true
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .font(DS.Typography.bodyBold)
-                            .foregroundStyle(.thToolbarIcon)
-                    }
-                    .accessibilityLabel(L10n.Filters.title)
-                    .filterBadge(isActive: viewModel.activeFilterCount > 0)
+        // Lienzo «Una sola Yala» (Flujo de caja): las gráficas y «⋯» van cada uno en su botón, como en Registros, y no
+        // juntos en una sola cápsula.
+        if effectiveReportTab == .flujoDeCaja && cashFlowViewModel.hasPlan {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    cashFlowViewModel.showChartsSheet = true
+                } label: {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thToolbarIcon)
                 }
+                .accessibilityLabel(L10n.Accessibility.cashFlowChart)
+                .accessibilityIdentifier("cashflow_charts_button")
+            }
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        showHorizonConfig = true
+                    } label: {
+                        Label(L10n.CashFlowPlan.configureHorizon, systemImage: "calendar.badge.clock")
+                    }
+                    .accessibilityIdentifier("cashflow_configure_horizon")
+                    Divider()
+                    Button(role: .destructive) {
+                        showResetConfirmation = true
+                    } label: {
+                        Label(L10n.CashFlowPlan.resetPlan, systemImage: "arrow.counterclockwise")
+                    }
+                    .accessibilityIdentifier("cashflow_reset_plan")
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thToolbarIcon)
+                }
+                .accessibilityIdentifier("cashflow_more_menu")
+            }
+        } else if effectiveReportTab == .comparativa {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    viewModel.showFiltersSheet = true
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(DS.Typography.bodyBold)
+                        .foregroundStyle(.thToolbarIcon)
+                }
+                .accessibilityLabel(L10n.Filters.title)
+                .filterBadge(isActive: viewModel.activeFilterCount > 0)
             }
         }
 
@@ -398,8 +441,34 @@ struct FinancialReportView: View {
             animationValue: viewModel.detailPeriod,
             onFilterChange: { scheduleRecalculate() }
         ) {
-            if showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod) {
-                ComparisonModeSelector(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
+            EmptyView()
+        }
+    }
+
+    // MARK: - Con qué se compara (L18-3) y «Todo el tiempo» (L18-2)
+
+    /// «Octubre comparado con setiembre» y los dos chips en palabras. En la Comparativa sustituye a la frase-menú de
+    /// Estadísticas (decisión de la variante 3: frase arriba y chips).
+    @ViewBuilder
+    private var comparisonHeader: some View {
+        if let compared = comparedPeriodName {
+            ReportComparisonHeader(
+                heading: ComparativeLabelsLogic.heading(current: currentPeriodName, compared: compared),
+                showsChips: showVariations && PreviousPeriodHelper.isSelectorVisible(for: viewModel.detailPeriod),
+                previousTitle: ComparativeLabelsLogic.previousChipTitle(for: viewModel.detailPeriod),
+                yearAgoTitle: L10n.UXL18.chipYearAgo(
+                    ComparativeLabelsLogic.yearAgoChipName(period: viewModel.detailPeriod, customRange: viewModel.customDateRange)
+                )
+            )
+        }
+    }
+
+    /// En «Todo el tiempo» no hay nada con qué comparar: una tarjeta lleva en un toque a un mes que sí lo tiene.
+    @ViewBuilder
+    private var allTimeCard: some View {
+        if viewModel.detailPeriod == .allTime {
+            ReportAllTimeCompareCard { period in
+                viewModel.detailPeriod = period
             }
         }
     }

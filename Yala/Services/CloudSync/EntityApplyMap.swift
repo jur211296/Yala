@@ -671,6 +671,7 @@ enum EntityApplyMap {
             "estimation_method": Apply.stringReq(\.estimationMethod),
             "manual_amount": Apply.moneyOpt(\.manualAmount),
             "custom_months_raw": Apply.csvOpt(\.customMonthsRaw),
+            "amount_changes_raw": Apply.textOpt(\.amountChangesRaw),
             "category_ref": ColumnApplier { m, v, ctx in
                 m.category = try resolveRef(v, entity: "cashflow_lines", column: "category_ref",
                                         rowSyncID: m.id, context: ctx) {
