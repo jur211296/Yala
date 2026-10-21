@@ -28,7 +28,7 @@
 //  `GroupsSignInView` sería justo la regla (4) de Presentaciones —dos anchors ante el mismo flujo— con el
 //  agravante de que el paso siguiente se monta desde aquí.
 //
-//  Cover y no sheet, como su hermano `GroupsOrganizerNameView`: es un paso de una cadena que ya salió del
+//  Cover y no sheet, como su hermano, el formulario del primer grupo de `ContentView` (L12-12): es un paso de una cadena que ya salió del
 //  Welcome, así que debajo no hay shell. Su blocker `groupsEducational` está en la matriz de readiness.
 //
 
@@ -95,7 +95,9 @@ struct GroupsBackendInviteModifier: ViewModifier {
                 // presentación siguiente (que es el sign-in, de este mismo anchor).
                 RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
             }) {
-                GroupsOnboardingView { result in
+                // L12-12: esta rama ya eligió crear un grupo, así que el educativo arranca en su Step 3, que desde L12-4 es el
+                // consentimiento. Los dos primeros contaban qué es un grupo a quien acababa de decir que quería uno.
+                GroupsOnboardingView(consentPath: "organizer", startsAtConsent: true) { result in
                     switch result {
                     case .complete, .completeAndSignIn:
                         // Los dos casos son el MISMO aquí, y no por descuido: el paso siguiente de ESTA
@@ -261,6 +263,8 @@ struct GroupsBackendInviteModifier: ViewModifier {
             // sign-in, antes de `startIfEligible` — ver allí el porqué completo.
             continueFlow()
         case .adoptAsCompleteAndOpenGroups:
+            // L12-11 · el recorrido sigue por la adopción de la cuenta completa, no por el formulario.
+            Self.dropCreateIntent()
             onAdoptCompleteAccount()
         case .blockedAccountIsComplete:
             showGroupsAccountIsCompleteBlock = true
@@ -278,9 +282,21 @@ struct GroupsBackendInviteModifier: ViewModifier {
     /// Cancel: para el invitado es un no-op (su intent persiste, TTL 7 d); para el organizador es la
     /// vuelta al Welcome.
     private func handleCancel() {
+        // L12-11 · cancelar la cuenta o el consentimiento retira la intención de crear (y el gasto que esperaba al grupo,
+        // L13-8): la persona decidió no seguir, y un formulario que saltara más tarde sería otra sorpresa.
+        Self.dropCreateIntent()
         guard groupsOrganizerFlowActive else { return }
         groupsOrganizerFlowActive = false
         onGroupsOrganizerCancelled()
+    }
+
+    /// L12-11/L13-8 · retira la intención de crear y el gasto que esperaba al grupo en TODAS las ventanas: los arma la
+    /// ventana donde se tocó, que con varias (iPad) no tiene por qué ser la líder que presenta la cadena.
+    private static func dropCreateIntent() {
+        for window in SceneRegistry.shared.allNavigations {
+            window.pendingCreateGroupAfterIdentity = false
+            window.pendingExpenseAfterNewGroup = false
+        }
     }
 
     private func continueFlow() {
@@ -294,7 +310,21 @@ struct GroupsBackendInviteModifier: ViewModifier {
         // `!isEmpty` además de `let`: el intent de re-ofrecer el sign-in tras el bloqueo puede llegar sin
         // zona (crear un grupo desde el tab), y el drain la asigna tal cual ⇒ `pendingGroupsJoinZone` pasa
         // de `nil` a `""`. Sin este término, la continuación llamaría al handler con una zona vacía.
-        guard let zone = pendingGroupsJoinZone, !zone.isEmpty else { return }
+        // UX 2.2 · L12-11 (decisión B de Jürgen): se venía a crear un grupo. La pestaña vuelve a pedir el formulario por
+        // el choke-point de siempre (`requestCreateGroup`), que re-decide con condiciones vivas: si aún falta el
+        // consentimiento lo pide (y vuelve a armar la intención), y si ya está todo, abre el formulario. Se consume
+        // AQUÍ, antes de pedirlo, para que una cadena que no avanza no pueda quedarse dando vueltas.
+        guard let zone = pendingGroupsJoinZone, !zone.isEmpty else {
+            // Sin invitación detrás (la invitación manda: su zona es lo primero que se mira).
+            // La intención la armó la ventana donde se tocó «Crear grupo», y este modificador vive en la líder (es la
+            // que drena la cuenta y el consentimiento): se busca en todas y el formulario se pide en ESA.
+            if let origin = SceneRegistry.shared.allNavigations.first(where: \.pendingCreateGroupAfterIdentity) {
+                origin.pendingCreateGroupAfterIdentity = false
+                origin.selectMainTab(.groups)
+                origin.pendingNewGroupForm = true
+            }
+            return
+        }
         Task { @MainActor in
             await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
         }

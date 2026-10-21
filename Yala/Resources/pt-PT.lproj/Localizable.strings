@@ -418,10 +418,6 @@
 "groups.onboarding.step2.title" = "Três passos, zero folhas de cálculo";
 "groups.onboarding.step3.cta" = "Ir para Grupos";
 "groups.onboarding.step3.signInCTA" = "Iniciar sessão";
-"groups.onboarding.step3.point1" = "Cada membro precisa de uma conta Yala.";
-"groups.onboarding.step3.point2" = "Os teus dados pessoais não são sincronizados com o grupo, apenas as despesas partilhadas.";
-"groups.onboarding.step3.subtitle" = "Só partilhas o necessário, mais nada.";
-"groups.onboarding.step3.title" = "A tua privacidade em primeiro lugar";
 "groups.settings.addMember" = "Adicionar membro";
 "groups.settings.addMemberPrompt" = "Nome do membro";
 "groups.settings.archive" = "Arquivar grupo";
@@ -1539,7 +1535,6 @@
 "groups.globalSettings.visibilityCaption" = "Escolhe se os registos de grupos aparecem no teu Painel, estatísticas e Registos.";
 "groups.globalSettings.visibilitySectionTitle" = "Visibilidade";
 "groups.onboarding.step2.bridgeAwareness" = "Quando você paga uma despesa, também a registramos na sua conta pessoal automaticamente — para que seu saldo sempre reflita a realidade.";
-"groups.onboarding.step3.bridgeAwareness" = "Você pode mudar este comportamento em Ajustes de Grupos.";
 "groups.settings.personalIntegrationHintBlockedByGlobal" = "Para ativar esta opção aqui, ative primeiro em Ajustes de Grupos.";
 "groups.settings.personalIntegrationHintInheritOn" = "Herda do seu ajuste geral (Ativado).";
 "groups.settings.personalIntegrationHintLocalOff" = "Só neste grupo: desativado.";
@@ -4050,7 +4045,7 @@
 "groups.consent.point1" = "Os grupos são partilhados por natureza: vivem na nuvem do Yala para que todos vejam as mesmas despesas, sempre em dia.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Com o grupo só se partilha o mínimo: o teu alias e as despesas do grupo. Os outros membros não veem o teu e-mail.";
+"groups.consent.point2" = "Com o grupo só se partilha o mínimo: o teu nome e as despesas do grupo. Os outros membros não veem o teu e-mail.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "As tuas finanças pessoais não se movem: ficam onde escolheste, privadas como sempre.";
@@ -4632,14 +4627,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "Voltar";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "Como te chamas?";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "É o nome que os outros vão ver no grupo.";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "Criar o meu grupo";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "Como funcionam os grupos?";
@@ -4652,12 +4643,10 @@
 "groups.empty.createAccount.action" = "Criar a minha conta";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "Um último passo";
+"groups.empty.needsConsent.title" = "Aceita como os teus grupos são guardados";
 "groups.empty.needsConsent.message" = "Dizemos-te o que fica guardado na nuvem da Yala e tu decides.";
-"groups.empty.needsConsent.action" = "Continuar";
+"groups.empty.needsConsent.action" = "Ver e aceitar";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "As despesas que registas num grupo ficam guardadas nos servidores da Yala, para que todos as vejam atualizadas.";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Criar a minha conta";
@@ -7253,3 +7242,35 @@
 
 /* Título del diálogo de borrar un gasto de grupo sin descripción. */
 "groups.expense.deleteTitleUnnamed" = "Eliminar este gasto?";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "Se não quiseres, desativa em Ajustes de Grupos.";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "Se já tens conta, entras; se não, é criada.";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "Ex.: Viagem a Cusco";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "Menos pagamentos entre vocês";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "A Yala junta as dívidas para que haja menos transferências.";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "Tudo numa moeda";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "Como costumam dividir";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "O teu nome no grupo";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "Para dividir uma despesa, cria primeiro um grupo";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "Agora regista a despesa";

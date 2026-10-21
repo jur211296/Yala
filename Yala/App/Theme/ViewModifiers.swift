@@ -595,7 +595,7 @@ struct GroupsOnboardingSheetModifier: ViewModifier {
             signInRequested = false
             onRequestSignIn()
         }) {
-            GroupsOnboardingView { result in
+            GroupsOnboardingView(consentPath: "tab") { result in
                 switch result {
                 case .complete:
                     onPersistFlag()

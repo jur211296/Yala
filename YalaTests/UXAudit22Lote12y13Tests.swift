@@ -246,8 +246,14 @@ struct UXAudit22Lote12y13WiringTests {
         // Si la persona cerró el formulario mientras se guardaba, su `onDismiss` ya pasó: la hoja se abre en el acto.
         let receive = try #require(tab.components(separatedBy: "private func receiveCreatedGroup(_ group: SplitGroup) {").dropFirst().first)
         let receiveBody = receive.components(separatedBy: "\n    }").first ?? ""
-        #expect(receiveBody.contains("if viewModel.showCreateGroup {"))
-        #expect(receiveBody.contains("groupReadyToInvite = group"))
+        // Desde L13-8 (2026-10-21) la decisión entre la hoja de invitar y el gasto que esperaba al grupo vive en UN sitio,
+        // `presentCreatedGroupInviteIfPending`: el formulario apunta el grupo y, si ya se cerró, se decide en el acto.
+        #expect(receiveBody.contains("groupAwaitingInviteSheet = group"))
+        #expect(receiveBody.contains("if !viewModel.showCreateGroup {"))
+        #expect(receiveBody.contains("presentCreatedGroupInviteIfPending()"))
+        let present = try #require(tab.components(separatedBy: "private func presentCreatedGroupInviteIfPending() {").dropFirst().first)
+        let presentBody = present.components(separatedBy: "\n    }").first ?? ""
+        #expect(presentBody.contains("groupReadyToInvite = created"))
         let formSheet = try #require(tab.components(separatedBy: ".sheet(isPresented: $viewModel.showCreateGroup, onDismiss: {").dropFirst().first)
         let onDismissBody = formSheet.components(separatedBy: "}) {").first ?? ""
         #expect(onDismissBody.contains("presentCreatedGroupInviteIfPending()"))

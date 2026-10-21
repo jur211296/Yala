@@ -69,6 +69,8 @@ struct GroupExpenseFormView: View {
     let memberNameLookup: [String: String]
     /// Chip de contexto de grupo debajo del segmented control. Default `.hidden`.
     let groupChip: GroupContextChipMode
+    /// L13-8 · aviso arriba del formulario («Ahora apunta el gasto») cuando se abre justo después de crear el grupo.
+    let notice: String?
     let expenseToEdit: SplitExpense?
     let existingShares: [SplitShare]
     let onSave: () -> Void
@@ -147,6 +149,7 @@ struct GroupExpenseFormView: View {
         members: [SplitMember],
         memberNameLookup: [String: String],
         groupChip: GroupContextChipMode = .hidden,
+        notice: String? = nil,
         expenseToEdit: SplitExpense? = nil,
         existingShares: [SplitShare] = [],
         initialTemplate: GroupExpensePrefillTemplate? = nil,
@@ -159,6 +162,7 @@ struct GroupExpenseFormView: View {
         self.members = members
         self.memberNameLookup = memberNameLookup
         self.groupChip = groupChip
+        self.notice = notice
         self.expenseToEdit = expenseToEdit
         self.existingShares = existingShares
         self.initialTemplate = initialTemplate
@@ -196,10 +200,33 @@ struct GroupExpenseFormView: View {
         }
     }
 
+    /// L13-8 (decisión B de Jürgen): el grupo se acaba de crear para esto, y el formulario lo dice.
+    private func noticeBanner(_ text: String) -> some View {
+        HStack(spacing: DS.Spacing.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Color.electricIndigo)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(DS.Typography.subheadline.weight(.semibold))
+                .foregroundStyle(.thPrimaryText)
+            Spacer(minLength: 0)
+        }
+        .padding(DS.Spacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .solidCard(padding: 0, radius: DS.Radius.lg)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("group_expense_notice")
+    }
+
     private var formView: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
+                    if let notice {
+                        noticeBanner(notice)
+                            .padding(.horizontal, DS.Spacing.lg)
+                    }
+
                     centralContent
                         .padding(.horizontal, DS.Spacing.lg)
 

@@ -4265,14 +4265,9 @@
 "groups.onboarding.step2.card3.body" = "支払いを完了してゼロに戻します。議論もExcelも不要です。";
 
 "groups.onboarding.step2.bridgeAwareness" = "支出を支払うと、個人の口座にも自動的に記録します。残高が常に実態を反映するようにするためです。";
-"groups.onboarding.step3.title" = "プライバシーを第一に";
-"groups.onboarding.step3.subtitle" = "必要な情報だけを共有します。";
-"groups.onboarding.step3.point1" = "メンバー全員にYalaアカウントが必要です。";
-"groups.onboarding.step3.point2" = "個人データはグループと同期されません。共有された支払いのみが同期されます。";
 "groups.onboarding.step3.cta" = "グループへ";
 "groups.onboarding.step3.signInCTA" = "サインイン";
 
-"groups.onboarding.step3.bridgeAwareness" = "この動作はグループ設定で変更できます。";
 
 // MARK: FU-02-reconnect
 "groups.reconnect.deletedForAll.title" = "%@は削除されました";
@@ -4771,7 +4766,7 @@
 "groups.consent.point1" = "グループはもともと共有のもの。全員が同じ支出を最新の状態で見られるよう、Yalaのクラウドに保存されます。";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "グループと共有されるのは最小限だけ：あなたのニックネームとグループの支出。ほかのメンバーにメールアドレスは表示されません。";
+"groups.consent.point2" = "グループと共有されるのは最小限だけ：あなたの名前とグループの支出。ほかのメンバーにメールアドレスは表示されません。";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "あなた個人の家計データは動きません。選んだ場所に、これまでどおりプライベートなまま残ります。";
@@ -5353,14 +5348,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "戻る";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "お名前は？";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "グループのみんなに表示される名前です。";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "グループを作成";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "グループの仕組み";
@@ -5373,12 +5364,10 @@
 "groups.empty.createAccount.action" = "アカウントを作成";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "あと1ステップ";
+"groups.empty.needsConsent.title" = "グループの保存方法に同意する";
 "groups.empty.needsConsent.message" = "Yalaのクラウドに何が保存されるかをお伝えします。決めるのはあなたです。";
-"groups.empty.needsConsent.action" = "続ける";
+"groups.empty.needsConsent.action" = "確認して同意";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "グループに記録した支出はYalaのサーバーに保存され、全員が最新の状態で確認できます。";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "アカウントを作成";
@@ -7938,3 +7927,35 @@
 
 /* Título del diálogo de borrar un gasto de grupo sin descripción. */
 "groups.expense.deleteTitleUnnamed" = "この支出を削除しますか？";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "不要なら、グループ設定でオフにできます。";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "アカウントがあればログインし、なければ作成されます。";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "例：クスコ旅行";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "メンバー間の支払いを減らす";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yalaが借りをまとめて、送金の回数を減らします。";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "すべてを1つの通貨で";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "いつもの分け方";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "グループでのあなたの名前";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "支出を分けるには、まずグループを作成してください";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "では支出を入力しましょう";

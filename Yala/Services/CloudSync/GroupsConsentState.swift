@@ -40,15 +40,21 @@
 import Foundation
 
 /// La caché local del consent, sellada con la cuenta a la que pertenece.
-struct GroupsConsentSnapshot: Codable, Equatable, Sendable {
-    /// El `sub` de la cuenta que aceptó. `nil` SOLO en dos casos legítimos: el consent adoptado de un build
-    /// anterior a C1 (que se escribía sin identidad ninguna) y el seam `-uitest-groups-consent`. En cuanto
-    /// hay sesión, `adoptLegacyIfNeeded` lo re-sella.
+nonisolated struct GroupsConsentSnapshot: Codable, Equatable, Sendable {
+    /// El `sub` de la cuenta que aceptó. `nil` en tres casos legítimos: el consent adoptado de un build anterior a
+    /// C1 (que se escribía sin identidad ninguna), el seam `-uitest-groups-consent` y, desde UX 2.2 · L12-4, el que se
+    /// acepta en el paso 3 del educativo antes de iniciar sesión. En cuanto hay sesión, `adoptLegacyIfNeeded` lo
+    /// re-sella; en una frontera de persona lo retira `removeUnsealedSnapshot`.
     var userID: String?
     /// Versión del texto que se aceptó (`GroupsConsentText.version` en el instante de aceptar).
     var textVersion: Int
     /// La hora de la ACEPTACIÓN. Jamás la del reintento que consiguió red.
     var acceptedAt: Date
+    /// Por dónde se aceptó (`tab` | `organizer` | …), solo mientras el snapshot va SIN sello: desde UX 2.2 · L12-4 el
+    /// paso 3 del educativo acepta antes de iniciar sesión, y el registro contra la cuenta lo arma después
+    /// `adoptLegacyIfNeeded`. Sin esto llegaba al servidor como «adopt-legacy», indistinguible de una migración real.
+    /// Opcional: los snapshots escritos antes decodifican igual.
+    var path: String? = nil
 }
 
 /// El consent local del DUEÑO, dormido mientras hay una visita usando el teléfono.
@@ -163,6 +169,25 @@ enum GroupsConsentState {
         defaults.removeObject(forKey: legacyAcceptedAtKey)
         defaults.removeObject(forKey: legacyTextVersionKey)
         NotificationCenter.default.post(name: didChangeNotification, object: nil)
+    }
+
+    /// UX 2.2 · L12-4 · retira el snapshot SIN sello en una frontera de persona («Empezar desde cero», relevo del dominio
+    /// de Grupos). Hasta L12-4 un snapshot sin sello solo podía venir del formato legacy o del seam de UI tests; desde
+    /// entonces lo deja también quien acepta en el paso 3 del educativo sin llegar a iniciar sesión, y al no llevar
+    /// sello la regla «manda el sello» no lo frena: la persona siguiente lo vería aceptado y, al entrar, se le
+    /// atribuiría. El sellado no se toca (lo protege su sello) ni las keys legacy (residual previo, sin cambio).
+    nonisolated static func removeUnsealedSnapshot(in defaults: UserDefaults) {
+        guard let data = defaults.data(forKey: snapshotKey) else { return }
+        do {
+            let snapshot = try JSONDecoder().decode(GroupsConsentSnapshot.self, from: data)
+            guard snapshot.userID == nil else { return }
+        } catch {
+            // Ilegible: tampoco prueba de quién es. Se retira, que es el lado que no atribuye nada a nadie.
+            #if DEBUG
+            print("GroupsConsentState: snapshot ilegible en la frontera, se retira: \(error)")
+            #endif
+        }
+        defaults.removeObject(forKey: snapshotKey)
     }
 
     /// ¿Hay algún rastro local de consent? Lo usa el gate del boot-cleanup del wipe de sign-out, que tiene

@@ -957,6 +957,9 @@ final class DataWipeService {
     /// dejaría al proceso vivo operando con la identidad cacheada del usuario anterior).
     static func removeGroupsDomainPreferenceKeys(from defaults: UserDefaults) {
         defaults.removeObject(forKey: AppPreferences.Keys.groupsBetaUnlocked)
+        // UX 2.2 · L12-4: el consentimiento que la persona anterior aceptó en el educativo sin llegar a iniciar sesión no
+        // lleva sello, así que nada más impediría que se atribuyera a quien entre después.
+        GroupsConsentState.removeUnsealedSnapshot(in: defaults)
 
         // Toggles personales de visibilidad/bridge y one-shots de Grupos: `removeUserPreferenceKeys`
         // ya los barre en todo wipe, pero este camino también corre sin él en algún futuro caller —

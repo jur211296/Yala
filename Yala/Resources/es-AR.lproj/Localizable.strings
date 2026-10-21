@@ -436,7 +436,6 @@
 "groups.onboarding.step2.card1.body" = "Familia, amigos, viajes o trabajo. Tantos grupos como necesités.";
 "groups.onboarding.step2.card2.body" = "Elegí cómo se divide cada gasto. Yala calcula quién debe qué.";
 "groups.onboarding.step2.card3.body" = "Apuntá los pagos y dejá todo en cero. Sin discusiones, sin Excel.";
-"groups.onboarding.step3.subtitle" = "Solo compartís lo necesario, nada más.";
 
 // MARK: FU-02-voseo
 "groups.settings.deleteGroupDisabledHint" = "Saldá las deudas pendientes antes de eliminar";
@@ -462,7 +461,7 @@
 "groups.balance.pending" = "Pendiente";
 "groups.balance.pendingDebts" = "Deudas pendientes";
 "groups.balance.settlements" = "Pagos";
-"groups.balance.title" = "Balances";
+"groups.balance.title" = "Saldos";
 "groups.bridge.alertTitle" = "Hubo un problema con el grupo";
 "groups.bridge.deactivationOptionDelete" = "Eliminar de mis cuentas";
 "groups.bridge.deactivationOptionFreeze" = "Mantener como histórico";
@@ -479,7 +478,7 @@
 "groups.card.leaveGroupAlertTitle" = "¿Salir del grupo?";
 "groups.card.pendingApprovalChip" = "Esperando aprobación";
 "groups.card.rejectedChip" = "Solicitud rechazada";
-"groups.detail.balances" = "Balances";
+"groups.detail.balances" = "Saldos";
 "groups.detail.comingSoon" = "Próximamente";
 "groups.detail.records" = "Gastos";
 "groups.detail.stats" = "Estadísticas";
@@ -592,12 +591,8 @@
 "groups.onboarding.step2.card3.title" = "Saldá deudas con un par de toques";
 "groups.onboarding.step2.subtitle" = "Yala divide, registra y salda por vos.";
 "groups.onboarding.step2.title" = "Tres pasos, cero hojas de cálculo";
-"groups.onboarding.step3.bridgeAwareness" = "Puedes cambiar este comportamiento en Ajustes de Grupos.";
 "groups.onboarding.step3.cta" = "Ir a Grupos";
 "groups.onboarding.step3.signInCTA" = "Iniciar sesión";
-"groups.onboarding.step3.point1" = "Cada miembro entra con su cuenta de Yala.";
-"groups.onboarding.step3.point2" = "Tu información personal no se sincroniza con el grupo, solo los gastos compartidos.";
-"groups.onboarding.step3.title" = "Tu privacidad, primero";
 "groups.reconnect.deletedForAll.body" = "Este grupo fue eliminado por su creador.";
 "groups.reconnect.deletedForAll.cta" = "Entendido";
 "groups.reconnect.deletedForAll.title" = "%@ fue eliminado";
@@ -4045,7 +4040,7 @@
 "groups.consent.point1" = "Los grupos son compartidos por naturaleza: viven en la nube de Yala para que todos vean los mismos gastos, al día.";
 
 /* G4 consent point 2 */
-"groups.consent.point2" = "Con el grupo solo se comparte lo mínimo: tu alias y los gastos del grupo. Los demás miembros no ven tu correo.";
+"groups.consent.point2" = "Con el grupo solo se comparte lo mínimo: tu nombre y los gastos del grupo. Los demás miembros no ven tu correo.";
 
 /* G4 consent point 3 */
 "groups.consent.point3" = "Tus finanzas personales no se mueven: siguen donde vos elegiste, privadas como siempre.";
@@ -4627,14 +4622,10 @@
 /* G3 gate: CTA de las pantallas de bloqueo */
 "welcome.groups.gateBack" = "Volver";
 
-/* G3: pantalla de nombre del organizador */
-"welcome.groups.nameTitle" = "¿Cómo te llamás?";
 
 /* G3: cuerpo de la pantalla de nombre */
 "welcome.groups.nameBody" = "Es el nombre que van a ver los demás en el grupo.";
 
-/* G3: CTA del alta del organizador */
-"welcome.groups.nameCta" = "Crear mi grupo";
 
 /* C2 · empty state cuando aún no vio el educativo */
 "groups.empty.needsEducational.title" = "¿Cómo funcionan los grupos?";
@@ -4647,12 +4638,10 @@
 "groups.empty.createAccount.action" = "Crear mi cuenta";
 
 /* C2 · empty state con sesión viva y sin consent */
-"groups.empty.needsConsent.title" = "Un último paso";
+"groups.empty.needsConsent.title" = "Aceptá cómo se guardan tus grupos";
 "groups.empty.needsConsent.message" = "Te contamos qué se guarda en la nube de Yala y tú decides.";
-"groups.empty.needsConsent.action" = "Continuar";
+"groups.empty.needsConsent.action" = "Ver y aceptar";
 
-/* C2 · el hecho sustantivo, antes de pedir identidad */
-"groups.onboarding.step3.point0" = "Los gastos que apuntes en un grupo se guardan en los servidores de Yala, para que todos los vean al día.";
 
 /* C2 · variante del CTA para quien nunca tuvo cuenta */
 "groups.onboarding.step3.createAccountCTA" = "Crear mi cuenta";
@@ -7257,3 +7246,35 @@
 
 /* Título del diálogo de borrar un gasto de grupo sin descripción. */
 "groups.expense.deleteTitleUnnamed" = "¿Eliminar este gasto?";
+
+/* ── Lote decidido 2.2 · 13 · Grupos: crear (2026-10-21) ── */
+
+/* L12-6 · tras la nota del registro personal del paso 2 del educativo. */
+"groups.d13.bridgeOff" = "Si no lo querés, se apaga en Ajustes de Grupos.";
+
+/* L12-7 · bajo «Continuar con Apple/Google»: los dos entran o crean la cuenta. */
+"groups.d13.signin.eitherWay" = "Si ya tenés cuenta, entrás; si no, se crea.";
+
+/* L12-9 · ejemplo en el nombre del grupo nuevo. */
+"groups.d13.form.namePlaceholder" = "Ej.: Viaje a Cusco";
+
+/* L12-9 · «Simplificar deudas» con palabras de persona, en «Más opciones». */
+"groups.d13.form.simplify" = "Menos pagos entre ustedes";
+
+/* L12-9 · qué hace «Menos pagos entre ustedes». */
+"groups.d13.form.simplifyHint" = "Yala junta las deudas para que haya menos transferencias.";
+
+/* L12-9 · «Moneda única para deudas» con palabras de persona. */
+"groups.d13.form.singleCurrency" = "Todo en una moneda";
+
+/* L12-9 · «División predeterminada» con palabras de persona. */
+"groups.d13.form.splitType" = "Cómo se reparte casi siempre";
+
+/* L12-12 · el nombre de la persona dentro del formulario de su primer grupo. */
+"groups.d13.form.yourName" = "Tu nombre en el grupo";
+
+/* L13-8 · «Grupo» del botón + sin ningún grupo. */
+"groups.d13.fab.noGroupsTitle" = "Para dividir un gasto, primero creá un grupo";
+
+/* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
+"groups.d13.expense.nowNotice" = "Ahora anotá el gasto";

@@ -696,22 +696,32 @@ struct ContentView: View {
         // se apaga en vez de quedarse colgada esperando un paso que nadie va a dar.
         .fullScreenCover(isPresented: $showGroupsOrganizerName, onDismiss: {
             // La continuación corre AQUÍ y no en el callback de éxito (contrato C7): con la dismissal ya
-            // terminada, lo que el drain presente a continuación no se lo traga SwiftUI. Cancel (swipe,
-            // o UIKit tumbando el cover) ⇒ la rama se apaga y el usuario vuelve al Welcome, nunca a una
-            // pantalla muerta.
+            // terminada, lo que pase después no se lo traga SwiftUI. Cancel sin alta (swipe, la «X» o UIKit
+            // tumbando el cover) ⇒ la rama se apaga y el usuario vuelve al Welcome, nunca a una pantalla muerta.
             guard organizerSetupCompleted else {
                 groupsOrganizerFlowActive = false
                 returnToGroupsChooser()
                 return
             }
             organizerSetupCompleted = false
-            // El trío ya está escrito ⇒ el siguiente paso que decide la máquina es el formulario.
-            RouterEntryGate.shared.submit(.presentGroupsOrganizerStep)
+            // L12-12 · el alta ya está escrita y el formulario era el último paso: la rama termina aquí, en Grupos. Con
+            // el grupo creado, Grupos propone invitar (L12-10); si crear falló y la persona cerró, aterriza en su estado
+            // vacío con «Crear grupo», que ya no vuelve a pedir nada.
+            groupsOrganizerFlowActive = false
+            navigation.selectedMainTab = .groups
+            // La hoja de invitar ya está pedida (la pidió el `onCreated`); soltar esto es lo que la deja salir.
+            navigation.isWelcomeGroupFormOpen = false
         }) {
-            GroupsOrganizerNameView {
-                organizerSetupCompleted = true
-                showGroupsOrganizerName = false
-            }
+            // L12-12 (decisión B de Jürgen): el nombre de la persona va DENTRO del formulario del grupo, y este cover
+            // sustituye a «¿Cómo te llamas?», cuyo botón decía «Crear mi grupo» y abría otro formulario.
+            GroupFormView(
+                group: nil,
+                // Se pide en el acto, también si la persona cerró el formulario mientras se guardaba: la pestaña la
+                // presenta cuando el cover ya no está (`isWelcomeGroupFormOpen`).
+                onCreated: { navigation.pendingCreatedGroupInviteID = $0.id.uuidString },
+                isFirstGroupSetup: true,
+                onSetupCompleted: { organizerSetupCompleted = true }
+            )
             .environment(SessionState.shared)
         }
         .modifier(GroupInviteModifier(
@@ -1546,6 +1556,7 @@ struct ContentView: View {
             pendingGroupsJoinZone = nil
             showGroupsConsent = true
         case .presentName:
+            navigation.isWelcomeGroupFormOpen = true
             showGroupsOrganizerName = true
         case .presentGroupForm:
             // La rama termina aquí: el form lo abre `GroupsContainerView` al montar el tab (molde de
@@ -3391,7 +3402,7 @@ private struct WelcomeFlowModifier: ViewModifier {
                         //    actúa (su guard mira `showWelcomeFlow`).
                         //
                         // Lo que NO se hace aquí, y no por olvido: escribir el trío de solo-grupos. Lo
-                        // escribe `GroupsOrganizerNameView` al final de su cadena, que es quien tiene
+                        // escribe el formulario del primer grupo (L12-12) al final de su cadena, que es quien tiene
                         // permiso.
                         // **El desarme del boot-wipe de grupos, que este camino se saltaba.** Lo medido:
                         // «Salir de Yala en este dispositivo» arma `groupsOnlyWipeArmed` y reabre el
@@ -3505,6 +3516,9 @@ private struct WelcomeFlowModifier: ViewModifier {
             if WelcomeKeptGroupsLogic.freshStartRetiresThePreviousPerson(
                 groupsKeptForThisPerson: groupsKeptForThisPerson) {
                 OnboardingResetHelper.clearResidualPreferencesForFreshStart()
+                // UX 2.2 · L12-4: el consentimiento de Grupos que la persona anterior aceptó sin iniciar sesión no lleva
+                // sello: sin retirarlo aquí, se le atribuiría a quien entre después.
+                GroupsConsentState.removeUnsealedSnapshot(in: .standard)
                 // **Y la sesión en la nube se retira también por aquí.** Esta rama es la que declara «soy
                 // nuevo» cuando no hay NADA que borrar, así que no pasa por `wipeLocalGroupsDomain` y hasta
                 // el 2026-09-17 se iba al onboarding con la sesión de la persona anterior intacta — el

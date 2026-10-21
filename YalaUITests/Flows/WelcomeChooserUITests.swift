@@ -369,40 +369,32 @@ final class WelcomeChooserUITests: XCTestCase {
                       "La card «Crear mi primer grupo» no se pinta: ¿`onCreate` sin cablear?")
         createCard.tap()
 
-        // **C2 · la puerta abre y lo PRIMERO que sale es el educativo**, no el nombre. Antes de C2 esta
-        // rama pedía identidad sin haber contado nunca qué es un grupo ni dónde viven sus gastos.
+        // **C2 · la puerta abre y lo PRIMERO que sale es el educativo**, no el nombre. Desde UX 2.2 · L12-12 arranca en
+        // su Step 3 (esta rama ya eligió crear un grupo): un solo toque, y sin la «‹» de volver a pasos que no enseña.
         let educationalCTA = app.buttons["groups_onboarding_cta"]
         XCTAssertTrue(educationalCTA.waitForExistence(timeout: 20),
                       "La puerta no dejó pasar, o la rama no empieza por el educativo (C2).")
-        // Tres steps: dos «Continuar» y el cierre, que es el que marca `hasShownGroupsOnboarding` y deja
-        // que la cadena avance.
-        educationalCTA.tap()
-        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 5), "El educativo no avanzó al step 2.")
-        educationalCTA.tap()
-        XCTAssertTrue(educationalCTA.waitForExistence(timeout: 5), "El educativo no avanzó al step 3.")
+        XCTAssertTrue(app.buttons["groups_onboarding_privacy_link"].exists,
+                      "El educativo de esta rama no arrancó en su Step 3, el del consentimiento (L12-12).")
         educationalCTA.tap()
 
         // Y AHORA sí: con sesión y consent fingidos, la cadena se salta sign-in y consent por condiciones
-        // vivas ⇒ el siguiente paso es el nombre.
-        let nameField = app.textFields["groups_organizer_name_field"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 20),
-                      "Tras el educativo, la rama no llegó al paso del nombre.")
-        nameField.tap()
-        nameField.typeText("Ana")
-
-        let nameCTA = app.buttons["groups_organizer_name_cta"]
-        XCTAssertTrue(nameCTA.waitForExistence(timeout: 10), "No apareció el CTA del alta.")
-        nameCTA.tap()
-
-        // El desmontaje del campo es la señal de que el cover se fue de verdad — `exists` del fondo no
-        // probaría nada (`.claude/rules/testing.md`).
-        XCTAssertTrue(waitForNonExistence(of: nameField, timeout: 15),
-                      "El cover del nombre no se desmontó tras completar el alta.")
-
-        // Y el último paso: el formulario de grupo, directo, sin que el usuario haya tenido que buscarlo.
+        // vivas ⇒ el siguiente paso es el formulario del grupo, con el nombre de la persona DENTRO (L12-12).
+        let yourName = app.textFields["group_form_your_name_input"]
+        XCTAssertTrue(yourName.waitForExistence(timeout: 20),
+                      "Tras el educativo, la rama no llegó al formulario con «Tu nombre en el grupo».")
         let groupNameInput = app.textFields["group_form_name_input"]
-        XCTAssertTrue(groupNameInput.waitForExistence(timeout: 20),
-                      "El alta terminó pero el formulario de grupo no se abrió solo.")
+        XCTAssertTrue(groupNameInput.exists, "El formulario no trae el nombre del grupo junto al de la persona.")
+
+        // Sin el nombre de la persona no se crea (antes se dejaba y los demás te veían como «Usuario»).
+        let save = app.buttons["group_form_save"]
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "No apareció el botón de crear.")
+        groupNameInput.tap()
+        groupNameInput.typeText("Depa Miraflores")
+        XCTAssertFalse(save.isEnabled, "Con el nombre del grupo pero sin el de la persona, «crear» tiene que estar apagado.")
+        yourName.tap()
+        yourName.typeText("Ana")
+        XCTAssertTrue(save.waitUntilEnabledForWelcome(timeout: 5), "Con los dos nombres, «crear» tiene que encenderse.")
     }
 
     /// **Tras un borrado de arranque que no pudo borrar, la puerta de Grupos lo dice y NO vuelve a armar** (ticket
@@ -551,5 +543,12 @@ final class WelcomeChooserUITests: XCTestCase {
         XCTAssertTrue(note.exists, "Falta «La que usaste en este iPhone».")
         XCTAssertGreaterThan(note.frame.minY, google.frame.minY, "La nota va bajo el botón de Google…")
         XCTAssertLessThan(note.frame.minY, apple.frame.minY, "…y antes del de Apple.")
+    }
+}
+
+private extension XCUIElement {
+    func waitUntilEnabledForWelcome(timeout: TimeInterval) -> Bool {
+        let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isEnabled == true"), object: self)
+        return XCTWaiter().wait(for: [enabled], timeout: timeout) == .completed
     }
 }
