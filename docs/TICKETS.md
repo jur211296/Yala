@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1007)
+## Index (1010)
 
 | id | status | path |
 |---|---|---|
@@ -910,9 +910,11 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | siri-ai-content-in-spotlight-and-pro-decision | backlog | tickets/backlog/siri-ai-content-in-spotlight-and-pro-decision.md |
 | siri-ai-integration-ios-27 | qa | tickets/qa/siri-ai-integration-ios-27.md |
 | siri-ai-visual-redesign | discarded | tickets/discarded/siri-ai-visual-redesign.md |
+| siri-free-users-on-device-model-awaits-decision | backlog | tickets/backlog/siri-free-users-on-device-model-awaits-decision.md |
 | siri-intent-dual-container | done | tickets/done/siri-intent-dual-container.md |
 | siri-phrases-shown-in-portuguese-do-not-trigger-siri | qa | tickets/qa/siri-phrases-shown-in-portuguese-do-not-trigger-siri.md |
-| siri-settings-screen-lists-phrases-siri-does-not-know | backlog | tickets/backlog/siri-settings-screen-lists-phrases-siri-does-not-know.md |
+| siri-settings-screen-does-not-show-the-new-questions | backlog | tickets/backlog/siri-settings-screen-does-not-show-the-new-questions.md |
+| siri-settings-screen-lists-phrases-siri-does-not-know | qa | tickets/qa/siri-settings-screen-lists-phrases-siri-does-not-know.md |
 | siri-shortcut-error-replies-speak-english-on-a-spanish-iphone | done | tickets/done/siri-shortcut-error-replies-speak-english-on-a-spanish-iphone.md |
 | small-screen-leftovers-after-the-iphone-se-audit | backlog | tickets/backlog/small-screen-leftovers-after-the-iphone-se-audit.md |
 | smart-ai-notifications | backlog | tickets/backlog/smart-ai-notifications.md |
@@ -1046,6 +1048,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | done | tickets/done/wire-decoder-accepts-non-finite-money.md |
+| worktree-stamp-reads-a-staged-rename-as-a-code-change | backlog | tickets/backlog/worktree-stamp-reads-a-staged-rename-as-a-code-change.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | xcode-27-1-with-the-iphone-duo-simulator | backlog | tickets/backlog/xcode-27-1-with-the-iphone-duo-simulator.md |
 | xcode-project-config-json-format-when-27-2-stable | backlog | tickets/backlog/xcode-project-config-json-format-when-27-2-stable.md |
