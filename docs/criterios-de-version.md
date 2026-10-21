@@ -1,6 +1,7 @@
 # Criterios para asignar versión en Yala
 
-> Propuesta del 2026-10-19, pendiente de que Jürgen la apruebe. Acompaña a `docs/ROADMAP.md`.
+> Propuesta del 2026-10-19, **vigente desde el 2026-10-21** (Jürgen la aprobó tal cual con el roadmap). Acompaña a
+> `docs/ROADMAP.md`.
 > Sirve para decidir **sin preguntar** en qué versión entra una card nueva, sea bug, mejora o idea.
 
 ## 1. Los tres tipos de versión
@@ -14,8 +15,8 @@
 Lo que no cumple ninguna de las cuatro condiciones de una mayor **es una menor, por grande que sea**. El tamaño no hace mayor
 a una versión: la hace mayor lo que obliga a cambiar fuera del iPhone.
 
-**Cadencia sugerida (supuesto, sin datos de velocidad todavía):** una menor cada 4 a 6 semanas y un parche cuando un bug
-lo exija. Se revisa al cerrar 2.2 con lo que de verdad tardó.
+**Sin fechas** (decidido el 2026-10-21): cada versión sale cuando cumple su criterio de salida. Un parche sale cuando
+un bug lo exige; no se planifica por adelantado.
 
 ## 2. Cómo pesan los bugs según su severidad
 
@@ -48,7 +49,9 @@ persona ve el primer día (que los gastos se apunten solos, los gastos hormiga, 
 ficha de la App Store. Superar al competidor va **después** de igualarlo, salvo que hacerlo mejor cueste lo mismo que
 copiarlo.
 
-**Plataforma.** Android y web son **mayores**. Sus dependencias —la nube estable, la cuenta de Yala, una suscripción que
+**Plataforma.** Android y web son **mayores**. Excepción decidida el 2026-10-21: una **beta que solo mira y deja borradores en la Bandeja**
+(la web de 2.3, como los conectores de IA) cabe en una menor, porque no escribe en la sincronización ni cobra. La
+plataforma completa sigue siendo mayor. Sus dependencias —la nube estable, la cuenta de Yala, una suscripción que
 valga en todas las plataformas— son requisitos de entrada, no trabajo de la propia versión. Lo que solo existe en Apple
 (widgets, Siri, iPad, Apple Watch, Mac) cabe en una menor.
 
@@ -93,11 +96,10 @@ siguiente del mismo tema.
 
 | Versión | Tema | Le llega |
 |---|---|---|
-| 2.1.1 | Parche del lanzamiento | Bugs del QA guiado del build 18 |
-| 2.2 | Se entiende a la primera | UX, copy, coherencia visual, tarjetas (multidivisa y fecha de corte), Siri |
-| 2.3 | Yala apunta sola | Captura automática, importación, suscripciones, gastos hormiga, iPad y iPhone Duo, nube de severidad media |
-| 2.4 | Tu mes real | Períodos, cuentas, ahorro, deudas, cuotas, presupuestos, notificaciones, divisas exactas, integridad de datos en la nube |
-| 2.5 | Yala conversa | Yala IA, WhatsApp, conector de Claude, rachas y mascota, endurecimiento final de la nube |
+| 2.2 | Se entiende a la primera | UX, copy, coherencia visual, tarjetas (multidivisa y fecha de corte), Siri, Sentry, los bugs del QA guiado de 2.1 |
+| 2.3 | Yala apunta sola | Captura automática (correo, atajo del banco y conectores de IA que registran), importar de Splitwise y Tricount, Yala web beta (ver y borradores), suscripciones, gastos hormiga, nube de severidad media |
+| 2.4 | Tu mes real | Períodos, cuentas, ahorro, deudas, cuotas, presupuestos, notificaciones, divisas exactas, integridad de datos en la nube, iPad, iPhone Duo y Mac, tutoriales, empezar con datos |
+| 2.5 | Yala conversa | Yala IA, WhatsApp, manos libres y reglas, IA en el iPhone, rachas y mascota, endurecimiento final de la nube |
 | 3.0 | Yala en la web | Plataforma web, suscripción por cuenta, cobro fuera de la App Store |
 | 3.1 | Juntos | Plan dúo: cuentas y presupuestos compartidos |
 | 3.2 | Yala en la muñeca | Apple Watch |

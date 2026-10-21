@@ -2,11 +2,12 @@
 
 <!-- INDICE:inicio — generado por scripts/indexar_doc.py, no editar a mano -->
 
-## Índice (89 entradas)
+## Índice (90 entradas)
 
-> **No hace falta leer este fichero entero** — son 257 KB. Localiza la entrada
+> **No hace falta leer este fichero entero** — son 259 KB. Localiza la entrada
 > aquí y salta a ella.
 
+- `2026-10-21` [Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas](#2026-10-21-roadmap-de-yala-de-22-a-40--por-tema-y-sin-fechas)
 - `2026-10-07` [IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos](#2026-10-07-ia-en-el-plan-free--voz-y-foto-son-un-cupo-de-prueba-de-5-notas-y-5-fotos)
 - `2026-10-07` [IA — el gateway elige el modelo de cada tarea, por calidad medida](#2026-10-07-ia--el-gateway-elige-el-modelo-de-cada-tarea-por-calidad-medida)
 - `2026-09-30` [El estado de Yala se lee de donde se escribe solo: se retira `docs/ESTADO.md`](#2026-09-30-el-estado-de-yala-se-lee-de-donde-se-escribe-solo-se-retira-docsestadomd)
@@ -115,6 +116,54 @@ Cada decisión sigue esta estructura:
 ---
 
 ## Decisiones Activas
+
+### [2026-10-21] Roadmap de Yala de 2.2 a 4.0 — por tema y sin fechas
+
+**Contexto.** 2.1 está en revisión de Apple desde el 21-oct. El 19-oct quedó una propuesta de roadmap de 2.1 a 4.0
+(PR #565) que nadie había decidido, y 2.2 seguía cargando funciones grandes que la propuesta sacaba. Jürgen la decidió
+el 21-oct en una sesión de preguntas, bloque por bloque.
+
+**Decisión** (Jürgen, 2026-10-21).
+
+- **Sin 2.1.1.** Los dos fallos del QA guiado (la barra de «Activar la nube» en ~60 % y la primera foto) van en 2.2.
+- **2.2 = UX y tarjetas:** la auditoría cerrada (también el formulario de registro), Grupos y Flujo de caja con el diseño
+  del resto, la tarjeta multidivisa y la de crédito con fecha de corte, y Sentry. El correo del banco, el ciclo del mes,
+  ahorros, deudas, cuotas, notificaciones, tutoriales y el iPhone Duo salen a 2.3 y 2.4.
+- **Ninguna versión tiene fecha:** sale cuando cumple su criterio de salida.
+- **2.3 «Yala apunta sola»:** correo y notificación del banco, suscripciones y gastos hormiga. **El correo exige cuenta en
+  la nube** y es Pro con un cupo de prueba. Para iCloud y el plan free, el **atajo del banco**: Atajos llama a una App
+  Intent, lo dispara la notificación del banco (iOS 27) o el correo de Mail si la prueba lo confirma, y Yala lo lee en el
+  iPhone. Es gratis porque no cuesta por uso. El total y la lista de gastos hormiga, gratis, y su consejo con IA, Pro.
+- **El correo del banco llega por reenvío en 2.3:** una dirección de Yala por persona y un filtro en su correo, con guía
+  en la app. «Conectar Gmail» (y Outlook), como Pablo y Clever, llega en cuanto Google apruebe la verificación de su
+  permiso restringido, que se pide ya y no frena 2.3.
+- **Los conectores de IA pasan de 2.5 a 2.3:** Claude y ChatGPT (Grok si su app lo permite) consultan y **registran**
+  en Yala, también leyendo el Gmail que la persona ya conectó a su IA. La IA solo deja borradores en la Bandeja, por
+  confirmar. Gratis, porque la IA la paga la persona. Exige la nube y el conector endurecido en producción.
+- **2.3 se aligera:** iPad, iPhone Duo, tutoriales y «Empezar con datos» pasan a 2.4; manos libres y reglas en lenguaje
+  natural, a 2.5.
+- **Grupos es gancho de llegada:** importar desde Splitwise y Tricount entra en 2.3 y se promociona. También en 2.3,
+  **repartir un recibo con IA** (Pro): foto o voz dentro del grupo, la IA reparte por «quién comió qué» y la persona ajusta.
+  Se guarda solo el importe de cada uno, sin líneas ni foto, para no cambiar el esquema.
+- **2.4 «Tu mes real»**, **2.5 «Yala conversa»** (WhatsApp, IA ampliada, IA local del iPhone para lo que haga bien). La nube
+  queda cerrada al salir 2.5.
+- **La web se parte en dos:** en 2.3, «Yala web» beta para cuentas en la nube, en sesión paralela (ver y apuntar
+  borradores a la Bandeja, entrar con Apple o Google); en **3.0, la web completa**, después de cerrar la nube; desde 3.0 la bienvenida propone la nube primero y iCloud privado se mantiene.
+  Después, **3.1 plan dúo, 3.2 Apple Watch, 4.0 Android**, con el lenguaje de Android decidido en su fase 0.
+- **Deuda técnica:** una cuota en cada versión, con cero bugs de prioridad alta al salir.
+- **Lanzamiento:** cada menor con ficha, capturas y novedades; el fuerte, en 2.3, y el siguiente en 3.0.
+- **Descartado:** probar momentic.ai.
+- **`docs/criterios-de-version.md` pasa a vigente** tal cual, con lo de hoy dentro.
+
+**Razones.** 2.2 no sale si se le suman funciones: la auditoría ya dejó más de 150 arreglos. La paridad con Pablo y
+Clever (el correo del banco y los gastos hormiga) es lo que la persona ve el primer día, y la ficha ya promete los gastos
+hormiga. Exigir la nube para el correo deja una sola vía, la misma que necesitan WhatsApp y la web. Sin fechas, porque aún
+no hay datos de cuánto tarda una menor.
+
+**Consecuencias.** `docs/ROADMAP.md` es el documento de referencia; la versión de cada card vive en el tablero. Una card
+nueva se versiona con los criterios, sin preguntar. El roadmap se revisa entero al cerrar cada menor.
+
+**Estado:** Activa
 
 ### [2026-10-07] IA en el plan free — voz y foto son un cupo de prueba de 5 notas y 5 fotos
 
