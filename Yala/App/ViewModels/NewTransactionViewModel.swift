@@ -604,6 +604,8 @@ final class NewTransactionViewModel {
             // Memoria per-device (App Group) para fallback de QuickExpenseIntent.
             if let savedAccount = result.first?.account {
                 LastUsedAccountStore.write(savedAccount.shortcutID.uuidString)
+                // Con la última cuenta usada cambia la moneda de la notificación de Apple Pay (L15-8).
+                ApplePayDraftService.refreshCurrencyHint(context: context)
             }
 
             // Update widget cache deferred — don't block save UI

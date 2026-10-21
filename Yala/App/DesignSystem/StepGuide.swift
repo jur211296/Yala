@@ -11,7 +11,9 @@
 //  3. Lista numerada con hilo. Solo el paso activo lleva botón; los demás se leen.
 //  4. «Lo que vas a ver»: lo que la persona encontrará fuera de Yala (opcional).
 //  5. Línea de garantía: qué NO va a pasar.
-//  6. Dos salidas al pie con jerarquía: la de éxito, llena; «me atasqué», un enlace.
+//  6. Dos salidas al pie con jerarquía: la de éxito, llena; «me atasqué», un enlace. La de éxito solo sale con todos los
+//     pasos hechos; mientras falten, el pie dice cuántos y que el avance se guarda (auditoría UX 2.2, lote 15, L15-10,
+//     opción C variante 2: «Listo» competía con «Hecho» y dejaba terminar sin hacer nada).
 //
 //  El estado (qué paso está activo) vive en `StepGuideProgress`, con test. En una ventana ancha el contenido se
 //  queda en `DS.Adaptive.readableWidth`, centrado: decide el ancho, no el aparato.
@@ -49,6 +51,8 @@ struct YalaStepGuide<Preview: View>: View {
     /// Identificador de la pantalla para XCUITest. Va en el título de la cabecera y no en la raíz: un id en un
     /// contenedor pisa los de sus hijos (`.claude/rules/testing.md`), y la guía tiene los suyos.
     let rootIdentifier: String
+    /// Con qué se guarda el avance (`StepGuideProgressStore`). Uno por guía.
+    let progressID: String
     let header: StepGuideHeader
     let steps: [StepGuideStep]
     let guarantee: String
@@ -69,6 +73,7 @@ struct YalaStepGuide<Preview: View>: View {
     init(
         navigationTitle: String,
         rootIdentifier: String,
+        progressID: String,
         header: StepGuideHeader,
         steps: [StepGuideStep],
         guarantee: String,
@@ -79,6 +84,7 @@ struct YalaStepGuide<Preview: View>: View {
     ) {
         self.navigationTitle = navigationTitle
         self.rootIdentifier = rootIdentifier
+        self.progressID = progressID
         self.header = header
         self.steps = steps
         self.guarantee = guarantee
@@ -86,7 +92,7 @@ struct YalaStepGuide<Preview: View>: View {
         self.onSuccess = onSuccess
         self.onStuck = onStuck
         self.preview = preview
-        _progress = State(initialValue: StepGuideProgress(total: steps.count))
+        _progress = State(initialValue: StepGuideProgressStore.load(progressID, total: steps.count))
     }
 
     var body: some View {
@@ -253,6 +259,12 @@ struct YalaStepGuide<Preview: View>: View {
         dsWithAnimation(reduceMotion, .easeOut(duration: DS.Animation.normal)) {
             progress.complete(index)
         }
+        StepGuideProgressStore.save(progress, guideID: progressID)
+    }
+
+    private func finish() {
+        StepGuideProgressStore.clear(progressID)
+        onSuccess()
     }
 
     // MARK: - Lo que vas a ver
@@ -287,7 +299,17 @@ struct YalaStepGuide<Preview: View>: View {
 
     private var footer: some View {
         VStack(spacing: DS.Spacing.md) {
-            YalaPrimaryButton(successTitle, action: onSuccess)
+            if progress.isFinished {
+                YalaPrimaryButton(successTitle, action: finish)
+            } else {
+                // Sin botón de terminar mientras falten pasos: lo único que se toca es el paso activo (L15-10).
+                Text(L10n.StepGuide.remaining(progress.remaining))
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.thSecondaryText)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("step_guide_remaining")
+            }
             Button(action: onStuck) {
                 Text(L10n.StepGuide.stuck)
                     .font(DS.Typography.subheadline)
@@ -320,6 +342,7 @@ extension YalaStepGuide where Preview == EmptyView {
     init(
         navigationTitle: String,
         rootIdentifier: String,
+        progressID: String,
         header: StepGuideHeader,
         steps: [StepGuideStep],
         guarantee: String,
@@ -328,8 +351,9 @@ extension YalaStepGuide where Preview == EmptyView {
         onStuck: @escaping () -> Void
     ) {
         self.init(
-            navigationTitle: navigationTitle, rootIdentifier: rootIdentifier, header: header, steps: steps, guarantee: guarantee,
-            successTitle: successTitle, onSuccess: onSuccess, onStuck: onStuck, preview: nil)
+            navigationTitle: navigationTitle, rootIdentifier: rootIdentifier, progressID: progressID, header: header,
+            steps: steps, guarantee: guarantee, successTitle: successTitle, onSuccess: onSuccess, onStuck: onStuck,
+            preview: nil)
     }
 }
 

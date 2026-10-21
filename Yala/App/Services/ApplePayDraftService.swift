@@ -85,21 +85,15 @@ struct ApplePayDraftService {
             // NO se escribe con ese símbolo, y la tarjeta tiene UNA cuenta que sí (`$` → su línea en dólares), el pago va a
             // esa cuenta. Antes, con la tarjeta en soles, un pago en `$` quedaba en soles (§2.13 del análisis). Con la
             // tarjeta en pesos (MXN, ARS, CLP…), `$` son pesos y manda la regla de siempre (review del 2026-10-18).
-            var currency = parsed.currency
-            var cardAccount: Account?
-            if let symbol = parsed.ambiguousSymbol, let lastUsedID = LastUsedAccountStore.read() {
-                if let member = cardMember(lastUsedShortcutID: lastUsedID, ambiguousSymbol: symbol, in: realAccounts) {
-                    currency = member.currencyCode
-                    cardAccount = member
-                } else if let resolved = currencyOfAccount(shortcutID: lastUsedID, in: realAccounts) {
-                    currency = resolved
-                }
-            }
+            let (currency, cardAccount) = resolveCurrency(
+                parsedCurrency: parsed.currency,
+                ambiguousSymbol: parsed.ambiguousSymbol,
+                lastUsedShortcutID: LastUsedAccountStore.read(),
+                in: realAccounts
+            )
 
             // Cuenta por divisa (único match entre cuentas reales; nil si 0 ó 2+ → user elige). La de la tarjeta, si la hay.
-            let matchedAccount: Account? = cardAccount ?? currency.flatMap {
-                DraftBuilder.findAccount(byCurrency: $0, in: realAccounts)
-            }
+            let matchedAccount = Self.matchedAccount(currency: currency, cardAccount: cardAccount, in: realAccounts)
 
             // Subcategoría por merchant (MerchantMemory) — preserva el routing de confianza del
             // intent viejo (autoAssign → 0.95, suggest → 0.8).
@@ -172,6 +166,72 @@ struct ApplePayDraftService {
         // y el remove reprocesaría los pagos → borrador duplicado (recuperable), nunca pérdida.
         ApplePayPendingStore.remove(keys: materializedKeys, defaults: pendingStoreDefaults)
         return createdDrafts.count
+    }
+
+    // MARK: - Moneda
+
+    /// La moneda del borrador y, si va a una tarjeta con varias divisas, la cuenta de esa tarjeta. Un código o un símbolo
+    /// inequívoco mandan; con `$`/`kr`, la de la última cuenta usada (o su línea que se escribe con ese símbolo); y sin
+    /// ningún símbolo, también la de la última cuenta usada (auditoría UX 2.2, L15-8: hasta entonces el borrador quedaba
+    /// sin moneda ni cuenta, y la notificación hablaba en dólares).
+    static func resolveCurrency(
+        parsedCurrency: String?,
+        ambiguousSymbol: String?,
+        lastUsedShortcutID: String?,
+        in accounts: [Account]
+    ) -> (currency: String?, cardAccount: Account?) {
+        guard let lastUsedID = lastUsedShortcutID else { return (parsedCurrency, nil) }
+        guard let symbol = ambiguousSymbol else {
+            return (parsedCurrency ?? currencyOfAccount(shortcutID: lastUsedID, in: accounts), nil)
+        }
+        if let member = cardMember(lastUsedShortcutID: lastUsedID, ambiguousSymbol: symbol, in: accounts) {
+            return (member.currencyCode, member)
+        }
+        return (currencyOfAccount(shortcutID: lastUsedID, in: accounts) ?? parsedCurrency, nil)
+    }
+
+    /// La cuenta a la que va el borrador: la de la tarjeta, o la ÚNICA cuenta en esa moneda (con 0 o 2+, la elige quien
+    /// aprueba). Mientras no tenga cuenta, la Bandeja lo enseña en la moneda por defecto.
+    static func matchedAccount(currency: String?, cardAccount: Account?, in accounts: [Account]) -> Account? {
+        cardAccount ?? currency.flatMap { DraftBuilder.findAccount(byCurrency: $0, in: accounts) }
+    }
+
+    /// La pista que lee la notificación del atajo (`ApplePayCurrencyHint`, L15-8): la moneda en que la Bandeja va a
+    /// enseñar el borrador —la de su cuenta— con la MISMA regla, sin símbolo y con `$` y `kr`. Sin cuenta, nada: la
+    /// notificación cae a la moneda por defecto, como la Bandeja.
+    static func currencyHint(lastUsedShortcutID: String?, accounts: [Account]) -> ApplePayCurrencyHint {
+        func shownCurrency(parsedCurrency: String?, symbol: String?) -> String? {
+            let (currency, card) = resolveCurrency(
+                parsedCurrency: parsedCurrency, ambiguousSymbol: symbol, lastUsedShortcutID: lastUsedShortcutID, in: accounts)
+            return matchedAccount(currency: currency, cardAccount: card, in: accounts)?.currencyCode
+        }
+        var bySymbol: [String: String] = [:]
+        for symbol in ["$", "kr"] {
+            // La moneda que el parseo le da al símbolo cuando nada la refina (USD, NOK).
+            let symbolDefault = ApplePayAmountParser.parse("\(symbol)1")?.currency
+            bySymbol[symbol] = shownCurrency(parsedCurrency: symbolDefault, symbol: symbol)
+        }
+        return ApplePayCurrencyHint(
+            lastUsedAccountID: lastUsedShortcutID,
+            noSymbolCurrency: shownCurrency(parsedCurrency: nil, symbol: nil),
+            currencyBySymbol: bySymbol)
+    }
+
+    /// Reescribe la pista con las cuentas de ahora. La llaman el arranque, la vuelta a primer plano y el guardado de un
+    /// movimiento (que es quien cambia la última cuenta usada). Un fetch que falla deja la pista que había. Cambiar la
+    /// moneda de una cuenta, borrarla o fundirla no la reescribe: la deja vieja hasta el siguiente primer plano, y la
+    /// notificación de ese rato puede decir la moneda de antes (residual aceptado).
+    static func refreshCurrencyHint(context: ModelContext) {
+        do {
+            let accounts = try context.fetch(
+                FetchDescriptor<Account>(predicate: #Predicate<Account> { $0.isSystemAccount == false })
+            )
+            ApplePayCurrencyHint.write(currencyHint(lastUsedShortcutID: LastUsedAccountStore.read(), accounts: accounts))
+        } catch {
+            #if DEBUG
+            print("ApplePayDraftService: Error refreshing currency hint: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Helpers

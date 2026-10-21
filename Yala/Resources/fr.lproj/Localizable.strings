@@ -2493,10 +2493,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "Nouvel enregistrement automatique";
-"shortcut.notification.expense" = "dépense";
-"shortcut.notification.income" = "revenu";
-"shortcut.notification.body" = "Un %@ de %@%@ a été noté. Ouvrez Yala pour le vérifier et l’enregistrer.";
 
 // MARK: - Category Seeds
 
@@ -2740,11 +2736,10 @@
 "tutorials.inboxApproval.step1.desc" = "Complète simplement les champs obligatoires et approuve. L'enregistrement se créera normalement.";
 "tutorials.inboxApproval.step2.desc" = "Tu peux aussi dicter ou photographier plusieurs enregistrements à la fois. Il te dira combien de brouillons ont été créés et te guidera vers la boîte pour les réviser.";
 "tutorials.inboxApproval.step3.desc" = "Dans ta boîte tu pourras approuver des enregistrements, sélectionner Approuver plus tard pour les voir après ou les rejeter directement.";
-"tutorials.applePay.step0.desc" = "Ouvre l'app Raccourcis et va dans la section Automatisations.";
-"tutorials.applePay.step1.desc" = "Touche Nouvelle automatisation, sélectionne l'option Wallet, choisis les cartes que tu veux utiliser et sélectionne Exécuter immédiatement.";
-"tutorials.applePay.step2.desc" = "Sélectionne Créer nouveau raccourci et cherche Yala tout en bas. Dans Yala sélectionne le raccourci « Enregistrer un paiement Apple Pay ».";
-"tutorials.applePay.step3.desc" = "Dans Montant sélectionne Entrée du raccourci puis Quantité. Fais la même chose pour Commerçant et Nom respectivement. Désactive le toggle « Afficher à l'exécution ».";
-
+"tutorials.applePay.step0.desc" = "Ouvre l'app Raccourcis et va dans Automatisation. Si tu ne la vois pas en bas, elle est dans Bibliothèque.";
+"tutorials.applePay.step1.desc" = "Touche +, choisis Wallet et sélectionne les cartes que tu utilises. Si c'est proposé, choisis Exécuter immédiatement.";
+"tutorials.applePay.step2.desc" = "Si on te le demande, touche Créer un raccourci. Cherche Yala et choisis le raccourci « Enregistrer un paiement Apple Pay ».";
+"tutorials.applePay.step3.desc" = "Dans Montant sélectionne Entrée du raccourci puis Quantité. Fais la même chose pour Commerçant et Nom respectivement. Si « Afficher à l'exécution » apparaît, désactive-le.";
 "tutorials.applePay.completion.title" = "Apple Pay connecté !";
 "tutorials.applePay.completion.desc" = "Avec ça tu auras maintenant des enregistrements automatiques chaque fois que tu utilises Apple Pay avec les cartes sélectionnées. Chaque paiement créera un brouillon dans ta boîte de réception.";
 "subcategory.fuel" = "Carburant";
@@ -2785,21 +2780,16 @@
 "settings.siriShortcuts" = "Siri et Raccourcis";
 "siriShortcuts.title" = "Siri et Raccourcis";
 "siriShortcuts.subtitle" = "Utilise ta voix ou des raccourcis rapides pour enregistrer tes dépenses instantanément.";
-"siriShortcuts.siri.title" = "Enregistrer avec Siri";
 "siriShortcuts.siri.description" = "Dicte ta dépense et un brouillon sera créé dans ta boîte de réception.";
 "siriShortcuts.siri.proNote" = "Nécessite Yala Pro";
 "siriShortcuts.siri.phrase" = "Crée un enregistrement dans Yala";
-"siriShortcuts.siri.alt1" = "Tu peux aussi dire : \"Note une dépense dans Yala\"";
-"siriShortcuts.siri.alt2" = "Ou : \"Enregistre une dépense dans Yala\"";
+"siriShortcuts.siri.alt1" = "Note une dépense dans Yala";
+"siriShortcuts.siri.alt2" = "Enregistre une dépense dans Yala";
 "siriShortcuts.all.title" = "Autres raccourcis";
-"siriShortcuts.shortcut.quick" = "Enregistrement rapide";
-"siriShortcuts.shortcut.voice" = "Entrée vocale";
-"siriShortcuts.shortcut.image" = "Ajouter avec une photo ou un fichier";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "Ouvre le formulaire d'enregistrement en un tap.";
-"siriShortcuts.desc.voice" = "Dicte le montant et la description avec ta voix.";
-"siriShortcuts.desc.image" = "Scanne un reçu ou ticket avec l'appareil photo.";
-"siriShortcuts.desc.applePay" = "Enregistre un paiement effectué avec Apple Pay.";
+"siriShortcuts.desc.quick" = "Ouvre le formulaire pour noter une dépense ou un revenu.";
+"siriShortcuts.desc.voice" = "Dicte le montant et la description.";
+"siriShortcuts.desc.image" = "Un reçu, une capture d'écran ou un PDF.";
+"siriShortcuts.desc.applePay" = "Utilisé par l'automatisation Wallet.";
 "siriShortcuts.phrase.quick" = "Enregistre dans Yala";
 "siriShortcuts.phrase.voice" = "Enregistre avec la voix dans Yala";
 "siriShortcuts.phrase.image" = "Enregistre avec photo ou fichier dans Yala";
@@ -7715,3 +7705,10 @@
 "uxpro.welcome.theme" = "Tu peux maintenant utiliser ce thème.";
 "uxpro.welcome.icon" = "Tu peux maintenant utiliser cette icône.";
 "uxpro.welcome.cashFlow" = "Tu peux maintenant utiliser le flux de trésorerie avancé.";
+"siriShortcuts.siri.alsoSay" = "Aussi : %1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "« %@ »";
+"siriShortcuts.openShortcuts" = "Ouvrir mes raccourcis Yala";
+"inbox.alert.siriDrafts" = "Brouillons de Siri : %d";
+"shortcut.applePay.notification.title" = "Paiement de %1$@ chez %2$@ à vérifier";
+"shortcut.applePay.notification.titleNoMerchant" = "Paiement de %@ à vérifier";
+"shortcut.applePay.notification.body" = "Touche pour l'approuver.";

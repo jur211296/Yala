@@ -2495,10 +2495,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "新自动记录";
-"shortcut.notification.expense" = "支出";
-"shortcut.notification.income" = "收入";
-"shortcut.notification.body" = "已记下一笔 %@，金额 %@%@。打开 Yala 检查并保存。";
 
 // MARK: - Category Seeds
 
@@ -2759,11 +2755,10 @@
 "tutorials.inboxApproval.step1.desc" = "只需填写必填字段并审批。记录将正常创建。";
 "tutorials.inboxApproval.step2.desc" = "你也可以用语音或图片一次记录多条记录。它会告诉你创建了多少草稿,并引导你到收件箱查看。";
 "tutorials.inboxApproval.step3.desc" = "在收件箱中你可以审批记录、选择「稍后审批」延后查看,或直接拒绝。";
-"tutorials.applePay.step0.desc" = "打开「快捷指令」应用,前往「自动化」版块。";
-"tutorials.applePay.step1.desc" = "点击「新建自动化」,选择 Wallet 选项,选择要使用的卡片,然后选择「立即运行」。";
-"tutorials.applePay.step2.desc" = "选择「创建新快捷指令」,在最底部搜索 Yala。在 Yala 中选择「记录 Apple Pay 付款」快捷指令。";
-"tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家和名称分别同样处理。关闭「运行时显示」开关。";
-
+"tutorials.applePay.step0.desc" = "打开「快捷指令」应用，进入「自动化」。如果底部没有，它在「资源库」里。";
+"tutorials.applePay.step1.desc" = "轻点「+」，选择 Wallet 并勾选你使用的卡片。如果出现，选择「立即运行」。";
+"tutorials.applePay.step2.desc" = "如有提示，轻点「创建新快捷指令」。搜索 Yala，选择「记录 Apple Pay 付款」快捷指令。";
+"tutorials.applePay.step3.desc" = "金额选择「快捷指令输入」然后选择「金额」。商家和名称分别同样处理。如果有「运行时显示」，将其关闭。";
 "tutorials.applePay.completion.title" = "Apple Pay 已连接!";
 "tutorials.applePay.completion.desc" = "这样,每次用所选卡片使用 Apple Pay 都会自动记录。每笔付款都会在你的收件箱创建一个草稿。";
 
@@ -2788,21 +2783,16 @@
 "settings.siriShortcuts" = "Siri 与快捷指令";
 "siriShortcuts.title" = "Siri 与快捷指令";
 "siriShortcuts.subtitle" = "用语音或快捷指令即时记录支出。";
-"siriShortcuts.siri.title" = "用 Siri 记录";
 "siriShortcuts.siri.description" = "口述你的支出,会在你的收件箱创建一个草稿。";
 "siriShortcuts.siri.proNote" = "需要 Yala Pro";
 "siriShortcuts.siri.phrase" = "在 Yala 中创建一条记录";
-"siriShortcuts.siri.alt1" = "你也可以说:「在 Yala 备注一笔支出」";
-"siriShortcuts.siri.alt2" = "或:「在 Yala 保存一笔支出」";
+"siriShortcuts.siri.alt1" = "在 Yala 备注一笔支出";
+"siriShortcuts.siri.alt2" = "在 Yala 保存一笔支出";
 "siriShortcuts.all.title" = "其他快捷指令";
-"siriShortcuts.shortcut.quick" = "快速记录";
-"siriShortcuts.shortcut.voice" = "语音输入";
-"siriShortcuts.shortcut.image" = "用照片或文件记账";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "一键打开记录表单。";
-"siriShortcuts.desc.voice" = "用语音口述金额和描述。";
-"siriShortcuts.desc.image" = "用相机扫描收据或票据。";
-"siriShortcuts.desc.applePay" = "记录一笔 Apple Pay 付款。";
+"siriShortcuts.desc.quick" = "打开表单，记录一笔支出或收入。";
+"siriShortcuts.desc.voice" = "口述金额和描述。";
+"siriShortcuts.desc.image" = "收据、截图或 PDF。";
+"siriShortcuts.desc.applePay" = "供 Wallet 自动化使用。";
 "siriShortcuts.phrase.quick" = "在 Yala 中记录";
 "siriShortcuts.phrase.voice" = "用语音在 Yala 中记录";
 "siriShortcuts.phrase.image" = "用照片或文件在 Yala 中记录";
@@ -7726,3 +7716,10 @@
 "uxpro.welcome.theme" = "现在可以使用这个主题了。";
 "uxpro.welcome.icon" = "现在可以使用这个图标了。";
 "uxpro.welcome.cashFlow" = "现在可以使用进阶现金流了。";
+"siriShortcuts.siri.alsoSay" = "也可以说：%1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "“%@”";
+"siriShortcuts.openShortcuts" = "打开我的 Yala 快捷指令";
+"inbox.alert.siriDrafts" = "Siri 草稿：%d 条";
+"shortcut.applePay.notification.title" = "%2$@ 的 %1$@ 付款待审核";
+"shortcut.applePay.notification.titleNoMerchant" = "%@ 付款待审核";
+"shortcut.applePay.notification.body" = "轻点以批准。";

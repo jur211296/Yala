@@ -2491,10 +2491,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "Neuer automatischer Eintrag";
-"shortcut.notification.expense" = "Ausgabe";
-"shortcut.notification.income" = "Einnahme";
-"shortcut.notification.body" = "Ein %@ über %@%@ wurde notiert. Öffne Yala, um es zu prüfen und zu speichern.";
 
 // MARK: - Category Seeds
 
@@ -2741,11 +2737,10 @@
 "tutorials.inboxApproval.step1.desc" = "Fülle einfach die Pflichtfelder aus und genehmige. Der Eintrag wird normal erstellt.";
 "tutorials.inboxApproval.step2.desc" = "Du kannst auch mehrere Einträge auf einmal per Sprache oder Foto erfassen. Es wird dir mitgeteilt, wie viele Entwürfe erstellt wurden, und dich zum Posteingang führen, um sie zu überprüfen.";
 "tutorials.inboxApproval.step3.desc" = "In deinem Posteingang kannst du Einträge genehmigen, Später genehmigen auswählen, um sie später zu sehen, oder sie direkt ablehnen.";
-"tutorials.applePay.step0.desc" = "Öffne die Kurzbefehle-App und gehe zum Bereich Automationen.";
-"tutorials.applePay.step1.desc" = "Tippe auf Neue Automation, wähle die Wallet-Option, wähle die Karten aus, die du verwenden möchtest, und wähle Sofort ausführen.";
-"tutorials.applePay.step2.desc" = "Wähle Neuen Kurzbefehl erstellen und suche ganz unten nach Yala. Wähle in Yala den Kurzbefehl „Apple-Pay-Zahlung erfassen“.";
-"tutorials.applePay.step3.desc" = "Bei Betrag wähle Kurzbefehleingabe und dann Betrag. Mache dasselbe für Händler und Name. Deaktiviere den Schalter \"Beim Ausführen anzeigen\".";
-
+"tutorials.applePay.step0.desc" = "Öffne die Kurzbefehle-App und gehe zu Automation. Siehst du sie unten nicht, findest du sie in der Mediathek.";
+"tutorials.applePay.step1.desc" = "Tippe auf +, wähle Wallet und markiere die Karten, die du nutzt. Wenn angeboten, wähle Sofort ausführen.";
+"tutorials.applePay.step2.desc" = "Falls gefragt, tippe auf Neuen Kurzbefehl erstellen. Suche nach Yala und wähle den Kurzbefehl „Apple-Pay-Zahlung erfassen“.";
+"tutorials.applePay.step3.desc" = "Bei Betrag wähle Kurzbefehleingabe und dann Betrag. Mache dasselbe für Händler und Name. Wenn „Beim Ausführen anzeigen“ erscheint, deaktiviere es.";
 "tutorials.applePay.completion.title" = "Apple Pay verbunden!";
 "tutorials.applePay.completion.desc" = "Damit hast du jetzt automatische Erfassungen jedes Mal, wenn du Apple Pay mit den ausgewählten Karten verwendest. Jede Zahlung erstellt einen Entwurf in deinem Posteingang.";
 "subcategory.leasing" = "Leasing";
@@ -2784,21 +2779,16 @@
 "settings.siriShortcuts" = "Siri & Kurzbefehle";
 "siriShortcuts.title" = "Siri & Kurzbefehle";
 "siriShortcuts.subtitle" = "Nutze deine Stimme oder Kurzbefehle, um Ausgaben sofort zu erfassen.";
-"siriShortcuts.siri.title" = "Mit Siri erfassen";
 "siriShortcuts.siri.description" = "Diktiere deine Ausgabe und ein Entwurf wird in deinem Posteingang erstellt.";
 "siriShortcuts.siri.proNote" = "Erfordert Yala Pro";
 "siriShortcuts.siri.phrase" = "Erstelle einen Eintrag in Yala";
-"siriShortcuts.siri.alt1" = "Du kannst auch sagen: \"Notiere eine Ausgabe in Yala\"";
-"siriShortcuts.siri.alt2" = "Oder: \"Speichere eine Ausgabe in Yala\"";
+"siriShortcuts.siri.alt1" = "Notiere eine Ausgabe in Yala";
+"siriShortcuts.siri.alt2" = "Speichere eine Ausgabe in Yala";
 "siriShortcuts.all.title" = "Weitere Kurzbefehle";
-"siriShortcuts.shortcut.quick" = "Schnellerfassung";
-"siriShortcuts.shortcut.voice" = "Spracheingabe";
-"siriShortcuts.shortcut.image" = "Mit Foto oder Datei erfassen";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "Öffnet das Erfassungsformular mit einem Tap.";
-"siriShortcuts.desc.voice" = "Diktiere Betrag und Beschreibung mit deiner Stimme.";
-"siriShortcuts.desc.image" = "Scanne einen Beleg oder Kassenbon mit der Kamera.";
-"siriShortcuts.desc.applePay" = "Erfasse eine Zahlung mit Apple Pay.";
+"siriShortcuts.desc.quick" = "Öffnet das Formular, um eine Ausgabe oder Einnahme zu erfassen.";
+"siriShortcuts.desc.voice" = "Diktiere Betrag und Beschreibung.";
+"siriShortcuts.desc.image" = "Ein Beleg, ein Screenshot oder ein PDF.";
+"siriShortcuts.desc.applePay" = "Wird von der Wallet-Automation verwendet.";
 "siriShortcuts.phrase.quick" = "Erfasse in Yala";
 "siriShortcuts.phrase.voice" = "Erfasse mit Stimme in Yala";
 "siriShortcuts.phrase.image" = "Erfasse mit Foto oder Datei in Yala";
@@ -7714,3 +7704,10 @@
 "uxpro.welcome.theme" = "Du kannst dieses Design jetzt nutzen.";
 "uxpro.welcome.icon" = "Du kannst dieses Symbol jetzt nutzen.";
 "uxpro.welcome.cashFlow" = "Du kannst jetzt den erweiterten Cashflow nutzen.";
+"siriShortcuts.siri.alsoSay" = "Auch: %1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "„%@“";
+"siriShortcuts.openShortcuts" = "Meine Yala-Kurzbefehle öffnen";
+"inbox.alert.siriDrafts" = "Siri-Entwürfe: %d";
+"shortcut.applePay.notification.title" = "Zahlung über %1$@ bei %2$@ zu prüfen";
+"shortcut.applePay.notification.titleNoMerchant" = "Zahlung über %@ zu prüfen";
+"shortcut.applePay.notification.body" = "Tippe zum Bestätigen.";

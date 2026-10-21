@@ -6963,6 +6963,11 @@ enum L10n {
                 }
             }
 
+            /// «Borradores de Siri: 2», en su propia línea del aviso (auditoría UX 2.2, L15-7).
+            static func siriDrafts(_ count: Int) -> String {
+                String(format: ls("inbox.alert.siriDrafts", comment: ""), count)
+            }
+
             enum Message {
                 static func scheduled(_ count: Int) -> String {
                     String(format: ls("inbox.alert.message.scheduled", comment: ""), count)
@@ -7314,6 +7319,10 @@ enum L10n {
             String(format: ls("stepGuide.progress", comment: ""), current, total)
         }
         static var markDone: String { ls("stepGuide.markDone", comment: "") }
+        /// «Te faltan 2 pasos · tu avance se guarda» (plural en el `.stringsdict`; L15-10).
+        static func remaining(_ count: Int) -> String {
+            String(format: ls("stepGuide.remaining", comment: ""), count)
+        }
         static var stuck: String { ls("stepGuide.stuck", comment: "") }
         static var whatYouWillSee: String { ls("stepGuide.whatYouWillSee", comment: "") }
         static var phaseDone: String { ls("stepGuide.phaseDone", comment: "") }
@@ -8503,14 +8512,16 @@ enum L10n {
         }
 
         enum Notification {
-            static var title: String { ls("shortcut.notification.title", comment: "") }
-            static var expense: String { ls("shortcut.notification.expense", comment: "") }
-            static var income: String { ls("shortcut.notification.income", comment: "") }
             static var errorTitle: String { ls("shortcut.notification.errorTitle", comment: "") }
             static var errorBody: String { ls("shortcut.notification.errorBody", comment: "") }
-            static func body(_ type: String, _ amount: String, _ note: String) -> String {
-                String(format: ls("shortcut.notification.body", comment: ""), type, amount, note)
+            /// «Pago de S/ 25,90 en Tambo por revisar» (sin comercio, «Pago de S/ 25,90 por revisar»). Auditoría UX 2.2,
+            /// L15-8: hasta entonces decía «Se ha registrado un gasto», y era un borrador por aprobar.
+            static func applePayTitle(amount: String, merchant: String) -> String {
+                merchant.isEmpty
+                    ? String(format: ls("shortcut.applePay.notification.titleNoMerchant", comment: ""), amount)
+                    : String(format: ls("shortcut.applePay.notification.title", comment: ""), amount, merchant)
             }
+            static var applePayBody: String { ls("shortcut.applePay.notification.body", comment: "") }
         }
     }
 

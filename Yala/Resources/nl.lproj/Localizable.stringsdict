@@ -1276,5 +1276,21 @@
 			<string>%d budgetten</string>
 		</dict>
 	</dict>
+	<key>stepGuide.remaining</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Nog %d stap · je voortgang wordt bewaard</string>
+			<key>other</key>
+			<string>Nog %d stappen · je voortgang wordt bewaard</string>
+		</dict>
+	</dict>
 </dict>
 </plist>
