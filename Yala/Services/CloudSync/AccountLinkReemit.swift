@@ -18,6 +18,9 @@
 //  Si (1) o (2) fallan, la petición se queda y el pull se corta: re-bajar sin haber encolado (b) pisaría esos
 //  enlaces con el valor del servidor, que no los tiene.
 //
+//  Desde la v3 (UX 2.2 · L18-8) hace lo mismo con los cambios de monto «desde este mes» de las líneas del flujo de
+//  caja (`cashflow_lines.amount_changes_raw`), apuntados por `SyncCapability.noteSuppressedCashFlowAmountChange`.
+//
 //  Por qué no «reemitir toda cuenta con enlace»: subiría con un HLC fresco copias de lo que bajó antes de que otro
 //  teléfono lo cambiara, y le ganaría por LWW a ese cambio más nuevo (lo cazó la review).
 //
@@ -66,6 +69,37 @@ extension CloudSyncEngine {
             reemitted = inputs.count
         }
 
+        // Los cambios de monto «desde este mes» del flujo de caja (v3, UX 2.2 · L18-8), con el mismo molde. Solo si el
+        // teléfono ya habla la versión que los conoce: con un Worker vuelto atrás a la v2 la columna no viajaría y lo
+        // apuntado se queda para la subida siguiente.
+        let pendingLineIDs = level >= SyncCapability.cashFlowAmountChangesSince
+            ? SyncCapability.suppressedCashFlowAmountChanges : []
+        if !pendingLineIDs.isEmpty {
+            let lines = try context.fetch(FetchDescriptor<CashFlowLine>()).filter { pendingLineIDs.contains($0.id) }
+            let emission = EntityEmissionMap.cashFlowLine
+            let groupedColumns = Set(emission.groupByColumn.keys)
+            let inputs = lines.map { line in
+                SnapshotRowInput(syncID: line.id, entityType: SyncEntityType.cashFlowLine) { hlc in
+                    let result = DeltaEmitter.emit(model: line, emission: emission,
+                                                   changedColumns: ["amount_changes_raw"], hlc: hlc,
+                                                   capabilityLevel: level)
+                    do {
+                        let fieldsJSON = try Canonc1Codec.encode(result.fields, groupedColumns: groupedColumns)
+                        return (fieldsJSON, self.encodeFieldHlcs(result.fieldHlcs))
+                    } catch {
+                        #if DEBUG
+                        print("CloudSyncEngine.applyCapabilityUpgrade: codec c1 rechazó la línea: \(error)")
+                        #endif
+                        CloudSyncBreadcrumb.encodeRejected(entity: SyncEntityType.cashFlowLine,
+                                                           reason: "amountChangesReemit:\(error)")
+                        return nil
+                    }
+                }
+            }
+            try enqueueSnapshotRows(inputs, context: context, now: now)
+            reemitted += inputs.count
+        }
+
         let cursor = try loadOrCreateCursor(context)
         if cursor.serverSeqCursor != 0 {
             try saveWithAuthor(context, Self.outboxSaveAuthor) {
@@ -74,6 +108,7 @@ extension CloudSyncEngine {
         }
         // Lo apuntado de cuentas que ya no existen se retira igual: no hay nada que subir de ellas.
         SyncCapability.clearSuppressedAccountLinks(pendingIDs)
+        SyncCapability.clearSuppressedCashFlowAmountChanges(pendingLineIDs)
         SyncCapability.upgradePending = false
         CloudSyncBreadcrumb.capabilityUpgradeApplied(reemittedLinks: reemitted)
         return true

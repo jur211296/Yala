@@ -4,7 +4,7 @@ status: backlog
 priority: low
 area: tests, reportes
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 source: gate de la revisión de Yala IA 2.2
 ---
 
@@ -23,3 +23,9 @@ veces y mira `isHittable`; con el simulador cargado el gesto no siempre pasa de 
 
 Que el helper espere a que el carrusel se asiente entre deslizamientos (o busque la página por su id), y medirlo con
 N corridas seguidas tras una tanda.
+
+## Otra vez (2026-10-21, gate del lote decidido 2.2 · 10)
+
+Mismo árbol (sí toca flujo de caja y reportes): verde en la tanda de 25 suites del gate y en una corrida suelta, rojo en
+la corrida que siguió a la unit completa (`:146`, «Por línea no tiene página para la línea en dólares»), y 3/3 verde
+justo después, aislado. Centinela a 0 en la roja: no hubo otra corrida encima. Sigue el patrón de arriba.

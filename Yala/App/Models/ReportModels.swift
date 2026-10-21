@@ -86,6 +86,19 @@ enum ReportGroupingDimension: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Un valor de ejemplo de este nivel, para el «Así se verá la tabla» de la hoja de desglosar (UX 2.2 · L18-4).
+    var exampleValue: String {
+        switch self {
+        case .tipo: return L10n.UXL18.exampleIncomeAndExpenses
+        case .categoria: return L10n.UXL18.exampleCategory
+        case .subcategoria: return L10n.UXL18.exampleSubcategory
+        case .etiqueta: return L10n.UXL18.exampleTag
+        case .cuenta: return L10n.UXL18.exampleAccount
+        case .divisa: return L10n.UXL18.exampleCurrency
+        case .naturaleza: return L10n.UXL18.exampleNeed
+        }
+    }
+
     var iconName: String {
         switch self {
         case .tipo: return "arrow.up.arrow.down"
@@ -119,6 +132,19 @@ struct ReportGroupingState {
     /// Move a dimension within the active list
     mutating func move(from source: IndexSet, to destination: Int) {
         activeDimensions.move(fromOffsets: source, toOffset: destination)
+    }
+
+    /// Los niveles que la persona elige, sin el fijo de «Ingresos y gastos» (UX 2.2 · L18-4: la hoja de desglosar ya no
+    /// lo pinta como una fila con candado y asa que no arrastra).
+    var optionalDimensions: [ReportGroupingDimension] {
+        activeDimensions.filter { !$0.isMandatory }
+    }
+
+    /// Reordena entre los niveles elegidos; el fijo se queda delante.
+    mutating func moveOptional(from source: IndexSet, to destination: Int) {
+        var optional = optionalDimensions
+        optional.move(fromOffsets: source, toOffset: destination)
+        activeDimensions = activeDimensions.filter(\.isMandatory) + optional
     }
 
     /// Whether a dimension is currently active

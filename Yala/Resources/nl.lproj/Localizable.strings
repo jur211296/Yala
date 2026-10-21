@@ -677,14 +677,14 @@
 "report.noSubcategory" = "Geen subcategorie";
 "report.noTag" = "Geen label";
 "report.noAccount" = "Geen rekening";
-"report.grouping.type" = "Type";
+"report.grouping.type" = "Inkomsten en uitgaven";
 "report.grouping.category" = "Categorie";
 "report.grouping.subcategory" = "Subcategorie";
 "report.grouping.tag" = "Label";
 "report.grouping.account" = "Rekening";
 "report.grouping.currency" = "Valuta";
-"report.grouping.nature" = "Aard";
-"report.grouping.drillDown" = "Inzoomen";
+"report.grouping.nature" = "Behoefte";
+"report.grouping.drillDown" = "Uitsplitsen";
 "report.grouping.hint" = "Voeg niveaus toe voor meer detail. Sleep om de volgorde te wijzigen.";
 "report.grouping.active" = "Actief";
 "report.grouping.available" = "Beschikbaar";
@@ -834,7 +834,7 @@
 "cashFlowPlan.monthsActive" = "maanden";
 "cashFlowPlan.suggestedSource" = "Op basis van %d maanden activiteit";
 "cashFlowPlan.bannerTitle" = "Wat is kasstroom?";
-"cashFlowPlan.bannerBody" = "Het is je maand-per-maand-plan voor inkomsten en uitgaven. Het laat zien of je geld toereikend is, of dat je iets moet bijsturen.";
+"cashFlowPlan.bannerBody" = "Zie per maand of wat je verdient je uitgaven dekt.";
 "cashFlowPlan.available" = "Beschikbaar";
 "cashFlowPlan.accumulated" = "Cumulatief";
 "cashFlowPlan.accumulatedShort" = "Cumul.";
@@ -903,7 +903,7 @@
 "cashFlowPlan.monthSummaryOnTrack" = "Je hebt %d%% van je geschatte uitgaven besteed deze maand";
 "cashFlowPlan.monthSummaryOver" = "Je zit %d%% boven je schatting deze maand";
 "cashFlowPlan.monthSummaryUnder" = "Pas %d%% besteed — je doet het lekker deze maand";
-"cashFlowPlan.configureHorizon" = "Horizon instellen";
+"cashFlowPlan.configureHorizon" = "Hoeveel maanden tonen";
 "cashFlowPlan.monthsAhead" = "Maanden vooruit";
 "cashFlowPlan.monthsBack" = "Maanden terug";
 "cashFlowPlan.showAccumulatedBalance" = "Cumulatief tonen";
@@ -4300,8 +4300,8 @@
 "more.subtitle.distribution" = "Ontdek waar je geld heen gaat";
 "more.subtitle.budgets" = "Stel limieten in en houd je tempo bij";
 "more.subtitle.scheduledPayments" = "Wat eraan komt: rekeningen en abonnementen";
-"more.subtitle.comparative" = "Vergelijk je periodes naast elkaar";
-"more.subtitle.cashFlow" = "Wat binnenkomt en wat eruitgaat";
+"more.subtitle.comparative" = "Meer of minder uitgegeven dan vorige maand?";
+"more.subtitle.cashFlow" = "Kom je de komende maanden rond?";
 "more.subtitle.records" = "Al je boekingen op één plek";
 "more.subtitle.groups" = "Deel uitgaven zonder gedoe";
 "more.subtitle.profile" = "Je account en voorkeuren";
@@ -7723,3 +7723,155 @@
 "shortcut.applePay.notification.title" = "Betaling van %1$@ bij %2$@ te controleren";
 "shortcut.applePay.notification.titleNoMerchant" = "Betaling van %@ te controleren";
 "shortcut.applePay.notification.body" = "Tik om goed te keuren.";
+
+/* VoiceOver: el cambio entre dos períodos redondea a cero */
+"accessibility.variationNoChange" = "Geen verandering";
+/* Comparativa en «Todo el tiempo»: tarjeta que invita a elegir un período */
+"report.l18.allTime.title" = "Kies een maand of jaar om te vergelijken";
+/* Comparativa: qué se compara con qué; %1$@ = «Octubre», %2$@ = «septiembre» */
+"report.l18.heading" = "%1$@ vergeleken met %2$@";
+/* Comparativa: igual, con un tramo de días; %1$@ = «Octubre», %2$@ = «1–21 de septiembre» */
+"report.l18.headingRange" = "%1$@ vergeleken met %2$@";
+/* Comparativa: chip para comparar con el mes anterior */
+"report.l18.chip.previousMonth" = "Met vorige maand";
+/* Comparativa: chip para comparar con la semana anterior */
+"report.l18.chip.previousWeek" = "Met vorige week";
+/* Comparativa: chip para comparar con los 7 días anteriores */
+"report.l18.chip.previous7Days" = "Met de 7 dagen ervoor";
+/* Comparativa: chip para comparar con los 30 días anteriores */
+"report.l18.chip.previous30Days" = "Met de 30 dagen ervoor";
+/* Comparativa: chip para comparar con el período anterior */
+"report.l18.chip.previousPeriod" = "Met de vorige periode";
+/* Comparativa: chip para comparar con el mismo período del año pasado; %@ = «octubre de 2025» */
+"report.l18.chip.yearAgo" = "Met %@";
+/* Comparativa: cabecera de la columna del cambio */
+"report.l18.column.change" = "Verschil";
+/* Comparativa: ingresos menos gastos cuando sobra */
+"report.l18.net.gain" = "Overgebleven";
+/* Comparativa: ingresos menos gastos cuando falta */
+"report.l18.net.loss" = "Tekort";
+/* Comparativa: qué es «Te quedó» */
+"report.l18.net.caption" = "Inkomsten min uitgaven.";
+/* Comparativa: qué es «Te quedó» y cuánto quedó antes; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionGainBefore" = "Inkomsten min uitgaven. In %1$@ hield je %2$@ over.";
+/* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionLossBefore" = "Inkomsten min uitgaven. In %1$@ kwam je %2$@ tekort.";
+/* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
+"report.l18.row.amountsA11y" = "%1$@ in %2$@, %3$@ in %4$@";
+/* Desglosar: título del ejemplo de cómo quedará la tabla */
+"report.l18.example.title" = "Zo ziet je tabel eruit";
+/* Desglosar, ejemplo: el nivel de ingresos y gastos */
+"report.l18.example.expenses" = "Uitgaven";
+/* Desglosar, ejemplo: una categoría */
+"report.l18.example.category" = "Eten";
+/* Desglosar, ejemplo: una subcategoría */
+"report.l18.example.subcategory" = "Boodschappen";
+/* Desglosar, ejemplo: una etiqueta */
+"report.l18.example.tag" = "Reis";
+/* Desglosar, ejemplo: una cuenta */
+"report.l18.example.account" = "Kaart";
+/* Desglosar, ejemplo: una divisa */
+"report.l18.example.currency" = "Euro";
+/* Desglosar, ejemplo: una necesidad */
+"report.l18.example.need" = "Essentieel";
+/* Desglosar: sin niveles elegidos, la tabla solo separa ingresos y gastos */
+"report.l18.onlyIncomeAndExpenses" = "Alleen inkomsten en uitgaven. Voeg hieronder een niveau toe.";
+/* Crear el plan: rótulo del saldo con el que empieza el plan */
+"cashflow.l18.start.title" = "Met hoeveel begin je?";
+/* Crear el plan: de dónde sale el saldo (una cuenta) */
+"cashflow.l18.start.captionOne" = "Wat je vandaag op je rekening hebt";
+/* Crear el plan: de dónde sale el saldo; %d = número de cuentas (2 o más) */
+"cashflow.l18.start.caption" = "Wat je vandaag op je %d rekeningen hebt";
+/* Crear el plan: sin cuentas que sumen, el saldo se escribe a mano */
+"cashflow.l18.start.captionNone" = "Vul in met hoeveel je begint";
+/* Crear el plan: el saldo lo escribió la persona */
+"cashflow.l18.start.captionTyped" = "Het bedrag dat je invulde";
+/* Crear el plan: enlace para cambiar el saldo inicial */
+"cashflow.l18.start.change" = "Bedrag wijzigen";
+/* Crear el plan: título de la sección de ingresos */
+"cashflow.l18.section.in" = "Wat binnenkomt";
+/* Crear el plan: título de la sección de gastos */
+"cashflow.l18.section.out" = "Wat eruitgaat";
+/* Crear el plan: fila plegada con los gastos que cambian; %d = cuántos */
+"cashflow.l18.variable.title" = "Wisselende uitgaven · %d";
+/* Crear el plan: qué son los gastos que cambian; %@ = ejemplos («Restaurantes, Taxis») */
+"cashflow.l18.variable.caption" = "%@… We tellen ze op als gemiddelde.";
+/* Crear el plan: desplegar los gastos que cambian */
+"cashflow.l18.variable.show" = "Bekijken";
+/* Crear el plan: plegar los gastos que cambian */
+"cashflow.l18.variable.hide" = "Verbergen";
+/* Crear el plan: total de ingresos al mes */
+"cashflow.l18.summary.income" = "Inkomsten per maand";
+/* Crear el plan: total de gastos al mes */
+"cashflow.l18.summary.expense" = "Uitgaven per maand";
+/* Crear el plan: lo que sobra al mes */
+"cashflow.l18.summary.surplus" = "Hou je per maand over";
+/* Crear el plan: lo que falta al mes */
+"cashflow.l18.summary.shortfall" = "Kom je per maand tekort";
+/* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
+"cashflow.l18.sheet.todayBalance" = "Vandaag heb je %@ op je rekeningen";
+/* Hoja del saldo inicial: usar el saldo de hoy */
+"cashflow.l18.sheet.useThisAmount" = "Dit bedrag gebruiken";
+/* Flujo de caja: con cuánto empezó el plan; %@ = monto */
+"cashflow.l18.startedWith" = "Je begon met %@";
+/* Flujo de caja: botón para cambiar algo (el saldo inicial, cómo se calcula una línea) */
+"cashflow.l18.change" = "Wijzigen";
+/* Detalle de una línea: rótulo de cómo se calcula el monto */
+"cashflow.l18.detail.howItsCalculated" = "Zo wordt het berekend";
+/* Detalle de una línea: monto nuevo desde un mes; %1$@ = «noviembre», %2$@ = monto */
+"cashflow.l18.detail.changeFrom" = "Vanaf %1$@: %2$@ per maand";
+/* Ajustar monto: rótulo del campo; %@ = «noviembre» */
+"cashflow.l18.detail.amountFor" = "Bedrag voor %@";
+/* Ajustar monto: a qué meses se aplica; %1$@ y %2$@ = el mismo mes («noviembre») */
+"cashflow.l18.scope.question" = "Alleen %1$@, of %2$@ en de maanden daarna?";
+/* Ajustar monto: solo el mes elegido */
+"cashflow.l18.scope.onlyThatMonth" = "Alleen die maand";
+/* Ajustar monto: el mes elegido y los siguientes */
+"cashflow.l18.scope.alsoFollowing" = "Die maand en de volgende";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
+"cashflow.l18.hero.surplusThisMonth" = "Deze maand hou je over";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
+"cashflow.l18.hero.shortfallThisMonth" = "Deze maand kom je tekort";
+/* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
+"cashflow.l18.hero.surplusFuture" = "In %@ hou je over";
+/* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
+"cashflow.l18.hero.shortfallFuture" = "In %@ kom je tekort";
+/* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
+"cashflow.l18.hero.surplusPast" = "In %@ hield je over";
+/* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
+"cashflow.l18.hero.shortfallPast" = "In %@ kwam je tekort";
+/* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
+"cashflow.l18.hero.projectedEnd" = "Als het zo doorgaat, heb je eind %1$@ %2$@";
+/* Flujo de caja: cuánto se lleva gastado del plan del mes; %d = porcentaje */
+"cashflow.l18.month.spentShare" = "Je hebt %d%% uitgegeven van wat je plande";
+/* Flujo de caja: en un ingreso, lo que falta recibir */
+"cashflow.l18.row.toReceive" = "Nog te ontvangen";
+/* Flujo de caja: en un ingreso, lo recibido de más */
+"cashflow.l18.row.receivedExtra" = "Extra ontvangen";
+/* Flujo de caja: una línea con un monto nuevo desde un mes; %@ = «noviembre» */
+"cashflow.l18.row.fromMonth" = "Vanaf %@";
+/* Gráficas: el período; %1$@ = «agosto», %2$@ = «febrero de 2027» */
+"cashflow.l18.chart.periodRange" = "%1$@ tot %2$@";
+/* Gráficas: de qué es la cifra de la proyección; %@ = «febrero» */
+"cashflow.l18.chart.projectionKPI" = "Saldo eind %@";
+/* Gráficas: de qué es la cifra del ahorro; %1$d = meses, %2$@ = «De agosto a octubre» */
+"cashflow.l18.chart.savingsKPI" = "Gemiddelde van %1$d maanden · %2$@";
+/* Gráficas: el período de «Gastos por revisar»; %@ = «De agosto a octubre» */
+"cashflow.l18.chart.deviationPeriod" = "Gemiddelde per maand. %@. Daarom wijkt het af van het detail van één maand.";
+/* Gráficas: gastado frente a lo planeado al mes; %1$@ = gastado, %2$@ = planeado */
+"cashflow.l18.chart.deviationLine" = "%1$@ van %2$@ per maand";
+/* Agregar línea: ejemplo del camino «Desde mis gastos» */
+"cashflow.l18.add.historyExpense" = "Gebruikt wat je deze maanden uitgaf, zoals boodschappen";
+/* Agregar línea: ejemplo del camino «Desde mis ingresos» */
+"cashflow.l18.add.historyIncome" = "Gebruikt wat je deze maanden ontving, zoals je salaris";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (gasto) */
+"cashflow.l18.add.scheduledExpense" = "Een geplande betaling die je al hebt, zoals de huur";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (ingreso) */
+"cashflow.l18.add.scheduledIncome" = "Een gepland inkomen dat je al hebt, zoals je salaris";
+/* Agregar línea: ejemplo del camino «Línea personalizada» */
+"cashflow.l18.add.custom" = "Iets wat je nog niet bijhoudt, zoals sparen of een reis";
+/* Agregar línea: lo que movió una categoría en 6 meses; %@ = monto */
+"cashflow.l18.add.inSixMonths" = "%@ in 6 maanden";
+
+/* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
+"report.l18.inPeriod" = "in %@";

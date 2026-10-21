@@ -39,14 +39,20 @@ import Foundation
 nonisolated enum SyncCapability {
 
     /// La versión del manifest que este build entiende. Súbela SOLO junto con la columna que la estrena.
-    static let clientManifestVersion = 2
+    static let clientManifestVersion = 3
 
     /// Versión del manifest que estrena `accounts.parent_account_id`.
     static let accountLinksSince = 2
 
+    /// Versión del manifest que estrena `cashflow_lines.amount_changes_raw` (UX 2.2 · L18-8: los cambios de monto «desde
+    /// este mes» de una línea del flujo de caja).
+    static let cashFlowAmountChangesSince = 3
+
     static let backendManifestVersionKey = "cloudSync.backendManifestVersion"
+    static let lastDeclaredLevelKey = "cloudSync.lastDeclaredLevel"
     static let upgradePendingKey = "cloudSync.capabilityUpgradePending"
     static let suppressedAccountLinksKey = "cloudSync.accountLinksSuppressed"
+    static let suppressedCashFlowAmountChangesKey = "cloudSync.cashFlowAmountChangesSuppressed"
 
     /// Bajo tests NUNCA `.standard`: el host es la app del simulador y un valor de una suite se leería luego en
     /// una corrida a mano. Inyectable (los tests que lo fijan lo restauran en `defer`).
@@ -66,17 +72,30 @@ nonisolated enum SyncCapability {
     static var declaredHeader: String { header(forLevel: declaredLevel) }
 
     /// Apunta lo que anunció el backend. `nil` = un Worker que no anuncia (anterior a esto) = 1. Si con esto el
-    /// teléfono PASA a hablar una versión que conoce los enlaces de tarjeta, deja pedida la subida
-    /// (`upgradePending`): la cumple el bucle del pull antes de aplicar nada más.
+    /// teléfono PASA a hablar una versión más alta —cualquiera: cada versión estrena columnas—, deja pedida la subida
+    /// (`upgradePending`): la cumple el bucle del pull antes de aplicar nada más. Hasta 2026-10-21 solo la pedía al
+    /// cruzar la de los enlaces de tarjeta (v2); con la v3 (cambios de monto del flujo de caja) el cruce de v2 a v3
+    /// también deja columnas que bajaron sin ella y cambios que no subieron.
+    ///
+    /// «Antes» es lo que el teléfono DECLARÓ la última vez que apuntó (`lastDeclaredLevelKey`), no lo que declararía
+    /// este build con la versión de antes: la versión también sube al ACTUALIZAR LA APP, sin que el backend cambie, y
+    /// recalculado con el build nuevo el «antes» ya valía la versión nueva y nadie pedía la subida (lo cazó la review
+    /// del 2026-10-21). Sin apunte —un build anterior a esto— se supone que el build de antes hablaba una versión
+    /// menos: pedir la subida de más solo vuelve a bajar desde 0.
     static func recordBackendManifestVersion(_ advertised: Int?) {
-        let before = declaredLevel
+        let before = (defaults.object(forKey: lastDeclaredLevelKey) as? Int)
+            ?? min(clientManifestVersion - 1, backendManifestVersion)
         let value = max(1, advertised ?? 1)
         if defaults.integer(forKey: backendManifestVersionKey) != value {
             defaults.set(value, forKey: backendManifestVersionKey)
         }
-        if before < accountLinksSince && declaredLevel >= accountLinksSince {
+        let now = declaredLevel
+        if now > before && now >= accountLinksSince {
             defaults.set(true, forKey: upgradePendingKey)
-            CloudSyncBreadcrumb.capabilityUpgraded(from: before, to: declaredLevel)
+            CloudSyncBreadcrumb.capabilityUpgraded(from: before, to: now)
+        }
+        if (defaults.object(forKey: lastDeclaredLevelKey) as? Int) != now {
+            defaults.set(now, forKey: lastDeclaredLevelKey)
         }
     }
 
@@ -115,6 +134,29 @@ nonisolated enum SyncCapability {
         let remaining = suppressedAccountLinks.subtracting(shortcutIDs)
         if remaining.isEmpty { defaults.removeObject(forKey: suppressedAccountLinksKey) }
         else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedAccountLinksKey) }
+    }
+
+    // MARK: - Cambios de monto del flujo de caja que no subieron (v3)
+
+    /// Las líneas del flujo de caja (por `id`) cuyos cambios «desde este mes» este teléfono cambió o subió mientras
+    /// hablaba una versión que no conoce la columna: la emisión la quitó y el servidor no la tiene.
+    static var suppressedCashFlowAmountChanges: Set<UUID> {
+        Set((defaults.stringArray(forKey: suppressedCashFlowAmountChangesKey) ?? []).compactMap(UUID.init(uuidString:)))
+    }
+
+    /// Lo llama quien filtró `amount_changes_raw` por la versión. Apuntar de más es inocuo: la reemisión sube el valor
+    /// de ese momento.
+    static func noteSuppressedCashFlowAmountChange(_ lineID: UUID) {
+        var current = suppressedCashFlowAmountChanges
+        guard current.insert(lineID).inserted else { return }
+        defaults.set(current.map(\.uuidString).sorted(), forKey: suppressedCashFlowAmountChangesKey)
+    }
+
+    /// Retira las que ya se encolaron. Solo esas: una que se apuntó mientras tanto se queda para la siguiente.
+    static func clearSuppressedCashFlowAmountChanges(_ lineIDs: Set<UUID>) {
+        let remaining = suppressedCashFlowAmountChanges.subtracting(lineIDs)
+        if remaining.isEmpty { defaults.removeObject(forKey: suppressedCashFlowAmountChangesKey) }
+        else { defaults.set(remaining.map(\.uuidString).sorted(), forKey: suppressedCashFlowAmountChangesKey) }
     }
 
     private static func makeDefaults() -> UserDefaults {

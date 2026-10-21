@@ -1,10 +1,12 @@
 ---
 id: cashflow-this-and-future-adjustment-rewrites-past-months
-status: backlog
+status: qa
 priority: medium
 area: cash-flow-plan
 created: 2026-10-16
-updated: 2026-10-16
+updated: 2026-10-21
+qa-status: needs-testing
+qa-notes: dos iPhone con el campo ya desplegado en CloudKit - cambio desde el mes siguiente en A y el B lo ve sin tocar el pasado
 source: auditoría UX 2.2, lote 18 (Reportes) — medido en el simulador
 ---
 
@@ -55,3 +57,14 @@ Recomendación: A.
 
 Ajustar un mes «y futuros» no cambia el estimado de ningún mes anterior al elegido, con un test de la proyección
 que lo fije (control: el mes elegido y los siguientes sí cambian).
+
+## Resuelto (2026-10-21, lote decidido 2.2 · 10, L18-8)
+
+«Ese mes y los siguientes» guarda ahora un cambio fechado (`CashFlowLine.amountChangesRaw`, `yyyy-MM=monto,…`) y no
+toca el método: los meses anteriores siguen con su cálculo. Se sincroniza por iCloud (campo `CD_amountChangesRaw`) y
+por el Modo Nube (columna `amount_changes_raw`, manifest v3). Fijado en `CashFlowAmountFromMonthTests`,
+`CashFlowAmountFromMonthViewModelTests`, `CashFlowAmountChangeSyncTests` y el XCUITest
+`CashFlowPlanUITests#test_amountFromThisMonthOn_changesTheComingMonths_andLeavesThePastAlone`.
+
+Queda: desplegar el campo a CloudKit (card de Lola), el DDL g21_01 y el Worker v3 (card de Jürgen), y probarlo con dos
+iPhone. Límites aceptados: `cashflow-amount-changes-from-two-phones-overwrite-each-other`.

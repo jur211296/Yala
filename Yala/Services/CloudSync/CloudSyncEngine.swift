@@ -3071,6 +3071,11 @@ final class CloudSyncEngine {
                let account = model as? Account {
                 SyncCapability.noteSuppressedAccountLink(account.shortcutID)
             }
+            // Igual con los cambios de monto «desde este mes» del flujo de caja (v3), también cuando se vacían.
+            if level < SyncCapability.cashFlowAmountChangesSince, changedColumns.contains("amount_changes_raw"),
+               let line = model as? CashFlowLine {
+                SyncCapability.noteSuppressedCashFlowAmountChange(line.id)
+            }
             changedColumns.formIntersection(emission.columns(upTo: level))
             guard !changedColumns.isEmpty else { return }
             try appendUpsert(model: model, emission: emission, syncID: syncID, entityType: entityType,

@@ -1759,6 +1759,27 @@ querying schema»**. El golden 28 hace `ctx.skip()` si `profiles[subC]` ya exist
 delete from public.profiles where id = (select id from auth.users where email='i5-user-c@test.yala');
 ```
 
+## g21_01 — `cashflow_lines.amount_changes_raw`: los cambios «desde este mes» del flujo de caja (2026-10-21)
+
+**PREPARADA, NO APLICADA en ningún entorno** (los pasos, en `docs/RUNBOOK-staging-ddl.md`). Fichero:
+`qa/cloud/g21_01_cashflow_line_amount_changes.sql`; marcha atrás `qa/cloud/g21_01_rollback.sql` (idempotente, solo sin
+cambios, bajo lock). Lote decidido 2.2 · L18-8.
+
+Qué cambia: una columna `text` nullable con los cambios de monto de una línea del plan, `yyyy-MM=monto,…` (lógica en
+`Yala/App/Logic/CashFlowAmountChangeLogic.swift`). Hasta aquí «este mes y los siguientes» pasaba la línea a monto fijo y
+reescribía también los meses ya cerrados; ahora el monto cambia desde ese mes y los anteriores quedan como estaban.
+
+**Segundo `since` del manifest**: la columna lleva `"since": 3` y el manifest `manifest_version: 3`, con el mismo
+mecanismo de g18_01 (proyección por versión, anuncio y subida con reemisión de lo apuntado,
+`SyncCapability.noteSuppressedCashFlowAmountChange`). **Lo que cambió en la subida**: desde la v3 la subida se pide al
+cruzar CUALQUIER versión (antes solo la de los enlaces) y el «antes» es lo que el teléfono declaró la última vez
+(`cloudSync.lastDeclaredLevel`), porque la versión también sube al actualizar la app sin que el Worker cambie (lo cazó la
+review). Lo fijan `CashFlowAmountChangeSyncTests` y `gateway/test/manifest.capability.test.ts`.
+
+**El orden: g18_01 → g21_01 → Worker v3 → app.** El Worker v3 sirve las columnas de la v2 y de la v3. Una sola columna
+para toda la cadena: dos teléfonos que cambian meses distintos de la misma línea a la vez se pisan por LWW (el mismo trato
+que `custom_months_raw`).
+
 ## g18_01 — `accounts.parent_account_id`: la tarjeta con varias divisas (2026-10-18)
 
 **Aplicada en STAGING el 2026-10-18; PRODUCCIÓN PENDIENTE (la aplica Jürgen, card «Aplicar en producción el DDL de

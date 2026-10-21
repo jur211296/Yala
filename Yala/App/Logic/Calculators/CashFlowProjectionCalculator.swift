@@ -48,6 +48,9 @@ struct CashFlowLineResult {
     /// `plannedAmount` salió de convertir un pago programado con una tasa no exacta: se pinta «≈».
     /// Solo lo enciende una línea `.scheduled` sin override (`ScheduledPaymentAmountConversion`).
     var isPlannedApproximate: Bool = false
+    /// El mes desde el que vale el monto de este mes (UX 2.2 · L18-8): un cambio «este mes y los siguientes» hecho
+    /// en `amountChangeFromMonthKey`. `nil` si el monto sale del método de la línea o de un ajuste de un solo mes.
+    var amountChangeFromMonthKey: String? = nil
 }
 
 struct CashFlowOtherResult {
@@ -308,22 +311,13 @@ struct CashFlowProjectionCalculator {
         calendar: Calendar
     ) -> CashFlowLineResult {
 
-        let override = line.monthOverride(for: monthKey)
-        let isOverride = override != nil
-
-        let plannedAmount: Double
-        let isPlannedApproximate: Bool
-        if let override {
-            plannedAmount = override.amount
-            isPlannedApproximate = false
-        } else {
-            let estimate = estimatePlanned(
-                line: line, monthDate: monthDate, index: index,
-                currencyCode: currencyCode, converter: converter, calendar: calendar
-            )
-            plannedAmount = estimate.amount
-            isPlannedApproximate = estimate.isApproximate
-        }
+        let planned = resolvePlanned(
+            line: line, monthKey: monthKey, monthDate: monthDate, index: index,
+            currencyCode: currencyCode, converter: converter, calendar: calendar
+        )
+        let plannedAmount = planned.amount
+        let isPlannedApproximate = planned.isApproximate
+        let isOverride = planned.isOverride
 
         let realAmount: Double?
         if isPast || isCurrent, (line.subcategory != nil || line.category != nil) {
@@ -377,8 +371,31 @@ struct CashFlowProjectionCalculator {
             progress: progress, isOverride: isOverride,
             estimationMethod: line.method,
             subcategoryBreakdown: subcategoryBreakdown,
-            isPlannedApproximate: isPlannedApproximate
+            isPlannedApproximate: isPlannedApproximate,
+            amountChangeFromMonthKey: planned.changeFromMonthKey
         )
+    }
+
+    /// Lo planeado para un mes, en el orden de L18-8: el ajuste de ese mes, el último cambio «desde este mes» igual o
+    /// anterior, y si no hay ninguno, el método de la línea. Lo usan la fila de cada mes y la ordenación de las líneas,
+    /// para que las dos digan el mismo número.
+    static func resolvePlanned(
+        line: CashFlowLine, monthKey: String, monthDate: Date,
+        index: TransactionIndex,
+        currencyCode: String, converter: any CurrencyConverting,
+        calendar: Calendar
+    ) -> (amount: Double, isApproximate: Bool, isOverride: Bool, changeFromMonthKey: String?) {
+        if let override = line.monthOverride(for: monthKey) {
+            return (override.amount, false, true, nil)
+        }
+        if let change = CashFlowAmountChangeLogic.change(for: monthKey, in: line.amountChanges) {
+            return (change.amount, false, false, change.monthKey)
+        }
+        let estimate = estimatePlanned(
+            line: line, monthDate: monthDate, index: index,
+            currencyCode: currencyCode, converter: converter, calendar: calendar
+        )
+        return (estimate.amount, estimate.isApproximate, false, nil)
     }
 
     // MARK: - Lookup (subcategory → category fallback)
@@ -645,11 +662,10 @@ struct CashFlowProjectionCalculator {
     ) -> [CashFlowLine] {
         // Pre-compute amounts once per line (O(n)) to avoid redundant calls during sort
         let amounts: [UUID: Double] = Dictionary(uniqueKeysWithValues: lines.map { line in
-            let amt = line.monthOverride(for: monthKey)?.amount
-                ?? estimatePlanned(
-                    line: line, monthDate: monthDate, index: index,
-                    currencyCode: currencyCode, converter: converter, calendar: calendar
-                ).amount
+            let amt = resolvePlanned(
+                line: line, monthKey: monthKey, monthDate: monthDate, index: index,
+                currencyCode: currencyCode, converter: converter, calendar: calendar
+            ).amount
             return (line.id, amt)
         })
 

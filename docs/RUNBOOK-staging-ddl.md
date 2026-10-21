@@ -529,6 +529,44 @@ entera (`unknown_column`); el teléfono la aparta para siempre, también lo que 
 `predeploy` lo impide (`gateway/scripts/check-manifest-not-older.mjs`), pero **2.1 no trae ese guard hasta que se mezcle
 2.2 en 2.1**: hasta entonces, el Worker de producción no se despliega desde 2.1.
 
+## `g21_01_cashflow_line_amount_changes.sql` — cambios «desde este mes» del flujo de caja (PENDIENTE en los dos entornos, 2026-10-21)
+
+**Ni staging ni producción.** La sesión que lo escribió no lo aplicó en staging a propósito: con el Worker de staging en
+`manifest_version: 2`, el DDL solo es inocuo, pero desplegar ahí el Worker v3 que lo necesita habría cambiado lo que
+prueban otras sesiones a la vez. **Lo aplica Jürgen** (card «Aplicar el DDL g21_01 y desplegar el Worker v3»).
+
+Qué es: `cashflow_lines.amount_changes_raw text` nullable, con los cambios de monto «este mes y los siguientes» de una
+línea del plan (`yyyy-MM=monto,…`). Va con el Worker de `manifest_version: 3` (`qa/cloud/README.md`, entrada g21_01).
+
+**Depende de g18_01.** El Worker v3 sirve también la columna de la v2 (`accounts.parent_account_id`): en un entorno sin
+g18_01, el Merkle de `accounts` de cualquier teléfono que pida `v2` o `v3` da 502. Si g18_01 sigue pendiente en ese
+entorno, va primero (su sección, arriba).
+
+### Los pasos, en orden (staging `fostjbbwstyuunmmefuk` primero; luego producción `kefvaiymtgytemwbltlz`)
+
+1. **Medir antes.** *SQL Editor* → *New query*:
+   ```sql
+   select column_name from information_schema.columns
+    where table_schema = 'public'
+      and ((table_name = 'accounts' and column_name = 'parent_account_id')
+        or (table_name = 'cashflow_lines' and column_name = 'amount_changes_raw'));
+   ```
+   Tiene que salir `parent_account_id`. Si falta, aplica antes g18_01. Si ya sale `amount_changes_raw`, salta al paso 4.
+2. **Aplicar.** *New query* → pega `qa/cloud/g21_01_cashflow_line_amount_changes.sql` entero → *Run*. Tiene que salir el
+   aviso `g21_01 OK · cashflow_lines.amount_changes_raw text nullable, grants heredados`. Con un error no se aplicó nada
+   (va en transacción): para y avisa a Frank.
+3. **Comprobar.** Repite la consulta del paso 1: salen las dos columnas.
+4. **Desplegar el Worker, SOLO después del paso 3**, desde `2.2` con este PR mergeado: `cd gateway && npm ci && npm run
+   deploy:staging` (staging) o `npm run deploy:production`. El `predeploy` tiene que decir `check-manifest-not-older: OK
+   (desplegado v…, este árbol v3)`. Apunta el `Current Version ID` y el anterior.
+5. **Comprobar el Worker.** `curl -s -A yala <url del gateway>/config` trae `"sync":{"manifestVersion":3}`. Con un iPhone
+   con esta build en la nube, `npx wrangler tail` (con `--env production` en producción) no debe enseñar
+   `[sync-merkle] … 502`.
+
+**Marcha atrás.** Worker: `npx wrangler rollback <id anterior>`. Columna: `g21_01_rollback.sql`, idempotente, que aborta si
+alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
+su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
+
 ## Referencias
 
 - Detalle por migración y su historia: `qa/cloud/README.md` (la entrada de `g14_01` está en

@@ -79,6 +79,7 @@ CREATE TABLE cashflow_lines (
   estimation_method TEXT,
   manual_amount NUMERIC(18,4),
   custom_months_raw TEXT[],
+  amount_changes_raw TEXT,  -- g21_01 (2026-10-21): cambios de monto «desde este mes» (UX 2.2 · L18-8); PENDIENTE en staging y producción
   category_ref UUID,
   subcategory_ref UUID,
   scheduled_payment_ref UUID,

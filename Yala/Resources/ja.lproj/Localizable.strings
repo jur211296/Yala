@@ -677,14 +677,14 @@
 "report.noSubcategory" = "サブカテゴリーなし";
 "report.noTag" = "タグなし";
 "report.noAccount" = "口座なし";
-"report.grouping.type" = "種別";
+"report.grouping.type" = "収入と支出";
 "report.grouping.category" = "カテゴリー";
 "report.grouping.subcategory" = "サブカテゴリー";
 "report.grouping.tag" = "タグ";
 "report.grouping.account" = "口座";
 "report.grouping.currency" = "通貨";
 "report.grouping.nature" = "性質";
-"report.grouping.drillDown" = "深掘り";
+"report.grouping.drillDown" = "内訳";
 "report.grouping.hint" = "階層を追加すると詳細が表示されます。優先度はドラッグで並び替えできます。";
 "report.grouping.active" = "アクティブ";
 "report.grouping.available" = "利用可能";
@@ -834,7 +834,7 @@
 "cashFlowPlan.monthsActive" = "ヶ月";
 "cashFlowPlan.suggestedSource" = "%dヶ月の活動データに基づく";
 "cashFlowPlan.bannerTitle" = "キャッシュフローとは？";
-"cashFlowPlan.bannerBody" = "毎月の収入と支出の計画です。お金が足りるか、調整が必要かが分かります。";
+"cashFlowPlan.bannerBody" = "収入で支出をまかなえているか、月ごとに確認できます。";
 "cashFlowPlan.available" = "利用可能";
 "cashFlowPlan.accumulated" = "累積";
 "cashFlowPlan.accumulatedShort" = "累積";
@@ -903,7 +903,7 @@
 "cashFlowPlan.monthSummaryOnTrack" = "今月の予想支出のうち%d%%を使用しました";
 "cashFlowPlan.monthSummaryOver" = "今月の予想を%d%%超過しています";
 "cashFlowPlan.monthSummaryUnder" = "%d%%だけ使用 — 今月は順調です";
-"cashFlowPlan.configureHorizon" = "期間を設定";
+"cashFlowPlan.configureHorizon" = "表示する月数";
 "cashFlowPlan.monthsAhead" = "先の月数";
 "cashFlowPlan.monthsBack" = "過去の月数";
 "cashFlowPlan.showAccumulatedBalance" = "累積を表示";
@@ -4300,8 +4300,8 @@
 "more.subtitle.distribution" = "お金の使いみちを発見";
 "more.subtitle.budgets" = "上限を決めて進み具合を確認";
 "more.subtitle.scheduledPayments" = "これからの支払いとサブスク";
-"more.subtitle.comparative" = "期間を並べて比較";
-"more.subtitle.cashFlow" = "入ってくるお金と出ていくお金";
+"more.subtitle.comparative" = "先月より使った？使わなかった？";
+"more.subtitle.cashFlow" = "これからの数か月、お金は足りる？";
 "more.subtitle.records" = "すべての記録をひとつに";
 "more.subtitle.groups" = "割り勘を手軽に共有";
 "more.subtitle.profile" = "アカウントと設定";
@@ -7723,3 +7723,155 @@
 "shortcut.applePay.notification.title" = "%2$@での%1$@の支払いを確認";
 "shortcut.applePay.notification.titleNoMerchant" = "%@の支払いを確認";
 "shortcut.applePay.notification.body" = "タップして承認します。";
+
+/* VoiceOver: el cambio entre dos períodos redondea a cero */
+"accessibility.variationNoChange" = "変化なし";
+/* Comparativa en «Todo el tiempo»: tarjeta que invita a elegir un período */
+"report.l18.allTime.title" = "比べるには、月か年を選んでください";
+/* Comparativa: qué se compara con qué; %1$@ = «Octubre», %2$@ = «septiembre» */
+"report.l18.heading" = "%1$@と%2$@の比較";
+/* Comparativa: igual, con un tramo de días; %1$@ = «Octubre», %2$@ = «1–21 de septiembre» */
+"report.l18.headingRange" = "%1$@と%2$@の比較";
+/* Comparativa: chip para comparar con el mes anterior */
+"report.l18.chip.previousMonth" = "前月と比べる";
+/* Comparativa: chip para comparar con la semana anterior */
+"report.l18.chip.previousWeek" = "前週と比べる";
+/* Comparativa: chip para comparar con los 7 días anteriores */
+"report.l18.chip.previous7Days" = "その前の7日間と比べる";
+/* Comparativa: chip para comparar con los 30 días anteriores */
+"report.l18.chip.previous30Days" = "その前の30日間と比べる";
+/* Comparativa: chip para comparar con el período anterior */
+"report.l18.chip.previousPeriod" = "前の期間と比べる";
+/* Comparativa: chip para comparar con el mismo período del año pasado; %@ = «octubre de 2025» */
+"report.l18.chip.yearAgo" = "%@と比べる";
+/* Comparativa: cabecera de la columna del cambio */
+"report.l18.column.change" = "増減";
+/* Comparativa: ingresos menos gastos cuando sobra */
+"report.l18.net.gain" = "残った額";
+/* Comparativa: ingresos menos gastos cuando falta */
+"report.l18.net.loss" = "足りなかった額";
+/* Comparativa: qué es «Te quedó» */
+"report.l18.net.caption" = "収入から支出を引いた額です。";
+/* Comparativa: qué es «Te quedó» y cuánto quedó antes; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionGainBefore" = "収入から支出を引いた額です。%1$@は%2$@残りました。";
+/* Comparativa: igual, cuando antes faltó; %1$@ = «septiembre», %2$@ = monto */
+"report.l18.net.captionLossBefore" = "収入から支出を引いた額です。%1$@は%2$@足りませんでした。";
+/* VoiceOver de una fila: %1$@ monto, %2$@ período, %3$@ monto anterior, %4$@ período anterior */
+"report.l18.row.amountsA11y" = "%2$@は%1$@、%4$@は%3$@";
+/* Desglosar: título del ejemplo de cómo quedará la tabla */
+"report.l18.example.title" = "表はこのようになります";
+/* Desglosar, ejemplo: el nivel de ingresos y gastos */
+"report.l18.example.expenses" = "支出";
+/* Desglosar, ejemplo: una categoría */
+"report.l18.example.category" = "食費";
+/* Desglosar, ejemplo: una subcategoría */
+"report.l18.example.subcategory" = "スーパー";
+/* Desglosar, ejemplo: una etiqueta */
+"report.l18.example.tag" = "旅行";
+/* Desglosar, ejemplo: una cuenta */
+"report.l18.example.account" = "カード";
+/* Desglosar, ejemplo: una divisa */
+"report.l18.example.currency" = "円";
+/* Desglosar, ejemplo: una necesidad */
+"report.l18.example.need" = "必需";
+/* Desglosar: sin niveles elegidos, la tabla solo separa ingresos y gastos */
+"report.l18.onlyIncomeAndExpenses" = "収入と支出だけです。下から項目を追加してください。";
+/* Crear el plan: rótulo del saldo con el que empieza el plan */
+"cashflow.l18.start.title" = "スタート時の金額は？";
+/* Crear el plan: de dónde sale el saldo (una cuenta) */
+"cashflow.l18.start.captionOne" = "今日の口座残高です";
+/* Crear el plan: de dónde sale el saldo; %d = número de cuentas (2 o más) */
+"cashflow.l18.start.caption" = "今日の%d口座の残高です";
+/* Crear el plan: sin cuentas que sumen, el saldo se escribe a mano */
+"cashflow.l18.start.captionNone" = "スタート時の金額を入力してください";
+/* Crear el plan: el saldo lo escribió la persona */
+"cashflow.l18.start.captionTyped" = "入力した金額";
+/* Crear el plan: enlace para cambiar el saldo inicial */
+"cashflow.l18.start.change" = "金額を変更";
+/* Crear el plan: título de la sección de ingresos */
+"cashflow.l18.section.in" = "入ってくるお金";
+/* Crear el plan: título de la sección de gastos */
+"cashflow.l18.section.out" = "出ていくお金";
+/* Crear el plan: fila plegada con los gastos que cambian; %d = cuántos */
+"cashflow.l18.variable.title" = "変動する支出 · %d";
+/* Crear el plan: qué son los gastos que cambian; %@ = ejemplos («Restaurantes, Taxis») */
+"cashflow.l18.variable.caption" = "%@…平均額で計算します。";
+/* Crear el plan: desplegar los gastos que cambian */
+"cashflow.l18.variable.show" = "表示";
+/* Crear el plan: plegar los gastos que cambian */
+"cashflow.l18.variable.hide" = "隠す";
+/* Crear el plan: total de ingresos al mes */
+"cashflow.l18.summary.income" = "月の収入";
+/* Crear el plan: total de gastos al mes */
+"cashflow.l18.summary.expense" = "月の支出";
+/* Crear el plan: lo que sobra al mes */
+"cashflow.l18.summary.surplus" = "月に残る額";
+/* Crear el plan: lo que falta al mes */
+"cashflow.l18.summary.shortfall" = "月に足りない額";
+/* Hoja del saldo inicial: lo que hay hoy en las cuentas; %@ = monto */
+"cashflow.l18.sheet.todayBalance" = "今日の口座残高は%@です";
+/* Hoja del saldo inicial: usar el saldo de hoy */
+"cashflow.l18.sheet.useThisAmount" = "この金額を使う";
+/* Flujo de caja: con cuánto empezó el plan; %@ = monto */
+"cashflow.l18.startedWith" = "開始時の金額：%@";
+/* Flujo de caja: botón para cambiar algo (el saldo inicial, cómo se calcula una línea) */
+"cashflow.l18.change" = "変更";
+/* Detalle de una línea: rótulo de cómo se calcula el monto */
+"cashflow.l18.detail.howItsCalculated" = "計算方法";
+/* Detalle de una línea: monto nuevo desde un mes; %1$@ = «noviembre», %2$@ = monto */
+"cashflow.l18.detail.changeFrom" = "%1$@から：毎月%2$@";
+/* Ajustar monto: rótulo del campo; %@ = «noviembre» */
+"cashflow.l18.detail.amountFor" = "%@の金額";
+/* Ajustar monto: a qué meses se aplica; %1$@ y %2$@ = el mismo mes («noviembre») */
+"cashflow.l18.scope.question" = "%1$@だけ？それとも%2$@以降すべて？";
+/* Ajustar monto: solo el mes elegido */
+"cashflow.l18.scope.onlyThatMonth" = "その月だけ";
+/* Ajustar monto: el mes elegido y los siguientes */
+"cashflow.l18.scope.alsoFollowing" = "その月以降すべて";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando sobra */
+"cashflow.l18.hero.surplusThisMonth" = "今月残る額";
+/* Flujo de caja: rótulo de la cifra del mes en curso cuando falta */
+"cashflow.l18.hero.shortfallThisMonth" = "今月足りない額";
+/* Flujo de caja: rótulo de un mes que viene cuando sobraría; %@ = «noviembre» */
+"cashflow.l18.hero.surplusFuture" = "%@に残る見込み";
+/* Flujo de caja: rótulo de un mes que viene cuando faltaría; %@ = «noviembre» */
+"cashflow.l18.hero.shortfallFuture" = "%@に足りない見込み";
+/* Flujo de caja: rótulo de un mes pasado cuando sobró; %@ = «septiembre» */
+"cashflow.l18.hero.surplusPast" = "%@に残った額";
+/* Flujo de caja: rótulo de un mes pasado cuando faltó; %@ = «septiembre» */
+"cashflow.l18.hero.shortfallPast" = "%@に足りなかった額";
+/* Flujo de caja: saldo al final del plan; %1$@ = «diciembre», %2$@ = monto */
+"cashflow.l18.hero.projectedEnd" = "このままなら、%1$@末には%2$@になります";
+/* Flujo de caja: cuánto se lleva gastado del plan del mes; %d = porcentaje */
+"cashflow.l18.month.spentShare" = "予定の%d%%を使いました";
+/* Flujo de caja: en un ingreso, lo que falta recibir */
+"cashflow.l18.row.toReceive" = "未受取";
+/* Flujo de caja: en un ingreso, lo recibido de más */
+"cashflow.l18.row.receivedExtra" = "予定より多く受取";
+/* Flujo de caja: una línea con un monto nuevo desde un mes; %@ = «noviembre» */
+"cashflow.l18.row.fromMonth" = "%@から";
+/* Gráficas: el período; %1$@ = «agosto», %2$@ = «febrero de 2027» */
+"cashflow.l18.chart.periodRange" = "%1$@〜%2$@";
+/* Gráficas: de qué es la cifra de la proyección; %@ = «febrero» */
+"cashflow.l18.chart.projectionKPI" = "%@末の残高";
+/* Gráficas: de qué es la cifra del ahorro; %1$d = meses, %2$@ = «De agosto a octubre» */
+"cashflow.l18.chart.savingsKPI" = "%1$dか月の平均（%2$@）";
+/* Gráficas: el período de «Gastos por revisar»; %@ = «De agosto a octubre» */
+"cashflow.l18.chart.deviationPeriod" = "月平均です。%@。そのため1か月の詳細とは一致しません。";
+/* Gráficas: gastado frente a lo planeado al mes; %1$@ = gastado, %2$@ = planeado */
+"cashflow.l18.chart.deviationLine" = "月%2$@のうち%1$@";
+/* Agregar línea: ejemplo del camino «Desde mis gastos» */
+"cashflow.l18.add.historyExpense" = "ここ数か月の支出をもとにします（例：スーパー）";
+/* Agregar línea: ejemplo del camino «Desde mis ingresos» */
+"cashflow.l18.add.historyIncome" = "ここ数か月の収入をもとにします（例：給料）";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (gasto) */
+"cashflow.l18.add.scheduledExpense" = "登録済みの予定支払い（例：家賃）";
+/* Agregar línea: ejemplo del camino «Desde pago programado» (ingreso) */
+"cashflow.l18.add.scheduledIncome" = "登録済みの予定入金（例：給料）";
+/* Agregar línea: ejemplo del camino «Línea personalizada» */
+"cashflow.l18.add.custom" = "まだ記録していないもの（例：貯金、旅行）";
+/* Agregar línea: lo que movió una categoría en 6 meses; %@ = monto */
+"cashflow.l18.add.inSixMonths" = "6か月で%@";
+
+/* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
+"report.l18.inPeriod" = "%@";

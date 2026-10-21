@@ -3,8 +3,13 @@
 //  Yala
 //
 //  A single line row in the month detail view.
-//  Shows icon, name, planned/real amount, and progress bar for current month.
 //  Tap → cell detail sheet. Context menu → ask to delete the line (the month detail confirms).
+//
+//  Lienzo «Una sola Yala» (2A, decisión de Jürgen del 19-oct): una línea del plan dice lo mismo que un presupuesto
+//  —cuánto llevas de cuánto y cuánto te queda—, así que es la tarjeta de Presupuestos: icono de 40, «S/ 1,238 de
+//  S/ 1,950 · 13 días», «Te quedan / Te pasaste por» a la derecha y la barra a lo ancho. En un ingreso, «Te falta
+//  recibir» y recibir de más no se pinta en rosa (B7). Un mes que viene dice lo planeado y cómo se calcula, en gris: el
+//  método ya no se pinta como un enlace (L18-7).
 //
 
 import SwiftUI
@@ -19,39 +24,43 @@ struct CashFlowDetailLineRow: View {
 
     @Environment(\.yalaTheme) private var theme
     @Environment(AppPreferences.self) private var appPreferences
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         Button {
             onTapLine()
         } label: {
-            HStack(spacing: DS.Spacing.md) {
-                // Category icon
-                categoryIcon
-
-                // Name + method hint
-                VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
-                    Text(lineResult.name)
-                        .font(DS.Typography.subheadline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    if !month.isCurrent && !month.isPast {
-                        Text(lineResult.estimationMethod.displayName)
-                            .font(DS.Typography.captionSmall)
-                            .foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+                AdaptiveRowStack(spacing: DS.Spacing.md, stackedSpacing: DS.Spacing.sm) {
+                    categoryIcon
+                    VStack(alignment: .leading, spacing: DS.Spacing.xxs) {
+                        Text(lineResult.name)
+                            .font(DS.Typography.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                        subtitle
                     }
+                } trailing: {
+                    trailingFigure
                 }
 
-                Spacer(minLength: 0)
-
-                // Amount column
-                amountColumn
+                if let real = lineResult.realAmount, hasRealData, lineResult.plannedAmount > 0 {
+                    BudgetProgressBar(
+                        percentage: real / lineResult.plannedAmount * 100,
+                        color: "",
+                        isExceeded: CashFlowLineSideLogic.progressIsAlarm(
+                            progress: real / lineResult.plannedAmount, isIncome: lineResult.isIncome
+                        ),
+                        simplified: true
+                    )
+                }
             }
-            .padding(.horizontal, DS.Spacing.lg)
-            .padding(.vertical, DS.Spacing.sm)
+            .padding(DS.Spacing.lg)
             .contentShape(Rectangle())
+            .solidCard(radius: DS.Radius.md)
         }
         .buttonStyle(.plain)
+        .pointerHighlight(cornerRadius: DS.Radius.md)
         .accessibilityIdentifier("cashflow_detail_line")
         .contextMenu {
             // El botón pide el borrado; la confirmación la pinta `CashFlowMonthDetailView`. Antes el botón
@@ -67,116 +76,119 @@ struct CashFlowDetailLineRow: View {
         }
     }
 
+    /// El mes ya tiene movimientos (en curso o pasado): se compara lo real con lo planeado.
+    private var hasRealData: Bool { month.isPast || month.isCurrent }
+
+    // MARK: - Subtítulo
+
+    @ViewBuilder
+    private var subtitle: some View {
+        if hasRealData, let real = lineResult.realAmount {
+            // «S/ 1,238 de S/ 1,950 · 13 días» (en curso) o «· Cerrado» (pasado), como un presupuesto.
+            BudgetSpentLine(
+                spent: real,
+                limit: lineResult.plannedAmount,
+                currencyCode: currencyCode,
+                suffix: month.isCurrent ? L10n.UXL9.shortDays(daysLeftInMonth) : L10n.UXL9.shortDays(-1)
+            )
+        } else {
+            Text(methodText)
+                .font(DS.Typography.captionSmall)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    /// Cómo sale el monto de un mes que viene: «Promedio 6 meses», «Desde noviembre» (un cambio «y los siguientes»)
+    /// o «Monto ajustado manualmente».
+    private var methodText: String {
+        if lineResult.isOverride { return L10n.CashFlowPlan.cellDetailOverrideActive }
+        if let from = lineResult.amountChangeFromMonthKey, let date = Self.monthDate(from) {
+            return L10n.UXL18.fromMonth(CashFlowMonthSummaryLogic.monthInSentence(date))
+        }
+        return lineResult.estimationMethod.displayName
+    }
+
+    private var daysLeftInMonth: Int {
+        let calendar = Calendar.current
+        guard let range = calendar.range(of: .day, in: .month, for: month.date) else { return 0 }
+        let today = calendar.component(.day, from: .now)
+        return max(1, range.count - today + 1)
+    }
+
+    // MARK: - Cifra de la derecha
+
+    @ViewBuilder
+    private var trailingFigure: some View {
+        if hasRealData, let real = lineResult.realAmount {
+            let remaining = lineResult.plannedAmount - real
+            let isOver = remaining < 0
+            // Un ingreso cobrado entero dice «Recibido» y lo cobrado, no «Te falta recibir S/ 0.00».
+            let fullyReceived = lineResult.isIncome && abs(remaining) < 0.005
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                Text(fullyReceived ? L10n.CashFlowPlan.realIncome : trailingLabel(isOver: isOver))
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(isOver && !lineResult.isIncome ? Color.overBudgetText : Color.secondary)
+                    .lineLimit(1)
+                Text(appPreferences.currency(fullyReceived ? real : abs(remaining), currencyCode: currencyCode))
+                    .font(DS.Typography.headline)
+                    .foregroundStyle(isOver && !lineResult.isIncome ? Color.overBudgetText : Color.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .layoutPriority(1)
+        } else {
+            VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
+                Text(L10n.CashFlowPlan.plan)
+                    .font(DS.Typography.captionSmall)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                AmountText(
+                    value: lineResult.plannedAmount,
+                    currencyCode: currencyCode,
+                    font: DS.Typography.headline.monospacedDigit(),
+                    tint: .color(Color.amountTint(isIncome: lineResult.isIncome)),
+                    isEstimate: lineResult.isPlannedApproximate
+                )
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            }
+            .layoutPriority(1)
+        }
+    }
+
+    private func trailingLabel(isOver: Bool) -> String {
+        if lineResult.isIncome {
+            return isOver ? L10n.UXL18.receivedExtra : L10n.UXL18.toReceive
+        }
+        return isOver ? L10n.UXL9.overLabel : L10n.UXL9.remainingLabel
+    }
+
     // MARK: - Category Icon
 
     private var categoryIcon: some View {
         let iconName = line?.subcategory?.iconName ?? line?.category?.iconName
         let colorHex = line?.subcategory?.colorHex ?? line?.category?.colorHex
 
-        return Group {
-            if let iconName, let colorHex {
-                ZStack {
-                    Circle()
-                        .fill(Color(hex: colorHex))
-                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-                    Image(systemName: iconName)
-                        .font(DS.Typography.iconMedium)
-                        .foregroundStyle(.white)
-                }
-            } else {
-                ZStack {
-                    Circle()
-                        .fill(Color.secondary.opacity(0.2))
-                        .frame(width: DS.Icon.badgeMedium, height: DS.Icon.badgeMedium)
-                    Image(systemName: "questionmark")
-                        .font(DS.Typography.iconMedium)
-                        .foregroundStyle(.secondary)
-                }
-            }
+        return ZStack {
+            Circle()
+                .fill(iconName != nil && colorHex != nil ? Color(hex: colorHex ?? "") : Color.secondary.opacity(0.2))
+                .frame(width: 40, height: 40)
+            Image(systemName: iconName ?? "questionmark")
+                .font(DS.Typography.label)
+                .foregroundStyle(iconName != nil && colorHex != nil ? Color.white : Color.secondary)
         }
+        .accessibilityHidden(true)
     }
 
-    // MARK: - Amount Column
+    // MARK: - Helpers
 
-    private var amountColumn: some View {
-        VStack(alignment: .trailing, spacing: DS.Spacing.xxs) {
-            // Display amount
-            AmountText(
-                value: displayAmount,
-                currencyCode: currencyCode,
-                font: DS.Typography.amountSmall.weight(.semibold).monospacedDigit(),
-                tint: .color(amountColor),
-                isEstimate: displaysPlanned && lineResult.isPlannedApproximate
-            )
+    private static let monthKeyParser: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM"
+        return formatter
+    }()
 
-            // Progress bar for current month
-            if month.isCurrent, let progress = lineResult.progress {
-                HStack(spacing: DS.Spacing.xs) {
-                    progressBar(progress: progress)
-                        .frame(width: 60)
-                    Text("\(Int(min(progress, 9.99) * 100))%")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
-                        .monospacedDigit()
-                }
-            }
-
-            // Plan label for past months with real data
-            if month.isPast, let real = lineResult.realAmount {
-                let diff = real - lineResult.plannedAmount
-                let isGood = lineResult.isIncome ? diff >= 0 : diff <= 0
-                HStack(spacing: DS.Spacing.xxs) {
-                    Image(systemName: isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(isGood ? Color.electricIndigo : Color.hotPink)
-                    Text(L10n.CashFlowPlan.plan + ": " + (lineResult.isPlannedApproximate ? "≈ " : "") + YalaFormatter.amountCompactTable(value: lineResult.plannedAmount))
-                        .font(DS.Typography.captionSmall)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-        }
-    }
-
-    // MARK: - Display Amount
-
-    private var displayAmount: Double {
-        if let real = lineResult.realAmount, (month.isPast || month.isCurrent) {
-            return real
-        }
-        return lineResult.plannedAmount
-    }
-
-    /// El importe grande es el del plan (no el real): solo entonces aplica su «≈».
-    private var displaysPlanned: Bool {
-        !(lineResult.realAmount != nil && (month.isPast || month.isCurrent))
-    }
-
-    private var amountColor: Color {
-        if lineResult.isOverride { return .primary }
-        if month.isPast, let diff = lineResult.difference {
-            if abs(diff) > lineResult.plannedAmount * 0.1 {
-                if lineResult.isIncome {
-                    return diff >= 0 ? Color.electricIndigo : Color.hotPink
-                }
-                return diff > 0 ? Color.hotPink : Color.electricIndigo
-            }
-        }
-        return .primary
-    }
-
-    // MARK: - Progress Bar
-
-    private func progressBar(progress: Double) -> some View {
-        let clamped = min(1.0, max(0, progress))
-        return ZStack(alignment: .leading) {
-            Capsule()
-                .fill(DS.Semantic.neutralBackground)
-                .frame(height: DS.Sizing.progressBarHeight)
-            Capsule()
-                .fill(CashFlowLineSideLogic.progressIsAlarm(progress: progress, isIncome: lineResult.isIncome) ? Color.hotPink : theme.accent)
-                .frame(maxWidth: .infinity, maxHeight: DS.Sizing.progressBarHeight)
-                .scaleEffect(x: max(0.05, clamped), anchor: .leading)
-        }
-        .frame(height: DS.Sizing.progressBarHeight)
-    }
+    static func monthDate(_ key: String) -> Date? { monthKeyParser.date(from: key) }
 }
