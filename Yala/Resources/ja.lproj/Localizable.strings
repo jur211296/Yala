@@ -3037,7 +3037,7 @@
 "groups.settings.dangerZone" = "危険ゾーン";
 
 // Bridge personal integration (per-group override)
-"groups.settings.personalIntegrationSectionTitle" = "個人連携";
+"groups.settings.personalIntegrationSectionTitle" = "あなたの口座に反映";
 "groups.settings.personalIntegrationToggleLabel" = "このグループの支出を個人の口座に記録する";
 "groups.settings.personalIntegrationHintInheritOn" = "全体設定を継承しています（オン）。";
 "groups.settings.personalIntegrationHintLocalOff" = "このグループのみ：オフ。";
@@ -3055,7 +3055,7 @@
 "groups.balance.title" = "残高";
 "groups.balance.noDebts" = "すべて精算済み！";
 "groups.balance.pendingDebts" = "未払いの貸し借り";
-"groups.balance.settlements" = "精算";
+"groups.balance.settlements" = "支払い";
 "groups.balance.confirmed" = "確認済み";
 "groups.balance.pending" = "保留中";
 "groups.expense.noExpenses" = "支出はありません";
@@ -3955,17 +3955,17 @@
 "filters.includeGroupTransactionsHint" = "オンの場合、共有支出から生成された動きがリストに表示されます。";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "この支出には後の精算があります。削除する前に精算を削除または整理してください。";
+"groups.bridge.deleteExpenseBlocked" = "この支出には後の支払いがあります。削除する前に、その支払いを削除または修正してください。";
 "groups.bridge.editFromGroup" = "この記録はグループと同期しています。共有支出から編集してください。";
 "groups.bridge.assignFromInbox" = "受信箱でサブカテゴリを割り当てて完了させてください。";
-"groups.bridge.editSettlementInGroup" = "この記録は精算から来ています。グループ内で編集してください。";
+"groups.bridge.editSettlementInGroup" = "この記録はグループの支払いから来ています。グループ内で編集してください。";
 "groups.bridge.editPartialBanner" = "この支出はグループからのものです。アカウント、カテゴリー、タグを編集できます。金額と日付はグループと同期します。";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@さんが%2$@でこの支出を記録しました。記録に追加するアカウントを選択してください。";
 "groups.bridge.draftReasonCurrencyChanged" = "%@の支出の通貨が変更されました。あなたの分を記録するアカウントを選択してください。";
 "groups.card.moreDebts" = "+%d 件";
-"inbox.groupExpenseAccountDraft.title" = "アカウントを割り当て";
+"inbox.groupExpenseAccountDraft.title" = "口座を選ぶ";
 "inbox.groupExpenseAccountDraft.assignAccount" = "支払元アカウント";
-"groups.bridge.activateTitle" = "自動記録を有効にする";
+"groups.bridge.activateTitle" = "あなたの口座に反映";
 "groups.bridge.activateBody" = "今後、共有支出はあなたの個人口座に反映されます。グループ内の過去の支出：%d件。それらをどうしますか？";
 "groups.bridge.activateOptionFromNow" = "今から始める";
 "groups.bridge.activateOptionFromNowHint" = "新しい支出のみが反映されます。";
@@ -3987,14 +3987,14 @@
 "groups.bridge.optoutAlertNo" = "グループのみ";
 
 // Bridge deactivation sheet (F5)
-"groups.bridge.deactivationSheetTitle" = "個人連携を無効にする";
+"groups.bridge.deactivationSheetTitle" = "口座への反映をやめる";
 "groups.bridge.deactivationSheetBody" = "自動的に作成された記録がすでに口座にあります。それらをどうするか選択してください。";
 "groups.bridge.deactivationOptionFreeze" = "履歴として保持";
 "groups.bridge.deactivationOptionDelete" = "口座から削除する";
 
 // Groups Global Settings sheet (F3a)
 "groups.globalSettings.title" = "グループ設定";
-"groups.globalSettings.bridgeSectionTitle" = "個人のYalaとの連携";
+"groups.globalSettings.bridgeSectionTitle" = "あなたの口座に反映";
 "groups.globalSettings.bridgeToggleLabel" = "グループの支出を個人の口座に記録する";
 "groups.globalSettings.bridgeCaption" = "オンにすると、あなたが支払うまたは精算する各支出が、選んだ個人の口座にも記録されます。残高が実態を反映します。";
 "groups.globalSettings.visibilitySectionTitle" = "表示";
@@ -4012,7 +4012,7 @@
 "subcategory.system.settlementSent" = "精算送信";
 "subcategory.system.settlementReceived" = "精算受領";
 "inbox.sourceGroupExpense" = "共有支出";
-"inbox.sourceGroupSettlement" = "精算";
+"inbox.sourceGroupSettlement" = "グループの支払い";
 "inbox.sourceManual" = "手動";
 "inbox.groupDraftCannotDelete" = "この記録は元のグループからのみ削除できます。";
 
@@ -4021,9 +4021,9 @@
 "groups.settlement.fromAccountNone" = "なし — 後で完了します";
 "inbox.openInbox" = "受信箱を開く";
 "groups.detail.openGroup" = "グループを開く";
-"inbox.groupExpenseDraft.title" = "サブカテゴリを割り当てる";
+"inbox.groupExpenseDraft.title" = "サブカテゴリを選ぶ";
 "inbox.groupExpenseDraft.assignSubcategory" = "サブカテゴリ";
-"inbox.groupSettlementDraft.title" = "口座を割り当てる";
+"inbox.groupSettlementDraft.title" = "口座を選ぶ";
 "inbox.groupSettlementDraft.assignAccount" = "送金先の口座";
 "inbox.groupDraft.finalize" = "完了する";
 "inbox.groupDraft.fromGroup" = "グループ：%@";
@@ -4348,20 +4348,20 @@
 "groups.card.youOwe" = "あなたは %@ に借りがあります";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
-"inbox.groupExpenseAccountDraft.banner" = "グループ「%@」の支出です。お金が出た口座を割り当てるだけです。金額と日付はグループが管理します。";
+"inbox.groupExpenseAccountDraft.banner" = "グループ「%@」から。";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
-"inbox.groupExpenseDraft.banner" = "グループ「%@」の支出です。分類するサブカテゴリーを選ぶだけです。金額と日付はグループが管理します。";
+"inbox.groupExpenseDraft.banner" = "グループ「%@」から。";
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
-"inbox.groupSettlementDraft.banner" = "グループ「%@」の精算です。口座を割り当てるだけです。金額と日付はグループが管理します。";
+"inbox.groupSettlementDraft.banner" = "グループ「%@」から。";
 "inbox.groupSettlementDraft.alreadyRegistered" = "この支払いはすでに口座に記録されています。この下書きは破棄できます。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "口座とサブカテゴリを割り当て";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "口座とサブカテゴリを選ぶ";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
-"inbox.groupExpenseAccountSubcategoryDraft.banner" = "グループ「%@」の支出です。お金が出た口座を割り当て、分類するサブカテゴリーを選んでください。金額と日付はグループが管理します。";
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "グループ「%@」から。";
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "この共有支出はグループにもう存在しません。";
@@ -5206,7 +5206,7 @@
 "settings.batchLeaveStoppedBody" = "「データを消去」からいつでも再開できます。";
 
 /* Feed row title for a confirmed settlement in group records */
-"groups.settlement.entryDescription" = "精算";
+"groups.settlement.entryDescription" = "支払い";
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@さんは%2$@さんに支払いました";
@@ -5277,16 +5277,16 @@
 "groups.signin.retryLater" = "今はアカウントを連携できませんでした。グループはそのまま残っているので、何も失われません。少ししてから、もう一度お試しください。";
 
 /* Groups > Balances: menu item on a confirmed settlement row (destructive) */
-"groups.settlement.deleteAction" = "精算を削除";
+"groups.settlement.deleteAction" = "支払いを削除";
 
 /* Groups > Balances: title of the delete-settlement confirmation dialog */
-"groups.settlement.deleteTitle" = "この精算を削除しますか？";
+"groups.settlement.deleteTitle" = "この支払いを削除しますか？";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
 "groups.settlement.deleteMessage" = "これで清算された残高は再び未精算に戻ります。口座に記録が作成されていた場合、その記録も削除されます。";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
-"groups.settlement.deleteFailed" = "精算を削除できませんでした。もう一度お試しください。";
+"groups.settlement.deleteFailed" = "支払いを削除できませんでした。もう一度お試しください。";
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "この招待を今は開けませんでした。リクエストは保存したので、少し経ってからもう一度お試しください。";
@@ -5505,7 +5505,7 @@
 "groups.shareableSummary.action" = "まとめを共有";
 
 /* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
-"groups.shareableSummary.hint" = "グループの合計と、精算に必要な最少の支払いをまとめた画像です。全期間が対象です。";
+"groups.shareableSummary.hint" = "グループの合計と、精算に必要な支払いをまとめた画像です。全期間が対象です。";
 
 /* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
 "groups.shareableSummary.totalSpent" = "支出の合計";
@@ -5604,7 +5604,7 @@
 "account.currencyChange.blockedReasonGroupExpense" = "グループの支出";
 
 /* Lowercase, used inside a list */
-"account.currencyChange.blockedReasonGroupSettlement" = "グループの精算";
+"account.currencyChange.blockedReasonGroupSettlement" = "グループの支払い";
 
 /* %1 old currency, %2 new currency */
 "account.currencyChange.confirmMessage" = "これらは%1$@で記録されており、それぞれの日付の為替レートで%2$@に換算されます。この操作は取り消せません。";
@@ -6454,7 +6454,7 @@
 "inbox.groupSettlementAmountChange.bannerSent" = "「%2$@」の%1$@さんへの支払いが変更されました：%3$@から%4$@になりました。%5$@には%6$@が記録されています。";
 
 /* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
-"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」のこの精算が変更されました：%2$@から%3$@になりました。%4$@には%5$@が記録されています。";
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」のこの支払いが変更されました：%2$@から%3$@になりました。%4$@には%5$@が記録されています。";
 
 /* Primary button: set my transaction to the new amount */
 "inbox.groupSettlementAmountChange.adjust" = "%@に調整";
@@ -7875,3 +7875,66 @@
 
 /* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
 "report.l18.inPeriod" = "%@";
+
+/* Título del diálogo de borrar un gasto de grupo. %@ = descripción del gasto. */
+"groups.expense.deleteTitle" = "「%@」を削除しますか？";
+
+/* Mensaje del diálogo de borrar un gasto de grupo: alcance del borrado. */
+"groups.expense.deleteMessage" = "グループ全員から削除され、残高が再計算されます。あなたの口座にある場合は、そこからも消えます。";
+
+/* Línea sobre «Guardar» cuando falta la descripción del gasto. */
+"groups.expense.missingDescription" = "説明を入力してください";
+
+/* Línea sobre «Guardar» cuando falta el monto. */
+"groups.expense.missingAmount" = "金額を入力してください";
+
+/* Línea sobre «Guardar» cuando no se eligió quién pagó. */
+"groups.expense.missingPayer" = "支払った人を選んでください";
+
+/* Línea sobre «Guardar» cuando nadie participa del gasto. */
+"groups.expense.missingParticipants" = "参加する人を選んでください";
+
+/* Línea sobre «Guardar» cuando el reparto no suma el monto. */
+"groups.expense.missingSplit" = "分け方の合計が金額と合いません";
+
+/* Línea sobre «Guardar» cuando pagaste tú y falta la cuenta. */
+"groups.expense.missingAccount" = "どの口座から出たか選んでください";
+
+/* Línea de ayuda bajo el título del formulario de saldo inicial. */
+"groups.openingBalance.formHelp" = "Yalaを使う前からあった貸し借り";
+
+/* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
+"inbox.movedToGroup" = "「%@」に移動しました";
+
+/* Botón del aviso «Movido a…»: abre el grupo. */
+"inbox.movedToGroupView" = "表示";
+
+/* Nombre del borrador de un pago que hiciste. %1$@ = a quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidTo" = "%1$@への支払い · %2$@";
+
+/* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidBy" = "%1$@からの支払い · %2$@";
+
+/* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
+"groups.stats.myPortionHint" = "あなたの負担分";
+
+/* Confirmación de «Eliminar de mis cuentas» al dejar de reflejar los gastos de grupo. */
+"groups.bridge.deleteConfirmTitle" = "あなたの口座から削除しますか？";
+
+/* Cuerpo de la confirmación. %d = movimientos que se borran (sin concordancia de plural a propósito). */
+"groups.bridge.deleteConfirmMessage" = "削除される記録：%d件。元に戻せません。";
+
+/* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
+"groups.settings.openGroupsSettings" = "グループ設定を開く";
+
+/* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
+"inbox.groupDraft.linkTitle" = "もう記録しましたか？";
+
+/* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
+"inbox.groupDraft.linkHint" = "記録をタップすると、重複させずにこの支出とつなげます。";
+
+/* Pista de VoiceOver de cada movimiento parecido. */
+"inbox.groupDraft.linkRowHint" = "グループの支出とつなげます";
+
+/* Título del diálogo de borrar un gasto de grupo sin descripción. */
+"groups.expense.deleteTitleUnnamed" = "この支出を削除しますか？";

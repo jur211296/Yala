@@ -3037,7 +3037,7 @@
 "groups.settings.dangerZone" = "危险区";
 
 // Bridge personal integration (per-group override)
-"groups.settings.personalIntegrationSectionTitle" = "个人集成";
+"groups.settings.personalIntegrationSectionTitle" = "同步到你的账户";
 "groups.settings.personalIntegrationToggleLabel" = "将此群组的支出记录到我的个人账户";
 "groups.settings.personalIntegrationHintInheritOn" = "继承你的通用设置（已开启）。";
 "groups.settings.personalIntegrationHintLocalOff" = "仅在此群组:已关闭。";
@@ -3055,7 +3055,7 @@
 "groups.balance.title" = "余额";
 "groups.balance.noDebts" = "全部已结清!";
 "groups.balance.pendingDebts" = "待结债务";
-"groups.balance.settlements" = "结算";
+"groups.balance.settlements" = "付款";
 "groups.balance.confirmed" = "已确认";
 "groups.balance.pending" = "待处理";
 "groups.expense.noExpenses" = "无支出";
@@ -3955,17 +3955,17 @@
 "filters.includeGroupTransactionsHint" = "开启时,由共享支出生成的动态会出现在你的列表中。";
 
 // MARK: - A0-Bridge Bridge messages
-"groups.bridge.deleteExpenseBlocked" = "此支出有后续结算。请先删除或调整结算后再移除。";
+"groups.bridge.deleteExpenseBlocked" = "此支出有后续付款。请先删除或调整这些付款，再移除它。";
 "groups.bridge.editFromGroup" = "此记录与一个群组同步。请从共享支出处编辑。";
 "groups.bridge.assignFromInbox" = "请在收件箱中分配子分类以完成它。";
-"groups.bridge.editSettlementInGroup" = "此记录来自结算。请在群组中编辑。";
+"groups.bridge.editSettlementInGroup" = "此记录来自群组付款。请在群组中编辑。";
 "groups.bridge.editPartialBanner" = "这笔支出来自群组。你可以编辑账户、分类和标签。金额和日期与群组同步。";
 "groups.bridge.draftReasonRemoteCreate" = "%1$@在%2$@中记录了这笔支出。选择一个账户将其纳入你的记录。";
 "groups.bridge.draftReasonCurrencyChanged" = "%@中支出的货币已更改。选择一个账户来记录你的份额。";
 "groups.card.moreDebts" = "+%d 更多";
-"inbox.groupExpenseAccountDraft.title" = "分配账户";
+"inbox.groupExpenseAccountDraft.title" = "选择账户";
 "inbox.groupExpenseAccountDraft.assignAccount" = "来源账户";
-"groups.bridge.activateTitle" = "启用自动记录";
+"groups.bridge.activateTitle" = "同步到你的账户";
 "groups.bridge.activateBody" = "从现在起，共享支出将显示在你的个人账户中。你的群组中之前的支出：%d 笔。要怎么处理它们？";
 "groups.bridge.activateOptionFromNow" = "从现在开始";
 "groups.bridge.activateOptionFromNowHint" = "只有新支出会被反映。";
@@ -3987,14 +3987,14 @@
 "groups.bridge.optoutAlertNo" = "仅群组";
 
 // Bridge deactivation sheet (F5)
-"groups.bridge.deactivationSheetTitle" = "禁用个人集成";
+"groups.bridge.deactivationSheetTitle" = "停止同步到你的账户";
 "groups.bridge.deactivationSheetBody" = "你的账户中已有自动创建的记录。请选择如何处理它们。";
 "groups.bridge.deactivationOptionFreeze" = "保留为历史记录";
 "groups.bridge.deactivationOptionDelete" = "从我的账户中删除";
 
 // Groups Global Settings sheet (F3a)
 "groups.globalSettings.title" = "群组设置";
-"groups.globalSettings.bridgeSectionTitle" = "与你的个人 Yala 集成";
+"groups.globalSettings.bridgeSectionTitle" = "同步到你的账户";
 "groups.globalSettings.bridgeToggleLabel" = "将群组支出记录到我的个人账户";
 "groups.globalSettings.bridgeCaption" = "开启后,你支付或结算的每笔支出也会记录到你选择的个人账户中。你的余额将反映真实情况。";
 "groups.globalSettings.visibilitySectionTitle" = "可见性";
@@ -4012,7 +4012,7 @@
 "subcategory.system.settlementSent" = "结算已发送";
 "subcategory.system.settlementReceived" = "结算已收到";
 "inbox.sourceGroupExpense" = "共享支出";
-"inbox.sourceGroupSettlement" = "结算";
+"inbox.sourceGroupSettlement" = "群组付款";
 "inbox.sourceManual" = "手动";
 "inbox.groupDraftCannotDelete" = "此记录只能从源群组中删除。";
 
@@ -4021,9 +4021,9 @@
 "groups.settlement.fromAccountNone" = "无 — 稍后完成";
 "inbox.openInbox" = "打开收件箱";
 "groups.detail.openGroup" = "打开群组";
-"inbox.groupExpenseDraft.title" = "分配子类别";
+"inbox.groupExpenseDraft.title" = "选择子类别";
 "inbox.groupExpenseDraft.assignSubcategory" = "子类别";
-"inbox.groupSettlementDraft.title" = "分配账户";
+"inbox.groupSettlementDraft.title" = "选择账户";
 "inbox.groupSettlementDraft.assignAccount" = "目标账户";
 "inbox.groupDraft.finalize" = "完成";
 "inbox.groupDraft.fromGroup" = "群组：%@";
@@ -4348,20 +4348,20 @@
 "groups.card.youOwe" = "你欠 %@";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar cuenta). %@ = nombre del grupo. */
-"inbox.groupExpenseAccountDraft.banner" = "群组「%@」的支出。只需指定资金来源的账户；金额和日期由群组管理。";
+"inbox.groupExpenseAccountDraft.banner" = "来自群组「%@」。";
 
 /* Banner explicativo en el sheet de finalización de gasto de grupo (asignar categoría). %@ = nombre del grupo. */
-"inbox.groupExpenseDraft.banner" = "群组「%@」的支出。只需选择一个子分类；金额和日期由群组管理。";
+"inbox.groupExpenseDraft.banner" = "来自群组「%@」。";
 
 /* Banner explicativo en el sheet de finalización de liquidación de grupo. %@ = nombre del grupo. */
-"inbox.groupSettlementDraft.banner" = "群组「%@」的结算。只需指定一个账户；金额和日期由群组管理。";
+"inbox.groupSettlementDraft.banner" = "来自群组「%@」。";
 "inbox.groupSettlementDraft.alreadyRegistered" = "这笔付款已记录在你的账户中。你可以放弃此草稿。";
 
 /* Title del sheet de finalización cuando faltan cuenta + subcategoría (Caso A match falla) */
-"inbox.groupExpenseAccountSubcategoryDraft.title" = "分配账户和子类别";
+"inbox.groupExpenseAccountSubcategoryDraft.title" = "选择账户和子类别";
 
 /* Banner sheet cuenta+subcategoría (Caso A match falla). %@ = nombre del grupo */
-"inbox.groupExpenseAccountSubcategoryDraft.banner" = "群组「%@」的支出。请指定资金来源的账户并选择一个子类别；金额和日期由群组管理。";
+"inbox.groupExpenseAccountSubcategoryDraft.banner" = "来自群组「%@」。";
 
 /* Group-expense draft approved but its source expense was deleted remotely (no TX exists) */
 "inbox.errorGroupExpenseGone" = "此共享支出在群组中已不存在。";
@@ -5206,7 +5206,7 @@
 "settings.batchLeaveStoppedBody" = "你可以随时在「清除数据」中继续。";
 
 /* Feed row title for a confirmed settlement in group records */
-"groups.settlement.entryDescription" = "结算";
+"groups.settlement.entryDescription" = "付款";
 
 /* Feed row subtitle: payer paid receiver (settlement) */
 "groups.settlement.feedRow" = "%1$@ 付给了 %2$@";
@@ -5277,16 +5277,16 @@
 "groups.signin.retryLater" = "嗯，我们暂时没能关联你的账户。你的群组还在，不会丢失任何内容，稍后再试试吧。";
 
 /* Groups > Balances: menu item on a confirmed settlement row (destructive) */
-"groups.settlement.deleteAction" = "删除结算";
+"groups.settlement.deleteAction" = "删除付款";
 
 /* Groups > Balances: title of the delete-settlement confirmation dialog */
-"groups.settlement.deleteTitle" = "删除此结算？";
+"groups.settlement.deleteTitle" = "删除这笔付款？";
 
 /* Groups > Balances: body of the delete-settlement dialog — names both consequences (balances reopen, bridged transaction removed) */
 "groups.settlement.deleteMessage" = "它结清的余额将重新变为待处理。如果它在你的账户中创建了记录，该记录也会被删除。";
 
 /* Groups > Balances: error alert when deleting a confirmed settlement fails */
-"groups.settlement.deleteFailed" = "无法删除结算。请重试。";
+"groups.settlement.deleteFailed" = "无法删除这笔付款。请重试。";
 
 /* Backend invite link arrived but the groups backend channel is off (remote flag/kill-switch). The link is valid; the intent stays persisted. */
 "groups.invite.channelUnavailable" = "暂时无法打开这个邀请。我们已保存你的请求，请稍后再试。";
@@ -5505,7 +5505,7 @@
 "groups.shareableSummary.action" = "分享摘要";
 
 /* Shareable group summary: hint under the entry point. States the two things it contains and that it is not filtered by period. */
-"groups.shareableSummary.hint" = "一张图片，包含群组总额和结清所需的最少笔付款。涵盖全部记录。";
+"groups.shareableSummary.hint" = "一张图片，包含群组总额和结清所需的付款。涵盖全部记录。";
 
 /* Shareable group summary: label above the big total, per currency. Rendered uppercased. */
 "groups.shareableSummary.totalSpent" = "总支出";
@@ -5604,7 +5604,7 @@
 "account.currencyChange.blockedReasonGroupExpense" = "群组支出";
 
 /* Lowercase, used inside a list */
-"account.currencyChange.blockedReasonGroupSettlement" = "群组结算";
+"account.currencyChange.blockedReasonGroupSettlement" = "群组付款";
 
 /* %1 old currency, %2 new currency */
 "account.currencyChange.confirmMessage" = "它们以 %1$@ 记录，将按各自日期的汇率换算为 %2$@。此操作无法撤销。";
@@ -6454,7 +6454,7 @@
 "inbox.groupSettlementAmountChange.bannerSent" = "「%2$@」中你付给 %1$@ 的款项已更改：原为 %3$@，现为 %4$@。%5$@ 中记录的是 %6$@。";
 
 /* Notice banner without the other person name. 1 group, 2 amount reviewed, 3 new amount, 4 account, 5 amount in that account */
-"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」中的这笔结算已更改：原为 %2$@，现为 %3$@。%4$@ 中记录的是 %5$@。";
+"inbox.groupSettlementAmountChange.bannerUnnamed" = "「%1$@」中的这笔付款已更改：原为 %2$@，现为 %3$@。%4$@ 中记录的是 %5$@。";
 
 /* Primary button: set my transaction to the new amount */
 "inbox.groupSettlementAmountChange.adjust" = "调整为 %@";
@@ -7875,3 +7875,66 @@
 
 /* Comparativa: bajo cada monto, el período anterior antes de su monto; %@ = «1–21 sept» */
 "report.l18.inPeriod" = "%@";
+
+/* Título del diálogo de borrar un gasto de grupo. %@ = descripción del gasto. */
+"groups.expense.deleteTitle" = "删除「%@」？";
+
+/* Mensaje del diálogo de borrar un gasto de grupo: alcance del borrado. */
+"groups.expense.deleteMessage" = "它会从整个群组中删除，余额会重新计算。如果它在你的账户里，也会一并移除。";
+
+/* Línea sobre «Guardar» cuando falta la descripción del gasto. */
+"groups.expense.missingDescription" = "请填写描述";
+
+/* Línea sobre «Guardar» cuando falta el monto. */
+"groups.expense.missingAmount" = "请填写金额";
+
+/* Línea sobre «Guardar» cuando no se eligió quién pagó. */
+"groups.expense.missingPayer" = "请选择付款人";
+
+/* Línea sobre «Guardar» cuando nadie participa del gasto. */
+"groups.expense.missingParticipants" = "请选择参与者";
+
+/* Línea sobre «Guardar» cuando el reparto no suma el monto. */
+"groups.expense.missingSplit" = "分摊总额与金额不符";
+
+/* Línea sobre «Guardar» cuando pagaste tú y falta la cuenta. */
+"groups.expense.missingAccount" = "请选择从哪个账户支出";
+
+/* Línea de ayuda bajo el título del formulario de saldo inicial. */
+"groups.openingBalance.formHelp" = "使用 Yala 之前就欠下的款项";
+
+/* Aviso tras convertir un borrador en gasto de grupo. %@ = nombre del grupo. */
+"inbox.movedToGroup" = "已移至「%@」";
+
+/* Botón del aviso «Movido a…»: abre el grupo. */
+"inbox.movedToGroupView" = "查看";
+
+/* Nombre del borrador de un pago que hiciste. %1$@ = a quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidTo" = "付给 %1$@ · %2$@";
+
+/* Nombre del borrador de un pago que recibiste. %1$@ = de quién, %2$@ = grupo. */
+"inbox.groupSettlementDraft.paidBy" = "来自 %1$@ 的付款 · %2$@";
+
+/* Bajo «Mi parte» en las estadísticas del grupo: qué mide. */
+"groups.stats.myPortionHint" = "你应承担的部分";
+
+/* Confirmación de «Eliminar de mis cuentas» al dejar de reflejar los gastos de grupo. */
+"groups.bridge.deleteConfirmTitle" = "从你的账户中删除？";
+
+/* Cuerpo de la confirmación. %d = movimientos que se borran (sin concordancia de plural a propósito). */
+"groups.bridge.deleteConfirmMessage" = "将删除的记录：%d 条。无法撤销。";
+
+/* Enlace bajo el aviso del grupo: abre Ajustes de Grupos. */
+"groups.settings.openGroupsSettings" = "打开群组设置";
+
+/* Título del bloque de movimientos parecidos al completar el borrador de un gasto de grupo. */
+"inbox.groupDraft.linkTitle" = "已经记过了？";
+
+/* Ayuda del bloque: tocar un movimiento lo enlaza con el gasto del grupo. */
+"inbox.groupDraft.linkHint" = "点按这条记录，我们会把它与此支出关联，不会重复。";
+
+/* Pista de VoiceOver de cada movimiento parecido. */
+"inbox.groupDraft.linkRowHint" = "将其关联到群组支出";
+
+/* Título del diálogo de borrar un gasto de grupo sin descripción. */
+"groups.expense.deleteTitleUnnamed" = "删除这笔支出？";

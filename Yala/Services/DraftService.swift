@@ -1025,6 +1025,182 @@ final class DraftService {
         return realTx
     }
 
+    // MARK: - «¿Ya lo apuntaste?» (UX 2.2 · L13-15)
+
+    /// Movimientos que la persona ya apuntó y que pueden ser este gasto de grupo: mismo día, misma divisa y mismo importe
+    /// (`GroupExpenseLinkCandidateLogic`). Solo para el borrador de un gasto que pagaste tú y que pide la cuenta (el que
+    /// crearía la pata real), y solo si ese gasto aún no tiene pata real. Lo más reciente primero, como mucho tres.
+    func groupExpenseLinkCandidates(for draft: InboxDraft) throws -> [TransactionItem] {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              draft.needsUserInput.contains(DraftInputRequirement.account),
+              let splitID = draft.splitExpenseID,
+              let expense = try fetchSplitExpense(splitID, in: context) else { return [] }
+        let zoneID = expense.groupZoneID
+        var groupDescriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID })
+        groupDescriptor.fetchLimit = 1
+        guard let group = try context.fetch(groupDescriptor).first,
+              try linkAllowed(for: expense, in: group, splitID: splitID, context: context) else { return [] }
+
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: expense.date)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let sameDay = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.date >= start && $0.date < end },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        ))
+        let matches = sameDay.filter { isLinkCandidate($0, for: expense, calendar: calendar) }
+        return Array(matches.prefix(GroupExpenseLinkCandidateLogic.maxShown))
+    }
+
+    /// Enlaza un movimiento ya apuntado con el gasto de grupo de este borrador: el movimiento pasa a ser la pata real del
+    /// gasto (como si se hubiera creado al aprobar), el puente rehace la virtual y el borrador se va.
+    ///
+    /// **Enlazar no cambia el importe, la cuenta, la nota ni la subcategoría del movimiento**: solo se elige uno con el
+    /// importe exacto, y el puente (preserve+update) reescribe el importe a `-total`, que es el mismo. Lo que sí toma es
+    /// la fecha del gasto, del mismo día, como cualquier pata real.
+    ///
+    /// **Desde ese momento es el gasto del grupo en tus cuentas**, y lo sigue como cualquier movimiento que el puente
+    /// creó: si alguien corrige el importe del gasto, cambia; si se borra el gasto, se va de tus cuentas (el diálogo de
+    /// borrar ya lo dice, L13-4). Es lo que significa enlazar: no queda un movimiento suelto que cuente el gasto aparte.
+    @discardableResult
+    func linkGroupExpenseDraft(_ draft: InboxDraft, to transaction: TransactionItem) throws -> TransactionItem {
+        let context = try requireContext()
+        guard draft.sourceType == .groupExpense,
+              draft.targetTransactionID == nil,
+              let splitID = draft.splitExpenseID,
+              let zoneID = draft.splitGroupZoneID,
+              let expense = try fetchSplitExpense(splitID, in: context) else {
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        let groupDescriptor = FetchDescriptor<SplitGroup>(predicate: #Predicate { $0.cloudKitZoneID == zoneID })
+        guard let group = try context.fetch(groupDescriptor).first else {
+            throw DraftServiceError.groupExpenseTargetMissing
+        }
+        // Se vuelve a comprobar aquí y no solo al listar: entre las dos cosas el movimiento pudo editarse, o el gasto pudo
+        // ganar su pata real por otro camino (otro dispositivo, el puente). Enlazar entonces duplicaría o cambiaría importes.
+        guard isLinkCandidate(transaction, for: expense, calendar: .current),
+              try linkAllowed(for: expense, in: group, splitID: splitID, context: context) else {
+            throw DraftServiceError.groupExpenseLinkNoLongerMatches
+        }
+
+        transaction.splitExpenseID = splitID
+        transaction.splitGroupZoneID = expense.groupZoneID
+        transaction.splitTotalAmount = expense.amount
+        transaction.splitType = expense.splitType
+
+        func undoLink() {
+            transaction.splitExpenseID = nil
+            transaction.splitGroupZoneID = nil
+            transaction.splitTotalAmount = nil
+            transaction.splitType = nil
+        }
+        do {
+            // `false` = el puente no pudo decidir (dominio cerrado, miembro propio sin resolver): no concilió la virtual,
+            // y dejar el movimiento enlazado sin ella contaría el gasto dos veces con el puente apagado.
+            let attended = try GroupTransactionBridge.shared.withSkippedDraftCleanup {
+                try GroupTransactionBridge.shared.bridgeExpense(
+                    expense,
+                    in: group,
+                    accountForCurrentUser: transaction.account,
+                    isRemoteSync: false,
+                    shouldSave: false
+                )
+            }
+            guard attended else {
+                undoLink()
+                throw DraftServiceError.groupExpenseLinkNoLongerMatches
+            }
+        } catch DraftServiceError.groupExpenseLinkNoLongerMatches {
+            throw DraftServiceError.groupExpenseLinkNoLongerMatches
+        } catch {
+            #if DEBUG
+            print("DraftService.linkGroupExpenseDraft: bridge failed: \(error)")
+            #endif
+            // Se deshace solo lo propio (el contexto es compartido: un `rollback()` se llevaría ediciones ajenas sin
+            // guardar). El borrador se queda para reintentar, como al aprobar con cuenta.
+            undoLink()
+            throw error
+        }
+
+        // Mismos punteros residuales que al aprobar con cuenta: con el movimiento clasificado, un puntero
+        // [.subcategory] hermano apuntaría a nada.
+        if transaction.subcategory != nil {
+            let siblings = try context.fetch(FetchDescriptor<InboxDraft>(
+                predicate: #Predicate { $0.splitExpenseID == splitID }
+            ))
+            for pointer in siblings where pointer.persistentModelID != draft.persistentModelID
+                && !pointer.optInPersonalOnly
+                && pointer.targetTransactionID == nil
+                && pointer.needsUserInput.contains(DraftInputRequirement.subcategory)
+                && !pointer.needsUserInput.contains(DraftInputRequirement.account) {
+                deleteInboxDraftPruningRow(pointer, in: context)
+            }
+        }
+
+        cacheDisplayValues(draft)
+        deleteInboxDraftPruningRow(draft, in: context)
+        try context.save()
+
+        SessionState.shared.incrementDataVersion()
+        WidgetDataCache.updateCache(context: context)
+        return transaction
+    }
+
+    private func fetchSplitExpense(_ splitID: String, in context: ModelContext) throws -> SplitExpense? {
+        guard let uuid = UUID(uuidString: splitID) else { return nil }
+        var descriptor = FetchDescriptor<SplitExpense>(predicate: #Predicate { $0.id == uuid })
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+
+    /// Enlazar solo tiene sentido donde el puente CONSERVA la pata real: el gasto lo pagaste tú (Caso A) y hay finanzas
+    /// personales. Con otro pagador el puente borra una pata real (con el puente encendido), y en una sesión solo-grupos
+    /// la borra siempre: enlazar ahí se llevaría el movimiento de la persona. Y si el gasto ya tiene pata real, sobra.
+    ///
+    /// Tampoco donde el puente no haría nada: grupo oculto, gasto conservado como movimiento al desasociar, o miembro
+    /// propio inactivo (`bridgeExpense` sale antes de conciliar en los tres).
+    private func linkAllowed(
+        for expense: SplitExpense, in group: SplitGroup, splitID: String, context: ModelContext
+    ) throws -> Bool {
+        guard SessionState.shared.hasPrivateSession, !group.isHiddenForAll else { return false }
+        guard let me = try GroupExpenseService.resolveCurrentUserMember(inZone: expense.groupZoneID, context: context),
+              me.isActive,
+              expense.paidByMemberID == me.id.uuidString else { return false }
+        guard !GroupsDetachedBridgeLedger.isConserved(
+            expenseID: splitID, associatedSub: GroupsAccountAssociation.shared.associatedSub) else { return false }
+        return try !hasRealLeg(splitID: splitID, in: context)
+    }
+
+    /// ¿El gasto ya tiene su pata real (un movimiento con su puntero en una cuenta que no es del sistema)?
+    private func hasRealLeg(splitID: String, in context: ModelContext) throws -> Bool {
+        let legs = try context.fetch(FetchDescriptor<TransactionItem>(
+            predicate: #Predicate { $0.splitExpenseID == splitID }
+        ))
+        return legs.contains { $0.account.map { !$0.isSystemAccount } ?? false }
+    }
+
+    private func isLinkCandidate(_ tx: TransactionItem, for expense: SplitExpense, calendar: Calendar) -> Bool {
+        GroupExpenseLinkCandidateLogic.isCandidate(
+            GroupExpenseLinkCandidateLogic.Movement(
+                date: tx.date,
+                amount: tx.amount,
+                currencyCode: tx.currencyCode,
+                hasGroupPointer: tx.splitExpenseID != nil || tx.splitSettlementID != nil || tx.splitGroupZoneID != nil,
+                isTransfer: tx.transferPairID != nil,
+                isBalanceAdjustment: tx.balanceAdjustmentType != nil,
+                isOnRealAccount: tx.account.map { !$0.isSystemAccount } ?? false,
+                isGroupPaymentRecord: tx.approvedDraft?.sourceType == .groupSettlement,
+                isConservedFromDetach: GroupsDetachedBridgeLedger.claimsMovement(tx)
+            ),
+            expenseTotal: expense.amount,
+            expenseCurrency: expense.currencyCode,
+            expenseDate: expense.date,
+            calendar: calendar
+        )
+    }
+
     // MARK: - Opt-In Personal Draft (bridge effective OFF flow)
 
     /// Crea un draft `groupExpense` con `optInPersonalOnly=true` para que el user pueda
@@ -1035,10 +1211,11 @@ final class DraftService {
     /// **y** subcategoría juntas (sheet combinado) en vez de solo cuenta — alineado con el draft
     /// del path auto-bridge (`createDraftCaseA`). Así el Inbox no muestra dos drafts (cuenta +
     /// subcategoría) ni deja un puntero `[.subcategory]` huérfano cuando el virtual se reconcilia.
+    @discardableResult
     func createGroupExpenseOptInDraft(
         splitExpenseID: String,
         groupZoneID: String
-    ) throws {
+    ) throws -> InboxDraft {
         let context = try requireContext()
         guard let splitUUID = UUID(uuidString: splitExpenseID) else {
             throw DraftServiceError.missingAccount
@@ -1091,13 +1268,15 @@ final class DraftService {
         )
         context.insert(draft)
         try context.save()
+        return draft
     }
 
     /// Crea un draft `groupSettlement` con `optInPersonalOnly=true` para opt-in Caso C.
+    @discardableResult
     func createGroupSettlementOptInDraft(
         splitSettlementID: String,
         groupZoneID: String
-    ) throws {
+    ) throws -> InboxDraft {
         let context = try requireContext()
         guard let settlementUUID = UUID(uuidString: splitSettlementID) else {
             throw DraftServiceError.missingAccount
@@ -1126,6 +1305,7 @@ final class DraftService {
         )
         context.insert(draft)
         try context.save()
+        return draft
     }
 
     /// Aprueba un draft `groupSettlement` opt-in: crea TX manual ligada al settlement
@@ -1200,6 +1380,8 @@ enum DraftServiceError: LocalizedError {
     case groupSettlementAlreadyRegistered
     /// El aviso de importe cambiado ya no se puede aplicar: su transacción ya no está, hay dos, o cambió de divisa.
     case settlementAmountChangeTransactionGone
+    /// UX 2.2 · L13-15: el movimiento elegido ya no coincide con el gasto (se editó, o el gasto ganó su pata real).
+    case groupExpenseLinkNoLongerMatches
 
     var errorDescription: String? {
         switch self {
@@ -1225,6 +1407,8 @@ enum DraftServiceError: LocalizedError {
             return L10n.Inbox.GroupSettlementDraft.alreadyRegistered
         case .settlementAmountChangeTransactionGone:
             return L10n.Inbox.GroupSettlementAmountChange.transactionGone
+        case .groupExpenseLinkNoLongerMatches:
+            return L10n.Groups.Errors.actionFailed
         }
     }
 }

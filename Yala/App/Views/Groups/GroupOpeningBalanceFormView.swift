@@ -82,6 +82,13 @@ struct GroupOpeningBalanceFormView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
+                    // UX 2.2 · L13-10: qué es un saldo inicial, en una línea, antes de pedir nada.
+                    Text(L10n.Groups.OpeningBalance.formHelp)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, DS.Spacing.xs)
+                        .accessibilityIdentifier("opening_balance_help")
                     memberRow(
                         label: L10n.Groups.OpeningBalance.debtorLabel,
                         selectedID: debtorMemberID,

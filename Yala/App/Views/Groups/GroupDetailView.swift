@@ -370,6 +370,16 @@ struct GroupDetailView: View {
             .yalaSheetDetents([.large])
             .presentationDragIndicator(.visible)
 
+        case .newOpeningBalance:
+            GroupOpeningBalanceFormView(
+                group: group,
+                members: viewModel.activeMembers,
+                memberNameLookup: viewModel.memberNameLookup,
+                onSave: {}
+            )
+            .yalaSheetDetents([.large])
+            .presentationDragIndicator(.visible)
+
         case .settlement(let debt):
             SettlementFormView(
                 group: group,
@@ -494,7 +504,10 @@ struct GroupDetailView: View {
                 onSettleDebt: viewModel.canCurrentUserParticipate ? { viewModel.activeSheet = .settlement($0) } : nil,
                 onConfirmSettlement: viewModel.canCurrentUserParticipate ? { viewModel.confirmSettlement($0) } : nil,
                 onRejectSettlement: viewModel.canCurrentUserParticipate ? { viewModel.rejectSettlement($0) } : nil,
-                onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil
+                onDeleteSettlement: viewModel.canCurrentUserParticipate ? { viewModel.deleteConfirmedSettlement($0) } : nil,
+                // Solo quien creó el grupo gestiona los saldos iniciales (el servicio lo exige; Miembros ya lo filtra).
+                onAddOpeningBalance: group.isOwner && viewModel.canCurrentUserParticipate
+                    ? { viewModel.activeSheet = .newOpeningBalance } : nil
             )
 
         case .stats:

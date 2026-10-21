@@ -14,7 +14,9 @@ struct GroupPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let groups: [SplitGroup]
-    let selectedGroupID: UUID
+    /// El grupo ya elegido, con su marca. `nil` = ninguno marcado: al convertir un borrador de la Bandeja nadie ha elegido
+    /// todavía, y marcar el primero parecía una decisión ya tomada (UX 2.2 · L13-11).
+    let selectedGroupID: UUID?
     let memberCount: (SplitGroup) -> Int
     let onSelect: (SplitGroup) -> Void
 

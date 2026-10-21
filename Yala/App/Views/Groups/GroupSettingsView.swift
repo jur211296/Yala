@@ -607,6 +607,7 @@ struct GroupSettingsView: View {
     // MARK: - Personal Integration (Bridge Override per-grupo, F4)
 
     @State private var showPerGroupDeactivationSheet: Bool = false
+    @State private var showGroupsGlobalSettings: Bool = false
 
     private var personalIntegrationState: OverrideStateLogic.UIState {
         OverrideStateLogic.compute(
@@ -665,9 +666,23 @@ struct GroupSettingsView: View {
                     Text(personalIntegrationHint(for: state))
                         .font(DS.Typography.captionSmall)
                         .foregroundStyle(.secondary)
+
+                    // UX 2.2 · L13-14: el aviso manda a Ajustes de Grupos; ahora lleva el camino.
+                    if state == .disabledOff {
+                        Button(L10n.Groups.Settings.openGroupsSettings) {
+                            showGroupsGlobalSettings = true
+                        }
+                        .font(DS.Typography.captionSmall.weight(.semibold))
+                        .foregroundStyle(theme.accent)
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("group_settings_open_groups_settings")
+                    }
                 }
                 .padding(.horizontal, DS.FormRow.paddingH)
                 .padding(.vertical, DS.FormRow.paddingV)
+            }
+            .sheet(isPresented: $showGroupsGlobalSettings) {
+                GroupsGlobalSettingsView()
             }
             .sheet(isPresented: $showPerGroupDeactivationSheet) {
                 BridgeDeactivationSheet(
