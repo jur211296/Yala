@@ -170,6 +170,43 @@ final class UXAudit22Lote13DecididoUITests: XCTestCase {
         capture(app, "despues-L13-7-exito-bandeja")
     }
 
+    // MARK: - L13-12
+
+    /// El borrador de un pago de grupo ya no dice «Sin descripción»: confirmas que Ana te pagó y la Bandeja lo nombra
+    /// «Pago de Ana · Viaje a Cusco».
+    func test_paymentDraft_isNamedInTheInbox() {
+        let app = XCUIApplication()
+        app.launchForUITest(pro: true, seed: "grupos", deeplink: "groups", pendingSettlement: true)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente — bootstrap/seed no completó.")
+        openCusco(app)
+        let tab = app.buttons["group_detail_tab_balances"]
+        XCTAssertTrue(tab.waitForExistence(timeout: 10), "No apareció la pestaña de saldos.")
+        tab.tap()
+        let yes = app.buttons["group_pending_confirm_yes"]
+        XCTAssertTrue(yes.waitForExistence(timeout: 10), "No apareció el pago de Ana por confirmar.")
+        yes.tap()
+        XCTAssertTrue(yes.waitForNonExistence(timeout: 8), "Confirmar no retiró la tarjeta.")
+
+        // Relanzar SIN sembrar (los datos ya están en disco) y abrir la Bandeja desde el Panel.
+        app.terminate()
+        app.launchForUITest(reset: false, pro: true, seed: nil)
+        XCTAssertTrue(app.waitForUITestReady(), "uitest_ready ausente tras relanzar.")
+        let inbox = app.buttons["panel_inbox_button"]
+        XCTAssertTrue(inbox.waitForExistence(timeout: 10), "No apareció el botón de la Bandeja.")
+        inbox.tap()
+
+        let named = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Ana' AND label CONTAINS 'Viaje a Cusco'"))
+            .firstMatch
+        XCTAssertTrue(named.waitForExistence(timeout: 8), "El borrador del pago no lleva nombre en la Bandeja (L13-12).")
+        capture(app, "despues-L13-12-bandeja-pago")
+        named.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["group_draft_banner"].waitForExistence(timeout: 8),
+            "No abrió la hoja del pago."
+        )
+        capture(app, "despues-L13-12-hoja-pago")
+    }
+
     /// Captura para el informe de la sesión, solo si la corrida la pide (`TEST_RUNNER_YALA_CAPTURE_DIR`).
     private func capture(_ app: XCUIApplication, _ name: String) {
         guard let dir = ProcessInfo.processInfo.environment["YALA_CAPTURE_DIR"] else { return }
