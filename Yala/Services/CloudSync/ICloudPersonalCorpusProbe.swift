@@ -37,6 +37,7 @@
 
 import CloudKit
 import Foundation
+import OSLog
 import SwiftData
 
 // MARK: - Lo que la sonda encuentra
@@ -169,9 +170,13 @@ enum ICloudPersonalCorpusProbe {
     /// de que el servidor dijera `moreComing == false`. Con CloudKit lento, la persona se quedaba mirando
     /// «Revisando qué hay en tu iCloud…» sin salida — y en la puerta del Welcome eso es la app entera.
     ///
-    /// Rendirse por tiempo cae en `.failed`, no en «vacío»: la pantalla ofrece reintentar **y** seguir sin
-    /// comprobar. Lo que no puede pasar es que decidamos por ella que no tiene datos.
-    static let scanDeadline: TimeInterval = 25
+    /// **Es un plazo SIN AVANCE, no total, desde el 2026-10-20** (card blqa, `ICloudZoneScan`): se corta si una espera
+    /// —la lista de zonas o una página— pasa de él. Como total, un iCloud con mucho historial se cortaba siempre aunque
+    /// cada página llegara a tiempo, y la persona leía «Puede ser la conexión» tres veces seguidas.
+    ///
+    /// Rendirse por tiempo cae en `.failed(ICloudZoneScanEnd.stalledReason)`, no en «vacío»: la pantalla ofrece
+    /// reintentar **y** seguir sin comprobar. Lo que no puede pasar es que decidamos por ella que no tiene datos.
+    static let scanStallLimit: TimeInterval = 25
 
     /// Prefijo de las zonas que crea `NSPersistentCloudKitContainer` para el store privado. Se compara
     /// por PREFIJO y no por igualdad: si el mirror repartiera el schema en varias zonas, las coge todas.
@@ -263,34 +268,25 @@ enum ICloudPersonalCorpusProbe {
     static var adoptRelevantRecords: @MainActor () async -> ICloudAdoptCorpusCheck = { await findAdoptRelevantRecord() }
 
     private static func findAdoptRelevantRecord() async -> ICloudAdoptCorpusCheck {
-        let startedAt = Date()
         let relevant = adoptRelevantRecordTypes
+        var found: String?
         do {
-            for zoneID in try await mirrorZoneIDs() {
-                var token: CKServerChangeToken?
-                var moreComing = true
-                while moreComing {
-                    let batch: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, Error>],
-                                deletions: [CKDatabase.RecordZoneChange.Deletion],
-                                changeToken: CKServerChangeToken, moreComing: Bool)
-                    do {
-                        batch = try await privateDatabase.recordZoneChanges(
-                            inZoneWith: zoneID, since: token, desiredKeys: [])
-                    } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
-                        // La zona se borró entre la lista y la lectura (el mismo trato que le da el borrado de abajo): no
-                        // tiene registros que el espejo vaya a bajar.
-                        break
-                    }
-                    for (_, result) in batch.modificationResultsByID {
-                        guard case .success(let modification) = result else { return .failed("partialRecordFailure") }
-                        let type = modification.record.recordType
-                        if relevant.contains(type) { return .found(recordType: type) }
-                    }
-                    token = batch.changeToken
-                    moreComing = batch.moreComing
-                    if Date().timeIntervalSince(startedAt) > scanDeadline { return .failed("scanDeadline") }
-                }
+            // Una zona que se borra entre la lista y la lectura se salta (el mismo trato que le da el borrado de abajo):
+            // no tiene registros que el espejo vaya a bajar.
+            let outcome = try await ICloudZoneScan.run(
+                io: liveZoneScanIO(desiredKeys: [], skipsDeletedZones: true),
+                stallLimit: scanStallLimit
+            ) { records in
+                found = records.first { relevant.contains($0.recordType) }?.recordType
+                return found != nil
             }
+            logScan("adopt", outcome)
+            switch outcome.end {
+            case .stalled:              return .failed(ICloudZoneScanEnd.stalledReason)
+            case .partialRecordFailure: return .failed("partialRecordFailure")
+            case .finished, .stopped:   break
+            }
+            if let found { return .found(recordType: found) }
             return .none
         } catch let error as CKError {
             #if DEBUG
@@ -320,12 +316,46 @@ enum ICloudPersonalCorpusProbe {
             .filter { $0.zoneName.hasPrefix(mirrorZonePrefix) }
     }
 
+    private static let logger = Logger(subsystem: "com.yala", category: "CloudSync")
+
+    /// El CloudKit real de `ICloudZoneScan`. `skipsDeletedZones` es lo que cada revisión hacía con una zona que se borra
+    /// entre la lista y la lectura: el adopt y la vuelta la saltan; la de la puerta lo trata como un fallo, como antes.
+    private static func liveZoneScanIO(desiredKeys: [CKRecord.FieldKey],
+                                       skipsDeletedZones: Bool) -> ICloudZoneScanIO<CKServerChangeToken> {
+        ICloudZoneScanIO(
+            zoneIDs: { try await mirrorZoneIDs() },
+            page: { zoneID, token in
+                do {
+                    let batch = try await privateDatabase.recordZoneChanges(
+                        inZoneWith: zoneID, since: token, desiredKeys: desiredKeys)
+                    let records: [CKRecord?] = batch.modificationResultsByID.map { _, result in
+                        guard case .success(let modification) = result else { return nil }
+                        return modification.record
+                    }
+                    return ICloudZoneScanPage(records: records, deletions: batch.deletions.count,
+                                              cursor: batch.changeToken, moreComing: batch.moreComing)
+                } catch let error as CKError
+                            where skipsDeletedZones && (error.code == .zoneNotFound || error.code == .userDeletedZone) {
+                    return nil
+                }
+            },
+            // Reloj monotónico, no la hora del teléfono (molde del borrado de «Empezar sin ellos»).
+            now: { Date(timeIntervalSinceReferenceDate: ProcessInfo.processInfo.systemUptime) })
+    }
+
+    /// El rastro de cada revisión: cuántas páginas, registros y borrados, y cómo acabó. Sin PII: solo cifras. Es lo que
+    /// el device-QA de la card blqa necesita para saber si un iCloud con mucho historial devuelve páginas de borrados.
+    private static func logScan(_ label: String, _ outcome: ICloudZoneScanOutcome) {
+        let end = String(describing: outcome.end)
+        let stats = outcome.stats
+        logger.notice("ICloudScan[\(label, privacy: .public)] end=\(end, privacy: .public) pages=\(stats.pages, privacy: .public) records=\(stats.records, privacy: .public) deletions=\(stats.deletions, privacy: .public)")
+    }
+
     /// **No hay gate local antes de preguntar, y es deliberado.** Quien sabe si CloudKit puede contestar
     /// es CloudKit: `notAuthenticated` y `managedAccountRestricted` SON la respuesta «no hay cuenta a la
     /// que preguntar», y cualquier predicado local que se adelante a ellas es un pre-filtro que tapa al
     /// criterio (aquí lo fue: ver `mirrorWillSync`).
     private static func measureFromCloudKit() async -> ICloudProbeOutcome {
-        let startedAt = Date()
         do {
             var transactions = 0
             var accounts = 0
@@ -335,42 +365,33 @@ enum ICloudPersonalCorpusProbe {
             var scanned = 0
             var truncated = false
 
-            for zoneID in try await mirrorZoneIDs() {
-                var token: CKServerChangeToken?
-                var moreComing = true
-                while moreComing {
-                    let batch = try await privateDatabase.recordZoneChanges(
-                        inZoneWith: zoneID, since: token, desiredKeys: desiredKeys)
-                    for (_, result) in batch.modificationResultsByID {
-                        // **Un registro que falla NO se salta en silencio.** Los fallos parciales son el
-                        // canal normal de reporte de esta API, y descartarlos mide de menos hacia el lado
-                        // peligroso: menos registros ⇒ «iCloud vacío» ⇒ borrado sin avisar. Un throw a
-                        // nivel de zona ya da `.failed`; los dos hechos son el mismo y merecen el mismo
-                        // veredicto.
-                        guard case .success(let modification) = result else {
-                            return .failed("partialRecordFailure")
-                        }
-                        scanned += 1
-                        classify(modification.record,
-                                 transactions: &transactions,
-                                 accounts: &accounts,
-                                 categories: &categories,
-                                 budgets: &budgets,
-                                 oldest: &oldest)
-                    }
-                    token = batch.changeToken
-                    moreComing = batch.moreComing
-                    if scanned >= recordScanCap {
-                        truncated = true
-                        moreComing = false
-                    }
-                    // El deadline corta la ESPERA, no el conteo: si se agota, lo medido hasta aquí no es
-                    // una respuesta y no puede presentarse como tal.
-                    if Date().timeIntervalSince(startedAt) > scanDeadline {
-                        return .failed("scanDeadline")
-                    }
+            let outcome = try await ICloudZoneScan.run(
+                io: liveZoneScanIO(desiredKeys: desiredKeys, skipsDeletedZones: false),
+                stallLimit: scanStallLimit
+            ) { records in
+                for record in records {
+                    scanned += 1
+                    classify(record,
+                             transactions: &transactions,
+                             accounts: &accounts,
+                             categories: &categories,
+                             budgets: &budgets,
+                             oldest: &oldest)
                 }
-                if truncated { break }
+                if scanned >= recordScanCap { truncated = true }
+                return truncated
+            }
+            logScan("probe", outcome)
+            switch outcome.end {
+            // **Un registro que falla NO se salta en silencio.** Los fallos parciales son el canal normal de reporte de
+            // esta API, y descartarlos mide de menos hacia el lado peligroso: menos registros ⇒ «iCloud vacío» ⇒
+            // borrado sin avisar. Un throw a nivel de zona ya da `.failed`; los dos hechos son el mismo y merecen el mismo
+            // veredicto.
+            case .partialRecordFailure: return .failed("partialRecordFailure")
+            // El plazo corta la ESPERA, no el conteo: si se agota, lo medido hasta aquí no es una respuesta y no puede
+            // presentarse como tal.
+            case .stalled:              return .failed(ICloudZoneScanEnd.stalledReason)
+            case .finished, .stopped:   break
             }
 
             return .measured(ICloudPersonalCorpus(
@@ -572,9 +593,9 @@ extension ICloudPersonalCorpusProbe {
         Set(CloudSyncEngine.personalEntityNames.map { "CD_" + $0 })
     }
 
-    /// Plazo de la pregunta. Más largo que el del Welcome (`scanDeadline`) porque aquí se recorren también los registros
-    /// que el espejo local ya conoce, y una copia propia grande no puede dejar la vuelta en «no pudimos revisar».
-    static let foreignScanDeadline: TimeInterval = 60
+    /// Plazo SIN AVANCE de la pregunta (`ICloudZoneScan`; era total hasta el 2026-10-20, card blqa). Más largo que el del
+    /// Welcome (`scanStallLimit`) porque aquí se recorren también los registros que el espejo local ya conoce.
+    static let foreignScanStallLimit: TimeInterval = 60
 
     /// Plazo SIN AVANCE del borrado de «Empezar sin ellos». No es un plazo total: el borrado sigue mientras CloudKit
     /// conteste algo útil (una página leída, una tanda con algún borrado) y solo se corta si pasa este rato sin nada.
@@ -671,7 +692,7 @@ extension ICloudPersonalCorpusProbe {
     /// Errores propios del recorrido: un registro que no se dejó leer, o el plazo.
     enum ForeignScanError: Error {
         case partialRecordFailure
-        case deadline
+        case stalled
     }
 
     /// Un error de la pregunta → su desenlace. **Solo CloudKit declara «no hay cuenta»** (`notAuthenticated`,
@@ -679,7 +700,7 @@ extension ICloudPersonalCorpusProbe {
     static func foreignCheckOutcome(for error: Error) -> ICloudForeignCorpusCheck {
         switch error {
         case ForeignScanError.partialRecordFailure: return .failed("partialRecordFailure")
-        case ForeignScanError.deadline:             return .failed("scanDeadline")
+        case ForeignScanError.stalled:              return .failed(ICloudZoneScanEnd.stalledReason)
         case let ck as CKError:
             if ck.code == .notAuthenticated || ck.code == .managedAccountRestricted { return .noAccount }
             return .failed("CKError.\(ck.code.rawValue)")
@@ -739,41 +760,27 @@ extension ICloudPersonalCorpusProbe {
     }
 
     /// Recorre las zonas del espejo y cuenta lo ajeno. **Un registro que falla no se salta**: contar de menos hacia «no
-    /// hay nada» es sumar sin avisar, el bug. El tope cuenta solo lo ajeno, porque es lo que el texto cifra; el plazo
-    /// acota la espera entera entre páginas (una petición colgada la acota el propio CloudKit).
+    /// hay nada» es sumar sin avisar, el bug. El tope cuenta solo lo ajeno, porque es lo que el texto cifra; el plazo es
+    /// SIN AVANCE (`ICloudZoneScan`): una petición colgada la acota el propio CloudKit. Una zona que se va entre la lista
+    /// y la lectura se salta: no hay nada que el espejo vaya a bajar de ella.
     private static func scanForeignCorpus(known: Set<String>,
                                           desiredKeys: [CKRecord.FieldKey]) async throws -> ICloudForeignCorpus {
-        let startedAt = Date()
         var tally = ForeignTally(known: known, countedTypes: reverseCountedRecordTypes,
                                  readsFields: !desiredKeys.isEmpty)
         var truncated = false
-        for zoneID in try await mirrorZoneIDs() {
-            var token: CKServerChangeToken?
-            var moreComing = true
-            while moreComing {
-                let batch: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, Error>],
-                            deletions: [CKDatabase.RecordZoneChange.Deletion],
-                            changeToken: CKServerChangeToken, moreComing: Bool)
-                do {
-                    batch = try await privateDatabase.recordZoneChanges(
-                        inZoneWith: zoneID, since: token, desiredKeys: desiredKeys)
-                } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
-                    // La zona se fue entre la lista y la lectura: no hay nada que el espejo vaya a bajar de ella.
-                    break
-                }
-                for (_, result) in batch.modificationResultsByID {
-                    guard case .success(let modification) = result else { throw ForeignScanError.partialRecordFailure }
-                    tally.add(modification.record)
-                }
-                token = batch.changeToken
-                moreComing = batch.moreComing
-                if tally.counted >= recordScanCap {
-                    truncated = true
-                    moreComing = false
-                }
-                if Date().timeIntervalSince(startedAt) > foreignScanDeadline { throw ForeignScanError.deadline }
-            }
-            if truncated { break }
+        let outcome = try await ICloudZoneScan.run(
+            io: liveZoneScanIO(desiredKeys: desiredKeys, skipsDeletedZones: true),
+            stallLimit: foreignScanStallLimit
+        ) { records in
+            for record in records { tally.add(record) }
+            if tally.counted >= recordScanCap { truncated = true }
+            return truncated
+        }
+        logScan("reverse", outcome)
+        switch outcome.end {
+        case .partialRecordFailure: throw ForeignScanError.partialRecordFailure
+        case .stalled:              throw ForeignScanError.stalled
+        case .finished, .stopped:   break
         }
         return tally.corpus(truncated: truncated)
     }

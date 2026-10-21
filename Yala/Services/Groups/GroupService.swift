@@ -70,8 +70,8 @@ final class GroupService {
     /// `flag && group.isBackendGroup`, y con un `SplitGroup` DUPLICADO **mixto** en la zona el MISMO grupo se
     /// enrutaba por un canal u otro según qué fila tuviera el caller en la mano: los siete call-sites de esta
     /// función eligen entre «RPC server-first» y «CloudKit», y equivocarse hacia CloudKit produce un ÉXITO
-    /// LOCAL FALSO —`leaveGroup` no llama a `leave_group`, `approveMember`/`removeMember` no llaman a su RPC,
-    /// los dos guards defensivos de `rejectMember`/`changeRole` dejan de lanzar— con el usuario intacto
+    /// LOCAL FALSO —`leaveGroup` no llama a `leave_group`, `approveMember`/`removeMember`/`rejectMember` no llaman a
+    /// su RPC, el guard defensivo de `changeRole` deja de lanzar— con el usuario intacto
     /// server-side (y, en el caso del leave, todavía `is_group_writer`).
     ///
     /// El fetch degrada a la fila en mano si no hay contexto o si lanza: nunca peor que el criterio anterior.
@@ -430,9 +430,31 @@ final class GroupService {
     }
 
     /// admin rejects a pending member's request, marking them as rejected and enqueuing sync.
-    func rejectMember(_ member: SplitMember, in group: SplitGroup) throws {
-        // Guard defensivo (review G5-A): sin routing backend para reject — evitar falso éxito local.
-        guard !routesMembershipToBackend(group) else { throw GroupServiceError.backendActionUnavailable }
+    ///
+    /// Grupo backend → RPC `remove_member` SERVER-FIRST, como aprobar. **El servidor ya rechazaba**: `remove_member`
+    /// deja `rejected` a quien estaba `pendingApproval` (`supabase-groups-staging.ddl`, §5), `g13_02` le deja leer su
+    /// fila y el Worker le manda el aviso neutro. Hasta el 2026-10-20 aquí había un guard que lanzaba
+    /// `.backendActionUnavailable` y el botón decía «vuelve a intentarlo» para siempre (card 840m del QA del TF19).
+    ///
+    /// **La solicitud tiene que seguir pendiente en local ANTES de llamar**: el mismo RPC deja `removed` a un miembro
+    /// activo, y así un miembro que este teléfono ya ve dentro no se expulsa por error. Lo que NO cubre, y tiene ticket
+    /// (`cloud-group-reject-can-expel-a-member-approved-on-another-device`): con el estado local viejo —aprobado desde otro
+    /// aparato del mismo admin y aún pendiente aquí— el servidor lo expulsa. Las validaciones locales van también antes
+    /// de la red (review del 2026-10-20): con un grupo congelado o sin ser admin, el RPC no sale. Y solo se marca
+    /// `.rejected` si el servidor dice `rejected`, y si el pull no lo marcó ya mientras volaba: lo demás lo trae el pull.
+    func rejectMember(_ member: SplitMember, in group: SplitGroup) async throws {
+        if routesMembershipToBackend(group) {
+            let context = try requireContext()
+            try validateGroupIsWritable(group)
+            try requireCurrentUserAdmin(in: group, context: context)
+            guard member.groupZoneID == group.cloudKitZoneID else { throw GroupServiceError.memberNotInGroup }
+            guard member.isPendingApproval else { throw GroupServiceError.notPendingApproval }
+            guard let memberKey = member.memberKey else { throw GroupServiceError.missingMemberKey }
+            let result = try await backendMembershipFactory().remove(
+                groupID: group.cloudKitZoneID, memberKey: memberKey)
+            guard GroupMemberRejectLogic.marksRejectedLocally(serverStatus: result.status),
+                  member.isPendingApproval else { return }
+        }
         try transitionPendingMember(member, to: .rejected, in: group)
     }
 

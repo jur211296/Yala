@@ -1490,7 +1490,7 @@ struct WelcomePrivateICloudGateWiringTests {
         // no con la presencia de un literal: intercambiarlos deja «Reintentar» saliendo de la puerta y la
         // salida re-midiendo, con los dos literales igual de presentes.
         let content = try Self.body(of: "private var content: some View {", in: src)
-        let unreachable = try #require(content.range(of: "case .unreachable:"))
+        let unreachable = try #require(content.range(of: "case .unreachable(let stalled):"))
         let hasta = try #require(content.range(of: "case .wipeFailed(let zoneGone):",
                                                range: unreachable.upperBound..<content.endIndex))
         let ramaUnreachable = String(content[unreachable.upperBound..<hasta.lowerBound])
@@ -1525,9 +1525,6 @@ struct WelcomePrivateICloudGateWiringTests {
             ("private var noICloudBody: String {",
              "L10n.Welcome.PrivateICloud.noAccountBody",
              "L10n.Welcome.PrivateICloud.discardUnverifiedNoAccountBody"),
-            ("private var unreachableBody: String {",
-             "L10n.Welcome.PrivateICloud.errorBody",
-             "L10n.Welcome.PrivateICloud.discardUnverifiedBody"),
             ("private var unverifiedExitLabel: String {",
              "L10n.Welcome.PrivateICloud.noAccountCta",
              "L10n.Welcome.PrivateICloud.discardUnverifiedBack")
@@ -1548,6 +1545,17 @@ struct WelcomePrivateICloudGateWiringTests {
                 «seguir» que esa pantalla no ofrece —y en el label, dice literalmente «Seguir así»
                 mientras vuelve atrás.
                 """))
+        }
+        // **El cuerpo de `.unreachable` ramifica además por el plazo** (card blqa, 2026-10-20): cuatro casillas, cada una
+        // con su copy. Con el plazo vencido ninguna de las dos culpa a la conexión.
+        let unreachable = try Self.body(of: "private func unreachableBody(stalled: Bool) -> String {", in: src)
+        for casilla in [
+            "case (.proceedWatchingTheMirror, false): return L10n.Welcome.PrivateICloud.errorBody",
+            "case (.proceedWatchingTheMirror, true): return L10n.Welcome.PrivateICloud.stalledBody",
+            "case (.returnWithoutClaimingAWipe, false): return L10n.Welcome.PrivateICloud.discardUnverifiedBody",
+            "case (.returnWithoutClaimingAWipe, true): return L10n.Welcome.PrivateICloud.discardStalledBody",
+        ] {
+            #expect(unreachable.contains(casilla), "`unreachableBody` perdió la casilla: \(casilla)")
         }
         // **El «sin default» del parámetro, que es lo que obliga a cada montaje a pronunciarse.** Ponerle
         // uno compila, deja los tres call-sites y sus aserciones intactos, y re-arma el bug para el

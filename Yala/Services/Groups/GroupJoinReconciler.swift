@@ -153,8 +153,12 @@ enum GroupJoinReconciler {
         case .skipFlagOff:
             // R5: flag rolled back — conservar hasta TTL, jamás procesar por CloudKit.
             logger.notice("JoinReconcile[\(trigger.rawValue, privacy: .public)]: backend intent \(entry.zoneName, privacy: .public) skip — flag OFF (conservado)")
+            // Nada que enseñar por esta invitación: «Abriendo tu invitación…» no espera a su techo (card z81w).
+            InviteOpeningState.shared.finish(.nothingToOpen)
 
         case .correctAndClear:
+            // Ya es miembro: no hay cadena que releve a la bienvenida, así que la apertura termina aquí (card z81w).
+            InviteOpeningState.shared.finish(.nothingToOpen)
             await GroupBackendInviteEntryHandler.correctDisplayNameIfNeeded(
                 groupID: groupID, intentName: entry.displayName,
                 currentMemberDisplayName: backendMember?.displayName ?? "")

@@ -4689,6 +4689,9 @@
 /* Welcome · terminal de relanzamiento cuando el destino elegido necesita el espejo de iCloud (R2) */
 "welcome.mirrorRelaunch.title" = "Um último passo: volta a abrir o Yala";
 
+/* Welcome cover while an invite link opens on a fresh install, until the sign-in replaces it (no buttons) */
+"welcome.inviteOpening.title" = "A abrir o teu convite…";
+
 /* Welcome · cuerpo del terminal de relanzamiento del mount neutro (R2) */
 "welcome.mirrorRelaunch.body" = "Para cuidarmos dos teus dados, o Yala precisa de abrir de novo. Vai para o ecrã principal e volta — continuamos exatamente onde ficaste.";
 
@@ -5059,6 +5062,15 @@
 
 /* Private branch iCloud gate: body when the CloudKit probe failed */
 "welcome.privateICloud.errorBody" = "Pode ser a ligação. Tenta outra vez antes de seguir — assim não aparecem dados antigos sem aviso.";
+
+/* Private branch iCloud gate: title when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledTitle" = "O iCloud demorou demasiado a responder";
+
+/* Private branch iCloud gate: body when the iCloud check took too long (not a connection error) */
+"welcome.privateICloud.stalledBody" = "Não conseguimos acabar de ver o teu iCloud. Tenta outra vez antes de seguir — assim não aparecem dados antigos sem aviso.";
+
+/* Private branch iCloud gate, after confirming a wipe: the iCloud check took too long, nothing was deleted */
+"welcome.privateICloud.discardStalledBody" = "Não conseguimos acabar de ver o teu iCloud, por isso não apagámos nada: está tudo como estava. Tenta outra vez, ou volta atrás e decide quando quiseres.";
 
 /* Late mirror notice: title when iCloud is turned on after a local-only onboarding */
 "welcome.privateICloud.lateTitle" = "Encontrámos dados teus no iCloud";

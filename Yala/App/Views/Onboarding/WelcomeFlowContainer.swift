@@ -193,8 +193,21 @@ struct WelcomeFlowContainer: View {
         visibleExistingOptions.contains(.cloudSignIn)
     }
 
+    /// ¿La apertura de una invitación tapa un paso con trabajo en vuelo? (Los de pura navegación los sustituye.)
+    private var coversStepWithInviteOpening: Bool {
+        InviteOpeningState.shared.isOpening && !step.isPlainNavigation
+    }
+
     var body: some View {
         ZStack {
+            // **«Abriendo tu invitación…» SUSTITUYE a los pasos de pura navegación** (card z81w): en el Hero y los
+            // selectores no hay nada en vuelo, y taparlos no basta — medido con `axe describe-ui` en iOS 27.0, con el paso
+            // debajo `accessibilityHidden` y transparente, «Empezar» seguía en el árbol de accesibilidad. En un paso con
+            // trabajo en vuelo (una puerta midiendo o borrando) no se desmonta nada: la capa de abajo lo tapa.
+            if InviteOpeningState.shared.isOpening && step.isPlainNavigation {
+                WelcomeInviteOpeningView()
+                    .transition(.opacity)
+            } else {
             switch step {
             case .hero:
                 WelcomeHeroView {
@@ -353,7 +366,20 @@ struct WelcomeFlowContainer: View {
                 WelcomeMirrorRelaunchView()
                     .transition(.opacity)
             }
+            }
         }
+        // **En los demás pasos, «Abriendo tu invitación…» los tapa sin desmontarlos** (card z81w, 2026-10-20): ni se tocan
+        // ni se ven, y vuelven tal cual si vence el techo (`InviteOpeningLogic.ceiling`).
+        .opacity(coversStepWithInviteOpening ? 0 : 1)
+        .allowsHitTesting(!coversStepWithInviteOpening)
+        .accessibilityHidden(coversStepWithInviteOpening)
+        .overlay {
+            if coversStepWithInviteOpening {
+                WelcomeInviteOpeningView()
+                    .transition(.opacity)
+            }
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: InviteOpeningState.shared.isOpening)
         // **El step inicial manda AUNQUE el cover ya esté montado, y sin esto se ignoraba en silencio.**
         //
         // `@State` se inicializa una sola vez por identidad de la vista, así que un productor que escriba
@@ -542,6 +568,16 @@ struct WelcomeFlowContainer: View {
         let animation: Animation? = reduceMotion ? nil : .smooth(duration: 0.5, extraBounce: 0.1)
         withAnimation(animation) {
             step = next
+        }
+    }
+}
+
+extension WelcomeFlowStep {
+    /// Pasos sin nada en vuelo, que «Abriendo tu invitación…» puede sustituir sin cancelar ningún trabajo (card z81w).
+    var isPlainNavigation: Bool {
+        switch self {
+        case .hero, .chooser, .existingChooser, .newChooser, .groupsChooser: return true
+        default: return false
         }
     }
 }

@@ -283,26 +283,23 @@ struct GroupMembersView: View {
         }
     }
 
+    /// `rejectMember` es `async` desde que el grupo de la nube rechaza en el servidor (card 840m): mismo molde que
+    /// `performApprove`. Con el canal de CloudKit no suspende.
     private func performReject() {
-        runPendingMemberAction(label: "rejectMember", GroupService.shared.rejectMember)
-    }
-
-    private func runPendingMemberAction(
-        label: String,
-        _ action: (SplitMember, SplitGroup) throws -> Void
-    ) {
         guard let member = pendingActionMember else { return }
-        do {
-            try action(member, group)
-            viewModel.loadData()
-        } catch {
-            pendingErrorMessage = error.localizedDescription
-            showPendingError = true
-            #if DEBUG
-            print("GroupMembersView: \(label) failed: \(error)")
-            #endif
+        Task {
+            do {
+                try await GroupService.shared.rejectMember(member, in: group)
+                viewModel.loadData()
+            } catch {
+                pendingErrorMessage = error.localizedDescription
+                showPendingError = true
+                #if DEBUG
+                print("GroupMembersView: rejectMember failed: \(error)")
+                #endif
+            }
+            pendingActionMember = nil
         }
-        pendingActionMember = nil
     }
 
     // MARK: - Opening Balance Section
