@@ -162,7 +162,10 @@ enum DevSeedGroups {
     /// otra mitad en `groupSecondaryCurrency`. En inglés: «Lisbon trip», te deben $190.00 + €46.67; en portugués de
     /// Brasil: «Viagem ao Rio» en reales, te devem R$ 380,00; en español, «Viaje a Cusco» como siempre.
     /// Las subcategorías son las de la app en ese idioma, para que cada gasto lleve su icono.
-    static func createFicha(in context: ModelContext, mainCurrency main: String) {
+    ///
+    /// Con `-uitest-seed-marketing` (material público de lanzamiento, que no enseña viajes) los grupos son los de casa:
+    /// ver `FichaCasa`. Mismo reparto y mismos pagadores, así que el balance es el mismo: te deben 190 × `groupFactor`.
+    static func createFicha(in context: ModelContext, mainCurrency main: String, casa: Bool = UITestHooks.marketingSeed) {
         let cifras = DevSeedFicha.cifras(forMainCurrency: main)
         let cal = Calendar.current
         func monthsAgo(_ n: Int) -> Date {
@@ -172,8 +175,8 @@ enum DevSeedGroups {
         }
         typealias Gasto = (desc: String, amount: Double, currency: String, payer: Int, subcat: String?, monthsAgo: Int)
 
-        func seedGroup(name: String, others: [String], gastos: [Gasto]) -> SplitGroup {
-            let group = SplitGroup(name: name, iconName: "airplane", currencyCode: main, isOwner: true)
+        func seedGroup(name: String, icon: String = "airplane", others: [String], gastos: [Gasto]) -> SplitGroup {
+            let group = SplitGroup(name: name, iconName: icon, currencyCode: main, isOwner: true)
             group.isBackendGroup = true  // C3: ver el porqué en `create(in:)`.
             context.insert(group)
             let zoneID = group.cloudKitZoneID
@@ -214,6 +217,29 @@ enum DevSeedGroups {
         typealias T = L10n.DevSeed.Ficha
         typealias Sub = L10n.Subcategory
         let k = cifras.groupFactor
+        if casa {
+            let nombres = FichaCasa.textos(for: AppLocale.current)
+            let depa = seedGroup(name: nombres.groupHome, icon: "house.fill", others: [T.memberA, T.memberB], gastos: [
+                (nombres.rent, 600 * k, main, 0, Sub.rent, 3),
+                (nombres.internet, 240 * k, main, 1, Sub.utilities, 2),
+                (nombres.power, 180 * k, main, 2, Sub.utilities, 1),
+                (nombres.cleaning, 90 * k, main, 2, Sub.supportStaff, 0),
+                (nombres.groceries, 120 * k, main, 1, Sub.supermarkets, 0),
+            ])
+            _ = seedGroup(name: nombres.groupOffice, icon: "fork.knife", others: [T.memberC], gastos: [
+                (nombres.officeLunch, 96 * k, main, 0, Sub.restaurants, 1),
+                (nombres.officeCoffee, 30 * k, main, 1, Sub.restaurants, 0),
+            ])
+            if UITestHooks.isActive {
+                UserDefaults.standard.set(depa.id.uuidString, forKey: UITestHooks.seededGroupIDKey)
+            }
+            do {
+                try context.save()
+            } catch {
+                print("DevSeedGroups: ficha (casa) save error: \(error)")
+            }
+            return
+        }
         // Índice del pagador: 0 = tú, 1 = Ana, 2 = Beto/Ben. Mismo reparto que `create`: te deben 190 × k.
         var trip: [Gasto] = [
             (T.expenseLodging, 600 * k, main, 0, Sub.travel, 3),
@@ -242,6 +268,37 @@ enum DevSeedGroups {
             try context.save()
         } catch {
             print("DevSeedGroups: ficha save error: \(error)")
+        }
+    }
+
+    /// Nombres de los grupos de casa de `-uitest-seed-marketing`, en los tres idiomas de la ficha (es, en, pt-BR). Solo
+    /// semilla DEBUG para grabar material público: van aquí y no al catálogo, como los de `createFichaMX`. Otro idioma
+    /// sale en inglés.
+    struct FichaCasa: Equatable {
+        let groupHome: String, groupOffice: String
+        let rent: String, internet: String, power: String, cleaning: String, groceries: String
+        let officeLunch: String, officeCoffee: String
+        /// El presupuesto de mascota sin nombre propio (el de `realista` lleva el de una mascota real).
+        let budgetPet: String
+
+        static func textos(for locale: Locale) -> FichaCasa {
+            switch locale.language.languageCode?.identifier {
+            case "es":
+                return FichaCasa(groupHome: "Depa compartido", groupOffice: "Almuerzos de la oficina",
+                                 rent: "Alquiler", internet: "Internet", power: "Luz y agua", cleaning: "Limpieza",
+                                 groceries: "Mercado", officeLunch: "Menú del viernes", officeCoffee: "Café",
+                                 budgetPet: "Mascota")
+            case "pt":
+                return FichaCasa(groupHome: "Apê compartilhado", groupOffice: "Almoços do escritório",
+                                 rent: "Aluguel", internet: "Internet", power: "Luz e água", cleaning: "Faxina",
+                                 groceries: "Mercado", officeLunch: "Almoço de sexta", officeCoffee: "Café",
+                                 budgetPet: "Pet")
+            default:
+                return FichaCasa(groupHome: "Shared apartment", groupOffice: "Office lunches",
+                                 rent: "Rent", internet: "Internet", power: "Utilities", cleaning: "Cleaning",
+                                 groceries: "Groceries", officeLunch: "Friday lunch", officeCoffee: "Coffee",
+                                 budgetPet: "Pet")
+            }
         }
     }
 
