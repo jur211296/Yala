@@ -170,25 +170,25 @@ struct WelcomeMirrorRelaunchLogicTests {
         let expected: [Destination: Bool] = [
             .privateOnboarding: true,   // el bypass de producción: es quien paga el relanzamiento nuevo
             .restoreICloud: true,       // sin mirror, `RestoreProgressView` cuenta filas de un import que no llega
-            .inviteRecovery: true,      // no lo necesita para su trabajo, pero su destino es usar la app
+            // «Tengo una invitación» pega un enlace del BACKEND, el mismo que el universal link (card t2q8, 2026-10-20).
+            // En `true`, una instalación nueva reabría Yala, montaba el espejo del iCloud del aparato y la puerta del
+            // invitado pedía dejar el teléfono en blanco.
+            .inviteRecovery: false,
             .cloudAccount: false,       // el alta nube: el mount neutro YA es su store
             .cloudSignIn: false,        // la re-entrada: idem, y su relanzamiento lo decide su máquina
             // G3 · el alta del ORGANIZADOR va por el backend (store de Grupos, `cloudKitDatabase: .none`),
-            // y su alta es solo-grupos ⇒ no crea corpus personal que espejar. Cae con las del Modo Nube y
-            // NO con `inviteRecovery`, que recupera un CKShare y desemboca en usar la app con datos
-            // personales. Ponerlo en `true` le cobra al organizador una pantalla de relanzamiento por un
-            // mirror que su camino no usa — es la mutación (c) del chip G3.
+            // y su alta es solo-grupos ⇒ no crea corpus personal que espejar. Cae con las del Modo Nube.
+            // Ponerlo en `true` le cobra al organizador una pantalla de relanzamiento por un mirror que su
+            // camino no usa — es la mutación (c) del chip G3.
             .groupsOrganizer: false,
             // Paso 8 · «Activar Yala completo» → privado (onboarding o restaurar): lo personal va a vivir en
             // el iCloud privado, así que caen con sus gemelas del Welcome. En `false`, el onboarding o el
             // restore correrían sin espejo tras elegir privado — el restore agotaría su espera de 90 s.
             .fullActivationPrivate: true,
             .fullActivationRestore: true,
-            // La invitación que devolvió el teléfono al NEUTRO (`GroupInviteNeutralGateLogic`). Cae con
-            // `groupsOrganizer` y **no con `inviteRecovery`**, aunque las dos hablen de invitaciones:
-            // aquella recupera un CKShare y desemboca en usar la app con datos personales; ésta llega por
-            // el backend y su dispositivo acaba de quedar en blanco A PROPÓSITO. En `true` le pediríamos
-            // reabrir para adjuntar el espejo que la puerta acaba de quitar — deshaciendo el arreglo.
+            // La invitación que devolvió el teléfono al NEUTRO (`GroupInviteNeutralGateLogic`). Llega por el
+            // backend y su dispositivo acaba de quedar en blanco A PROPÓSITO. En `true` le pediríamos reabrir
+            // para adjuntar el espejo que la puerta acaba de quitar — deshaciendo el arreglo.
             .groupsInvite: false,
         ]
         #expect(Set(expected.keys) == Set(Destination.allCases),

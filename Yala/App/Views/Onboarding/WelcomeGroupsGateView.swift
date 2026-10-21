@@ -723,7 +723,9 @@ struct WelcomeGroupsGateView: View {
         // revés. Los providers ya los cablea `ContentView` con los MISMOS closures que alimentan al guard
         // cross-cuenta, así que lo que se mide aquí es literalmente lo que se midió allí — solo que ahora,
         // que es lo único que esta segunda lectura añade.
-        switch GroupBackendInviteEntryHandler.neutralGateDecision() {
+        // El grupo viene en el propósito: esta función solo corre en la rama del invitado (`.acceptInvite`).
+        guard let groupID = purpose.invitedGroupID else { return }
+        switch GroupBackendInviteEntryHandler.neutralGateDecision(groupID: groupID) {
         case .proceed:
             GroupsGateWipeFailureMarker.clear()
             onProceed()

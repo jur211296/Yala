@@ -1311,6 +1311,13 @@ struct ContentView: View {
         // `drained-notice-lets-the-next-intent-drain-before-the-matrix-blocks`). `updateContentViewReadiness` bloquea en
         // el acto y libera una vuelta después, así que esto no añade ningún drenaje.
         defer { updateContentViewReadiness() }
+        // La cadena del invitado (firmar, consentir, la hoja o su puerta) releva a la bienvenida: «Abriendo tu
+        // invitación…» ya cumplió (card z81w). Aquí y no en `dismissWelcomeChainForSupersedingIntent`, que solo corre con
+        // el Welcome como único bloqueo: si la hoja sale sin pasar por ahí y la persona la cancela, el Welcome volvería
+        // con la pantalla de apertura puesta hasta el techo.
+        if intent.supersedesWelcomeChain {
+            InviteOpeningState.shared.finish(.handedOver)
+        }
         switch intent {
         case .showInboxAlert(let notif):
             activeInboxNotification = notif
@@ -2832,6 +2839,11 @@ struct ContentView: View {
         // uitest: presentar el cover de GroupInviteOnboarding directo (CKShare no
         // funciona en sim). `-uitest-join-phase` congela la fase del tracker para
         // testear cada step determinista.
+        // `-uitest-invite-opening` (card z81w): «Abriendo tu invitación…» encendida justo cuando la bienvenida se va a
+        // presentar, para que el techo empiece a contar con ella delante y no durante el splash.
+        if UITestHooks.inviteOpening {
+            InviteOpeningState.shared.begin(origin: "uitest")
+        }
         if UITestHooks.startAtInviteOnboarding {
             if let phase = UITestHooks.joinPhaseOverride {
                 GroupJoinIntentTracker.shared._uitestForcePhase(named: phase)
@@ -3002,18 +3014,24 @@ private struct WelcomeFlowModifier: ViewModifier {
                 WelcomeFlowContainer(
                     initialStep: welcomeFlowInitialStep,
                     onSelectBranch: { branch in
-                        hasShownWelcomeChooser = true
                         switch branch {
                         case .new:
+                            hasShownWelcomeChooser = true
                             // Inalcanzable desde A4: el container desvía `.new` a su 2º nivel
                             // (`handleNewBranch`) igual que ya hacía con `.restore`. Se delega al
                             // MISMO helper que el callback nuevo — dos copias de este camino es
                             // como divergen la limpieza de residuales y el alert de wipe.
                             startFreshPrivateOnboarding()
                         case .restore:
+                            hasShownWelcomeChooser = true
                             showWelcomeFlow = false
                             showWelcomeRestore = true
                         case .invite:
+                            // **«Tengo una invitación» no marca el chooser** (card t2q8, 2026-10-20), como «Crear mi primer
+                            // grupo»: el invitado todavía no ha elegido dónde viven sus datos personales. Marcado, el enlace
+                            // que pega no arma el neutro duradero (`GroupInviteNeutralGateLogic.armsDurableNeutralOnEntry`)
+                            // y un relanzamiento a mitad montaba el espejo del iCloud del aparato. Si abandona, el Welcome
+                            // vuelve a salir en el arranque siguiente, que es lo honesto.
                             showWelcomeFlow = false
                             showInviteRecovery = true
                         }

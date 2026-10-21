@@ -107,7 +107,9 @@ struct ContentViewReadinessReleaseWiringTests {
         // `applyContentViewReadiness` aquí haría `markReady` dentro de la actualización otra vez.
         let vista = try Self.code("Yala/App/ContentView.swift")
         let drain = try Self.body(of: "private func drainContentViewIntents()", in: vista)
-        #expect(drain.contains("return } defer { updateContentViewReadiness() } switch intent {"))
+        #expect(drain.contains("return } defer { updateContentViewReadiness() }"))
+        // Entre el `defer` y el `switch` solo va el fin de «Abriendo tu invitación…» (card z81w): no presenta ni libera nada.
+        #expect(drain.contains("defer { updateContentViewReadiness() } if intent.supersedesWelcomeChain { InviteOpeningState.shared.finish(.handedOver) } switch intent {"))
         #expect(Self.occurrences(of: "defer {", in: drain) == 1)
     }
 

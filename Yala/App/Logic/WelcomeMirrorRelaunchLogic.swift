@@ -82,27 +82,25 @@ nonisolated enum WelcomeMirrorRelaunchLogic {
     ///    Que un mirror adjuntado en un arranque POSTERIOR exporte lo escrito en la ventana neutra es
     ///    plausible pero **NO está medido** (spec §8), y el primer corpus de un usuario no es el sitio para
     ///    apostar a un inferido.
-    ///  · `inviteRecovery` no necesita el mirror para su propio trabajo —el CKShare va por el container de
-    ///    Grupos— pero su destino es usar la app con datos personales, así que cae del mismo lado que el
-    ///    onboarding privado. Sesgo deliberado: pedir un relanzamiento de más cuesta una pantalla; de menos,
-    ///    una sesión entera sin espejo.
-    ///  · `groupsOrganizer` (G3) cae con las del Modo Nube y **no con `inviteRecovery`**, aunque las dos
-    ///    hablen de grupos: aquella recupera un CKShare y desemboca en usar la app con datos personales;
-    ///    esta va por el BACKEND (store de Grupos con `cloudKitDatabase: .none`) y su alta es solo-grupos,
-    ///    que por definición no crea corpus personal que espejar. Pedirle un relanzamiento sería cobrarle
-    ///    una pantalla por un mirror que su camino no usa.
+    ///  · `inviteRecovery` («Vengo por un grupo › Tengo una invitación») **cae con `groupsInvite` desde el
+    ///    2026-10-20** (card t2q8 del QA guiado del TF19). Pedía el espejo porque recuperaba un CKShare y desembocaba en
+    ///    usar la app con datos personales; ese transporte murió en la Fase 3 y hoy pega un enlace del BACKEND, el mismo
+    ///    que entra por el universal link sin relanzar nada. Con `true`, una instalación nueva reabría Yala, montaba el
+    ///    espejo del iCloud del aparato y la puerta del invitado pedía dejar el teléfono en blanco.
+    ///  · `groupsOrganizer` (G3) cae con las del Modo Nube: va por el BACKEND (store de Grupos con
+    ///    `cloudKitDatabase: .none`) y su alta es solo-grupos, que por definición no crea corpus personal que espejar.
+    ///    Pedirle un relanzamiento sería cobrarle una pantalla por un mirror que su camino no usa.
     static func requiresMirror(_ destination: Destination) -> Bool {
         switch destination {
         // Las dos de la activación caen con sus gemelas del Welcome por la misma razón: lo personal va a
         // vivir en el iCloud privado, y el onboarding o el restore tienen que correr con el espejo puesto.
-        case .privateOnboarding, .restoreICloud, .inviteRecovery,
+        case .privateOnboarding, .restoreICloud,
              .fullActivationPrivate, .fullActivationRestore:
             return true
-        // `groupsInvite` cae con `groupsOrganizer` y NO con `inviteRecovery`, aunque las dos hablen de
-        // invitaciones: aquella recupera un CKShare y desemboca en usar la app con datos personales; ésta
-        // llega por el BACKEND y su dispositivo acaba de quedar en NEUTRO a propósito. Pedirle que reabra
-        // para adjuntar un espejo sería deshacer justo lo que la puerta acaba de hacer.
-        case .cloudAccount, .cloudSignIn, .groupsOrganizer, .groupsInvite:
+        // Las tres de grupos van por el BACKEND y su dispositivo se queda en NEUTRO a propósito: `groupsInvite` acaba de
+        // volver a él, e `inviteRecovery` entra por el mismo enlace que el universal link. Pedirles que reabran para
+        // adjuntar un espejo sería deshacer justo lo que la puerta del invitado protege.
+        case .cloudAccount, .cloudSignIn, .groupsOrganizer, .groupsInvite, .inviteRecovery:
             return false
         }
     }

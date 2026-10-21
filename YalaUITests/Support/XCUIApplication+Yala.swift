@@ -73,6 +73,11 @@ extension XCUIApplication {
         // `-uitest-private-gate-device-reading <present|unreadable>`: la puerta de «Es mi primera vez → privado» mide con
         // esa lectura del teléfono fingida e iCloud «sin cuenta» (ticket `private-gate-device-notice-has-no-forward-exit`).
         privateGateDeviceReading: String? = nil,
+        // `-uitest-private-gate-probe-stalled`: la revisión de iCloud de esa puerta contesta «se quedó sin avanzar» (card
+        // blqa). `-uitest-invite-opening`: el arranque enciende «Abriendo tu invitación…» (card z81w). NOMBRADOS por lo
+        // mismo que sus vecinos: un typo dejaría la pantalla normal y el rojo culparía a la vista.
+        privateGateProbeStalled: Bool = false,
+        inviteOpening: Bool = false,
         scheduledSeedDay: Int? = nil,
         // `-uitest-last-seen-version <versión|none|keep>`: la última versión cuyas Novedades «vio» el dispositivo
         // (`UITestHooks.lastSeenAppVersionOverride`). Sin él, la actual, y la hoja no sale. NOMBRADO por lo mismo que sus
@@ -222,6 +227,8 @@ extension XCUIApplication {
             args.append("-uitest-private-gate-device-reading")
             args.append(privateGateDeviceReading)
         }
+        if privateGateProbeStalled { args.append("-uitest-private-gate-probe-stalled") }
+        if inviteOpening { args.append("-uitest-invite-opening") }
         if let fakeMigrationIdentity {
             args.append("-uitest-fake-migration-identity")
             args.append(fakeMigrationIdentity)

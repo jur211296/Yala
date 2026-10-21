@@ -156,7 +156,9 @@ struct WelcomePrivateICloudGateView: View {
         /// mismo que `iCloudUnverified` abajo: un `@State` al lado se hereda en silencio al reintentar.
         case wipeFailed(zoneGone: Bool)
         case noICloud
-        case unreachable
+        /// iCloud no contestó. `stalled` dice si fue el plazo sin avance de la revisión y no un fallo de CloudKit: cambia
+        /// el texto, que entonces no culpa a la conexión (card blqa). Viaja en el case por lo mismo que los de abajo.
+        case unreachable(stalled: Bool)
         /// **No se pudo leer lo que hay en este teléfono** (ticket `private-gate-device-notice-has-no-forward-exit`). Nada
         /// que borrar ni que contar: reintentar o volver.
         case deviceUnreadable
@@ -276,7 +278,7 @@ struct WelcomePrivateICloudGateView: View {
             // Ajustes y volver a preguntar. Sin este botón, hacerlo obliga a salir de la puerta y repetir
             // el gesto destructivo entero.
             noICloudContent
-        case .unreachable:
+        case .unreachable(let stalled):
             // Se pudo intentar y falló. Dos salidas, y las dos hacen falta:
             //
             //  · **Reintentar** es la primera, porque aquí el remedio existe (a diferencia del estado K).
@@ -294,11 +296,12 @@ struct WelcomePrivateICloudGateView: View {
             // dos desenlaces — aquí el remedio existe, y es el que de verdad resuelve.
             twoWayNoticeContent(
                 icon: "exclamationmark.icloud",
-                title: L10n.Welcome.PrivateICloud.errorTitle,
-                body: unreachableBody,
+                title: stalled ? L10n.Welcome.PrivateICloud.stalledTitle : L10n.Welcome.PrivateICloud.errorTitle,
+                body: unreachableBody(stalled: stalled),
                 primary: L10n.Welcome.Restore.retry,
                 secondary: unverifiedExitLabel,
-                identifier: "welcome_private_icloud_error",
+                // Un id propio para el plazo: es otro texto, y el XCUITest lo separa sin leer copy localizado.
+                identifier: stalled ? "welcome_private_icloud_stalled" : "welcome_private_icloud_error",
                 primaryAction: { phase = .checking },
                 secondaryAction: exitWithoutValidating)
         case .deviceUnreadable:
@@ -742,10 +745,15 @@ struct WelcomePrivateICloudGateView: View {
     /// aquí no hay ningún «seguir». El de recambio nombra el reintento igual que él, porque ese botón
     /// sigue estando y es el único que de verdad resuelve — un cuerpo que solo ofreciera volver empujaría
     /// al camino que no arregla nada.
-    private var unreachableBody: String {
-        switch unverifiedExit {
-        case .proceedWatchingTheMirror: return L10n.Welcome.PrivateICloud.errorBody
-        case .returnWithoutClaimingAWipe: return L10n.Welcome.PrivateICloud.discardUnverifiedBody
+    ///
+    /// **Y cuando fue el plazo, ninguno de los dos habla de la conexión** (card blqa): un iCloud con mucho historial que
+    /// tarda demasiado no es una red caída, y «Puede ser la conexión» mandaba a revisar algo que estaba bien.
+    private func unreachableBody(stalled: Bool) -> String {
+        switch (unverifiedExit, stalled) {
+        case (.proceedWatchingTheMirror, false): return L10n.Welcome.PrivateICloud.errorBody
+        case (.proceedWatchingTheMirror, true): return L10n.Welcome.PrivateICloud.stalledBody
+        case (.returnWithoutClaimingAWipe, false): return L10n.Welcome.PrivateICloud.discardUnverifiedBody
+        case (.returnWithoutClaimingAWipe, true): return L10n.Welcome.PrivateICloud.discardStalledBody
         }
     }
 
@@ -880,7 +888,8 @@ struct WelcomePrivateICloudGateView: View {
         // La única excepción es el seam que finge la LECTURA del teléfono (`-uitest-private-gate-device-reading`): sin
         // él, las pantallas del corpus del teléfono no tienen XCUITest. Tampoco toca la red: iCloud cuenta «sin cuenta».
         let forcedDeviceReading = UITestHooks.privateGateDeviceReading
-        guard !SwiftDataConfiguration.isUITesting || forcedDeviceReading != nil else {
+        let forcedProbeStalled = UITestHooks.privateGateProbeStalled
+        guard !SwiftDataConfiguration.isUITesting || forcedDeviceReading != nil || forcedProbeStalled else {
             onProceed()
             return
         }
@@ -902,7 +911,9 @@ struct WelcomePrivateICloudGateView: View {
         // no hay cuenta es él, con su `notAuthenticated`. (`mirrorWillSync` sigue siendo el pre-filtro
         // correcto del aviso TARDÍO, donde la pregunta sí es sobre el espejo que ya está puesto.)
         let outcome: ICloudProbeOutcome
-        if forcedDeviceReading != nil {
+        if forcedProbeStalled {
+            outcome = .failed(ICloudZoneScanEnd.stalledReason)
+        } else if forcedDeviceReading != nil {
             outcome = .noAccount
         } else {
             outcome = await ICloudPersonalCorpusProbe.probe()
@@ -951,8 +962,8 @@ struct WelcomePrivateICloudGateView: View {
             phase = .foundDevice(iCloudUnverified: unverified)
         case .noICloud:
             phase = .noICloud
-        case .unreachable:
-            phase = .unreachable
+        case .unreachable(let reason):
+            phase = .unreachable(stalled: WelcomePrivateICloudGateLogic.wasStalled(reason))
         case .deviceUnreadable:
             phase = .deviceUnreadable
         }
