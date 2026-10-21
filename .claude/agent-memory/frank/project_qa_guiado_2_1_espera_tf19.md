@@ -15,6 +15,10 @@ con las decisiones de Jürgen ya en las cards y enviadas al bot Frank: t2q8, 840
 nube: implementarlo en backend), blqa (revisión de iCloud > 25 s: 2.1), z81w (invitación 10-15 s en la bienvenida: 2.1
 con pantalla «Abriendo tu invitación…»).
 
+**21-oct: tanda del #577 HECHA, 4 de 4 pasan** (`apsn` nueva, 2.2 alta). Falta solo que Jürgen diga «cerramos» para
+`/cerrar-total`. **Aparatos:** el iPad Pro `…A54EA1EB9001C` ya NO es de Jürgen; el iPad de QA es ahora un **iPad Air**
+`00008132-000008CA1A60C01C` con iCloud jur211296 (Modo desarrollador activado y registrado en el perfil de Yala Dev el 21-oct).
+
 **Actualizado 20-oct 21h:** las 4 entraron con el #577 (`e47b5cca9`) y el TF20 está VALID (PR #578). La tanda corta es
 `docs/qa/tanda-qa-jurgen-2.1-tf20.md`, toda en Yala Dev (compilado desde el #577 en el mismo DerivedData).
 
