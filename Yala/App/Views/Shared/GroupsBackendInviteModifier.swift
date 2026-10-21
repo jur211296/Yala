@@ -165,6 +165,16 @@ struct GroupsBackendInviteModifier: ViewModifier {
                     // empty state. D8-safe por el guard de mount-mismatch; no-op temprano con el flag OFF.
                     // Salvo con una cuenta completa: su alta pasa por el guard cross-cuenta del Welcome, y los grupos que
                     // el canal bajara ahora contarían como «datos de otra cuenta» (`GroupsSignInChannelStartLogic`).
+                    // Los grupos que el canal baje desde aquí son de quien acaba de entrar (card t2q8): sin esto, un relanzamiento
+                    // antes del CTA de la hoja los encontraba en el store y la puerta del invitado los contaba como de otra
+                    // persona. ANTES de arrancar el canal: la marca solo se escribe sin grupos aquí.
+                    if GroupInviteNeutralGateLogic.vouchesForGroupsAtSignIn(
+                        sessionOpenedHere: origen == .signedInHere,
+                        hasCompletedPersonalOnboarding: UserDefaults.standard.bool(
+                            forKey: AppPreferences.Keys.hasCompletedOnboarding),
+                        channelStartsAtSignIn: GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino)) {
+                        LateNoticeKeptGroupsMark.recordAtGroupsEntryIfNoGroupsYet(context: modelContext)
+                    }
                     if GroupsSignInChannelStartLogic.startsChannelAtSignIn(destino) {
                         GroupsSyncClient.shared.startIfEligible(context: modelContext, trigger: "post-sign-in")
                     }

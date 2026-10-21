@@ -104,7 +104,7 @@ struct InviteFreshInstallEntryTests {
         // Puerta del enlace: primero la del invitado…
         #expect(GroupInviteNeutralGateLogic.decide(
             hasCompletedPersonalOnboarding: false, hasExistingData: false, mountAttachesMirror: false,
-            personalDataLivesInLiveCloudAccount: false) == .proceed)
+            personalDataLivesInLiveCloudAccount: false, signUpStartedOnCleanStore: false) == .proceed)
         // …y con una cuenta completa el canal no baja grupos antes del guard, así que el guard cuenta lo mismo.
         let canalArrancado = GroupsSignInChannelStartLogic.startsChannelAtSignIn(.adoptAsCompleteAndOpenGroups)
         #expect(CrossAccountEntryGuardLogic.decide(

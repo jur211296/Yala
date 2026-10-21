@@ -513,6 +513,18 @@ struct GroupInviteOnboardingView: View {
     /// El alta de primer arranque. **Solo para quien NO tiene cuenta** — ver `performJoinOnlySetup` para
     /// qué de todo esto es dañino sobre una cuenta que ya existe, y por qué.
     private func performSilentSetup() {
+        // -1. **Antes de sembrar nada, se apunta si el alta empieza sobre un store limpio** (card t2q8, 2026-10-20). Las
+        // categorías que siembra el paso 4 son de esta persona, pero la puerta del invitado vuelve a medir justo después
+        // —en el `drive(.userAction)` de este mismo CTA y en cada relanzamiento— y las contaba como corpus de otra: el
+        // join no salía y al reabrir pedía dejar el teléfono en blanco. Se mide AQUÍ y no después para que la marca no
+        // pueda cubrir un corpus que ya estaba.
+        if let pendingJoinZone,
+           GroupInviteNeutralGateLogic.marksSignUpOnCleanStore(
+               hasExistingData: GroupBackendInviteEntryHandler.hasLocalDataProvider(),
+               mountAttachesMirror: GroupBackendInviteEntryHandler.mountAttachesMirrorProvider()) {
+            PendingJoinStore.markSignUpStartedOnCleanStore(zoneName: pendingJoinZone)
+        }
+
         // 0. **El neutro durable de la sesión solo-grupos** (paso 5 del rediseño). Hermano de la línea
         // equivalente en `GroupsOrganizerOnboarding.writePreferences`: sin ella el arranque SIGUIENTE
         // adjunta el espejo al store personal y se trae el contenedor privado del Apple ID del teléfono.

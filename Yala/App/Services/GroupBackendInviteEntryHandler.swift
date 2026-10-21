@@ -120,12 +120,13 @@ enum GroupBackendInviteEntryHandler {
 
     /// El veredicto de la puerta con los cuatro términos VIVOS. Internal para que el test pueda
     /// llamarla con los providers fingidos sin tocar `drive`.
-    static func neutralGateDecision() -> GroupInviteNeutralGateLogic.Decision {
+    static func neutralGateDecision(groupID: String) -> GroupInviteNeutralGateLogic.Decision {
         GroupInviteNeutralGateLogic.decide(
             hasCompletedPersonalOnboarding: hasCompletedPersonalOnboardingProvider(),
             hasExistingData: hasLocalDataProvider(),
             mountAttachesMirror: mountAttachesMirrorProvider(),
-            personalDataLivesInLiveCloudAccount: personalDataLivesInLiveCloudAccountProvider())
+            personalDataLivesInLiveCloudAccount: personalDataLivesInLiveCloudAccountProvider(),
+            signUpStartedOnCleanStore: PendingJoinStore.entry(zoneName: groupID)?.signUpStartedOnCleanStore ?? false)
     }
     // `hasCompletedOnboardingProvider` se RETIRÓ el 2026-09-05 y aquí queda su lápida, porque su ausencia
     // es el arreglo. Alimentaba el único término que decidía si el invitado veía la hoja, y respondía a la
@@ -232,7 +233,9 @@ enum GroupBackendInviteEntryHandler {
             //    estando ya en «esperando aprobación», y a repetir un sí que ya había dado: `step(…)` no
             //    mira la fase hasta que se tapea el CTA (`GroupInviteOnboardingLogic:87`), así que pintaba
             //    `.welcome` con el join en vuelo.
-            inviteConfirmedAt: (existing?.inviteToken == token) ? existing?.inviteConfirmedAt : nil
+            inviteConfirmedAt: (existing?.inviteToken == token) ? existing?.inviteConfirmedAt : nil,
+            // Lo mismo para la marca del alta sobre un store limpio: es de ESTA invitación, y un token nuevo empieza sin ella.
+            signUpOnCleanStoreAt: (existing?.inviteToken == token) ? existing?.signUpOnCleanStoreAt : nil
         ))
     }
 
@@ -360,7 +363,7 @@ enum GroupBackendInviteEntryHandler {
         // No borra ni escribe: SUBMITEA la pantalla, que es la que informa y pide el gesto. Por eso el
         // trigger `.boot` del reconciler puede llamar a este método sin que nada se pierda, que es el
         // criterio nº 2 del ticket.
-        if neutralGateDecision() == .returnsToNeutral {
+        if neutralGateDecision(groupID: groupID) == .returnsToNeutral {
             RouterEntryGate.shared.submit(.presentGroupsInviteNeutralGate(pendingJoin: groupID))
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: mirrored/occupied store → neutral return gate for \(groupID, privacy: .public)")
             return
@@ -388,6 +391,8 @@ enum GroupBackendInviteEntryHandler {
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: invite unconfirmed → present invite onboarding for \(groupID, privacy: .public)")
         case .join:
             await attemptJoin(groupID: groupID, token: token, source: source)
+            // Sin pantalla que relevar a la bienvenida: «Abriendo tu invitación…» termina con el intento (card z81w).
+            InviteOpeningState.shared.finish(.joinAttempted)
         }
     }
 

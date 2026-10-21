@@ -38,7 +38,8 @@ struct GroupInviteNeutralGateLogicTests {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                             hasExistingData: false,
                             mountAttachesMirror: true,
-                            personalDataLivesInLiveCloudAccount: false) == .returnsToNeutral)
+                            personalDataLivesInLiveCloudAccount: false,
+                            signUpStartedOnCleanStore: false) == .returnsToNeutral)
     }
 
     /// La otra mitad del OR: corpus de alguien debajo, sin espejo.
@@ -47,7 +48,8 @@ struct GroupInviteNeutralGateLogicTests {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                             hasExistingData: true,
                             mountAttachesMirror: false,
-                            personalDataLivesInLiveCloudAccount: false) == .returnsToNeutral)
+                            personalDataLivesInLiveCloudAccount: false,
+                            signUpStartedOnCleanStore: false) == .returnsToNeutral)
     }
 
     /// **Criterio nº 3 del ticket**: el invitado de una instalación fresca no paga NADA. Es la población
@@ -58,7 +60,8 @@ struct GroupInviteNeutralGateLogicTests {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                             hasExistingData: false,
                             mountAttachesMirror: false,
-                            personalDataLivesInLiveCloudAccount: false) == .proceed)
+                            personalDataLivesInLiveCloudAccount: false,
+                            signUpStartedOnCleanStore: false) == .proceed)
     }
 
     /// **El término que separa esta puerta de la del organizador**, y el que evita el daño más caro: con
@@ -73,7 +76,8 @@ struct GroupInviteNeutralGateLogicTests {
                     #expect(Gate.decide(hasCompletedPersonalOnboarding: true,
                                         hasExistingData: hasData,
                                         mountAttachesMirror: mirror,
-                                        personalDataLivesInLiveCloudAccount: cloud) == .proceed,
+                                        personalDataLivesInLiveCloudAccount: cloud,
+                            signUpStartedOnCleanStore: false) == .proceed,
                             "corpus=\(hasData) espejo=\(mirror) nube=\(cloud): la fila C de la matriz dice asociar, no borrar")
                 }
             }
@@ -90,7 +94,8 @@ struct GroupInviteNeutralGateLogicTests {
         #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                             hasExistingData: true,
                             mountAttachesMirror: false,
-                            personalDataLivesInLiveCloudAccount: true) == .proceed)
+                            personalDataLivesInLiveCloudAccount: true,
+                            signUpStartedOnCleanStore: false) == .proceed)
     }
 
     /// **Y el espejo sigue mandando aunque los datos ya vivan en la nube.** En el arranque que acaba de pasar a la nube
@@ -102,26 +107,30 @@ struct GroupInviteNeutralGateLogicTests {
             #expect(Gate.decide(hasCompletedPersonalOnboarding: false,
                                 hasExistingData: hasData,
                                 mountAttachesMirror: true,
-                                personalDataLivesInLiveCloudAccount: true) == .returnsToNeutral,
+                                personalDataLivesInLiveCloudAccount: true,
+                            signUpStartedOnCleanStore: false) == .returnsToNeutral,
                     "corpus=\(hasData): con el espejo adjunto lo escrito se exporta, vivan donde vivan los datos")
         }
     }
 
     /// La tabla ENTERA, 8 celdas, contra la regla dicha de otra forma. Lo que caza que una implementación
     /// futura reordene los guards y cambie una celda sin que ninguna de las de arriba lo note.
-    @Test("las 16 celdas, contra el predicado dicho al revés")
+    @Test("las 32 celdas, contra el predicado dicho al revés")
     func fullTruthTable() {
         for onboarded in [true, false] {
             for hasData in [true, false] {
                 for mirror in [true, false] {
                     for cloud in [true, false] {
-                        let esperado: Gate.Decision =
-                            (!onboarded && (mirror || (hasData && !cloud))) ? .returnsToNeutral : .proceed
-                        #expect(Gate.decide(hasCompletedPersonalOnboarding: onboarded,
-                                            hasExistingData: hasData,
-                                            mountAttachesMirror: mirror,
-                                            personalDataLivesInLiveCloudAccount: cloud) == esperado,
-                                "onboarded=\(onboarded) corpus=\(hasData) espejo=\(mirror) nube=\(cloud)")
+                        for clean in [true, false] {
+                            let esperado: Gate.Decision =
+                                (!onboarded && (mirror || (hasData && !cloud && !clean))) ? .returnsToNeutral : .proceed
+                            #expect(Gate.decide(hasCompletedPersonalOnboarding: onboarded,
+                                                hasExistingData: hasData,
+                                                mountAttachesMirror: mirror,
+                                                personalDataLivesInLiveCloudAccount: cloud,
+                                                signUpStartedOnCleanStore: clean) == esperado,
+                                    "onboarded=\(onboarded) corpus=\(hasData) espejo=\(mirror) nube=\(cloud) limpio=\(clean)")
+                        }
                     }
                 }
             }
@@ -551,7 +560,7 @@ struct GroupInviteNeutralGateWiringTests {
     @Test("la puerta del Welcome re-mide con el veredicto del handler, no con el suyo propio")
     func theGateViewReusesTheSameVerdict() throws {
         let code = try Self.source("Yala/App/Views/Onboarding/WelcomeGroupsGateView.swift")
-        #expect(code.contains("GroupBackendInviteEntryHandler.neutralGateDecision()"))
+        #expect(code.contains("GroupBackendInviteEntryHandler.neutralGateDecision(groupID: groupID)"))
         #expect(!code.contains("GroupInviteNeutralGateLogic.decide("),
                 "la pantalla recompuso la decisión por su cuenta: es la segunda verdad que hay que evitar")
     }

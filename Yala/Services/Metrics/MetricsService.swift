@@ -317,6 +317,10 @@ enum MetricsCanary: String {
     case routingReadinessBlocked
     case routingDrainHoldSustained
     case routingWelcomeChainSuperseded
+    /// «Abriendo tu invitación…» (card z81w, 2026-10-20) llegó a su techo de 20 s sin que la cadena del invitado
+    /// relevara a la bienvenida, y volvió la bienvenida normal. `detail` = cómo se abrió (`cold`/`warm`). >0 sostenido =
+    /// algo vuelve a retrasar el encaminamiento de la invitación en el arranque.
+    case inviteOpeningCeilingReached
     case inviteReEmittedFromStore
     case invitePendingExpired
 

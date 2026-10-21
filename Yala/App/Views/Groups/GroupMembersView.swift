@@ -299,9 +299,10 @@ struct GroupMembersView: View {
         }
     }
 
+    /// `rejectMember` es `async` desde que el grupo de la nube rechaza en el servidor (card 840m): mismo molde que
+    /// `performApprove`. Con el canal de CloudKit no suspende.
     private func performReject() {
         guard let member = pendingActionMember else { return }
-        // `rejectMember` es `async` desde el lote 19: en un grupo del canal backend va al servidor (`remove_member`).
         Task {
             do {
                 try await GroupService.shared.rejectMember(member, in: group)

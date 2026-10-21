@@ -246,6 +246,28 @@ final class UITestHooks {
     /// —bajo XCUITest la puerta no mide y el mount nunca es neutro—, así que sin esto no hay XCUITest ni capturas.
     /// **Finge la entrada, no la decisión**: lo que se pinta lo decide `WelcomePrivateICloudGateLogic.decide`. No toca la
     /// red ni persiste nada. Un valor desconocido se ignora. Solo DEBUG.
+    /// `-uitest-private-gate-probe-stalled`: la revisión de iCloud de la puerta privada contesta «se quedó sin avanzar»
+    /// (`ICloudZoneScanEnd.stalledReason`) sin tocar CloudKit, para el XCUITest y las capturas del texto que no culpa a la
+    /// conexión (card blqa). **Finge la entrada, no la decisión**: lo que se pinta lo decide la tabla de producción. Solo
+    /// DEBUG.
+    nonisolated static var privateGateProbeStalled: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-private-gate-probe-stalled")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-uitest-invite-opening`: al presentar la bienvenida se enciende «Abriendo tu invitación…» como si acabara de llegar
+    /// un enlace (card z81w), sin enlace ni red. Lo apagan el techo o la cadena del invitado, como en producción. Solo DEBUG.
+    nonisolated static var inviteOpening: Bool {
+        #if DEBUG
+        return isActive && ProcessInfo.processInfo.arguments.contains("-uitest-invite-opening")
+        #else
+        return false
+        #endif
+    }
+
     nonisolated static var privateGateDeviceReading: WelcomePrivateICloudGateLogic.DeviceDataReading? {
         #if DEBUG
         guard isActive else { return nil }

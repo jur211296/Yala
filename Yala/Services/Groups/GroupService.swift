@@ -431,34 +431,30 @@ final class GroupService {
 
     /// admin rejects a pending member's request, marking them as rejected.
     ///
-    /// Grupo del canal backend: `remove_member` SERVER-FIRST, que deja `rejected` si el objetivo estaba pendiente
-    /// (golden «A rechaza» de `gateway/test/groups.goldens.test.ts`). Hasta el lote 19 de la auditoría UX esta rama
-    /// lanzaba `backendActionUnavailable` y «Rechazar» fallaba SIEMPRE en un grupo de la nube con «Vuelve a
-    /// intentarlo», que no arreglaba nada.
+    /// Grupo del canal backend → RPC `remove_member` SERVER-FIRST, como aprobar. **El servidor ya rechazaba**:
+    /// `remove_member` deja `rejected` a quien estaba `pendingApproval` (`supabase-groups-staging.ddl`, §5; golden «A
+    /// rechaza» de `gateway/test/groups.goldens.test.ts`). Hasta el lote 19 de la auditoría UX (2.2) y la card 840m del
+    /// QA del TF19 (2.1) aquí había un guard que lanzaba `.backendActionUnavailable` y el botón decía «vuelve a
+    /// intentarlo» para siempre. Las dos ramas lo arreglaron por separado; el merge de 2.1 en 2.2 (2026-10-20) se queda
+    /// con el contrato de 2.1 para la respuesta.
     ///
-    /// **Lo que NO cubre, y es el residual de usar `remove_member`:** ese RPC acepta también a un miembro ACTIVO y lo
-    /// deja `removed`. Si otro admin (u otro dispositivo de este) aprobó la solicitud y este teléfono aún no lo ha
-    /// bajado, rechazar EXPULSA a quien ya estaba dentro. Las comprobaciones locales van antes del RPC y frenan lo que
-    /// este teléfono sabe (una fila que aquí ya no está pendiente), no lo que solo sabe el servidor. El cierre de
-    /// verdad es un `reject_member` que exija `pendingApproval` (ticket
-    /// `groups-reject-can-expel-a-member-approved-elsewhere`). Mientras tanto, el estado local sigue a la respuesta:
-    /// `removed` si el servidor dice que ya era miembro, no un `rejected` que nunca ocurrió. Quien sale así puede volver
-    /// a entrar con el enlace (el re-join lo deja otra vez pendiente).
+    /// **La solicitud tiene que seguir pendiente en local ANTES de llamar**: el mismo RPC deja `removed` a un miembro
+    /// activo, y así un miembro que este teléfono ya ve dentro no se expulsa por error. Las validaciones locales van
+    /// todas antes de la red: con un grupo congelado o sin ser admin, el RPC no sale. Lo que NO cubre, y tiene ticket
+    /// (`cloud-group-reject-can-expel-a-member-approved-on-another-device`): con el estado local viejo —aprobado desde
+    /// otro aparato y aún pendiente aquí— el servidor lo expulsa. Solo se marca `.rejected` si el servidor dice
+    /// `rejected`, y si el pull no lo marcó ya mientras volaba: lo demás (un `removed`, un estado desconocido) lo trae
+    /// el pull, sin inventar en local un estado que el servidor no confirmó.
     func rejectMember(_ member: SplitMember, in group: SplitGroup) async throws {
-        var localOutcome: SplitMemberStatus = .rejected
         if routesMembershipToBackend(group) {
             try validatePendingTransition(member, in: group)
             guard let memberKey = member.memberKey else { throw GroupServiceError.missingMemberKey }
             let result = try await backendMembershipFactory().remove(
                 groupID: group.cloudKitZoneID, memberKey: memberKey)
-            localOutcome = Self.localStatusAfterRejectRPC(result.status)
+            guard GroupMemberRejectLogic.marksRejectedLocally(serverStatus: result.status),
+                  member.isPendingApproval else { return }
         }
-        try transitionPendingMember(member, to: localOutcome, in: group)
-    }
-
-    /// El estado local tras el `remove_member` de un rechazo: el que dice el servidor. `removed` solo si ya era miembro.
-    static func localStatusAfterRejectRPC(_ serverStatus: String) -> SplitMemberStatus {
-        serverStatus == "removed" ? .removed : .rejected
+        try transitionPendingMember(member, to: .rejected, in: group)
     }
 
     /// ¿Ofrece la app «Cambiar rol» en este grupo? No en uno del canal backend: el servidor no tiene cómo cambiar un
