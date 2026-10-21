@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1012)
+## Index (1015)
 
 | id | status | path |
 |---|---|---|
@@ -542,6 +542,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | image-entry-uitests-save-stays-off-for-a-complete-record | done | tickets/done/image-entry-uitests-save-stays-off-for-a-complete-record.md |
 | image-note-uses-bank-template-instead-of-merchant | done | tickets/done/image-note-uses-bank-template-instead-of-merchant.md |
 | image-reading-sends-the-full-resolution-photo | done | tickets/done/image-reading-sends-the-full-resolution-photo.md |
+| image-vision-error-still-names-the-ai-provider | backlog | tickets/backlog/image-vision-error-still-names-the-ai-provider.md |
 | import-activity-flag-describes-the-process-not-the-search | backlog | tickets/backlog/import-activity-flag-describes-the-process-not-the-search.md |
 | import-activity-latch-survives-an-icloud-account-change | backlog | tickets/backlog/import-activity-latch-survives-an-icloud-account-change.md |
 | in-app-ai-privacy-claims-need-a-policy-check | done | tickets/done/in-app-ai-privacy-claims-need-a-policy-check.md |
@@ -881,6 +882,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | settings-migrate-to-cloud-adopts-silently-instead-of-migrating | done | tickets/done/settings-migrate-to-cloud-adopts-silently-instead-of-migrating.md |
 | settings-redesign-as-grouped-lists-like-ios | done | tickets/done/settings-redesign-as-grouped-lists-like-ios.md |
 | settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist | backlog | tickets/backlog/settings-sign-out-scope-says-groups-stay-in-an-account-that-may-not-exist.md |
+| settle-and-opening-balance-buttons-turn-off-without-saying-why | backlog | tickets/backlog/settle-and-opening-balance-buttons-turn-off-without-saying-why.md |
 | settlement-amount-change-notice-archived-row-reads-as-a-rejected-payment | backlog | tickets/backlog/settlement-amount-change-notice-archived-row-reads-as-a-rejected-payment.md |
 | settlement-amount-change-notice-on-a-build-before-the-approval-mark | backlog | tickets/backlog/settlement-amount-change-notice-on-a-build-before-the-approval-mark.md |
 | settlement-amount-edited-after-approval-leaves-the-bank-stale | done | tickets/done/settlement-amount-edited-after-approval-leaves-the-bank-stale.md |
@@ -969,6 +971,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
 | trial-says-30-days-for-a-one-month-offer | backlog | tickets/backlog/trial-says-30-days-for-a-one-month-offer.md |
 | tutorial-completion-check-appears-only-after-reentering | backlog | tickets/backlog/tutorial-completion-check-appears-only-after-reentering.md |
+| two-account-drafts-for-one-group-expense-can-create-two-real-legs | backlog | tickets/backlog/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
 | two-silent-local-reads-leave-a-false-or-no-trace | backlog | tickets/backlog/two-silent-local-reads-leave-a-false-or-no-trace.md |
 | uitest-compara-fechas-sin-fijar-locale | done | tickets/done/uitest-compara-fechas-sin-fijar-locale.md |
