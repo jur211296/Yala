@@ -8133,3 +8133,131 @@
 "welcome.cloud.otherAccountUsedTitle" = "Na tym iPhonie używano już innego konta";
 "welcome.cloud.otherAccountUsedBody" = "Na tym iPhonie używano już konta Yala utworzonego przez %1$@, a konto z %2$@ jest inne. Na pewno chcesz użyć innego konta? Aby dalej korzystać z dotychczasowego, zaloguj się przez %1$@.";
 "welcome.cloud.otherAccountUsedBodyGeneric" = "Na tym iPhonie używano już konta Yala utworzonego inną metodą, a konto z %@ jest inne. Na pewno chcesz użyć innego konta? Aby dalej korzystać z dotychczasowego, zaloguj się metodą, której użyto wtedy.";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "Administrator";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "Nadaj uprawnienia administratora";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "Odbierz uprawnienia administratora";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "Nadać %@ uprawnienia administratora?";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@ będzie mógł przyjmować lub odrzucać prośby o dołączenie, usuwać członków, zmieniać nazwę i budżet grupy, archiwizować ją i nadawać innym uprawnienia administratora.";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "Odebrać %@ uprawnienia administratora?";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@ zostaje w grupie, ale nie może już przyjmować próśb, usuwać członków, zmieniać nazwy i budżetu ani archiwizować grupy.";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "Usuń z grupy";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "Usunąć %@ z grupy?";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@ przestanie widzieć grupę. Wpisane przez nią wydatki zostają.";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "Jeśli usuniesz %@ z grupy, to, co zostało do rozliczenia, pozostanie nierozliczone.";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "Najpierw rozlicz";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@ jest ci winien %2$@.";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "Jesteś winien %1$@ %2$@.";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@ jest winien %3$@ %2$@.";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@ ma do oddania %2$@";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "Masz do oddania %@";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "Jeśli wyjdziesz, przestaniesz widzieć tę grupę i ten dług; %@ nadal będzie go widzieć.";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "Jeśli wyjdziesz, przestaniesz widzieć tę grupę i te długi; pozostali nadal będą je widzieć.";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "Grupa zniknie dla wszystkich. To, co zapisałeś na swoich kontach, zostaje.";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "Archiwizuj lub usuń";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "Archiwizacja";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "Grupa trafia do Zarchiwizowanych dla wszystkich. Wydatki i długi zostają zapisane i możesz ją przywrócić, kiedy chcesz.";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "Grupa wraca na listę wszystkich, razem z wydatkami i długami.";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "Grupa zniknie dla wszystkich i nie da się tego cofnąć.";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "Usuniesz ją, gdy wszystko zostanie rozliczone.";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "Jeśli chcesz odejść, przekaż grupę i ją opuść.";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "Jeśli chcesz tylko zdjąć ją z listy, zarchiwizuj ją: długi zostaną zapisane.";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "Zobacz salda";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "Przeniesiono do Zarchiwizowanych";
+/* Deshacer el archivado */
+"groups.l19.undo" = "Cofnij";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "Zarchiwizowana grupa";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "Tylko administrator może przywrócić ją z archiwum.";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "Przywróć";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ %@, które ci są winni w zarchiwizowanych grupach";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ %@, które jesteś winien w zarchiwizowanych grupach";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "Ile najwyżej chcecie wydać?";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "Do tej pory: %@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "W grupie nie ma jeszcze wydatków.";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "Już byście przekroczyli o %@";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "Zostałoby %@";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "Widzi go cała grupa, nie tylko ty.";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "Powiadomimy wszystkich w połowie, przy trzech czwartych, tuż przed limitem i po jego osiągnięciu.";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "Mniej przelewów między wami";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "Jeśli Ana jest ci winna, a ty jesteś winien Betowi, Ana płaci bezpośrednio Betowi.";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "Pokaż długi w jednej walucie";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "Tylko osoba, która utworzyła grupę, może to zmienić.";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "Jak dzielić nowy wydatek";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "Na twoich kontach";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "Zapisuj na moich kontach to, co tu płacę";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "Tak jak w Ustawieniach grup.";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "Jest ci winien";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "Jesteś winien";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "To ty ją utworzyłeś i nikt inny nie może jeszcze jej przejąć. Otwórz ją, aby ją zarchiwizować lub usunąć.";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "Otwórz ustawienia";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "Twoje grupy znikną z tego iPhone’a; zostają na twoim koncie i wrócą, gdy połączysz je ponownie.";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "Zostaw na moich kontach to, co zapłaciłem";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "Usuń to też z moich kont";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "Jeśli je zostawisz, wydatki, które zapłaciłeś, zostaną na twoich kontach: %1$d (%2$@).";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "Jeśli je usuniesz, znikną też z twoich kont.";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "Osoba, która utworzyła grupę, zawsze jest administratorem: tej roli nie można odebrać.";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "W grupie musi zostać co najmniej jeden administrator.";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "Ta osoba musi najpierw ponownie dołączyć do grupy ze swoim kontem, zanim zostanie administratorem.";

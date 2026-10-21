@@ -240,7 +240,7 @@ struct GroupChannelRoutingTests {
         #expect(member.memberStatus == .pendingApproval)   // local INTACTO
     }
 
-    // MARK: - Lote 19 · Rechazar va al servidor; «Cambiar rol» no se ofrece donde no existe
+    // MARK: - Lote 19 · Rechazar va al servidor
 
     /// Grupo del canal backend + flag ON → `rejectMember` va SERVER-FIRST por `remove_member` (que deja `rejected`
     /// a un pendiente) y luego marca `.rejected` en local. Hasta el lote 19 lanzaba `backendActionUnavailable`.
@@ -441,24 +441,7 @@ struct GroupChannelRoutingTests {
         #expect(member.memberStatus == .rejected)
     }
 
-    /// «Cambiar rol» solo se ofrece donde `changeRole` puede funcionar: no en un grupo del canal backend.
-    @Test func offersRoleChange_onlyOutsideTheBackendChannel() throws {
-        let dir = freshDir(); defer { cleanup(dir) }
-        let context = try makeContext(dir)
-        GroupService.shared.setContext(context)
-        defer { CloudSyncFlags._testResetGroupsBackendEnabledOverride() }
-
-        let backend = SplitGroup(name: "Nube")
-        backend.isBackendGroup = true
-        context.insert(backend)
-        let legacy = SplitGroup(name: "Local")
-        context.insert(legacy)
-        try context.save()
-
-        CloudSyncFlags.groupsBackendEnabled = true
-        #expect(GroupService.shared.offersRoleChange(in: backend) == false)
-        #expect(GroupService.shared.offersRoleChange(in: legacy) == true)
-        CloudSyncFlags.groupsBackendEnabled = false
-        #expect(GroupService.shared.offersRoleChange(in: backend) == true)
-    }
+    // «Cambiar rol» ya no se esconde por grupo: desde L19-3 el canal backend tiene `set_member_role` (g22_01) y la
+    // pregunta es por miembro y por sentido (`GroupService.roleChangeOffer`). Su tabla, y el cambio de rol por el
+    // servidor, viven en `GroupChangeRoleBackendTests`.
 }

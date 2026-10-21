@@ -148,6 +148,53 @@ struct GroupsMembershipClientTests {
         #expect(body["p_group_id"] as? String == "g-1")
     }
 
+    // MARK: - set_member_role (g22_01, L19-3)
+
+    @Test func setMemberRole_sendsTheThreeParams_decodesResult() async throws {
+        let session = stub(#"{"group_id":"g-1","member_key":"m-1","role":"admin","changed":true}"#)
+        let result = try await client(session).setMemberRole(groupID: "g-1", memberKey: "m-1", role: "admin")
+        #expect(result == SetMemberRoleResult(groupID: "g-1", memberKey: "m-1", role: "admin", changed: true))
+        #expect(session.lastRequest?.url?.absoluteString == "https://gw.test/groups/rpc/set_member_role")
+        let body = try sentBody(session)
+        #expect(body.count == 3)   // los tres de `PARAM_ALLOWLIST.set_member_role`, ni uno más
+        #expect(body["p_group_id"] as? String == "g-1")
+        #expect(body["p_member_key"] as? String == "m-1")
+        #expect(body["p_role"] as? String == "admin")
+    }
+
+    /// El no-op del servidor (ya tenía ese rol) decodifica igual, con `changed == false`.
+    @Test func setMemberRole_noOp_decodesChangedFalse() async throws {
+        let session = stub(#"{"group_id":"g-1","member_key":"m-1","role":"member","changed":false}"#)
+        let result = try await client(session).setMemberRole(groupID: "g-1", memberKey: "m-1", role: "member")
+        #expect(result.changed == false)
+        #expect(result.role == "member")
+    }
+
+    /// Los tres rechazos propios del RPC llegan como su caso, no como `.permanentRejected`, y no se reintentan.
+    @Test func setMemberRole_rejections_mapToTheirCase() async throws {
+        let casos: [(String, GroupsRPCError)] = [
+            ("yala_cannot_change_owner_role", .cannotChangeOwnerRole),
+            ("yala_last_admin", .lastAdmin),
+            ("yala_member_not_eligible", .memberNotEligible),
+        ]
+        for (code, expected) in casos {
+            let session = stub(#"{"error":{"message":"\#(code)","type":"yala_rpc_error","code":"\#(code)"}}"#, status: 400)
+            await #expect(throws: expected, "\(code)") {
+                _ = try await self.client(session).setMemberRole(groupID: "g-1", memberKey: "m-1", role: "member")
+            }
+            #expect(session.callCount == 1, "\(code): un rechazo permanente no se reintenta")
+        }
+    }
+
+    /// Es idempotente (regla 7 del RPC), así que un transitorio SÍ se reintenta: no está en `neverRetryTransient`.
+    @Test func setMemberRole_transient_isRetried() async throws {
+        let session = stub(#"{"error":{"message":"upstream"}}"#, status: 502)
+        await #expect(throws: GroupsRPCError.transient(status: 502)) {
+            _ = try await self.client(session).setMemberRole(groupID: "g-1", memberKey: "m-1", role: "admin")
+        }
+        #expect(session.callCount == 3)   // 1 + los 2 reintentos de `retryDelays`
+    }
+
     // MARK: - revoke_invite / update_member_display_name / groups_forget_user
 
     @Test func revokeInvite_succeedsOn200() async throws {
@@ -555,6 +602,10 @@ struct GroupsMembershipClientTests {
         // los ocho casos siguientes y habría invalidado la lectura de los reportes de device de los
         // builds ya publicados. Este test lo cazó, que es exactamente para lo que está.
         #expect((GroupsRPCError.groupArchived as NSError).code == 14)
+        // g22_01 (2026-10-21), los tres de `set_member_role`, también al FINAL y por la misma razón.
+        #expect((GroupsRPCError.cannotChangeOwnerRole as NSError).code == 15)
+        #expect((GroupsRPCError.lastAdmin as NSError).code == 16)
+        #expect((GroupsRPCError.memberNotEligible as NSError).code == 17)
     }
 
     /// La contraprueba de que el número ya no llega a ninguna pantalla de salida: las dos superficies

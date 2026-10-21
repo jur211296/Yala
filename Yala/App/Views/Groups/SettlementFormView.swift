@@ -132,6 +132,7 @@ struct SettlementFormView: View {
                         handleSave()
                     }
                     .disabled(parsedAmount <= 0 || isSaving || optInInFlight)
+                    .accessibilityIdentifier("settlement_form_save")
                     .padding(.horizontal, DS.Spacing.lg)
                 }
                 .padding(.top, DS.Spacing.lg)

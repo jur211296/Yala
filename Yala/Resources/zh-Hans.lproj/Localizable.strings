@@ -8133,3 +8133,131 @@
 "welcome.cloud.otherAccountUsedTitle" = "这台 iPhone 已使用过另一个账户";
 "welcome.cloud.otherAccountUsedBody" = "这台 iPhone 上已使用过一个通过 %1$@ 创建的 Yala 账户，而 %2$@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请通过 %1$@ 登录。";
 "welcome.cloud.otherAccountUsedBodyGeneric" = "这台 iPhone 上已使用过一个通过其他方式创建的 Yala 账户，而 %@ 的账户是另一个。确定要使用其他账户吗？要继续使用原来的账户，请用当时的方式登录。";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "管理员";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "设为管理员";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "取消管理员";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "将%@设为管理员？";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@将可以同意或拒绝加入请求、移除成员、修改群组名称和预算、归档群组，并把其他人设为管理员。";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "取消%@的管理员身份？";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@仍在群组中，但不能再同意请求、移除成员、修改名称和预算或归档群组。";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "移出群组";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "将%@移出群组？";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@将看不到这个群组，已记的支出会保留。";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "如果把%@移出群组，未结清的部分将不会结清。";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "先结清";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@欠你%2$@。";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "你欠%1$@%2$@。";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@欠%3$@%2$@。";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@欠%2$@";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "你欠%@";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "退出后你将看不到这个群组和这笔欠款，%@仍会看到。";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "退出后你将看不到这个群组和这些欠款，其他人仍会看到。";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "群组将对所有人消失。你在自己账户里记下的内容会保留。";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "归档或删除";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "归档";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "群组会为所有人移到已归档。支出和欠款都会保留，你随时可以恢复。";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "群组会带着支出和欠款回到所有人的列表。";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "群组将对所有人消失，且无法撤销。";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "所有账结清后即可删除。";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "如果想离开，请转让后退出。";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "如果只想把它移出列表，请归档：欠款会保留。";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "查看余额";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "已移到已归档";
+/* Deshacer el archivado */
+"groups.l19.undo" = "撤销";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "已归档的群组";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "只有管理员可以取消归档。";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "取消归档";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ 已归档群组中别人欠你的%@";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ 你在已归档群组中欠的%@";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "你们最多想花多少？";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "目前已花：%@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "群组里还没有支出。";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "已经超出%@";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "还剩%@";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "整个群组都能看到，不只是你。";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "达到一半、四分之三、接近上限和到达上限时，我们会通知所有人。";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "减少彼此间的转账";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "如果 Ana 欠你，你又欠 Beto，Ana 会直接付给 Beto。";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "用一种货币显示欠款";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "只有创建群组的人可以更改。";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "新支出的分摊方式";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "你的账户";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "把我在这里付的钱记到我的账户";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "与群组设置相同。";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "欠你";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "你欠";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "群组是你创建的，暂时还没有其他人能接手。打开群组即可归档或删除。";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "打开群组设置";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "你的群组会从这台 iPhone 上移除；它们仍保留在你的账户中，重新连接后就会回来。";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "把我付的钱留在我的账户里";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "也从我的账户里删除";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "如果保留，你付过的支出会留在你的账户里：%1$d 笔（%2$@）。";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "如果删除，它们也会从你的账户中移除。";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "创建群组的人始终是管理员，无法取消这个身份。";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "群组至少需要一名管理员。";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "此人需要先用自己的账户重新加入群组，才能成为管理员。";

@@ -47,7 +47,7 @@ const { default: app } = await import("../src/index");
 const SUPA = "https://enckey-unit.local";
 
 // Los 4 RPCs de membresía que escriben columnas † (espejo de RPC_NEEDS_ENC_KEY en src/groups/rpc.ts) y los
-// 6 que NO. Juntos son la allowlist completa: si crece una, este test obliga a clasificar la nueva.
+// 9 que NO. Juntos son la allowlist completa: si crece una, este test obliga a clasificar la nueva.
 const NEEDS_KEY = ["create_group", "join_group", "update_member_display_name", "groups_forget_user"];
 const NO_KEY = [
   "create_group_invite",
@@ -56,6 +56,8 @@ const NO_KEY = [
   "leave_group",
   "revoke_invite",
   "transfer_group_ownership",
+  // L19-3 (g22_01): el rol es texto plano, no una columna †.
+  "set_member_role",
   // C1: el registro del consent no escribe ninguna columna † (la tabla `groups_consents` es texto plano
   // por diseño — un registro legal tiene que poder auditarse sin la llave).
   "record_groups_consent",

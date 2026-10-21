@@ -156,6 +156,11 @@ final class SceneNavigation: Identifiable {
     /// Set by AppRouter.navigate(.groupDetail) handler, read by GroupsContainerView.
     var pendingGroupID: String?
 
+    /// Zona del grupo cuyos AJUSTES debe abrir esta ventana: el botón de cada grupo que «necesita tu decisión» al
+    /// salir de varios grupos (auditoría UX 2.2 · L19-13). Lo consume `GroupsContainerView` (abre el detalle) y el
+    /// detalle de ese grupo (abre sus ajustes).
+    var pendingGroupSettingsZoneID: String?
+
     /// Presupuesto que esta ventana debe abrir al llegar a Presupuestos: el de la alerta tocada (UX 2.2 · L9-5). Lo pone
     /// `ContentView.handleMainTabIntent` al drenar `.navigate(.budgets)` y lo consume `BudgetsListView`.
     var pendingBudgetID: UUID?

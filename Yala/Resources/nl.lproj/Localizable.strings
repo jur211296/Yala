@@ -8133,3 +8133,131 @@
 "welcome.cloud.otherAccountUsedTitle" = "Deze iPhone heeft al een ander account gebruikt";
 "welcome.cloud.otherAccountUsedBody" = "Op deze iPhone is al een Yala-account gebruikt dat met %1$@ is gemaakt, en dat van %2$@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met %1$@ om je vertrouwde account te blijven gebruiken.";
 "welcome.cloud.otherAccountUsedBodyGeneric" = "Op deze iPhone is al een Yala-account gebruikt dat met een andere methode is gemaakt, en dat van %@ is een ander account. Weet je zeker dat je een ander account wilt gebruiken? Log in met de methode van toen om je vertrouwde account te blijven gebruiken.";
+
+/* ===== Auditoría UX 2.2 · lote 19 decidido (Grupos: administrar, archivar, eliminar, salir) ===== */
+/* Insignia del rol en Miembros (una sola palabra para el rol) */
+"groups.l19.role.admin" = "Beheerder";
+/* Menú de un miembro: darle el rol */
+"groups.l19.member.makeAdmin" = "Beheerder maken";
+/* Menú de un miembro: quitarle el rol */
+"groups.l19.member.removeAdmin" = "Verwijderen als beheerder";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.makeAdminTitle" = "%@ beheerder maken?";
+/* Qué podrá hacer; %@ = nombre */
+"groups.l19.member.makeAdminBody" = "%@ kan dan verzoeken om lid te worden accepteren of weigeren, leden verwijderen, de naam en het budget van de groep wijzigen, de groep archiveren en anderen beheerder maken.";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeAdminTitle" = "%@ verwijderen als beheerder?";
+/* Qué deja de poder hacer; %@ = nombre */
+"groups.l19.member.removeAdminBody" = "%@ blijft in de groep, maar kan geen verzoeken meer accepteren, geen leden verwijderen, de naam en het budget niet meer wijzigen en de groep niet archiveren.";
+/* Menú y botón: quitar a alguien del grupo */
+"groups.l19.member.remove" = "Uit de groep verwijderen";
+/* Confirmación; %@ = nombre */
+"groups.l19.member.removeTitle" = "%@ uit de groep verwijderen?";
+/* Sin deuda; %@ = nombre */
+"groups.l19.member.removeBody" = "%@ ziet de groep dan niet meer. De uitgaven die er al in staan, blijven.";
+/* Tras la cifra de la deuda, al quitar a alguien; %@ = nombre */
+"groups.l19.member.removeDebtTail" = "Als je %@ uit de groep verwijdert, blijft wat nog openstaat onverrekend.";
+/* Botón: saldar antes de quitar o salir */
+"groups.l19.settleFirst" = "Eerst verrekenen";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.owesYou" = "%1$@ is je %2$@ schuldig.";
+/* %1$@ = nombre, %2$@ = cifra */
+"groups.l19.debt.youOwe" = "Je bent %1$@ %2$@ schuldig.";
+/* %1$@ = quien debe, %2$@ = cifra, %3$@ = a quién */
+"groups.l19.debt.owesOther" = "%1$@ is %3$@ %2$@ schuldig.";
+/* Bloqueo de eliminar; %1$@ = nombre, %2$@ = cifra (sin punto final) */
+"groups.l19.debt.memberOwes" = "%1$@ moet nog %2$@ betalen";
+/* Bloqueo de eliminar, quien mira; %@ = cifra (sin punto final) */
+"groups.l19.debt.youOweNet" = "Je moet nog %@ betalen";
+/* Salir con deuda, una persona; %@ = la otra persona */
+"groups.l19.leave.debtTailOne" = "Als je de groep verlaat, zie je deze groep en die schuld niet meer; %@ ziet die nog wel.";
+/* Salir con deuda, varias personas */
+"groups.l19.leave.debtTailMany" = "Als je de groep verlaat, zie je deze groep en die schulden niet meer; de anderen zien ze nog wel.";
+/* Confirmación de eliminar: qué pasa con tu dinero */
+"groups.l19.delete.body" = "De groep verdwijnt voor iedereen. Wat je in je rekeningen hebt vastgelegd, blijft.";
+/* Ajustes del grupo: título de la tarjeta */
+"groups.l19.exits.sectionBoth" = "Archiveren of verwijderen";
+/* Ajustes del grupo: título si solo se puede archivar */
+"groups.l19.exits.sectionArchive" = "Archiveren";
+/* Bajo «Archivar grupo»: qué pasa (archivar es para todo el grupo) */
+"groups.l19.archive.body" = "De groep gaat voor iedereen naar Gearchiveerd. Uitgaven en schulden blijven bewaard en je kunt hem terughalen wanneer je wilt.";
+/* Bajo «Desarchivar grupo» */
+"groups.l19.unarchive.body" = "De groep komt voor iedereen terug in de lijst, met de uitgaven en schulden.";
+/* Bajo «Eliminar grupo» */
+"groups.l19.delete.rowBody" = "De groep verdwijnt voor iedereen en dit kan niet ongedaan worden gemaakt.";
+/* Eliminar bloqueado: la condición */
+"groups.l19.delete.blockedTail" = "Je kunt de groep verwijderen zodra alles verrekend is.";
+/* Eliminar bloqueado con heredero */
+"groups.l19.delete.transferInstead" = "Wil je weg? Draag de groep over en verlaat hem.";
+/* Eliminar bloqueado sin heredero */
+"groups.l19.delete.archiveInstead" = "Wil je hem alleen uit de lijst? Archiveer hem: de schulden blijven bewaard.";
+/* Enlace a la pestaña de saldos del grupo */
+"groups.l19.seeBalances" = "Saldi bekijken";
+/* Aviso tras archivar un grupo */
+"groups.l19.archived.notice" = "Verplaatst naar Gearchiveerd";
+/* Deshacer el archivado */
+"groups.l19.undo" = "Ongedaan maken";
+/* Aviso dentro de un grupo archivado */
+"groups.l19.archived.bannerTitle" = "Gearchiveerde groep";
+/* Grupo archivado, para quien no administra */
+"groups.l19.archived.bannerMemberHint" = "Alleen een beheerder kan de groep dearchiveren.";
+/* Botón del aviso de grupo archivado */
+"groups.l19.archived.unarchive" = "Dearchiveren";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.owedLine" = "+ %@ die je nog krijgt in gearchiveerde groepen";
+/* Bajo el total de la lista; %@ = cifras */
+"groups.l19.archived.oweLine" = "+ %@ die je nog moet betalen in gearchiveerde groepen";
+/* Hoja del presupuesto: la pregunta */
+"groups.l19.budget.question" = "Hoeveel willen jullie maximaal uitgeven?";
+/* Vista previa; %@ = lo gastado hasta hoy (con ≈ si hubo conversión) */
+"groups.l19.budget.spentSoFar" = "Tot nu toe: %@";
+/* Vista previa sin gastos */
+"groups.l19.budget.noSpendingYet" = "Nog geen uitgaven in de groep.";
+/* Vista previa: ya se pasaron; %@ = cuánto */
+"groups.l19.budget.wouldExceed" = "Jullie zitten er al %@ boven";
+/* Vista previa: lo que quedaría; %@ = cuánto */
+"groups.l19.budget.wouldRemain" = "Nog %@ over";
+/* Hoja del presupuesto: quién lo ve */
+"groups.l19.budget.seenByAll" = "De hele groep ziet het, niet alleen jij.";
+/* Hoja del presupuesto: los avisos (50, 75, 90 y 100 %) */
+"groups.l19.budget.alerts" = "We laten iedereen het weten bij de helft, driekwart, bijna op de limiet en op de limiet.";
+/* Opción del grupo (antes «Simplificar deudas») */
+"groups.l19.options.simplify" = "Minder betalingen onderling";
+/* Ejemplo de la opción */
+"groups.l19.options.simplifyExample" = "Als Ana jou geld schuldig is en jij Beto, betaalt Ana Beto rechtstreeks.";
+/* Opción del grupo (antes «Moneda única para deudas») */
+"groups.l19.options.singleCurrency" = "Schulden in één valuta tonen";
+/* Opción que solo cambia quien creó el grupo */
+"groups.l19.options.ownerOnly" = "Alleen wie de groep heeft gemaakt, kan dit wijzigen.";
+/* Opción del grupo (antes «División predeterminada») */
+"groups.l19.options.splitType" = "Hoe een nieuwe uitgave wordt verdeeld";
+/* Sección de ajustes del grupo (antes «Integración personal») */
+"groups.l19.options.personalSection" = "In je rekeningen";
+/* Interruptor del puente con las cuentas personales */
+"groups.l19.options.personalToggle" = "Wat ik hier betaal in mijn rekeningen vastleggen";
+/* Pie del interruptor cuando sigue el ajuste general */
+"groups.l19.options.personalInherit" = "Zoals in Groepsinstellingen.";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.owesYouShort" = "Is je schuldig";
+/* Miembros: rótulo sobre la cifra */
+"groups.l19.member.youOweShort" = "Je bent schuldig";
+/* Salir de varios: por qué un grupo no se pudo dejar */
+"groups.l19.batch.reasonCreator" = "Jij hebt de groep gemaakt en niemand anders kan hem nog overnemen. Open hem om hem te archiveren of te verwijderen.";
+/* Salir de varios: botón por grupo */
+"groups.l19.batch.openSettings" = "Instellingen openen";
+/* Desasociar la cuenta de grupos: qué pasa */
+"groups.l19.detach.body" = "Je groepen verdwijnen van deze iPhone; ze blijven in je account en komen terug als je dat weer koppelt.";
+/* Desasociar: salida que conserva */
+"groups.l19.detach.keep" = "Wat ik betaalde in mijn rekeningen laten staan";
+/* Desasociar: salida que quita */
+"groups.l19.detach.remove" = "Dat ook uit mijn rekeningen halen";
+/* Desasociar: efecto de conservar; %1$d = gastos, %2$@ = total */
+"groups.l19.detach.keepCount" = "Als je het laat staan, blijven de uitgaven die je hebt betaald in je rekeningen: %1$d (%2$@).";
+/* Desasociar: efecto de quitar */
+"groups.l19.detach.removeEffect" = "Als je het weghaalt, verdwijnen ze ook uit je rekeningen.";
+/* Error: no se puede quitar el rol a quien creó el grupo */
+"groups.l19.error.creatorStaysAdmin" = "Wie de groep heeft gemaakt, is altijd beheerder: die rol kan niet worden weggehaald.";
+/* Error: tiene que quedar un administrador */
+"groups.l19.error.lastAdmin" = "De groep moet minstens één beheerder hebben.";
+/* Error: la persona no tiene cuenta todavía */
+"groups.l19.error.memberNeedsAccount" = "Deze persoon moet eerst met een eigen account weer lid worden voordat die beheerder kan zijn.";

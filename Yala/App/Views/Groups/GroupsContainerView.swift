@@ -116,6 +116,10 @@ struct GroupsContainerView: View {
                     // Only archived groups exist
                     VStack(spacing: DS.Spacing.xl) {
                         emptyState(standardAccessibilityID: nil, hasArchivedGroups: true)
+                        if let archived = viewModel.archivedSummary {
+                            ArchivedDebtLine(summary: archived)
+                                .padding(.horizontal, DS.Spacing.lg)
+                        }
                         archivedGroupsSection
                             .padding(.horizontal, DS.Spacing.lg)
                     }
@@ -124,7 +128,14 @@ struct GroupsContainerView: View {
                         VStack(spacing: DS.Spacing.lg) {
                             // Global summary
                             if let summary = viewModel.globalSummary {
-                                GroupSummaryHeader(summary: summary)
+                                VStack(spacing: DS.Spacing.xs) {
+                                    GroupSummaryHeader(summary: summary)
+                                    // L19-9: lo que se debe en los archivados, bajo el total, para que archivar no
+                                    // parezca saldar.
+                                    if let archived = viewModel.archivedSummary {
+                                        ArchivedDebtLine(summary: archived)
+                                    }
+                                }
                             }
 
                             // Nudge banner
@@ -363,6 +374,10 @@ struct GroupsContainerView: View {
             .onChange(of: navigation.pendingGroupID, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
             }
+            // L19-13: «Abrir sus ajustes» desde el resultado de salir de varios grupos.
+            .onChange(of: navigation.pendingGroupSettingsZoneID, initial: true) { _, _ in
+                openPendingGroupSettingsIfAvailable()
+            }
             // FAB del Panel ("Grupo"): abre el composer "Nuevo gasto" al llegar al tab.
             .onChange(of: navigation.pendingNewGroupExpense, initial: true) { _, _ in
                 openExpenseComposerIfRequested()
@@ -375,6 +390,7 @@ struct GroupsContainerView: View {
                 navigation: navigation, onChange: { presentWelcomeCreatedGroupInviteIfPending() }))
             .onChange(of: viewModel.groups.count, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
+                openPendingGroupSettingsIfAvailable()
                 openExpenseComposerIfRequested()
                 presentWelcomeCreatedGroupInviteIfPending()
                 presentUITestCreatedSheetIfRequested()
@@ -653,6 +669,20 @@ struct GroupsContainerView: View {
         // notificación metía al pendiente en el detalle saltándose la tarjeta — la única puerta que
         // estaba cerrada. Se consume el intent igual (arriba) para que no quede reintentándose.
         guard viewModel.canOpenDetail(for: group) else {
+            showPendingApprovalNotice = true
+            return
+        }
+        viewModel.openDetail(for: group)
+    }
+
+    /// L19-13 · abre el detalle del grupo cuyos ajustes se pidieron; el detalle abre la hoja (`pendingGroupSettingsZoneID`
+    /// lo consume él). Archivados incluidos: un grupo que no se pudo dejar puede estar archivado.
+    private func openPendingGroupSettingsIfAvailable() {
+        guard let zoneID = navigation.pendingGroupSettingsZoneID,
+              let group = viewModel.groups.first(where: { $0.cloudKitZoneID == zoneID && !$0.isHiddenForAll })
+        else { return }
+        guard viewModel.canOpenDetail(for: group) else {
+            navigation.pendingGroupSettingsZoneID = nil
             showPendingApprovalNotice = true
             return
         }
