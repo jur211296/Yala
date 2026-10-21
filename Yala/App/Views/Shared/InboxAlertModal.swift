@@ -3,7 +3,7 @@
 //  Yala
 //
 //  Modal centrado para notificar nuevos items añadidos al inbox.
-//  Soporta pagos planificados, suscripciones y registros automáticos.
+//  Soporta pagos planificados, suscripciones, registros automáticos y borradores de Siri (línea propia, L15-7).
 //
 
 import SwiftUI
@@ -26,17 +26,30 @@ struct InboxAlertModal: View {
         }
     }
 
-    private var message: String {
-        switch notification.notificationType {
+    private var message: String { Self.message(for: notification) }
+
+    /// El mensaje de siempre según el tipo y, debajo, en su propia línea, «Borradores de Siri: N» (L15-7). Con solo
+    /// borradores de Siri, el mensaje es esa línea.
+    static func message(for notification: PendingInboxNotification) -> String {
+        let siriLine = notification.siriDrafts > 0 ? L10n.Inbox.Alert.siriDrafts(notification.siriDrafts) : nil
+        let others = PendingInboxNotification(
+            scheduledPayments: notification.scheduledPayments,
+            subscriptions: notification.subscriptions,
+            automations: notification.automations
+        )
+        guard !others.isEmpty else { return siriLine ?? "" }
+        let base: String
+        switch others.notificationType {
         case .scheduledPayments:
-            return L10n.Inbox.Alert.Message.scheduled(notification.scheduledPayments)
+            base = L10n.Inbox.Alert.Message.scheduled(others.scheduledPayments)
         case .subscriptions:
-            return L10n.Inbox.Alert.Message.subscriptions(notification.subscriptions)
+            base = L10n.Inbox.Alert.Message.subscriptions(others.subscriptions)
         case .automations:
-            return L10n.Inbox.Alert.Message.automations(notification.automations)
+            base = L10n.Inbox.Alert.Message.automations(others.automations)
         case .mixed:
-            return notification.mixedMessageBreakdown
+            base = others.mixedMessageBreakdown
         }
+        return [base, siriLine].compactMap { $0 }.joined(separator: "\n")
     }
 
     private var icon: String {

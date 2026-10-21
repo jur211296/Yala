@@ -264,6 +264,8 @@ final class AppBootstrapper {
             // hay cuentas). Read-only (no save) → seguro aunque el import de CloudKit siga en curso;
             // converge en cada foreground.
             SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+            // La moneda que pondrá el borrador de un pago de Apple Pay, para que su notificación diga la misma (L15-8).
+            ApplePayDraftService.refreshCurrencyHint(context: context)
         }
 
         // 5. Check for pending inbox drafts and notify user
@@ -816,6 +818,9 @@ final class AppBootstrapper {
             // un test que reordena/oculta tabs (TabBarConfigView) contaminaría a los demás.
             // Restaurar el tab bar al default (`[.panel, .statistics, .planning]`).
             UserDefaults.standard.removeObject(forKey: TabBarConfiguration.storageKey)
+            // El avance guardado de las guías por pasos (L15-10): un test que deja una a medias la abriría a medias en
+            // el siguiente.
+            StepGuideProgressStore.guideIDs.forEach { StepGuideProgressStore.clear($0) }
             // Mismo motivo (UserDefaults sobrevive al wipe): limpiar flags de uitest que
             // contaminarían corridas posteriores con fallos engañosos:
             //  · `expensesOnlyMode` oculta el chip de Ingresos (InsightsTabView) → rompería el
@@ -1223,10 +1228,8 @@ final class AppBootstrapper {
         // InboxAlertModal simulado en uitest: encola `.showInboxAlert` con un payload de
         // muestra (mismo path que el sync real, ver checkInboxDraftsAndNotify) para poder
         // testear el modal sin depender de un evento de CloudKit.
-        if UITestHooks.showInboxAlert {
-            RouterEntryGate.shared.submit(.showInboxAlert(
-                PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
-            ))
+        if let notification = UITestHooks.inboxAlertPayload {
+            RouterEntryGate.shared.submit(.showInboxAlert(notification))
         }
         // ProTrialOfferSheet simulado en uitest (escenario paywall + alert en cola).
         if UITestHooks.showTrialOffer {
@@ -2248,16 +2251,15 @@ final class AppBootstrapper {
         }
         // Refrescar la caché de contexto del intent de Siri (subcategorías/divisa/cuentas).
         SiriIntentContextCache.refresh(context: context, defaultCurrency: appPreferences.defaultCurrencyCode.rawValue)
+        ApplePayDraftService.refreshCurrencyHint(context: context)
         // Espeja el gate de bootstrap (paso del check inicial): en UITest el
         // alert de inbox solo se dispara vía el hook explícito -uitest-inbox-alert.
         // La re-emisión del hook aquí es load-bearing: el intent es transient y
         // la emisión temprana del bootstrap puede caer en un blip de scenePhase
         // (resetTransients) antes del primer drain — dedup por id cubre duplicados.
         if UITestHooks.isActive {
-            if UITestHooks.showInboxAlert {
-                RouterEntryGate.shared.submit(.showInboxAlert(
-                    PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
-                ))
+            if let notification = UITestHooks.inboxAlertPayload {
+                RouterEntryGate.shared.submit(.showInboxAlert(notification))
             }
             if UITestHooks.showTrialOffer {
                 RouterEntryGate.shared.submit(.presentTrialOffer)
@@ -3151,16 +3153,7 @@ final class AppBootstrapper {
                 guard !processed.contains(sig) else { continue }
                 processed.insert(sig)
                 newSignatures.append(sig)
-                switch draft.sourceTypeRaw {
-                case "scheduledPayment":
-                    notification.scheduledPayments += 1
-                case "subscription":
-                    notification.subscriptions += 1
-                case "applePay", "automation":
-                    notification.automations += 1
-                default:
-                    break
-                }
+                notification.count(sourceTypeRaw: draft.sourceTypeRaw)
             }
         } catch {
             #if DEBUG

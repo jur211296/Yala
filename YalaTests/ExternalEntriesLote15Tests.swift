@@ -152,7 +152,8 @@ struct SiriNaturalEntryConsentTests {
         let source = Repo.codeOnly(try Repo.text("Yala/App/Intents/QuickExpenseIntent.swift"))
         #expect(source.contains(
             "let aiConsentAccepted = UserDefaults.standard.bool(forKey: AppPreferences.Keys.aiDataConsentAccepted)"))
-        #expect(source.contains("consentAccepted: aiConsentAccepted"))
+        // En el teléfono (`.onDevice`, L15-6, apagado) el texto no sale de él y no hace falta el consentimiento.
+        #expect(source.contains("consentAccepted: route == .onDevice || aiConsentAccepted"))
         #expect(source.components(separatedBy: "TranscriptionParserService.shared.parseMultiple(").count == 2,
                 "El intent llama a la IA por otro camino que no pasa por el consentimiento.")
     }

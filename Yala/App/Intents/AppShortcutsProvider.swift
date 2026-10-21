@@ -4,10 +4,10 @@
 //
 //  Provides App Shortcuts for the Shortcuts app and Siri.
 //
-//  Las frases de abajo son las CLAVES. Cada idioma las recibe tal cual (español e inglés, en los 16) salvo donde
-//  `AppShortcuts.xcstrings` las traduce: hoy, portugués (pt, pt-BR, pt-PT). Lo que Siri entrena por idioma se ve en el
-//  bundle compilado, `Metadata.appintents/root.ssu.yaml`, y lo fija `SiriPhrasesPortugueseTests`. Los otros siete
-//  idiomas esperan decisión (L15-5).
+//  Las frases de abajo son las CLAVES. Español e inglés (con sus variantes) las reciben tal cual; los otros diez idiomas
+//  las reciben traducidas en `AppShortcuts.xcstrings`: portugués (pt, pt-BR, pt-PT) desde #552 y de, fr, it, ja, nl, pl
+//  y zh-Hans desde la auditoría UX 2.2 (L15-5). Un idioma con traducciones entrena SOLO esas, así que cada frase que
+//  enseña la app en ese idioma tiene que estar en el catálogo: lo fija `SiriPhrasesPortugueseTests` contra el bundle.
 //
 
 import AppIntents

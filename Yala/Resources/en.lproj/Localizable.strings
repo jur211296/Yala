@@ -2495,10 +2495,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "New automatic record";
-"shortcut.notification.expense" = "expense";
-"shortcut.notification.income" = "income";
-"shortcut.notification.body" = "A %@ of %@%@ was noted. Open Yala to review and save it.";
 
 // MARK: - Category Seeds
 
@@ -2806,11 +2802,10 @@
 "tutorials.inboxApproval.step1.desc" = "Simply fill in the required fields and approve. The record will be created normally.";
 "tutorials.inboxApproval.step2.desc" = "You can also dictate or photograph several records at once. It will tell you how many drafts were created and guide you to the inbox to review them.";
 "tutorials.inboxApproval.step3.desc" = "In your inbox you can approve records, select Approve later to see them later, or reject them directly.";
-"tutorials.applePay.step0.desc" = "Open the Shortcuts app and go to the Automations section.";
-"tutorials.applePay.step1.desc" = "Tap New automation, select the Wallet option, choose the cards you want to use, and select Run Immediately.";
-"tutorials.applePay.step2.desc" = "Select Create new shortcut and search for Yala at the very bottom. In Yala select the “Record Apple Pay payment” shortcut.";
-"tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. Turn off the \"Show When Run\" toggle.";
-
+"tutorials.applePay.step0.desc" = "Open the Shortcuts app and go to Automation. If you don't see it at the bottom, it's in Library.";
+"tutorials.applePay.step1.desc" = "Tap +, choose Wallet and select the cards you use. If offered, choose Run Immediately.";
+"tutorials.applePay.step2.desc" = "If asked, tap Create New Shortcut. Search for Yala and choose the “Record Apple Pay payment” shortcut.";
+"tutorials.applePay.step3.desc" = "For Amount select Shortcut Input and then Amount. Do the same for Merchant and Name respectively. If you see “Show When Run”, turn it off.";
 "tutorials.applePay.completion.title" = "Apple Pay connected!";
 "tutorials.applePay.completion.desc" = "With this you'll now have automatic records every time you use Apple Pay with the selected cards. Each payment will create a draft in your inbox.";
 
@@ -2835,21 +2830,16 @@
 "settings.siriShortcuts" = "Siri & Shortcuts";
 "siriShortcuts.title" = "Siri & Shortcuts";
 "siriShortcuts.subtitle" = "Use your voice or quick shortcuts to record expenses instantly.";
-"siriShortcuts.siri.title" = "Record with Siri";
 "siriShortcuts.siri.description" = "Dictate your expense and a draft will be created in your inbox.";
 "siriShortcuts.siri.proNote" = "Requires Yala Pro";
 "siriShortcuts.siri.phrase" = "Note an expense in Yala";
-"siriShortcuts.siri.alt1" = "You can also say: \"Log an expense in Yala\"";
-"siriShortcuts.siri.alt2" = "Or: \"Record with Siri in Yala\"";
+"siriShortcuts.siri.alt1" = "Log an expense in Yala";
+"siriShortcuts.siri.alt2" = "Record with Siri in Yala";
 "siriShortcuts.all.title" = "Other shortcuts";
-"siriShortcuts.shortcut.quick" = "Quick record";
-"siriShortcuts.shortcut.voice" = "Voice input";
-"siriShortcuts.shortcut.image" = "Add with a photo or file";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "Opens the record form with a single tap.";
-"siriShortcuts.desc.voice" = "Dictate the amount and description with your voice.";
-"siriShortcuts.desc.image" = "Scan a receipt or ticket with your camera.";
-"siriShortcuts.desc.applePay" = "Log a payment made with Apple Pay.";
+"siriShortcuts.desc.quick" = "Opens the form to log an expense or income.";
+"siriShortcuts.desc.voice" = "Dictate the amount and description.";
+"siriShortcuts.desc.image" = "A receipt, a screenshot or a PDF.";
+"siriShortcuts.desc.applePay" = "Used by the Wallet automation.";
 "siriShortcuts.phrase.quick" = "Record in Yala";
 "siriShortcuts.phrase.voice" = "Record with voice in Yala";
 "siriShortcuts.phrase.image" = "Record with photo or file in Yala";
@@ -7720,3 +7710,10 @@
 "uxpro.welcome.theme" = "You can now use this theme.";
 "uxpro.welcome.icon" = "You can now use this icon.";
 "uxpro.welcome.cashFlow" = "You can now use advanced cash flow.";
+"siriShortcuts.siri.alsoSay" = "Also: %1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "“%@”";
+"siriShortcuts.openShortcuts" = "Open my Yala shortcuts";
+"inbox.alert.siriDrafts" = "Siri drafts: %d";
+"shortcut.applePay.notification.title" = "%1$@ payment at %2$@ to review";
+"shortcut.applePay.notification.titleNoMerchant" = "%@ payment to review";
+"shortcut.applePay.notification.body" = "Tap to approve it.";

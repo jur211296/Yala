@@ -509,6 +509,20 @@ final class UITestHooks {
     /// muestra para presentar el InboxAlertModal sin depender del sync de CloudKit.
     nonisolated static var showInboxAlert: Bool { hasArg("-uitest-inbox-alert") }
 
+    /// `-uitest-inbox-alert-siri`: añade dos borradores de Siri al aviso de la Bandeja (auditoría UX 2.2, L15-7). Solo,
+    /// el aviso trae SOLO borradores de Siri; con `-uitest-inbox-alert`, la muestra de siempre y la línea de Siri.
+    nonisolated static var showInboxAlertSiri: Bool { hasArg("-uitest-inbox-alert-siri") }
+
+    /// Lo que encola el aviso de la Bandeja simulado, o `nil` sin ninguno de los dos args.
+    static var inboxAlertPayload: PendingInboxNotification? {
+        guard showInboxAlert || showInboxAlertSiri else { return nil }
+        var notification = showInboxAlert
+            ? PendingInboxNotification(scheduledPayments: 2, subscriptions: 1, automations: 1)
+            : PendingInboxNotification()
+        if showInboxAlertSiri { notification.siriDrafts = 2 }
+        return notification
+    }
+
     /// `-uitest-remote-wipe-notice`: tras el seed, encola `.presentRemoteWipeNotice` — el aviso de «tus
     /// datos fueron eliminados de iCloud».
     ///

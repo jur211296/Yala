@@ -2495,10 +2495,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "新しい自動記録";
-"shortcut.notification.expense" = "支出";
-"shortcut.notification.income" = "収入";
-"shortcut.notification.body" = "%@（%@%@）を記録しました。Yalaを開いて確認・保存してください。";
 
 // MARK: - Category Seeds
 
@@ -2759,11 +2755,10 @@
 "tutorials.inboxApproval.step1.desc" = "必須項目を入力して承認するだけ。通常通り記録が作成されます。";
 "tutorials.inboxApproval.step2.desc" = "音声や画像で複数の記録をまとめて登録することもできます。作成されたドラフトの数を案内し、受信箱で確認できます。";
 "tutorials.inboxApproval.step3.desc" = "受信箱では記録を承認、あとで承認、または直接却下できます。";
-"tutorials.applePay.step0.desc" = "ショートカットアプリを開いてオートメーションセクションへ移動します。";
-"tutorials.applePay.step1.desc" = "新規オートメーションをタップ、Walletオプションを選び、使うカードを選択して「すぐに実行」を選びます。";
-"tutorials.applePay.step2.desc" = "新規ショートカットを作成を選び、一番下までスクロールしてYalaを検索。Yala内の「Apple Payの支払いを記録」ショートカットを選択します。";
-"tutorials.applePay.step3.desc" = "金額にショートカット入力 → 金額を選択。店舗と名前にも同様に設定。「実行時に表示」トグルをオフにします。";
-
+"tutorials.applePay.step0.desc" = "ショートカットアプリを開いて「オートメーション」へ。下に見当たらない場合は「ライブラリ」の中にあります。";
+"tutorials.applePay.step1.desc" = "「+」をタップし、「Wallet」を選んで使うカードを選択します。表示されたら「すぐに実行」を選びます。";
+"tutorials.applePay.step2.desc" = "求められたら「新規ショートカットを作成」をタップ。Yalaを検索して「Apple Payの支払いを記録」ショートカットを選びます。";
+"tutorials.applePay.step3.desc" = "金額にショートカット入力 → 金額を選択。店舗と名前にも同様に設定。「実行時に表示」があればオフにします。";
 "tutorials.applePay.completion.title" = "Apple Payが連携されました！";
 "tutorials.applePay.completion.desc" = "これで選択したカードでApple Payを使うたびに自動記録されます。各支払いが受信箱にドラフトを作成します。";
 
@@ -2788,21 +2783,16 @@
 "settings.siriShortcuts" = "Siriとショートカット";
 "siriShortcuts.title" = "Siriとショートカット";
 "siriShortcuts.subtitle" = "音声やクイックショートカットを使って即座に支出を記録します。";
-"siriShortcuts.siri.title" = "Siriで記録";
 "siriShortcuts.siri.description" = "支出を口述すると、受信箱にドラフトが作成されます。";
 "siriShortcuts.siri.proNote" = "Yala Proが必要";
 "siriShortcuts.siri.phrase" = "Yalaに記録を作成";
-"siriShortcuts.siri.alt1" = "次のようにも話せます: 「Yalaに支出をログ」";
-"siriShortcuts.siri.alt2" = "または: 「Yalaに支出を保存」";
+"siriShortcuts.siri.alt1" = "Yalaに支出をログ";
+"siriShortcuts.siri.alt2" = "Yalaに支出を保存";
 "siriShortcuts.all.title" = "その他のショートカット";
-"siriShortcuts.shortcut.quick" = "クイック記録";
-"siriShortcuts.shortcut.voice" = "音声入力";
-"siriShortcuts.shortcut.image" = "写真やファイルで記録";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "1タップで記録フォームを開きます。";
-"siriShortcuts.desc.voice" = "金額と説明を音声で口述します。";
-"siriShortcuts.desc.image" = "カメラでレシートや伝票を読み取ります。";
-"siriShortcuts.desc.applePay" = "Apple Payで行った支払いを記録します。";
+"siriShortcuts.desc.quick" = "支出や収入を記録するフォームを開きます。";
+"siriShortcuts.desc.voice" = "金額と説明を口述します。";
+"siriShortcuts.desc.image" = "レシート、スクリーンショット、PDF。";
+"siriShortcuts.desc.applePay" = "Walletのオートメーションで使います。";
 "siriShortcuts.phrase.quick" = "Yalaに記録";
 "siriShortcuts.phrase.voice" = "Yalaに音声で記録";
 "siriShortcuts.phrase.image" = "Yalaに写真やファイルで記録";
@@ -7726,3 +7716,10 @@
 "uxpro.welcome.theme" = "このテーマが使えるようになりました。";
 "uxpro.welcome.icon" = "このアイコンが使えるようになりました。";
 "uxpro.welcome.cashFlow" = "高度なキャッシュフローが使えるようになりました。";
+"siriShortcuts.siri.alsoSay" = "ほかに：%1$@・%2$@";
+"siriShortcuts.quotedPhrase" = "「%@」";
+"siriShortcuts.openShortcuts" = "Yalaのショートカットを開く";
+"inbox.alert.siriDrafts" = "Siriのドラフト：%d件";
+"shortcut.applePay.notification.title" = "%2$@での%1$@の支払いを確認";
+"shortcut.applePay.notification.titleNoMerchant" = "%@の支払いを確認";
+"shortcut.applePay.notification.body" = "タップして承認します。";

@@ -2491,10 +2491,6 @@
 
 // MARK: - Shortcut Notifications
 
-"shortcut.notification.title" = "Novo registro automático";
-"shortcut.notification.expense" = "despesa";
-"shortcut.notification.income" = "receita";
-"shortcut.notification.body" = "Foi anotado um %@ de %@%@. Abra o Yala para revisar e salvar.";
 
 // MARK: - Category Seeds
 
@@ -2741,11 +2737,10 @@
 "tutorials.inboxApproval.step1.desc" = "Basta preencher os campos obrigatórios e aprovar. O registro será criado normalmente.";
 "tutorials.inboxApproval.step2.desc" = "Você também pode ditar ou fotografar vários registros de uma vez. O app vai te dizer quantos rascunhos foram criados e te levar à caixa para revisá-los.";
 "tutorials.inboxApproval.step3.desc" = "Na sua caixa, você pode aprovar registros, selecionar Aprovar depois para vê-los mais tarde ou rejeitá-los diretamente.";
-"tutorials.applePay.step0.desc" = "Abra o app Atalhos e vá para a seção Automação.";
-"tutorials.applePay.step1.desc" = "Toque em Nova Automação, selecione a opção Wallet, escolha os cartões que você quer usar e selecione Executar Imediatamente.";
-"tutorials.applePay.step2.desc" = "Selecione Criar Novo Atalho e procure Yala bem no final da lista. No Yala, selecione o atalho Registrar pagamento Apple Pay.";
-"tutorials.applePay.step3.desc" = "Em Valor selecione Entrada do Atalho e depois Quantidade. Faça o mesmo para Comerciante e Nome, respectivamente. Desative o botão \"Mostrar ao Executar\".";
-
+"tutorials.applePay.step0.desc" = "Abra o app Atalhos e entre em Automação. Se não a vir embaixo, está em Biblioteca.";
+"tutorials.applePay.step1.desc" = "Toque em +, escolha Wallet e selecione os cartões que você usa. Se aparecer, escolha Executar Imediatamente.";
+"tutorials.applePay.step2.desc" = "Se pedir, toque em Criar Novo Atalho. Procure Yala e escolha o atalho Registrar pagamento Apple Pay.";
+"tutorials.applePay.step3.desc" = "Em Valor selecione Entrada do Atalho e depois Quantidade. Faça o mesmo para Comerciante e Nome, respectivamente. Se aparecer \"Mostrar ao Executar\", desative.";
 "tutorials.applePay.completion.title" = "Apple Pay conectado!";
 "tutorials.applePay.completion.desc" = "Com isso, você já terá registros automáticos cada vez que usar o Apple Pay com os cartões selecionados. Cada pagamento criará um rascunho na sua caixa de entrada.";
 "subcategory.leasing" = "Leasing";
@@ -2784,21 +2779,16 @@
 "settings.siriShortcuts" = "Siri e Atalhos";
 "siriShortcuts.title" = "Siri e Atalhos";
 "siriShortcuts.subtitle" = "Use sua voz ou atalhos rápidos para registrar despesas instantaneamente.";
-"siriShortcuts.siri.title" = "Registrar com Siri";
 "siriShortcuts.siri.description" = "Dite sua despesa e um rascunho será criado na sua caixa de entrada.";
 "siriShortcuts.siri.proNote" = "Requer Yala Pro";
 "siriShortcuts.siri.phrase" = "Cria um registro no Yala";
-"siriShortcuts.siri.alt1" = "Você também pode dizer: \"Anota uma despesa no Yala\"";
-"siriShortcuts.siri.alt2" = "Ou: \"Salva uma despesa no Yala\"";
+"siriShortcuts.siri.alt1" = "Anota uma despesa no Yala";
+"siriShortcuts.siri.alt2" = "Salva uma despesa no Yala";
 "siriShortcuts.all.title" = "Outros atalhos";
-"siriShortcuts.shortcut.quick" = "Registro rápido";
-"siriShortcuts.shortcut.voice" = "Entrada por voz";
-"siriShortcuts.shortcut.image" = "Registrar com foto ou arquivo";
-"siriShortcuts.shortcut.applePay" = "Apple Pay";
-"siriShortcuts.desc.quick" = "Abre o formulário de registro com um toque.";
-"siriShortcuts.desc.voice" = "Dite o valor e a descrição com sua voz.";
-"siriShortcuts.desc.image" = "Digitalize um recibo ou nota com a câmera.";
-"siriShortcuts.desc.applePay" = "Registre um pagamento feito com Apple Pay.";
+"siriShortcuts.desc.quick" = "Abre o formulário para anotar uma despesa ou receita.";
+"siriShortcuts.desc.voice" = "Dite o valor e a descrição.";
+"siriShortcuts.desc.image" = "Um recibo, uma captura de tela ou um PDF.";
+"siriShortcuts.desc.applePay" = "Usado pela automação da Wallet.";
 "siriShortcuts.phrase.quick" = "Registre no Yala";
 "siriShortcuts.phrase.voice" = "Registre com voz no Yala";
 "siriShortcuts.phrase.image" = "Registre com foto ou arquivo no Yala";
@@ -7714,3 +7704,10 @@
 "uxpro.welcome.theme" = "Agora você já pode usar este tema.";
 "uxpro.welcome.icon" = "Agora você já pode usar este ícone.";
 "uxpro.welcome.cashFlow" = "Agora você já pode usar o fluxo de caixa avançado.";
+"siriShortcuts.siri.alsoSay" = "Também: %1$@ · %2$@";
+"siriShortcuts.quotedPhrase" = "“%@”";
+"siriShortcuts.openShortcuts" = "Abrir meus atalhos do Yala";
+"inbox.alert.siriDrafts" = "Rascunhos da Siri: %d";
+"shortcut.applePay.notification.title" = "Pagamento de %1$@ em %2$@ para revisar";
+"shortcut.applePay.notification.titleNoMerchant" = "Pagamento de %@ para revisar";
+"shortcut.applePay.notification.body" = "Toque para aprovar.";

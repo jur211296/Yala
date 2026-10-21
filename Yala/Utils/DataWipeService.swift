@@ -252,6 +252,8 @@ final class DataWipeService {
             SetupChecklistManager.shared.resetAll()
             UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?
                 .removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)
+            UserDefaults(suiteName: SharedContainerService.appGroupIdentifier)?
+                .removeObject(forKey: ApplePayCurrencyHint.storageKey)  // la moneda de esa cuenta (L15-8)
         }
 
         // **«El borrado del aviso tardío quedó a medias» se resuelve aquí, en cualquier scope.** Esa marca describe un
@@ -1100,6 +1102,7 @@ final class DataWipeService {
             appGroup.removeObject(forKey: AppPreferences.Keys.expensesOnlyMode)   // espejo del didSet de SessionState (widgets)
             appGroup.removeObject(forKey: "firstWeekday")                         // espejo de PreferenceSyncService (widgets)
             appGroup.removeObject(forKey: AppPreferences.Keys.lastUsedAccountID)  // shortcutID de una Account ya borrada
+            appGroup.removeObject(forKey: ApplePayCurrencyHint.storageKey)        // su moneda, para la notificación de Apple Pay
         }
     }
 

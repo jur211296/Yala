@@ -34,6 +34,7 @@ extension XCUIApplication {
         seedDesync: Bool = false,
         onboarding: Bool = false,
         inboxAlert: Bool = false,
+        inboxAlertSiri: Bool = false,
         trialOffer: Bool = false,
         trialOfferArmed: Bool = false,
         forceUpdate: Bool = false,
@@ -166,6 +167,7 @@ extension XCUIApplication {
         }
         if onboarding { args.append("-uitest-onboarding") }
         if inboxAlert { args.append("-uitest-inbox-alert") }
+        if inboxAlertSiri { args.append("-uitest-inbox-alert-siri") }
         if trialOffer { args.append("-uitest-trial-offer") }
         if fakePricesTrialUsed {
             args.append(contentsOf: ["-uitest-fake-prices", "trial-used"])

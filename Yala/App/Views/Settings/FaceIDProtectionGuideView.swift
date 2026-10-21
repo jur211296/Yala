@@ -30,6 +30,7 @@ struct FaceIDProtectionGuideView: View {
         YalaStepGuide(
             navigationTitle: L10n.Settings.faceIDProtection,
             rootIdentifier: "faceid_guide_root",
+            progressID: StepGuideProgressStore.faceID,
             header: StepGuideHeader(
                 systemImage: "faceid",
                 tint: DS.Semantic.successForeground,

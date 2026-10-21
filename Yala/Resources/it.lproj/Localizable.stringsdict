@@ -1276,5 +1276,21 @@
 			<string>%d budget</string>
 		</dict>
 	</dict>
+	<key>stepGuide.remaining</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ti manca %d passaggio · i tuoi progressi vengono salvati</string>
+			<key>other</key>
+			<string>Ti mancano %d passaggi · i tuoi progressi vengono salvati</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

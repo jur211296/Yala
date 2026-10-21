@@ -3,6 +3,42 @@
   "strings": {
     "Anota un gasto en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erstelle einen Eintrag in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crée un enregistrement dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea un registro in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に記録を作成"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maak een boeking in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz wpis w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -19,12 +55,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anota um gasto no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中创建一条记录"
           }
         }
       }
     },
     "Apple Pay en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}でApple Pay"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -41,12 +119,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apple Pay no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中 Apple Pay"
           }
         }
       }
     },
     "Apunta un gasto en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notiere eine Ausgabe in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note une dépense dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annota una spesa in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に支出をログ"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boek een uitgave in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz wydatek w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -63,6 +183,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anota uma despesa no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 备注一笔支出"
           }
         }
       }
@@ -91,6 +217,42 @@
     },
     "Cuánto gasté en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie viel habe ich in ${applicationName} ausgegeben"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Combien j'ai dépensé dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto ho speso in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}でいくら使った"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoeveel heb ik uitgegeven in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile wydałem w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -107,12 +269,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quanto gastei no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我在 ${applicationName} 花了多少"
           }
         }
       }
     },
     "Cuánto llevo gastado en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meine Ausgaben in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mes dépenses dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le mie spese in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}の支出"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mijn uitgaven in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje wydatki w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -129,12 +333,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "Quanto já gastei no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我在 ${applicationName} 的支出"
           }
         }
       }
     },
     "Cuánto tengo en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie viel habe ich in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Combien j'ai dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quanto ho in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}にいくらある"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoeveel heb ik in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile mam w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -152,11 +398,53 @@
             "state": "translated",
             "value": "Quanto tenho no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我在 ${applicationName} 有多少钱"
+          }
         }
       }
     },
     "Dictar gasto en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diktiere eine Ausgabe in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dicte une dépense dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detta una spesa in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}で支出を口述"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dicteer een uitgave in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podyktuj wydatek w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -173,6 +461,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ditar despesa no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中口述支出"
           }
         }
       }
@@ -201,6 +495,42 @@
     },
     "Entrada por voz en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spracheingabe in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrée vocale dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserimento vocale in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}で音声入力"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spraakinvoer in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wprowadzanie głosowe w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -218,11 +548,53 @@
             "state": "translated",
             "value": "Entrada por voz no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中语音输入"
+          }
         }
       }
     },
     "Escanear gasto en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanne eine Ausgabe in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanne une dépense dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scansiona una spesa in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}で支出をスキャン"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan een uitgave in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeskanuj wydatek w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -239,6 +611,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Digitalizar despesa no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中扫描支出"
           }
         }
       }
@@ -267,6 +645,42 @@
     },
     "Mi saldo en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mein Kontostand in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mon solde dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il mio saldo in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}の残高"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mijn saldo in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje saldo w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -284,11 +698,29 @@
             "state": "translated",
             "value": "O meu saldo no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我在 ${applicationName} 的余额"
+          }
         }
       }
     },
     "Note an expense in ${applicationName}": {
       "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に支出をメモ"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noteer een uitgave in ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -311,6 +743,42 @@
     },
     "Nuevo registro en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neuer Eintrag in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouvel enregistrement dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuova registrazione in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}で新しい記録"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe boeking in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowy wpis w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -328,11 +796,53 @@
             "state": "translated",
             "value": "Novo registo no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中新建记录"
+          }
         }
       }
     },
     "Pago Apple Pay en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-Pay-Zahlung in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paiement Apple Pay dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pagamento Apple Pay in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}でApple Pay支払い"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay-betaling in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatność Apple Pay w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -350,11 +860,53 @@
             "state": "translated",
             "value": "Pagamento Apple Pay no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中 Apple Pay 付款"
+          }
         }
       }
     },
     "Registra Apple Pay en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfasse Apple Pay in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistre Apple Pay dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra Apple Pay in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に Apple Payを記録"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Pay boeken in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz Apple Pay w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -372,11 +924,53 @@
             "state": "translated",
             "value": "Regista Apple Pay no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 记录 Apple Pay"
+          }
         }
       }
     },
     "Registra con Siri en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichere eine Ausgabe in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistre une dépense dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva una spesa in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に支出を保存"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sla een uitgave op in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj wydatek w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -394,11 +988,53 @@
             "state": "translated",
             "value": "Cria um registo no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 保存一笔支出"
+          }
         }
       }
     },
     "Registra con foto o archivo en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfasse mit Foto oder Datei in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistre avec photo ou fichier dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra con foto o file in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に写真やファイルで記録"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boeken met foto of bestand in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz ze zdjęcia lub pliku w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -416,11 +1052,53 @@
             "state": "translated",
             "value": "Regista com foto ou ficheiro no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用照片或文件在 ${applicationName} 中记录"
+          }
         }
       }
     },
     "Registra con imagen en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfasse mit Bild in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistre avec une image dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra con immagine in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に画像で記録"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boeken met afbeelding in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz z obrazu w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -438,11 +1116,53 @@
             "state": "translated",
             "value": "Regista com imagem no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用图片在 ${applicationName} 中记录"
+          }
         }
       }
     },
     "Registra con voz en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfasse mit Stimme in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistre avec la voix dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra con voce in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に音声で記録"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boeken met spraak in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz głosem w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -460,11 +1180,53 @@
             "state": "translated",
             "value": "Regista com voz no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用语音在 ${applicationName} 中记录"
+          }
         }
       }
     },
     "Registra en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erfasse in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistre dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}に記録"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boeken in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -482,11 +1244,53 @@
             "state": "translated",
             "value": "Regista no ${applicationName}"
           }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中记录"
+          }
         }
       }
     },
     "Registro rápido en ${applicationName}": {
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schnellerfassung in ${applicationName}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrement rapide dans ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrazione rapida in ${applicationName}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}でクイック記録"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snel boeken in ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szybki wpis w ${applicationName}"
+          }
+        },
         "pt": {
           "stringUnit": {
             "state": "translated",
@@ -503,6 +1307,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Registo rápido no ${applicationName}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 ${applicationName} 中快速记录"
           }
         }
       }
