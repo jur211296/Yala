@@ -218,7 +218,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-engine-can-start-with-a-reverse-abort-pending | backlog | tickets/backlog/cloud-engine-can-start-with-a-reverse-abort-pending.md |
 | cloud-fx-rates-blob-two-faces | done | tickets/done/cloud-fx-rates-blob-two-faces.md |
 | cloud-group-reject-can-expel-a-member-approved-on-another-device | backlog | tickets/backlog/cloud-group-reject-can-expel-a-member-approved-on-another-device.md |
-| cloud-group-reject-request-always-fails | qa | tickets/qa/cloud-group-reject-request-always-fails.md |
+| cloud-group-reject-request-always-fails | done | tickets/done/cloud-group-reject-request-always-fails.md |
 | cloud-hydration-banner-does-not-see-data-that-arrives-after-mount | backlog | tickets/backlog/cloud-hydration-banner-does-not-see-data-that-arrives-after-mount.md |
 | cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped | backlog | tickets/backlog/cloud-hydration-spinner-keeps-spinning-with-the-engine-stopped.md |
 | cloud-hydration-spinner-never-gives-up-without-attest | done | tickets/done/cloud-hydration-spinner-never-gives-up-without-attest.md |
@@ -526,9 +526,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-backend-stale-config | done | tickets/done/invite-backend-stale-config.md |
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | backlog | tickets/backlog/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
-| invite-link-on-a-fresh-install-shows-the-welcome-first | qa | tickets/qa/invite-link-on-a-fresh-install-shows-the-welcome-first.md |
+| invite-link-on-a-fresh-install-shows-the-welcome-first | done | tickets/done/invite-link-on-a-fresh-install-shows-the-welcome-first.md |
 | invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness | backlog | tickets/backlog/invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness.md |
-| invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | qa | tickets/qa/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
+| invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | done | tickets/done/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
 | invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo | done | tickets/done/invite-refresh-forzado-es-noop-si-hay-otro-en-vuelo.md |
 | invite-sign-in-with-a-complete-account-blocks-on-its-own-groups | qa | tickets/qa/invite-sign-in-with-a-complete-account-blocks-on-its-own-groups.md |
@@ -678,7 +678,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-gate-notices-overflow-at-the-largest-text-size | backlog | tickets/backlog/private-gate-notices-overflow-at-the-largest-text-size.md |
 | private-gate-remote-wipe-can-strand-its-arm | done | tickets/done/private-gate-remote-wipe-can-strand-its-arm.md |
 | private-gate-wipe-failure-copy-claims-icloud-is-intact | done | tickets/done/private-gate-wipe-failure-copy-claims-icloud-is-intact.md |
-| private-icloud-check-gives-up-on-a-large-history | qa | tickets/qa/private-icloud-check-gives-up-on-a-large-history.md |
+| private-icloud-check-gives-up-on-a-large-history | done | tickets/done/private-icloud-check-gives-up-on-a-large-history.md |
 | private-icloud-gate-back-lands-on-the-wrong-branch | backlog | tickets/backlog/private-icloud-gate-back-lands-on-the-wrong-branch.md |
 | private-sign-out-blocks-on-a-cloud-keychain-read-error | backlog | tickets/backlog/private-sign-out-blocks-on-a-cloud-keychain-read-error.md |
 | private-sign-out-counts-group-writes-without-capturing-them | done | tickets/done/private-sign-out-counts-group-writes-without-capturing-them.md |

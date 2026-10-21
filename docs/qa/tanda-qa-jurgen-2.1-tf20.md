@@ -82,3 +82,23 @@ Cada bloque deja los aparatos como los necesita el siguiente.
 - Cada card que pase, a done, y su ticket de `tickets/qa/`, también.
 - El iPad vuelve a tu iCloud personal.
 - Staging: Frank borra las cuentas de prueba de la tanda (las `i5-*` se quedan).
+
+---
+
+## Resultado (2026-10-21)
+
+**Montaje real:** el iPad Pro ya no es de Jürgen. El aparato **B** fue un **iPad Air** con iCloud `jur211296@gmail.com`.
+Hubo que activarle el Modo de desarrollador y registrarlo en el perfil de Yala Dev (recompilado desde `e47b5cca9`).
+
+**Pasan las cuatro cards:**
+
+- `blqa`: el iCloud de test@ contesta 1 registro, 2 cuentas y 62 categorías, sin «No pudimos conectarnos». El rastro
+  `ICloudScan` va al registro del sistema y no a la consola de `devicectl`: no se midió.
+- `z81w`: «Abriendo tu invitación…» sale desde el primer instante y la bienvenida no se puede tocar, pero tarda **12 s**
+  hasta «Conecta tu cuenta». Jürgen la cierra por la pantalla (opción A); el tiempo pasa a `apsn`.
+- `840m`: el rechazo desaparece en el iPhone sin error y el iPad dice «Solicitud rechazada» (en staging, `rejected`).
+- `t2q8`: las tres puertas acaban en «Esperando aprobación», sin «queda en blanco» (en staging, `pendingApproval`). Queda
+  sin medir si el iCloud de jur211296 tenía datos de Yala Dev.
+
+**Card nueva (2.2, alta):** `apsn`. En una instalación nueva, la pantalla se queda negra unos 10 s tras «Vengo por un
+grupo». Lleva también los 12 s de `z81w`.

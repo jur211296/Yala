@@ -1,10 +1,10 @@
 ---
 id: invite-link-on-a-fresh-install-shows-the-welcome-first
-status: qa
+status: done
 priority: medium
 area: "groups, onboarding"
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 source: "tablero-al-abrir-un-enlace-de-invitacion-en-una-z81w (QA guiado del TF19, 2026-10-20)"
 ---
 
@@ -40,3 +40,5 @@ Instalo Yala y abro el enlace del grupo. Durante 10-15 s veo la bienvenida norma
 1. Borra Yala, reinstala sin abrir y abre el enlace de «QA unión 19» con el cronómetro en marcha.
 2. Esperado: desde el primer instante «Abriendo tu invitación…» sin botones, y «Conecta tu cuenta» en 1-2 s (más si la red es lenta).
 3. Esperado: en ningún momento se puede tocar «Empezar».
+
+Cerrado en el QA guiado 2026-10-21 (iPhone de QA e iPad Air, Yala Dev @ e47b5cca9, staging): «Abriendo tu invitación…» sale desde el primer instante y la bienvenida no se puede tocar; tarda 12 s hasta «Conecta tu cuenta». Jürgen la da por buena por la pantalla; el tiempo pasa a la card apsn (2.2, alta).

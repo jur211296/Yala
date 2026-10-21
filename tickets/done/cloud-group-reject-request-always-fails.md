@@ -1,10 +1,10 @@
 ---
 id: cloud-group-reject-request-always-fails
-status: qa
+status: done
 priority: medium
 area: "groups, modo-nube"
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 source: "tablero-en-un-grupo-de-la-nube-rechazar-una-soli-840m (QA guiado del TF19, 2026-10-20)"
 ---
 
@@ -40,3 +40,5 @@ Soy el administrador de un grupo. Alguien pide unirse y toco «Rechazar»: Yala 
 2. Con admin@ (iPhone), Grupos › «QA unión 19» › Miembros › la solicitud › «Rechazar» › confirmar.
 3. Esperado en el iPhone: la solicitud desaparece, sin error.
 4. Esperado en el iPad: llega el aviso, y al abrir el grupo pone «no te aceptaron».
+
+Cerrado en el QA guiado 2026-10-21 (iPhone de QA e iPad Air, Yala Dev @ e47b5cca9, staging): admin@ rechazó a test@ en «QA unión 20»: la solicitud desaparece sin error y el iPad dice «Solicitud rechazada» (staging: rejected).

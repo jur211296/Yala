@@ -1,10 +1,10 @@
 ---
 id: invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch
-status: qa
+status: done
 priority: medium
 area: "groups, modo-nube, onboarding"
 created: 2026-10-19
-updated: 2026-10-20
+updated: 2026-10-21
 source: "tablero-unirse-por-enlace-en-una-instalacion-nue-t2q8 (QA guiado 2026-10-19)"
 ---
 
@@ -68,3 +68,5 @@ Una SEGUNDA invitación tras un kill a mitad de la primera: su intent no lleva l
 1. Borra Yala, reinstala sin abrir, abre el enlace de «QA unión».
 2. En la hoja de «Unirme», cierra Yala del todo y vuelve a abrir el enlace.
 3. Esperado: sigue el recorrido sin «Antes de unirte, este teléfono queda en blanco». Entra con Google `test@yala-app.pe` y únete. No debe esperar minutos en «Conectando con tu grupo…».
+
+Cerrado en el QA guiado 2026-10-21 (iPhone de QA e iPad Air, Yala Dev @ e47b5cca9, staging): las tres puertas acaban en «Esperando aprobación» sin «queda en blanco»: enlace directo (test@), bienvenida › «Tengo una invitación» (jur211296, sin «Abre Yala otra vez») y cerrar Yala en «Conectando…» y reabrir el enlace (test@).

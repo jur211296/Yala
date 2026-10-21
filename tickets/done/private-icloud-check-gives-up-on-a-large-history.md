@@ -1,10 +1,10 @@
 ---
 id: private-icloud-check-gives-up-on-a-large-history
-status: qa
+status: done
 priority: high
 area: "onboarding, modo-nube, iCloud"
 created: 2026-10-20
-updated: 2026-10-20
+updated: 2026-10-21
 source: "tablero-no-pudimos-conectarnos-a-icloud-al-elegi-blqa (QA guiado del TF19, 2026-10-20)"
 ---
 
@@ -36,3 +36,5 @@ Elijo «Tu cuenta en tu iCloud privado» (en el Welcome o en «Activar Yala comp
 1. En el iPhone de QA, con la sesión solo-grupos de admin@, Perfil › «Activar Yala completo» › «Tu cuenta en tu iCloud privado».
 2. Esperado: contesta con cifras (o «vacío»), sin «No pudimos conectarnos a iCloud». Puede tardar más de 25 s.
 3. Si aun así sale un aviso, debe decir «iCloud tardó demasiado en responder». Con la Mac conectada, la consola filtrada por `ICloudScan` dice cuántas páginas y borrados devolvió.
+
+Cerrado en el QA guiado 2026-10-21 (iPhone de QA e iPad Air, Yala Dev @ e47b5cca9, staging): con el iCloud de test@ (1.500 movimientos importados y borrados el 20-oct), «Tu cuenta en tu iCloud privado» contesta 1 registro, 2 cuentas y 62 categorías, sin «No pudimos conectarnos».
