@@ -4,7 +4,7 @@ status: qa
 priority: medium
 area: "ia, gateway, attest"
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 source: "tablero-la-primera-foto-tras-instalar-falla-al-m-vv0k (QA guiado 2026-10-19)"
 ---
 
@@ -30,7 +30,8 @@ después la segunda funciona.
 ## Lo que cambia
 
 1. **Gateway:** la ráfaga se cuenta por categoría (`burstBy`); la sincronización ya no le quita el hueco a una foto o a
-   una nota de voz. Un estado guardado con la lista global de antes no frena a nadie. **Hay que desplegar el Worker.**
+   una nota de voz. Un estado guardado con la lista global de antes no frena a nadie. **Desplegado el 2026-10-22** en
+   staging (`043cdff6`) y producción (`2e2c05c4`).
 2. **App, foto y voz:** el 429 de ráfaga dice «Un momento · Llegaron muchas peticiones seguidas desde este teléfono.
    Espera un minuto y vuelve a intentarlo» con «Reintentar»; el 429 de cuota diaria dice «Llegaste al límite de hoy ·
    Por hoy no quedan más lecturas… Se renuevan cada día» con «Registrar a mano» (no dice «mañana»: el cupo se renueva a
