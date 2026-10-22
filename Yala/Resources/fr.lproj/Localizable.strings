@@ -3422,7 +3422,7 @@
 "groups.invite.ready" = "Tout est prêt !";
 "groups.invite.goToGroup" = "Aller au groupe";
 "groups.invite.linkInvalidTitle" = "Lien invalide";
-"groups.invite.linkInvalidDetail" = "Ce lien n'est plus valide ou a expiré. Demande à l'admin d'en générer un nouveau.";
+"groups.invite.linkInvalidDetail" = "Ce lien n'est plus valide ou a expiré. Demande un nouveau lien à la personne qui t'a invité.";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Problème avec le groupe";
@@ -4007,7 +4007,7 @@
 "groups.member.rejectConfirm" = "Refuser la demande de %@ ? Cette personne pourra redemander l'accès avec un autre lien.";
 "groups.member.pendingRequestsSection" = "Demandes en attente";
 "groups.invite.waitingApproval.title" = "Demande envoyée";
-"groups.invite.waitingApproval.body" = "L'admin du groupe doit t'accepter avant que tu puisses participer. En attendant, tu verras le groupe dans ta liste, mais tu ne peux pas encore l'ouvrir. Rouvre Yala dans un moment pour voir si c'est bon.";
+"groups.invite.waitingApproval.body" = "L'admin du groupe doit t'accepter avant que tu puisses participer. En attendant, tu verras le groupe dans ta liste, mais tu ne peux pas encore l'ouvrir. On te préviendra quand tu seras accepté.";
 "groups.invite.waitingApproval.banner" = "En attente de l'approbation de l'admin";
 "groups.invite.rejected.title" = "Demande refusée";
 "groups.invite.rejected.body" = "L'administrateur n'a pas approuvé votre demande. Demandez-lui un nouveau lien si vous souhaitez réessayer.";
@@ -4462,10 +4462,10 @@
 "groups.openingBalance.emptyState" = "Aucun solde initial pour l'instant.";
 "groups.openingBalance.rollupOwes" = "doit";
 "groups.openingBalance.rollupOwed" = "on lui doit";
-"groups.openingBalance.approvalPromptTitle" = "%@ commence-t-il avec un solde ?";
-"groups.openingBalance.approvalPromptBody" = "Enregistrez ce qu'il doit ou ce qu'on lui doit déjà.";
-"groups.openingBalance.approvalPromptAdd" = "Ajouter un solde initial";
-"groups.openingBalance.approvalPromptSkip" = "Pas maintenant";
+"groups.openingBalance.approvalPromptTitle" = "%@ avait-il déjà des comptes à régler avec le groupe ?";
+"groups.openingBalance.approvalPromptBody" = "Si cette personne devait déjà quelque chose avant de rejoindre le groupe, ou si on lui devait, ajoute-le pour que les soldes tombent juste.";
+"groups.openingBalance.approvalPromptAdd" = "Oui, l'ajouter";
+"groups.openingBalance.approvalPromptSkip" = "Non, commencer à zéro";
 "groups.openingBalance.errorNotOwner" = "Seul le créateur du groupe peut gérer les soldes initiaux.";
 "groups.openingBalance.errorSameMember" = "Choisissez deux membres différents.";
 
@@ -5441,7 +5441,7 @@
 "groups.card.pendingNotice.title" = "En attente d'approbation";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "L'administrateur du groupe n'a pas encore approuvé ta demande. Dès qu'il l'aura fait, tu pourras ouvrir le groupe et voir ses dépenses. Reviens dans un moment.";
+"groups.card.pendingNotice.body" = "L'administrateur du groupe n'a pas encore approuvé ta demande. Dès qu'il l'aura fait, tu pourras ouvrir le groupe et voir ses dépenses. On te préviendra quand tu seras accepté.";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "Solde des comptes";
@@ -5822,7 +5822,7 @@
 "welcome.groups.inviteNeutralTitle" = "Avant de rejoindre, ce téléphone repart de zéro";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "Des données enregistrées ici se synchronisent avec un iCloud. Pour que tes dépenses de groupe n'y atterrissent pas, nous allons les supprimer de ce téléphone : la copie dans iCloud reste intacte. Yala va redémarrer et tu poursuivras avec ton invitation.";
+"welcome.groups.inviteNeutralBody" = "Des données enregistrées ici se synchronisent avec un compte iCloud. Pour que tes dépenses de groupe n'y atterrissent pas, nous allons les supprimer de ce téléphone : la copie dans iCloud reste intacte. Yala va redémarrer et tu poursuivras avec ton invitation.";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
 "welcome.groups.inviteNeutralBodyNoBackup" = "Des données sont enregistrées ici et nous n'avons pas trouvé de copie dans iCloud. Pour que tes dépenses de groupe ne s'y mélangent pas, il faut les supprimer de ce téléphone, et elles seront irrécupérables. Yala va redémarrer et tu poursuivras avec ton invitation.";
@@ -7948,3 +7948,93 @@
 
 /* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
 "groups.d13.expense.nowNotice" = "Maintenant, ajoute la dépense";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "Notifications du groupe";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "On te prévient quand quelqu'un ajoute une dépense ou te rembourse.";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "Activer les notifications";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "Notifications activées";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Les notifications de Yala sont désactivées dans Réglages.";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@ t'invite à « %2$@ » sur Yala pour partager les dépenses. Touche le lien pour rejoindre le groupe ; si tu n'as pas Yala, télécharge-la et touche à nouveau le lien.";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "Tu es invité à « %@ » sur Yala pour partager les dépenses. Touche le lien pour rejoindre le groupe ; si tu n'as pas Yala, télécharge-la et touche à nouveau le lien.";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@ t'invite";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "Tu as été invité dans ce groupe";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "Ensuite, tu choisis avec quel compte te connecter.";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "Tu fais partie de « %@ »";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "Tu fais partie du groupe";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "Avec %@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "Ajouter une dépense";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "Voir le groupe";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "Ton groupe arrive";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "Il apparaîtra ici dès qu'il sera prêt.";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "Ta demande est acceptée : tu peux voir les dépenses et ajouter les tiennes.";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@ veut rejoindre le groupe";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "Plusieurs personnes veulent rejoindre le groupe";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "Accepte la demande pour lui permettre de voir et d'ajouter des dépenses.";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "Accepte les demandes pour leur permettre de voir et d'ajouter des dépenses.";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "Voir";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "Veulent rejoindre (%d)";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "A ouvert ton lien d'invitation aujourd'hui";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "A ouvert ton lien d'invitation hier";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "A ouvert ton lien d'invitation le %@";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "Si tu acceptes, cette personne verra les dépenses du groupe et pourra ajouter les siennes. Si tu refuses, elle ne verra rien.";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "Accepter";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "Accepter %@ dans le groupe ?";

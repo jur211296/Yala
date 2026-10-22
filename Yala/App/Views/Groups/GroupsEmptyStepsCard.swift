@@ -18,7 +18,8 @@ struct GroupsEmptyStepsCard: View {
     /// Título y mensaje de la tarjeta sin pasos (la de pasos lleva el suyo).
     let title: String
     let message: String?
-    let actionTitle: String
+    /// `nil` = sin botón: el estado no tiene nada que ofrecer (L12-19, «Tu grupo está en camino»).
+    let actionTitle: String?
     let action: () -> Void
 
     var body: some View {
@@ -49,8 +50,10 @@ struct GroupsEmptyStepsCard: View {
                 }
             }
 
-            YalaPrimaryButton(actionTitle, icon: card.action == .tellMe ? "hand.tap.fill" : nil, action: action)
-                .padding(.top, DS.Spacing.xs)
+            if let actionTitle {
+                YalaPrimaryButton(actionTitle, icon: card.action == .tellMe ? "hand.tap.fill" : nil, action: action)
+                    .padding(.top, DS.Spacing.xs)
+            }
 
             if card.showsFootnote {
                 Text(L10n.UXL12.stepsFootnote)

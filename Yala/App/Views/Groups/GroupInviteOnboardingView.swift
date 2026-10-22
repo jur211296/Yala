@@ -17,6 +17,8 @@ struct GroupInviteOnboardingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SessionState.self) private var sessionState
     @Environment(\.yalaTheme) private var theme
+    /// La ventana que presenta la hoja: «Ver el grupo» y «Apuntar un gasto» (L12-18) dejan aquí su destino.
+    @Environment(SceneNavigation.self) private var navigation
 
     @State private var userName: String = ""
     @State private var hasTappedJoin: Bool = false
@@ -99,7 +101,10 @@ struct GroupInviteOnboardingView: View {
                 .padding(.horizontal, DS.Spacing.xxl)
             }
         }
-        .onAppear { seedNameFromProfileIfNeeded() }
+        .onAppear {
+            seedNameFromProfileIfNeeded()
+            joinIfGroupCardWasAccepted()
+        }
         .onChange(of: tracker.phase) { _, newPhase in
             // Fase terminal → el soft-timeout deja de tener sentido.
             switch newPhase {
@@ -118,31 +123,20 @@ struct GroupInviteOnboardingView: View {
 
     // MARK: - Step 1: Welcome
 
+    /// L12-17 (decisión de Jürgen del 18-oct, opción B): lo primero es la tarjeta del grupo —nombre, quién invita y
+    /// quién está— con el nombre con el que vas a entrar y «Unirme». Sin cuenta o sin consentimiento, ese toque sigue a
+    /// esos pasos y la unión arranca sola al volver; con los dos, une aquí mismo.
     private var welcomeStep: some View {
         VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
-            ZStack {
-                Circle()
-                    .fill(groupColor)
-                    .frame(width: 72, height: 72) // A11Y-DT: decorative hero icon, fixed size
+            groupCard
 
-                Image(systemName: groupIcon)
-                    .font(.system(size: 32)) // A11Y-DT: decorative icon inside circle
-                    .foregroundStyle(.white)
-            }
-            .glassEffect(.regular, in: Circle())
-
-            VStack(spacing: DS.Spacing.sm) {
-                Text(welcomeTitle)
-                    .font(DS.Typography.title2)
-                    .multilineTextAlignment(.center)
-
-                Text(L10n.Groups.Invite.subtitle)
-                    .font(DS.Typography.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+            Text(L10n.Groups.Invite.subtitle)
+                .font(DS.Typography.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             TextField(L10n.Groups.Invite.namePlaceholder, text: $userName)
                 .font(DS.Typography.body)
@@ -160,10 +154,22 @@ struct GroupInviteOnboardingView: View {
 
             Spacer()
 
-            YalaPrimaryButton(L10n.Groups.Invite.joinButton) {
-                handleJoinTap()
+            VStack(spacing: DS.Spacing.sm) {
+                YalaPrimaryButton(L10n.Groups.Invite.joinButton) {
+                    handleJoinTap()
+                }
+                .accessibilityIdentifier("invite_join_button")
+
+                // Qué viene después del toque, solo cuando lo que viene es elegir cuenta: «sin pasos de más, pero nunca
+                // perdido».
+                if joinTapRoute == .continueToAccount && !CloudAuthService.shared.hasSession {
+                    Text(L10n.UXD14.nextAccount)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("invite_next_account_hint")
+                }
             }
-            .accessibilityIdentifier("invite_join_button")
             .padding(.bottom, canDecline ? DS.Spacing.md : DS.Spacing.xxl)
 
             // **La salida, y por qué SOLO para quien ya tiene la app montada.** Al invitado FRESCO esta
@@ -188,6 +194,51 @@ struct GroupInviteOnboardingView: View {
         .dismissKeyboardOnTap()
     }
 
+    /// La tarjeta del grupo: lo que trae el enlace (lo mismo que enseña la web de invitación).
+    private var groupCard: some View {
+        VStack(spacing: DS.Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(groupColor)
+                    .frame(width: 72, height: 72) // A11Y-DT: decorative hero icon, fixed size
+
+                Image(systemName: groupIcon)
+                    .font(.system(size: 32)) // A11Y-DT: decorative icon inside circle
+                    .foregroundStyle(.white)
+            }
+            .glassEffect(.regular, in: Circle())
+            .accessibilityHidden(true)
+
+            VStack(spacing: DS.Spacing.xs) {
+                Text(cardGroupName)
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("invite_group_name")
+
+                Text(inviterLine)
+                    .font(DS.Typography.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("invite_inviter")
+
+                if let membersLine = linkMembersLine {
+                    Text(membersLine)
+                        .font(DS.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("invite_members")
+                }
+            }
+        }
+        .padding(DS.Spacing.xl)
+        .frame(maxWidth: .infinity)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("invite_group_card")
+    }
+
     // MARK: - Step 3: Pending Approval
 
     private var pendingApprovalStep: some View {
@@ -209,6 +260,9 @@ struct GroupInviteOnboardingView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DS.Spacing.lg)
             }
+
+            // L12-20 · el texto promete «Te avisaremos cuando te aprueben»: sin el permiso de avisos sería falso.
+            GroupNotificationsOptInCard()
 
             Spacer()
 
@@ -261,8 +315,57 @@ struct GroupInviteOnboardingView: View {
 
     // MARK: - Join handler (A3)
 
+    /// L12-17 · «Unirme» en la tarjeta sin cuenta o sin consentimiento: apunta el «sí» y el nombre en la invitación y
+    /// cierra la hoja para que la cadena siga. No escribe nada más: el alta y la unión corren al volver, donde corrían.
+    private func acceptGroupCard() {
+        guard let pendingJoinZone else { return }
+        let name = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !name.isEmpty { PendingJoinStore.updateDisplayName(name) }
+        PendingJoinStore.markGroupCardAccepted(zoneName: pendingJoinZone)
+        complete(.continueToAccount)
+    }
+
+    /// L12-17 · al volver de la cuenta y el consentimiento, la unión arranca sola: la persona ya dijo «Unirme» en la
+    /// tarjeta y no se le pide otra vez. El nombre es el que escribió allí. Solo dentro de su ventana
+    /// (`GroupInviteGroupFirstLogic.autoJoinWindow`): más tarde, la tarjeta vuelve con «Unirme» y «Más tarde».
+    private func joinIfGroupCardWasAccepted() {
+        guard !hasTappedJoin, let pendingJoinZone,
+              let entry = PendingJoinStore.entry(zoneName: pendingJoinZone) else { return }
+        // Cinturón del drenado de `ContentView`: si aun así la hoja sale con la tarjeta ya aceptada y la cuenta o el
+        // consentimiento pendientes, se cierra y la cadena sigue, en vez de pedir «Unirme» dos veces.
+        if GroupInviteGroupFirstLogic.skipsSheetToContinueChain(
+            hasAcceptedGroupCard: entry.hasAcceptedGroupCard,
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted) {
+            complete(.continueToAccount)
+            return
+        }
+        guard
+              GroupInviteGroupFirstLogic.joinsOnAppear(
+                  groupCardAcceptedAt: entry.groupCardAcceptedAt,
+                  hasSession: CloudAuthService.shared.hasSession,
+                  isConsented: GroupsConsentState.isAccepted)
+        else { return }
+        if let typed = entry.displayName?.trimmingCharacters(in: .whitespacesAndNewlines), !typed.isEmpty {
+            userName = typed
+        }
+        handleJoinTap()
+    }
+
+    /// Qué hace «Unirme» ahora mismo (L12-17). Se lee vivo: la sesión y el consentimiento pueden cambiar con la hoja puesta.
+    private var joinTapRoute: GroupInviteGroupFirstLogic.JoinTapRoute {
+        GroupInviteGroupFirstLogic.joinTapRoute(
+            hasPendingZone: pendingJoinZone != nil,
+            hasSession: CloudAuthService.shared.hasSession,
+            isConsented: GroupsConsentState.isAccepted)
+    }
+
     private func handleJoinTap() {
         guard !hasTappedJoin else { return }
+        if joinTapRoute == .continueToAccount {
+            acceptGroupCard()
+            return
+        }
         // **La bifurcación entera del arreglo está en esta línea, y no en lo que se ve.** La hoja es la
         // misma para todos; lo que su CTA ESCRIBE no puede serlo: el alta completa, corrida sobre una
         // cuenta que ya existe, le pisa preferencias vivas — y las tres peores (`userName`,
@@ -316,7 +419,7 @@ struct GroupInviteOnboardingView: View {
         switch outcome {
         case .joined, .pendingApproval:
             NudgeService.shared.recordGroupJoinIfNeeded()
-        case .closedWhileSyncing, .abandonedAfterFailure, .declined:
+        case .closedWhileSyncing, .abandonedAfterFailure, .declined, .continueToAccount:
             break
         }
         // El tracker se consume al confirmar unión o al abandonar sin recovery;
@@ -335,7 +438,9 @@ struct GroupInviteOnboardingView: View {
         // **Quien dice «más tarde» no va a Grupos.** No se ha unido a nada: mandarle al tab sería
         // llevarle justo a donde no quiso entrar, y en un dominio que puede no haber abierto nunca. Vuelve
         // a lo que estaba haciendo, que es lo que pidió.
-        guard outcome != .declined else { return }
+        //
+        // L12-17 · quien sigue a la cuenta tampoco: la hoja vuelve en cuanto la tenga.
+        guard outcome != .declined, outcome != .continueToAccount else { return }
         // Navigate to groups after dismiss (UX delay for animation, not sync)
         Task {
             try? await Task.sleep(for: .milliseconds(300))
@@ -453,26 +558,98 @@ struct GroupInviteOnboardingView: View {
 
     // MARK: - Step: Completion (SOLO con member confirmado activo)
 
+    /// L12-18 (decisión de Jürgen del 18-oct, opción B): a qué grupo entraste, con quién, y qué hacer ahora. Aquí se pide
+    /// el permiso de los avisos (L12-8).
     private var completionStep: some View {
-        VStack(spacing: DS.Spacing.xl) {
+        let joined = joinedGroup
+        return VStack(spacing: DS.Spacing.xl) {
             Spacer()
 
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 56)) // A11Y-DT: decorative hero icon, fixed size
                 .foregroundStyle(DS.Semantic.successForeground)
+                .accessibilityHidden(true)
 
-            Text(L10n.Groups.Invite.ready)
-                .font(DS.Typography.title2)
-                .multilineTextAlignment(.center)
-                .accessibilityIdentifier("invite_ready_title")
+            VStack(spacing: DS.Spacing.sm) {
+                Text(readyTitle(joined))
+                    .font(DS.Typography.title2)
+                    .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("invite_ready_title")
+
+                if let membersLine = joinedMembersLine(joined) {
+                    Text(membersLine)
+                        .font(DS.Typography.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("invite_ready_members")
+                }
+            }
+
+            GroupNotificationsOptInCard()
 
             Spacer()
 
-            YalaPrimaryButton(L10n.Groups.Invite.goToGroup) {
-                complete(.joined)
+            VStack(spacing: DS.Spacing.md) {
+                YalaPrimaryButton(L10n.UXD14.readyAddExpense, icon: "plus") {
+                    finishJoined(addExpense: true, group: joined)
+                }
+                .accessibilityIdentifier("invite_ready_add_expense")
+
+                YalaSecondaryButton(L10n.UXD14.readyViewGroup) {
+                    finishJoined(addExpense: false, group: joined)
+                }
+                .accessibilityIdentifier("invite_ready_view_group")
             }
             .padding(.bottom, DS.Spacing.xxl)
         }
+    }
+
+    /// El grupo al que se acaba de entrar, ya en el teléfono (la fase `.active` exige el miembro propio bajado).
+    private var joinedGroup: SplitGroup? {
+        guard let zone = tracker.zoneName ?? pendingJoinZone else { return nil }
+        return GroupService.shared.group(for: zone)
+    }
+
+    private func readyTitle(_ group: SplitGroup?) -> String {
+        if let name = group?.name, !name.isEmpty { return L10n.UXD14.readyTitle(name) }
+        if let name = inviteMetadata?.name, !name.isEmpty { return L10n.UXD14.readyTitle(name) }
+        return L10n.UXD14.readyTitleNoName
+    }
+
+    /// «Con Ana y Beto»: los demás miembros activos del grupo; si aún no bajaron, los que traía el enlace.
+    private func joinedMembersLine(_ group: SplitGroup?) -> String? {
+        var names: [String] = []
+        if let group {
+            do {
+                let currentUserID = CloudAuthService.shared.currentUserID?.lowercased()
+                names = try GroupService.shared.fetchMembers(for: group)
+                    .filter { member in
+                        let isMe = member.isCurrentUser
+                            || (currentUserID != nil && member.userID?.lowercased() == currentUserID)
+                        return member.isActive && !isMe
+                    }
+                    .map(\.displayName)
+            } catch {
+                #if DEBUG
+                print("GroupInviteOnboardingView: Error fetching joined members: \(error)")
+                #endif
+            }
+        }
+        if names.isEmpty { names = inviteMetadata?.members ?? [] }
+        let cleaned = names.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        guard !cleaned.isEmpty else { return nil }
+        return L10n.UXD14.readyWith(L10n.UXD14.names(cleaned))
+    }
+
+    /// «Apuntar un gasto» abre el formulario de gasto con ESTE grupo; «Ver el grupo», su detalle. Los dos dejan el destino
+    /// en la ventana y cierran como siempre: lo aplica el `onDismiss` del cover y lo consume la pestaña Grupos.
+    private func finishJoined(addExpense: Bool, group: SplitGroup?) {
+        if let group {
+            navigation.pendingInviteFollowUp = addExpense ? .addExpense(groupID: group.id) : .viewGroup(groupID: group.id)
+        }
+        complete(.joined)
     }
 
     // MARK: - Setup del CTA · la persona que YA tiene cuenta
@@ -640,10 +817,27 @@ struct GroupInviteOnboardingView: View {
         return "person.2.fill"
     }
 
-    private var welcomeTitle: String {
-        if let name = inviteMetadata?.name, !name.isEmpty {
-            return L10n.Groups.Invite.welcomeWithGroup(name)
-        }
+    /// El nombre del grupo en la tarjeta; sin él, «Te invitaron a un grupo» como antes.
+    private var cardGroupName: String {
+        if let name = inviteMetadata?.name, !name.isEmpty { return name }
         return L10n.Groups.Invite.welcome
+    }
+
+    /// «Lucía te invita», o «Te invitaron a este grupo» si el enlace no lo dice.
+    private var inviterLine: String {
+        if let inviter = inviteMetadata?.inviter?.trimmingCharacters(in: .whitespacesAndNewlines), !inviter.isEmpty {
+            return L10n.UXD14.invitedBy(inviter)
+        }
+        return L10n.UXD14.invitedFallback
+    }
+
+    /// «Con Ana y Beto»: quién está, según el enlace, sin repetir a quien invita (ya va en su línea).
+    private var linkMembersLine: String? {
+        let inviter = inviteMetadata?.inviter?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let names = (inviteMetadata?.members ?? [])
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && $0 != inviter }
+        guard !names.isEmpty else { return nil }
+        return L10n.UXD14.readyWith(L10n.UXD14.names(names))
     }
 }

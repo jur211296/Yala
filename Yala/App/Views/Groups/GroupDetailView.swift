@@ -149,6 +149,21 @@ struct GroupDetailView: View {
                     PendingApprovalBanner(state: .rejected, onLeave: { discardRejectedGroup() })
                 }
 
+                // L19-1 · alguien pidió unirse: se ve sin abrir Miembros, y «Revisar» lleva a su tarjeta. Solo para quien
+                // puede aceptar, y no en un grupo congelado (ahí aprobar no llega a ningún sitio).
+                if let requestTitle = GroupJoinRequestsLogic.bannerTitle(
+                    pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                    canReview: viewModel.isCurrentUserAdmin && !group.isMigratedFrozen
+                ) {
+                    GroupJoinRequestsBanner(
+                        pendingNames: viewModel.pendingApprovalMembers.map(\.resolvedDisplayName),
+                        title: requestTitle,
+                        onReview: { viewModel.activeSheet = .members }
+                    )
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.sm)
+                }
+
                 tabContent
                     .yalaSkeleton(!viewModel.isReady)
             }
@@ -237,7 +252,12 @@ struct GroupDetailView: View {
         }
         .sheet(isPresented: $showShareSheet) {
             if let url = viewModel.shareURL {
-                ActivityView(activityItems: [url])
+                // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
+                ActivityView(activityItems: [GroupInviteShareMessage.text(
+                    inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+                    defaultName: L10n.Profile.defaultName,
+                    groupName: group.name,
+                    url: url)])
                 }
         }
         .alert(L10n.Common.error, isPresented: $viewModel.showActionError) {

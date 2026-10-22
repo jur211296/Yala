@@ -3432,7 +3432,7 @@
 "groups.invite.ready" = "Helemaal klaar!";
 "groups.invite.goToGroup" = "Naar groep";
 "groups.invite.linkInvalidTitle" = "Ongeldige link";
-"groups.invite.linkInvalidDetail" = "Deze link is niet meer geldig of is verlopen. Vraag de admin een nieuwe te genereren.";
+"groups.invite.linkInvalidDetail" = "Deze link is niet meer geldig of is verlopen. Vraag degene die je heeft uitgenodigd om een nieuwe link.";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Probleem met de groep";
@@ -4038,7 +4038,7 @@
 "groups.member.rejectConfirm" = "Het verzoek van %@ afwijzen? Diegene kan opnieuw toegang vragen met een andere link.";
 "groups.member.pendingRequestsSection" = "Openstaande verzoeken";
 "groups.invite.waitingApproval.title" = "Verzoek verstuurd";
-"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. Ondertussen zie je de groep in je lijst, maar je kunt hem nog niet openen. Open Yala straks nog eens om te zien of het gelukt is.";
+"groups.invite.waitingApproval.body" = "De groepsbeheerder moet je goedkeuren voordat je kunt meedoen. Ondertussen zie je de groep in je lijst, maar je kunt hem nog niet openen. We laten het je weten zodra je bent goedgekeurd.";
 "groups.invite.waitingApproval.banner" = "Wacht op goedkeuring van de beheerder";
 "groups.invite.rejected.title" = "Verzoek afgewezen";
 "groups.invite.rejected.body" = "De beheerder heeft je verzoek niet goedgekeurd. Vraag een nieuwe link als je het opnieuw wilt proberen.";
@@ -4473,10 +4473,10 @@
 "groups.openingBalance.emptyState" = "Nog geen beginsaldi.";
 "groups.openingBalance.rollupOwes" = "is schuldig";
 "groups.openingBalance.rollupOwed" = "heeft tegoed";
-"groups.openingBalance.approvalPromptTitle" = "Begint %@ met een saldo?";
-"groups.openingBalance.approvalPromptBody" = "Leg vast wat iemand schuldig is of tegoed heeft.";
-"groups.openingBalance.approvalPromptAdd" = "Beginsaldo toevoegen";
-"groups.openingBalance.approvalPromptSkip" = "Niet nu";
+"groups.openingBalance.approvalPromptTitle" = "Had %@ al iets openstaan met de groep?";
+"groups.openingBalance.approvalPromptBody" = "Was diegene vóór het meedoen al iets schuldig, of had die nog iets tegoed? Voeg het toe zodat de saldi kloppen.";
+"groups.openingBalance.approvalPromptAdd" = "Ja, toevoegen";
+"groups.openingBalance.approvalPromptSkip" = "Nee, begin bij nul";
 "groups.openingBalance.errorNotOwner" = "Alleen de maker van de groep kan beginsaldi beheren.";
 "groups.openingBalance.errorSameMember" = "Kies twee verschillende leden.";
 
@@ -5452,7 +5452,7 @@
 "groups.card.pendingNotice.title" = "Wacht op goedkeuring";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "De groepsbeheerder heeft je verzoek nog niet goedgekeurd. Zodra dat gebeurt, kun je de groep openen en de uitgaven bekijken. Kom straks nog eens terug.";
+"groups.card.pendingNotice.body" = "De groepsbeheerder heeft je verzoek nog niet goedgekeurd. Zodra dat gebeurt, kun je de groep openen en de uitgaven bekijken. We laten het je weten zodra je bent goedgekeurd.";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "Rekeningsaldo";
@@ -5833,7 +5833,7 @@
 "welcome.groups.inviteNeutralTitle" = "Voor je meedoet, wordt deze telefoon leeggemaakt";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "Hier staan gegevens opgeslagen die synchroniseren met een iCloud. Zodat jouw groepsuitgaven daar niet terechtkomen, verwijderen we ze van deze telefoon: de kopie in iCloud blijft ongemoeid. Yala start opnieuw op en je gaat verder met je uitnodiging.";
+"welcome.groups.inviteNeutralBody" = "Hier staan gegevens opgeslagen die synchroniseren met een iCloud-account. Zodat jouw groepsuitgaven daar niet terechtkomen, verwijderen we ze van deze telefoon: de kopie in iCloud blijft ongemoeid. Yala start opnieuw op en je gaat verder met je uitnodiging.";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
 "welcome.groups.inviteNeutralBodyNoBackup" = "Hier staan gegevens opgeslagen en we konden geen kopie in iCloud vinden. Zodat jouw groepsuitgaven er niet mee vermengd raken, moeten ze van deze telefoon verwijderd worden, en ze zijn niet terug te halen. Yala start opnieuw op en je gaat verder met je uitnodiging.";
@@ -7959,3 +7959,93 @@
 
 /* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
 "groups.d13.expense.nowNotice" = "Voer nu de uitgave in";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "Groepsmeldingen";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "We laten het je weten als iemand een uitgave toevoegt of je betaalt.";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "Meldingen aanzetten";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "Meldingen staan aan";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Meldingen van Yala staan uit in Instellingen.";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@ nodigt je uit voor ‘%2$@’ in Yala om uitgaven te delen. Tik op de link om mee te doen; heb je Yala nog niet, download het dan en tik daarna nog een keer op de link.";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "Je bent uitgenodigd voor ‘%@’ in Yala om uitgaven te delen. Tik op de link om mee te doen; heb je Yala nog niet, download het dan en tik daarna nog een keer op de link.";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@ nodigt je uit";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "Je bent uitgenodigd voor deze groep";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "Daarna kies je met welk account je inlogt.";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "Je zit nu in ‘%@’";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "Je zit nu in de groep";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "Met %@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "Uitgave toevoegen";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "Groep bekijken";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "Je groep is onderweg";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "Hij verschijnt hier zodra hij klaar is.";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "Je bent goedgekeurd: je kunt nu de uitgaven zien en die van jou toevoegen.";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@ wil meedoen";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "Meerdere mensen willen meedoen";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "Accepteer het verzoek zodat diegene uitgaven kan zien en toevoegen.";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "Accepteer de verzoeken zodat ze uitgaven kunnen zien en toevoegen.";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "Bekijken";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "Willen meedoen (%d)";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "Heeft vandaag je uitnodigingslink geopend";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "Heeft gisteren je uitnodigingslink geopend";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "Heeft op %@ je uitnodigingslink geopend";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "Als je accepteert, ziet diegene de uitgaven van de groep en kan die eigen uitgaven toevoegen. Als je weigert, ziet diegene niets.";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "Accepteren";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "%@ toelaten tot de groep?";

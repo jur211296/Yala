@@ -71,6 +71,9 @@ struct GroupCreatedInviteSheet: View {
                     }
                     .accessibilityIdentifier("group_created_invite")
 
+                    // L12-8 · el permiso de los avisos se pide aquí, con su porqué, y no en una alerta suelta en la lista.
+                    GroupNotificationsOptInCard()
+
                     Button(L10n.UXL12.createdLater) { dismiss() }
                         .font(DS.Typography.label)
                         .foregroundStyle(.secondary)
@@ -91,7 +94,12 @@ struct GroupCreatedInviteSheet: View {
             // reintentar o dejarlo para más tarde.
             if didShare { dismiss() }
         }) { item in
-            ActivityView(activityItems: [item.url]) { completed in
+            // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
+            ActivityView(activityItems: [GroupInviteShareMessage.text(
+                inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+                defaultName: L10n.Profile.defaultName,
+                groupName: group.name,
+                url: item.url)]) { completed in
                 if completed { didShare = true }
             }
         }

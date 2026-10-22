@@ -3432,7 +3432,7 @@
 "groups.invite.ready" = "準備完了！";
 "groups.invite.goToGroup" = "グループへ";
 "groups.invite.linkInvalidTitle" = "無効なリンク";
-"groups.invite.linkInvalidDetail" = "このリンクは無効または期限切れです。管理者に新しいリンクを発行してもらってください。";
+"groups.invite.linkInvalidDetail" = "このリンクは無効または期限切れです。招待してくれた人に新しいリンクをもらってください。";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "グループに問題が発生しました";
@@ -4038,7 +4038,7 @@
 "groups.member.rejectConfirm" = "%@ のリクエストを拒否しますか？別のリンクで再度アクセスをリクエストできます。";
 "groups.member.pendingRequestsSection" = "保留中のリクエスト";
 "groups.invite.waitingApproval.title" = "リクエストを送信しました";
-"groups.invite.waitingApproval.body" = "グループの管理者が承認するまでは参加できません。それまではリストにグループが表示されますが、まだ開くことはできません。しばらくしてからYalaをもう一度開いて、承認されたか確認してください。";
+"groups.invite.waitingApproval.body" = "グループの管理者が承認するまでは参加できません。それまではリストにグループが表示されますが、まだ開くことはできません。承認されたらお知らせします。";
 "groups.invite.waitingApproval.banner" = "管理者の承認を待っています";
 "groups.invite.rejected.title" = "リクエストが拒否されました";
 "groups.invite.rejected.body" = "管理者がリクエストを承認しませんでした。再度試したい場合は、新しいリンクを依頼してください。";
@@ -4473,10 +4473,10 @@
 "groups.openingBalance.emptyState" = "まだ開始残高はありません。";
 "groups.openingBalance.rollupOwes" = "借りています";
 "groups.openingBalance.rollupOwed" = "受け取ります";
-"groups.openingBalance.approvalPromptTitle" = "%@さんは残高ありで参加しますか？";
-"groups.openingBalance.approvalPromptBody" = "以前からの貸し借りを記録します。";
-"groups.openingBalance.approvalPromptAdd" = "開始残高を追加";
-"groups.openingBalance.approvalPromptSkip" = "後で";
+"groups.openingBalance.approvalPromptTitle" = "%@さんには、グループとの未精算の貸し借りがありましたか？";
+"groups.openingBalance.approvalPromptBody" = "参加前から貸し借りがあった場合は、残高が合うように記録してください。";
+"groups.openingBalance.approvalPromptAdd" = "はい、記録する";
+"groups.openingBalance.approvalPromptSkip" = "いいえ、ゼロから始める";
 "groups.openingBalance.errorNotOwner" = "グループの作成者のみが開始残高を管理できます。";
 "groups.openingBalance.errorSameMember" = "異なるメンバーを2人選んでください。";
 
@@ -5452,7 +5452,7 @@
 "groups.card.pendingNotice.title" = "承認待ち";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "グループの管理者がまだリクエストを承認していません。承認されると、グループを開いて支出を見られるようになります。しばらくしてからもう一度確認してください。";
+"groups.card.pendingNotice.body" = "グループの管理者がまだリクエストを承認していません。承認されると、グループを開いて支出を見られるようになります。承認されたらお知らせします。";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "口座残高";
@@ -5833,7 +5833,7 @@
 "welcome.groups.inviteNeutralTitle" = "参加する前に、この端末を空にします";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "この端末には、あるiCloudと同期しているデータが保存されています。あなたのグループの支出がそこに届かないよう、この端末からは削除します。iCloud上のコピーはそのまま残ります。Yalaを再起動したあと、招待の続きに進みます。";
+"welcome.groups.inviteNeutralBody" = "この端末には、あるiCloudアカウントと同期しているデータが保存されています。あなたのグループの支出がそこに届かないよう、この端末からは削除します。iCloud上のコピーはそのまま残ります。Yalaを再起動したあと、招待の続きに進みます。";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
 "welcome.groups.inviteNeutralBodyNoBackup" = "この端末にはデータが保存されていますが、iCloudにコピーは見つかりませんでした。あなたのグループの支出が混ざらないよう、この端末から削除する必要があり、元に戻すことはできません。Yalaを再起動したあと、招待の続きに進みます。";
@@ -7959,3 +7959,93 @@
 
 /* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
 "groups.d13.expense.nowNotice" = "では支出を入力しましょう";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "グループの通知";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "誰かが支出を記録したり、あなたに支払ったりしたときにお知らせします。";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "通知をオンにする";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "通知はオンです";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Yalaの通知は設定でオフになっています。";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@さんがYalaの「%2$@」に招待しています。費用を割り勘できます。リンクをタップして参加してください。Yalaをお持ちでない場合は、ダウンロードしてからもう一度リンクをタップしてください。";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "Yalaの「%@」に招待されています。費用を割り勘できます。リンクをタップして参加してください。Yalaをお持ちでない場合は、ダウンロードしてからもう一度リンクをタップしてください。";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@さんからの招待";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "このグループに招待されています";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "次に、サインインするアカウントを選びます。";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "「%@」に参加しました";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "グループに参加しました";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "メンバー：%@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "支出を記録";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "グループを見る";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "グループを準備しています";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "準備ができしだい、ここに表示されます。";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "承認されました。支出を確認して、自分の分を記録できます。";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@さんが参加を希望しています";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "複数の人が参加を希望しています";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "承認すると、支出の確認と記録ができるようになります。";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "承認すると、支出の確認と記録ができるようになります。";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "確認";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "参加希望（%d）";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "今日、招待リンクを開きました";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "昨日、招待リンクを開きました";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "%@に招待リンクを開きました";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "承認すると、グループの支出を見て自分の分を記録できるようになります。拒否すると、何も表示されません。";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "承認";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "%@さんをグループに承認しますか？";

@@ -763,6 +763,15 @@ final class UITestHooks {
     /// congelar la fase del GroupJoinIntentTracker y testear cada step determinista.
     nonisolated static var startAtInviteOnboarding: Bool { hasArg("-uitest-invite-onboarding") }
 
+    /// `-uitest-invite-branded` (con `-uitest-invite-onboarding`): la hoja recibe la marca de un enlace real —«Depa
+    /// Miraflores», «Lucía te invita», Ana y Beto— para ver la tarjeta del grupo (L12-17) y «Ya estás en «X»» (L12-18) sin
+    /// pasar por el enlace.
+    nonisolated static var inviteBranded: Bool { hasArg("-uitest-invite-branded") }
+
+    /// `-uitest-opening-balance-prompt`: al abrir Miembros sale la pregunta que sigue a aceptar a alguien («¿Carla ya
+    /// tenía cuentas pendientes con el grupo?», L19-2). Aceptar de verdad pide el servidor, que en el simulador no está.
+    nonisolated static var openingBalancePrompt: Bool { hasArg("-uitest-opening-balance-prompt") }
+
     /// Valor de `-uitest-join-phase <waitingForZone|creatingMember|pendingApproval|active|failed>`:
     /// congela la fase del tracker para los XCUI del onboarding de invitación.
     nonisolated static var joinPhaseOverride: String? {

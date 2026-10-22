@@ -29,8 +29,6 @@ struct GroupsContainerView: View {
     @State private var isPresentingSettings = false
     @State private var isPresentingGroupsSettings = false
     @Environment(AppPreferences.self) private var appPreferences
-    @State private var showNotificationPrompt = false
-    @State private var showPermissionDeniedAlert = false
     @State private var showNudgeBanner = false
     @State private var showGroupsOnboarding = false
     // D2 (§3.3.3): banner one-shot de re-entrada tras "Cerrar sesión de grupos". Se arma con
@@ -246,19 +244,13 @@ struct GroupsContainerView: View {
             }) {
                 GroupFormView(group: nil, onCreated: { receiveCreatedGroup($0) })
             }
-            .sheet(item: $groupReadyToInvite, onDismiss: {
-                // El aviso de notificaciones de grupo esperó a esta hoja (salta con el primer grupo): ahora sí.
-                maybeShowGroupsNotificationPrompt()
-            }) { group in
+            // L12-8 · los avisos de grupo se piden DENTRO de esta hoja (y de «Ya estás en «X»»), con su porqué: ya no hay
+            // alerta suelta en la lista al aparecer el primer grupo.
+            .sheet(item: $groupReadyToInvite) { group in
                 GroupCreatedInviteSheet(group: group, members: viewModel.activeMembers(for: group))
                     .yalaSheetDetents([.medium])
             }
-            .sheet(item: $expenseComposerPayload, onDismiss: {
-                // El prompt de notificaciones se difirió para no colisionar con este
-                // composer (dos modales simultáneos → el sheet no llega a presentarse).
-                // Reevaluarlo ahora que el composer cerró.
-                maybeShowGroupsNotificationPrompt()
-            }) { payload in
+            .sheet(item: $expenseComposerPayload) { payload in
                 GroupExpenseComposerView(
                     groups: payload.groups,
                     initialGroup: payload.initialGroup,
@@ -367,9 +359,6 @@ struct GroupsContainerView: View {
                 // Sync remoto: debounced para coalescer ráfagas de cambios de CloudKit.
                 viewModel.reloadAndRecalculate()
             }
-            .onChange(of: viewModel.activeGroups.count) { _, _ in
-                maybeShowGroupsNotificationPrompt()
-            }
             // Deep link: open a specific group detail once the group list is available.
             .onChange(of: navigation.pendingGroupID, initial: true) { _, _ in
                 openPendingGroupIfAvailable()
@@ -389,27 +378,6 @@ struct GroupsContainerView: View {
                 openExpenseComposerIfRequested()
                 presentWelcomeCreatedGroupInviteIfPending()
                 presentUITestCreatedSheetIfRequested()
-            }
-            .alert(L10n.Groups.Notifications.promptTitle, isPresented: $showNotificationPrompt) {
-                Button(L10n.Groups.Notifications.promptEnable) {
-                    appPreferences.hasSeenGroupsNotificationPrompt = true
-                    activateGroupsNotification()
-                }
-                Button(L10n.Action.cancel, role: .cancel) {
-                    appPreferences.hasSeenGroupsNotificationPrompt = true
-                }
-            } message: {
-                Text(L10n.Groups.Notifications.promptMessage)
-            }
-            .alert(L10n.Notifications.permissionRequired, isPresented: $showPermissionDeniedAlert) {
-                Button(L10n.Notifications.openSettings) {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        openURL(url)
-                    }
-                }
-                Button(L10n.Action.cancel, role: .cancel) {}
-            } message: {
-                Text(L10n.Notifications.permissionMessage)
             }
             .alert(
                 L10n.Groups.Card.leaveGroupAlertTitle,
@@ -525,6 +493,17 @@ struct GroupsContainerView: View {
             hasSession: CloudAuthService.shared.hasSession,
             isConsented: GroupsConsentState.isAccepted
         )
+        // L12-19 · con una unión en curso la pestaña no ofrece crear otro grupo: dice que el suyo está en camino, sin pasos
+        // ni botón, y el chip de arriba cuenta en qué punto va. Gana a los cinco estados de abajo.
+        if GroupsJoinOnTheWayLogic.showsOnTheWay(phase: GroupJoinIntentTracker.shared.phase) {
+            GroupsEmptyStepsCard(
+                card: GroupsEmptyStepsLogic.Card(currentStep: nil, action: .createGroup),
+                title: L10n.UXD14.onTheWayTitle,
+                message: L10n.UXD14.onTheWayMessage,
+                actionTitle: nil
+            ) {}
+                .accessibilityIdentifier("groups_empty_state_on_the_way")
+        } else {
         switch kind {
         case .standard:
             let base = GroupsEmptyStepsCard(
@@ -573,6 +552,7 @@ struct GroupsContainerView: View {
                 actionTitle: L10n.Groups.Empty.NeedsConsent.action
             ) { requestGroupsConsent() }
                 .accessibilityIdentifier("groups_empty_state_consent")
+        }
         }
     }
 
@@ -685,11 +665,32 @@ struct GroupsContainerView: View {
     /// al llegar el primero — abriendo el composer tras crear el primer grupo.
     private func openExpenseComposerIfRequested() {
         guard navigation.pendingNewGroupExpense else { return }
-        let eligibles = viewModel.eligibleGroupsForExpense()
-        guard let first = eligibles.first else { return }
+        var eligibles = viewModel.eligibleGroupsForExpense()
 
+        // L12-18 · «Apuntar un gasto» al entrar en un grupo pide ESE grupo. La caché de miembros puede ir por detrás de la
+        // aprobación que acaba de bajar (la recarga es diferida): una recarga síncrona antes de decidir. Sigue sin ser
+        // elegible → si no admitirá gastos nunca (archivado, congelado), se retira la petición; si no, se espera al
+        // siguiente intento en vez de abrir el formulario en otro grupo.
+        var wantedGroup: SplitGroup?
+        if let wanted = navigation.pendingNewGroupExpenseGroupID {
+            if !eligibles.contains(where: { $0.id == wanted }) {
+                viewModel.loadData()
+                eligibles = viewModel.eligibleGroupsForExpense()
+            }
+            guard let match = eligibles.first(where: { $0.id == wanted }) else {
+                if let known = viewModel.groups.first(where: { $0.id == wanted }),
+                   known.isArchived || known.isMigratedFrozen {
+                    navigation.pendingNewGroupExpense = false
+                    navigation.pendingNewGroupExpenseGroupID = nil
+                }
+                return
+            }
+            wantedGroup = match
+        }
+        guard let initial = wantedGroup ?? eligibles.first else { return }
         navigation.pendingNewGroupExpense = false
-        expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: first)
+        navigation.pendingNewGroupExpenseGroupID = nil
+        expenseComposerPayload = ExpenseComposerPayload(groups: eligibles, initialGroup: initial)
     }
 
     /// G3 · abre el formulario de grupo pedido por la rama organizador del Welcome. **Se consume al
@@ -701,27 +702,6 @@ struct GroupsContainerView: View {
         guard navigation.pendingNewGroupForm else { return }
         navigation.pendingNewGroupForm = false
         Task { await requestCreateGroup() }
-    }
-
-    /// Presenta el prompt de notificaciones de grupos, SALVO que un composer del FAB del
-    /// Panel esté pendiente o presentándose: SwiftUI no presenta dos modales a la vez, y el
-    /// alert ganaría dejando el sheet del composer sin mostrarse. En ese caso el prompt
-    /// espera al `onDismiss` del composer. La guarda doble (`pendingNewGroupExpense` +
-    /// `expenseComposerPayload`) cubre cualquier orden entre los `onChange`.
-    private func maybeShowGroupsNotificationPrompt() {
-        guard !appPreferences.hasSeenGroupsNotificationPrompt,
-              !viewModel.activeGroups.isEmpty,
-              !navigation.pendingNewGroupExpense,
-              expenseComposerPayload == nil,
-              // L12-10: con un grupo recién creado la hoja «está listo» va primero; el aviso espera a su `onDismiss`.
-              groupAwaitingInviteSheet == nil,
-              groupReadyToInvite == nil,
-              // L12-12: lo mismo con el grupo que creó el formulario de la bienvenida, y nada mientras ese formulario
-              // siga encima (la pestaña ya está montada debajo).
-              navigation.pendingCreatedGroupInviteID == nil,
-              !navigation.isWelcomeGroupFormOpen
-        else { return }
-        showNotificationPrompt = true
     }
 
     /// L12-10 · el formulario acaba de crear un grupo. Lo normal es que siga abierto (el grupo espera a su `onDismiss`);
@@ -791,35 +771,6 @@ struct GroupsContainerView: View {
             }
         case .dismiss:
             break
-        }
-    }
-
-    private func activateGroupsNotification() {
-        // typeRaw matches NotificationType.groups
-        let descriptor = FetchDescriptor<NotificationItem>(
-            predicate: #Predicate { $0.typeRaw == "groups" }
-        )
-        do {
-            if let item = try modelContext.fetch(descriptor).first {
-                item.isActive = true
-                try modelContext.save()
-            }
-        } catch {
-            #if DEBUG
-            print("GroupsContainerView: Error activating groups notification: \(error)")
-            #endif
-        }
-
-        Task { @MainActor in
-            let status = await NotificationService.shared.checkPermissionStatus()
-            switch status {
-            case .notDetermined:
-                _ = await NotificationService.shared.requestPermission()
-            case .denied:
-                showPermissionDeniedAlert = true
-            default:
-                break
-            }
         }
     }
 
