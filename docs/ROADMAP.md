@@ -73,7 +73,7 @@ Ninguna lleva fecha. Cada una sale cuando cumple su criterio de salida, y el roa
   sesión y modo solo grupos), 05 (nube e iCloud), 06 (Yala Pro), 09 (Siri, Atajos y Apple Pay), 10 (Flujo de caja y
   reportes) y 11 (gastos de grupo y saldar), además de Siri gratis con el modelo del iPhone.
 - *En PR:* el 07 (Yala IA, #571), el 08 (widgets, iPad y teclado, #576) y el 12 (administrar grupos, #588).
-- *Falta decidirlo y construirlo:* el formulario de registro (lote 2, 22 cards). Es la pantalla más usada.
+- *Decidido el 21-oct, falta construirlo:* el formulario de registro (lote 2, 22 cards y 3 de backlog, en dos sesiones). Es la pantalla más usada.
 - *Falta construirlo:* lo que queda de Grupos I (L12) y de Ajustes (L16), y el resto de lo que está en «lista para lanzar».
 - *Espera a Jürgen:* 36 cards en QA y las decisiones de pantalla en «espera decisión».
 
