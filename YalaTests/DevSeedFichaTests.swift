@@ -74,6 +74,64 @@ struct DevSeedFichaTests {
         #expect(try paid(L10n.DevSeed.Ficha.expenseLocalMeal, context) == 360)
     }
 
+    // MARK: - Material público (`-uitest-seed-marketing`): los grupos de casa
+
+    @Test func createFicha_casa_usd_isTheSharedApartmentWithoutTrips() throws {
+        let context = try makeTestContext()
+        DevSeedGroups.createFicha(in: context, mainCurrency: "USD", casa: true)
+
+        let nombres = DevSeedGroups.FichaCasa.textos(for: AppLocale.current)
+        let grupos = try context.fetch(FetchDescriptor<SplitGroup>())
+        #expect(Set(grupos.map(\.name)) == [nombres.groupHome, nombres.groupOffice], "Sin el viaje: \(grupos.map(\.name))")
+        #expect(!grupos.contains { $0.iconName == "airplane" })
+        let nets = try myNets(inGroupNamed: nombres.groupHome, context)
+        #expect(Set(nets.keys) == ["USD"], "Todo en la divisa principal, sin la mitad en euros del viaje: \(nets)")
+        #expect(abs((nets["USD"] ?? 0) - 190) < 0.01, "Te deben $190.00, el mismo balance de la lámina: \(nets)")
+        #expect(try paid(nombres.groceries, context) == 120)
+        #expect(try paid(nombres.rent, context) == 600)
+    }
+
+    @Test func createFicha_casa_brl_isDoubledInReais() throws {
+        let context = try makeTestContext()
+        DevSeedGroups.createFicha(in: context, mainCurrency: "BRL", casa: true)
+
+        let nets = try myNets(inGroupNamed: DevSeedGroups.FichaCasa.textos(for: AppLocale.current).groupHome, context)
+        #expect(Set(nets.keys) == ["BRL"], "\(nets)")
+        #expect(abs((nets["BRL"] ?? 0) - 380) < 0.01, "Te devem R$ 380,00: \(nets)")
+    }
+
+    @Test(arguments: [("es-419", "Depa compartido", "Mascota"), ("es-PE", "Depa compartido", "Mascota"),
+                      ("pt-BR", "Apê compartilhado", "Pet"), ("en-US", "Shared apartment", "Pet"),
+                      ("ja-JP", "Shared apartment", "Pet")])
+    func fichaCasa_namesFollowTheAppLanguage(_ idioma: String, _ grupo: String, _ mascota: String) {
+        let t = DevSeedGroups.FichaCasa.textos(for: Locale(identifier: idioma))
+        #expect(t.groupHome == grupo)
+        #expect(t.budgetPet == mascota)
+        let todo = [t.groupHome, t.groupOffice, t.rent, t.internet, t.power, t.cleaning, t.groceries, t.officeLunch, t.officeCoffee]
+        #expect(!todo.contains { $0.localizedCaseInsensitiveContains("viaje") || $0.localizedCaseInsensitiveContains("trip")
+            || $0.localizedCaseInsensitiveContains("viagem") }, "El material público no enseña viajes: \(todo)")
+    }
+
+    @Test func budgets_publicMaterial_dropTheRealPetName() throws {
+        let context = try makeTestContext()
+        let account = Account(name: "Main", currencyCode: "PEN", colorHex: "#6366F1", iconName: "banknote", type: AccountType.checking.rawValue)
+        context.insert(account)
+        DevSeedBudgets.create(account: account, subcategoryLookup: [:], in: context, publicMaterial: true)
+
+        let nombres = try context.fetch(FetchDescriptor<Budget>()).map(\.name)
+        #expect(nombres.contains(DevSeedGroups.FichaCasa.textos(for: AppLocale.current).budgetPet), "\(nombres)")
+        #expect(!nombres.contains(L10n.DevSeed.budgetPet), "El nombre propio de la mascota no sale en material público: \(nombres)")
+    }
+
+    @Test func budgets_withoutPublicMaterial_keepTheRealistaNames() throws {
+        let context = try makeTestContext()
+        let account = Account(name: "Main", currencyCode: "PEN", colorHex: "#6366F1", iconName: "banknote", type: AccountType.checking.rawValue)
+        context.insert(account)
+        DevSeedBudgets.create(account: account, subcategoryLookup: [:], in: context, publicMaterial: false)
+
+        #expect(try context.fetch(FetchDescriptor<Budget>()).map(\.name).contains(L10n.DevSeed.budgetPet))
+    }
+
     // MARK: - Vida personal
 
     @Test func adaptPersonalData_usd_landsTheTravelAccountOnItsExactBalance() throws {

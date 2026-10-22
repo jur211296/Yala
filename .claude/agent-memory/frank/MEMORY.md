@@ -1,6 +1,8 @@
 # Memoria de Frank — Yala
 
 ## Cómo trabaja Jürgen
+- [QA en Yala Dev antes que prod](feedback_qa_en_yala_dev_antes_que_prod.md) — TestFlight solo para lo que exige producción (App Store, attest enforce, StoreKit).
+- [QA guiado 2.1 sigue abierto](project_qa_guiado_2_1_espera_tf19.md) — tras el TF19 espera t2q8, 840m, blqa, z81w y un TF20; tanda en Yala Dev.
 - [Sesión de rediseño](feedback_sesion_de_rediseno.md) — si el QA se vuelve producto, se sigue: acta en docs/sessions.
 - [Diseña en lienzo antes de construir](feedback_disena_en_lienzo_antes_de_construir.md) — cita vaga de UI: 3-4 propuestas, elige él; el alcance crece.
 - [«Creo que» no es aprobación](feedback_creo_que_no_es_aprobacion.md) — si no reconoce el componente, explicar antes de borrar.
@@ -28,6 +30,7 @@
 - [Auditoría UI: el glass se queda, se jerarquiza](feedback_auditoria_ui_glass_se_queda_jerarquiza.md) — rellenos sólidos, sin degradados ni brillos; instruir; adaptar; solo el lote.
 
 - [Capturas en el chat antes de preguntar](feedback_capturas_en_el_chat_antes_de_preguntar.md) — SendUserFile o artifact antes de la pregunta; la ruta no sirve.
+- [El guion se adapta al estado del teléfono](feedback_el_guion_se_adapta_al_estado_del_telefono.md) — QA guiado: re-deriva cada paso de lo que dejaron las pruebas previas; nunca literal.
 - [QA sin accesibilidad](feedback_qa_sin_accesibilidad.md) — en su QA manual no se piden pasos de texto grande ni VoiceOver: se dan por buenos.
 - [Planificar con él es iterar](feedback_planificar_con_el_es_iterar.md) — acepta lo recomendado y vuelve con ideas; re-pregunta «¿bueno?».
 - [Tablero: una tanda a la vez](feedback_tablero_una_tanda_a_la_vez.md) — dos tandas se pisan (409); ajustes en pasada final.

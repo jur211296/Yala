@@ -9,6 +9,9 @@ source "$(cd "$(dirname "$0")/.." && pwd)/comun.sh" "$1"
 APARATO="${2:?Falta iphone o ipad}"; shift 2
 U="$(udid "$APARATO")"
 SEMILLA=(-uitest-reset -uitest-seed ficha)
+# YALA_FICHA_MARKETING=1: material público de lanzamiento, con los grupos de casa en vez de los viajes y sin nombres
+# propios (`-uitest-seed-marketing`, ver DevSeedGroups.FichaCasa). Solo cuenta al sembrar.
+[ "${YALA_FICHA_MARKETING:-}" = 1 ] && SEMILLA+=(-uitest-seed-marketing)
 if [ "${1:-}" = "--sin-semilla" ]; then SEMILLA=(); shift; fi
 # El Panel de usuario nuevo (`PanelDefaults`: Tendencias, Planificación y Últimos registros), fijado por el dominio de
 # argumentos. Medido el 16-oct-2026: al relanzar sin -uitest-reset, la migración del Panel a veces encuentra la

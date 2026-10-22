@@ -7,7 +7,7 @@ on:
   # (push) + 102,4 min (pull_request). El commit que se mergea lo vuelve a cubrir el push
   # sobre `2.1`, así que no se pierde cobertura: se deja de pagarla dos veces.
   push:
-    branches: ["2.1", "1.0"]
+    branches: ["2.2", "1.0"]
   pull_request:
   # La suite de UI entera NO corre en el PR: corre aqui, una vez al dia sobre `2.1`
   # (decision del owner, 2026-09-06). El PR tiene que dar senal dentro de una sesion de
@@ -20,7 +20,7 @@ on:
   # cubre la suite COMPLETA a diario.
   #
   # `schedule` corre sobre la rama por defecto del repositorio y no se puede elegir otra;
-  # aqui la rama por defecto ES `2.1` (comprobado el 2026-09-07 con
+  # aqui la rama por defecto ES `2.2` desde el 2026-10-22 (antes `2.1`, comprobado el 2026-09-07 con
   # `gh api repos/jur211296/Yala --jq .default_branch`), que es justo lo que se queria. Si
   # algun dia se cambia la rama por defecto, esta corrida se muda con ella sin avisar.
   #
@@ -827,7 +827,7 @@ jobs:
               "CI de $REPO ($RAMA): hay unit tests en ROJO tras repetirlos, y el check \`tests\` esta en rojo." \
               "" \
               "Los unit bloquean: si es un PR, el auto-merge NO lo mergea hasta que se arreglen." \
-              "Si es un push a 2.1, ya entro: la rama esta en rojo." \
+              "Si es un push a 2.2 o 1.0, ya entro: la rama esta en rojo." \
               "" \
               "Pasos en rojo:$(printf '%b' "$fallidos")")
           elif [ -n "$fallidos" ]; then
