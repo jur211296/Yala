@@ -1,10 +1,10 @@
 ---
 id: welcome-to-pro-still-lists-the-old-feature-names
-status: backlog
+status: done
 priority: low
 area: pro, copy
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-22
 source: lote decidido 2.2 · 06 — Yala Pro (encargo 2026-10-19-lote-decidido-2-2-06-yala-pro, PR #561)
 ---
 
@@ -22,3 +22,7 @@ La decisión L17-9 solo pidió quitar el brillo a la bienvenida y abrir la funci
 
 - A. Dejarla.
 - B. Usar las mismas fichas de «Qué incluye Pro» del paywall. ← recomendada: una sola forma de decir qué incluye Pro.
+
+## Hecho (2026-10-22, lote decidido 2.2 · 15)
+
+Implementada la opción que eligió Jürgen. Red: `YalaTests/UXAudit22Decidido15Tests` y `YalaUITests/Flows/SettingsLote15UITests`.

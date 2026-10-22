@@ -1,10 +1,10 @@
 ---
 id: welcome-sign-in-notes-say-the-account-is-bound-to-one-method
-status: backlog
+status: done
 priority: low
 area: "welcome, cuenta, copy"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-22
 source: "lote decidido 2.2 · 04 (L20-9), visto al unificar la frase del método"
 ---
 
@@ -32,3 +32,7 @@ cuenta». Las dos no pueden ser verdad.
 1. Que las dos notas del Welcome digan la misma frase (misma key). Matiz: con «Ocultar mi correo» de Apple el correo es
    otro y sí serían dos cuentas; la frase ya lo condiciona («si usas el mismo correo»).
 2. Dejarlas: en el Welcome «entra con el mismo método» es un consejo práctico, aunque la razón que da no es exacta.
+
+## Hecho (2026-10-22, lote decidido 2.2 · 15)
+
+Implementada la opción que eligió Jürgen. Red: `YalaTests/UXAudit22Decidido15Tests` y `YalaUITests/Flows/SettingsLote15UITests`.

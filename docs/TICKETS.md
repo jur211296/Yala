@@ -142,7 +142,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | archiving-exclusion-open-decisions | backlog | tickets/backlog/archiving-exclusion-open-decisions.md |
 | associate-cta-ignores-the-groups-kill-switch | done | tickets/done/associate-cta-ignores-the-groups-kill-switch.md |
 | association-read-writes-defaults-from-a-view-body | backlog | tickets/backlog/association-read-writes-defaults-from-a-view-body.md |
-| attest-copy-still-says-the-security-check-our-server-requires | backlog | tickets/backlog/attest-copy-still-says-the-security-check-our-server-requires.md |
+| attest-copy-still-says-the-security-check-our-server-requires | done | tickets/done/attest-copy-still-says-the-security-check-our-server-requires.md |
 | attest-gateway-reports-a-storage-failure-as-an-invalid-attestation | backlog | tickets/backlog/attest-gateway-reports-a-storage-failure-as-an-invalid-attestation.md |
 | attest-session-token-rejected-by-the-gateway-stays-cached | qa | tickets/qa/attest-session-token-rejected-by-the-gateway-stays-cached.md |
 | autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files | done | tickets/done/autonomous-mode-still-asks-to-continue-after-listing-more-than-three-files.md |
@@ -753,7 +753,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | private-sign-out-misses-group-edits-made-during-the-icloud-wait | backlog | tickets/backlog/private-sign-out-misses-group-edits-made-during-the-icloud-wait.md |
 | private-sign-out-proceeds-with-a-migration-in-flight | done | tickets/done/private-sign-out-proceeds-with-a-migration-in-flight.md |
 | private-signout-groups-session-expiry-does-not-say-where-to-sign-in | backlog | tickets/backlog/private-signout-groups-session-expiry-does-not-say-where-to-sign-in.md |
-| pro-theme-resets-silently-when-pro-ends | backlog | tickets/backlog/pro-theme-resets-silently-when-pro-ends.md |
+| pro-theme-resets-silently-when-pro-ends | done | tickets/done/pro-theme-resets-silently-when-pro-ends.md |
 | prompts-de-traduccion-corren-xcodebuild-sin-cola | backlog | tickets/backlog/prompts-de-traduccion-corren-xcodebuild-sin-cola.md |
 | pt-br-category-strings-keep-portugal-and-unaccented-forms | backlog | tickets/backlog/pt-br-category-strings-keep-portugal-and-unaccented-forms.md |
 | pt-br-group-rows-say-they-lent-you-under-owed-to-you | done | tickets/done/pt-br-group-rows-say-they-lent-you-under-owed-to-you.md |
@@ -799,7 +799,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | remote-wipe-receiver-has-no-behaviour-test | backlog | tickets/backlog/remote-wipe-receiver-has-no-behaviour-test.md |
 | remote-wipe-signal-honored-by-any-session | done | tickets/done/remote-wipe-signal-honored-by-any-session.md |
 | remote-wipe-signal-is-burned-even-when-the-session-ignores-it | backlog | tickets/backlog/remote-wipe-signal-is-burned-even-when-the-session-ignores-it.md |
-| remove-device-data-row-leads-to-alerts-that-say-sign-out | backlog | tickets/backlog/remove-device-data-row-leads-to-alerts-that-say-sign-out.md |
+| remove-device-data-row-leads-to-alerts-that-say-sign-out | done | tickets/done/remove-device-data-row-leads-to-alerts-that-say-sign-out.md |
 | reopen-yala-only-for-private-icloud | backlog | tickets/backlog/reopen-yala-only-for-private-icloud.md |
 | reopened-balance-calculator-reads-a-grouped-amount-as-zero | backlog | tickets/backlog/reopened-balance-calculator-reads-a-grouped-amount-as-zero.md |
 | repair-queue-has-no-exit-for-partial-rate-rows | done | tickets/done/repair-queue-has-no-exit-for-partial-rate-rows.md |
@@ -980,7 +980,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | trends-insight-card-v2-bullets | done | tickets/done/trends-insight-card-v2-bullets.md |
 | trends-insight-title-capitalizes-the-period-mid-sentence | done | tickets/done/trends-insight-title-capitalizes-the-period-mid-sentence.md |
 | trends-prompt-asks-the-language-by-bare-code | backlog | tickets/backlog/trends-prompt-asks-the-language-by-bare-code.md |
-| trial-says-30-days-for-a-one-month-offer | backlog | tickets/backlog/trial-says-30-days-for-a-one-month-offer.md |
+| trial-says-30-days-for-a-one-month-offer | done | tickets/done/trial-says-30-days-for-a-one-month-offer.md |
 | tutorial-completion-check-appears-only-after-reentering | backlog | tickets/backlog/tutorial-completion-check-appears-only-after-reentering.md |
 | two-account-drafts-for-one-group-expense-can-create-two-real-legs | backlog | tickets/backlog/two-account-drafts-for-one-group-expense-can-create-two-real-legs.md |
 | two-qa-benches-nobody-runs | backlog | tickets/backlog/two-qa-benches-nobody-runs.md |
@@ -1035,9 +1035,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | welcome-private-card-promises-icloud-in-visit | discarded | tickets/discarded/welcome-private-card-promises-icloud-in-visit.md |
 | welcome-private-fresh-start-skips-icloud-check | done | tickets/done/welcome-private-fresh-start-skips-icloud-check.md |
 | welcome-shows-a-takeover-exit-as-a-connection-error | backlog | tickets/backlog/welcome-shows-a-takeover-exit-as-a-connection-error.md |
-| welcome-sign-in-notes-say-the-account-is-bound-to-one-method | backlog | tickets/backlog/welcome-sign-in-notes-say-the-account-is-bound-to-one-method.md |
+| welcome-sign-in-notes-say-the-account-is-bound-to-one-method | done | tickets/done/welcome-sign-in-notes-say-the-account-is-bound-to-one-method.md |
 | welcome-start-fresh-wipes-before-ask | done | tickets/done/welcome-start-fresh-wipes-before-ask.md |
-| welcome-to-pro-still-lists-the-old-feature-names | backlog | tickets/backlog/welcome-to-pro-still-lists-the-old-feature-names.md |
+| welcome-to-pro-still-lists-the-old-feature-names | done | tickets/done/welcome-to-pro-still-lists-the-old-feature-names.md |
 | welcome-wipes-on-a-mirrored-store-never-start-with-drive-off | backlog | tickets/backlog/welcome-wipes-on-a-mirrored-store-never-start-with-drive-off.md |
 | whats-new-2-0-still-calls-groups-beta | backlog | tickets/backlog/whats-new-2-0-still-calls-groups-beta.md |
 | whats-new-2-2-review-before-release | backlog | tickets/backlog/whats-new-2-2-review-before-release.md |

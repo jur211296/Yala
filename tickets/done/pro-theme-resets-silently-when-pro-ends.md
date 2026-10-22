@@ -1,10 +1,10 @@
 ---
 id: pro-theme-resets-silently-when-pro-ends
-status: backlog
+status: done
 priority: medium
 area: pro, settings, themes
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-22
 source: lote decidido 2.2 · 06 — Yala Pro (encargo 2026-10-19-lote-decidido-2-2-06-yala-pro, PR #561)
 ---
 
@@ -23,3 +23,7 @@ La decisión L16-11 de Jürgen (2026-10-18) pide avisar una vez **antes de volve
 ¿El tema entra en el mismo aviso? Opciones:
 - A. Dejarlo como está (vuelve en silencio).
 - B. Una línea más en la hoja de fin de Pro, «Tu tema vuelve a Liquid Glass», y que vuelva al confirmar, como el icono. ← recomendada: es la misma hoja y la misma regla de «no quitar nada sin decirlo».
+
+## Hecho (2026-10-22, lote decidido 2.2 · 15)
+
+Implementada la opción que eligió Jürgen. Red: `YalaTests/UXAudit22Decidido15Tests` y `YalaUITests/Flows/SettingsLote15UITests`.

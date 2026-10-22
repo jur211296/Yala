@@ -1,10 +1,10 @@
 ---
 id: attest-copy-still-says-the-security-check-our-server-requires
-status: backlog
+status: done
 priority: low
 area: "grupos, nube, copy"
 created: 2026-10-19
-updated: 2026-10-19
+updated: 2026-10-22
 source: "lote decidido 2.2 · 04 (L19-18), visto al reescribir el aviso fijo de Grupos"
 ---
 
@@ -28,3 +28,7 @@ nuestro servidor», la frase que la auditoría señaló como jerga.
 ## Lo que hay que decidir
 
 Si se reescriben con el molde de L19-18 (qué pasó en palabras de la persona + qué hacer), en 16 idiomas.
+
+## Hecho (2026-10-22, lote decidido 2.2 · 15)
+
+Implementada la opción que eligió Jürgen. Red: `YalaTests/UXAudit22Decidido15Tests` y `YalaUITests/Flows/SettingsLote15UITests`.
