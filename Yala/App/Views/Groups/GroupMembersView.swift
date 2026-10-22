@@ -70,6 +70,11 @@ struct GroupMembersView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: DS.Spacing.xxl) {
+                    // L19-1 · las solicitudes van arriba, una tarjeta por persona, con su consecuencia y sus dos botones.
+                    if canActAsAdmin && !viewModel.pendingApprovalMembers.isEmpty {
+                        joinRequestsSection
+                    }
+
                     membersSection
 
                     // Saldos iniciales (deuda de apertura) — owner-only.
@@ -92,7 +97,12 @@ struct GroupMembersView: View {
                 }
             }
             .sheet(item: $shareItem) { item in
-                ActivityView(activityItems: [item.url])
+                // L12-14 · el enlace viaja con un texto que dice qué es y qué hacer si aún no tiene Yala.
+                ActivityView(activityItems: [GroupInviteShareMessage.text(
+                    inviterName: UserDefaults.standard.string(forKey: AppPreferences.Keys.userName),
+                    defaultName: L10n.Profile.defaultName,
+                    groupName: group.name,
+                    url: item.url)])
             }
             .sheet(isPresented: $showOpeningBalanceEditor, onDismiss: { viewModel.loadData() }) {
                 GroupOpeningBalanceFormView(
@@ -116,6 +126,7 @@ struct GroupMembersView: View {
                     openingBalanceToEdit = nil
                     showOpeningBalanceEditor = true
                 }
+                .accessibilityIdentifier("opening_balance_prompt_add")
                 Button(L10n.Groups.OpeningBalance.approvalPromptSkip) {
                     openingBalancePrefillDebtor = nil
                 }
@@ -140,12 +151,14 @@ struct GroupMembersView: View {
                     Text(L10n.Groups.Member.removeConfirm)
                 }
             }
+            // L19-1 · el mismo verbo que la tarjeta («Aceptar»): «Aprobar» en la confirmación eran dos palabras para un gesto.
             .confirmationDialog(
-                pendingActionMember.map { L10n.Groups.Member.approveConfirm($0.displayName) } ?? "",
+                pendingActionMember.map { L10n.UXD14.requestsAcceptConfirm($0.displayName) } ?? "",
                 isPresented: $showApproveConfirm,
                 titleVisibility: .visible
             ) {
-                Button(L10n.Groups.Member.approve) { performApprove() }
+                Button(L10n.UXD14.requestsAccept) { performApprove() }
+                    .accessibilityIdentifier("group_member_approve_confirm")
                 Button(L10n.Common.cancel) { pendingActionMember = nil }
                     .accessibilityIdentifier("group_member_approve_cancel")
             }
@@ -173,6 +186,15 @@ struct GroupMembersView: View {
             } message: {
                 Text(actionErrorMessage)
             }
+            #if DEBUG
+            .onAppear {
+                // L19-2 · la pregunta que sigue a aceptar, sin el servidor que la aceptación necesita (XCUITest y capturas).
+                if UITestHooks.openingBalancePrompt, !showOpeningBalanceApprovalPrompt {
+                    approvedMemberName = "Carla"
+                    showOpeningBalanceApprovalPrompt = true
+                }
+            }
+            #endif
         }
     }
 
@@ -197,7 +219,7 @@ struct GroupMembersView: View {
                     inviteCard
                 }
 
-                ForEach(viewModel.visibleMembers, id: \.id) { member in
+                ForEach(listedMembers, id: \.id) { member in
                     GroupMemberRow(
                         member: member,
                         groupColorHex: group.colorHex,
@@ -227,13 +249,52 @@ struct GroupMembersView: View {
                         } : nil
                     )
 
-                    if member.id != viewModel.members.last?.id {
+                    if member.id != listedMembers.last?.id {
                         Divider()
                             .padding(.leading, DS.FormRow.paddingH)
                     }
                 }
             }
         }
+    }
+
+    /// La lista de Miembros. Para quien puede aceptar, sin las solicitudes: esas ya tienen su tarjeta arriba (L19-1), y
+    /// repetirlas abajo con dos iconos sería el mismo gesto en dos sitios.
+    private var listedMembers: [SplitMember] {
+        canActAsAdmin ? viewModel.visibleMembers.filter { !$0.isPendingApproval } : viewModel.visibleMembers
+    }
+
+    /// L19-1 · «Quieren unirse (N)»: una tarjeta por solicitud. Aceptar y rechazar pasan por las mismas confirmaciones de
+    /// siempre.
+    private var joinRequestsSection: some View {
+        let pending = viewModel.pendingApprovalMembers.sorted { $0.joinedAt < $1.joinedAt }
+        // La cabecera es la de `SectionBox` (misma letra, color y sangría); el cuerpo no, porque cada solicitud ya es su
+        // propia tarjeta y dentro de otra quedaría una tarjeta en una tarjeta.
+        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            Text(L10n.UXD14.requestsSection(pending.count))
+                .font(DS.Typography.headline)
+                .foregroundStyle(.thSecondaryText)
+                .padding(.leading, DS.Spacing.sm)
+                .accessibilityAddTraits(.isHeader)
+            VStack(spacing: DS.Spacing.md) {
+                ForEach(pending, id: \.id) { member in
+                    GroupJoinRequestCard(
+                        name: member.resolvedDisplayName,
+                        idName: member.displayName,
+                        requestedAt: member.joinedAt,
+                        onAccept: {
+                            pendingActionMember = member
+                            showApproveConfirm = true
+                        },
+                        onReject: {
+                            pendingActionMember = member
+                            showRejectConfirm = true
+                        }
+                    )
+                }
+            }
+        }
+        .accessibilityIdentifier("group_join_requests_section")
     }
 
     /// L12-13 · la tarjeta de invitar: pregunta, qué pasa al tocar y un solo botón relleno.

@@ -261,13 +261,12 @@ struct UXAudit22Lote12y13WiringTests {
         #expect(tab.contains("GroupCreatedInviteSheet(group: group"))
     }
 
-    /// El aviso de notificaciones (salta con el primer grupo) espera a la hoja «está listo».
-    @Test func notificationPrompt_waitsForTheInviteSheet() throws {
+    /// L12-8 (lote decidido 2.2 · 14) SUSTITUYE el contrato de L12-10 sobre el aviso de notificaciones: ya no hay alerta
+    /// suelta que espere a la hoja «está listo», porque el permiso se pide DENTRO de ella. Lo fija
+    /// `UXAudit22Decidido14WiringTests.notificationsPermission_livesInsideTheScreensNotInALooseAlert`.
+    @Test func notificationPrompt_isNoLongerALooseAlertOnTheList() throws {
         let tab = try Self.source("Yala/App/Views/Groups/GroupsContainerView.swift")
-        let fn = try #require(tab.components(separatedBy: "private func maybeShowGroupsNotificationPrompt() {").dropFirst().first)
-        let guardBlock = fn.components(separatedBy: "else { return }").first ?? ""
-        #expect(guardBlock.contains("groupAwaitingInviteSheet == nil"))
-        #expect(guardBlock.contains("groupReadyToInvite == nil"))
+        #expect(!tab.contains("maybeShowGroupsNotificationPrompt"), "vuelve la alerta suelta de avisos en la lista")
     }
 
     /// L13-1: «Saldar» solo en las deudas tuyas.
@@ -302,7 +301,8 @@ struct UXAudit22Lote12y13WiringTests {
     @Test func groupsEmptyStates_useTheStepsCard() throws {
         let tab = try Self.source("Yala/App/Views/Groups/GroupsContainerView.swift")
         #expect(!tab.contains("YalaEmptyState."))
-        #expect(tab.components(separatedBy: "GroupsEmptyStepsCard(").count - 1 == 5)
+        // Los cinco de L12-2 más «Tu grupo está en camino» (lote decidido 2.2 · 14, L12-19), que usa la misma tarjeta.
+        #expect(tab.components(separatedBy: "GroupsEmptyStepsCard(").count - 1 == 6)
     }
 
     /// L12-13: el aviso del «acceso por enlace» que no se puede apagar ya no sale en Miembros.

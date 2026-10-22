@@ -3472,7 +3472,7 @@
 "groups.invite.ready" = "All set!";
 "groups.invite.goToGroup" = "Go to group";
 "groups.invite.linkInvalidTitle" = "Invalid link";
-"groups.invite.linkInvalidDetail" = "This link is no longer valid or has expired. Ask the admin to generate a new one.";
+"groups.invite.linkInvalidDetail" = "This link is no longer valid or has expired. Ask whoever invited you for a new link.";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "Group sync issue";
@@ -4009,7 +4009,7 @@
 "groups.member.rejectConfirm" = "Reject %@'s request? They can request access again with another link.";
 "groups.member.pendingRequestsSection" = "Pending requests";
 "groups.invite.waitingApproval.title" = "Request sent";
-"groups.invite.waitingApproval.body" = "The group admin has to approve you before you can take part. While you wait you'll see the group in your list, but you can't open it yet. Open Yala again in a while to see if you're in.";
+"groups.invite.waitingApproval.body" = "The group admin has to approve you before you can take part. While you wait you'll see the group in your list, but you can't open it yet. We'll let you know when you're approved.";
 "groups.invite.waitingApproval.banner" = "Waiting for admin approval";
 "groups.invite.rejected.title" = "Request rejected";
 "groups.invite.rejected.body" = "The admin didn't approve your request. Ask them for a new link if you'd like to try again.";
@@ -4467,10 +4467,10 @@
 "groups.openingBalance.emptyState" = "No opening balances yet.";
 "groups.openingBalance.rollupOwes" = "owes";
 "groups.openingBalance.rollupOwed" = "is owed";
-"groups.openingBalance.approvalPromptTitle" = "Does %@ start with a balance?";
-"groups.openingBalance.approvalPromptBody" = "Record what they owe or are owed from before.";
-"groups.openingBalance.approvalPromptAdd" = "Add opening balance";
-"groups.openingBalance.approvalPromptSkip" = "Not now";
+"groups.openingBalance.approvalPromptTitle" = "Did %@ already have anything to settle with the group?";
+"groups.openingBalance.approvalPromptBody" = "If they already owed something before joining, or were owed, add it so the balances add up.";
+"groups.openingBalance.approvalPromptAdd" = "Yes, add it";
+"groups.openingBalance.approvalPromptSkip" = "No, start at zero";
 "groups.openingBalance.errorNotOwner" = "Only the group creator can manage opening balances.";
 "groups.openingBalance.errorSameMember" = "Choose two different members.";
 
@@ -5446,7 +5446,7 @@
 "groups.card.pendingNotice.title" = "Waiting for approval";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "The group admin hasn't approved your request yet. Once they do, you'll be able to open the group and see its expenses. Check back in a little while.";
+"groups.card.pendingNotice.body" = "The group admin hasn't approved your request yet. Once they do, you'll be able to open the group and see its expenses. We'll let you know when you're approved.";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "Account balance";
@@ -7953,3 +7953,93 @@
 
 /* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
 "groups.d13.expense.nowNotice" = "Now add the expense";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "Group notifications";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "We'll let you know when someone adds an expense or pays you.";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "Turn on notifications";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "Notifications on";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Yala notifications are off in Settings.";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@ is inviting you to “%2$@” on Yala to split expenses. Tap the link to join; if you don't have Yala, download it and tap the link again.";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "You're invited to “%@” on Yala to split expenses. Tap the link to join; if you don't have Yala, download it and tap the link again.";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@ is inviting you";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "You've been invited to this group";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "Next, you'll choose which account to sign in with.";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "You're in “%@”";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "You're in the group";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "With %@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "Add an expense";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "View group";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "Your group is on its way";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "It'll show up here as soon as it's ready.";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "You've been approved: you can now see its expenses and add yours.";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@ wants to join";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "Several people want to join";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "Accept their request so they can see and add expenses.";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "Accept their requests so they can see and add expenses.";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "Review";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "Want to join (%d)";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "Opened your invite link today";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "Opened your invite link yesterday";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "Opened your invite link on %@";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "If you accept, they'll see the group's expenses and can add their own. If you reject, they won't see anything.";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "Accept";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "Accept %@ into the group?";

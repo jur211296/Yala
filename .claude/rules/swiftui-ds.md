@@ -41,6 +41,11 @@ paths:
   valor de antes. Con un `@Observable` (Registros, `RecordsViewModel`) el mismo molde funciona. ⇒ **para presentar UN
   objeto, `.sheet(item:)`**; si hace falta encadenar otra presentación al cerrar, guarda el objeto en un estado aparte
   (`recordAwaitingEditor`) antes de vaciar el `item`. Pin: `UXAudit22Lote8CWiringTests`.
+- **Un `.task` (o un `onAppear`) colgado de un `Group` cuyo contenido es un `if` falso no corre nunca (medido el
+  2026-10-21, iOS 27.0, lote decidido 14).** Los modificadores de un `Group` se reparten entre sus hijos; sin hijos no
+  hay vista que aparezca. La tarjeta de avisos de grupo medía su estado en ese `.task` y no salía jamás. ⇒ **lo que mide
+  antes de decidir si se pinta cuelga de un marcador propio que solo existe hasta tener respuesta**
+  (`Color.clear.frame(width: 1, height: 1).task { … }`, molde de `GroupNotificationsOptInCard`).
 - **El `onAppear` de un `ViewModifier` puede correr ANTES que el de la vista que lo lleva (medido el 2026-10-17, iOS 27.0,
   lote 9).** `BudgetAlertOpening` (abrir el presupuesto de una alerta) buscaba en `viewModel.allBudgets` desde su
   `onAppear`, y el `onAppear` de `BudgetsListView` —el que hace `setContext`— aún no había corrido: lista vacía, el

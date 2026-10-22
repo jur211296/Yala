@@ -47,6 +47,9 @@ extension XCUIApplication {
         groupsConsent: Bool = false,
         groupsEducativo: Bool = false,
         inviteOnboarding: Bool = false,
+        inviteBranded: Bool = false,
+        // L19-2: la pregunta de cuentas pendientes sale al abrir Miembros (aceptar de verdad pide el servidor).
+        openingBalancePrompt: Bool = false,
         icloudIdentity: Bool = false,
         joinPhase: String? = nil,
         joinSoftTimeout: String? = nil,
@@ -199,6 +202,9 @@ extension XCUIApplication {
         // de Grupos, que es justo por lo que ese early-return existe.
         if groupsEducativo { args.append("-uitest-groups-educativo") }
         if inviteOnboarding { args.append("-uitest-invite-onboarding") }
+        // La marca de un enlace real en esa hoja (L12-17/18). NOMBRADO por lo mismo que sus vecinos.
+        if inviteBranded { args.append("-uitest-invite-branded") }
+        if openingBalancePrompt { args.append("-uitest-opening-balance-prompt") }
         // Siembra la identidad iCloud de Grupos. Va NOMBRADO, no por `extraArguments:`, por la
         // misma razón que sus vecinos y con una de propina: este seam decide QUIÉN ERES, así que un
         // typo que lo dejara fuera no da rojo — da un VERDE que prueba el camino del flag creyendo

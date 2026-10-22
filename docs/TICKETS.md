@@ -43,8 +43,10 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1019)
+## Index (1021)
 
+| groups-notifications-permission-skipped-when-the-group-arrives-another-way | backlog | tickets/backlog/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
+| invite-neutral-gate-forgets-the-group-card-answer | backlog | tickets/backlog/invite-neutral-gate-forgets-the-group-card-answer.md |
 | groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed | backlog | tickets/backlog/groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed.md |
 | groups-fab-group-with-only-pending-groups-says-nothing | backlog | tickets/backlog/groups-fab-group-with-only-pending-groups-says-nothing.md |
 | groups-form-and-settings-name-the-same-options-differently | backlog | tickets/backlog/groups-form-and-settings-name-the-same-options-differently.md |

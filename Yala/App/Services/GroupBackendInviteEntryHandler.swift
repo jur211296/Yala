@@ -235,7 +235,10 @@ enum GroupBackendInviteEntryHandler {
             //    `.welcome` con el join en vuelo.
             inviteConfirmedAt: (existing?.inviteToken == token) ? existing?.inviteConfirmedAt : nil,
             // Lo mismo para la marca del alta sobre un store limpio: es de ESTA invitación, y un token nuevo empieza sin ella.
-            signUpOnCleanStoreAt: (existing?.inviteToken == token) ? existing?.signUpOnCleanStoreAt : nil
+            signUpOnCleanStoreAt: (existing?.inviteToken == token) ? existing?.signUpOnCleanStoreAt : nil,
+            // Y lo mismo para el «Unirme» de la tarjeta del grupo (L12-17): re-tocar el MISMO enlace mientras se hace la
+            // cuenta no vuelve a enseñarla; un enlace nuevo, sí.
+            groupCardAcceptedAt: (existing?.inviteToken == token) ? existing?.groupCardAcceptedAt : nil
         ))
     }
 
@@ -363,6 +366,23 @@ enum GroupBackendInviteEntryHandler {
         // No borra ni escribe: SUBMITEA la pantalla, que es la que informa y pide el gesto. Por eso el
         // trigger `.boot` del reconciler puede llamar a este método sin que nada se pierda, que es el
         // criterio nº 2 del ticket.
+        // **L12-17 · la tarjeta del grupo va ANTES que la cuenta, el consentimiento y la puerta del neutro.** Sin cuenta o
+        // sin consentimiento, lo primero que se ve de una invitación es a qué grupo te unes, quién invita y quién está; su
+        // «Unirme» apunta la marca (`markGroupCardAccepted`) y vuelve aquí por `continueFlow`, que ya no la enseña. Va
+        // delante de la puerta del neutro porque la tarjeta no escribe nada que esa puerta tenga que proteger: solo
+        // enseña lo que trae el enlace.
+        let pendingEntry = PendingJoinStore.entry(zoneName: groupID)
+        if GroupInviteGroupFirstLogic.showsGroupBeforeAccount(
+            hasSession: hasSessionProvider(),
+            isConsented: isConsentedProvider(),
+            hasConfirmedInvite: pendingEntry?.isInviteConfirmed ?? false,
+            hasAcceptedGroupCard: pendingEntry?.hasAcceptedGroupCard ?? false,
+            canPresentOnboarding: source != .userAction && pendingEntry != nil
+        ) {
+            RouterEntryGate.shared.submit(.presentGroupBackendInviteOnboarding(pendingJoin: groupID))
+            logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: group card before account for \(groupID, privacy: .public)")
+            return
+        }
         if neutralGateDecision(groupID: groupID) == .returnsToNeutral {
             RouterEntryGate.shared.submit(.presentGroupsInviteNeutralGate(pendingJoin: groupID))
             logger.notice("BackendInvite[\(source.rawValue, privacy: .public)]: mirrored/occupied store → neutral return gate for \(groupID, privacy: .public)")

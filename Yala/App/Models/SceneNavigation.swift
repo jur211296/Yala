@@ -177,6 +177,20 @@ final class SceneNavigation: Identifiable {
     /// elegible (espeja el patrón de `pendingGroupID`).
     var pendingNewGroupExpense: Bool = false
 
+    /// El grupo con el que debe abrirse ese composer (UX 2.2 · L12-18: «Apuntar un gasto» al entrar en un grupo). `nil` =
+    /// el primero elegible, como el FAB del Panel. Lo consume `GroupsContainerView` junto con `pendingNewGroupExpense`.
+    var pendingNewGroupExpenseGroupID: UUID?
+
+    /// L12-18 · lo que pidió «Ya estás en «X»» al cerrarse: apuntar un gasto en ese grupo o abrirlo. Lo deja la hoja de
+    /// invitación y lo aplica el `onDismiss` de su cover (`ContentView`), cuando el ancla ya está libre: pedir el
+    /// formulario de gasto con el cover aún bajando son dos presentaciones a la vez (review adversarial del 2026-10-21).
+    var pendingInviteFollowUp: InviteFollowUp?
+
+    enum InviteFollowUp: Equatable {
+        case addExpense(groupID: UUID)
+        case viewGroup(groupID: UUID)
+    }
+
     /// G3 · último paso de la rama organizador del Welcome: abrir el FORMULARIO de grupo nuevo al aterrizar
     /// en el tab. Espeja `pendingNewGroupExpense` —mismo molde, mismo consumidor— pero es su hermano y no
     /// el mismo flag: aquel exige un grupo elegible para consumirse y este existe precisamente porque

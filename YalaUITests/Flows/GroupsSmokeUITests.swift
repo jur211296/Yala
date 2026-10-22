@@ -135,6 +135,11 @@ final class GroupsSmokeUITests: XCTestCase {
             "GroupFormView no montó (group_form_name_input)."
         )
 
+        // Desde el lote decidido 2.2 · 13 los ajustes viven tras «Más opciones», cerrado por defecto.
+        let more = app.buttons["group_form_more_options"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "No apareció «Más opciones».")
+        more.tap()
+
         // La fila de divisa solo existe con el toggle ON.
         let toggle = app.switches["group_form_single_currency_toggle"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "No apareció el toggle de moneda única.")

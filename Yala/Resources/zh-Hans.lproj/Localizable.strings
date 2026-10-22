@@ -3432,7 +3432,7 @@
 "groups.invite.ready" = "全部就绪!";
 "groups.invite.goToGroup" = "前往群组";
 "groups.invite.linkInvalidTitle" = "链接无效";
-"groups.invite.linkInvalidDetail" = "此链接已无效或已过期。请管理员生成新链接。";
+"groups.invite.linkInvalidDetail" = "此链接已无效或已过期。请向邀请你的人要一个新链接。";
 
 // Groups — Bridge / Sync errors
 "groups.bridge.alertTitle" = "群组同步出现问题";
@@ -4038,7 +4038,7 @@
 "groups.member.rejectConfirm" = "拒绝 %@ 的请求吗？对方可以使用其他链接重新申请加入。";
 "groups.member.pendingRequestsSection" = "待处理的请求";
 "groups.invite.waitingApproval.title" = "请求已发送";
-"groups.invite.waitingApproval.body" = "群组管理员批准后你才能参与。在此期间群组会显示在你的列表里，但还无法打开。过一会儿再打开 Yala，看看是否已经通过。";
+"groups.invite.waitingApproval.body" = "群组管理员批准后你才能参与。在此期间群组会显示在你的列表里，但还无法打开。获批后我们会通知你。";
 "groups.invite.waitingApproval.banner" = "等待管理员批准";
 "groups.invite.rejected.title" = "请求被拒绝";
 "groups.invite.rejected.body" = "管理员没有批准你的请求。如果你想再次尝试，可以请管理员发送新的链接。";
@@ -4473,10 +4473,10 @@
 "groups.openingBalance.emptyState" = "暂无初始余额。";
 "groups.openingBalance.rollupOwes" = "欠";
 "groups.openingBalance.rollupOwed" = "应收";
-"groups.openingBalance.approvalPromptTitle" = "%@ 加入时是否有余额？";
-"groups.openingBalance.approvalPromptBody" = "记录之前的欠款或应收款。";
-"groups.openingBalance.approvalPromptAdd" = "添加初始余额";
-"groups.openingBalance.approvalPromptSkip" = "暂不";
+"groups.openingBalance.approvalPromptTitle" = "%@ 和群组之间是否已有未结清的账？";
+"groups.openingBalance.approvalPromptBody" = "如果对方加入前就欠了钱或被欠钱，请记下来，让余额对得上。";
+"groups.openingBalance.approvalPromptAdd" = "是，记下来";
+"groups.openingBalance.approvalPromptSkip" = "否，从零开始";
 "groups.openingBalance.errorNotOwner" = "只有群组创建者可以管理初始余额。";
 "groups.openingBalance.errorSameMember" = "请选择两位不同的成员。";
 
@@ -5452,7 +5452,7 @@
 "groups.card.pendingNotice.title" = "等待批准";
 
 /* Cuerpo del aviso al tocar la tarjeta de un grupo pendiente de aprobación */
-"groups.card.pendingNotice.body" = "群组管理员尚未批准你的申请。批准后，你就可以打开该群组并查看它的支出。请稍后再来看看。";
+"groups.card.pendingNotice.body" = "群组管理员尚未批准你的申请。批准后，你就可以打开该群组并查看它的支出。获批后我们会通知你。";
 
 /* Stats hero caption: the figure is the accounts balance (stock), same as Panel KPI */
 "stats.hero.captionAccountsBalance" = "账户余额";
@@ -5833,7 +5833,7 @@
 "welcome.groups.inviteNeutralTitle" = "加入之前，这部手机会被清空";
 
 /* Puerta del invitado: cuerpo cuando SÍ hay copia en iCloud */
-"welcome.groups.inviteNeutralBody" = "这里保存着与某个 iCloud 同步的数据。为了让你的群组支出不会进到那里，我们会把它从这部手机上删除：iCloud 中的副本保持不变。Yala 会重新启动，然后你继续完成邀请。";
+"welcome.groups.inviteNeutralBody" = "这里保存着与某个 iCloud 账户同步的数据。为了让你的群组支出不会进到那里，我们会把它从这部手机上删除：iCloud 中的副本保持不变。Yala 会重新启动，然后你继续完成邀请。";
 
 /* Puerta del invitado: cuerpo cuando NO hay copia en iCloud */
 "welcome.groups.inviteNeutralBodyNoBackup" = "这里保存着数据，而且我们没有在 iCloud 中找到副本。为了让你的群组支出不与它们混在一起，必须把它从这部手机上删除，并且无法恢复。Yala 会重新启动，然后你继续完成邀请。";
@@ -7959,3 +7959,93 @@
 
 /* L13-8 · aviso arriba del gasto que se abre tras crear el grupo. */
 "groups.d13.expense.nowNotice" = "现在记下这笔支出";
+
+/* Título de la tarjeta que pide activar los avisos de grupo. */
+"groups.d14.notify.title" = "群组通知";
+
+/* Por qué activar los avisos de grupo. */
+"groups.d14.notify.why" = "有人记了一笔支出或付款给你时，我们会通知你。";
+
+/* Botón que activa los avisos de grupo. */
+"groups.d14.notify.enable" = "开启通知";
+
+/* Estado tras activar los avisos de grupo. */
+"groups.d14.notify.enabled" = "通知已开启";
+
+/* Los avisos de Yala están apagados en los ajustes del sistema. */
+"groups.d14.notify.denied" = "Yala 的通知已在设置中关闭。";
+
+/* Mensaje que acompaña al enlace de invitación. %1$@ = quien invita, %2$@ = grupo. */
+"groups.d14.share.message" = "%1$@ 邀请你加入 Yala 中的“%2$@”，一起分摊费用。点按链接即可加入；如果你还没有 Yala，请先下载，然后再点按一次链接。";
+
+/* Mensaje del enlace de invitación sin nombre de quien invita. %@ = grupo. */
+"groups.d14.share.messageNoInviter" = "你受邀加入 Yala 中的“%@”，一起分摊费用。点按链接即可加入；如果你还没有 Yala，请先下载，然后再点按一次链接。";
+
+/* Quién invita, bajo el nombre del grupo. %@ = nombre. */
+"groups.d14.invite.invitedBy" = "%@ 邀请你";
+
+/* Bajo el nombre del grupo, cuando el enlace no dice quién invita. */
+"groups.d14.invite.invitedFallback" = "你受邀加入这个群组";
+
+/* Bajo «Unirme» cuando aún no hay cuenta: qué viene después. */
+"groups.d14.invite.nextAccount" = "接下来，你可以选择用哪个账户登录。";
+
+/* Título al entrar en un grupo y del aviso al ser aprobado. %@ = grupo. */
+"groups.d14.ready.title" = "你已加入“%@”";
+
+/* Título al entrar en un grupo sin nombre conocido. */
+"groups.d14.ready.titleNoName" = "你已加入群组";
+
+/* Quiénes están en el grupo. %@ = lista de nombres. */
+"groups.d14.ready.with" = "成员：%@";
+
+/* Botón para apuntar el primer gasto en el grupo recién unido. */
+"groups.d14.ready.addExpense" = "记一笔支出";
+
+/* Botón para abrir el grupo recién unido. */
+"groups.d14.ready.viewGroup" = "查看群组";
+
+/* Pestaña Grupos vacía con una unión en curso. */
+"groups.d14.onTheWay.title" = "你的群组正在路上";
+
+/* Bajo «Tu grupo está en camino». */
+"groups.d14.onTheWay.message" = "准备好后会显示在这里。";
+
+/* Cuerpo del aviso cuando te aprueban en un grupo. */
+"groups.d14.approved.body" = "你已获批准：现在可以查看支出并记录你的支出。";
+
+/* Aviso dentro del grupo: una persona pide unirse. %@ = nombre. */
+"groups.d14.requests.bannerOne" = "%@ 想加入";
+
+/* Aviso dentro del grupo: varias personas piden unirse. */
+"groups.d14.requests.bannerMany" = "有几个人想加入";
+
+/* Bajo «X quiere unirse». */
+"groups.d14.requests.bannerBodyOne" = "接受请求后，对方就能查看和记录支出。";
+
+/* Bajo «Varias personas quieren unirse». */
+"groups.d14.requests.bannerBodyMany" = "接受请求后，他们就能查看和记录支出。";
+
+/* Botón del aviso de solicitudes: abre Miembros. */
+"groups.d14.requests.review" = "查看";
+
+/* Cabecera de las solicitudes en Miembros. %d = cuántas. */
+"groups.d14.requests.section" = "想加入（%d）";
+
+/* Cuándo pidió unirse: hoy. */
+"groups.d14.requests.openedToday" = "今天打开了你的邀请链接";
+
+/* Cuándo pidió unirse: ayer. */
+"groups.d14.requests.openedYesterday" = "昨天打开了你的邀请链接";
+
+/* Cuándo pidió unirse: otro día. %@ = fecha corta. */
+"groups.d14.requests.openedOn" = "%@ 打开了你的邀请链接";
+
+/* Qué pasa al aceptar o rechazar una solicitud. */
+"groups.d14.requests.consequence" = "如果接受，对方将能看到群组的支出并记录自己的支出。如果拒绝，对方什么都看不到。";
+
+/* Botón para aceptar una solicitud para unirse. */
+"groups.d14.requests.accept" = "接受";
+
+/* Confirmación al aceptar una solicitud. %@ = nombre. */
+"groups.d14.requests.acceptConfirm" = "接受 %@ 加入群组？";

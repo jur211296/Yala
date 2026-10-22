@@ -101,6 +101,13 @@ struct PendingJoinEntry: Codable, Equatable {
     /// back-compat: un JSON anterior decodifica a `nil`, que es el lado que no deja pasar nada nuevo.
     var signUpOnCleanStoreAt: Date?
 
+    /// L12-17 · cuándo la persona dijo «Unirme» en la TARJETA del grupo, la que se enseña antes de pedir cuenta y
+    /// consentimiento. NO es la confirmación del join (`inviteConfirmedAt`, que sigue sellando el toque que une de verdad):
+    /// solo dice que la tarjeta ya se vio y aceptó, para que la cadena siga a cuenta y consentimiento sin volver a
+    /// enseñarla y la unión arranque sola al volver. Muere con el intent, como sus vecinas; un token nuevo empieza sin
+    /// ella. Opcional Codable back-compat: un JSON anterior decodifica a `nil` ⇒ se enseña la tarjeta.
+    var groupCardAcceptedAt: Date?
+
     /// `true` si esta entry es un join backend por token (contrato C3). El discriminador
     /// backend↔CloudKit del reconciler tiene PRIORIDAD sobre el flag (R5).
     var isBackendJoin: Bool { inviteToken != nil }
@@ -110,6 +117,9 @@ struct PendingJoinEntry: Codable, Equatable {
 
     /// ¿El alta de esta invitación empezó aquí sobre un store limpio? Ver `signUpOnCleanStoreAt`.
     var signUpStartedOnCleanStore: Bool { signUpOnCleanStoreAt != nil }
+
+    /// ¿Dijo «Unirme» en la tarjeta del grupo? Ver `groupCardAcceptedAt`.
+    var hasAcceptedGroupCard: Bool { groupCardAcceptedAt != nil }
 
     init(
         zoneName: String,
@@ -122,7 +132,8 @@ struct PendingJoinEntry: Codable, Equatable {
         legacyMemberKey: String? = nil,
         branded: InviteLinkService.BrandedMetadata? = nil,
         inviteConfirmedAt: Date? = nil,
-        signUpOnCleanStoreAt: Date? = nil
+        signUpOnCleanStoreAt: Date? = nil,
+        groupCardAcceptedAt: Date? = nil
     ) {
         self.zoneName = zoneName
         self.zoneOwnerName = zoneOwnerName
@@ -135,6 +146,7 @@ struct PendingJoinEntry: Codable, Equatable {
         self.branded = branded
         self.inviteConfirmedAt = inviteConfirmedAt
         self.signUpOnCleanStoreAt = signUpOnCleanStoreAt
+        self.groupCardAcceptedAt = groupCardAcceptedAt
     }
 }
 
@@ -211,6 +223,16 @@ enum PendingJoinStore {
         var entries = load()
         guard var entry = entries[zoneName], entry.inviteConfirmedAt == nil else { return }
         entry.inviteConfirmedAt = date
+        entries[zoneName] = entry
+        persist(entries)
+    }
+
+    /// L12-17 · apunta que la persona dijo «Unirme» en la tarjeta del grupo de ESTA invitación. Idempotente: conserva la
+    /// primera fecha. Sin entry no hace nada.
+    static func markGroupCardAccepted(zoneName: String, at date: Date = .now) {
+        var entries = load()
+        guard var entry = entries[zoneName], entry.groupCardAcceptedAt == nil else { return }
+        entry.groupCardAcceptedAt = date
         entries[zoneName] = entry
         persist(entries)
     }

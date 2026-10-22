@@ -1468,7 +1468,20 @@ struct ContentView: View {
             // ausencia como «no confirmó» le presenta la hoja a alguien que YA está dentro del grupo, con
             // el visual genérico y un CTA que no puede hacer nada (`reconcile` sale por su
             // `guard !entries.isEmpty`). Sin entry no se presenta: no se pide confirmar lo que ya no existe.
-            switch PendingJoinStore.entry(zoneName: zone)?.isInviteConfirmed {
+            let pendingEntry = PendingJoinStore.entry(zoneName: zone)
+            // L12-17 · la tarjeta ya dijo «Unirme» y falta cuenta o consentimiento: lo que toca es seguir la cadena, no
+            // volver a enseñarla (una vuelta a primer plano con ella delante deja otra petición en cola).
+            if let pendingEntry, !pendingEntry.isInviteConfirmed,
+               GroupInviteGroupFirstLogic.skipsSheetToContinueChain(
+                   hasAcceptedGroupCard: pendingEntry.hasAcceptedGroupCard,
+                   hasSession: GroupBackendInviteEntryHandler.hasSessionProvider(),
+                   isConsented: GroupBackendInviteEntryHandler.isConsentedProvider()) {
+                Task { @MainActor in
+                    await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
+                }
+                break
+            }
+            switch pendingEntry?.isInviteConfirmed {
             case .some(false):
                 // La marca sale del intent PERSISTIDO, no del payload: es lo que hace que también la
                 // tenga el invitado que llegó desde la web con la app cerrada, que es el caso normal.
@@ -2902,6 +2915,11 @@ struct ContentView: View {
             if let phase = UITestHooks.joinPhaseOverride {
                 GroupJoinIntentTracker.shared._uitestForcePhase(named: phase)
             }
+            if UITestHooks.inviteBranded {
+                pendingInviteMetadata = InviteLinkService.BrandedMetadata(
+                    name: "Depa Miraflores", icon: "house.fill", color: "E91E63",
+                    members: ["Lucía", "Ana", "Beto"], inviter: "Lucía")
+            }
             showGroupInviteOnboarding = true
             return
         }
@@ -3807,6 +3825,13 @@ private struct GroupInviteModifier: ViewModifier {
     @Binding var hasCompletedOnboarding: Bool
     @Binding var activeInviteError: InviteAlertContent?
     @Binding var activeGroupSyncError: String?
+    /// La ventana que presenta la hoja: «Ver el grupo» y «Apuntar un gasto» de «Ya estás en «X»» (L12-18) dejan su
+    /// destino en ella.
+    @Environment(SceneNavigation.self) private var navigation
+    /// L12-17 · la invitación cuya tarjeta acaba de decir «Unirme» sin cuenta o sin consentimiento. La cadena sigue en el
+    /// `onDismiss` del cover, cuando el ancla ya está libre: pedir el inicio de sesión con el cover aún bajando son dos
+    /// presentaciones ante el mismo ancla.
+    @State private var zoneAwaitingAccount: String?
 
     func body(content: Content) -> some View {
         content
@@ -3834,7 +3859,24 @@ private struct GroupInviteModifier: ViewModifier {
             } message: {
                 Text(activeGroupSyncError ?? "")
             }
-            .fullScreenCover(isPresented: $showGroupInviteOnboarding) {
+            .fullScreenCover(isPresented: $showGroupInviteOnboarding, onDismiss: {
+                // L12-18 · lo que pidió «Ya estás en «X»», ahora que el cover se fue y la pestaña puede presentar.
+                if let followUp = navigation.pendingInviteFollowUp {
+                    navigation.pendingInviteFollowUp = nil
+                    switch followUp {
+                    case .addExpense(let groupID):
+                        navigation.pendingNewGroupExpenseGroupID = groupID
+                        navigation.pendingNewGroupExpense = true
+                    case .viewGroup(let groupID):
+                        navigation.pendingGroupID = groupID.uuidString
+                    }
+                }
+                guard let zone = zoneAwaitingAccount else { return }
+                zoneAwaitingAccount = nil
+                Task { @MainActor in
+                    await GroupBackendInviteEntryHandler.continueFlow(zoneName: zone)
+                }
+            }) {
                 GroupInviteOnboardingView(
                     inviteMetadata: pendingInviteMetadata,
                     pendingJoinZone: pendingInviteZone
@@ -3849,7 +3891,15 @@ private struct GroupInviteModifier: ViewModifier {
                     // onboarding —no ha completado nada— ni se le toca el intent desde aquí (lo retira la
                     // propia vista, que es quien sabe de qué grupo habla). En los demás, el setup ya corrió
                     // (nombre/moneda): no re-onboardear, y el join intent sigue trabajando en background.
-                    if outcome != .declined {
+                    //
+                    // L12-17 · `.continueToAccount` tampoco: la tarjeta del grupo solo apuntó el «sí» y falta la cuenta,
+                    // el consentimiento y la propia unión (con su alta, si es nuevo). La cadena sigue al cerrarse el cover.
+                    switch outcome {
+                    case .declined:
+                        break
+                    case .continueToAccount:
+                        zoneAwaitingAccount = pendingInviteZone
+                    default:
                         hasCompletedOnboarding = true
                     }
                     showGroupInviteOnboarding = false
@@ -3857,6 +3907,7 @@ private struct GroupInviteModifier: ViewModifier {
                     pendingInviteZone = nil
                 }
                 .environment(SessionState.shared)
+                .environment(navigation)
             }
     }
 }
