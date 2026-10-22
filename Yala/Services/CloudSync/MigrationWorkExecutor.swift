@@ -2227,8 +2227,17 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         // backend). El conteo sale del plan preliminar; el backfill las materializa (syncID + testigo
         // SyncIdentity). El eco del drain lo previene el contrato de baseline de I14 (punto ii) — igual que
         // en el líder.
-        // Menos las que la guarda de linaje acaba de casar con una fila de la cuenta: esas no las acuña el backfill.
-        let identityAssigned = prePlan.identityCount - reboundWithoutIdentity
+        // Los tipos de cambio sin identidad toman la de la cuenta para su fecha y su base (card hov2): sin esto, cada entrada
+        // subía los 366 que el arranque descargó, antes de dejar pasar. Después de las dos guardas, que no mutan nada, y
+        // antes del backfill, que acuñaría identidades nuevas. Ilegible → `.localFailure`, como el resto del inventario.
+        let reboundExchangeRates: Int
+        do {
+            reboundExchangeRates = try rebindExchangeRatesToBackend(enumeration)
+        } catch {
+            return .localFailure
+        }
+        // Menos las que la guarda de linaje y el casado de tipos de cambio acaban de casar: esas no las acuña el backfill.
+        let identityAssigned = prePlan.identityCount - reboundWithoutIdentity - reboundExchangeRates
         // Un backfill que no termina deja filas SIN identidad, y el diff las cuenta como `needsIdentity`, no como
         // huérfanas: el adopt podía cerrarse sin subirlas. `.localFailure`, como el inventario ilegible.
         do {
@@ -2271,6 +2280,34 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         let outcome = await uploadAdoptOrphans(plan, identityAssigned: identityAssigned)
         if case .completed = outcome { relayAdoptMarkerIfCovered(enumeration: enumeration) }
         return outcome
+    }
+
+    /// Da a cada tipo de cambio local SIN identidad la de un tipo de cambio vivo de la cuenta con la misma fecha y base
+    /// (`AdoptExchangeRateRebind.plan`). El backfill que corre detrás les escribe el testigo con esa identidad (rama «fila
+    /// con id y sin testigo»), y el diff definitivo ya no las cuenta como huérfanas. Devuelve cuántas casó.
+    ///
+    /// **Solo sin el espejo de iCloud adjunto** (la instalación nueva que entra por la bienvenida, el caso de la card): con el
+    /// espejo, la fila del líder de ese día puede llegar después con la identidad del backend ya puesta, y la casada de aquí
+    /// sería una segunda fila viva con ese `syncID` (lo cazó la review). Ahí todo sube como antes.
+    private func rebindExchangeRatesToBackend(_ enumeration: BackendEnumeration) throws -> Int {
+        guard !enumeration.liveExchangeRateAnchors.isEmpty, !adoptMirrorAttached() else { return 0 }
+        let rows = try fetchInventory(ExchangeRate.self, step: "adopt-exchange-rates")
+        let taken = Set(rows.compactMap(\.syncID))
+        let anchors = rows.map { SyncContentAnchor.exchangeRate(dateKey: $0.dateKey, base: $0.base) }
+        let candidates = rows.enumerated().compactMap { index, row -> AdoptExchangeRateRebind.Candidate? in
+            guard row.syncID == nil else { return nil }
+            return .init(index: index, anchor: anchors[index])
+        }
+        let assignment = AdoptExchangeRateRebind.plan(
+            candidates: candidates, backendLive: enumeration.liveExchangeRateAnchors, taken: taken,
+            localAnchors: anchors)
+        for (index, syncID) in assignment {
+            rows[index].syncID = syncID
+        }
+        if !assignment.isEmpty {
+            CloudSyncBreadcrumb.adoptExchangeRatesRebound(count: assignment.count, candidates: candidates.count)
+        }
+        return assignment.count
     }
 
     /// Los pasos 6-7 del reconcile del adopt: sube EXACTAMENTE las huérfanas del plan definitivo. Sin huérfanas, o sin
@@ -3284,6 +3321,9 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         /// El instante (ms, componente físico del HLC) de la última escritura que conoce el backend, upserts y tombstones.
         /// `nil` si alguna no se deja leer o no hay ninguna: entonces ninguna fila local se da por nacida después.
         var lastWriteMs: Int64?
+        /// El ancla de contenido (fecha y base) de cada tipo de cambio VIVO del backend, para que el adopt case los locales
+        /// en vez de subirlos (`AdoptExchangeRateRebind`, card hov2).
+        var liveExchangeRateAnchors: [UUID: String] = [:]
     }
 
     /// Enumera TODAS las identidades que el backend conoce (upserts Y tombstones) por páginas read-only (idiom
@@ -3296,6 +3336,7 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
         var liveFusionKeys: [UUID: String] = [:]
         var lastWriteMs: Int64?
         var lastWriteReadable = true
+        var liveExchangeRateAnchors: [UUID: String] = [:]
         var cursor: Int64 = 0
         while true {
             switch await tombstoneSource.pullPage(since: cursor, limit: 500) {
@@ -3314,17 +3355,22 @@ final class MigrationWorkExecutor: MigrationWorkExecuting {
                         liveByTable[delta.entityType]?.remove(delta.syncID)
                         liveKeys[delta.syncID] = nil
                         liveFusionKeys[delta.syncID] = nil
+                        liveExchangeRateAnchors[delta.syncID] = nil
                     } else {
                         liveByTable[delta.entityType, default: []].insert(delta.syncID)
                         liveKeys[delta.syncID] = LineageTwinKey.backend(table: delta.entityType, fields: delta.fields)
                         liveFusionKeys[delta.syncID] = LineageTwinKey.fusion(table: delta.entityType, fields: delta.fields)
+                        if delta.entityType == EntityEmissionMap.exchangeRate.table {
+                            liveExchangeRateAnchors[delta.syncID] = AdoptExchangeRateRebind.backendAnchor(fields: delta.fields)
+                        }
                     }
                 }
                 let next = max(page.maxServerSeq, cursor)
                 if page.deltas.isEmpty || next <= cursor {   // agotado / sin progreso
                     return BackendEnumeration(known: known, liveByTable: liveByTable, liveKeys: liveKeys,
                                               liveFusionKeys: liveFusionKeys,
-                                              lastWriteMs: lastWriteReadable ? lastWriteMs : nil)
+                                              lastWriteMs: lastWriteReadable ? lastWriteMs : nil,
+                                              liveExchangeRateAnchors: liveExchangeRateAnchors)
                 }
                 cursor = next
             case .sessionExpired, .accountUnavailable, .transient:

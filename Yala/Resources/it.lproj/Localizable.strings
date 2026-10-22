@@ -8047,3 +8047,35 @@
 
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "Accettare %@ nel gruppo?";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "Il tuo account è passato al cloud da un altro dispositivo, quindi il ritorno a iCloud si fa da quello, se ha ancora Yala. Qui puoi continuare a usare il cloud.";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "Un momento";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "Sono arrivate molte richieste di fila da questo telefono. Aspetta un minuto e riprova: la foto va bene.";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "Hai raggiunto il limite di oggi";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "Per oggi non restano altre letture di foto. Si rinnovano ogni giorno; nel frattempo puoi inserirlo a mano.";
+
+/* card vv0k */
+"voice.failure.busy.title" = "Un momento";
+
+/* card vv0k */
+"voice.failure.busy.message" = "Sono arrivate molte richieste di fila da questo telefono. Aspetta un minuto e riprova con la stessa nota.";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "Hai raggiunto il limite di oggi";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "Per oggi non restano altre letture vocali. Si rinnovano ogni giorno; nel frattempo puoi inserirlo a mano.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "Hai raggiunto il limite di oggi: 1 non è stata letta.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "Hai raggiunto il limite di oggi: %d non sono state lette.";

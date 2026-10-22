@@ -41,4 +41,10 @@ nonisolated enum MigrationImportWaitLogic {
         }
         return "\(cause)|\(bucket)"
     }
+
+    /// El mismo canario cuando la espera que vence es la de cada entrada del runner (120 s; card ppxk): no cuenta imports,
+    /// así que el segundo segmento es `runner` y la serie distingue las dos esperas sin cambiar de nombre.
+    static func runnerStallDetail(stillImporting: Bool) -> String {
+        "\(stillImporting ? "importing" : "recentImport")|runner"
+    }
 }

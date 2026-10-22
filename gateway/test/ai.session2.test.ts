@@ -318,9 +318,9 @@ describe("limitador (lógica pura)", () => {
     expect(applyCheck(s, { category: "voice", trial: 5, burstPerMin: 100, notePairing: "consume" }, t0 + 10)).toMatchObject({ allowed: true, ticket: { counted: null } });
     const burst = base();
     burst.notes = [t0];
-    burst.burst = [t0, t0, t0];
+    burst.burstBy = { voice: [t0, t0, t0] };
     expect(applyCheck(burst, { category: "voice", trial: 5, burstPerMin: 3, notePairing: "consume" }, t0 + 1).allowed).toBe(true);
-    expect(burst.burst).toHaveLength(3);
+    expect(burst.burstBy?.voice).toHaveLength(3);
   });
 
   it("dos notas seguidas (4 llamadas) caben en la ráfaga de 5 por minuto del plan free", () => {
@@ -329,7 +329,31 @@ describe("limitador (lógica pura)", () => {
       expect(applyCheck(s, { category: "voice", trial: 5, burstPerMin: 5, notePairing: "grant" }, t0 + i * 2).allowed).toBe(true);
       expect(applyCheck(s, { category: "voice", trial: 5, burstPerMin: 5, notePairing: "consume" }, t0 + i * 2 + 1).allowed).toBe(true);
     }
-    expect(s.burst).toHaveLength(2);
+    expect(s.burstBy?.voice).toHaveLength(2);
+  });
+
+  it("la ráfaga es por categoría: el tráfico de sync no le quita el hueco a una foto (card vv0k)", () => {
+    const s = base();
+    // El motor de la nube y el arranque, en el mismo minuto: diez peticiones de sync y tres de tasas.
+    for (let i = 0; i < 10; i++) expect(applyCheck(s, { category: "sync", daily: 20000, burstPerMin: 240 }, t0 + i).allowed).toBe(true);
+    for (let i = 0; i < 3; i++) expect(applyCheck(s, { category: "rates", daily: 2000, burstPerMin: 60 }, t0 + 20 + i).allowed).toBe(true);
+    // La primera foto del plan free, con su tope de 5 por minuto, entra.
+    expect(applyCheck(s, { category: "vision", trial: 5, burstPerMin: 5 }, t0 + 30)).toMatchObject({ allowed: true, reason: null });
+    // Y su propio tope sigue mandando (con cupo diario de sobra, para que el motivo sea la ráfaga y no el cupo).
+    for (let i = 1; i < 5; i++) {
+      expect(applyCheck(s, { category: "vision", daily: 50, burstPerMin: 5 }, t0 + 30 + i).allowed).toBe(true);
+    }
+    expect(applyCheck(s, { category: "vision", daily: 50, burstPerMin: 5 }, t0 + 40).reason).toBe("burst");
+    // Pasado el minuto, las listas se podan: ninguna se queda creciendo en el estado.
+    expect(applyCheck(s, { category: "vision", daily: 50, burstPerMin: 5 }, t0 + 61_000).allowed).toBe(true);
+    expect(Object.keys(s.burstBy ?? {})).toEqual(["vision"]);
+  });
+
+  it("un estado guardado con la lista global de antes no frena a nadie", () => {
+    const s = base();
+    s.burst = Array.from({ length: 50 }, (_, i) => t0 + i);
+    expect(applyCheck(s, { category: "vision", trial: 5, burstPerMin: 5 }, t0 + 100).allowed).toBe(true);
+    expect(s.burst).toEqual([]);
   });
 
   it("un rechazo no gasta (los reintentos no se castigan solos)", () => {

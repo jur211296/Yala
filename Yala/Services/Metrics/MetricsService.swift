@@ -141,6 +141,13 @@ enum MetricsCanary: String {
     /// canario es lo que la confirma o la refuta en la flota. Distinto de cero = había teléfonos que se quedaban esperando
     /// para siempre a un token.
     case attestRefreshAbandoned
+    /// Una lectura de foto o de nota de voz que falló EN EL CAMINO al gateway (card vv0k del QA guiado del 2026-10-19: la
+    /// primera foto tras instalar falló al instante y no llegó ningún canario, porque ese camino no emitía nada). `detail` =
+    /// `<photo|voice-transcribe|voice-parse>|<tipo>`: el `error.type` del gateway (`yala_quota_burst`, `yala_attest_invalid`…)
+    /// o la familia local (`attest`, `url:<código>`, `decoding`, `invalidResponse`, `other`), sin datos de la persona
+    /// (`ProxyErrorMapper.failureKind`). Una vez por proceso y tipo (`canaryOnce`): una tanda de diez fotos con el mismo
+    /// fallo no llena el spool. El cupo de prueba agotado no sale: es el desenlace esperado del plan free, no una avería.
+    case aiEntryReadFailed
     /// «Activar la nube» venció los 300 s de pre-espera a que iCloud termine de importar
     /// (`CloudMigrationController.awaitImportQuiescenceForResume`). Una vez por proceso. `detail` =
     /// `<importing|recentImport>|<0|1-10|11-50|gt50>`: si al vencer seguía un import en curso o habían terminado imports

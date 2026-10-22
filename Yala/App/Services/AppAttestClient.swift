@@ -155,6 +155,20 @@ final class AppAttestClient {
         #endif
     }
 
+    /// El plan del teléfono acaba de cambiar (una compra o una restauración de Yala Pro). El token de sesión lleva el plan
+    /// DENTRO (lo decide el gateway al acuñarlo, `attest/routes.ts` › `applyEntitlement`) y vive 15 min: sin olvidarlo, el
+    /// gateway seguía viendo «free» hasta un cuarto de hora después de comprar, con sus topes (card vv0k del QA guiado del
+    /// 2026-10-19). El siguiente `currentSessionToken()` pide uno nuevo con la compra ya dentro. Tampoco toca el
+    /// single-flight ni la caché negativa: un refresh en vuelo empezó antes de la compra y su token se guardará igual, y
+    /// eso solo deja el caso de antes (el plan viejo hasta que caduque).
+    func discardSessionTokenAfterPlanChange() {
+        guard cached != nil else { return }
+        cached = nil
+        #if DEBUG
+        print("AppAttestClient: el plan cambió, se pedirá un token de sesión nuevo")
+        #endif
+    }
+
     /// Espera a `task` como mucho lo que le quede del techo (`AttestSessionTokenLogic.refreshStallCeiling`, contado desde
     /// que arrancó). Vencido, la tarea se ABANDONA —deja de ser el single-flight y el siguiente llamador arranca otra— y se
     /// lanza un error de red: pasajero para todos los consumidores y sin sumar a la racha del teléfono (estar sin respuesta
