@@ -583,10 +583,16 @@ entorno, va primero (su sección, arriba).
 alguna línea ya tiene cambios. Tras volver el Worker atrás, un teléfono que ya apuntó «backend = 3» manda la columna hasta
 su siguiente pull, y el Worker v2 rechaza esas filas enteras (`unknown_column`) en ese hueco.
 
-## `g22_01_set_member_role.sql` — hacer o quitar administrador en un grupo de la nube (PENDIENTE en los dos entornos, 2026-10-21)
+## `g22_01_set_member_role.sql` — hacer o quitar administrador en un grupo de la nube (aplicada en los dos entornos el 2026-10-22)
 
-**Ni staging ni producción.** La sesión que lo escribió no tocó ninguna base, a propósito: el encargo lo deja en local
-(banco y migración) y el despliegue es de Jürgen (ticket `groups-set-member-role-deploy`).
+> **Aplicada el 2026-10-22 en staging y producción** (Frank, con el token de gestión por `/database/query`, envuelta en
+> `begin;`/`commit;`, autorizado por Jürgen en el encargo). Antes, en los dos: `set_member_role` no existía y los md5 eran
+> los de partida (`e716f203…` / `a4bbcff1…`). Después, en los dos: una fila con `prosecdef = true`,
+> `proconfig = {search_path=public}`, `anon_puede = false`, `authenticated_puede = true`, y los md5 nuevos
+> (`efce7084…` / `f4820b99…`). Workers: staging `043cdff6` → `2574d9e8`, producción `2e2c05c4` → `9769f3fd`; `/config`
+> sigue anunciando `manifestVersion 3` en los dos. Sonda en staging con el usuario A de test: `set_member_role` sobre un
+> grupo ajeno contesta `yala_not_authorized` (el RPC existe y decide) y el control `nonexistent_rpc_probe`, 404
+> `unknown rpc`. Falta la prueba con dos teléfonos (paso 5): ticket `groups-set-member-role-deploy`, en `qa`.
 
 Qué es: un RPC nuevo, `public.set_member_role(text, text, text)`, que un admin activo usa para hacer admin a otro miembro
 activo o quitárselo, y dos RPC redefinidos: `remove_member` y `leave_group` dejan además `role = 'member'` (quien sale

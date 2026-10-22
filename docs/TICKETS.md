@@ -43,17 +43,8 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1034)
+## Index (1037)
 
-| cloud-progress-shows-real-steps-and-counts | backlog | tickets/backlog/cloud-progress-shows-real-steps-and-counts.md |
-| cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in | qa | tickets/qa/cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in.md |
-| first-photo-after-install-fails-on-a-shared-burst-limit | qa | tickets/qa/first-photo-after-install-fails-on-a-shared-burst-limit.md |
-| groups-notifications-permission-skipped-when-the-group-arrives-another-way | backlog | tickets/backlog/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
-| invite-neutral-gate-forgets-the-group-card-answer | backlog | tickets/backlog/invite-neutral-gate-forgets-the-group-card-answer.md |
-| groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed | backlog | tickets/backlog/groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed.md |
-| groups-fab-group-with-only-pending-groups-says-nothing | backlog | tickets/backlog/groups-fab-group-with-only-pending-groups-says-nothing.md |
-| groups-form-and-settings-name-the-same-options-differently | backlog | tickets/backlog/groups-form-and-settings-name-the-same-options-differently.md |
-| groups-legacy-consent-keys-survive-a-person-handover | backlog | tickets/backlog/groups-legacy-consent-keys-survive-a-person-handover.md |
 | id | status | path |
 |---|---|---|
 | a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved | done | tickets/done/a-failed-snapshot-enqueue-save-leaves-the-journal-unsaved.md |
@@ -253,10 +244,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | cloud-migration-offers-the-cloud-to-a-phone-without-app-attest | done | tickets/done/cloud-migration-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest | done | tickets/done/cloud-onboarding-offers-the-cloud-to-a-phone-without-app-attest.md |
 | cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes | done | tickets/done/cloud-phone-without-app-attest-cannot-sign-out-with-personal-changes.md |
+| cloud-progress-shows-real-steps-and-counts | backlog | tickets/backlog/cloud-progress-shows-real-steps-and-counts.md |
 | cloud-session-expiry-with-only-group-changes-has-no-sign-in-door | done | tickets/done/cloud-session-expiry-with-only-group-changes-has-no-sign-in-door.md |
 | cloud-sign-in-cannot-choose-another-apple-id | backlog | tickets/backlog/cloud-sign-in-cannot-choose-another-apple-id.md |
 | cloud-sign-in-discovers-account-kind | done | tickets/done/cloud-sign-in-discovers-account-kind.md |
 | cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest | done | tickets/done/cloud-sign-in-screen-offers-sign-up-to-a-phone-without-app-attest.md |
+| cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in | qa | tickets/qa/cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in.md |
 | cloud-sign-out-final-recount-misses-edits-left-only-in-history | backlog | tickets/backlog/cloud-sign-out-final-recount-misses-edits-left-only-in-history.md |
 | cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit | done | tickets/done/cloud-sign-out-with-an-expired-session-and-personal-changes-has-no-exit.md |
 | cloud-sign-out-with-another-account-points-to-a-missing-sign-in-door | backlog | tickets/backlog/cloud-sign-out-with-another-account-points-to-a-missing-sign-in-door.md |
@@ -372,6 +365,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | external-entry-panel-link-loses-the-typed-amount-intermittently | backlog | tickets/backlog/external-entry-panel-link-loses-the-typed-amount-intermittently.md |
 | fab-appears-without-animation | backlog | tickets/backlog/fab-appears-without-animation.md |
 | faq-says-long-press-starts-bulk-edit | done | tickets/done/faq-says-long-press-starts-bulk-edit.md |
+| favorite-editor-does-not-know-transfer-favorites | backlog | tickets/backlog/favorite-editor-does-not-know-transfer-favorites.md |
+| favorite-transfer-destination-does-not-travel-in-cloud-mode | backlog | tickets/backlog/favorite-transfer-destination-does-not-travel-in-cloud-mode.md |
 | ficha-mx-vida-rates-jump-on-the-last-day | backlog | tickets/backlog/ficha-mx-vida-rates-jump-on-the-last-day.md |
 | filtro-de-cuentas-se-colapsa-al-navegar-a-registros | backlog | tickets/backlog/filtro-de-cuentas-se-colapsa-al-navegar-a-registros.md |
 | financial-report-amounts-unmarked | backlog | tickets/backlog/financial-report-amounts-unmarked.md |
@@ -379,6 +374,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | first-drain-cursor-creation-saves-pending-edits-under-the-engine-author | backlog | tickets/backlog/first-drain-cursor-creation-saves-pending-edits-under-the-engine-author.md |
 | first-expense-practice-alert-tears-down-the-success-screen | done | tickets/done/first-expense-practice-alert-tears-down-the-success-screen.md |
 | first-panel-says-available-zero-next-to-the-opening-balance | qa | tickets/qa/first-panel-says-available-zero-next-to-the-opening-balance.md |
+| first-photo-after-install-fails-on-a-shared-burst-limit | qa | tickets/qa/first-photo-after-install-fails-on-a-shared-burst-limit.md |
 | floating-buttons-cover-row-amounts-on-ipad-landscape | done | tickets/done/floating-buttons-cover-row-amounts-on-ipad-landscape.md |
 | flows-atlas-predates-session-redesign | backlog | tickets/backlog/flows-atlas-predates-session-redesign.md |
 | follower-waits-forever-on-a-lease-with-a-null-heartbeat | backlog | tickets/backlog/follower-waits-forever-on-a-lease-with-a-null-heartbeat.md |
@@ -457,6 +453,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-cloud-identity-loss-on-migrate | discarded | tickets/discarded/groups-cloud-identity-loss-on-migrate.md |
 | groups-cloud-mode-hardening-v1 | discarded | tickets/discarded/groups-cloud-mode-hardening-v1.md |
 | groups-consent-door-spec | qa | tickets/qa/groups-consent-door-spec.md |
+| groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed | backlog | tickets/backlog/groups-consent-signed-in-elsewhere-waits-for-groups-to-be-sealed.md |
 | groups-convergence-retries-every-launch-without-a-ceiling | backlog | tickets/backlog/groups-convergence-retries-every-launch-without-a-ceiling.md |
 | groups-create-approve-remove-show-a-raw-rpc-error | done | tickets/done/groups-create-approve-remove-show-a-raw-rpc-error.md |
 | groups-cursor-map-reads-an-undecodable-json-as-no-cursors | backlog | tickets/backlog/groups-cursor-map-reads-an-undecodable-json-as-no-cursors.md |
@@ -473,6 +470,8 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-entry-on-a-mirrored-store-still-blocks-the-owner | done | tickets/done/groups-entry-on-a-mirrored-store-still-blocks-the-owner.md |
 | groups-equal-split-shows-not-participating-on-peer | done | tickets/done/groups-equal-split-shows-not-participating-on-peer.md |
 | groups-expense-notif-only-on-foreground | done | tickets/done/groups-expense-notif-only-on-foreground.md |
+| groups-fab-group-with-only-pending-groups-says-nothing | backlog | tickets/backlog/groups-fab-group-with-only-pending-groups-says-nothing.md |
+| groups-form-and-settings-name-the-same-options-differently | backlog | tickets/backlog/groups-form-and-settings-name-the-same-options-differently.md |
 | groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing | backlog | tickets/backlog/groups-gate-can-start-the-neutral-return-while-the-welcome-is-dismissing.md |
 | groups-gate-wipe-failed-notice-can-outlive-its-attempt | backlog | tickets/backlog/groups-gate-wipe-failed-notice-can-outlive-its-attempt.md |
 | groups-ghost-tx-on-delete | done | tickets/done/groups-ghost-tx-on-delete.md |
@@ -491,10 +490,12 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start | done | tickets/done/groups-kept-by-the-late-notice-are-purged-by-the-welcome-fresh-start.md |
 | groups-killswitch-403-blocks-detach-forever | done | tickets/done/groups-killswitch-403-blocks-detach-forever.md |
 | groups-leave-rpc-error-10 | done | tickets/done/groups-leave-rpc-error-10.md |
+| groups-legacy-consent-keys-survive-a-person-handover | backlog | tickets/backlog/groups-legacy-consent-keys-survive-a-person-handover.md |
 | groups-log-expense-via-chat-voice | backlog | tickets/backlog/groups-log-expense-via-chat-voice.md |
 | groups-loop-in-backoff-ignores-the-return-to-foreground | done | tickets/done/groups-loop-in-backoff-ignores-the-return-to-foreground.md |
 | groups-loop-restart-docs-cite-a-retired-mount-guard | backlog | tickets/backlog/groups-loop-restart-docs-cite-a-retired-mount-guard.md |
 | groups-merkle-reads-an-unreadable-table-as-an-empty-one | done | tickets/done/groups-merkle-reads-an-unreadable-table-as-an-empty-one.md |
+| groups-notifications-permission-skipped-when-the-group-arrives-another-way | backlog | tickets/backlog/groups-notifications-permission-skipped-when-the-group-arrives-another-way.md |
 | groups-only-account-deletion-skips-export-wait | backlog | tickets/backlog/groups-only-account-deletion-skips-export-wait.md |
 | groups-only-private-restart-skips-the-wipe-alert | done | tickets/done/groups-only-private-restart-skips-the-wipe-alert.md |
 | groups-only-second-launch-mounts-icloud-mirror | done | tickets/done/groups-only-second-launch-mounts-icloud-mirror.md |
@@ -517,7 +518,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | groups-reassociation-does-not-restore-the-bridge-link | backlog | tickets/backlog/groups-reassociation-does-not-restore-the-bridge-link.md |
 | groups-reconnect-prune-or-rewire | done | tickets/done/groups-reconnect-prune-or-rewire.md |
 | groups-reject-can-expel-a-member-approved-elsewhere | backlog | tickets/backlog/groups-reject-can-expel-a-member-approved-elsewhere.md |
-| groups-set-member-role-deploy | backlog | tickets/backlog/groups-set-member-role-deploy.md |
+| groups-set-member-role-deploy | qa | tickets/qa/groups-set-member-role-deploy.md |
 | groups-settlement-reminder | done | tickets/done/groups-settlement-reminder.md |
 | groups-settlement-reminder-discoverability | done | tickets/done/groups-settlement-reminder-discoverability.md |
 | groups-settlement-reminder-stale-clock | backlog | tickets/backlog/groups-settlement-reminder-stale-clock.md |
@@ -585,6 +586,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | invite-link-creation-blames-the-connection-for-any-rpc-failure | done | tickets/done/invite-link-creation-blames-the-connection-for-any-rpc-failure.md |
 | invite-link-five-causes-one-message | done | tickets/done/invite-link-five-causes-one-message.md |
 | invite-link-on-a-fresh-install-shows-the-welcome-first | done | tickets/done/invite-link-on-a-fresh-install-shows-the-welcome-first.md |
+| invite-neutral-gate-forgets-the-group-card-answer | backlog | tickets/backlog/invite-neutral-gate-forgets-the-group-card-answer.md |
 | invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness | backlog | tickets/backlog/invite-neutral-gate-reopens-the-welcome-without-recomputing-readiness.md |
 | invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch | done | tickets/done/invite-on-a-fresh-install-mounts-the-icloud-mirror-after-a-relaunch.md |
 | invite-recovery-relaunches-for-a-mirror-it-never-uses | backlog | tickets/backlog/invite-recovery-relaunches-for-a-mirror-it-never-uses.md |
@@ -703,7 +705,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | panel-budget-spent-diverges-from-planning | backlog | tickets/backlog/panel-budget-spent-diverges-from-planning.md |
 | panel-colapsa-la-seleccion-de-cuentas-a-la-primera | done | tickets/done/panel-colapsa-la-seleccion-de-cuentas-a-la-primera.md |
 | panel-defaults-four-sections-four-widgets | done | tickets/done/panel-defaults-four-sections-four-widgets.md |
-| panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | backlog | tickets/backlog/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
+| panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo | done | tickets/done/panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo.md |
 | panel-no-recalcula-al-llegar-tasas-nuevas | done | tickets/done/panel-no-recalcula-al-llegar-tasas-nuevas.md |
 | panel-spent-per-account-counts-refunds-as-spending | done | tickets/done/panel-spent-per-account-counts-refunds-as-spending.md |
 | panel-stayed-filtered-after-removing-the-account-chip | backlog | tickets/backlog/panel-stayed-filtered-after-removing-the-account-chip.md |
@@ -870,8 +872,9 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | row-deleted-during-the-relief-wait-comes-back-after-the-relief | backlog | tickets/backlog/row-deleted-during-the-relief-wait-comes-back-after-the-relief.md |
 | rules-testing-habla-de-ios-27-que-no-existe | discarded | tickets/discarded/rules-testing-habla-de-ios-27-que-no-existe.md |
 | saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas | backlog | tickets/backlog/saldo-con-seleccion-no-contable-diverge-entre-panel-y-estadisticas.md |
-| save-as-favorite-from-a-mismatched-row-relabels-it | backlog | tickets/backlog/save-as-favorite-from-a-mismatched-row-relabels-it.md |
+| save-as-favorite-from-a-mismatched-row-relabels-it | done | tickets/done/save-as-favorite-from-a-mismatched-row-relabels-it.md |
 | save-error-alert-lies-when-the-context-autosaves | backlog | tickets/backlog/save-error-alert-lies-when-the-context-autosaves.md |
+| saved-record-notice-covers-the-panel-plus-button | backlog | tickets/backlog/saved-record-notice-covers-the-panel-plus-button.md |
 | saving-a-mismatched-transaction-relabels-it-without-converting | done | tickets/done/saving-a-mismatched-transaction-relabels-it-without-converting.md |
 | savings-tracking | backlog | tickets/backlog/savings-tracking.md |
 | scene-phase-active-guard-may-leave-the-brake-paused | backlog | tickets/backlog/scene-phase-active-guard-may-leave-the-brake-paused.md |
