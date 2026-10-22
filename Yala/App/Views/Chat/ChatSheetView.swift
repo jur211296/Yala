@@ -18,6 +18,9 @@ struct ChatSheetView: View {
     @State private var viewModel = ChatAssistantViewModel()
     @State private var showAISettingsSheet = false
     @State private var showTopicsSheet = false
+    /// El permiso de voz y foto que pide el micrófono antes de grabar la primera vez.
+    @State private var showVoiceConsentAlert = false
+    @State private var pendingVoiceConsentInput: PendingAIInput = .voice
     /// El tema elegido en la hoja de Temas sale al CERRARSE esa hoja: si toca preguntar N1, su aviso no puede pedirse
     /// con la hoja todavía arriba.
     @State private var topicAwaitingSheetDismissal: ChatSuggestion?
@@ -128,6 +131,9 @@ struct ChatSheetView: View {
                 isLoading: viewModel.suggestionsLoading,
                 onSelect: { suggestion in topicAwaitingSheetDismissal = suggestion }
             )
+        }
+        .aiConsentAlert(isPresented: $showVoiceConsentAlert, pendingInput: $pendingVoiceConsentInput) { _ in
+            Task { await viewModel.startVoiceInput() }
         }
         .cloudExploreConsentAlert(
             isPresented: $viewModel.showsCloudExploreConsent,
@@ -492,9 +498,18 @@ struct ChatSheetView: View {
     }
 
     private func toggleVoiceInput() async {
-        if viewModel.isRecording {
+        // El audio va a transcribirse con un servicio de IA: sin el permiso de voz y foto se pide antes (decisión A de
+        // Jürgen, `ChatVoiceInputGateLogic`).
+        switch ChatVoiceInputGateLogic.action(
+            isRecording: viewModel.isRecording,
+            dataConsentAccepted: appPreferences.aiDataConsentAccepted
+        ) {
+        case .stop:
             await viewModel.stopVoiceInput()
-        } else {
+        case .askConsent:
+            pendingVoiceConsentInput = .voice
+            showVoiceConsentAlert = true
+        case .start:
             await viewModel.startVoiceInput()
         }
     }

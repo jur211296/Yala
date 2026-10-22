@@ -2198,6 +2198,9 @@ final class AppBootstrapper {
         // rehace para que lo que llegó a su fecha entre.
         WidgetDataCache.refreshIfBuiltOnAnotherDay(context: context)
 
+        // Quien volvió por «Ya tengo una cuenta»: si sus datos ya llegaron, los tips de principiante se dan por vistos.
+        ReturningUserBeginnerTips.settleIfPending(context: context)
+
         // Modo Nube runtime (I9, DARK): dispara un ciclo inmediato / re-evalúa stop-states. Inerte con
         // el flag apagado (y sin `shared` asignado, que solo lo pone el wiring del paso 14.7).
         if CloudSyncFlags.syncRuntimeEnabled {

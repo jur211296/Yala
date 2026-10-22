@@ -119,6 +119,37 @@ final class GroupsEducationalUITests: XCTestCase {
                        "Salió la hoja del consentimiento después de aceptarlo en el paso 3.")
     }
 
+    /// **El segundo botón del paso del consentimiento se llama «Ahora no»** (decisión B de Jürgen, 2026-10-21): «Ir a
+    /// Grupos» se leía como el mismo destino que «Aceptar y continuar». Sigue saliendo sin aceptar. Se afirma el texto
+    /// porque el cambio ES el texto; las dos lenguas del simulador (es y en) caben en la lista.
+    func test_educational_consentStep_secondaryButtonSaysNotNow() {
+        let app = XCUIApplication()
+        app.launchForUITest(seed: nil, deeplink: "groups", groupsEducativo: true)
+        XCTAssertTrue(app.waitForUITestReady(), "La app no llegó a `uitest_ready`.")
+
+        let cta = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(cta.waitForExistence(timeout: 30), "El educativo no se montó.")
+        cta.tap()
+        XCTAssertTrue(cta.waitForExistence(timeout: 5), "El educativo no avanzó al step 2.")
+        cta.tap()
+
+        XCTAssertTrue(app.buttons["groups_onboarding_consent_accept"].waitForExistence(timeout: 5),
+                      "El paso 3 no es el del consentimiento.")
+        let secondary = app.buttons["groups_onboarding_cta"]
+        XCTAssertTrue(secondary.waitForExistence(timeout: 5), "El paso 3 perdió su segundo botón.")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "educativo-grupos-paso-3"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(["Ahora no", "Not now"].contains(secondary.label),
+                      "El segundo botón dice «\(secondary.label)», no «Ahora no».")
+
+        // Sale sin aceptar: no hay hoja de la cuenta detrás.
+        secondary.tap()
+        XCTAssertFalse(app.buttons["groups_signin_button_google"].waitForExistence(timeout: 3),
+                       "«Ahora no» no puede seguir a la cuenta: sale sin aceptar.")
+    }
+
     /// La otra dirección, y la que impide que el seam se lea como «el educativo sale siempre»: **sin el
     /// arg, el early-return sigue puesto**. Si alguien «simplifica» quitándolo, el sheet interceptaría los
     /// taps de toda la suite de Grupos — que es exactamente el fallo que ese early-return previene, y por

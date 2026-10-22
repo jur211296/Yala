@@ -138,10 +138,9 @@ struct ImportIntroSheet: View {
         self.onImportCompleted = onImportCompleted
     }
 
+    /// Las cuentas a las que se puede importar (`ImportAccountChoiceLogic`): sin archivadas ni cuentas de sistema.
     private var activeAccounts: [Account] {
-        accounts
-            .filter { !$0.isArchived }
-            .sorted(by: { $0.name < $1.name })
+        ImportAccountChoiceLogic.importableAccounts(accounts)
     }
 
     /// Accounts filtered by a specific currency (for single-currency import)

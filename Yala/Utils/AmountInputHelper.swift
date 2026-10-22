@@ -73,16 +73,17 @@ enum AmountInputHelper {
     }
 
     /// Parses a text field value to Double, handling locale grouping and decimal separators.
-    static func parseDecimal(_ text: String) -> Double {
-        let grouping = Locale.current.groupingSeparator ?? ","
-        let decimal = Locale.current.decimalSeparator ?? "."
+    static func parseDecimal(_ text: String, locale: Locale = .current) -> Double {
+        let grouping = locale.groupingSeparator ?? ","
+        let decimal = locale.decimalSeparator ?? "."
         let cleaned = text.replacing(grouping, with: "").replacing(decimal, with: ".")
         return Double(cleaned) ?? 0
     }
 
     /// Formats a Double with thousand grouping separators and 2 decimal places, respecting locale.
-    static func formatWithGrouping(_ value: Double) -> String {
+    static func formatWithGrouping(_ value: Double, locale: Locale = .current) -> String {
         let formatter = NumberFormatter()
+        formatter.locale = locale
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2

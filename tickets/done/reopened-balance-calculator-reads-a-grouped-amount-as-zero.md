@@ -1,10 +1,10 @@
 ---
 id: reopened-balance-calculator-reads-a-grouped-amount-as-zero
-status: backlog
+status: done
 priority: medium
 area: "onboarding, calculadora de saldo"
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-22
 source: "auditoría UX 2.2 · lote 1, nueva propuesta UI (sesión del 2026-10-13), hallazgo de camino"
 ---
 
@@ -35,3 +35,9 @@ Solo el onboarding prefija la calculadora; `AccountFormView` no.
 - El prefijado escribe el número sin separador de miles (o `parseAmount` entiende el formato que escribe el
   prefijado), con un test que cubra 1.800 en es-PE y en es-ES.
 - Reabrir la calculadora con 1.800 enseña 1.800 en el resultado y «Usar este saldo» lo conserva.
+
+## Cerrado (2026-10-22)
+
+El onboarding prefija la calculadora con su propio formato (`BalanceCalculatorInputLogic.prefillText`: sin separador de
+miles, punto decimal) y la calculadora lee con la misma lógica. Reabrir con 1.800 enseña 1.800 y lo conserva.
+Tests: `BalanceCalculatorInputLogicTests` (es-PE, es-ES, en-US y de-DE, con el control del texto agrupado).

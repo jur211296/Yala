@@ -1,10 +1,10 @@
 ---
 id: aligned-previous-interval-counts-the-next-midnight
-status: backlog
+status: done
 priority: medium
 area: statistics, panel
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-22
 source: encargo chat-context-archived-accounts-and-mtd (Frank, 2026-10-09), al reusar el helper para el chat
 ---
 
@@ -34,3 +34,11 @@ Restar 1 s al `end` del helper cuando no es el clamp (como hace ya `FullFinancia
 que lo corrige en local por no tocar los heros en su encargo), o filtrar con `< end` en los dos llamadores. Test con la
 transacción a medianoche exacta del día siguiente, en los dos heros. Revisar el `DateIntervalDayCount` de quien cuente
 días sobre ese intervalo.
+
+## Cerrado (2026-10-22)
+
+`DateAlignmentHelper.alignedPreviousInterval` resta un segundo cuando el fin es una medianoche (el día equivalente
+cierra en 23:59:59; el clamp a un previo que ya cierra en 23:59:59 no se toca). La corrección local de
+`FullFinancialContextBuilder.lastMonthToDateInterval` se retiró: con las dos, el día equivalente perdía un segundo real.
+Tests: `AlignedPreviousIntervalMidnightTests` (los dos heros) y los de `DateAlignmentHelperTests`, que fijaban el borde
+abierto como contrato y ahora usan previos como los entrega `PreviousPeriodHelper`.

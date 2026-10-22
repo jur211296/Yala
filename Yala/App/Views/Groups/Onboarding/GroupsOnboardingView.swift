@@ -304,8 +304,9 @@ struct GroupsOnboardingView: View {
             isConsented: GroupsConsentState.isAccepted
         ) {
             // L12-4: aceptar aquí es aceptar el consentimiento, por el mismo escritor que la hoja. Sin sesión sigue a la
-            // cuenta; con sesión, a Grupos. «Ir a Grupos» sale sin aceptar, como hasta hoy: qué hacer con ese segundo
-            // botón está en una card aparte, esperando la decisión de Jürgen.
+            // cuenta; con sesión, a Grupos. El segundo botón sale sin aceptar y se llama «Ahora no» (decisión B de
+            // Jürgen, 2026-10-21): «Ir a Grupos» se leía como el mismo destino que el principal, y la pestaña vuelve a
+            // pedir lo mismo.
             VStack(spacing: DS.Spacing.sm) {
                 YalaPrimaryButton(L10n.Groups.Consent.accept, icon: "checkmark.shield") {
                     GroupsConsentView.registerAcceptance(path: consentPath)
@@ -313,7 +314,7 @@ struct GroupsOnboardingView: View {
                 }
                 .accessibilityIdentifier("groups_onboarding_consent_accept")
 
-                YalaSecondaryButton(label) {
+                YalaSecondaryButton(L10n.Action.notNow) {
                     advance()
                 }
                 .accessibilityIdentifier("groups_onboarding_cta")

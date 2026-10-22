@@ -1314,7 +1314,7 @@ final class PanelViewModel {
             let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
                 for: trendType,
                 interval: calcContext.effectiveInterval,
-                accounts: calcContext.eligibleAccounts,
+                accounts: calcContext.balanceAccounts,
                 transactions: calcContext.balanceTransactions,
                 preferredCurrencyCode: calcContext.defaultCurrencyCode,
                 // El mismo converter que la curva: la cifra y su último punto salen de la misma regla
@@ -1727,14 +1727,20 @@ final class PanelViewModel {
             return FilterService.matchesCriteria(transaction, criteria: comparisonCriteria)
         }
 
-        // Balance transactions: same filters as filtered BUT without date filter
-        // INCLUDES adjustments (needed for running balance calculation)
-        let balanceCriteria = buildFilterCriteria()  // dateInterval = nil → no date filter
-        let balanceTransactions = transactions.filter { transaction in
-            guard let account = transaction.account else { return false }
-            if !eligibleAccountIDs.contains(account.persistentModelID) { return false }
-            return FilterService.matchesCriteria(transaction, criteria: balanceCriteria)
-        }
+        // Un saldo es lo que hay en las cuentas (decisión de Jürgen, 2026-10-22): las mismas cuentas que el número de
+        // arriba —el interruptor de Grupos incluido— y todos sus movimientos, sin los chips de filtro. Hasta ese día la
+        // curva de saldo y la hoja «¿Cuánto tienes hoy?» filtraban por los chips y no por el interruptor, al revés que
+        // el número de arriba (`hoja-del-saldo-vivo-ignora-los-filtros-de-sesion`). INCLUYE ajustes y saldos iniciales.
+        let balanceAccounts = PanelBalanceScopeLogic.accounts(
+            eligible: eligibleAccounts,
+            includeGroups: appPreferences?.includeGroupsInPanelTotal ?? true,
+            selectedAccountIDs: selectedAccountIDs,
+            isExcludeMode: isExcludeMode
+        )
+        let balanceTransactions = PanelBalanceScopeLogic.transactions(
+            transactions,
+            accountIDs: Set(balanceAccounts.map { $0.persistentModelID })
+        )
 
         // Expense-filtered transactions (excludes adjustments and initial balances)
         let expenseFiltered = filtered.filter { $0.balanceAdjustmentType == nil }
@@ -1802,6 +1808,7 @@ final class PanelViewModel {
             fullyFilteredTransactions: fullyFiltered,
             needWidgetTransactions: needWidgetTxns,
             transactionsWithoutDateFilter: transactionsWithoutDateFilter,
+            balanceAccounts: balanceAccounts,
             balanceTransactions: balanceTransactions,
             period: selectedPeriod,
             effectiveInterval: effectiveInterval,
@@ -2788,7 +2795,7 @@ final class PanelViewModel {
         let liveBalanceOverride = LiveBalanceCalculator.liveBalanceOverride(
             for: trendType,
             interval: context.effectiveInterval,
-            accounts: context.eligibleAccounts,
+            accounts: context.balanceAccounts,
             transactions: context.balanceTransactions,
             preferredCurrencyCode: context.defaultCurrencyCode,
             converter: context.converter
