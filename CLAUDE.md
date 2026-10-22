@@ -82,24 +82,26 @@ La rama depende de **dónde corre la sesión** —comprobable con un comando— 
 
 | Dónde corre | Cómo entrega |
 |---|---|
-| **Árbol principal** (`~/Yala`) | Commit directo en `2.1`. Sin rama y sin PR, **también para código**. |
+| **Árbol principal** (`~/Yala`) | Commit directo en `2.2`. Sin rama y sin PR, **también para código**. |
 | **Worktree** (`lanzar-sesion`, Grokbot) | Rama + PR, siempre. |
 
 Se comprueba con `git rev-parse --git-common-dir`: si devuelve algo distinto de `.git`, es worktree. «Quién está trabajando primero» NO es comprobable y por eso no es el criterio: dos sesiones que arranquen a la vez se creerían ambas la primera.
 
-Dos condiciones innegociables para commitear directo en `2.1`:
+Dos condiciones innegociables para commitear directo en `2.2`:
 
 1. **`/gate` en verde.** Sin PR, el gate es la única red que queda. Si no pasa, no hay commit.
 2. **El árbol es tuyo.** Si `git status` trae cambios que no son de esta sesión, parar y avisar. Dos sesiones sobre el mismo árbol se arrastran y el aislamiento por hunks no funciona.
 
-**Sin nada que compilar** —diffs que caen ENTEROS en `docs/` · `tickets/` · `marketing/` · `Web/` · `.github/` · `README.md` · `CLAUDE.md` · `LICENSE*`— va directo a `2.1` **desde cualquier sesión**, worktree incluido, y el gate salta a la validación del índice.
+**Sin nada que compilar** —diffs que caen ENTEROS en `docs/` · `tickets/` · `marketing/` · `Web/` · `.github/` · `README.md` · `CLAUDE.md` · `LICENSE*`— va directo a `2.2` **desde cualquier sesión**, worktree incluido, y el gate salta a la validación del índice.
 
 Esta lista **ya no es** «la del job `changes` de `.github/workflows/qa.yml` menos `.claude/`». Las dos responden preguntas distintas —«¿hay que compilar antes de commitear?» aquí, «¿puede este diff romper el build?» allí— y divergen en dos sitios, los dos a propósito:
 
 - **`.claude/` está aquí fuera y allí dentro.** Hooks, rules y permisos no rompen el build —por eso el CI los deja pasar— pero cambian cómo trabaja todo el mundo, así que van por PR.
 - **`.github/` está aquí dentro y allí fuera** (2026-09-03). En local no hay nada que compilar, así que el gate no aporta; en CI un cambio al workflow **tiene** que disparar la suite, o el CI dejaría de probar sus propios cambios — que es justo lo que hay que evitar después de un día ejecutando cero tests.
 
-**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión deja su propio PR **en cola de auto-merge** y cierra sin esperar al CI (ADR-054 de casa). GitHub lo mergea cuando pasan `tests` y `coverage-index`, que el ruleset de `2.1` exige. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
+**Ramas desde el 22-oct-2026** (2.1 publicada): `1.0` es la oficial de la app y de la web —Vercel publica desde ella—, solo admite PR con CI verde y recibe cada versión al publicarse. El trabajo se integra en `2.2`. Un arreglo urgente sobre lo publicado sale de `1.0`, se etiqueta `v2.1.x` y se mergea también a `2.2`: `docs/FLUJO-RAMAS-Y-HOTFIX.md`. Un cambio en `Web/` que deba verse ya es un hotfix: en `2.2` no se publica hasta la próxima versión.
+
+**El release sigue siendo de Jürgen**, y un PR abierto lo mergea él salvo que pida otra cosa. Un encargo en **MODO AUTÓNOMO ya lo pide**: ahí la sesión deja su propio PR **en cola de auto-merge** y cierra sin esperar al CI (ADR-054 de casa). GitHub lo mergea cuando pasan `tests` y `coverage-index`, que el ruleset de `2.2` exige. Mergear no es release; subir un build sigue siendo suyo. Lo que desaparece es el PR como trámite para el trabajo de una sesión única, no su criterio.
 
 **Documentación: dos superficies, no cinco.** El ticket en `tickets/` (qué y por qué, mientras el trabajo vive) y la regla durable en `.claude/rules/` (lo que el yo-futuro no debe romper). Git y el cuerpo de cada PR ya guardan el qué y el cuándo; `docs/DECISIONS.md` es narrativa de proceso, no bitácora de cada commit.
 
@@ -136,7 +138,7 @@ Se bifurca según cómo se abrió la sesión, y eso se lee en el encargo o en el
 
 **Git:** cada comando de lectura una sola vez, secuencialmente. No matar shells con git en curso.
 
-**Tags:** semver con prefijo `v` → `v1.0.0`. Nunca sin prefijo ni sin 3 componentes.
+**Tags:** semver con prefijo `v` → `v1.0.0`. Nunca sin prefijo ni sin 3 componentes. Única excepción: `v2.1`, que el cierre de 2.1 pidió con ese nombre y convive con `v2.1.0` en el mismo commit.
 
 
 ## Antes de cerrar una release
