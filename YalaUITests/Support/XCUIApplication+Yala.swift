@@ -458,6 +458,19 @@ extension XCUIApplication {
         return self
     }
 
+    // MARK: - Cerrar el formulario de registro
+
+    /// Cierra «Nuevo registro» con su X. Con algo escrito, la X pregunta «¿Descartar este registro?» (UX 2.2 · L2-4): se
+    /// confirma. Vacío, cierra sin preguntar y no hay nada que confirmar.
+    func closeNewTransactionDiscarding(timeout: TimeInterval = 5, file: StaticString = #filePath, line: UInt = #line) {
+        let close = buttons["new_transaction_close"]
+        XCTAssertTrue(close.waitForExistence(timeout: timeout),
+                      "Falta la X de Nuevo registro (new_transaction_close).", file: file, line: line)
+        close.tap()
+        let discard = alerts.buttons["new_transaction_discard_confirm"].firstMatch
+        if discard.waitForExistence(timeout: 2) { discard.tap() }
+    }
+
     // MARK: - Selectores (cuenta, subcategoría, etiquetas)
 
     /// Abre un selector desde su chip (o fila) y devuelve su primera fila, sin tocarla.

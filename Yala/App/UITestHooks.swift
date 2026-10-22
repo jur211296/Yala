@@ -893,6 +893,17 @@ final class UITestHooks {
         hasArg("-uitest-fail-wipe") && shared.isReady
     }
 
+    /// Valor de `-uitest-transactions-saved <n>`: los registros que la persona ya lleva guardados
+    /// (`transactionsSavedCount`). Con 3 o más, guardar cierra el formulario con el aviso breve (UX 2.2 · L2-5).
+    nonisolated static var transactionsSavedCount: Int? {
+        #if DEBUG
+        guard isActive else { return nil }
+        return parseValue(after: "-uitest-transactions-saved", from: ProcessInfo.processInfo.arguments).flatMap(Int.init)
+        #else
+        return nil
+        #endif
+    }
+
     /// Valor de `-uitest-seed <perfil>` (ej. "realista", "pesado", "dead-pointer"). Nil si ausente.
     /// `dead-pointer` siembra UNA TX personal cuyo puntero de grupo no resuelve — AC (c) de
     /// `qa_groups-tx-fantasma-al-borrar-gasto-de-grupo`. Ver `DevSeedTransactions.createDeadPointerFixture`.

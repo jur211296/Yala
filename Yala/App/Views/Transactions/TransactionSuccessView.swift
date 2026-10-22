@@ -82,6 +82,7 @@ struct TransactionSuccessView: View {
                     Spacer()
                     Button(L10n.Action.edit, action: onEdit)
                         .buttonStyle(.bordered)
+                        .accessibilityIdentifier("transaction_success_edit")
                 }
                 .padding(.horizontal, DS.Spacing.xl)
                 .padding(.top, DS.Spacing.lg)
@@ -298,11 +299,11 @@ struct TransactionSuccessView: View {
                 }
             }
 
-            // Note
+            // «Descripción», como en el formulario (UX 2.2 · L2-5): antes decía «Nota».
             if !data.note.isEmpty {
                 detailRow(
                     icon: "text.alignleft",
-                    label: L10n.Transaction.note,
+                    label: L10n.Transaction.description,
                     value: data.note
                 )
             }

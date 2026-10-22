@@ -1,10 +1,10 @@
 ---
 id: panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo
-status: backlog
+status: done
 priority: medium
 area: panel
 created: 2026-09-07
-updated: 2026-10-13
+updated: 2026-10-22
 source: review adversarial de panel-colapsa-la-seleccion-de-cuentas-a-la-primera
 ---
 
@@ -93,3 +93,15 @@ simulador: filtrada a «Ahorros USD», «Tienes ≈ S/ 119.333 en 1 cuenta» (an
 `tablero-bug-lote-3-b2-filtrado-a-una-cuenta-tus-0kbp`.
 
 **Queda abierto el (2)** (prefill del formulario) y su pregunta A/B/C de arriba.
+
+## Implementación (2026-10-22, lote decidido 2.2 · 02, sesión A)
+
+- **(2) El prefill del formulario**: el Panel ya no pasa `selectedAccountID`. La cuenta precargada sale de
+  `TransactionAccountPrefillLogic` (regla de L2-1 decidida por Jürgen el 21-oct), que lee el conjunto y el modo de
+  `SessionState`: filtro de una → esa; la última usada si el filtro no la deja fuera (con varias, solo si está entre ellas;
+  en excluir, solo si no es una excluida); la única; vacía. Nunca una al azar ni una excluida. Vale desde cualquier pantalla
+  que abra el formulario. Tests: `TransactionAccountPrefillLogicTests` (una, varias, excluir, sin filtro, una sola,
+  archivada, líneas de tarjeta) y el scan `UXAudit22Decidido02WiringTests.elPanel_yaNoPrecargaUnaCuentaDelFiltro`.
+- **(1) El subtítulo del panorama**: medido, ya no se pinta en ningún sitio (`panoramaCollapsedSummary` no tiene
+  consumidor; el hero dice «Tienes X en tus cuentas», sin número, y el flujo de caja cuenta con `summedAccountsCount`).
+  No queda nada que arreglar.

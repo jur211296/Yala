@@ -74,9 +74,8 @@ final class WidgetEntryBackgroundUITests: XCTestCase {
     }
 
     private func closeForm(_ app: XCUIApplication) {
-        let close = app.buttons["new_transaction_close"]
-        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
-        close.tap()
+        // Con el importe escrito, la X pregunta antes de descartar (UX 2.2 · L2-4).
+        app.closeNewTransactionDiscarding()
     }
 
     private func assertPanelSelected(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {

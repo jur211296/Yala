@@ -1148,6 +1148,20 @@ final class AppBootstrapper {
             Self.restoreUITestSecondaryCurrencies(into: UserDefaults.standard)
             SessionState.shared.needsExchangeRateWidgetRefresh = true
         }
+        // Registros que la persona ya lleva (UX 2.2 · L2-5): con 3 o más, guardar cierra con el aviso breve en vez de la
+        // pantalla completa. Tras el reset, que borra el contador.
+        if let saved = UITestHooks.transactionsSavedCount {
+            UserDefaults.standard.set(saved, forKey: NotificationPrimerMoments.savedRecordsKey)
+            // Quien ya lleva esos registros ya pasó por el respaldo del permiso de notificaciones (sale en el tercero):
+            // sin esto, la hoja del permiso saldría al guardar, antes del aviso.
+            if saved >= NotificationPrimerMomentLogic.recordsThreshold {
+                UserDefaults.standard.set(true, forKey: NotificationPrimerMoments.seenKey)
+            }
+            // Y por el primer gasto: sin esto, «¿Era de prueba?» saldría sobre el aviso del cuarto registro.
+            if saved > 0 {
+                SetupChecklistManager.shared.markCompleted(.firstExpense)
+            }
+        }
         // Seed desync AISLADO (excluyente con `-uitest-seed`): 4 TX con signo↔categoría
         // desincronizada para el XCUI de clasificación income/expense por categoría.
         if UITestHooks.seedDesync {

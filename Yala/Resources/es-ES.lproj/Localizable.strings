@@ -1479,8 +1479,8 @@
 "favorites.newTitle" = "Nuevo favorito";
 "favorites.noFavorites" = "Aún no tienes favoritos";
 "favorites.notConfigured" = "Sin configurar";
-"favorites.saveDescription" = "Guarda como favorito las características de este pago y úsalo para registrar más rápido gastos similares en el futuro. Lo encontrarás en la ⭐ en la parte superior derecha al crear o editar cualquier registro. Siempre podrás editarlo desde Pagos Favoritos en tu perfil.";
-"favorites.title" = "Pagos favoritos";
+"favorites.saveDescription" = "Tus gastos de siempre, a un toque.";
+"favorites.title" = "Favoritos";
 "featureGate.accounts" = "Cuentas";
 "featureGate.budgets" = "Presupuestos";
 "featureGate.cashFlowAdvanced" = "Flujo de caja avanzado";
@@ -2698,7 +2698,7 @@
 "settings.exportData" = "Exportar datos";
 "settings.faceId" = "Face ID";
 "settings.faq" = "Preguntas frecuentes";
-"settings.favorites" = "Pagos favoritos";
+"settings.favorites" = "Favoritos";
 "settings.firstWeekday" = "Primer día de la semana";
 "settings.firstWeekdayDescription" = "Define qué día considerar como inicio de semana para filtros como 'Esta semana'.";
 "settings.help" = "¿Necesitas ayuda?";
@@ -3324,9 +3324,9 @@
 "tutorials.createFavorites.intro.title" = "¿Qué son los favoritos?";
 "tutorials.createFavorites.step0.desc" = "En Nuevo registro, toca «Favorito», debajo del monto, para guardar como favorito lo que llevas escrito.";
 "tutorials.createFavorites.step0.title" = "Crea un favorito";
-"tutorials.createFavorites.step1.desc" = "La próxima vez, toca la estrella de arriba y elige el favorito: los campos que has guardado se rellenan solos.";
+"tutorials.createFavorites.step1.desc" = "La próxima vez, toca el favorito en la fila de arriba del formulario: los campos que has guardado se rellenan solos.";
 "tutorials.createFavorites.step1.title" = "Úsalo rápidamente";
-"tutorials.createFavorites.title" = "Pagos favoritos";
+"tutorials.createFavorites.title" = "Favoritos";
 "tutorials.createRecord.completion.desc" = "Cuanto antes apuntes cada gasto, más claro verás en qué se va tu dinero.";
 "tutorials.createRecord.completion.title" = "Ya sabes cómo registrar un gasto";
 "tutorials.createRecord.intro.desc" = "Cada gasto que registras te ayuda a entender mejor tus finanzas.";
@@ -7587,3 +7587,34 @@
 "groups.l19.error.lastAdmin" = "Tiene que quedar al menos un administrador en el grupo.";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "Esta persona tiene que volver a entrar al grupo con su cuenta antes de poder administrarlo.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "Para guardar, falta %@";
+"l2d.missing.amount" = "el importe";
+"l2d.missing.account" = "la cuenta";
+"l2d.missing.category" = "la categoría";
+"l2d.missing.sourceAccount" = "la cuenta de origen";
+"l2d.missing.destinationAccount" = "la cuenta de destino";
+"l2d.missing.twoDifferentAccounts" = "Elige dos cuentas distintas";
+"l2d.missing.chipValue" = "Falta";
+"l2d.discard.title" = "¿Descartar este registro?";
+"l2d.saved.expense" = "Gasto guardado · %@";
+"l2d.saved.income" = "Ingreso guardado · %@";
+"l2d.saved.transfer" = "Transferencia guardada · %@";
+"l2d.saved.changes" = "Cambios guardados";
+"l2d.saved.repeatsWeekly" = "Guardado · se repetirá cada semana";
+"l2d.saved.repeatsMonthly" = "Guardado · se repetirá cada mes";
+"l2d.saved.repeatsYearly" = "Guardado · se repetirá cada año";
+"l2d.transfer.needsAnotherAccount" = "Para pasar dinero necesitas otra cuenta";
+"l2d.transfer.createAnotherAccount" = "Crear otra cuenta";
+"l2d.date.dayBeforeYesterday" = "Anteayer";
+"l2d.date.futureDaysNote" = "Los días que vienen salen en gris. Para un pago que aún no ha llegado, usa [Pagos planificados](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "Ver todos";
+"l2d.favorites.use" = "Usar el favorito %@";
+"l2d.favorites.transferHelp" = "Tus transferencias de siempre, a un toque.";
+"l2d.recurring.title" = "Hacer recurrente";
+"l2d.recurring.header" = "Guardamos el de hoy. Los siguientes llegarán a tu Bandeja el día que toque, para que los confirmes. Los ves en Pagos planificados.";
+"l2d.recurring.weekly" = "Cada semana, el %@";
+"l2d.recurring.monthly" = "Cada mes, el día %d";
+"l2d.recurring.yearly" = "Cada año, el %@";
+"l2d.recurring.moreOptions" = "Más opciones…";

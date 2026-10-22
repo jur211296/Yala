@@ -400,7 +400,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "Favoriete betalingen";
+"favorites.title" = "Favorieten";
 "favorites.new" = "Nieuwe favoriet";
 "favorites.edit" = "Favoriet bewerken";
 "favorites.noFavorites" = "Je hebt nog geen favorieten";
@@ -410,7 +410,7 @@
 "favorites.namePlaceholder" = "Naam van favoriet";
 "favorites.notConfigured" = "Niet ingesteld";
 "favorites.descriptionPlaceholder" = "Beschrijving (optioneel)";
-"favorites.saveDescription" = "Sla deze betaling op als favoriet om vergelijkbare uitgaven in de toekomst snel te boeken. Je vindt hem in de ⭐ rechtsboven bij het aanmaken of bewerken van een boeking. Je kunt hem altijd bewerken via Favoriete betalingen in je profiel.";
+"favorites.saveDescription" = "Je vaste uitgaven, met één tik.";
 
 // MARK: - Scheduled
 
@@ -445,7 +445,7 @@
 "settings.categories" = "Categorieën";
 "settings.tags" = "Labels";
 "settings.notifications" = "Notificaties";
-"settings.favorites" = "Favoriete betalingen";
+"settings.favorites" = "Favorieten";
 "settings.budgets" = "Budgetten";
 "settings.budgetsFavorites" = "Favoriete budgetten";
 "settings.budgetsFavoritesInfo" = "Favoriete budgetten verschijnen in de Budgetten-kaart op Start (3 in medium, 5 in groot).";
@@ -2666,7 +2666,7 @@
 "tutorials.createScheduledPayments.completion.desc" = "Op de vervaldag zet Yala elke betaling in de Inbox, klaar om goed te keuren.";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "Favoriete betalingen";
+"tutorials.createFavorites.title" = "Favorieten";
 "tutorials.createFavorites.intro.title" = "Wat zijn favorieten?";
 "tutorials.createFavorites.intro.desc" = "Bewaar veelvoorkomende uitgaven als shortcuts en boek ze met één tik.";
 "tutorials.createFavorites.step0.title" = "Maak een favoriet";
@@ -2742,7 +2742,7 @@
 "tutorials.createScheduledPayments.step3.desc" = "Zet onder ‘Meer opties’ ‘Is dit een abonnement?’ aan als het er een is.";
 "tutorials.createScheduledPayments.step4.desc" = "Door op een geplande betaling te tikken zie je aankomende en al uitgevoerde betalingen, en kun je hem altijd bewerken.";
 "tutorials.createFavorites.step0.desc" = "Tik in Nieuwe boeking onder het bedrag op ‘Favoriet’ om wat je al hebt ingevuld als favoriet op te slaan.";
-"tutorials.createFavorites.step1.desc" = "Tik de volgende keer bovenin op de ster en kies de favoriet: de velden die je hebt opgeslagen, worden vanzelf ingevuld.";
+"tutorials.createFavorites.step1.desc" = "Tik de volgende keer op de favoriet in de rij bovenaan het formulier: de velden die je hebt opgeslagen, worden vanzelf ingevuld.";
 "tutorials.editPanel.step0.desc" = "Ga naar het hoofdscherm waar je je uitgavenoverzicht ziet met alle beschikbare widgets.";
 "tutorials.editPanel.step1.desc" = "Tik op de knop met vierkantjes naast elke sectie op Start om te kiezen welke widgets je ziet en in welke volgorde.";
 "tutorials.editPanel.step2.desc" = "Onthoud dat je altijd kunt terugkeren naar de standaardvolgorde door binnen 'Aanpassen' op \"Reset\" te tikken.";
@@ -8261,3 +8261,34 @@
 "groups.l19.error.lastAdmin" = "De groep moet minstens één beheerder hebben.";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "Deze persoon moet eerst met een eigen account weer lid worden voordat die beheerder kan zijn.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "Om op te slaan ontbreekt nog %@";
+"l2d.missing.amount" = "het bedrag";
+"l2d.missing.account" = "de rekening";
+"l2d.missing.category" = "de categorie";
+"l2d.missing.sourceAccount" = "de rekening waar het vandaan komt";
+"l2d.missing.destinationAccount" = "de rekening waar het naartoe gaat";
+"l2d.missing.twoDifferentAccounts" = "Kies twee verschillende rekeningen";
+"l2d.missing.chipValue" = "Ontbreekt";
+"l2d.discard.title" = "Deze registratie weggooien?";
+"l2d.saved.expense" = "Uitgave opgeslagen · %@";
+"l2d.saved.income" = "Inkomen opgeslagen · %@";
+"l2d.saved.transfer" = "Overschrijving opgeslagen · %@";
+"l2d.saved.changes" = "Wijzigingen opgeslagen";
+"l2d.saved.repeatsWeekly" = "Opgeslagen · herhaalt elke week";
+"l2d.saved.repeatsMonthly" = "Opgeslagen · herhaalt elke maand";
+"l2d.saved.repeatsYearly" = "Opgeslagen · herhaalt elk jaar";
+"l2d.transfer.needsAnotherAccount" = "Om geld over te maken heb je nog een rekening nodig";
+"l2d.transfer.createAnotherAccount" = "Nog een rekening maken";
+"l2d.date.dayBeforeYesterday" = "Eergisteren";
+"l2d.date.futureDaysNote" = "Komende dagen zijn grijs. Gebruik voor een betaling die nog moet komen [Geplande betalingen](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "Alles bekijken";
+"l2d.favorites.use" = "Favoriet %@ gebruiken";
+"l2d.favorites.transferHelp" = "Je vaste overschrijvingen, met één tik.";
+"l2d.recurring.title" = "Terugkerend maken";
+"l2d.recurring.header" = "We slaan die van vandaag op. De volgende komen op de juiste dag in je Inbox, zodat je ze bevestigt. Je vindt ze bij Geplande betalingen.";
+"l2d.recurring.weekly" = "Elke week, op %@";
+"l2d.recurring.monthly" = "Elke maand, op dag %d";
+"l2d.recurring.yearly" = "Elk jaar, op %@";
+"l2d.recurring.moreOptions" = "Meer opties…";

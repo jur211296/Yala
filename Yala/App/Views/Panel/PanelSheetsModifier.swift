@@ -94,8 +94,9 @@ struct PanelSheetsModifier: ViewModifier {
                 let subcategoryName = viewModel.selectedSubcategoryIDs.first.flatMap { id in
                     viewModel.allSubcategories.first { $0.persistentModelID == id }?.name
                 }
+                // La cuenta la pone la regla del formulario con el filtro entero (UX 2.2 · L2-1): `selectedAccountID` era
+                // una cuenta al azar con dos filtradas y la excluida en modo excluir.
                 NewTransactionView(
-                    prefillAccountID: viewModel.selectedAccountID,
                     prefillCategoryID: viewModel.selectedCategoryID,
                     prefillSubcategoryName: subcategoryName
                 )

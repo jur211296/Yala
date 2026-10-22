@@ -152,6 +152,8 @@ struct DetailContainerView: View {
                     reloadAndRecalculate: reloadAndRecalculate
                 )
             )
+            // «Editar» del aviso tras guardar abre el registro con la hoja de editar de Estadísticas (UX 2.2 · L2-5).
+            .environment(\.savedRecordEditorOpener, recordsViewModel.savedRecordEditorOpener)
             .appliesPendingRemoteChanges(sessionState)
             // Menú contextual de las filas de Registros: confirmación de borrado y selector de categoría.
             .modifier(RecordRowActionsPresenter(viewModel: recordsViewModel))

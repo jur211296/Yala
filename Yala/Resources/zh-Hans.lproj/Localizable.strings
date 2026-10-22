@@ -400,7 +400,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "收藏付款";
+"favorites.title" = "收藏";
 "favorites.new" = "新建收藏";
 "favorites.edit" = "编辑收藏";
 "favorites.noFavorites" = "你还没有任何收藏";
@@ -410,7 +410,7 @@
 "favorites.namePlaceholder" = "收藏名称";
 "favorites.notConfigured" = "未配置";
 "favorites.descriptionPlaceholder" = "描述(可选)";
-"favorites.saveDescription" = "把此付款保存为收藏,以便日后快速记录类似支出。在创建或编辑任何记录时,你会在右上角的 ⭐ 中找到它。你随时可以在个人资料中的「收藏付款」编辑它。";
+"favorites.saveDescription" = "常用支出，一键完成。";
 
 // MARK: - Scheduled
 
@@ -445,7 +445,7 @@
 "settings.categories" = "类别";
 "settings.tags" = "标签";
 "settings.notifications" = "通知";
-"settings.favorites" = "收藏付款";
+"settings.favorites" = "收藏";
 "settings.budgets" = "预算";
 "settings.budgetsFavorites" = "收藏的预算";
 "settings.budgetsFavoritesInfo" = "收藏的预算会显示在首页的预算卡片中（中等显示 3 个，大显示 5 个）。";
@@ -2666,7 +2666,7 @@
 "tutorials.createScheduledPayments.completion.desc" = "到了日子，Yala 会把每笔付款放进收件箱，等你审批。";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "收藏付款";
+"tutorials.createFavorites.title" = "收藏";
 "tutorials.createFavorites.intro.title" = "什么是收藏?";
 "tutorials.createFavorites.intro.desc" = "把常用支出存为快捷,一键记录。";
 "tutorials.createFavorites.step0.title" = "创建一个收藏";
@@ -2742,7 +2742,7 @@
 "tutorials.createScheduledPayments.step3.desc" = "在「更多选项」中，如果是订阅，请打开「这是订阅吗?」。";
 "tutorials.createScheduledPayments.step4.desc" = "点击一笔计划付款可查看即将到来的付款、已付款,以及随时编辑。";
 "tutorials.createFavorites.step0.desc" = "在新记录中，点击金额下方的「收藏」，即可将已填写的内容保存为收藏。";
-"tutorials.createFavorites.step1.desc" = "下次点击顶部的星标并选择收藏，已保存的字段会自动填好。";
+"tutorials.createFavorites.step1.desc" = "下次在表单顶部的那一行点击收藏，已保存的字段会自动填好。";
 "tutorials.editPanel.step0.desc" = "前往主屏幕,看到所有可用小组件的支出摘要。";
 "tutorials.editPanel.step1.desc" = "点按首页每个版块旁的方格按钮，选择要显示的小组件及其顺序。";
 "tutorials.editPanel.step2.desc" = "记住:在自定义中点击「重置」即可恢复默认顺序。";
@@ -8261,3 +8261,34 @@
 "groups.l19.error.lastAdmin" = "群组至少需要一名管理员。";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "此人需要先用自己的账户重新加入群组，才能成为管理员。";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "保存前还需要%@";
+"l2d.missing.amount" = "金额";
+"l2d.missing.account" = "账户";
+"l2d.missing.category" = "分类";
+"l2d.missing.sourceAccount" = "转出账户";
+"l2d.missing.destinationAccount" = "转入账户";
+"l2d.missing.twoDifferentAccounts" = "请选择两个不同的账户";
+"l2d.missing.chipValue" = "未填写";
+"l2d.discard.title" = "要丢弃这条记录吗？";
+"l2d.saved.expense" = "支出已保存 · %@";
+"l2d.saved.income" = "收入已保存 · %@";
+"l2d.saved.transfer" = "转账已保存 · %@";
+"l2d.saved.changes" = "更改已保存";
+"l2d.saved.repeatsWeekly" = "已保存 · 每周重复";
+"l2d.saved.repeatsMonthly" = "已保存 · 每月重复";
+"l2d.saved.repeatsYearly" = "已保存 · 每年重复";
+"l2d.transfer.needsAnotherAccount" = "转账需要另一个账户";
+"l2d.transfer.createAnotherAccount" = "创建另一个账户";
+"l2d.date.dayBeforeYesterday" = "前天";
+"l2d.date.futureDaysNote" = "未来的日期显示为灰色。尚未发生的付款，请使用[计划付款](yala-form://scheduled)。";
+"l2d.favorites.seeAll" = "查看全部";
+"l2d.favorites.use" = "使用收藏“%@”";
+"l2d.favorites.transferHelp" = "常用转账，一键完成。";
+"l2d.recurring.title" = "设为重复";
+"l2d.recurring.header" = "我们会保存今天这笔。之后的会在到期当天进入你的收件箱，等你确认。你可以在计划付款中查看。";
+"l2d.recurring.weekly" = "每周%@";
+"l2d.recurring.monthly" = "每月%d日";
+"l2d.recurring.yearly" = "每年%@";
+"l2d.recurring.moreOptions" = "更多选项…";

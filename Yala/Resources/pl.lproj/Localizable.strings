@@ -400,7 +400,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "Ulubione płatności";
+"favorites.title" = "Ulubione";
 "favorites.new" = "Nowa ulubiona";
 "favorites.edit" = "Edytuj ulubioną";
 "favorites.noFavorites" = "Nie masz jeszcze ulubionych";
@@ -410,7 +410,7 @@
 "favorites.namePlaceholder" = "Nazwa ulubionej";
 "favorites.notConfigured" = "Nieskonfigurowane";
 "favorites.descriptionPlaceholder" = "Opis (opcjonalnie)";
-"favorites.saveDescription" = "Zapisz tę płatność jako ulubioną, aby szybko zapisywać podobne wydatki w przyszłości. Znajdziesz ją w ⭐ w prawym górnym rogu podczas tworzenia lub edycji wpisu. Zawsze możesz ją edytować w sekcji Ulubione płatności w profilu.";
+"favorites.saveDescription" = "Twoje stałe wydatki na jedno stuknięcie.";
 
 // MARK: - Scheduled
 
@@ -445,7 +445,7 @@
 "settings.categories" = "Kategorie";
 "settings.tags" = "Etykiety";
 "settings.notifications" = "Powiadomienia";
-"settings.favorites" = "Ulubione płatności";
+"settings.favorites" = "Ulubione";
 "settings.budgets" = "Budżety";
 "settings.budgetsFavorites" = "Ulubione budżety";
 "settings.budgetsFavoritesInfo" = "Ulubione budżety pojawiają się na karcie Budżety na ekranie Start (3 w średniej, 5 w dużej).";
@@ -2666,7 +2666,7 @@
 "tutorials.createScheduledPayments.completion.desc" = "W dniu płatności Yala umieszcza ją w Skrzynce, gotową do zatwierdzenia.";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "Ulubione płatności";
+"tutorials.createFavorites.title" = "Ulubione";
 "tutorials.createFavorites.intro.title" = "Czym są ulubione?";
 "tutorials.createFavorites.intro.desc" = "Zapisuj częste wydatki jako skróty i rejestruj je jednym dotknięciem.";
 "tutorials.createFavorites.step0.title" = "Utwórz ulubioną";
@@ -2742,7 +2742,7 @@
 "tutorials.createScheduledPayments.step3.desc" = "W „Więcej opcji” włącz „Czy to subskrypcja?”, jeśli to subskrypcja.";
 "tutorials.createScheduledPayments.step4.desc" = "Stukając zaplanowaną płatność, zobaczysz nadchodzące płatności, te już zrealizowane, i będziesz mógł ją edytować w każdej chwili.";
 "tutorials.createFavorites.step0.desc" = "Na ekranie Nowy wpis stuknij „Ulubione” pod kwotą, aby zapisać jako ulubioną to, co już wpisano.";
-"tutorials.createFavorites.step1.desc" = "Następnym razem stuknij gwiazdkę u góry i wybierz ulubioną: zapisane pola wypełnią się same.";
+"tutorials.createFavorites.step1.desc" = "Następnym razem stuknij ulubioną w rzędzie u góry formularza: zapisane pola wypełnią się same.";
 "tutorials.editPanel.step0.desc" = "Przejdź na ekran główny, gdzie widzisz podsumowanie wydatków ze wszystkimi dostępnymi widżetami.";
 "tutorials.editPanel.step1.desc" = "Stuknij przycisk z kwadracikami obok każdej sekcji ekranu Start, aby wybrać, które widżety widzieć i w jakiej kolejności.";
 "tutorials.editPanel.step2.desc" = "Pamiętaj, że zawsze możesz wrócić do domyślnej kolejności, dotykając „Reset” w personalizacji.";
@@ -8261,3 +8261,34 @@
 "groups.l19.error.lastAdmin" = "W grupie musi zostać co najmniej jeden administrator.";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "Ta osoba musi najpierw ponownie dołączyć do grupy ze swoim kontem, zanim zostanie administratorem.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "Aby zapisać, brakuje: %@";
+"l2d.missing.amount" = "kwota";
+"l2d.missing.account" = "konto";
+"l2d.missing.category" = "kategoria";
+"l2d.missing.sourceAccount" = "konto źródłowe";
+"l2d.missing.destinationAccount" = "konto docelowe";
+"l2d.missing.twoDifferentAccounts" = "Wybierz dwa różne konta";
+"l2d.missing.chipValue" = "Brakuje";
+"l2d.discard.title" = "Odrzucić ten wpis?";
+"l2d.saved.expense" = "Wydatek zapisany · %@";
+"l2d.saved.income" = "Przychód zapisany · %@";
+"l2d.saved.transfer" = "Transfer zapisany · %@";
+"l2d.saved.changes" = "Zmiany zapisane";
+"l2d.saved.repeatsWeekly" = "Zapisano · powtórzy się co tydzień";
+"l2d.saved.repeatsMonthly" = "Zapisano · powtórzy się co miesiąc";
+"l2d.saved.repeatsYearly" = "Zapisano · powtórzy się co rok";
+"l2d.transfer.needsAnotherAccount" = "Aby przelać pieniądze, potrzebujesz drugiego konta";
+"l2d.transfer.createAnotherAccount" = "Utwórz kolejne konto";
+"l2d.date.dayBeforeYesterday" = "Przedwczoraj";
+"l2d.date.futureDaysNote" = "Nadchodzące dni są wyszarzone. Do płatności, która jeszcze nie nastąpiła, użyj [Zaplanowanych płatności](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "Zobacz wszystkie";
+"l2d.favorites.use" = "Użyj ulubionego: %@";
+"l2d.favorites.transferHelp" = "Twoje stałe przelewy na jedno stuknięcie.";
+"l2d.recurring.title" = "Ustaw jako cykliczne";
+"l2d.recurring.header" = "Zapisujemy dzisiejszy. Kolejne trafią do Twojej Skrzynki w odpowiednim dniu, żebyś je potwierdził. Znajdziesz je w Zaplanowanych płatnościach.";
+"l2d.recurring.weekly" = "Co tydzień: %@";
+"l2d.recurring.monthly" = "Co miesiąc, %d. dnia";
+"l2d.recurring.yearly" = "Co rok, %@";
+"l2d.recurring.moreOptions" = "Więcej opcji…";

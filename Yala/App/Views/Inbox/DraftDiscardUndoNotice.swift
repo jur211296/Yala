@@ -29,6 +29,9 @@ enum DraftDiscardUndoNotice {
 
     private static var window: UIWindow?
     private static var hideTask: Task<Void, Never>?
+    /// El `noticeIdentifier` del aviso que está en pantalla, o `nil`. Quien vigila su propio aviso
+    /// (`SavedRecordNotice`) lo mira para no retirar el de otro.
+    private(set) static var currentNoticeIdentifier: String?
 
     /// Enseña el aviso en la ventana que está delante. `onUndo` corre al tocar «Deshacer» y el aviso se va.
     static func show(onUndo: @escaping @MainActor () -> Void) {
@@ -37,13 +40,19 @@ enum DraftDiscardUndoNotice {
 
     /// El mismo aviso con otro texto e icono: Registros lo usa tras cambiar la subcategoría desde el menú de una fila
     /// (auditoría UX 2.2, L8-9), que también cierra su hoja al elegir.
+    ///
+    /// El formulario de registro lo usa tras guardar (UX 2.2 · L2-5): con «Editar» delante de «Deshacer»
+    /// (`secondaryTitle`/`onSecondary`), y sin ningún botón para «Cambios guardados» (`onUndo` a `nil`).
     static func show(
         message: String,
         systemImage: String = "archivebox",
         undoTitle: String? = nil,
         noticeIdentifier: String = "draft_discard_notice",
         undoIdentifier: String = "draft_discard_undo",
-        onUndo: @escaping @MainActor () -> Void
+        secondaryTitle: String? = nil,
+        secondaryIdentifier: String = "draft_discard_secondary",
+        onSecondary: (@MainActor () -> Void)? = nil,
+        onUndo: (@MainActor () -> Void)?
     ) {
         hide()
         guard let scene = targetScene() else { return }
@@ -54,11 +63,12 @@ enum DraftDiscardUndoNotice {
                 systemImage: systemImage,
                 undoTitle: undoTitle ?? L10n.Inbox.undoDiscard,
                 noticeIdentifier: noticeIdentifier,
-                undoIdentifier: undoIdentifier
-            ) {
-                onUndo()
-                hide()
-            }
+                undoIdentifier: undoIdentifier,
+                secondaryTitle: onSecondary == nil ? nil : secondaryTitle,
+                secondaryIdentifier: secondaryIdentifier,
+                onSecondary: onSecondary.map { action in { action(); hide() } },
+                onUndo: onUndo.map { action in { action(); hide() } }
+            )
         )
         host.view.backgroundColor = .clear
 
@@ -77,6 +87,7 @@ enum DraftDiscardUndoNotice {
         window.rootViewController = host
         window.isHidden = false
         self.window = window
+        currentNoticeIdentifier = noticeIdentifier
 
         UIAccessibility.post(notification: .announcement, argument: message)
 
@@ -95,6 +106,7 @@ enum DraftDiscardUndoNotice {
         hideTask = nil
         window?.isHidden = true
         window = nil
+        currentNoticeIdentifier = nil
     }
 
     /// La escena de la ventana que está delante; si el registro aún no la conoce, la escena activa.
@@ -115,7 +127,12 @@ struct DraftDiscardUndoToast: View {
     var undoTitle: String = L10n.Inbox.undoDiscard
     var noticeIdentifier: String = "draft_discard_notice"
     var undoIdentifier: String = "draft_discard_undo"
-    let onUndo: () -> Void
+    /// Un segundo botón delante de «Deshacer» («Editar» tras guardar un registro).
+    var secondaryTitle: String? = nil
+    var secondaryIdentifier: String = "draft_discard_secondary"
+    var onSecondary: (() -> Void)? = nil
+    /// `nil`: el aviso no lleva «Deshacer» (solo informa).
+    let onUndo: (() -> Void)?
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -128,11 +145,20 @@ struct DraftDiscardUndoToast: View {
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: DS.Spacing.sm)
-            Button(undoTitle, action: onUndo)
-                .font(DS.Typography.label.weight(.semibold))
-                .foregroundStyle(DS.Semantic.undoForeground)
-                .frame(minHeight: 44)
-                .accessibilityIdentifier(undoIdentifier)
+            if let secondaryTitle, let onSecondary {
+                Button(secondaryTitle, action: onSecondary)
+                    .font(DS.Typography.label.weight(.semibold))
+                    .foregroundStyle(DS.Semantic.undoForeground)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier(secondaryIdentifier)
+            }
+            if let onUndo {
+                Button(undoTitle, action: onUndo)
+                    .font(DS.Typography.label.weight(.semibold))
+                    .foregroundStyle(DS.Semantic.undoForeground)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier(undoIdentifier)
+            }
         }
         .padding(.leading, DS.Spacing.lg)
         .padding(.trailing, DS.Spacing.md)
@@ -149,7 +175,7 @@ struct DraftDiscardUndoToast: View {
 #Preview("Aviso de descartado") {
     VStack {
         Spacer()
-        DraftDiscardUndoToast(message: "Lo moviste a Archivados") {}
+        DraftDiscardUndoToast(message: "Lo moviste a Archivados", onUndo: {})
     }
 }
 #endif

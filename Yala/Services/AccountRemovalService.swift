@@ -43,6 +43,9 @@ enum AccountRemovalService {
         let outsidePartners: [PersistentIdentifier: TransactionItem]
         let scheduled: [ScheduledPayment]
         let favorites: [FavoritePayment]
+        /// Favoritos de transferencia que llevan dinero A esta cuenta (UX 2.2 · L2-14): al mover, su destino pasa a la
+        /// cuenta destino; al soltar, se quedan sin destino.
+        let destinationFavorites: [FavoritePayment]
         let pendingDrafts: [InboxDraft]
         /// Presupuestos cuyo filtro incluye esta cuenta, con las cuentas que les quedarían sin ella.
         let budgets: [(budget: Budget, remaining: [Account])]
@@ -120,7 +123,9 @@ enum AccountRemovalService {
             }
 
             let scheduled = try context.fetch(FetchDescriptor<ScheduledPayment>()).filter { belongs($0.account) }
-            let favorites = try context.fetch(FetchDescriptor<FavoritePayment>()).filter { belongs($0.account) }
+            let allFavorites = try context.fetch(FetchDescriptor<FavoritePayment>())
+            let favorites = allFavorites.filter { belongs($0.account) }
+            let destinationFavorites = allFavorites.filter { belongs($0.destinationAccount) }
             let pending = DraftStatus.pending.rawValue
             let drafts = try context.fetch(FetchDescriptor<InboxDraft>(
                 predicate: #Predicate { $0.statusRaw == pending })).filter { belongs($0.account) }
@@ -146,6 +151,7 @@ enum AccountRemovalService {
                 outsidePartners: partners,
                 scheduled: scheduled,
                 favorites: favorites,
+                destinationFavorites: destinationFavorites,
                 pendingDrafts: drafts,
                 budgets: budgets
             )
@@ -257,6 +263,13 @@ enum AccountRemovalService {
         }
         inventory.scheduled.forEach { $0.account = destination }
         inventory.favorites.forEach { $0.account = destination }
+        inventory.destinationFavorites.forEach { $0.destinationAccount = destination }
+        // Un favorito «esta → destino» (o «destino → esta») acabaría con origen y destino iguales: se queda sin destino,
+        // que el formulario señala como lo que falta.
+        for favorite in inventory.favorites + inventory.destinationFavorites
+        where favorite.destinationAccount?.persistentModelID == favorite.account?.persistentModelID {
+            favorite.destinationAccount = nil
+        }
         inventory.pendingDrafts.forEach { $0.account = destination }
         for entry in inventory.budgets {
             let accounts = entry.remaining.contains { $0.persistentModelID == destinationID }
@@ -300,6 +313,7 @@ enum AccountRemovalService {
         inventory.transactions.forEach { context.delete($0) }
         inventory.scheduled.forEach { $0.account = nil }
         inventory.favorites.forEach { $0.account = nil }
+        inventory.destinationFavorites.forEach { $0.destinationAccount = nil }
         inventory.pendingDrafts.forEach { $0.account = nil }
         for entry in inventory.budgets {
             setBudgetAccounts(entry.budget, entry.remaining)

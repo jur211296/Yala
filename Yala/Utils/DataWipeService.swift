@@ -528,6 +528,7 @@ final class DataWipeService {
             let isTaken = taken(favorite.createdAt)
             if isTaken { takenFavorites.append(favorite) }
             use(favorite.account?.persistentModelID, byTaken: isTaken)
+            use(favorite.destinationAccount?.persistentModelID, byTaken: isTaken)
             use(favorite.subcategory?.persistentModelID, byTaken: isTaken)
         }
         for payment in scheduled {

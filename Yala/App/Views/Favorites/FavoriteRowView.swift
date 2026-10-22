@@ -81,34 +81,33 @@ struct FavoriteRowView: View {
             .fill(.thCard)
     }
 
+    /// Icono y color de su categoría; los de transferencia, los de transferencia (UX 2.2 · L2-14). Los comparte con
+    /// la fila de chips del formulario (`FavoriteChipStyle`).
     private var favoriteIcon: some View {
-        let colorHex =
-            favorite.subcategory?.category?.colorHex
-            ?? favorite.subcategory?.colorHex
-            ?? AppConstants.defaultColorHex
-        let iconName =
-            favorite.subcategory?.iconName
-            ?? favorite.subcategory?.category?.iconName
-            ?? "star.fill"
-
+        let style = FavoriteChipStyle(favorite: favorite)
         return ZStack {
             Circle()
-                .fill(Color(hex: colorHex))
+                .fill(style.color)
                 .frame(width: DS.ListRow.iconSize, height: DS.ListRow.iconSize)
 
-            Image(systemName: iconName)
+            Image(systemName: style.iconName)
                 .font(DS.Typography.label)
                 .foregroundStyle(.white)
         }
     }
 
     private var secondaryLine: some View {
-        let parts: [String] = [
-            favorite.subcategory?.name,
-            favorite.account?.name,
-        ].compactMap { $0 }
-
-        let text = parts.isEmpty ? L10n.Favorites.notConfigured : parts.joined(separator: " • ")
+        let text: String
+        if favorite.type == .transfer {
+            // «Cuenta Principal → Ahorros». Un favorito de antes de 2.2 no tiene destino: «Cuenta Principal → …».
+            text = "\(favorite.account?.name ?? "…") → \(favorite.destinationAccount?.name ?? "…")"
+        } else {
+            let parts: [String] = [
+                favorite.subcategory?.name,
+                favorite.account?.name,
+            ].compactMap { $0 }
+            text = parts.isEmpty ? L10n.Favorites.notConfigured : parts.joined(separator: " • ")
+        }
 
         return Text(text)
             .font(DS.Typography.caption)

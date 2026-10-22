@@ -398,7 +398,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "Paiements Favoris";
+"favorites.title" = "Favoris";
 "favorites.new" = "Nouveau favori";
 "favorites.edit" = "Modifier le favori";
 "favorites.noFavorites" = "Aucun favori";
@@ -408,7 +408,7 @@
 "favorites.namePlaceholder" = "Nom du favori";
 "favorites.notConfigured" = "Non configure";
 "favorites.descriptionPlaceholder" = "Description (optionnel)";
-"favorites.saveDescription" = "Enregistre ce paiement comme favori pour saisir plus rapidement des dépenses similaires à l'avenir. Tu le trouveras dans ⭐ en haut à droite lors de la création ou modification d'un enregistrement. Tu pourras toujours le modifier depuis les Paiements Favoris dans ton profil.";
+"favorites.saveDescription" = "Tes dépenses habituelles, en un geste.";
 
 // MARK: - Scheduled
 
@@ -443,7 +443,7 @@
 "settings.categories" = "Categories";
 "settings.tags" = "Etiquettes";
 "settings.notifications" = "Notifications";
-"settings.favorites" = "Paiements favoris";
+"settings.favorites" = "Favoris";
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budgets favoris";
 "settings.budgetsFavoritesInfo" = "Les budgets favoris apparaissent dans la carte Budgets de l’Accueil (3 en moyen, 5 en grand).";
@@ -2647,7 +2647,7 @@
 "tutorials.createScheduledPayments.completion.desc" = "Le jour venu, Yala dépose chaque paiement dans la Boîte de réception, prêt à être approuvé.";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "Paiements favoris";
+"tutorials.createFavorites.title" = "Favoris";
 "tutorials.createFavorites.intro.title" = "Que sont les favoris ?";
 "tutorials.createFavorites.intro.desc" = "Enregistre tes dépenses fréquentes en raccourcis et ajoute-les en un tap.";
 "tutorials.createFavorites.step0.title" = "Crée un favori";
@@ -2723,7 +2723,7 @@
 "tutorials.createScheduledPayments.step3.desc" = "Dans « Plus d’options », active « Est-ce un abonnement? » si c'en est un.";
 "tutorials.createScheduledPayments.step4.desc" = "En touchant un paiement planifié tu pourras voir les futurs paiements, ceux déjà effectués et le modifier quand tu veux.";
 "tutorials.createFavorites.step0.desc" = "Dans Nouvel enregistrement, touche « Favori », sous le montant, pour enregistrer comme favori ce que tu as déjà saisi.";
-"tutorials.createFavorites.step1.desc" = "La prochaine fois, touche l'étoile en haut et choisis le favori : les champs enregistrés se remplissent tout seuls.";
+"tutorials.createFavorites.step1.desc" = "La prochaine fois, touche le favori dans la rangée en haut du formulaire : les champs enregistrés se remplissent tout seuls.";
 "tutorials.editPanel.step0.desc" = "Va à l'écran principal où tu vois ton résumé de dépenses avec tous les widgets disponibles.";
 "tutorials.editPanel.step1.desc" = "Touche le bouton à petits carrés à côté de chaque section de l’Accueil pour choisir quels widgets voir et dans quel ordre.";
 "tutorials.editPanel.step2.desc" = "N'oublie pas que tu peux toujours revenir à l'ordre par défaut en touchant « Réinitialiser » dans la personnalisation.";
@@ -8250,3 +8250,34 @@
 "groups.l19.error.lastAdmin" = "Le groupe doit garder au moins un admin.";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "Cette personne doit d’abord revenir dans le groupe avec son compte pour pouvoir l’administrer.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "Pour enregistrer, il manque %@";
+"l2d.missing.amount" = "le montant";
+"l2d.missing.account" = "le compte";
+"l2d.missing.category" = "la catégorie";
+"l2d.missing.sourceAccount" = "le compte d'origine";
+"l2d.missing.destinationAccount" = "le compte de destination";
+"l2d.missing.twoDifferentAccounts" = "Choisis deux comptes différents";
+"l2d.missing.chipValue" = "Manquant";
+"l2d.discard.title" = "Abandonner cet enregistrement ?";
+"l2d.saved.expense" = "Dépense enregistrée · %@";
+"l2d.saved.income" = "Revenu enregistré · %@";
+"l2d.saved.transfer" = "Virement enregistré · %@";
+"l2d.saved.changes" = "Modifications enregistrées";
+"l2d.saved.repeatsWeekly" = "Enregistré · se répétera chaque semaine";
+"l2d.saved.repeatsMonthly" = "Enregistré · se répétera chaque mois";
+"l2d.saved.repeatsYearly" = "Enregistré · se répétera chaque année";
+"l2d.transfer.needsAnotherAccount" = "Pour transférer de l'argent, il te faut un autre compte";
+"l2d.transfer.createAnotherAccount" = "Créer un autre compte";
+"l2d.date.dayBeforeYesterday" = "Avant-hier";
+"l2d.date.futureDaysNote" = "Les jours à venir sont grisés. Pour un paiement qui n'a pas encore eu lieu, utilise [Paiements planifiés](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "Tout voir";
+"l2d.favorites.use" = "Utiliser le favori %@";
+"l2d.favorites.transferHelp" = "Tes virements habituels, en un geste.";
+"l2d.recurring.title" = "Rendre récurrent";
+"l2d.recurring.header" = "On enregistre celui d'aujourd'hui. Les suivants arriveront dans ta Boîte de réception le jour prévu, pour que tu les confirmes. Tu les retrouves dans Paiements planifiés.";
+"l2d.recurring.weekly" = "Chaque semaine, le %@";
+"l2d.recurring.monthly" = "Chaque mois, le %d";
+"l2d.recurring.yearly" = "Chaque année, le %@";
+"l2d.recurring.moreOptions" = "Plus d'options…";

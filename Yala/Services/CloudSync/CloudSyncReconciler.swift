@@ -252,6 +252,7 @@ enum CloudSyncReconciler {
                 for tx in loser.transactions ?? [] { tx.account = winner }
                 for sched in loser.scheduledPayments ?? [] { sched.account = winner }
                 for fav in loser.favoritePayments ?? [] { fav.account = winner }
+                for fav in loser.destinationFavoritePayments ?? [] { fav.destinationAccount = winner }
                 for draft in loser.inboxDrafts ?? [] { draft.account = winner }
                 for budget in loser.budgets ?? [] {
                     budgetsToResync.insert(budget.persistentModelID)

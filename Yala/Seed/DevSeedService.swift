@@ -94,6 +94,12 @@ enum DevSeedProfile: String {
     /// Tarjeta con varias divisas (entrega 2): «Visa QA» en soles con su línea en dólares, más dos cuentas sueltas.
     /// Ver `DevSeedAccountLines`.
     case tarjetaDosLineas = "tarjeta-dos-lineas"
+    /// El formulario de registro tras un onboarding de una sola cuenta: categorías y «Cuenta Principal», sin registros
+    /// (UX 2.2 · L2-1 y L2-6). Ver `DevSeedTransactionForm`.
+    case unaCuenta = "una-cuenta"
+    /// El formulario de registro con favoritos: las dos cuentas de siempre, sin registros, y cuatro favoritos (un gasto, un
+    /// ingreso, una transferencia con destino y una transferencia vieja sin destino). UX 2.2 · L2-13 y L2-14.
+    case formulario
 
     /// Días de historial de transacciones a generar (escala el volumen).
     /// `minimal`/`grupos`/`gruposInvitado`/`gruposSaldado`/`soloGrupos`/`deadPointer`/`gruposSinFlag`
@@ -104,7 +110,7 @@ enum DevSeedProfile: String {
         case .minimal, .grupos, .gruposInvitado, .gruposSaldado, .soloGrupos, .deadPointer,
              .gruposSinFlag, .gruposPendiente, .soloGruposTrasAviso, .sinRegistros, .fichaMX,
              .cuentaConMovimientos, .movimientosSinCuenta, .gastoDeGrupoSinSuGrupo, .pataDeGrupoSinCuenta,
-             .tarjetaDosLineas: return 7
+             .tarjetaDosLineas, .unaCuenta, .formulario: return 7
         case .fichaMXVida: return 365
         case .realista, .ficha: return 730
         case .pesado: return 3650
@@ -182,6 +188,22 @@ final class DevSeedService {
             }
             do { try context.save() } catch {
                 print("DevSeedService: cuenta-con-movimientos save error: \(error)")
+            }
+            UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
+            hasSeeded = true
+            SessionState.shared.incrementDataVersion()
+            return
+        }
+        if profile == .unaCuenta || profile == .formulario {
+            defer { isSeeding = false }
+            seedCategoriesIfNeeded(in: context)
+            if profile == .unaCuenta {
+                DevSeedTransactionForm.createOneAccount(in: context)
+            } else {
+                DevSeedTransactionForm.createWithFavorites(subcategoryLookup: buildSubcategoryLookup(in: context), in: context)
+            }
+            do { try context.save() } catch {
+                print("DevSeedService: \(profile.rawValue) save error: \(error)")
             }
             UserDefaults.standard.set(true, forKey: "devSeedDataExecuted")
             hasSeeded = true
