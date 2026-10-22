@@ -43,7 +43,7 @@ Rules:
 
 Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment could not read that repo (GitHub App sees only `jur211296/Yala`). Bodies are **not** invented. Paths below are the owner map.
 
-## Index (1031)
+## Index (1032)
 
 | cloud-progress-shows-real-steps-and-counts | backlog | tickets/backlog/cloud-progress-shows-real-steps-and-counts.md |
 | cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in | qa | tickets/qa/cloud-sign-in-uploads-the-boot-exchange-rates-before-letting-in.md |
@@ -1069,6 +1069,7 @@ Source repo for absorption: `jur211296/YalaWiki` @ `1934e8ad`. This environment 
 | wipe-sheet-still-promises-every-apple-id-device | done | tickets/done/wipe-sheet-still-promises-every-apple-id-device.md |
 | wiped-state-reaches-the-discard-gate-with-the-window-open | done | tickets/done/wiped-state-reaches-the-discard-gate-with-the-window-open.md |
 | wire-decoder-accepts-non-finite-money | done | tickets/done/wire-decoder-accepts-non-finite-money.md |
+| worktree-stamp-depends-on-whether-a-rename-is-staged | backlog | tickets/backlog/worktree-stamp-depends-on-whether-a-rename-is-staged.md |
 | worktree-stamp-reads-a-staged-rename-as-a-code-change | backlog | tickets/backlog/worktree-stamp-reads-a-staged-rename-as-a-code-change.md |
 | wrangler-prod-onboarding-choice-percent-drift | done | tickets/done/wrangler-prod-onboarding-choice-percent-drift.md |
 | xcode-27-1-with-the-iphone-duo-simulator | backlog | tickets/backlog/xcode-27-1-with-the-iphone-duo-simulator.md |
