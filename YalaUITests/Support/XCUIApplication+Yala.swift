@@ -66,6 +66,8 @@ extension XCUIApplication {
         // `reverse-to-icloud-merges-prior-icloud-data-without-asking`). NOMBRADOS por lo mismo que sus vecinos: un typo en
         // el primero dejaría la tarjeta de la vuelta sin salir y el rojo culparía a la pantalla.
         bornCloudStorage: Bool = false,
+        // `-uitest-adopted-cloud-storage`: la nube, pero la cuenta llegó desde otro dispositivo (card i9qh).
+        adoptedCloudStorage: Bool = false,
         reversePriorICloud: String? = nil,
         reversePriorICloudWipe: String? = nil,
         fakeMigrationIdentity: String? = nil,
@@ -268,6 +270,7 @@ extension XCUIApplication {
         // (`PendingICloudWipeMigrationWiringTests`).
         if pendingICloudWipe { args.append("-uitest-pending-icloud-wipe") }
         if bornCloudStorage { args.append("-uitest-born-cloud-storage") }
+        if adoptedCloudStorage { args.append("-uitest-adopted-cloud-storage") }
         if let reversePriorICloud {
             args.append("-uitest-reverse-prior-icloud")
             args.append(reversePriorICloud)

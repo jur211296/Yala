@@ -2762,6 +2762,90 @@ struct MigrationWorkExecutorTests {
         #expect(userRowOutcome == .lineageUnproven)
     }
 
+    /// **Los tipos de cambio que la cuenta ya tiene no suben: toman su identidad** (card hov2 del QA guiado del 19-oct). Cada
+    /// «Entrar con mi cuenta» de la flota subía 366 antes de dejar pasar. El de la cuenta para la misma fecha y base es el
+    /// mismo dato: con varios (teléfonos que entraron antes), el de menor `syncID`; uno BORRADO en la cuenta no se
+    /// resucita, y una fecha que la cuenta no tiene sigue subiendo.
+    @Test("runAdoptOrphanReconcile: el tipo de cambio que la cuenta ya tiene toma su identidad y no sube")
+    func adoptReconcile_exchangeRatesTheAccountHas_takeItsIdentity() async throws {
+        let dir = freshDir(); defer { cleanup(dir) }
+        let context = try makeContext(dir)
+        let stub = RoutingStub()
+        stub.merkleBody = try makeMerkleBody(["categories": 1, "exchange_rates": 2])
+        let ids = [UUID(), UUID()].sorted { $0.uuidString < $1.uuidString }
+        let deletedThere = UUID()
+        let fx: (String) -> [String: WireValue] = { day in ["date_key": .string(day), "base": .string("USD")] }
+        let source = FakeTombstoneSource()
+        source.pages = [PulledPage(deltas: [
+            upsertDelta(table: "categories", syncID: UUID(), seq: 1),
+            upsertDelta(table: "exchange_rates", syncID: ids[1], seq: 2, fields: fx("2026-09-23")),
+            upsertDelta(table: "exchange_rates", syncID: ids[0], seq: 3, fields: fx("2026-09-23")),
+            upsertDelta(table: "exchange_rates", syncID: deletedThere, seq: 4, fields: fx("2026-09-24")),
+            tombstone(table: "exchange_rates", syncID: deletedThere, seq: 5),
+        ], maxServerSeq: 5)]
+        var local: [String: ExchangeRate] = [:]
+        for day in ["2026-09-23", "2026-09-24", "2026-09-25"] {
+            let rate = try ExchangeRate(dateKey: day, base: "USD", ratesDictionary: ["PEN": 3.7])
+            context.insert(rate)
+            local[day] = rate
+        }
+        try context.save()
+
+        let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                    FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                    tombstoneSource: source)
+        let outcome = await executor.runAdoptOrphanReconcile()
+
+        // El 23 casa con el menor de los dos; el 24 (borrado en la cuenta) y el 25 (que la cuenta no tiene) suben.
+        #expect(outcome == .completed(uploaded: 2, identityAssigned: 2))
+        #expect(local["2026-09-23"]?.syncID == ids[0])
+        #expect(local["2026-09-24"]?.syncID != deletedThere)
+        let pushed = Set(stub.pushedSyncIDs.map { $0.lowercased() })
+        #expect(!pushed.contains(ids[0].uuidString.lowercased()))
+        #expect(!pushed.contains(ids[1].uuidString.lowercased()))
+        // Control: lo que no casó sí viajó.
+        let orphanIDs = [local["2026-09-24"]?.syncID, local["2026-09-25"]?.syncID].compactMap { $0?.uuidString.lowercased() }
+        #expect(orphanIDs.count == 2)
+        #expect(Set(orphanIDs).isSubset(of: pushed))
+        // Y el backfill le escribió el testigo con la identidad de la cuenta.
+        let witnesses = try context.fetch(FetchDescriptor<SyncIdentity>())
+        #expect(witnesses.contains { $0.syncID == ids[0] && $0.entityType == SyncEntityType.exchangeRate })
+    }
+
+    /// Los dos controles del casado (review del 2026-10-21): con el espejo de iCloud adjunto, la fila del líder puede llegar
+    /// después con la identidad del backend, así que no se casa nada; y con dos filas locales del mismo día, tampoco.
+    @Test("runAdoptOrphanReconcile: con el espejo adjunto o con dos filas del mismo día, los tipos de cambio suben como antes")
+    func adoptReconcile_exchangeRates_notReboundWithTheMirrorOrADuplicateDay() async throws {
+        for mirror in [true, false] {
+            let dir = freshDir(); defer { cleanup(dir) }
+            let context = try makeContext(dir)
+            let stub = RoutingStub()
+            stub.merkleBody = try makeMerkleBody(["categories": 1, "exchange_rates": 1])
+            let accountsRate = UUID()
+            let source = FakeTombstoneSource()
+            source.pages = [PulledPage(deltas: [
+                upsertDelta(table: "categories", syncID: UUID(), seq: 1),
+                upsertDelta(table: "exchange_rates", syncID: accountsRate, seq: 2,
+                            fields: ["date_key": .string("2026-09-23"), "base": .string("USD")]),
+            ], maxServerSeq: 2)]
+            let days = mirror ? ["2026-09-23"] : ["2026-09-23", "2026-09-23"]
+            var rows: [ExchangeRate] = []
+            for day in days {
+                let rate = try ExchangeRate(dateKey: day, base: "USD", ratesDictionary: ["PEN": 3.7])
+                context.insert(rate)
+                rows.append(rate)
+            }
+            try context.save()
+            let executor = makeExecutor(context, CloudSyncEngine(), stub, FakeSession(token: "jwt", userID: "sub-1"),
+                                        FakeBeaconStore(), personalStoreURL: dir.appendingPathComponent("personal.sqlite"),
+                                        tombstoneSource: source, adoptMirrorAttached: { mirror },
+                                        adoptICloudCorpusCheck: { .none })
+            let outcome = await executor.runAdoptOrphanReconcile()
+            #expect(outcome == .completed(uploaded: days.count, identityAssigned: days.count), "espejo=\(mirror)")
+            #expect(rows.allSatisfy { $0.syncID != nil && $0.syncID != accountsRate }, "espejo=\(mirror)")
+        }
+    }
+
     /// **La guarda mira también el plan DEFINITIVO, que es el que sube** (hallazgo de la review). Una fila que el import
     /// confirma entre el plan preliminar —vacío: no pidió prueba— y el definitivo no puede subir sin marcador. Se simula con
     /// el seam del inventario: en la TERCERA lectura (la del definitivo) aparece una categoría del corpus de otro iCloud.

@@ -8049,3 +8049,35 @@
 
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "Zaakceptować %@ w grupie?";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "Twoje konto trafiło do chmury z innego urządzenia, więc powrót do iCloud odbywa się z niego, jeśli nadal ma Yalę. Tutaj możesz dalej korzystać z chmury.";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "Chwileczkę";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "Z tego telefonu przyszło wiele żądań pod rząd. Poczekaj minutę i spróbuj ponownie: zdjęcie jest w porządku.";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "Osiągnięto dzisiejszy limit";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "Na dziś nie ma już odczytów zdjęć. Odnawiają się codziennie; w międzyczasie możesz wpisać to ręcznie.";
+
+/* card vv0k */
+"voice.failure.busy.title" = "Chwileczkę";
+
+/* card vv0k */
+"voice.failure.busy.message" = "Z tego telefonu przyszło wiele żądań pod rząd. Poczekaj minutę i spróbuj ponownie z tą samą notatką.";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "Osiągnięto dzisiejszy limit";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "Na dziś nie ma już odczytów głosowych. Odnawiają się codziennie; w międzyczasie możesz wpisać to ręcznie.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "Osiągnięto dzisiejszy limit: 1 nie zostało odczytane.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "Osiągnięto dzisiejszy limit. Nieodczytane: %d.";

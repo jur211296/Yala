@@ -694,7 +694,13 @@ final class CloudMigrationController {
             context: context,
             executor: Self.makeExecutor(context: context, deviceID: deviceID),
             deviceID: deviceID,
-            quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent })
+            quiescenceSignal: { iCloudSyncService.shared.isImportQuiescent },
+            onQuiescenceTimeout: {
+                MetricsService.canaryOnce(
+                    .cloudMigrationImportNotSettled, key: "runner",
+                    detail: MigrationImportWaitLogic.runnerStallDetail(
+                        stillImporting: iCloudSyncService.shared.status == .syncing(kind: .importing)))
+            })
         _runner = r
         return r
     }
@@ -1406,7 +1412,7 @@ final class CloudMigrationController {
     /// `-uitest-born-cloud-storage` lo lee `.cloud` (finge la entrada; ver `UITestHooks.fakeBornCloudStorage`).
     private static func readPersistedStorageMode() -> StorageMode {
         #if DEBUG
-        if UITestHooks.fakeBornCloudStorage { return .cloud }
+        if UITestHooks.fakeBornCloudStorage || UITestHooks.fakeAdoptedCloudStorage { return .cloud }
         #endif
         return StorageModePersistence.read()
     }

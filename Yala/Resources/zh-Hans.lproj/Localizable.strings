@@ -8049,3 +8049,35 @@
 
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "接受 %@ 加入群组？";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "你的账户是从另一台设备转到云端的，因此需要在那台设备上返回 iCloud（如果它仍装有 Yala）。在这台设备上，你可以继续使用云端。";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "请稍候";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "这台手机连续发出了很多请求。请等一分钟再试：照片没有问题。";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "已达今日上限";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "今天的照片识别次数已用完。每天都会更新；在此期间，你可以手动记录。";
+
+/* card vv0k */
+"voice.failure.busy.title" = "请稍候";
+
+/* card vv0k */
+"voice.failure.busy.message" = "这台手机连续发出了很多请求。请等一分钟，再用同一条语音重试。";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "已达今日上限";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "今天的语音识别次数已用完。每天都会更新；在此期间，你可以手动记录。";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "已达今日上限：有 1 张未读取。";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "已达今日上限：有 %d 张未读取。";

@@ -8049,3 +8049,35 @@
 
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "%@さんをグループに承認しますか？";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "あなたのアカウントは別の端末からクラウドに移行したため、iCloud に戻す操作はその端末から行います（Yala がまだ入っている場合）。この端末ではクラウドをそのまま使えます。";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "少々お待ちください";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "この端末からのリクエストが続きました。1分待ってからもう一度お試しください。写真には問題ありません。";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "本日の上限に達しました";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "本日の写真の読み取りはもう残っていません。毎日更新されます。それまでは手動で入力できます。";
+
+/* card vv0k */
+"voice.failure.busy.title" = "少々お待ちください";
+
+/* card vv0k */
+"voice.failure.busy.message" = "この端末からのリクエストが続きました。1分待ってから同じメモでもう一度お試しください。";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "本日の上限に達しました";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "本日の音声の読み取りはもう残っていません。毎日更新されます。それまでは手動で入力できます。";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "本日の上限に達しました。1枚を読み取れませんでした。";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "本日の上限に達しました。%d枚を読み取れませんでした。";

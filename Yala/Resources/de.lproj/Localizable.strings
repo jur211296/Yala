@@ -8037,3 +8037,35 @@
 
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "%@ in die Gruppe aufnehmen?";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "Dein Konto kam von einem anderen Gerät in die Cloud, daher geht die Rückkehr zu iCloud von diesem aus, falls Yala dort noch installiert ist. Hier kannst du die Cloud weiter nutzen.";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "Einen Moment";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "Von diesem Handy kamen viele Anfragen hintereinander. Warte eine Minute und versuch es noch mal: Das Foto ist in Ordnung.";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "Tageslimit erreicht";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "Für heute sind keine Fotoauswertungen mehr übrig. Sie erneuern sich jeden Tag; bis dahin kannst du es von Hand eintragen.";
+
+/* card vv0k */
+"voice.failure.busy.title" = "Einen Moment";
+
+/* card vv0k */
+"voice.failure.busy.message" = "Von diesem Handy kamen viele Anfragen hintereinander. Warte eine Minute und versuch es mit derselben Notiz noch mal.";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "Tageslimit erreicht";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "Für heute sind keine Sprachauswertungen mehr übrig. Sie erneuern sich jeden Tag; bis dahin kannst du es von Hand eintragen.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "Tageslimit erreicht: 1 wurde nicht gelesen.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "Tageslimit erreicht: %d wurden nicht gelesen.";

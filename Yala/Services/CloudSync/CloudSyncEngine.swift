@@ -1436,6 +1436,12 @@ enum CloudSyncBreadcrumb {
         logger.notice("CloudSyncAdopt orphanReconciled count=\(count, privacy: .public) identityAssigned=\(identityAssigned, privacy: .public) — el adoptador rescató writes de la ventana de cutover")
     }
 
+    /// El adopt casó `count` de sus `candidates` tipos de cambio sin identidad con los de la cuenta, en vez de subirlos
+    /// (card hov2). Sin PII: solo los conteos.
+    static func adoptExchangeRatesRebound(count: Int, candidates: Int) {
+        logger.notice("CloudSyncAdopt exchangeRatesRebound count=\(count, privacy: .public) candidates=\(candidates, privacy: .public) — tipos de cambio casados con la cuenta, no suben")
+    }
+
     /// El adopt tenía filas que subir y el store local no tiene ni el marcador de esa cuenta ni filas suyas: no sube nada (ticket
     /// `adopt-uploads-a-foreign-corpus-without-a-lineage-check`). Sin PII: solo el conteo.
     static func adoptReconcileLineageUnproven(pending: Int) {

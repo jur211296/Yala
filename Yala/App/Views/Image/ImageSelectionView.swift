@@ -563,6 +563,8 @@ struct ImageSelectionView: View {
                     .foregroundStyle(DS.Semantic.warningForeground)
                     .frame(minHeight: 44)
                     .accessibilityIdentifier("image_retry_failed")
+            case .dailyLimit(let count):
+                failedPhotosText(L10n.Image.Entry.dailyLimitLeftOut(count))
             case .trialUsedUp(let count):
                 failedPhotosText(L10n.Image.Entry.trialLeftOut(count))
                 Spacer(minLength: DS.Spacing.sm)
@@ -679,7 +681,7 @@ struct ImageSelectionView: View {
         case .cameraPermission:
             secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
             primaryButton(L10n.Image.openSettings, isEnabled: true, identifier: "image_open_settings", action: openSystemSettings)
-        case .serviceUnavailable:
+        case .serviceUnavailable, .dailyLimit:
             secondaryButton(L10n.Action.close, identifier: "image_failure_close") { dismiss() }
             primaryButton(L10n.Voice.enterManually, isEnabled: true, identifier: "image_enter_manually") { showManualEntry = true }
         case .trialUsedUp:
@@ -688,7 +690,7 @@ struct ImageSelectionView: View {
         case .noAmount, .unreadable, .unreadableFile:
             secondaryButton(L10n.Voice.enterManually, identifier: "image_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Image.Entry.otherPhoto, isEnabled: true, identifier: "image_other_photo", action: chooseAnother)
-        case .noConnection, .generic, .saveFailed:
+        case .noConnection, .generic, .saveFailed, .busy:
             if failure.retriesSamePhotos, !readingImages.isEmpty {
                 secondaryButton(L10n.Image.Entry.otherPhoto, identifier: "image_other_photo", action: chooseAnother)
                 primaryButton(L10n.Action.retry, isEnabled: true, identifier: "image_retry") {
@@ -708,6 +710,8 @@ struct ImageSelectionView: View {
         case .unreadable: "photo"
         case .unreadableFile: "doc"
         case .trialUsedUp: "sparkles"
+        case .busy: "hourglass"
+        case .dailyLimit: "calendar"
         case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
         }
     }
@@ -720,6 +724,8 @@ struct ImageSelectionView: View {
         case .unreadable: L10n.Image.Entry.failureUnreadableTitle
         case .unreadableFile: L10n.Image.Entry.failureUnreadableFileTitle
         case .trialUsedUp: L10n.Image.Entry.failureTrialUsedUpTitle
+        case .busy: L10n.Image.Entry.failureBusyTitle
+        case .dailyLimit: L10n.Image.Entry.failureDailyLimitTitle
         case .serviceUnavailable, .saveFailed, .generic: L10n.Image.Entry.failureGenericTitle
         }
     }
@@ -735,6 +741,8 @@ struct ImageSelectionView: View {
         case .saveFailed: L10n.Image.errorSaveFailed
         case .generic: L10n.Image.Entry.failureGenericMessage
         case .trialUsedUp: L10n.Image.Entry.failureTrialUsedUpMessage
+        case .busy: L10n.Image.Entry.failureBusyMessage
+        case .dailyLimit: L10n.Image.Entry.failureDailyLimitMessage
         }
     }
 
@@ -1056,20 +1064,20 @@ struct ImageSelectionView: View {
         var readDrafts: [InboxDraft] = []
         var failed: [UIImage] = []
         var reasons: [ImageEntryFailure] = []
-        var skipsTheRest = false
+        var skipReason: ImageEntryFailure?
 
         func fail(_ image: UIImage, _ failure: ImageEntryFailure) {
             outcomes.append(.failed(failure))
             failed.append(image)
             reasons.append(failure)
-            skipsTheRest = skipsTheRest || ImageEntryFlowLogic.skipsRemainingReads(after: failure)
+            if skipReason == nil, ImageEntryFlowLogic.skipsRemainingReads(after: failure) { skipReason = failure }
         }
 
         for (index, image) in batch.enumerated() {
             readingIndex = index
-            // Sin cupo de prueba, las siguientes fallarían igual: no se piden.
-            guard !skipsTheRest else {
-                fail(image, .trialUsedUp)
+            // Sin cupo (de prueba o del día), las siguientes fallarían igual: no se piden.
+            if let skipReason {
+                fail(image, skipReason)
                 continue
             }
             do {
@@ -1091,6 +1099,9 @@ struct ImageSelectionView: View {
                 #if DEBUG
                 print("ImageSelectionView: Error reading photo \(index + 1): \(error)")
                 #endif
+                if let detail = ImageEntryFlowLogic.canaryDetail(for: error) {
+                    MetricsService.canaryOnce(.aiEntryReadFailed, key: detail, detail: detail)
+                }
                 fail(image, ImageEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
             } catch {
                 guard !Task.isCancelled else { return }
@@ -1155,6 +1166,9 @@ struct ImageSelectionView: View {
         if let profile = UITestHooks.imageResult {
             // `trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó (403 yala_trial_exhausted).
             if profile == "trial-used-up" { throw VisionError.networkError(ProxyErrorMapper.trialExhaustedResponse()) }
+            // `busy` / `daily-limit`: el gateway contesta 429 por ráfaga o por cupo del día (card vv0k).
+            if profile == "busy" { throw VisionError.networkError(ProxyErrorMapper.quotaResponse(type: "yala_quota_burst")) }
+            if profile == "daily-limit" { throw VisionError.networkError(ProxyErrorMapper.quotaResponse(type: "yala_quota_daily")) }
             return try await uiTestDrafts(profile, index: index)
         }
         #endif

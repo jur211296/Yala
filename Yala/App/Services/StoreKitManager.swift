@@ -247,6 +247,9 @@ final class StoreKitManager {
                 await updateSubscriptionStatus(verifiedPurchase: transaction)
                 await transaction.finish()
                 didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+                // El token de sesión del gateway lleva el plan dentro: sin olvidarlo, la primera foto tras comprar o
+                // restaurar salía con los topes de free hasta 15 min (card vv0k).
+                AppAttestClient.shared.discardSessionTokenAfterPlanChange()
                 if !didJustSubscribe {
                     alertTitle = L10n.Subscription.errorTitle
                     errorMessage = L10n.Subscription.purchaseNotActivated
@@ -319,6 +322,9 @@ final class StoreKitManager {
             switch ProSubscriptionActivationLogic.restoreOutcome(isProUser: isProUser) {
             case .restoredPro:
                 didJustSubscribe = ProSubscriptionActivationLogic.shouldCelebratePurchase(isProUser: isProUser)
+                // El token de sesión del gateway lleva el plan dentro: sin olvidarlo, la primera foto tras comprar o
+                // restaurar salía con los topes de free hasta 15 min (card vv0k).
+                AppAttestClient.shared.discardSessionTokenAfterPlanChange()
             case .noEntitlement:
                 alertTitle = L10n.Subscription.restoreEmptyTitle
                 errorMessage = L10n.Subscription.restoreEmpty

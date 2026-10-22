@@ -164,6 +164,9 @@ struct WelcomeCloudSignInView: View {
     @State private var flowTask: Task<Void, Never>?
     /// H-2026-07-17-5: detector de drive aparcado del poll (auto-resume + botón manual).
     @State private var autoResumeState = WelcomeAdoptAutoResume.State()
+    /// «Esto puede tardar unos minutos» solo cuando la conexión ya está tardando (card hov2): con una cuenta casi vacía
+    /// entrar dura segundos, y el aviso de minutos sobraba.
+    @State private var adoptSlowHintVisible = false
     /// Fase journaleada del tick anterior del poll — alimenta `machineAdvanced` (un avance
     /// real repone intentos de auto-resume). `nil` = primer tick (jamás cuenta como avance).
     @State private var lastObservedPhase: MigrationPhase?
@@ -841,11 +844,14 @@ struct WelcomeCloudSignInView: View {
                 .font(DS.Typography.headline)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Text(L10n.Welcome.Cloud.adoptingHint)
-                .font(DS.Typography.caption)
-                .foregroundStyle(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, DS.Spacing.xl)
+            if adoptSlowHintVisible {
+                Text(L10n.Welcome.Cloud.adoptingHint)
+                    .font(DS.Typography.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, DS.Spacing.xl)
+                    .accessibilityIdentifier("welcome_cloud_adopt_slow_hint")
+            }
             // #36 (H1): pre-espera de quiescencia en curso (hasta 300s) — estado honesto,
             // misma key que la card de Almacenamiento. Leer la propiedad @Observable en
             // body registra la dependencia.
@@ -872,6 +878,17 @@ struct WelcomeCloudSignInView: View {
             }
         }
         .accessibilityIdentifier("welcome_cloud_adopting")
+        .task {
+            // La pista sale si la conexión sigue aquí pasado el plazo. La `.task` muere con la pantalla, así que una
+            // conexión que termina antes no la enseña nunca.
+            do {
+                try await Task.sleep(for: WelcomeAdoptSlowHint.delay)
+            } catch {
+                return
+            }
+            adoptSlowHintVisible = true
+        }
+        .onDisappear { adoptSlowHintVisible = false }
     }
 
     /// «Cancelar la activación» durante el adopt (ticket `welcome-adopt-effect-failure-has-no-reason-and-no-cancel`,

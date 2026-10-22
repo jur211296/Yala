@@ -8038,3 +8038,35 @@
 
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "Accepter %@ dans le groupe ?";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "Ton compte est passé dans le cloud depuis un autre appareil : le retour à iCloud se fait donc depuis celui-ci, s’il a encore Yala. Ici, tu peux continuer à utiliser le cloud.";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "Un instant";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "Beaucoup de requêtes sont parties de ce téléphone d’affilée. Attends une minute et réessaie : la photo est bonne.";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "Limite du jour atteinte";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "Il ne reste plus de lectures de photos pour aujourd’hui. Elles se renouvellent chaque jour ; en attendant, tu peux le saisir à la main.";
+
+/* card vv0k */
+"voice.failure.busy.title" = "Un instant";
+
+/* card vv0k */
+"voice.failure.busy.message" = "Beaucoup de requêtes sont parties de ce téléphone d’affilée. Attends une minute et réessaie avec la même note.";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "Limite du jour atteinte";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "Il ne reste plus de lectures vocales pour aujourd’hui. Elles se renouvellent chaque jour ; en attendant, tu peux le saisir à la main.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "Limite du jour atteinte : 1 n’a pas été lue.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "Limite du jour atteinte : %d n’ont pas été lues.";

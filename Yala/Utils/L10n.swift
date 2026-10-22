@@ -7136,6 +7136,10 @@ enum L10n {
         /// El plan free probó la voz con su cupo de prueba entero (lo decide el gateway: `yala_trial_exhausted`).
         static var failureTrialUsedUpTitle: String { ls("voice.failure.trialUsedUp.title", comment: "Free plan used up its trial voice notes") }
         static var failureTrialUsedUpMessage: String { ls("voice.failure.trialUsedUp.message", comment: "Free plan used up its trial voice notes: Pro has no limit") }
+        static var failureBusyTitle: String { ls("voice.failure.busy.title", comment: "Gateway burst limit (429): wait a minute") }
+        static var failureBusyMessage: String { ls("voice.failure.busy.message", comment: "Gateway burst limit (429): wait a minute") }
+        static var failureDailyLimitTitle: String { ls("voice.failure.dailyLimit.title", comment: "Daily voice quota reached (429)") }
+        static var failureDailyLimitMessage: String { ls("voice.failure.dailyLimit.message", comment: "Daily voice quota reached (429)") }
         /// Botón que abre la hoja de Yala Pro desde el cupo de prueba agotado (voz y foto).
         static var trialSeePro: String { ls("ai.trial.seePro", comment: "Button that opens Yala Pro when the trial is used up") }
     }
@@ -7296,6 +7300,10 @@ enum L10n {
             /// El plan free probó la foto con su cupo de prueba entero (`yala_trial_exhausted` del gateway).
             static var failureTrialUsedUpTitle: String { ls("image.entry.failure.trialUsedUp.title", comment: "Free plan used up its trial photos") }
             static var failureTrialUsedUpMessage: String { ls("image.entry.failure.trialUsedUp.message", comment: "Free plan used up its trial photos: Pro has no limit") }
+            static var failureBusyTitle: String { ls("image.entry.failure.busy.title", comment: "Gateway burst limit (429): wait a minute") }
+            static var failureBusyMessage: String { ls("image.entry.failure.busy.message", comment: "Gateway burst limit (429): wait a minute") }
+            static var failureDailyLimitTitle: String { ls("image.entry.failure.dailyLimit.title", comment: "Daily photo quota reached (429)") }
+            static var failureDailyLimitMessage: String { ls("image.entry.failure.dailyLimit.message", comment: "Daily photo quota reached (429)") }
 
             // Un PDF página a página (ticket pdf-statement-reads-only-the-first-page, 2026-10-08).
             static func readingPageProgress(_ current: Int, _ total: Int) -> String {
@@ -7323,6 +7331,11 @@ enum L10n {
                 count == 1
                     ? ls("image.entry.trialLeftOutOne", comment: "")
                     : String(format: ls("image.entry.trialLeftOutMany", comment: ""), count)
+            }
+            static func dailyLimitLeftOut(_ count: Int) -> String {
+                count == 1
+                    ? ls("image.entry.dailyLimitLeftOutOne", comment: "")
+                    : String(format: ls("image.entry.dailyLimitLeftOutMany", comment: ""), count)
             }
         }
     }
@@ -8142,6 +8155,8 @@ enum L10n {
             static var desenlaceNote: String { ls("storage.revert.desenlaceNote", comment: "") }
             static var button: String { ls("storage.revert.button", comment: "") }
             static var ineligible: String { ls("storage.revert.ineligible", comment: "") }
+            /// `ReverseEligibility.degradedNoMap`: no es pasajero, así que no dice «ahora mismo» (card i9qh del QA del 19-oct).
+            static var ineligibleOtherDevice: String { ls("storage.revert.ineligibleOtherDevice", comment: "") }
 
             /// El aviso de datos previos en iCloud antes de volver (ticket
             /// `reverse-to-icloud-merges-prior-icloud-data-without-asking`).

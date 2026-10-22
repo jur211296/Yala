@@ -309,6 +309,12 @@ final class UITestHooks {
     /// `ReverseEligibility`. No persiste nada. Solo DEBUG.
     nonisolated static var fakeBornCloudStorage: Bool { hasArg("-uitest-born-cloud-storage") }
 
+    /// `-uitest-adopted-cloud-storage`: como `-uitest-born-cloud-storage`, pero la cuenta NO nació aquí (el teléfono entró
+    /// con «Ya tengo una cuenta»). Sin mapa de CloudKit en el simulador, `ReverseEligibility` decide `.degradedNoMap`: la
+    /// tarjeta de la vuelta enseña por qué no se puede desde este dispositivo (card i9qh del QA del 19-oct). Finge la
+    /// ENTRADA, no la decisión, y no persiste nada. Solo DEBUG.
+    nonisolated static var fakeAdoptedCloudStorage: Bool { hasArg("-uitest-adopted-cloud-storage") }
+
     /// Valor de `-uitest-reverse-prior-icloud <found|foundGroups|none|failed|noAccount>`: lo que contesta la pregunta a iCloud antes
     /// de «Volver a iCloud» (`ICloudPersonalCorpusProbe.foreignCorpusForReverse`), que en el simulador no tiene CloudKit.
     /// `found`: 12 registros, 2 cuentas y 1 presupuesto ajenos; `foundGroups`: solo 9 registros de grupos, el caso del QA
@@ -716,8 +722,9 @@ final class UITestHooks {
         #endif
     }
 
-    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|pages|pages-trial>`: el registro por imagen no abre
-    /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
+    /// Valor de `-uitest-image-result <one|incomplete|two|partial|none|trial-used-up|busy|daily-limit|pages|pages-trial>`: el registro por imagen no abre
+    /// Fotos ni llama a la red (`trial-used-up`: el gateway contesta que el cupo de prueba de fotos se agotó; `busy` y
+    /// `daily-limit`: un 429 por ráfaga o por el cupo del día). «Fotos» usa los recibos de ejemplo de la práctica guiada y la hoja «lee» lo que diga el perfil,
     /// resuelto contra los datos sembrados (`one`: un gasto · `incomplete`: sin subcategoría · `two`: dos fotos, un gasto
     /// cada una · `partial`: dos fotos y la segunda falla · `none`: ninguna trae importe · `pages`: un gasto distinto por
     /// página de PDF · `pages-trial`: la primera página se lee y en las demás se acaba el cupo de prueba). El selector de Fotos es de

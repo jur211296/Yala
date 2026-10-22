@@ -363,7 +363,7 @@ struct VoiceRecordingView: View {
         case .trialUsedUp:
             secondaryButton(L10n.Action.close, identifier: "voice_failure_close") { dismiss() }
             primaryButton(L10n.Voice.trialSeePro, isEnabled: true, identifier: "voice_trial_see_pro") { showUpgrade = true }
-        case .serviceUnavailable:
+        case .serviceUnavailable, .dailyLimit:
             secondaryButton(L10n.Action.close, identifier: "voice_failure_close") { dismiss() }
             primaryButton(L10n.Voice.enterManually, isEnabled: true, identifier: "voice_enter_manually") { showManualEntry = true }
         case .noConnection:
@@ -377,7 +377,7 @@ struct VoiceRecordingView: View {
         case .noVoice, .noAmount:
             secondaryButton(L10n.Voice.enterManually, identifier: "voice_enter_manually") { showManualEntry = true }
             primaryButton(L10n.Voice.recordAgain, isEnabled: true, identifier: "voice_record_again", action: recordAgain)
-        case .generic, .saveFailed:
+        case .generic, .saveFailed, .busy:
             if failure.retriesSameAudio, pendingAudioData != nil {
                 secondaryButton(L10n.Voice.recordAgain, identifier: "voice_record_again", action: recordAgain)
                 primaryButton(L10n.Action.retry, isEnabled: true, identifier: "voice_retry", action: retryProcessing)
@@ -394,6 +394,8 @@ struct VoiceRecordingView: View {
         case .noVoice: "waveform.slash"
         case .noAmount: "questionmark"
         case .trialUsedUp: "sparkles"
+        case .busy: "hourglass"
+        case .dailyLimit: "calendar"
         case .serviceUnavailable, .saveFailed, .generic: "exclamationmark"
         }
     }
@@ -405,6 +407,8 @@ struct VoiceRecordingView: View {
         case .noVoice: L10n.Voice.failureNoVoiceTitle
         case .noAmount: L10n.Voice.failureNoAmountTitle
         case .trialUsedUp: L10n.Voice.failureTrialUsedUpTitle
+        case .busy: L10n.Voice.failureBusyTitle
+        case .dailyLimit: L10n.Voice.failureDailyLimitTitle
         case .serviceUnavailable, .saveFailed, .generic: L10n.Voice.failureGenericTitle
         }
     }
@@ -419,6 +423,8 @@ struct VoiceRecordingView: View {
         case .saveFailed: L10n.Voice.errorSaveFailed
         case .generic: L10n.Voice.failureGenericMessage
         case .trialUsedUp: L10n.Voice.failureTrialUsedUpMessage
+        case .busy: L10n.Voice.failureBusyMessage
+        case .dailyLimit: L10n.Voice.failureDailyLimitMessage
         }
     }
 
@@ -616,8 +622,14 @@ struct VoiceRecordingView: View {
             phase = .review
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         } catch let error as TranscriptionError {
+            if let detail = VoiceEntryFlowLogic.canaryDetail(for: error) {
+                MetricsService.canaryOnce(.aiEntryReadFailed, key: detail, detail: detail)
+            }
             phase = .failure(VoiceEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
         } catch let error as ParserError {
+            if let detail = VoiceEntryFlowLogic.canaryDetail(for: error) {
+                MetricsService.canaryOnce(.aiEntryReadFailed, key: detail, detail: detail)
+            }
             phase = .failure(VoiceEntryFlowLogic.failure(for: error, isConnected: networkMonitor.isConnected))
         } catch {
             #if DEBUG

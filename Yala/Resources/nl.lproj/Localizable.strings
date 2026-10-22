@@ -8049,3 +8049,35 @@
 
 /* Confirmación al aceptar una solicitud. %@ = nombre. */
 "groups.d14.requests.acceptConfirm" = "%@ toelaten tot de groep?";
+/* Volver a iCloud no disponible: la cuenta no nació ni migró en este dispositivo (ReverseEligibility.degradedNoMap) */
+"storage.revert.ineligibleOtherDevice" = "Je account is vanaf een ander apparaat naar de cloud gegaan, dus terug naar iCloud gaat vanaf dat apparaat, als Yala er nog op staat. Hier kun je de cloud blijven gebruiken.";
+
+/* card vv0k */
+"image.entry.failure.busy.title" = "Even geduld";
+
+/* card vv0k */
+"image.entry.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van deze telefoon. Wacht een minuut en probeer het opnieuw: de foto is in orde.";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.title" = "Daglimiet bereikt";
+
+/* card vv0k */
+"image.entry.failure.dailyLimit.message" = "Voor vandaag zijn er geen fotolezingen meer over. Ze worden elke dag vernieuwd; voer het intussen handmatig in.";
+
+/* card vv0k */
+"voice.failure.busy.title" = "Even geduld";
+
+/* card vv0k */
+"voice.failure.busy.message" = "Er kwamen veel verzoeken achter elkaar van deze telefoon. Wacht een minuut en probeer het opnieuw met dezelfde notitie.";
+
+/* card vv0k */
+"voice.failure.dailyLimit.title" = "Daglimiet bereikt";
+
+/* card vv0k */
+"voice.failure.dailyLimit.message" = "Voor vandaag zijn er geen spraaklezingen meer over. Ze worden elke dag vernieuwd; voer het intussen handmatig in.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutOne" = "Daglimiet bereikt: 1 is niet gelezen.";
+
+/* card vv0k: fotos de la tanda que no se leyeron por el cupo del día */
+"image.entry.dailyLimitLeftOutMany" = "Daglimiet bereikt: %d zijn niet gelezen.";
