@@ -293,13 +293,13 @@ struct GroupMembersView: View {
     /// siempre.
     private var joinRequestsSection: some View {
         let pending = viewModel.pendingApprovalMembers.sorted { $0.joinedAt < $1.joinedAt }
-        // La cabecera es la de `SectionBox` (misma letra, color y sangría); el cuerpo no, porque cada solicitud ya es su
-        // propia tarjeta y dentro de otra quedaría una tarjeta en una tarjeta.
+        // La cabecera imita la de las secciones de la lista (letra, color y sangría de «Miembros»); el cuerpo no, porque
+        // cada solicitud ya es su propia tarjeta y dentro de otra quedaría una tarjeta en una tarjeta.
         return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
             Text(L10n.UXD14.requestsSection(pending.count))
                 .font(DS.Typography.headline)
                 .foregroundStyle(.thSecondaryText)
-                .padding(.leading, DS.Spacing.sm)
+                .padding(.leading, DS.Spacing.lg)
                 .accessibilityAddTraits(.isHeader)
             VStack(spacing: DS.Spacing.md) {
                 ForEach(pending, id: \.id) { member in

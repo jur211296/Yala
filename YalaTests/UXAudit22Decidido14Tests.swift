@@ -479,7 +479,8 @@ struct UXAudit22Decidido14WiringTests {
     /// mismo verbo.
     @Test func joinRequests_haveTheirSection_andLeaveTheList() throws {
         let members = try Self.source("Yala/App/Views/Groups/GroupMembersView.swift")
-        #expect(members.contains("if canActAsAdmin && !viewModel.pendingApprovalMembers.isEmpty {\n                        joinRequestsSection"))
+        // Desde el lote 12 decidido Miembros es una lista agrupada: la sección de solicitudes va en su propia `Section`.
+        #expect(members.contains("if canActAsAdmin && !viewModel.pendingApprovalMembers.isEmpty {\n                    Section {\n                        joinRequestsSection"))
         #expect(members.contains("canActAsAdmin ? viewModel.visibleMembers.filter { !$0.isPendingApproval } : viewModel.visibleMembers"))
         #expect(members.contains("ForEach(listedMembers, id: \\.id)"))
         #expect(members.contains("Button(L10n.UXD14.requestsAccept) { performApprove() }\n                    .accessibilityIdentifier(\"group_member_approve_confirm\")"))
