@@ -204,9 +204,8 @@ final class SharedImageEntryUITests: XCTestCase {
         XCTAssertTrue(typed.contains("1234") || typed.contains("1.234") || typed.contains("1,234"),
                       "El importe escrito se perdió (valor: «\(typed)»).")
 
-        let close = app.buttons["new_transaction_close"]
-        XCTAssertTrue(close.waitForExistence(timeout: 5), "Falta la X de Nuevo registro (new_transaction_close).")
-        close.tap()
+        // Con el importe escrito, la X pregunta antes de descartar (UX 2.2 · L2-4).
+        app.closeNewTransactionDiscarding()
         assertReadingStarts(app, "Al cerrar el formulario, la foto compartida tenía que leerse.")
     }
 

@@ -1,10 +1,10 @@
 ---
 id: save-as-favorite-from-a-mismatched-row-relabels-it
-status: backlog
+status: done
 priority: medium
 area: "transactions, favorites, scheduled, currency"
 created: 2026-10-08
-updated: 2026-10-08
+updated: 2026-10-22
 source: review adversarial de account-currency-change-leaves-scheduled-and-favorites-stale (2026-10-08, tres lentes)
 ---
 
@@ -38,3 +38,13 @@ del PR del 2026-10-08 para no tocar lo adyacente.
 - Decisión pendiente. A) convertir el importe a la divisa de la cuenta con la tasa de hoy al crear el favorito o el programado. B) crearlo en la divisa de la fila, que obliga a tocar `prefillFromFavorite`. C) avisar y no crear. Recomendada: A, que es lo que hace el arreglo de la divisa de la cuenta.
 
 Triage 2026-10-08: abierto · low → medium · sigue pasando (favoriteSheetContent/recurringSheetContent con effectiveCurrencyCode) y crea un favorito o un programado con un importe en otra divisa justo después de que la pantalla enseñara la buena; es la misma clase que su hermano medium.
+
+## Implementación (2026-10-22, lote decidido 2.2 · 02, sesión A, card 4k2q)
+
+- El favorito y el pago planificado guardan la divisa del IMPORTE (`viewModel.amountCurrencyCode`), sin convertir:
+  `favoriteSheetContent`, `recurringSheetContent` y la hoja corta «Hacer recurrente» (`createRecurringPayment`). El editor
+  completo de pagos guarda la divisa del prefill mientras la cuenta sea la del registro.
+- Al usar un favorito, la precarga enruta por divisa (tarjeta con varias divisas) y, si la cuenta no tiene esa divisa, el
+  importe la conserva (`NewTransactionViewModel.keepAmountCurrency`). Lo mismo al duplicar un movimiento.
+- Tests: `UXAudit22Decidido02FormTests` (favorito y pago de 50 USD desde un gasto en cuenta en soles; usar un favorito en
+  dólares en cuenta en soles guarda USD) y los scans de `UXAudit22Decidido02WiringTests`.

@@ -1,10 +1,10 @@
 ---
 id: groups-set-member-role-deploy
-status: backlog
+status: qa
 priority: high
 area: "groups, backend, gateway"
 created: 2026-10-21
-updated: 2026-10-21
+updated: 2026-10-22
 owner: jurgen
 source: "lote decidido UX 2.2 · grupos administrar (L19-3, D2), encargo 2026-10-21-lote-decidido-2-2-12-grupos-administrar"
 ---
@@ -79,3 +79,23 @@ Están, con los comandos, en `docs/RUNBOOK-staging-ddl.md`, sección «`g22_01_s
 `qa/cloud/g22_01_rollback.sql` borra la función y devuelve `remove_member` / `leave_group` a su cuerpo anterior
 (idempotente, con guarda). Antes, volver al Worker anterior
 (`npx wrangler rollback <id>`): con el Worker nuevo y sin la función, el botón da el error genérico.
+
+## Desplegado (2026-10-22, Frank)
+
+- `g22_01` aplicada en staging y producción por la API de gestión (`/database/query`, en una transacción). Medido antes
+  y después en los dos: la función no existía y los md5 eran los de partida; ahora existe con `prosecdef`,
+  `search_path=public`, sin `anon` y con `authenticated`, y los md5 son los nuevos.
+- Worker de staging `043cdff6` → `2574d9e8`; de producción `2e2c05c4` → `9769f3fd`. Marcha atrás:
+  `npx wrangler rollback 043cdff6-499b-4fb2-89b0-67476bc06c18` (staging) y
+  `npx wrangler rollback 2e2c05c4-293e-43f1-92e0-baa1bf6eaed2 --env production`, y después `g22_01_rollback.sql`.
+- Sonda en staging por el Worker con el usuario A: `set_member_role` → `yala_not_authorized` (llega al RPC); control con
+  un RPC inventado → 404 `unknown rpc`.
+
+## Guion para el iPhone (Jürgen)
+
+1. Dos teléfonos con la build 2.2 (TestFlight), los dos en el mismo grupo de la nube; tú administrador.
+2. En el tuyo: el grupo → Miembros → la otra persona → «Hacer administrador». En el otro teléfono, tras sincronizar, sale
+   como administrador.
+3. Quítaselo («Quitar como administrador»). En el otro teléfono vuelve a miembro.
+4. Desde el otro teléfono (siendo admin), intenta quitarte el rol a ti, que creaste el grupo: sale «Quien creó el grupo
+   siempre es administrador: no se le puede quitar el rol.» y sigues siéndolo.

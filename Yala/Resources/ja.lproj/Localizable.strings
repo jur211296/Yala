@@ -400,7 +400,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "お気に入りの支払い";
+"favorites.title" = "お気に入り";
 "favorites.new" = "新規お気に入り";
 "favorites.edit" = "お気に入りを編集";
 "favorites.noFavorites" = "お気に入りはまだありません";
@@ -410,7 +410,7 @@
 "favorites.namePlaceholder" = "お気に入りの名前";
 "favorites.notConfigured" = "未設定";
 "favorites.descriptionPlaceholder" = "説明(任意)";
-"favorites.saveDescription" = "この支払いをお気に入りとして保存すると、似た支出をすばやく記録できます。記録の作成・編集画面の右上にある⭐から呼び出せます。プロフィールのお気に入り支払いからいつでも編集できます。";
+"favorites.saveDescription" = "いつもの支出をワンタップで。";
 
 // MARK: - Scheduled
 
@@ -445,7 +445,7 @@
 "settings.categories" = "カテゴリー";
 "settings.tags" = "タグ";
 "settings.notifications" = "通知";
-"settings.favorites" = "お気に入りの支払い";
+"settings.favorites" = "お気に入り";
 "settings.budgets" = "予算";
 "settings.budgetsFavorites" = "お気に入りの予算";
 "settings.budgetsFavoritesInfo" = "お気に入りの予算はホームの予算カードに表示されます（中サイズで3件、大サイズで5件）。";
@@ -2666,7 +2666,7 @@
 "tutorials.createScheduledPayments.completion.desc" = "当日になると、Yalaが各支払いを受信箱に入れ、承認できる状態にします。";
 
 // 8. createFavorites (2 steps)
-"tutorials.createFavorites.title" = "お気に入りの支払い";
+"tutorials.createFavorites.title" = "お気に入り";
 "tutorials.createFavorites.intro.title" = "お気に入りとは？";
 "tutorials.createFavorites.intro.desc" = "頻繁な支出をショートカットとして保存し、1タップで記録できます。";
 "tutorials.createFavorites.step0.title" = "お気に入りを作成";
@@ -2742,7 +2742,7 @@
 "tutorials.createScheduledPayments.step3.desc" = "「その他のオプション」で、サブスクリプションの場合は「サブスクリプションですか？」をオンにします。";
 "tutorials.createScheduledPayments.step4.desc" = "予定支払いをタップすると、今後の支払い、すでに完了した支払いの確認、いつでも編集ができます。";
 "tutorials.createFavorites.step0.desc" = "新規記録で金額の下にある「お気に入り」をタップすると、入力中の内容をお気に入りとして保存できます。";
-"tutorials.createFavorites.step1.desc" = "次回は上部の星をタップしてお気に入りを選ぶと、保存した項目が自動で入力されます。";
+"tutorials.createFavorites.step1.desc" = "次回はフォーム上部の列にあるお気に入りをタップすると、保存した項目が自動で入力されます。";
 "tutorials.editPanel.step0.desc" = "メイン画面に移動すると、利用可能なすべてのウィジェットで支出のサマリーが表示されます。";
 "tutorials.editPanel.step1.desc" = "ホームの各セクションの横にある四角いボタンをタップすると、表示するウィジェットと順番を選べます。";
 "tutorials.editPanel.step2.desc" = "カスタマイズ内の「リセット」をタップすればいつでも既定の順序に戻せます。";
@@ -8261,3 +8261,34 @@
 "groups.l19.error.lastAdmin" = "グループには少なくとも1人の管理者が必要です。";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "この人が管理者になるには、まず自分のアカウントでグループに入り直す必要があります。";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "保存するには%@が必要です";
+"l2d.missing.amount" = "金額";
+"l2d.missing.account" = "口座";
+"l2d.missing.category" = "カテゴリ";
+"l2d.missing.sourceAccount" = "出金元の口座";
+"l2d.missing.destinationAccount" = "入金先の口座";
+"l2d.missing.twoDifferentAccounts" = "別々の口座を2つ選んでください";
+"l2d.missing.chipValue" = "未入力";
+"l2d.discard.title" = "この記録を破棄しますか？";
+"l2d.saved.expense" = "支出を保存しました · %@";
+"l2d.saved.income" = "収入を保存しました · %@";
+"l2d.saved.transfer" = "振替を保存しました · %@";
+"l2d.saved.changes" = "変更を保存しました";
+"l2d.saved.repeatsWeekly" = "保存しました · 毎週くり返します";
+"l2d.saved.repeatsMonthly" = "保存しました · 毎月くり返します";
+"l2d.saved.repeatsYearly" = "保存しました · 毎年くり返します";
+"l2d.transfer.needsAnotherAccount" = "お金を移すには別の口座が必要です";
+"l2d.transfer.createAnotherAccount" = "別の口座を作成";
+"l2d.date.dayBeforeYesterday" = "一昨日";
+"l2d.date.futureDaysNote" = "今後の日付はグレーで表示されます。まだ発生していない支払いには[予定の支払い](yala-form://scheduled)を使ってください。";
+"l2d.favorites.seeAll" = "すべて表示";
+"l2d.favorites.use" = "お気に入り「%@」を使う";
+"l2d.favorites.transferHelp" = "いつもの振替をワンタップで。";
+"l2d.recurring.title" = "くり返しにする";
+"l2d.recurring.header" = "今日の分を保存します。次回からは該当日に受信トレイに届くので、確認してください。予定の支払いで確認できます。";
+"l2d.recurring.weekly" = "毎週%@";
+"l2d.recurring.monthly" = "毎月%d日";
+"l2d.recurring.yearly" = "毎年%@";
+"l2d.recurring.moreOptions" = "その他のオプション…";

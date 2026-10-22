@@ -337,10 +337,8 @@ final class PanelViewModel {
     /// exactamente el bug por el que el Panel y Distribución mostraban saldos
     /// distintos. Para filtrar, `selectedAccountIDs`.
     ///
-    /// Queda una lectura viva en `PanelSheetsModifier` (prefill del formulario
-    /// de transacción), y **no es legítima**: precarga una cuenta arbitraria, y
-    /// en modo excluir precarga justo la que el usuario acaba de excluir. Ticket:
-    /// `panel-lee-el-filtro-de-cuentas-en-singular-fuera-del-saldo`.
+    /// El formulario de transacción ya no la lee: su cuenta precargada sale de
+    /// `TransactionAccountPrefillLogic` con el conjunto y el modo (UX 2.2 · L2-1).
     var selectedAccountID: PersistentIdentifier? {
         // La tarjeta y sus líneas van juntas en el conjunto (entrega 3): el representante es la tarjeta, no una línea.
         get { SessionState.shared.representativeAccountID(in: SessionState.shared.selectedAccountIDs) }

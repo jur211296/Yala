@@ -61,6 +61,11 @@ final class Account {
     @Relationship(deleteRule: .nullify)
     var favoritePayments: [FavoritePayment]?
 
+    /// Inverse relationship: favoritos de transferencia que llevan dinero A esta cuenta (UX 2.2 · L2-14) - CloudKit:
+    /// must be optional. Es una a-muchos, así que no es un campo de CloudKit: el campo es `CD_destinationAccount` del favorito.
+    @Relationship(deleteRule: .nullify)
+    var destinationFavoritePayments: [FavoritePayment]?
+
     /// Inverse relationship: scheduled payments linked to this account - CloudKit: must be optional
     @Relationship(deleteRule: .nullify)
     var scheduledPayments: [ScheduledPayment]?

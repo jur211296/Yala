@@ -98,6 +98,8 @@ struct RecordsStandaloneView: View {
                 recalculateData: recalculateData,
                 reloadAndRecalculate: reloadAndRecalculate
             ))
+            // «Editar» del aviso tras guardar abre el registro con la hoja de editar de Registros (UX 2.2 · L2-5).
+            .environment(\.savedRecordEditorOpener, recordsViewModel.savedRecordEditorOpener)
             .modifier(RecordsStandaloneObservers(
                 sessionState: sessionState,
                 dataViewModel: dataViewModel,

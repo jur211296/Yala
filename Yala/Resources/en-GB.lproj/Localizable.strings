@@ -29,15 +29,15 @@
 "action.savedAsFavorite" = "Saved as favourite";
 "empty.noFavorites" = "You don't have any favourites yet";
 "empty.activateCategoriesMessage" = "Create them now to organise your group expenses and see stats. You'll manage them from your profile.";
-"favorites.title" = "Favourite Payments";
+"favorites.title" = "Favourites";
 "favorites.new" = "New Favourite";
 "favorites.edit" = "Edit Favourite";
 "favorites.noFavorites" = "You don't have any favourites yet";
 "favorites.newTitle" = "New Favourite";
 "favorites.editTitle" = "Edit Favourite";
 "favorites.namePlaceholder" = "Favourite name";
-"favorites.saveDescription" = "Save this payment as a favourite to quickly record similar expenses in the future. You'll find it in the ⭐ at the top right when creating or editing any record. You can always edit it from Favourite Payments in your profile.";
-"settings.favorites" = "Favourite Payments";
+"favorites.saveDescription" = "Your usual expenses, one tap away.";
+"settings.favorites" = "Favourites";
 "settings.budgetsFavorites" = "Favourite Budgets";
 "settings.budgetsFavoritesInfo" = "Favourite budgets appear in the Budgets card on the Home tab (3 in medium, 5 in large).";
 "settings.budgetsFavoritesReorder" = "Reorder favourites";
@@ -80,7 +80,7 @@
 "tutorials.createCategories.step3.title" = "Customise your category";
 "tutorials.createTags.step1.title" = "Customise your tag";
 "tutorials.createBudgets.step2.title" = "Show it on Home";
-"tutorials.createFavorites.title" = "Favourite payments";
+"tutorials.createFavorites.title" = "Favourites";
 "tutorials.createFavorites.intro.title" = "What are favourites?";
 "tutorials.createFavorites.step0.title" = "Create a favourite";
 "tutorials.createFavorites.completion.title" = "Now you know how to use favourites";
@@ -94,7 +94,7 @@
 "tutorials.createBudgets.step1.desc" = "Give it a name, amount, and define the period: daily, monthly, annual, or one-time (for a trip, event, etc.). Choose which accounts, categories, tags, and natures you want to track. Turn on notifications if you want alerts at certain thresholds.";
 "tutorials.createBudgets.step2.desc" = "Turn on ‘Show in widget’ to see it in the Budgets widget on Home.";
 "tutorials.createFavorites.step0.desc" = "In New Record, tap ‘Favourite’ below the amount to save what you’ve entered so far as a favourite.";
-"tutorials.createFavorites.step1.desc" = "Next time, tap the star at the top and pick the favourite: the fields you saved fill in automatically.";
+"tutorials.createFavorites.step1.desc" = "Next time, tap the favourite in the row at the top of the form: the fields you saved fill in automatically.";
 "aiSettings.title" = "Customise AI";
 "aiConsent.processingMessage" = "Say it or pick a photo of the receipt, and Yala records the expense. To do that it sends the audio or photo to an AI service, only at that moment. It’s not used to train the AI.";
 "whatsNew.v12.themes.description" = "Customise the app with new Minimalist and Translucent themes.";
@@ -7571,3 +7571,34 @@
 "groups.l19.error.lastAdmin" = "The group needs at least one admin.";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "This person needs to rejoin the group with their account before they can be an admin.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "To save, you still need %@";
+"l2d.missing.amount" = "the amount";
+"l2d.missing.account" = "the account";
+"l2d.missing.category" = "the category";
+"l2d.missing.sourceAccount" = "the account it comes from";
+"l2d.missing.destinationAccount" = "the account it goes to";
+"l2d.missing.twoDifferentAccounts" = "Choose two different accounts";
+"l2d.missing.chipValue" = "Missing";
+"l2d.discard.title" = "Discard this record?";
+"l2d.saved.expense" = "Expense saved · %@";
+"l2d.saved.income" = "Income saved · %@";
+"l2d.saved.transfer" = "Transfer saved · %@";
+"l2d.saved.changes" = "Changes saved";
+"l2d.saved.repeatsWeekly" = "Saved · repeats every week";
+"l2d.saved.repeatsMonthly" = "Saved · repeats every month";
+"l2d.saved.repeatsYearly" = "Saved · repeats every year";
+"l2d.transfer.needsAnotherAccount" = "To move money, you need another account";
+"l2d.transfer.createAnotherAccount" = "Create another account";
+"l2d.date.dayBeforeYesterday" = "2 days ago";
+"l2d.date.futureDaysNote" = "Upcoming days are greyed out. For a payment that hasn't happened yet, use [Scheduled payments](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "See all";
+"l2d.favorites.use" = "Use favourite %@";
+"l2d.favorites.transferHelp" = "Your usual transfers, one tap away.";
+"l2d.recurring.title" = "Make recurring";
+"l2d.recurring.header" = "We'll save today's. The next ones will land in your Inbox on the day they're due, for you to confirm. You'll find them in Scheduled payments.";
+"l2d.recurring.weekly" = "Every week, on %@";
+"l2d.recurring.monthly" = "Every month, on day %d";
+"l2d.recurring.yearly" = "Every year, on %@";
+"l2d.recurring.moreOptions" = "More options…";

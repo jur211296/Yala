@@ -398,7 +398,7 @@
 
 // MARK: - Favorites
 
-"favorites.title" = "Lieblingszahlungen";
+"favorites.title" = "Favoriten";
 "favorites.new" = "Neuer Favorit";
 "favorites.edit" = "Favorit bearbeiten";
 "favorites.noFavorites" = "Keine Favoriten";
@@ -408,7 +408,7 @@
 "favorites.namePlaceholder" = "Name des Favoriten";
 "favorites.notConfigured" = "Nicht konfiguriert";
 "favorites.descriptionPlaceholder" = "Beschreibung (optional)";
-"favorites.saveDescription" = "Speichere diese Zahlung als Favorit, um ähnliche Ausgaben schneller zu erfassen. Du findest sie unter ⭐ oben rechts beim Erstellen oder Bearbeiten eines Eintrags. Du kannst sie jederzeit in den Favoriten in deinem Profil bearbeiten.";
+"favorites.saveDescription" = "Deine üblichen Ausgaben, mit einem Tipp.";
 
 // MARK: - Scheduled
 
@@ -443,7 +443,7 @@
 "settings.categories" = "Kategorien";
 "settings.tags" = "Tags";
 "settings.notifications" = "Benachrichtigungen";
-"settings.favorites" = "Lieblingszahlungen";
+"settings.favorites" = "Favoriten";
 "settings.budgets" = "Budgets";
 "settings.budgetsFavorites" = "Budget-Favoriten";
 "settings.budgetsFavoritesInfo" = "Budget-Favoriten erscheinen in der Budget-Karte der Übersicht (3 bei mittel, 5 bei groß).";
@@ -2724,7 +2724,7 @@
 "tutorials.createScheduledPayments.step3.desc" = "Aktiviere unter „Weitere Optionen“ die Option „Ist dies ein Abonnement?“, wenn es eines ist.";
 "tutorials.createScheduledPayments.step4.desc" = "Wenn du auf eine geplante Zahlung tippst, kannst du die zukünftigen Zahlungen, die bereits getätigten sehen und sie jederzeit bearbeiten.";
 "tutorials.createFavorites.step0.desc" = "Tippe in „Neuer Eintrag“ unter dem Betrag auf „Favorit“, um deine bisherigen Eingaben als Favoriten zu speichern.";
-"tutorials.createFavorites.step1.desc" = "Tippe beim nächsten Mal oben auf den Stern und wähle den Favoriten: Die gespeicherten Felder füllen sich automatisch aus.";
+"tutorials.createFavorites.step1.desc" = "Tippe beim nächsten Mal in der Leiste oben im Formular auf den Favoriten: Die gespeicherten Felder füllen sich automatisch aus.";
 "tutorials.editPanel.step0.desc" = "Gehe zum Hauptbildschirm, wo du deine Ausgabenübersicht mit allen verfügbaren Widgets siehst.";
 "tutorials.editPanel.step1.desc" = "Tippe auf die Kästchen-Schaltfläche neben jedem Bereich der Übersicht, um zu wählen, welche Widgets du siehst und in welcher Reihenfolge.";
 "tutorials.editPanel.step2.desc" = "Denke daran, dass du jederzeit zur Standardreihenfolge zurückkehren kannst, indem du innerhalb der Anpassung auf \"Zurücksetzen\" tippst.";
@@ -8249,3 +8249,34 @@
 "groups.l19.error.lastAdmin" = "Die Gruppe braucht mindestens einen Admin.";
 /* Error: la persona no tiene cuenta todavía */
 "groups.l19.error.memberNeedsAccount" = "Diese Person muss der Gruppe erst mit ihrem Konto wieder beitreten, bevor sie Admin sein kann.";
+
+/* Lote decidido 2.2 · 02 — formulario de registro (sesión A) */
+"l2d.missing.toSave" = "Zum Speichern fehlt noch: %@";
+"l2d.missing.amount" = "der Betrag";
+"l2d.missing.account" = "das Konto";
+"l2d.missing.category" = "die Kategorie";
+"l2d.missing.sourceAccount" = "das Ausgangskonto";
+"l2d.missing.destinationAccount" = "das Zielkonto";
+"l2d.missing.twoDifferentAccounts" = "Wähle zwei verschiedene Konten";
+"l2d.missing.chipValue" = "Fehlt";
+"l2d.discard.title" = "Diesen Eintrag verwerfen?";
+"l2d.saved.expense" = "Ausgabe gespeichert · %@";
+"l2d.saved.income" = "Einnahme gespeichert · %@";
+"l2d.saved.transfer" = "Überweisung gespeichert · %@";
+"l2d.saved.changes" = "Änderungen gespeichert";
+"l2d.saved.repeatsWeekly" = "Gespeichert · wiederholt sich jede Woche";
+"l2d.saved.repeatsMonthly" = "Gespeichert · wiederholt sich jeden Monat";
+"l2d.saved.repeatsYearly" = "Gespeichert · wiederholt sich jedes Jahr";
+"l2d.transfer.needsAnotherAccount" = "Um Geld zu übertragen, brauchst du ein weiteres Konto";
+"l2d.transfer.createAnotherAccount" = "Weiteres Konto erstellen";
+"l2d.date.dayBeforeYesterday" = "Vorgestern";
+"l2d.date.futureDaysNote" = "Kommende Tage sind ausgegraut. Für eine Zahlung, die noch aussteht, nutze [Geplante Zahlungen](yala-form://scheduled).";
+"l2d.favorites.seeAll" = "Alle anzeigen";
+"l2d.favorites.use" = "Favorit %@ verwenden";
+"l2d.favorites.transferHelp" = "Deine üblichen Überweisungen, mit einem Tipp.";
+"l2d.recurring.title" = "Wiederkehrend machen";
+"l2d.recurring.header" = "Wir speichern den von heute. Die nächsten landen am fälligen Tag in deinem Posteingang, damit du sie bestätigst. Du findest sie unter Geplante Zahlungen.";
+"l2d.recurring.weekly" = "Jede Woche, am %@";
+"l2d.recurring.monthly" = "Jeden Monat, am %d.";
+"l2d.recurring.yearly" = "Jedes Jahr, am %@";
+"l2d.recurring.moreOptions" = "Weitere Optionen…";

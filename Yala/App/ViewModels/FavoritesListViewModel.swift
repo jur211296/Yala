@@ -32,10 +32,7 @@ final class FavoritesListViewModel {
 
     /// Favorites filtered for expenses-only mode (hides income favorites)
     var displayedFavorites: [FavoritePayment] {
-        if SessionState.shared.isExpensesOnlyMode {
-            return favorites.filter { $0.transactionType != "income" }
-        }
-        return favorites
+        FavoritesVisibility.shown(favorites, isExpensesOnlyMode: SessionState.shared.isExpensesOnlyMode)
     }
 
     var isEmpty: Bool {
