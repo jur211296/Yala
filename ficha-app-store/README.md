@@ -32,6 +32,26 @@ ficha y reinstalan la app (la que esté instalada o la de `YALA_FICHA_APP`). Des
 cada pantalla. `YALA_FICHA_SIN_SEMBRAR=1` se salta las dos cosas, para repetir una pantalla suelta:
 `YALA_FICHA_SIN_SEMBRAR=1 capturas/conducir.sh en ipad grupo`.
 
+## La portada (recurso universal de App Store Connect)
+
+La primera pieza de la ficha: el recurso universal 16:9 (5244×2950, PNG sin alfa), que Apple usa a la vez de encabezado
+de la página de producto y de resultado de búsqueda. Un set para el iPhone (dos iPhone 17 Pro) y otro para el iPad (dos
+iPad Pro 13"), con las pantallas de Yala IA y de la foto que saca el molde:
+
+```bash
+YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 capturas/conducir.sh es iphone ia foto
+YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 capturas/conducir.sh es ipad ia foto
+YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 portada/render.sh es        # → es/portada/
+YALA_FICHA_SALIDA=~/Claude/propuestas/ficha-app-store-2.2 portada/render.sh es guia   # → es/portada/_revision/
+```
+
+- El lema es el cierre de `VIDEO` en `textos/<idioma>.js`; la bajada vive en `portada/portada.html` (`TXT`).
+- **El texto y los equipos llenan el lienzo** (22-oct-2026). La de 2.1 metía todo en la zona segura de 1402×962 de las
+  plantillas de Apple, y en el iPad y en la búsqueda, que enseñan el lienzo entero, se veía diminuta (capturas de
+  Jürgen). La copia `guia` marca esa zona: en el iPhone el recorte puede acercarse a ella, y se mira en la vista previa
+  de ASC antes de enviar.
+- En el iPad, el de Yala IA va delante: su chat vive en la columna derecha y detrás quedaría tapado.
+
 ## Sumar un idioma (de, fr, it, ja…)
 
 1. **`textos/<idioma>.js`**: el fichero de Lola, con la misma forma que `en.js` (`TXT`, `OBJ`, `VIDEO`).
@@ -67,6 +87,7 @@ posición de un chip). Los textos no se tocan: son de Lola.
 | `video/grabar.sh` | Graba cada escena del vídeo con `simctl io recordVideo` y apunta los toques. |
 | `video/cortes/<idioma>.json` | Los tramos de cada toma y los toques, medidos por idioma. |
 | `video/tomas.py` · `index.html` · `render.sh` | La pista de pantalla, la composición con las frases de `VIDEO` y el render (HyperFrames + ffmpeg). |
+| `portada/` | `portada.html` (composición del recurso universal, iPhone e iPad) y `render.sh` (Chrome → PNG sin alfa). |
 | `assets/` | El logo y GSAP (licencia estándar de GreenSock). La música (`pop.mp3`, Mixkit) no está en el repo: `YALA_FICHA_MUSICA`. |
 
 ## El reloj
